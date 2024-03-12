@@ -879,20 +879,6 @@ impl LanguageServer for Backend {
             let file_uri = params.text_document_position_params.text_document.uri;
             let file_id = file(db, file_uri);
             let position = params.text_document_position_params.position;
-            let (node, lookup_items) = get_node_and_lookup_items(db, file_id, position)?;
-            let lookup_item_id = lookup_items.into_iter().next()?;
-            let function_id = match lookup_item_id {
-                LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
-                    FunctionWithBodyId::Free(free_function_id)
-                }
-                LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
-                    FunctionWithBodyId::Impl(impl_function_id)
-                }
-                _ => {
-                    return None;
-                }
-            };
-
             // Get the item id of the definition.
             let (found_file, span) = get_definition_location(db, file_id, position)?;
             // Get the documentation and declaration of the item.
@@ -903,14 +889,8 @@ impl LanguageServer for Backend {
             )?;
             // Build texts.
             let mut hints = Vec::new();
-            if let Some(hint) = get_pattern_hint(db, function_id, node.clone()) {
-                hints.push(MarkedString::String(hint));
-            } else if let Some(hint) = get_expr_hint(db.upcast(), lookup_items.into_iter().next()?)
-            {
+            if let Some(hint) = get_expr_hint(db.upcast(), lookup_items.into_iter().next()?) {
                 hints.extend(hint);
-            };
-            if let Some(hint) = get_identifier_hint(db, lookup_item_id, node) {
-                hints.push(MarkedString::String(hint));
             };
 
             Some(Hover { contents: HoverContents::Array(hints), range: None })
@@ -1464,10 +1444,11 @@ fn get_identifier_hint(
 #[tracing::instrument(level = "trace", skip_all)]
 fn get_expr_hint(db: &dyn DefsGroup, lookup_item_id: LookupItemId) -> Option<Vec<MarkedString>> {
     let mut hints = vec![];
-    let (definition, documentation) = db.documentation_with_definition(lookup_item_id);
+    let definition = db.get_item_definition(lookup_item_id);
     hints.push(MarkedString::from_language_code("cairo".to_owned(), definition));
     // Add a separator.
     hints.push(MarkedString::String("\n---\n".to_string()));
+    let documentation = db.get_item_documentation(lookup_item_id);
     let mut doc = "".to_string();
     let mut is_cairo_string = false;
     for line in documentation.lines() {
