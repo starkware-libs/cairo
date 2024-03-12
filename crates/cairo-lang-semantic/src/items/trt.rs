@@ -275,8 +275,13 @@ pub struct TraitDefinitionData {
     /// computing the items' diagnostics require a query about their trait, forming a cycle of
     /// queries. Adding the items' diagnostics only after the whole computation breaks this cycle.
     diagnostics: Diagnostics<SemanticDiagnostic>,
+
+    // AST maps.
     function_asts: OrderedHashMap<TraitFunctionId, ast::TraitItemFunction>,
     item_type_asts: OrderedHashMap<TraitTypeId, ast::TraitItemType>,
+
+    /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
+    item_id_by_name: Arc<OrderedHashMap<SmolStr, TraitItemId>>,
 }
 
 // --- Selectors ---
@@ -313,6 +318,15 @@ pub fn trait_item_names(
     let trait_functions = db.trait_functions(trait_id)?;
     let trait_types = db.trait_types(trait_id)?;
     Ok(chain!(trait_functions.keys(), trait_types.keys()).cloned().collect())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_item_by_name].
+pub fn trait_item_by_name(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+    name: SmolStr,
+) -> Maybe<Option<TraitItemId>> {
+    Ok(db.priv_trait_definition_data(trait_id)?.item_id_by_name.get(&name).cloned())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_functions].
@@ -373,8 +387,10 @@ pub fn priv_trait_definition_data(
     trait_id: TraitId,
 ) -> Maybe<TraitDefinitionData> {
     let syntax_db: &dyn SyntaxGroup = db.upcast();
+
     let module_file_id = trait_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -382,7 +398,8 @@ pub fn priv_trait_definition_data(
 
     let mut function_asts = OrderedHashMap::default();
     let mut item_type_asts = OrderedHashMap::default();
-    let mut trait_item_names = OrderedHashSet::<_>::default();
+    let mut item_id_by_name = OrderedHashMap::default();
+
     if let ast::MaybeTraitBody::Some(body) = trait_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
             match item {
@@ -393,7 +410,10 @@ pub fn priv_trait_definition_data(
                     ));
                     let name_node = func.declaration(syntax_db).name(syntax_db);
                     let name = name_node.text(syntax_db);
-                    if !trait_item_names.insert(name.clone()) {
+                    if item_id_by_name
+                        .insert(name.clone(), TraitItemId::Function(trait_func_id))
+                        .is_some()
+                    {
                         diagnostics.report_by_ptr(
                             name_node.stable_ptr().untyped(),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
@@ -406,7 +426,10 @@ pub fn priv_trait_definition_data(
                         db.intern_trait_type(TraitTypeLongId(module_file_id, ty.stable_ptr()));
                     let name_node = ty.name(syntax_db);
                     let name = name_node.text(syntax_db);
-                    if !trait_item_names.insert(name.clone()) {
+                    if item_id_by_name
+                        .insert(name.clone(), TraitItemId::Type(trait_type_id))
+                        .is_some()
+                    {
                         diagnostics.report_by_ptr(
                             name_node.stable_ptr().untyped(),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
@@ -427,7 +450,12 @@ pub fn priv_trait_definition_data(
         }
     }
 
-    Ok(TraitDefinitionData { diagnostics: diagnostics.build(), function_asts, item_type_asts })
+    Ok(TraitDefinitionData {
+        diagnostics: diagnostics.build(),
+        function_asts,
+        item_type_asts,
+        item_id_by_name: item_id_by_name.into(),
+    })
 }
 
 // === Trait item type ===
