@@ -154,6 +154,58 @@ impl ConcreteTraitGenericFunctionId {
     }
 }
 
+/// The ID of a type item in a concrete trait.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ConcreteTraitTypeLongId {
+    // Note the members are private to prevent direct call to the constructor.
+    concrete_trait_id: ConcreteTraitId,
+    type_id: TraitTypeId,
+}
+impl ConcreteTraitTypeLongId {
+    pub fn new(
+        db: &dyn SemanticGroup,
+        concrete_trait_id: ConcreteTraitId,
+        type_id: TraitTypeId,
+    ) -> Self {
+        assert_eq!(
+            concrete_trait_id.trait_id(db),
+            type_id.trait_id(db.upcast()),
+            "Concrete trait and trait type must belong to the same generic trait."
+        );
+        Self { concrete_trait_id, type_id }
+    }
+}
+define_short_id!(
+    ConcreteTraitTypeId,
+    ConcreteTraitTypeLongId,
+    SemanticGroup,
+    lookup_intern_concrete_trait_type
+);
+semantic_object_for_id!(
+    ConcreteTraitTypeId,
+    lookup_intern_concrete_trait_type,
+    intern_concrete_trait_type,
+    ConcreteTraitTypeLongId
+);
+impl ConcreteTraitTypeId {
+    pub fn new(
+        db: &dyn SemanticGroup,
+        concrete_trait_id: ConcreteTraitId,
+        type_id: TraitTypeId,
+    ) -> Self {
+        db.intern_concrete_trait_type(ConcreteTraitTypeLongId::new(db, concrete_trait_id, type_id))
+    }
+
+    pub fn type_id(&self, db: &dyn SemanticGroup) -> TraitTypeId {
+        db.lookup_intern_concrete_trait_type(*self).type_id
+    }
+
+    pub fn concrete_trait_id(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
+        db.lookup_intern_concrete_trait_type(*self).concrete_trait_id
+    }
+}
+
 // === Trait Declaration ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
