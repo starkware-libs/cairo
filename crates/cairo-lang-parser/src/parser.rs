@@ -1094,6 +1094,12 @@ impl<'a> Parser<'a> {
         lbrace_allowed: LbraceAllowed,
     ) -> TryParseResult<ExprGreen> {
         let mut expr = self.try_parse_atom_or_unary(lbrace_allowed)?;
+
+        // If expr is [SyntaxKind::ExprTypeCast], we don't want to parse an operator.
+        if matches!(self.db.lookup_intern_green(expr.0).kind, SyntaxKind::ExprTypeCast) {
+            return Ok(expr);
+        }
+
         while let Some(precedence) = get_post_operator_precedence(self.peek().kind) {
             if precedence >= parent_precedence {
                 return Ok(expr);
@@ -1106,6 +1112,10 @@ impl<'a> Parser<'a> {
                 let index_expr = self.parse_expr();
                 let rbrack = self.parse_token::<TerminalRBrack>();
                 ExprIndexed::new_green(self.db, expr, lbrack, index_expr, rbrack).into()
+            } else if self.peek().kind == SyntaxKind::TerminalAs {
+                let as_kw = self.take::<TerminalAs>();
+                let ty = self.parse_type_expr();
+                return Ok(ExprTypeCast::new_green(self.db, expr, as_kw, ty).into());
             } else {
                 let op = self.parse_binary_operator();
                 let rhs = self.parse_expr_limited(precedence, lbrace_allowed);

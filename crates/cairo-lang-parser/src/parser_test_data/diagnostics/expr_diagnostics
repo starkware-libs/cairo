@@ -27,3 +27,26 @@ fn f() {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test expr type cast with operators
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() -> u32 {
+    (foo() as Array<u8> + 5,)
+}
+
+//! > expected_diagnostics
+error: Missing token TerminalComma.
+ --> dummy_file.cairo:2:24
+    (foo() as Array<u8> + 5,)
+                       ^
+
+error: Skipped tokens. Expected: expression.
+ --> dummy_file.cairo:2:25
+    (foo() as Array<u8> + 5,)
+                        ^

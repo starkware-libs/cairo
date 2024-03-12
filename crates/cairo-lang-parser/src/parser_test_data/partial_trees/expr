@@ -57,3 +57,68 @@ StatementExpr
     │   ├── op (kind: TokenMul): '*'
     │   └── rhs (kind: TokenLiteralNumber): '5'
     └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+
+//! > ==========================================================================
+
+//! > Test expr type cast
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() -> u32 {
+    ((foo() as Array<u8>) + 5,7 as u9);
+    
+}
+
+//! > top_level_kind
+StatementExpr
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementExpr
+    ├── attributes (kind: AttributeList) []
+    ├── expr (kind: ExprListParenthesized)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── expressions (kind: ExprList)
+    │   │   ├── item #0 (kind: ExprBinary)
+    │   │   │   ├── lhs (kind: ExprParenthesized)
+    │   │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   │   │   ├── expr (kind: ExprTypeCast)
+    │   │   │   │   │   ├── expr (kind: ExprFunctionCall)
+    │   │   │   │   │   │   ├── path (kind: ExprPath)
+    │   │   │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │   │   │   │       └── ident (kind: TokenIdentifier): 'foo'
+    │   │   │   │   │   │   └── arguments (kind: ArgListParenthesized)
+    │   │   │   │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │   │   │   │       ├── arguments (kind: ArgList) []
+    │   │   │   │   │   │       └── rparen (kind: TokenRParen): ')'
+    │   │   │   │   │   ├── as_kw (kind: TokenAs): 'as'
+    │   │   │   │   │   └── ty (kind: ExprPath)
+    │   │   │   │   │       └── item #0 (kind: PathSegmentWithGenericArgs)
+    │   │   │   │   │           ├── ident (kind: TokenIdentifier): 'Array'
+    │   │   │   │   │           ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │   │   │   │   │           └── generic_args (kind: GenericArgs)
+    │   │   │   │   │               ├── langle (kind: TokenLT): '<'
+    │   │   │   │   │               ├── generic_args (kind: GenericArgList)
+    │   │   │   │   │               │   └── item #0 (kind: GenericArgUnnamed)
+    │   │   │   │   │               │       └── value (kind: GenericArgValueExpr)
+    │   │   │   │   │               │           └── expr (kind: ExprPath)
+    │   │   │   │   │               │               └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │   │               │                   └── ident (kind: TokenIdentifier): 'u8'
+    │   │   │   │   │               └── rangle (kind: TokenGT): '>'
+    │   │   │   │   └── rparen (kind: TokenRParen): ')'
+    │   │   │   ├── op (kind: TokenPlus): '+'
+    │   │   │   └── rhs (kind: TokenLiteralNumber): '5'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   └── item #1 (kind: ExprTypeCast)
+    │   │       ├── expr (kind: TokenLiteralNumber): '7'
+    │   │       ├── as_kw (kind: TokenAs): 'as'
+    │   │       └── ty (kind: ExprPath)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TokenIdentifier): 'u9'
+    │   └── rparen (kind: TokenRParen): ')'
+    └── semicolon (kind: TokenSemicolon): ';'
