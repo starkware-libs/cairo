@@ -618,6 +618,7 @@ impl<'db> Inference<'db> {
             return self.conform_impl(impl_id, other_impl);
         }
         if self.impl_contains_var(&impl_id, InferenceVar::Impl(var)) {
+            println!("yg impl_contains_var");
             return Err(InferenceError::Cycle { var: InferenceVar::Impl(var) });
         }
         self.impl_assignment.insert(var, impl_id);
@@ -648,6 +649,7 @@ impl<'db> Inference<'db> {
         assert!(!self.type_assignment.contains_key(&var.id), "Cannot reassign variable.");
         let inference_var = InferenceVar::Type(var.id);
         if self.ty_contains_var(ty, inference_var) {
+            println!("yg ty_contains_var");
             return Err(InferenceError::Cycle { var: inference_var });
         }
         self.type_assignment.insert(var.id, ty);

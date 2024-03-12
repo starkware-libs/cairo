@@ -88,7 +88,7 @@ pub trait InferenceEmbeddings {
     ) -> InferenceResult<GenericFunctionId>;
     fn infer_trait_type(
         &mut self,
-        trait_type: ConcreteTraitTypeId,
+        concrete_trait_type: ConcreteTraitTypeId,
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<TypeId>;
@@ -353,19 +353,19 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
     /// Returns the resulting impl type.
     fn infer_trait_type(
         &mut self,
-        trait_type: ConcreteTraitTypeId,
+        concrete_trait_type: ConcreteTraitTypeId,
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<TypeId> {
         println!("yg new_impl_var 5 (infer_trait_type)");
         let impl_id = self.new_impl_var(
-            trait_type.concrete_trait(self.db),
+            concrete_trait_type.concrete_trait(self.db),
             stable_ptr,
             lookup_context.clone(),
         )?;
         Ok(self.db.intern_type(TypeLongId::ImplType(ImplTypeId::new(
             impl_id,
-            trait_type.trait_type(self.db),
+            concrete_trait_type.trait_type(self.db),
             self.db,
         ))))
     }
