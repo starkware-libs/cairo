@@ -49,29 +49,29 @@ Weight by sierra statement:
   statement 19: 4 (store_temp<test::MyEnum>([8]) -> ([8]))
   statement 20: 4 (store_temp<test::MyEnum>([13]) -> ([13]))
   statement 21: 4 (store_temp<test::MyEnum>([18]) -> ([18]))
-  statement 101: 4 (u8_overflowing_add([49], [75], [76]) { fallthrough([80], [81]) 151([82], [83]) })
-  statement 129: 4 (u8_overflowing_add([71], [97], [98]) { fallthrough([102], [103]) 139([104], [105]) })
-  statement 137: 3 (store_temp<core::panics::PanicResult::<((),)>>([109]) -> ([109]))
-  statement 50: 2 (enum_match<test::MyEnum>([8]) { fallthrough([41]) 56([42]) 62([43]) 68([44]) })
-  statement 78: 2 (enum_match<test::MyEnum>([13]) { fallthrough([63]) 84([64]) 90([65]) 96([66]) })
-  statement 106: 2 (enum_match<test::MyEnum>([18]) { fallthrough([85]) 112([86]) 118([87]) 124([88]) })
-  statement 22: 1 (enum_match<test::MyEnum>([4]) { fallthrough([19]) 28([20]) 34([21]) 40([22]) })
+  statement 89: 4 (u8_overflowing_add([41], [63], [64]) { fallthrough([68], [69]) 135([70], [71]) })
+  statement 113: 4 (u8_overflowing_add([59], [81], [82]) { fallthrough([86], [87]) 123([88], [89]) })
+  statement 121: 3 (store_temp<core::panics::PanicResult::<((),)>>([93]) -> ([93]))
+  statement 46: 2 (enum_match<test::MyEnum>([8]) { fallthrough([37]) 50([38]) 54([39]) 60([40]) })
+  statement 70: 2 (enum_match<test::MyEnum>([13]) { fallthrough([55]) 74([56]) 78([57]) 84([58]) })
+  statement 94: 2 (enum_match<test::MyEnum>([18]) { fallthrough([73]) 98([74]) 102([75]) 108([76]) })
+  statement 22: 1 (enum_match<test::MyEnum>([4]) { fallthrough([19]) 26([20]) 30([21]) 36([22]) })
   statement 23: 1 (branch_align() -> ())
-  statement 27: 1 (jump() { 32() })
-  statement 32: 1 (store_temp<RangeCheck>([0]) -> ([27]))
-  statement 33: 1 (jump() { 50() })
-  statement 56: 1 (branch_align() -> ())
-  statement 60: 1 (store_temp<RangeCheck>([27]) -> ([49]))
-  statement 61: 1 (jump() { 78() })
-  statement 93: 1 (store_temp<u8>([72]) -> ([75]))
-  statement 94: 1 (store_temp<u8>([74]) -> ([76]))
-  statement 95: 1 (jump() { 101() })
-  statement 105: 1 (store_temp<RangeCheck>([80]) -> ([71]))
-  statement 127: 1 (store_temp<u8>([99]) -> ([97]))
-  statement 128: 1 (store_temp<u8>([101]) -> ([98]))
-  statement 130: 1 (branch_align() -> ())
-  statement 133: 1 (store_temp<RangeCheck>([102]) -> ([93]))
-  statement 138: 1 (return([93], [109]))
+  statement 25: 1 (jump() { 28() })
+  statement 28: 1 (store_temp<RangeCheck>([0]) -> ([23]))
+  statement 29: 1 (jump() { 46() })
+  statement 50: 1 (branch_align() -> ())
+  statement 52: 1 (store_temp<RangeCheck>([23]) -> ([41]))
+  statement 53: 1 (jump() { 70() })
+  statement 81: 1 (store_temp<u8>([60]) -> ([63]))
+  statement 82: 1 (store_temp<u8>([62]) -> ([64]))
+  statement 83: 1 (jump() { 89() })
+  statement 93: 1 (store_temp<RangeCheck>([68]) -> ([59]))
+  statement 111: 1 (store_temp<u8>([83]) -> ([81]))
+  statement 112: 1 (store_temp<u8>([85]) -> ([82]))
+  statement 114: 1 (branch_align() -> ())
+  statement 117: 1 (store_temp<RangeCheck>([86]) -> ([77]))
+  statement 122: 1 (return([77], [93]))
 Weight by concrete libfunc:
   libfunc store_temp<test::MyEnum>: 16
   libfunc u8_overflowing_add: 8
@@ -94,9 +94,10 @@ Weight by user function (inc. generated):
 Weight by original user function (exc. generated):
   function test::main: 50
 Weight by Cairo function:
-  function lib.cairo::foo: 31
+  function lib.cairo::foo: 30
   function integer.cairo::U8Add::add: 11
   function lib.cairo::main: 8
+  function unknown: 1
 Weight by Sierra stack trace:
   test::main: 50
 Weight by Cairo stack trace:
