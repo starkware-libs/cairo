@@ -103,21 +103,21 @@ impl ConcreteTraitId {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ConcreteTraitGenericFunctionLongId {
     // Note the members are private to prevent direct call to the constructor.
-    concrete_trait_id: ConcreteTraitId,
-    function_id: TraitFunctionId,
+    concrete_trait: ConcreteTraitId,
+    trait_function: TraitFunctionId,
 }
 impl ConcreteTraitGenericFunctionLongId {
     pub fn new(
         db: &dyn SemanticGroup,
-        concrete_trait_id: ConcreteTraitId,
-        function_id: TraitFunctionId,
+        concrete_trait: ConcreteTraitId,
+        trait_function: TraitFunctionId,
     ) -> Self {
         assert_eq!(
-            concrete_trait_id.trait_id(db),
-            function_id.trait_id(db.upcast()),
+            concrete_trait.trait_id(db),
+            trait_function.trait_id(db.upcast()),
             "Concrete trait a trait function must belong to the same generic trait."
         );
-        Self { concrete_trait_id, function_id }
+        Self { concrete_trait, trait_function }
     }
 }
 define_short_id!(
@@ -135,22 +135,74 @@ semantic_object_for_id!(
 impl ConcreteTraitGenericFunctionId {
     pub fn new(
         db: &dyn SemanticGroup,
-        concrete_trait_id: ConcreteTraitId,
-        function_id: TraitFunctionId,
+        concrete_trait: ConcreteTraitId,
+        trait_function: TraitFunctionId,
     ) -> Self {
         db.intern_concrete_trait_function(ConcreteTraitGenericFunctionLongId::new(
             db,
-            concrete_trait_id,
-            function_id,
+            concrete_trait,
+            trait_function,
         ))
     }
 
-    pub fn function_id(&self, db: &dyn SemanticGroup) -> TraitFunctionId {
-        db.lookup_intern_concrete_trait_function(*self).function_id
+    pub fn trait_function(&self, db: &dyn SemanticGroup) -> TraitFunctionId {
+        db.lookup_intern_concrete_trait_function(*self).trait_function
     }
 
-    pub fn concrete_trait_id(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
-        db.lookup_intern_concrete_trait_function(*self).concrete_trait_id
+    pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
+        db.lookup_intern_concrete_trait_function(*self).concrete_trait
+    }
+}
+
+/// The ID of a type item in a concrete trait.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ConcreteTraitTypeLongId {
+    // Note the members are private to prevent direct call to the constructor.
+    concrete_trait: ConcreteTraitId,
+    trait_type: TraitTypeId,
+}
+impl ConcreteTraitTypeLongId {
+    pub fn new(
+        db: &dyn SemanticGroup,
+        concrete_trait: ConcreteTraitId,
+        trait_type: TraitTypeId,
+    ) -> Self {
+        assert_eq!(
+            concrete_trait.trait_id(db),
+            trait_type.trait_id(db.upcast()),
+            "Concrete trait and trait type must belong to the same generic trait."
+        );
+        Self { concrete_trait, trait_type }
+    }
+}
+define_short_id!(
+    ConcreteTraitTypeId,
+    ConcreteTraitTypeLongId,
+    SemanticGroup,
+    lookup_intern_concrete_trait_type
+);
+semantic_object_for_id!(
+    ConcreteTraitTypeId,
+    lookup_intern_concrete_trait_type,
+    intern_concrete_trait_type,
+    ConcreteTraitTypeLongId
+);
+impl ConcreteTraitTypeId {
+    pub fn new(
+        db: &dyn SemanticGroup,
+        concrete_trait: ConcreteTraitId,
+        trait_type: TraitTypeId,
+    ) -> Self {
+        db.intern_concrete_trait_type(ConcreteTraitTypeLongId::new(db, concrete_trait, trait_type))
+    }
+
+    pub fn trait_type(&self, db: &dyn SemanticGroup) -> TraitTypeId {
+        db.lookup_intern_concrete_trait_type(*self).trait_type
+    }
+
+    pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
+        db.lookup_intern_concrete_trait_type(*self).concrete_trait
     }
 }
 
@@ -764,13 +816,13 @@ pub fn concrete_trait_function_generic_params(
     db: &dyn SemanticGroup,
     concrete_trait_function_id: ConcreteTraitGenericFunctionId,
 ) -> Maybe<Vec<GenericParam>> {
-    let concrete_trait_id = concrete_trait_function_id.concrete_trait_id(db);
+    let concrete_trait_id = concrete_trait_function_id.concrete_trait(db);
     let substitution = GenericSubstitution::new(
         &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
         &concrete_trait_id.generic_args(db),
     );
     let generic_params =
-        db.trait_function_generic_params(concrete_trait_function_id.function_id(db))?;
+        db.trait_function_generic_params(concrete_trait_function_id.trait_function(db))?;
     let mut rewriter = SubstitutionRewriter { db, substitution: &substitution };
     rewriter.rewrite(generic_params)
 }
@@ -780,13 +832,13 @@ pub fn concrete_trait_function_signature(
     db: &dyn SemanticGroup,
     concrete_trait_function_id: ConcreteTraitGenericFunctionId,
 ) -> Maybe<semantic::Signature> {
-    let concrete_trait_id = concrete_trait_function_id.concrete_trait_id(db);
+    let concrete_trait_id = concrete_trait_function_id.concrete_trait(db);
     let substitution = GenericSubstitution::new(
         &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
         &concrete_trait_id.generic_args(db),
     );
     let generic_signature =
-        db.trait_function_signature(concrete_trait_function_id.function_id(db))?;
+        db.trait_function_signature(concrete_trait_function_id.trait_function(db))?;
     SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_signature)
 }
 
