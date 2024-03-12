@@ -642,3 +642,124 @@ End:
   Return(v9)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Upcast const.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(x: u128) -> u128 {
+  x / 1_u64.into()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u128
+blk0 (root):
+Statements:
+  (v1: core::integer::u64) <- 1
+  (v11: core::integer::u128) <- core::integer::upcast::<core::integer::u64, core::integer::u128>(v1)
+End:
+  Match(match core::integer::u128_is_zero(v11) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v12) => blk2,
+  })
+
+blk1:
+Statements:
+  (v13: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v14: core::felt252) <- 5420154128225384396790819266608
+  (v15: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v13, v14)
+  (v16: core::panics::Panic) <- struct_construct()
+  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v16, v15)
+  (v18: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v17)
+End:
+  Goto(blk3, {v18 -> v4})
+
+blk2:
+Statements:
+  (v19: core::integer::u128, v20: core::integer::u128) <- core::integer::u128_safe_divmod(v0, v12)
+  (v21: (core::integer::u128,)) <- struct_construct(v19)
+  (v22: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v21)
+End:
+  Goto(blk3, {v22 -> v4})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v4) {
+    PanicResult::Ok(v5) => blk4,
+    PanicResult::Err(v7) => blk5,
+  })
+
+blk4:
+Statements:
+  (v9: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v5)
+End:
+  Return(v9)
+
+blk5:
+Statements:
+  (v10: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v7)
+End:
+  Return(v10)
+
+//! > after
+Parameters: v0: core::integer::u128
+blk0 (root):
+Statements:
+  (v1: core::integer::u64) <- 1
+  (v11: core::integer::u128) <- 1
+  (v12: core::zeroable::NonZero::<core::integer::u128>) <- 1
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+  (v13: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v14: core::felt252) <- 5420154128225384396790819266608
+  (v15: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v13, v14)
+  (v16: core::panics::Panic) <- struct_construct()
+  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v16, v15)
+  (v18: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v17)
+End:
+  Goto(blk3, {v18 -> v4})
+
+blk2:
+Statements:
+  (v19: core::integer::u128, v20: core::integer::u128) <- core::integer::u128_safe_divmod(v0, v12)
+  (v21: (core::integer::u128,)) <- struct_construct(v19)
+  (v22: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v21)
+End:
+  Goto(blk3, {v22 -> v4})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v4) {
+    PanicResult::Ok(v5) => blk4,
+    PanicResult::Err(v7) => blk5,
+  })
+
+blk4:
+Statements:
+  (v9: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v5)
+End:
+  Return(v9)
+
+blk5:
+Statements:
+  (v10: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v7)
+End:
+  Return(v10)
+
+//! > lowering_diagnostics

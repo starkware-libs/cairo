@@ -41,15 +41,20 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
 
     let semantic_db = db.upcast();
     let to_lowering_id = |id| db.intern_lowering_function(FunctionLongId::Semantic(id));
+    let get_extern = |module, name: &str, fullpath: &str| {
+        let Ok(Some(ModuleItemId::ExternFunction(id))) =
+            db.module_item_by_name(module, name.into())
+        else {
+            unreachable!("`{fullpath}` not found");
+        };
+        id
+    };
     let felt_sub =
         to_lowering_id(corelib::get_core_function_id(semantic_db, "felt252_sub".into(), vec![]));
     let box_module = corelib::core_submodule(db.upcast(), "box");
-    let Ok(Some(ModuleItemId::ExternFunction(into_box))) =
-        db.module_item_by_name(box_module, "into_box".into())
-    else {
-        unreachable!("core::box::into_box not found");
-    };
+    let into_box = get_extern(box_module, "into_box", "core::box::into_box");
     let integer_module = corelib::core_submodule(db.upcast(), "integer");
+    let upcast = get_extern(integer_module, "upcast", "core::integer::upcast");
     let nz_fns = UnorderedHashSet::<_>::from_iter(
         chain!(
             [corelib::get_core_function_id(semantic_db, "felt252_is_zero".into(), vec![])],
@@ -111,6 +116,13 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                                     lowered.variables[inputs[0].var_id].ty,
                                     val.clone().into(),
                                 );
+                                var_info.insert(outputs[0], VarInfo::Const(value.clone()));
+                                *stmt =
+                                    Statement::Const(StatementConst { value, output: outputs[0] });
+                            }
+                        } else if extrn == upcast {
+                            if let Some(VarInfo::Const(value)) = var_info.get(&inputs[0].var_id) {
+                                let value = value.clone();
                                 var_info.insert(outputs[0], VarInfo::Const(value.clone()));
                                 *stmt =
                                     Statement::Const(StatementConst { value, output: outputs[0] });
