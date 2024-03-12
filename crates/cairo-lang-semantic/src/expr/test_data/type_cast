@@ -1,0 +1,52 @@
+//! > Test type cast wrong type
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+  let _x = 5 as u32;
+  let _y: i16 = _x;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::integer::i16", found: "core::integer::u32".
+ --> lib.cairo:3:17
+  let _y: i16 = _x;
+                ^^
+
+//! > ==========================================================================
+
+//! > Test type cast annotation needed
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    MyTrait::bar() as MyStruct;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+}
+
+trait MyTrait<T> {
+    fn bar() -> T;
+}
+
+impl MyStructMyTrait of MyTrait<MyStruct> {
+    fn bar() -> MyStruct {
+        MyStruct {}
+    }
+}
+
+//! > expected_diagnostics
