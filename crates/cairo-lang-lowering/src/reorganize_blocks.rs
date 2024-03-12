@@ -127,13 +127,11 @@ impl Analyzer<'_> for TopSortContext {
         _info: &mut Self::Info,
         _statement_location: StatementLocation,
         target_block_id: BlockId,
-        remapping: &VarRemapping,
+        // Note that the remappings of a goto are not considered a usage, Later usages (such as a
+        // merge) would catch them if used.
+        _remapping: &VarRemapping,
     ) {
         self.incoming_gotos[target_block_id.0] += 1;
-
-        for var_usage in remapping.values() {
-            self.remappings_ctx.set_used(var_usage.var_id);
-        }
     }
 
     fn merge_match(
