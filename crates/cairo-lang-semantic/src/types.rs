@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, StructId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplTypeDefId, ModuleFileId,
+    NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -12,6 +13,7 @@ use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::Zero;
+use smol_str::SmolStr;
 
 use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
@@ -338,6 +340,52 @@ impl ConcreteExternTypeId {
     }
 }
 
+/// An impl item of kind type.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct ImplTypeId {
+    /// The impl the item type is in.
+    impl_id: ImplId,
+    /// The trait type this impl type "implements".
+    ty: TraitTypeId,
+}
+impl ImplTypeId {
+    /// Creates a new impl type id. For an impl type of a concrete impl, verifies that the trait
+    /// type belongs to the same trait that the impl implements.
+    pub fn new(impl_id: ImplId, ty: TraitTypeId, db: &dyn SemanticGroup) -> Self {
+        if let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_id {
+            let impl_def_id = concrete_impl.impl_def_id(db);
+            assert_eq!(ty.trait_id(db.upcast()), db.impl_def_trait(impl_def_id).unwrap());
+        }
+
+        ImplTypeId { impl_id, ty }
+    }
+    pub fn impl_id(&self) -> ImplId {
+        self.impl_id
+    }
+    pub fn ty(&self) -> TraitTypeId {
+        self.ty
+    }
+    /// Gets the impl type def (language element), if `self.impl_id` is of a concrete impl.
+    pub fn impl_type_def(&self, db: &dyn SemanticGroup) -> Maybe<Option<ImplTypeDefId>> {
+        match self.impl_id {
+            ImplId::Concrete(concrete_impl_id) => concrete_impl_id.get_impl_type_def(db, self.ty),
+            ImplId::GenericParameter(_) | ImplId::ImplVar(_) => Ok(None),
+        }
+    }
+    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("{}::{}", self.impl_id.name(db.upcast()), self.ty.name(db.upcast())).into()
+    }
+}
+impl DebugWithDb<dyn SemanticGroup> for ImplTypeId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
+    }
+}
+
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path.
 pub fn resolve_type(
@@ -540,7 +588,7 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         semantic::TypeLongId::Coupon(_) => false,
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
-                || matches!(db.lookup_intern_const_value(size), 
+                || matches!(db.lookup_intern_const_value(size),
                             ConstValue::Int(value) if value.is_zero())
         }
     })
