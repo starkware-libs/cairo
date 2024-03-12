@@ -387,7 +387,7 @@ pub fn maybe_compute_expr_semantic(
         }
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
-        ast::Expr::TypeCast(expr) => Err(ctx.diagnostics.report(expr, Unsupported)),
+        ast::Expr::TypeCast(expr) => compute_expr_type_cast_semantic(ctx, expr),
     }
 }
 
@@ -729,6 +729,31 @@ fn compute_expr_fixed_size_array_semantic(
         }),
         stable_ptr: syntax.stable_ptr().into(),
     }))
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprTypeCast].
+fn compute_expr_type_cast_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprTypeCast,
+) -> Maybe<Expr> {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+
+    let expr_syntax = syntax.expr(syntax_db);
+    let expr = maybe_compute_expr_semantic(ctx, &expr_syntax)?;
+    let ty_syntax = syntax.ty(syntax_db);
+    let explicit_type = resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &ty_syntax);
+    let explicit_type = ctx.reduce_ty(explicit_type);
+    let inferred_type = ctx.reduce_ty(expr.ty());
+    if !inferred_type.is_missing(db)
+        && ctx.resolver.inference().conform_ty(inferred_type, explicit_type).is_err()
+    {
+        ctx.diagnostics.report(
+            syntax,
+            WrongArgumentType { expected_ty: explicit_type, actual_ty: inferred_type },
+        );
+    }
+    Ok(expr)
 }
 
 fn compute_expr_function_call_semantic(
