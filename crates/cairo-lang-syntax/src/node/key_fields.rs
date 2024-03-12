@@ -113,6 +113,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::OptionFixedSizeArraySizeEmpty => {
             vec![]
         }
+        SyntaxKind::ExprTypeCast => {
+            vec![]
+        }
         SyntaxKind::StructArgExpr => {
             vec![]
         }
