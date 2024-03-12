@@ -7,8 +7,6 @@ extern crate alloc;
 
 #[cfg(not(feature = "std"))]
 use alloc::boxed::Box;
-#[cfg(not(feature = "std"))]
-use alloc::sync::Arc;
 use core::fmt;
 
 pub mod bigint;
