@@ -310,6 +310,7 @@ impl<'db> Resolver<'db> {
         if let Some(base_module) = self.try_handle_super_segments(diagnostics, segments) {
             return Ok(ResolvedConcreteItem::Module(base_module?));
         }
+
         let db = self.db;
         let syntax_db = db.upcast();
         Ok(match segments.peek().unwrap() {
@@ -326,6 +327,15 @@ impl<'db> Resolver<'db> {
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
                 let identifier = simple_segment.ident(syntax_db);
+
+                if let Some(resolved_item) =
+                    resolve_self_segment(db, diagnostics, &identifier, self.data.trait_or_impl_ctx)
+                {
+                    // The first segment is "Self". Consume it and return.
+                    segments.next().unwrap();
+                    return resolved_item;
+                }
+
                 if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
                     self.resolved_items.mark_concrete(db, segments.next().unwrap(), local_item)
                 } else if let Some(module_id) = self.determine_base_module(&identifier) {
@@ -344,6 +354,7 @@ impl<'db> Resolver<'db> {
             }
         })
     }
+
     /// Resolves a generic item, given a path.
     /// Guaranteed to result in at most one diagnostic.
     pub fn resolve_generic_path(
@@ -500,6 +511,11 @@ impl<'db> Resolver<'db> {
     ) -> Maybe<ResolvedConcreteItem> {
         let syntax_db = self.db.upcast();
         let ident = identifier.text(syntax_db);
+
+        if identifier.text(syntax_db) == "Self" {
+            return Err(diagnostics.report(identifier, SelfMustBeFirst));
+        }
+
         match containing_item {
             ResolvedConcreteItem::Module(module_id) => {
                 // Prefix "super" segments should be removed earlier. Middle "super" segments are
@@ -1104,6 +1120,36 @@ impl<'db> Resolver<'db> {
             diagnostics.report(identifier, ItemNotVisible { item_id: item_info.item_id });
         }
     }
+}
+
+/// Resolves the segment if it's "Self". Returns the Some(ResolvedConcreteItem) or Some(Err) if
+/// segment == "Self" or None otherwise.
+fn resolve_self_segment(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    identifier: &ast::TerminalIdentifier,
+    trait_or_impl_ctx: TraitOrImplContext,
+) -> Option<Maybe<ResolvedConcreteItem>> {
+    if identifier.text(db.upcast()) != "Self" {
+        return None;
+    }
+
+    Some(match trait_or_impl_ctx {
+        TraitOrImplContext::None => Err(diagnostics.report(identifier, SelfNotSupportedInContext)),
+        TraitOrImplContext::Trait { trait_id } => {
+            let concrete_trait_id =
+                db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args: vec![] });
+            Ok(ResolvedConcreteItem::Trait(concrete_trait_id))
+        }
+        TraitOrImplContext::Impl { impl_def_id } => {
+            let impl_id =
+                ImplId::Concrete(db.intern_concrete_impl(ConcreteImplLongId {
+                    impl_def_id,
+                    generic_args: vec![],
+                }));
+            Ok(ResolvedConcreteItem::Impl(impl_id))
+        }
+    })
 }
 
 /// Extracts the edition of a crate.

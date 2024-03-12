@@ -740,6 +740,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::FixedSizeArraySizeTooBig => {
                 "Fixed size array size must be smaller than 2^15.".into()
             }
+            SemanticDiagnosticKind::SelfNotSupportedInContext => {
+                "`Self` is not supported in this context.".into()
+            }
+            SemanticDiagnosticKind::SelfMustBeFirst => {
+                "`Self` can only be the first segment of a path.".into()
+            }
         }
     }
 
@@ -1094,6 +1100,8 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArrayNonSingleValue,
     FixedSizeArrayEmptyElements,
     FixedSizeArraySizeTooBig,
+    SelfNotSupportedInContext,
+    SelfMustBeFirst,
 }
 
 impl SemanticDiagnosticKind {
