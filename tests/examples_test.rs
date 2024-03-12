@@ -19,7 +19,7 @@ use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
 use cairo_lang_sierra_to_casm::metadata::{calc_metadata, calc_metadata_ap_change_only};
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
-use cairo_lang_utils::{arc_unwrap_or_clone, extract_matches, Upcast};
+use cairo_lang_utils::{extract_matches, Upcast};
 use itertools::Itertools;
 use rstest::{fixture, rstest};
 
@@ -84,7 +84,7 @@ fn checked_compile_to_sierra(
         }
     }
     let SierraProgramWithDebug { program: sierra_program, .. } =
-        arc_unwrap_or_clone(db.get_sierra_program_for_functions(requested_function_ids).unwrap());
+        Arc::unwrap_or_clone(db.get_sierra_program_for_functions(requested_function_ids).unwrap());
     replace_sierra_ids_in_program(&db, &sierra_program)
 }
 

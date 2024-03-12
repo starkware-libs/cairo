@@ -3,6 +3,7 @@
 //! This crate is responsible for compiling a Cairo project into a Sierra program.
 //! It is the main entry point for the compiler.
 use std::path::Path;
+use std::sync::Arc;
 
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
@@ -11,7 +12,6 @@ use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use cairo_lang_utils::arc_unwrap_or_clone;
 
 use crate::db::RootDatabase;
 use crate::diagnostics::DiagnosticsReporter;
@@ -100,7 +100,7 @@ pub fn compile_prepared_db(
 ) -> Result<Program> {
     compiler_config.diagnostics_reporter.ensure(db)?;
 
-    let SierraProgramWithDebug { program: mut sierra_program, .. } = arc_unwrap_or_clone(
+    let SierraProgramWithDebug { program: mut sierra_program, .. } = Arc::unwrap_or_clone(
         db.get_sierra_program(main_crate_ids)
             .to_option()
             .context("Compilation failed without any diagnostics")?,
