@@ -528,6 +528,11 @@ pub fn impl_type_by_trait_type(
     impl_def_id: ImplDefId,
     trait_type_id: TraitTypeId,
 ) -> Maybe<Option<ImplTypeDefId>> {
+    if trait_type_id.trait_id(db.upcast()) != db.impl_def_trait(impl_def_id)? {
+        // The trait type belongs to a trait other than the one the impl implements.
+        return Ok(None);
+    }
+
     let defs_db = db.upcast();
     let name = trait_type_id.name(defs_db);
     for impl_type_id in db.priv_impl_definition_data(impl_def_id)?.item_type_asts.keys() {
