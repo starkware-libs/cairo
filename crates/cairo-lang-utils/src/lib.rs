@@ -10,8 +10,6 @@ use alloc::boxed::Box;
 #[cfg(not(feature = "std"))]
 use alloc::sync::Arc;
 use core::fmt;
-#[cfg(feature = "std")]
-use std::sync::Arc;
 
 pub mod bigint;
 pub mod byte_array;
