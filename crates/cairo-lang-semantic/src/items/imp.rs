@@ -434,8 +434,13 @@ pub struct ImplDefinitionData {
     /// computing the items' diagnostics require a query about their impl, forming a cycle of
     /// queries. Adding the items' diagnostics only after the whole computation breaks this cycle.
     diagnostics: Diagnostics<SemanticDiagnostic>,
+
+    // AST maps.
     function_asts: OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>,
     item_type_asts: Arc<OrderedHashMap<ImplTypeDefId, ast::ItemTypeAlias>>,
+
+    /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
+    item_id_by_name: Arc<OrderedHashMap<SmolStr, ImplItemId>>,
 }
 
 // --- Selectors ---
@@ -495,6 +500,15 @@ pub fn impl_function_by_trait_function(
         }
     }
     Ok(None)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_item_by_name].
+pub fn impl_item_by_name(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    name: SmolStr,
+) -> Maybe<Option<ImplItemId>> {
+    Ok(db.priv_impl_definition_data(impl_def_id)?.item_id_by_name.get(&name).cloned())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_types].
@@ -573,11 +587,12 @@ pub fn priv_impl_definition_data(
     // Ignore the result.
     .ok();
 
-    // TODO(yuval): verify that all functions of `concrete_trait` appear in this impl.
+    // TODO(yuval): verify that all functions and types of `concrete_trait` appear in this impl.
 
     let mut function_asts = OrderedHashMap::default();
     let mut item_type_asts = OrderedHashMap::default();
-    let mut impl_item_names = OrderedHashSet::<_>::default();
+    // TODO(yg): can it be unordered?
+    let mut item_id_by_name = OrderedHashMap::default();
 
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
@@ -621,7 +636,10 @@ pub fn priv_impl_definition_data(
                     ));
                     let name_node = func.declaration(syntax_db).name(syntax_db);
                     let name = name_node.text(syntax_db);
-                    if !impl_item_names.insert(name.clone()) {
+                    if item_id_by_name
+                        .insert(name.clone(), ImplItemId::Function(impl_function_id))
+                        .is_some()
+                    {
                         diagnostics.report_by_ptr(
                             name_node.stable_ptr().untyped(),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
@@ -634,7 +652,10 @@ pub fn priv_impl_definition_data(
                         db.intern_impl_type_def(ImplTypeDefLongId(module_file_id, ty.stable_ptr()));
                     let name_node = ty.name(syntax_db);
                     let name = name_node.text(syntax_db);
-                    if !impl_item_names.insert(name.clone()) {
+                    if item_id_by_name
+                        .insert(name.clone(), ImplItemId::Type(impl_type_id))
+                        .is_some()
+                    {
                         diagnostics.report_by_ptr(
                             name_node.stable_ptr().untyped(),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
@@ -661,6 +682,7 @@ pub fn priv_impl_definition_data(
     // to verify here that all items in `concrete_trait` appear in this impl.
     // TODO(yuval): Once default implementation of trait functions is supported, filter such
     // functions out.
+    let impl_item_names: OrderedHashSet<SmolStr> = item_id_by_name.keys().cloned().collect();
     let trait_id = db.lookup_intern_concrete_trait(concrete_trait).trait_id;
     let trait_item_names = db.trait_item_names(trait_id)?;
     let missing_items_in_impl =
@@ -678,6 +700,7 @@ pub fn priv_impl_definition_data(
         diagnostics: diagnostics.build(),
         function_asts,
         item_type_asts: item_type_asts.into(),
+        item_id_by_name: item_id_by_name.into(),
     })
 }
 
