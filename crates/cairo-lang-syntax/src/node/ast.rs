@@ -215,6 +215,7 @@ pub enum Expr {
     Indexed(ExprIndexed),
     InlineMacro(ExprInlineMacro),
     FixedSizeArray(ExprFixedSizeArray),
+    TypeCast(ExprTypeCast),
     Missing(ExprMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -337,6 +338,11 @@ impl From<ExprFixedSizeArrayPtr> for ExprPtr {
         Self(value.0)
     }
 }
+impl From<ExprTypeCastPtr> for ExprPtr {
+    fn from(value: ExprTypeCastPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingPtr> for ExprPtr {
     fn from(value: ExprMissingPtr) -> Self {
         Self(value.0)
@@ -452,6 +458,11 @@ impl From<ExprFixedSizeArrayGreen> for ExprGreen {
         Self(value.0)
     }
 }
+impl From<ExprTypeCastGreen> for ExprGreen {
+    fn from(value: ExprTypeCastGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingGreen> for ExprGreen {
     fn from(value: ExprMissingGreen) -> Self {
         Self(value.0)
@@ -511,6 +522,7 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::ExprFixedSizeArray => {
                 Expr::FixedSizeArray(ExprFixedSizeArray::from_syntax_node(db, node))
             }
+            SyntaxKind::ExprTypeCast => Expr::TypeCast(ExprTypeCast::from_syntax_node(db, node)),
             SyntaxKind::ExprMissing => Expr::Missing(ExprMissing::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Expr"),
         }
@@ -539,6 +551,7 @@ impl TypedSyntaxNode for Expr {
             Expr::Indexed(x) => x.as_syntax_node(),
             Expr::InlineMacro(x) => x.as_syntax_node(),
             Expr::FixedSizeArray(x) => x.as_syntax_node(),
+            Expr::TypeCast(x) => x.as_syntax_node(),
             Expr::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -572,6 +585,7 @@ impl Expr {
             SyntaxKind::ExprIndexed => true,
             SyntaxKind::ExprInlineMacro => true,
             SyntaxKind::ExprFixedSizeArray => true,
+            SyntaxKind::ExprTypeCast => true,
             SyntaxKind::ExprMissing => true,
             _ => false,
         }
@@ -4593,6 +4607,84 @@ impl TypedSyntaxNode for OptionFixedSizeArraySizeEmpty {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionFixedSizeArraySizeEmptyPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprTypeCast {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl ExprTypeCast {
+    pub const INDEX_EXPR: usize = 0;
+    pub const INDEX_AS_KW: usize = 1;
+    pub const INDEX_TY: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        expr: ExprGreen,
+        as_kw: TerminalAsGreen,
+        ty: ExprGreen,
+    ) -> ExprTypeCastGreen {
+        let children: Vec<GreenId> = vec![expr.0, as_kw.0, ty.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ExprTypeCastGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::ExprTypeCast,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl ExprTypeCast {
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn as_kw(&self, db: &dyn SyntaxGroup) -> TerminalAs {
+        TerminalAs::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprTypeCastPtr(pub SyntaxStablePtrId);
+impl ExprTypeCastPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> ExprTypeCast {
+        ExprTypeCast::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprTypeCastGreen(pub GreenId);
+impl TypedSyntaxNode for ExprTypeCast {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprTypeCast);
+    type StablePtr = ExprTypeCastPtr;
+    type Green = ExprTypeCastGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprTypeCastGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::ExprTypeCast,
+            details: GreenNodeDetails::Node {
+                children: vec![Expr::missing(db).0, TerminalAs::missing(db).0, Expr::missing(db).0],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprTypeCast,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprTypeCast
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprTypeCastPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
