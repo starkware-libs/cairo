@@ -10,6 +10,8 @@ use starknet::{
 };
 use core::serde::Serde;
 
+/// Address in the storage of a Starknet contract.
+/// The maximum data this can hold is 251 bits - 1.
 #[derive(Copy, Drop)]
 pub extern type StorageAddress;
 
