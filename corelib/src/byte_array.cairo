@@ -272,8 +272,8 @@ pub impl ByteArrayImpl of ByteArrayTrait {
 
     /// Appends a single word to the end of `self`, given that `0 < split_index < 16`.
     ///
-    /// `split_index` is the number of bytes left in `self.pending_word` after this function. This is
-    /// the index of the split (LSB's index is 0).
+    /// `split_index` is the number of bytes left in `self.pending_word` after this function.
+    /// This is the index of the split (LSB's index is 0).
     ///
     /// Note: this function doesn't update the new pending length of self. It's the caller's
     /// responsibility.
@@ -293,8 +293,8 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// Appends a single word to the end of `self`, given that the index of splitting `word` is
     /// exactly 16.
     ///
-    /// `split_index` is the number of bytes left in `self.pending_word` after this function. This is
-    /// the index of the split (LSB's index is 0).
+    /// `split_index` is the number of bytes left in `self.pending_word` after this function.
+    /// This is the index of the split (LSB's index is 0).
     ///
     /// Note: this function doesn't update the new pending length of self. It's the caller's
     /// responsibility.
@@ -306,8 +306,8 @@ pub impl ByteArrayImpl of ByteArrayTrait {
 
     /// Appends a single word to the end of `self`, given that the index of splitting `word` is > 16.
     ///
-    /// `split_index` is the number of bytes left in `self.pending_word` after this function. This is
-    /// the index of the split (LSB's index is 0).
+    /// `split_index` is the number of bytes left in `self.pending_word` after this function.
+    /// This is the index of the split (LSB's index is 0).
     ///
     /// Note: this function doesn't update the new pending length of self. It's the caller's
     /// responsibility.
