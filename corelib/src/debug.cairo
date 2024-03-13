@@ -2,22 +2,22 @@ use core::array::ArrayTrait;
 use core::traits::Into;
 use core::option::Option;
 
-// Usage:
-//
-// use core::debug::PrintTrait;
-//
-// 1.print();
-//
-// (1 == 2).print();
-//
-// get_caller_address().print();
-//
-// let mut arr = array![];
-// arr.append('1234567890123456789012345678901');
-// arr.append('Sca');
-// arr.append('SomeVeryLongMessage');
-// arr.print();
-
+/// Usage:
+/// ```
+/// use core::debug::PrintTrait;
+///
+/// 1.print();
+///
+/// (1 == 2).print();
+///
+/// get_caller_address().print();
+///
+/// let mut arr = array![];
+/// arr.append('1234567890123456789012345678901');
+/// arr.append('Sca');
+/// arr.append('SomeVeryLongMessage');
+/// arr.print();
+/// ```
 pub(crate) extern fn print(message: Array<felt252>) nopanic;
 
 fn print_felt252(message: felt252) {
