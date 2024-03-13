@@ -19,6 +19,7 @@ use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::{ToPrimitive, Zero};
@@ -356,8 +357,21 @@ pub fn compile(
     validate_metadata(program, &registry, metadata)?;
     let type_sizes = get_type_size_map(program, &registry)
         .ok_or(CompilationError::FailedBuildingTypeInformation)?;
+    let mut backwards_jump_indices = UnorderedHashSet::<_>::default();
+    for (statement_id, statement) in program.statements.iter().enumerate() {
+        if let Statement::Invocation(invocation) = statement {
+            for branch in &invocation.branches {
+                if let BranchTarget::Statement(target) = branch.target {
+                    if target.0 < statement_id {
+                        backwards_jump_indices.insert(target);
+                    }
+                }
+            }
+        }
+    }
     let mut program_annotations = ProgramAnnotations::create(
         program.statements.len(),
+        backwards_jump_indices,
         &program.funcs,
         metadata,
         config.gas_usage_check,
@@ -455,15 +469,20 @@ pub fn compile(
                 }
                 instructions.extend(compiled_invocation.instructions);
 
-                let updated_annotations = StatementAnnotations {
+                let branching_libfunc = compiled_invocation.results.len() > 1;
+                // Using a vector of annotations for the loop allows us to clone the annotations
+                // only in the case of more the 1 branch, which is less common.
+                let mut all_updated_annotations = vec![StatementAnnotations {
                     environment: compiled_invocation.environment,
                     ..annotations
-                };
+                }];
+                while all_updated_annotations.len() < compiled_invocation.results.len() {
+                    all_updated_annotations.push(all_updated_annotations[0].clone());
+                }
 
-                let branching_libfunc = compiled_invocation.results.len() > 1;
-
-                for (branch_info, branch_changes) in
+                for ((branch_info, branch_changes), updated_annotations) in
                     zip_eq(&invocation.branches, compiled_invocation.results)
+                        .zip(all_updated_annotations)
                 {
                     let destination_statement_idx = statement_idx.next(&branch_info.target);
                     if branching_libfunc
@@ -482,7 +501,7 @@ pub fn compile(
                         .propagate_annotations(
                             statement_idx,
                             destination_statement_idx,
-                            &updated_annotations,
+                            updated_annotations,
                             branch_info,
                             branch_changes,
                             branching_libfunc,
