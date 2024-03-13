@@ -385,6 +385,192 @@ Match(
 
 //! > ==========================================================================
 
+//! > `match` with type mismatch.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+enum MyEnum {
+    A,
+    B,
+}
+
+//! > function_body
+let a = MyEnum::A;
+
+//! > expr_code
+match a {
+    MyEnum::A => 3_u32,
+    MyEnum::B => 3_u16,
+}
+
+//! > expected_diagnostics
+error: Match arms have incompatible types: "core::integer::u32" and "core::integer::u16"
+ --> lib.cairo:8:18
+    MyEnum::B => 3_u16,
+                 ^***^
+
+//! > expected_semantics
+Match(
+    ExprMatch {
+        matched_expr: Var(
+            LocalVarId(test::a),
+        ),
+        arms: [
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::A,
+                            inner_pattern: None,
+                            ty: test::MyEnum,
+                        },
+                    ),
+                ],
+                expression: Literal(
+                    ExprLiteral {
+                        value: 3,
+                        ty: core::integer::u32,
+                    },
+                ),
+            },
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::B,
+                            inner_pattern: None,
+                            ty: test::MyEnum,
+                        },
+                    ),
+                ],
+                expression: Literal(
+                    ExprLiteral {
+                        value: 3,
+                        ty: core::integer::u16,
+                    },
+                ),
+            },
+        ],
+        ty: core::integer::u32,
+    },
+)
+
+//! > ==========================================================================
+
+//! > `match` with type mismatch with inference.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+enum MyEnum {
+    A,
+    B,
+}
+
+//! > function_body
+let a = MyEnum::A;
+
+//! > expr_code
+match a {
+    MyEnum::A => 3 + 3_u32,
+    MyEnum::B => 3 + 3_u16,
+}
+
+//! > expected_diagnostics
+error: Match arms have incompatible types: "core::integer::u32" and "core::integer::u16"
+ --> lib.cairo:8:18
+    MyEnum::B => 3 + 3_u16,
+                 ^*******^
+
+//! > expected_semantics
+Match(
+    ExprMatch {
+        matched_expr: Var(
+            LocalVarId(test::a),
+        ),
+        arms: [
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::A,
+                            inner_pattern: None,
+                            ty: test::MyEnum,
+                        },
+                    ),
+                ],
+                expression: FunctionCall(
+                    ExprFunctionCall {
+                        function: core::integer::U32Add::add,
+                        args: [
+                            Value(
+                                Literal(
+                                    ExprLiteral {
+                                        value: 3,
+                                        ty: core::integer::u32,
+                                    },
+                                ),
+                            ),
+                            Value(
+                                Literal(
+                                    ExprLiteral {
+                                        value: 3,
+                                        ty: core::integer::u32,
+                                    },
+                                ),
+                            ),
+                        ],
+                        coupon_arg: None,
+                        ty: core::integer::u32,
+                    },
+                ),
+            },
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::B,
+                            inner_pattern: None,
+                            ty: test::MyEnum,
+                        },
+                    ),
+                ],
+                expression: FunctionCall(
+                    ExprFunctionCall {
+                        function: core::integer::U16Add::add,
+                        args: [
+                            Value(
+                                Literal(
+                                    ExprLiteral {
+                                        value: 3,
+                                        ty: core::integer::u16,
+                                    },
+                                ),
+                            ),
+                            Value(
+                                Literal(
+                                    ExprLiteral {
+                                        value: 3,
+                                        ty: core::integer::u16,
+                                    },
+                                ),
+                            ),
+                        ],
+                        coupon_arg: None,
+                        ty: core::integer::u16,
+                    },
+                ),
+            },
+        ],
+        ty: core::integer::u32,
+    },
+)
+
+//! > ==========================================================================
+
 //! > Test match with or pattern, with missing arm variables.
 
 //! > test_runner_name
@@ -590,7 +776,7 @@ error: Missing variable in pattern.
     MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
                    ^***************^
 
-error: Match arms have incompatible types: "?2" and "?3"
+error: Match arms have incompatible types: "core::felt252" and "core::integer::u8"
  --> lib.cairo:15:60
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
                                                            ^***^
