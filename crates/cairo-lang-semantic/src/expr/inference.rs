@@ -719,7 +719,6 @@ impl<'db> Inference<'db> {
         let ImplId::Concrete(concrete_impl) = canonical_impl.0 else {
             return Ok(SolutionSet::Unique(canonical_impl));
         };
-        let concrete_impl = self.rewrite(concrete_impl).no_err();
         let mut rewriter = SubstitutionRewriter {
             db: self.db,
             substitution: &concrete_impl.substitution(self.db)?,
