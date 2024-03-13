@@ -82,6 +82,11 @@ pub trait SemanticGroup:
         id: items::trt::ConcreteTraitGenericFunctionLongId,
     ) -> items::trt::ConcreteTraitGenericFunctionId;
     #[salsa::interned]
+    fn intern_concrete_trait_type(
+        &self,
+        id: items::trt::ConcreteTraitTypeLongId,
+    ) -> items::trt::ConcreteTraitTypeId;
+    #[salsa::interned]
     fn intern_concrete_impl(
         &self,
         id: items::imp::ConcreteImplLongId,
