@@ -1,0 +1,223 @@
+//! > `loop` with type mismatch.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+
+//! > function_body
+let cond = true;
+
+//! > expr_code
+loop {
+    if cond {
+        break 3_u32;
+    } else {
+        break 3_u16;
+    }
+}
+
+//! > expected_diagnostics
+error: Loop has incompatible return types: "core::integer::u32" and "core::integer::u16"
+ --> lib.cairo:6:15
+        break 3_u16;
+              ^***^
+
+//! > expected_semantics
+Loop(
+    ExprLoop {
+        body: Block(
+            ExprBlock {
+                statements: [],
+                tail: Some(
+                    If(
+                        ExprIf {
+                            condition: BoolExpr(
+                                Var(
+                                    LocalVarId(test::cond),
+                                ),
+                            ),
+                            if_block: Block(
+                                ExprBlock {
+                                    statements: [
+                                        Break(
+                                            StatementBreak {
+                                                expr_option: Some(
+                                                    Literal(
+                                                        ExprLiteral {
+                                                            value: 3,
+                                                            ty: core::integer::u32,
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                    tail: None,
+                                    ty: core::never,
+                                },
+                            ),
+                            else_block: Some(
+                                Block(
+                                    ExprBlock {
+                                        statements: [
+                                            Break(
+                                                StatementBreak {
+                                                    expr_option: Some(
+                                                        Literal(
+                                                            ExprLiteral {
+                                                                value: 3,
+                                                                ty: core::integer::u16,
+                                                            },
+                                                        ),
+                                                    ),
+                                                },
+                                            ),
+                                        ],
+                                        tail: None,
+                                        ty: core::never,
+                                    },
+                                ),
+                            ),
+                            ty: core::never,
+                        },
+                    ),
+                ),
+                ty: (),
+            },
+        ),
+        ty: core::integer::u32,
+    },
+)
+
+//! > ==========================================================================
+
+//! > `loop` with type mismatch with inference.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+
+//! > function_body
+let cond = true;
+
+//! > expr_code
+loop {
+    if cond {
+        break 3 + 3_u32;
+    } else {
+        break 3 + 3_u16;
+    }
+}
+
+//! > expected_diagnostics
+error: Loop has incompatible return types: "core::integer::u32" and "core::integer::u16"
+ --> lib.cairo:6:15
+        break 3 + 3_u16;
+              ^*******^
+
+//! > expected_semantics
+Loop(
+    ExprLoop {
+        body: Block(
+            ExprBlock {
+                statements: [],
+                tail: Some(
+                    If(
+                        ExprIf {
+                            condition: BoolExpr(
+                                Var(
+                                    LocalVarId(test::cond),
+                                ),
+                            ),
+                            if_block: Block(
+                                ExprBlock {
+                                    statements: [
+                                        Break(
+                                            StatementBreak {
+                                                expr_option: Some(
+                                                    FunctionCall(
+                                                        ExprFunctionCall {
+                                                            function: core::integer::U32Add::add,
+                                                            args: [
+                                                                Value(
+                                                                    Literal(
+                                                                        ExprLiteral {
+                                                                            value: 3,
+                                                                            ty: core::integer::u32,
+                                                                        },
+                                                                    ),
+                                                                ),
+                                                                Value(
+                                                                    Literal(
+                                                                        ExprLiteral {
+                                                                            value: 3,
+                                                                            ty: core::integer::u32,
+                                                                        },
+                                                                    ),
+                                                                ),
+                                                            ],
+                                                            coupon_arg: None,
+                                                            ty: core::integer::u32,
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                    tail: None,
+                                    ty: core::never,
+                                },
+                            ),
+                            else_block: Some(
+                                Block(
+                                    ExprBlock {
+                                        statements: [
+                                            Break(
+                                                StatementBreak {
+                                                    expr_option: Some(
+                                                        FunctionCall(
+                                                            ExprFunctionCall {
+                                                                function: core::integer::U16Add::add,
+                                                                args: [
+                                                                    Value(
+                                                                        Literal(
+                                                                            ExprLiteral {
+                                                                                value: 3,
+                                                                                ty: core::integer::u16,
+                                                                            },
+                                                                        ),
+                                                                    ),
+                                                                    Value(
+                                                                        Literal(
+                                                                            ExprLiteral {
+                                                                                value: 3,
+                                                                                ty: core::integer::u16,
+                                                                            },
+                                                                        ),
+                                                                    ),
+                                                                ],
+                                                                coupon_arg: None,
+                                                                ty: core::integer::u16,
+                                                            },
+                                                        ),
+                                                    ),
+                                                },
+                                            ),
+                                        ],
+                                        tail: None,
+                                        ty: core::never,
+                                    },
+                                ),
+                            ),
+                            ty: core::never,
+                        },
+                    ),
+                ),
+                ty: (),
+            },
+        ),
+        ty: core::integer::u32,
+    },
+)

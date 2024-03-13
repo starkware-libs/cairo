@@ -70,6 +70,7 @@ cairo_lang_test_utils::test_file_test!(
         literals: "literals",
         match_: "match",
         if_: "if",
+        loop_: "loop",
         operator: "operator",
         structure: "structure",
         tuple: "tuple",
