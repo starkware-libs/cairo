@@ -10,6 +10,8 @@ use starknet::{
 };
 use core::serde::Serde;
 
+/// Address in the storage of a Starknet contract.
+/// Max value is 2**251.
 #[derive(Copy, Drop)]
 pub extern type StorageAddress;
 
