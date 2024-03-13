@@ -4,8 +4,7 @@
 block_generator_test
 
 //! > function
-fn foo() -> felt252 {
-    let x = 10;
+fn foo(x: felt252) -> felt252 {
     match x {
         0 => 3,
         _ => {
@@ -27,7 +26,6 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-const_as_immediate<Const<felt252, 10>>() -> ([0])
 felt252_is_zero([0]) { fallthrough() label_test::foo::0([1]) }
 branch_align() -> ()
 const_as_immediate<Const<felt252, 3>>() -> ([2])
@@ -42,10 +40,9 @@ return([3])
 label_test::foo::1:
 
 //! > lowering_flat
-Parameters:
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 10
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
@@ -72,8 +69,7 @@ End:
 block_generator_test
 
 //! > function
-fn foo() -> felt252 {
-    let x = 7;
+fn foo(x: felt252) -> felt252 {
     match x {
         0 => x,
         _ => 7,
@@ -92,7 +88,6 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-const_as_immediate<Const<felt252, 7>>() -> ([0])
 dup<felt252>([0]) -> ([0], [1])
 felt252_is_zero([1]) { fallthrough() label_test::foo::0([2]) }
 branch_align() -> ()
@@ -108,10 +103,9 @@ return([3])
 label_test::foo::1:
 
 //! > lowering_flat
-Parameters:
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 7
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,

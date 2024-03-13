@@ -117,8 +117,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: felt252) -> felt252 {
-    let x = 7;
+fn foo(a: felt252, x: felt252) -> felt252 {
     match x {
         0 => a + 1,
         _ => x,
@@ -135,10 +134,9 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt252
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 7
 End:
   Match(match core::felt252_is_zero(v1) {
     IsZeroResult::Zero => blk1,
