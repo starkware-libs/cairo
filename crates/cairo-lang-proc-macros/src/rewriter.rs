@@ -28,9 +28,12 @@ fn emit_struct_semantic_object(name: syn::Ident, structure: syn::DataStruct) -> 
     let crt = semantic_crate();
     quote! {
         impl<T:#deps, Error> #crt::SemanticObject<T, Error> for #name {
-            fn default_rewrite(self, rewriter: &mut T) -> Result<Self, Error> {
-                let #name #pattern = self;
-                Ok(#name #field_rewrites)
+            fn default_rewrite(&mut self, rewriter: &mut T) -> Result<#crt::substitution::RewriteResult, Error> {
+                let Self #pattern = self;
+                let mut result = #crt::substitution::RewriteResult::NoChange;
+                #field_rewrites
+
+                Ok(result)
             }
         }
     }
@@ -47,17 +50,19 @@ fn emit_enum_semantic_object(name: syn::Ident, enm: syn::DataEnum) -> TokenStrea
         variant_rewrites = quote! {
             #variant_rewrites
             #name :: #variant_name #pattern => {
-                #name :: #variant_name #field_rewrites
+                #field_rewrites
             }
         }
     }
     let crt = semantic_crate();
     quote! {
         impl<T:#deps, Error> #crt::SemanticObject<T, Error> for #name {
-            fn default_rewrite(self, rewriter: &mut T) -> Result<Self, Error> {
-                Ok(match self {
+            fn default_rewrite(&mut self, rewriter: &mut T) -> Result<#crt::substitution::RewriteResult, Error> {
+                let mut result = #crt::substitution::RewriteResult::NoChange;
+                match self {
                     #variant_rewrites
-                })
+                }
+                Ok(result)
             }
         }
     }
@@ -75,41 +80,35 @@ fn emit_fields_semantic_object(fields: syn::Fields) -> (TokenStream2, TokenStrea
             .ident
             .clone()
             .unwrap_or_else(|| syn::Ident::new(&format!("v{i}"), Span::call_site()));
-        pattern = quote! { #pattern #field_ident, };
 
         let has_dont_rewrite_attr = field
             .attrs
             .iter()
             .any(|a| a.path().segments.len() == 1 && a.path().segments[0].ident == "dont_rewrite");
-        let rewrite_expr = if has_dont_rewrite_attr {
-            quote! { #field_ident }
+        if has_dont_rewrite_attr {
+            if let Some(field_ident) = &field.ident {
+                pattern = quote! { #pattern #field_ident: _, };
+            } else {
+                pattern = quote! { #pattern _, };
+            }
         } else {
-            emit_expr_for_ty(&mut deps, quote! {#field_ident}, &field.ty)
+            pattern = quote! { #pattern #field_ident, };
+            let rewrite_expr = emit_expr_for_ty(&mut deps, quote! {#field_ident}, &field.ty);
+            field_rewrites = quote! {
+                #field_rewrites
+                #rewrite_expr;
+            }
         };
-        if let Some(field_ident) = &field.ident {
-            field_rewrites = quote! {
-                #field_rewrites
-                #field_ident: #rewrite_expr,
-            }
-        } else {
-            field_rewrites = quote! {
-                #field_rewrites
-                #rewrite_expr,
-            }
-        }
     }
     match fields {
         syn::Fields::Named(_) => {
             pattern = quote! { { #pattern } };
-            field_rewrites = quote! { { #field_rewrites } };
         }
         syn::Fields::Unnamed(_) => {
             pattern = quote! { ( #pattern ) };
-            field_rewrites = quote! { ( #field_rewrites ) };
         }
         syn::Fields::Unit => {
             pattern = quote! {};
-            field_rewrites = quote! {};
         }
     };
     (deps, pattern, field_rewrites)
@@ -119,7 +118,12 @@ fn emit_expr_for_ty(deps: &mut TokenStream2, item: TokenStream2, ty: &syn::Type)
     let crt = semantic_crate();
     *deps = quote! { #deps #crt::substitution::SemanticRewriter<#ty, Error> + };
     quote! {
-        #crt::substitution::SemanticRewriter::<#ty, Error>::rewrite(rewriter, #item)?
+        match #crt::substitution::SemanticRewriter::<#ty, Error>::internal_rewrite(rewriter, #item)? {
+            #crt::substitution::RewriteResult::Modified => {
+                result = #crt::substitution::RewriteResult::Modified;
+            }
+            #crt::substitution::RewriteResult::NoChange => {}
+        }
     }
 }
 

@@ -16,7 +16,6 @@ use cairo_lang_sierra_to_casm::compiler;
 use cairo_lang_sierra_to_casm::metadata::{calc_metadata, MetadataComputationConfig};
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::test_lock;
-use cairo_lang_utils::arc_unwrap_or_clone;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
@@ -187,7 +186,7 @@ fn run_e2e_test(
 
     // Compile to Sierra.
     let SierraProgramWithDebug { program: sierra_program, .. } =
-        arc_unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id]).unwrap());
+        Arc::unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id]).unwrap());
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
     let sierra_program_str = sierra_program.to_string();
 

@@ -22,11 +22,15 @@ impl ErrorCode {
     /// Format this error code in a way that is suitable for display in error message.
     ///
     /// ```
-    /// # use cairo_lang_diagnostics::{codes, error_code};
-    /// assert_eq!(error_code!(codes::UNUSED_VARIABLE).display_bracketed(), "[E0001]");
+    /// # use cairo_lang_diagnostics::error_code;
+    /// assert_eq!(error_code!(E0001).display_bracketed(), "[E0001]");
     /// ```
     pub fn display_bracketed(self) -> String {
         format!("[{}]", self)
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.0
     }
 }
 
@@ -39,8 +43,8 @@ impl fmt::Display for ErrorCode {
 /// Constructs an [`ErrorCode`].
 ///
 /// ```
-/// # use cairo_lang_diagnostics::{codes, error_code, ErrorCode};
-/// let code: ErrorCode = error_code!(codes::UNUSED_VARIABLE);
+/// # use cairo_lang_diagnostics::{error_code, ErrorCode};
+/// let code: ErrorCode = error_code!(E0001);
 /// # assert_eq!(format!("{code}"), "E0001");
 /// ```
 #[macro_export]
@@ -48,7 +52,7 @@ macro_rules! error_code {
     ($code:expr) => {{
         use $crate::ErrorCode;
         // NOTE: This is a magic trick to trigger the validation in compile time.
-        const ENSURE_CONST: ErrorCode = ErrorCode::new($code);
+        const ENSURE_CONST: ErrorCode = ErrorCode::new(stringify!($code));
         ENSURE_CONST
     }};
 }
@@ -62,16 +66,11 @@ impl OptionErrorCodeExt for Option<ErrorCode> {
     /// Format this error code in a way that is suitable for display in error message.
     ///
     /// ```
-    /// # use cairo_lang_diagnostics::{codes, error_code, OptionErrorCodeExt};
-    /// assert_eq!(Some(error_code!(codes::UNUSED_VARIABLE)).display_bracketed(), "[E0001]");
+    /// # use cairo_lang_diagnostics::{error_code, OptionErrorCodeExt};
+    /// assert_eq!(Some(error_code!(E0001)).display_bracketed(), "[E0001]");
     /// assert_eq!(None.display_bracketed(), "");
     /// ```
     fn display_bracketed(self) -> String {
         self.map(ErrorCode::display_bracketed).unwrap_or_default()
     }
-}
-
-pub mod codes {
-    /// Unused variable.
-    pub const UNUSED_VARIABLE: &str = "E0001";
 }

@@ -42,7 +42,7 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_free_function(&self, id: FreeFunctionLongId) -> FreeFunctionId;
     #[salsa::interned]
-    fn intern_impl_type(&self, id: ImplTypeLongId) -> ImplTypeId;
+    fn intern_impl_type_def(&self, id: ImplTypeDefLongId) -> ImplTypeDefId;
     #[salsa::interned]
     fn intern_impl_function(&self, id: ImplFunctionLongId) -> ImplFunctionId;
     #[salsa::interned]

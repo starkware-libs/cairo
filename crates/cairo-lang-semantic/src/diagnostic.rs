@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    codes, error_code, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics,
+    error_code, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics,
     DiagnosticsBuilder, ErrorCode, Severity,
 };
 use cairo_lang_filesystem::ids::FileId;
@@ -740,6 +740,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::FixedSizeArraySizeTooBig => {
                 "Fixed size array size must be smaller than 2^15.".into()
             }
+            SemanticDiagnosticKind::SelfNotSupportedInContext => {
+                "`Self` is not supported in this context.".into()
+            }
+            SemanticDiagnosticKind::SelfMustBeFirst => {
+                "`Self` can only be the first segment of a path.".into()
+            }
         }
     }
 
@@ -1094,12 +1100,14 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArrayNonSingleValue,
     FixedSizeArrayEmptyElements,
     FixedSizeArraySizeTooBig,
+    SelfNotSupportedInContext,
+    SelfMustBeFirst,
 }
 
 impl SemanticDiagnosticKind {
     pub fn error_code(&self) -> Option<ErrorCode> {
         Some(match &self {
-            Self::UnusedVariable => error_code!(codes::UNUSED_VARIABLE),
+            Self::UnusedVariable => error_code!(E0001),
             _ => return None,
         })
     }

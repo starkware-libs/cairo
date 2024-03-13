@@ -15,7 +15,7 @@ use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_utils::{arc_unwrap_or_clone, Upcast, UpcastMut};
+use cairo_lang_utils::{Upcast, UpcastMut};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use lowering::optimizations::config::OptimizationConfig;
@@ -127,7 +127,7 @@ pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::P
     let (db, crate_id) = setup_db_and_get_crate_id(content);
 
     let SierraProgramWithDebug { program, .. } =
-        arc_unwrap_or_clone(db.get_sierra_program(vec![crate_id]).unwrap());
+        Arc::unwrap_or_clone(db.get_sierra_program(vec![crate_id]).unwrap());
     replace_sierra_ids_in_program(&db, &program)
 }
 

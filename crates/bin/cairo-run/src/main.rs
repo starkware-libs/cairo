@@ -1,6 +1,7 @@
 //! Compiles and runs a Cairo program.
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::{Context, Ok};
 use cairo_lang_compiler::db::RootDatabase;
@@ -14,7 +15,6 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_starknet::contract::get_contracts_info;
-use cairo_lang_utils::arc_unwrap_or_clone;
 use clap::Parser;
 
 /// Compiles a Cairo project and runs the function `main`.
@@ -64,7 +64,7 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("failed to compile: {}", args.path.display());
     }
 
-    let SierraProgramWithDebug { program: sierra_program, debug_info } = arc_unwrap_or_clone(
+    let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
         db.get_sierra_program(main_crate_ids.clone())
             .to_option()
             .with_context(|| "Compilation failed without any diagnostics.")?,

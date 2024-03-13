@@ -33,7 +33,7 @@ use crate::items::functions::{
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
-use crate::substitution::{HasDb, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId};
 use crate::{
     add_basic_rewrites, add_expr_rewrites, add_rewrite, semantic_object_for_id, ConcreteEnumId,
@@ -294,9 +294,21 @@ impl InferenceData {
             InferenceIdReplacer::new(db, self.inference_id, inference_id);
         Self {
             inference_id,
-            type_assignment: inference_id_replacer.rewrite(self.type_assignment.clone()).no_err(),
-            const_assignment: inference_id_replacer.rewrite(self.const_assignment.clone()).no_err(),
-            impl_assignment: inference_id_replacer.rewrite(self.impl_assignment.clone()).no_err(),
+            type_assignment: self
+                .type_assignment
+                .iter()
+                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                .collect(),
+            const_assignment: self
+                .const_assignment
+                .iter()
+                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                .collect(),
+            impl_assignment: self
+                .impl_assignment
+                .iter()
+                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                .collect(),
             type_vars: inference_id_replacer.rewrite(self.type_vars.clone()).no_err(),
             const_vars: inference_id_replacer.rewrite(self.const_vars.clone()).no_err(),
             impl_vars: inference_id_replacer.rewrite(self.impl_vars.clone()).no_err(),
@@ -707,7 +719,6 @@ impl<'db> Inference<'db> {
         let ImplId::Concrete(concrete_impl) = canonical_impl.0 else {
             return Ok(SolutionSet::Unique(canonical_impl));
         };
-        let concrete_impl = self.rewrite(concrete_impl).no_err();
         let mut rewriter = SubstitutionRewriter {
             db: self.db,
             substitution: &concrete_impl.substitution(self.db)?,
@@ -766,31 +777,39 @@ add_basic_rewrites!(<'a>, Inference<'a>, NoError, @exclude TypeLongId ImplId Con
 add_expr_rewrites!(<'a>, Inference<'a>, NoError, @exclude);
 add_rewrite!(<'a>, Inference<'a>, NoError, Ambiguity);
 impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
-    fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, NoError> {
+    fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, NoError> {
         if let TypeLongId::Var(var) = value {
             if let Some(type_id) = self.type_assignment.get(&var.id) {
-                return self.rewrite(self.db.lookup_intern_type(*type_id));
+                let mut long_type_id = self.db.lookup_intern_type(*type_id);
+                self.internal_rewrite(&mut long_type_id)?;
+                *value = long_type_id;
+                return Ok(RewriteResult::Modified);
             }
         }
         value.default_rewrite(self)
     }
 }
 impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
-    fn rewrite(&mut self, value: ConstValue) -> Result<ConstValue, NoError> {
+    fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, NoError> {
         if let ConstValue::Var(var) = value {
             if let Some(const_value_id) = self.const_assignment.get(&var.id) {
-                return self.rewrite(self.db.lookup_intern_const_value(*const_value_id));
+                let mut const_value = self.db.lookup_intern_const_value(*const_value_id);
+                self.internal_rewrite(&mut const_value)?;
+                *value = const_value;
+                return Ok(RewriteResult::Modified);
             }
         }
         value.default_rewrite(self)
     }
 }
 impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
-    fn rewrite(&mut self, value: ImplId) -> Result<ImplId, NoError> {
+    fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
         if let ImplId::ImplVar(var) = value {
             // Relax the candidates.
-            if let Some(impl_id) = self.impl_assignment(var.get(self.db).id) {
-                return self.rewrite(impl_id);
+            if let Some(mut impl_id) = self.impl_assignment(var.get(self.db).id) {
+                self.internal_rewrite(&mut impl_id)?;
+                *value = impl_id;
+                return Ok(RewriteResult::Modified);
             }
         }
         value.default_rewrite(self)
@@ -820,7 +839,12 @@ add_basic_rewrites!(<'a>, InferenceIdReplacer<'a>, NoError, @exclude InferenceId
 add_expr_rewrites!(<'a>, InferenceIdReplacer<'a>, NoError, @exclude);
 add_rewrite!(<'a>, InferenceIdReplacer<'a>, NoError, Ambiguity);
 impl<'a> SemanticRewriter<InferenceId, NoError> for InferenceIdReplacer<'a> {
-    fn rewrite(&mut self, value: InferenceId) -> Result<InferenceId, NoError> {
-        if value == self.from_inference_id { Ok(self.to_inference_id) } else { Ok(value) }
+    fn internal_rewrite(&mut self, value: &mut InferenceId) -> Result<RewriteResult, NoError> {
+        if value == &self.from_inference_id {
+            *value = self.to_inference_id;
+            Ok(RewriteResult::Modified)
+        } else {
+            Ok(RewriteResult::NoChange)
+        }
     }
 }
