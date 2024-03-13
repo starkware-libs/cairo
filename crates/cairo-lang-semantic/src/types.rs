@@ -187,7 +187,7 @@ pub fn reduce_impl_type_if_possible(
     // TODO(yg): don't unwrap.
     // Make sure the inference is solved. This function doesn't add new inference data, only uses
     // the existing data.
-    // inference.solve().unwrap();
+    inference.solve().unwrap();
 
     println!("yg1 reduce_impl_type_if_possible1 type: {:?}", type_to_reduce.debug(db.elongate()));
     // First, reduce if already inferred.
@@ -346,7 +346,7 @@ fn reduce_trait_impl_type(
     };
 
     println!("yg impl_id before: {:?}", impl_id.debug(db.elongate()));
-    inference.solve().unwrap();
+    // inference.solve().unwrap();
     let impl_id = inference.rewrite(impl_id).unwrap();
 
     println!("yg impl_id after: {:?}", impl_id.debug(db.elongate()));
