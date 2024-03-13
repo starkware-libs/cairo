@@ -103,8 +103,8 @@ pub trait DefsGroup:
     fn module_dir(&self, module_id: ModuleId) -> Maybe<Directory>;
 
     /// Gets the documentation above an item definition.
-    fn get_item_documentation(&self, item_id: LookupItemId) -> String;
-    /// Gets the the definition + documentation above.
+    fn get_item_documentation(&self, item_id: LookupItemId) -> Option<String>;
+    /// Gets the the definition of an item.
     fn get_item_definition(&self, item_id: LookupItemId) -> String;
 
     // File to module.
@@ -286,11 +286,13 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
     }
 }
 
-fn get_item_documentation(db: &dyn DefsGroup, item_id: LookupItemId) -> String {
+/// Gets the documentation above an item definition.
+fn get_item_documentation(db: &dyn DefsGroup, item_id: LookupItemId) -> Option<String> {
     // Get the text of the item (trivia + definition)
     let doc = item_id.stable_location(db).syntax_node(db).get_text(db.upcast());
     // Only get the doc comments (start with `///` or `//!`) above the function.
-    doc.lines()
+    let doc = doc
+        .lines()
         .take_while_ref(|line| {
             !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
         })
@@ -298,27 +300,29 @@ fn get_item_documentation(db: &dyn DefsGroup, item_id: LookupItemId) -> String {
             (line.trim_start().starts_with("///") || line.trim_start().starts_with("//!"))
                 .then_some(line.trim_start())
         })
-        .collect::<Vec<&str>>()
-        .join("\n")
+        .collect::<Vec<&str>>();
+    (!doc.is_empty()).then(|| doc.join("\n"))
 }
+
+/// Gets the the definition of an item.
 fn get_item_definition(db: &dyn DefsGroup, item_id: LookupItemId) -> String {
     let syntax_node = item_id.stable_location(db).syntax_node(db);
     let definition = match syntax_node.green_node(db.upcast()).kind {
         SyntaxKind::ItemConstant
         | SyntaxKind::TraitItemFunction
-        | SyntaxKind::ItemTrait
-        | SyntaxKind::ItemImpl
         | SyntaxKind::ItemTypeAlias
         | SyntaxKind::ItemImplAlias => syntax_node.clone().get_text_without_trivia(db.upcast()),
         SyntaxKind::FunctionWithBody => {
-            let children = <dyn DefsGroup as Upcast<dyn SyntaxGroup>>::upcast(db)
-                .get_children(syntax_node.clone());
+            let children =
+                <dyn DefsGroup as Upcast<dyn SyntaxGroup>>::upcast(db).get_children(syntax_node);
             children[1..]
                 .iter()
                 .map_while(|node| {
                     let kind = node.kind(db.upcast());
-                    (kind != SyntaxKind::ExprBlock).then_some(
-                        if kind == SyntaxKind::VisibilityPub {
+                    (kind != SyntaxKind::ExprBlock
+                        && kind != SyntaxKind::ImplBody
+                        && kind != SyntaxKind::TraitBody)
+                        .then_some(if kind == SyntaxKind::VisibilityPub {
                             node.clone().get_text_without_trivia(db.upcast()).trim().to_owned()
                                 + " "
                         } else {
@@ -328,18 +332,46 @@ fn get_item_definition(db: &dyn DefsGroup, item_id: LookupItemId) -> String {
                                 .map(|line| line.trim())
                                 .collect::<Vec<&str>>()
                                 .join("")
-                        },
-                    )
+                        })
                 })
                 .collect::<Vec<String>>()
                 .join("")
         }
         SyntaxKind::ItemEnum | SyntaxKind::ItemExternType | SyntaxKind::ItemStruct => {
             <dyn DefsGroup as Upcast<dyn SyntaxGroup>>::upcast(db)
-                .get_children(syntax_node.clone())
+                .get_children(syntax_node)
                 .iter()
                 .skip(1)
                 .map(|node| node.clone().get_text(db.upcast()))
+                .collect::<Vec<String>>()
+                .join("")
+        }
+        SyntaxKind::ItemTrait | SyntaxKind::ItemImpl => {
+            let children =
+                <dyn DefsGroup as Upcast<dyn SyntaxGroup>>::upcast(db).get_children(syntax_node);
+            children[1..]
+                .iter()
+                .enumerate()
+                .map_while(|(index, node)| {
+                    let kind = node.kind(db.upcast());
+                    if kind != SyntaxKind::ImplBody && kind != SyntaxKind::TraitBody {
+                        let text = node
+                            .clone()
+                            .get_text_without_trivia(db.upcast())
+                            .lines()
+                            .map(|line| line.trim())
+                            .collect::<Vec<&str>>()
+                            .join("");
+
+                        Some(if index == 0 || kind == SyntaxKind::WrappedGenericParamList {
+                            text
+                        } else {
+                            " ".to_owned() + &text
+                        })
+                    } else {
+                        None
+                    }
+                })
                 .collect::<Vec<String>>()
                 .join("")
         }

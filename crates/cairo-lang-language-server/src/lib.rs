@@ -1403,9 +1403,11 @@ fn get_expr_hint(db: &dyn DefsGroup, lookup_item_id: LookupItemId) -> Option<Vec
     let mut hints = vec![];
     let definition = db.get_item_definition(lookup_item_id);
     hints.push(MarkedString::from_language_code("cairo".to_owned(), definition));
+    let documentation = db.get_item_documentation(lookup_item_id).unwrap_or_default();
     // Add a separator.
-    hints.push(MarkedString::String("\n---\n".to_string()));
-    let documentation = db.get_item_documentation(lookup_item_id);
+    if !documentation.is_empty() {
+        hints.push(MarkedString::String("\n---\n".to_string()));
+    }
     let mut doc = "".to_string();
     let mut is_cairo_string = false;
     for line in documentation.lines() {
