@@ -280,7 +280,6 @@ impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
         }
         let concrete_trait_id = self.rewrite(var.concrete_trait_id)?;
         let new_id = self.from_canonic.impl_var_mapping.entry(var.id).or_insert_with(|| {
-            println!("yg new_impl_var_raw from rewrite");
             self.inference.new_impl_var_raw(var.lookup_context.clone(), concrete_trait_id, None)
         });
         *value = ImplId::ImplVar(self.inference.impl_vars[new_id.0].intern(self.get_db()));

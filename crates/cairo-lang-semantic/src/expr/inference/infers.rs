@@ -285,7 +285,6 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         lookup_context: ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<GenericArgumentId> {
-        println!("yg new_impl_var 3");
         match param {
             GenericParam::Type(_) => Ok(GenericArgumentId::Type(self.new_type_var(stable_ptr))),
             GenericParam::Impl(param) => Ok(GenericArgumentId::Impl(self.new_impl_var(
@@ -337,7 +336,6 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<GenericFunctionId> {
-        println!("yg new_impl_var 4 (infer_trait_generic_function)");
         let impl_id = self.new_impl_var(
             concrete_trait_function.concrete_trait(self.db),
             stable_ptr,
@@ -357,7 +355,6 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<TypeId> {
-        println!("yg new_impl_var 5 (infer_trait_type)");
         let impl_id = self.new_impl_var(
             concrete_trait_type.concrete_trait(self.db),
             stable_ptr,

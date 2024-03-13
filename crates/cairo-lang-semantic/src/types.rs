@@ -181,7 +181,10 @@ pub fn reduce_impl_type_if_possible(
     // Make sure the inference is solved. This function doesn't add new inference data, only uses
     // the existing data.
     // TODO(yg): explain why ignoring is ok.
-    inference.solve().ok();
+    // inference.solve().ok();
+    if let Err(err) = inference.solve() {
+        println!("-------- yg err: {:?}", err);
+    };
     reduce_impl_type_if_possible_inner(db, type_to_reduce, trait_or_impl_context, inference)
 }
 
@@ -833,7 +836,6 @@ pub fn get_impl_at_context(
 ) -> InferenceResult<ImplId> {
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
-    println!("yg new_impl_var 6");
     let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
     if let Some((_, err)) = inference.finalize() {
         return Err(err);

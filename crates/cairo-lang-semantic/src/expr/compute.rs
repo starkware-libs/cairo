@@ -2068,7 +2068,6 @@ fn new_literal_expr(
     let concrete_trait_id =
         ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
     let lookup_context = ctx.resolver.impl_lookup_context();
-    println!("yg new_impl_var 1 (numeric literal)");
     ctx.resolver
         .inference()
         .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
@@ -2121,7 +2120,6 @@ fn new_string_literal_expr(
     let concrete_trait_id =
         ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
     let lookup_context = ctx.resolver.impl_lookup_context();
-    println!("yg new_impl_var 2");
     ctx.resolver
         .inference()
         .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
@@ -2202,7 +2200,10 @@ fn method_call_expr(
     let func_name = segment.identifier(syntax_db);
     let generic_args_syntax = segment.generic_args(syntax_db);
     // Save some work.
-    ctx.resolver.inference().solve().ok();
+    // ctx.resolver.inference().solve().ok();
+    if let Err(err) = ctx.resolver.inference().solve() {
+        println!("-------- yg err: {:?}", err);
+    };
 
     let mut candidate_traits = traits_in_context(ctx)?;
 
@@ -2705,18 +2706,18 @@ pub fn compute_statement_semantic(
     }
     let statement = match &syntax {
         ast::Statement::Let(let_syntax) => {
-            println!("yg ==================== let statement ====================");
-            println!("yg === RHS ===");
-            println!("yg #pending: {}", ctx.resolver.inference().data.pending.len());
-            println!("yg #impl_vars: {}", ctx.resolver.inference().data.impl_vars.len());
+            // println!("yg ==================== let statement ====================");
+            // println!("yg === RHS ===");
+            // println!("yg #pending: {}", ctx.resolver.inference().data.pending.len());
+            // println!("yg #impl_vars: {}", ctx.resolver.inference().data.impl_vars.len());
             let expr = compute_expr_semantic(ctx, &let_syntax.rhs(syntax_db));
             let inferred_type = expr.ty();
-            println!("yg inferred_type -1: {:?}", inferred_type.debug(db.elongate()));
+            // println!("yg inferred_type -1: {:?}", inferred_type.debug(db.elongate()));
             let rhs_expr_id = expr.id;
-            println!("yg #pending: {}", ctx.resolver.inference().data.pending.len());
-            println!("yg #impl_vars: {}", ctx.resolver.inference().data.impl_vars.len());
+            // println!("yg #pending: {}", ctx.resolver.inference().data.pending.len());
+            // println!("yg #impl_vars: {}", ctx.resolver.inference().data.impl_vars.len());
 
-            println!("yg === LHS ===");
+            // println!("yg === LHS ===");
             let ty = match let_syntax.type_clause(syntax_db) {
                 ast::OptionTypeClause::Empty(_) => inferred_type,
                 ast::OptionTypeClause::TypeClause(type_clause) => {
@@ -2726,9 +2727,10 @@ pub fn compute_statement_semantic(
                     let explicit_type = ctx.reduce_ty(explicit_type);
                     let explicit_type = ctx.reduce_impl_type_if_possible(explicit_type)?;
                     let inferred_type = ctx.reduce_ty(inferred_type);
-                    println!("yg inferred_type before: {:?}", inferred_type.debug(db.elongate()));
+                    // println!("yg inferred_type before: {:?}",
+                    // inferred_type.debug(db.elongate()));
                     let inferred_type = ctx.reduce_impl_type_if_possible(inferred_type)?;
-                    println!("yg inferred_type after: {:?}", inferred_type.debug(db.elongate()));
+                    // println!("yg inferred_type after: {:?}", inferred_type.debug(db.elongate()));
                     if !inferred_type.is_missing(db)
                         && ctx
                             .resolver
@@ -2816,7 +2818,7 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Return(return_syntax) => {
-            println!("yg ==================== return statement ====================");
+            // println!("yg ==================== return statement ====================");
             if ctx.loop_ctx.is_some() {
                 return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));
             }
