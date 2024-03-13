@@ -665,12 +665,14 @@ impl<'db> Resolver<'db> {
                         let type_long_id =
                             TypeLongId::ImplType(ImplTypeId::new(*impl_id, trait_type_id, self.db));
 
+                        let tmp_inference_data = &mut self.inference().temporary_clone();
+                        let mut tmp_inference = tmp_inference_data.inference(self.db);
                         // TODO(yg): is this one needed?
                         let ty = reduce_impl_type_if_possible(
                             self.db,
                             self.db.intern_type(type_long_id),
                             TraitOrImplContext::None,
-                            &mut self.inference(),
+                            &mut tmp_inference,
                         )?;
                         Ok(ResolvedConcreteItem::Type(ty))
                     }
