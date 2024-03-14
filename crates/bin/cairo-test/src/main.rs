@@ -56,6 +56,9 @@ struct Args {
     /// [cairo_lang_test_runner::RunProfilerConfig]
     #[clap(short, long, default_value_t, value_enum)]
     run_profiler: RunProfilerConfigArg,
+    /// Whether to print resource usage after each test.
+    #[arg(long, default_value_t = false)]
+    print_resource_usage: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -69,6 +72,7 @@ fn main() -> anyhow::Result<()> {
         ignored: args.ignored,
         include_ignored: args.include_ignored,
         run_profiler: args.run_profiler.into(),
+        print_resource_usage: args.print_resource_usage,
     };
 
     let runner = TestRunner::new(&args.path, args.starknet, args.allow_warnings, config)?;
