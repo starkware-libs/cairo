@@ -280,6 +280,27 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
                 .collect(),
         )
     }
+
+    /// Merges the map with another map. If a key is present in both maps, the given merge function
+    /// is used to combine the values.
+    pub fn merge<M>(&mut self, other: &Self, merge: M)
+    where
+        BH: Clone,
+        M: Fn(&mut Value, &Value),
+        Key: Clone,
+        Value: Clone,
+    {
+        for (key, value) in &other.0 {
+            match self.0.entry(key.clone()) {
+                Entry::Occupied(mut e) => {
+                    merge(e.get_mut(), value);
+                }
+                Entry::Vacant(e) => {
+                    e.insert(value.clone());
+                }
+            }
+        }
+    }
 }
 
 impl<Key, Q: ?Sized, Value, BH: BuildHasher> Index<&Q> for UnorderedHashMap<Key, Value, BH>

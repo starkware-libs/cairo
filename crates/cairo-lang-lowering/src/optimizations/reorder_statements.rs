@@ -4,7 +4,8 @@ mod test;
 
 use std::cmp::Reverse;
 
-use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
 
@@ -70,7 +71,7 @@ pub struct ReorderStatementsInfo {
     // A mapping from var_id to a candidate location that it can be moved to.
     // If the variable is used in multiple match arms we define the next use to be
     // the match.
-    next_use: OrderedHashMap<VariableId, StatementLocation>,
+    next_use: UnorderedHashMap<VariableId, StatementLocation>,
 }
 
 pub struct ReorderStatementsContext<'a> {
@@ -96,7 +97,7 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         let mut immovable = matches!(stmt, Statement::Call(stmt) if !self.call_can_be_moved(stmt));
         let mut optional_target_location = None;
         for var_to_move in stmt.outputs() {
-            let Some((block_id, index)) = info.next_use.swap_remove(var_to_move) else { continue };
+            let Some((block_id, index)) = info.next_use.remove(var_to_move) else { continue };
             if let Some((target_block_id, target_index)) = &mut optional_target_location {
                 *target_index = std::cmp::min(*target_index, index);
                 // If the output is used in multiple places we can't move their creation point.
@@ -159,18 +160,9 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         let mut info = Self::Info::default();
 
         for arm_info in infos {
-            for (var_id, location) in arm_info.next_use.iter() {
-                match info.next_use.entry(*var_id) {
-                    Entry::Occupied(mut e) => {
-                        // A variable that is used in multiple arms can be moved to
-                        // before the match.
-                        e.insert(statement_location);
-                    }
-                    Entry::Vacant(e) => {
-                        e.insert(*location);
-                    }
-                }
-            }
+            info.next_use.merge(&arm_info.next_use, |v, _| {
+                *v = statement_location;
+            });
         }
 
         for var_usage in match_info.inputs() {
