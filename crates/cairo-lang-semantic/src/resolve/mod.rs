@@ -580,16 +580,21 @@ impl<'db> Resolver<'db> {
                     ),
                 );
                 let impl_lookup_context = self.impl_lookup_context();
-                let generic_function = self
-                    .data
-                    .inference_data
-                    .inference(self.db)
+                let inference = &mut self.data.inference_data.inference(self.db);
+                let identifier_stable_ptr = identifier.stable_ptr().untyped();
+                let generic_function = inference
                     .infer_trait_generic_function(
                         concrete_trait_function,
                         &impl_lookup_context,
-                        Some(identifier.stable_ptr().untyped()),
+                        Some(identifier_stable_ptr),
                     )
-                    .map_err(|err| err.report(diagnostics, identifier.stable_ptr().untyped()))?;
+                    .map_err(|err_set| {
+                        inference.report_on_pending_error(
+                            err_set,
+                            diagnostics,
+                            identifier.stable_ptr().untyped(),
+                        )
+                    })?;
 
                 Ok(ResolvedConcreteItem::Function(self.specialize_function(
                     diagnostics,
@@ -1007,12 +1012,12 @@ impl<'db> Resolver<'db> {
     ) -> Result<GenericArgumentId, cairo_lang_diagnostics::DiagnosticAdded> {
         let Some(generic_arg_syntax) = generic_arg_syntax_opt else {
             let lookup_context = self.impl_lookup_context();
-            return self
-                .data
-                .inference_data
-                .inference(self.db)
+            let inference = &mut self.data.inference_data.inference(self.db);
+            return inference
                 .infer_generic_arg(&generic_param, lookup_context, Some(stable_ptr))
-                .map_err(|err| err.report(diagnostics, stable_ptr));
+                .map_err(|err_set| {
+                    inference.report_on_pending_error(err_set, diagnostics, stable_ptr)
+                });
         };
 
         Ok(match generic_param {

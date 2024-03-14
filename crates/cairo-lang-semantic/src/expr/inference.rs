@@ -2,6 +2,7 @@
 
 use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
+use std::mem;
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_debug::DebugWithDb;
@@ -10,7 +11,7 @@ use cairo_lang_defs::ids::{
     ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, LookupItemId, MemberId,
     ParamId, StructId, TraitFunctionId, TraitId, VarId, VariantId,
 };
-use cairo_lang_diagnostics::DiagnosticAdded;
+use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -208,13 +209,6 @@ impl InferenceError {
     }
 }
 
-pub type InferenceResult<T> = Result<T, InferenceError>;
-
-impl From<DiagnosticAdded> for InferenceError {
-    fn from(value: DiagnosticAdded) -> Self {
-        InferenceError::Failed(value)
-    }
-}
 impl InferenceError {
     pub fn report(
         &self,
@@ -229,6 +223,21 @@ impl InferenceError {
             ),
         }
     }
+}
+
+/// This struct is used to ensure that when an inference error occurs, it is properly set in the
+/// `Inference` object, and then properly consumed.
+///
+/// It must not be constructed directly. Instead, it is returned by [Inference::set_error].
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub struct ErrorSet;
+
+pub type InferenceResult<T> = Result<T, ErrorSet>;
+
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+pub enum InferenceErrorStatus {
+    Pending,
+    Consumed,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -283,7 +292,7 @@ impl InferenceData {
         }
     }
     pub fn inference<'db, 'b: 'db>(&'db mut self, db: &'b dyn SemanticGroup) -> Inference<'db> {
-        Inference { db, data: self }
+        Inference::new(db, self)
     }
     pub fn clone_with_inference_id(
         &self,
@@ -341,6 +350,11 @@ impl InferenceData {
 pub struct Inference<'db> {
     db: &'db dyn SemanticGroup,
     pub data: &'db mut InferenceData,
+    error_status: Result<(), InferenceErrorStatus>,
+    /// `Some` only when error_state is Err(Pending).
+    error: Option<InferenceError>,
+    /// `Some` only when error_state is Err(Consumed).
+    consumed_error: Option<DiagnosticAdded>,
 }
 
 impl Deref for Inference<'_> {
@@ -364,15 +378,21 @@ impl<'db> std::fmt::Debug for Inference<'db> {
 }
 
 impl<'db> Inference<'db> {
+    fn new(db: &'db dyn SemanticGroup, data: &'db mut InferenceData) -> Self {
+        Self { db, data, error_status: Ok(()), error: None, consumed_error: None }
+    }
+
     /// Getter for an [ImplVar].
     fn impl_var(&self, var_id: LocalImplVarId) -> &ImplVar {
         &self.impl_vars[var_id.0]
     }
+
     /// Getter for an impl var assignment.
     pub fn impl_assignment(&self, var_id: LocalImplVarId) -> Option<ImplId> {
         self.impl_assignment.get(&var_id).copied()
     }
-    // Getter for a type var assignment.
+
+    /// Getter for a type var assignment.
     fn type_assignment(&self, var_id: LocalTypeVarId) -> Option<TypeId> {
         self.type_assignment.get(&var_id).copied()
     }
@@ -455,7 +475,12 @@ impl<'db> Inference<'db> {
 
     /// Solves the inference system. After a successful solve, there are no more pending impl
     /// inferences.
+    /// Returns whether the inference was successful. If not, the error may be found by
+    /// `.error_state()`.
     pub fn solve(&mut self) -> InferenceResult<()> {
+        // Stop if an error is already set.
+        self.is_error_set()?;
+
         let mut ambiguous = std::mem::take(&mut self.ambiguous);
         self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
         while let Some(var) = self.pending.pop_front() {
@@ -504,16 +529,14 @@ impl<'db> Inference<'db> {
     }
 
     /// Finalizes an inference by inferring uninferred numeric literals as felt252.
-    pub fn finalize(&mut self) -> Option<(Option<SyntaxStablePtrId>, InferenceError)> {
+    pub fn finalize(&mut self) -> Result<(), (ErrorSet, Option<SyntaxStablePtrId>)> {
         let numeric_trait_id = get_core_trait(self.db, "NumericLiteral".into());
         let felt_ty = core_felt252_ty(self.db);
 
         // Conform all uninferred numeric literals to felt252.
         loop {
             let mut changed = false;
-            if let Err(err) = self.solve() {
-                return Some((None, err));
-            }
+            self.solve().map_err(|err_set| (err_set, None))?;
             for (var, _) in self.ambiguous.clone() {
                 let impl_var = self.impl_var(var).clone();
                 if impl_var.concrete_trait_id.trait_id(self.db) != numeric_trait_id {
@@ -527,12 +550,9 @@ impl<'db> Inference<'db> {
                 if self.rewrite(ty).no_err() == felt_ty {
                     continue;
                 }
-                if let Err(err) = self.conform_ty(ty, felt_ty) {
-                    return Some((
-                        self.stable_ptrs.get(&InferenceVar::Impl(impl_var.id)).copied(),
-                        err,
-                    ));
-                }
+                self.conform_ty(ty, felt_ty).map_err(|err_set| {
+                    (err_set, self.stable_ptrs.get(&InferenceVar::Impl(impl_var.id)).copied())
+                })?;
                 changed = true;
                 break;
             }
@@ -544,13 +564,17 @@ impl<'db> Inference<'db> {
             self.pending.is_empty(),
             "pending should all be solved by this point. Guaranteed by solve()."
         );
-        let (var, err) = self.first_undetermined_variable()?;
-        Some((self.stable_ptrs.get(&var).copied(), err))
+
+        let Some((var, err)) = self.first_undetermined_variable() else {
+            return Ok(());
+        };
+        Err((self.set_error(err), self.stable_ptrs.get(&var).copied()))
     }
 
     /// Retrieves the first variable that is still not inferred, or None, if everything is
     /// inferred.
-    pub fn first_undetermined_variable(&mut self) -> Option<(InferenceVar, InferenceError)> {
+    /// Does not set the error but return it, which is ok as this is a private helper function.
+    fn first_undetermined_variable(&mut self) -> Option<(InferenceVar, InferenceError)> {
         for (id, var) in self.type_vars.iter().enumerate() {
             if self.type_assignment(LocalTypeVarId(id)).is_none() {
                 let ty = self.db.intern_type(TypeLongId::Var(*var));
@@ -580,15 +604,15 @@ impl<'db> Inference<'db> {
         var: LocalImplVarId,
         impl_id: ImplId,
     ) -> InferenceResult<ImplId> {
-        self.conform_traits(
-            self.impl_var(var).concrete_trait_id,
-            impl_id.concrete_trait(self.db)?,
-        )?;
+        let concrete_trait = impl_id
+            .concrete_trait(self.db)
+            .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?;
+        self.conform_traits(self.impl_var(var).concrete_trait_id, concrete_trait)?;
         if let Some(other_impl) = self.impl_assignment(var) {
             return self.conform_impl(impl_id, other_impl);
         }
         if self.impl_contains_var(&impl_id, InferenceVar::Impl(var)) {
-            return Err(InferenceError::Cycle { var: InferenceVar::Impl(var) });
+            return Err(self.set_error(InferenceError::Cycle { var: InferenceVar::Impl(var) }));
         }
         self.impl_assignment.insert(var, impl_id);
         Ok(impl_id)
@@ -598,10 +622,10 @@ impl<'db> Inference<'db> {
     fn assign_impl(&mut self, var_id: ImplVarId, impl_id: ImplId) -> InferenceResult<ImplId> {
         let var = var_id.get(self.db);
         if var.inference_id != self.inference_id {
-            return Err(InferenceError::ImplKindMismatch {
+            return Err(self.set_error(InferenceError::ImplKindMismatch {
                 impl0: ImplId::ImplVar(var_id),
                 impl1: impl_id,
-            });
+            }));
         }
         self.assign_local_impl(var.id, impl_id)
     }
@@ -610,15 +634,15 @@ impl<'db> Inference<'db> {
     /// Assumes the variable is not already assigned.
     fn assign_ty(&mut self, var: TypeVar, ty: TypeId) -> InferenceResult<TypeId> {
         if var.inference_id != self.inference_id {
-            return Err(InferenceError::TypeKindMismatch {
+            return Err(self.set_error(InferenceError::TypeKindMismatch {
                 ty0: self.db.intern_type(TypeLongId::Var(var)),
                 ty1: ty,
-            });
+            }));
         }
         assert!(!self.type_assignment.contains_key(&var.id), "Cannot reassign variable.");
         let inference_var = InferenceVar::Type(var.id);
         if self.ty_contains_var(ty, inference_var) {
-            return Err(InferenceError::Cycle { var: inference_var });
+            return Err(self.set_error(InferenceError::Cycle { var: inference_var }));
         }
         self.type_assignment.insert(var.id, ty);
         Ok(ty)
@@ -628,10 +652,10 @@ impl<'db> Inference<'db> {
     /// Assumes the variable is not already assigned.
     fn assign_const(&mut self, var: ConstVar, id: ConstValueId) -> InferenceResult<ConstValueId> {
         if var.inference_id != self.inference_id {
-            return Err(InferenceError::ConstKindMismatch {
+            return Err(self.set_error(InferenceError::ConstKindMismatch {
                 const0: self.db.intern_const_value(ConstValue::Var(var)),
                 const1: id,
-            });
+            }));
         }
 
         self.const_assignment.insert(var.id, id);
@@ -696,7 +720,11 @@ impl<'db> Inference<'db> {
 
         let (canonical_trait, canonicalizer) =
             CanonicalTrait::canonicalize(self.db, self.inference_id, concrete_trait_id);
-        match self.db.canonic_trait_solutions(canonical_trait, lookup_context)? {
+        let solution_set = match self.db.canonic_trait_solutions(canonical_trait, lookup_context) {
+            Ok(solution_set) => solution_set,
+            Err(err) => return Err(self.set_error(err)),
+        };
+        match solution_set {
             SolutionSet::None => Ok(SolutionSet::None),
             SolutionSet::Unique(canonical_impl) => {
                 Ok(SolutionSet::Unique((canonical_impl, canonicalizer)))
@@ -718,15 +746,25 @@ impl<'db> Inference<'db> {
         };
         let mut rewriter = SubstitutionRewriter {
             db: self.db,
-            substitution: &concrete_impl.substitution(self.db)?,
+            substitution: &concrete_impl
+                .substitution(self.db)
+                .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?,
         };
 
-        for garg in self.db.impl_def_generic_params(concrete_impl.impl_def_id(self.db))? {
+        for garg in self
+            .db
+            .impl_def_generic_params(concrete_impl.impl_def_id(self.db))
+            .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?
+        {
             let GenericParam::NegImpl(neg_impl) = garg else {
                 continue;
             };
 
-            let concrete_trait_id = rewriter.rewrite(neg_impl)?.concrete_trait?;
+            let concrete_trait_id = rewriter
+                .rewrite(neg_impl)
+                .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?
+                .concrete_trait
+                .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?;
             for garg in concrete_trait_id.generic_args(self.db) {
                 let GenericArgumentId::Type(ty) = garg else {
                     continue;
@@ -762,6 +800,74 @@ impl<'db> Inference<'db> {
         }
 
         Ok(SolutionSet::Unique(canonical_impl))
+    }
+
+    // Error handling methods
+    // ======================
+
+    /// Sets an error in the inference state.
+    /// Panics if an error is already set.
+    /// Returns an `ErrorSet` that can be used in reporting the error.
+    pub fn set_error(&mut self, err: InferenceError) -> ErrorSet {
+        assert!(self.error_status.is_ok(), "Can't overwrite the error");
+        self.error_status = if let InferenceError::Failed(diag_added) = err {
+            self.consumed_error = Some(diag_added);
+            Err(InferenceErrorStatus::Consumed)
+        } else {
+            self.error = Some(err);
+            Err(InferenceErrorStatus::Pending)
+        };
+        ErrorSet
+    }
+
+    /// Returns whether an error is set (either pending or consumed).
+    pub fn is_error_set(&self) -> InferenceResult<()> {
+        if self.error_status.is_err() { Err(ErrorSet) } else { Ok(()) }
+    }
+
+    /// Consumes the error but doesn't report it. If there is not error, or the error is consumed,
+    /// does nothing. This should be used with caution. Always prefer to use
+    /// `report_on_pending_error` if possible.
+    /// Gets an `ErrorSet` to "enforce" it is only called when an error is set.
+    pub fn consume_error_without_reporting(
+        &mut self,
+        _err_set: ErrorSet,
+    ) -> Option<InferenceError> {
+        if self.error_status != Err(InferenceErrorStatus::Pending) {
+            panic!("consume_error when there is no pending error");
+        }
+        self.error_status = Err(InferenceErrorStatus::Consumed);
+        self.consumed_error = Some(skip_diagnostic());
+        mem::take(&mut self.error)
+    }
+
+    /// Consumes the pending error, if any, and reports it.
+    /// Should only be called when an error is set, otherwise it panics.
+    /// Gets an `ErrorSet` to "enforce" it is only called when an error is set.
+    /// If an error was set but it's already consumed, it doesn't report it again but returns the
+    /// stored `DiagnosticAdded`.
+    pub fn report_on_pending_error(
+        &mut self,
+        _err_set: ErrorSet,
+        diagnostics: &mut SemanticDiagnostics,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> DiagnosticAdded {
+        let Err(state_error) = self.error_status else {
+            panic!("report_on_pending_error should be called only on error");
+        };
+        match state_error {
+            InferenceErrorStatus::Consumed => self
+                .consumed_error
+                .expect("consumed_error is not set although error_status is Err(Consumed)"),
+            InferenceErrorStatus::Pending => {
+                let diag_added = mem::take(&mut self.error)
+                    .expect("error is not set although error_status is Err(Pending)")
+                    .report(diagnostics, stable_ptr);
+                self.error_status = Err(InferenceErrorStatus::Consumed);
+                self.consumed_error = Some(diag_added);
+                diag_added
+            }
+        }
     }
 }
 
