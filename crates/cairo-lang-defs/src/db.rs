@@ -312,7 +312,7 @@ fn get_item_definition(db: &dyn DefsGroup, item_id: LookupItemId) -> String {
         | SyntaxKind::TraitItemFunction
         | SyntaxKind::ItemTypeAlias
         | SyntaxKind::ItemImplAlias => syntax_node.clone().get_text_without_trivia(db.upcast()),
-        SyntaxKind::FunctionWithBody => {
+        SyntaxKind::FunctionWithBody | SyntaxKind::ItemExternFunction => {
             let children =
                 <dyn DefsGroup as Upcast<dyn SyntaxGroup>>::upcast(db).get_children(syntax_node);
             children[1..]
@@ -322,17 +322,21 @@ fn get_item_definition(db: &dyn DefsGroup, item_id: LookupItemId) -> String {
                     (kind != SyntaxKind::ExprBlock
                         && kind != SyntaxKind::ImplBody
                         && kind != SyntaxKind::TraitBody)
-                        .then_some(if kind == SyntaxKind::VisibilityPub {
-                            node.clone().get_text_without_trivia(db.upcast()).trim().to_owned()
-                                + " "
-                        } else {
-                            node.clone()
-                                .get_text_without_trivia(db.upcast())
-                                .lines()
-                                .map(|line| line.trim())
-                                .collect::<Vec<&str>>()
-                                .join("")
-                        })
+                        .then_some(
+                            if kind == SyntaxKind::VisibilityPub
+                                || kind == SyntaxKind::TerminalExtern
+                            {
+                                node.clone().get_text_without_trivia(db.upcast()).trim().to_owned()
+                                    + " "
+                            } else {
+                                node.clone()
+                                    .get_text_without_trivia(db.upcast())
+                                    .lines()
+                                    .map(|line| line.trim())
+                                    .collect::<Vec<&str>>()
+                                    .join("")
+                            },
+                        )
                 })
                 .collect::<Vec<String>>()
                 .join("")
