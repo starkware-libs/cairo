@@ -12,7 +12,7 @@ use test_case::test_case;
 
 use super::format_for_debug;
 use crate::casm_run::contract_address::calculate_contract_address;
-use crate::casm_run::run_function;
+use crate::casm_run::{run_function, RunFunctionResult};
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{build_hints_dict, CairoHintProcessor, StarknetState};
 
@@ -116,6 +116,7 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         string_to_hint,
         starknet_state: StarknetState::default(),
         run_resources: RunResources::default(),
+        syscalls_used_resources: Default::default(),
     };
     let bytecode: Vec<BigInt> = function
         .instructions
@@ -123,7 +124,7 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         .flat_map(|instruction| instruction.assemble().encode())
         .collect();
 
-    let (cells, ap) = run_function(
+    let RunFunctionResult { memory, ap, .. } = run_function(
         &mut VirtualMachine::new(true),
         bytecode.iter(),
         vec![],
@@ -132,9 +133,9 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         hints_dict,
     )
     .expect("Running code failed.");
-    let cells = cells.into_iter().skip(ap - n_returns);
+    let ret_memory = memory.into_iter().skip(ap - n_returns);
     assert_eq!(
-        cells.take(n_returns).map(|cell| cell.unwrap()).collect_vec(),
+        ret_memory.take(n_returns).map(|cell| cell.unwrap()).collect_vec(),
         expected.iter().copied().map(Felt252::from).collect_vec()
     );
 }
@@ -154,11 +155,12 @@ fn test_allocate_segment() {
         string_to_hint,
         starknet_state: StarknetState::default(),
         run_resources: RunResources::default(),
+        syscalls_used_resources: Default::default(),
     };
     let bytecode: Vec<BigInt> =
         casm.instructions.iter().flat_map(|instruction| instruction.assemble().encode()).collect();
 
-    let (memory, ap) = run_function(
+    let RunFunctionResult { memory, ap, .. } = run_function(
         &mut VirtualMachine::new(true),
         bytecode.iter(),
         vec![],
