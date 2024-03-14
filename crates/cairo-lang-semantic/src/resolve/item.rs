@@ -106,7 +106,7 @@ impl ResolvedConcreteItem {
                 db.lookup_intern_function(*function).function.generic_function,
             ),
             ResolvedConcreteItem::TraitFunction(trait_function) => {
-                ResolvedGenericItem::TraitFunction(trait_function.function_id(db))
+                ResolvedGenericItem::TraitFunction(trait_function.trait_function(db))
             }
             ResolvedConcreteItem::Type(ty) => {
                 if let TypeLongId::Concrete(concrete) = db.lookup_intern_type(*ty) {

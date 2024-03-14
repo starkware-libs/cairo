@@ -193,3 +193,36 @@ error: variable is bound inconsistently across alternatives separated by `|` bou
  --> lib.cairo:16:46
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, z: mut t, .. }) => x + t,
                                              ^***^
+
+//! > ==========================================================================
+
+//! > Test conform in or pattern
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+  let a = MyEnum::A(5);
+  match a {
+    MyEnum::A(x) | MyEnum::B((x, _)) => x,
+  }
+  bar(a);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum<T> {
+  A: T,
+  B: (felt252, felt252),
+}
+fn bar(a: MyEnum<u32>) {
+}
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "test::MyEnum::<core::integer::u32>", found: "test::MyEnum::<core::felt252>".
+ --> lib.cairo:12:7
+  bar(a);
+      ^

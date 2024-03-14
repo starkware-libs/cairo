@@ -833,8 +833,9 @@ pub fn compute_root_expr(
     return_type: TypeId,
 ) -> Maybe<ExprId> {
     let res = compute_expr_block_semantic(ctx, syntax)?;
-    let res_ty = res.ty();
+    let res_ty = ctx.reduce_ty(res.ty());
     let res = ctx.exprs.alloc(res);
+    let return_type = ctx.reduce_ty(return_type);
     if ctx.resolver.inference().conform_ty(res_ty, return_type).is_err() {
         ctx.diagnostics
             .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res_ty });
@@ -980,9 +981,17 @@ fn compute_arm_semantic(
                         std::collections::hash_map::Entry::Occupied(entry) => {
                             let get_location = || variable.stable_ptr.lookup(db.upcast());
                             let var = entry.get();
-                            let expected_ty = var.ty;
 
-                            if expected_ty != variable.var.ty {
+                            let expected_ty = new_ctx.reduce_ty(var.ty);
+                            let actual_ty = new_ctx.reduce_ty(variable.var.ty);
+
+                            if !variable.var.ty.is_missing(new_ctx.db)
+                                && new_ctx
+                                    .resolver
+                                    .inference()
+                                    .conform_ty(actual_ty, expected_ty)
+                                    .is_err()
+                            {
                                 new_ctx.diagnostics.report(
                                     &get_location(),
                                     WrongType { expected_ty, actual_ty: variable.var.ty },
@@ -1059,8 +1068,9 @@ fn compute_expr_match_semantic(
     // Unify arm types.
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
     for (_, expr) in patterns_and_exprs.iter() {
+        let expr_ty = ctx.reduce_ty(expr.ty());
         if let Err((match_ty, arm_ty)) =
-            helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr.ty())
+            helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr_ty)
         {
             ctx.diagnostics.report_by_ptr(
                 expr.stable_ptr().untyped(),
@@ -1130,8 +1140,10 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
     };
 
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
+    let if_block_ty = ctx.reduce_ty(if_block.ty());
+    let else_block_ty = ctx.reduce_ty(else_block_ty);
     helper
-        .try_merge_types(&mut ctx.resolver.inference(), ctx.db, if_block.ty())
+        .try_merge_types(&mut ctx.resolver.inference(), ctx.db, if_block_ty)
         .and(helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, else_block_ty))
         .unwrap_or_else(|(block_if_ty, block_else_ty)| {
             ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty });
@@ -1369,7 +1381,7 @@ fn compute_method_function_call_data(
         TraitFunctionId,
     ) -> SemanticDiagnosticKind,
 ) -> Maybe<(FunctionId, ExprAndId, Mutability)> {
-    let self_ty = self_expr.ty();
+    let self_ty = ctx.reduce_ty(self_expr.ty());
     let mut inference_errors = vec![];
     let candidates = filter_candidate_traits(
         ctx,
@@ -2725,6 +2737,7 @@ pub fn compute_statement_semantic(
                     (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
                 }
             };
+            let ty = ctx.reduce_ty(ty);
             match &mut ctx.loop_ctx {
                 None => {
                     return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
