@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::vec::IntoIter;
@@ -15,7 +16,9 @@ use cairo_lang_runner::casm_run::format_next_item;
 use cairo_lang_runner::profiling::{
     ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
-use cairo_lang_runner::{ProfilingInfoCollectionConfig, RunResultValue, SierraCasmRunner};
+use cairo_lang_runner::{
+    ProfilingInfoCollectionConfig, RunResultValue, SierraCasmRunner, UsedResources,
+};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
@@ -93,7 +96,7 @@ impl CompiledTestRunner {
             self.compiled,
             self.config.include_ignored,
             self.config.ignored,
-            self.config.filter,
+            &self.config.filter,
         );
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
@@ -102,8 +105,8 @@ impl CompiledTestRunner {
             compiled.sierra_program,
             compiled.function_set_costs,
             compiled.contracts_info,
-            self.config.run_profiler != RunProfilerConfig::None,
             compiled.statements_functions,
+            &self.config,
         )?;
 
         if failed.is_empty() {
@@ -171,6 +174,7 @@ pub struct TestRunConfig {
     pub ignored: bool,
     /// Whether to run the profiler and how.
     pub run_profiler: RunProfilerConfig,
+    pub print_resource_usage: bool,
 }
 
 /// The test cases compiler.
@@ -243,7 +247,7 @@ pub fn filter_test_cases(
     compiled: TestCompilation,
     include_ignored: bool,
     ignored: bool,
-    filter: String,
+    filter: &str,
 ) -> (TestCompilation, usize) {
     let total_tests_count = compiled.named_tests.len();
     let named_tests = compiled.named_tests
@@ -255,7 +259,7 @@ pub fn filter_test_cases(
             }
             (func, test)
         })
-        .filter(|(name, _)| name.contains(&filter))
+        .filter(|(name, _)| name.contains(filter))
         // Filtering unignored tests in `ignored` mode
         .filter(|(_, test)| !ignored || test.ignored)
         .collect_vec();
@@ -276,6 +280,8 @@ struct TestResult {
     status: TestStatus,
     /// The gas usage of the run if relevant.
     gas_usage: Option<i64>,
+    /// The used resources of the run.
+    used_resources: UsedResources,
     /// The profiling info of the run, if requested.
     profiling_info: Option<ProfilingInfo>,
 }
@@ -295,8 +301,8 @@ pub fn run_tests(
     sierra_program: Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     contracts_info: OrderedHashMap<Felt252, ContractInfo>,
-    run_profiler: bool,
     statements_functions: UnorderedHashMap<StatementIdx, String>,
+    config: &TestRunConfig,
 ) -> Result<TestsSummary> {
     let runner = SierraCasmRunner::new(
         sierra_program.clone(),
@@ -308,7 +314,12 @@ pub fn run_tests(
             compute_runtime_costs: false,
         }),
         contracts_info,
-        if run_profiler { Some(ProfilingInfoCollectionConfig::default()) } else { None },
+        match config.run_profiler {
+            RunProfilerConfig::None => None,
+            RunProfilerConfig::Cairo | RunProfilerConfig::Sierra => {
+                Some(ProfilingInfoCollectionConfig::default())
+            }
+        },
     )
     .with_context(|| "Failed setting up runner.")?;
     let suffix = if named_tests.len() != 1 { "s" } else { "" };
@@ -337,6 +348,7 @@ pub fn run_tests(
                         process_by_cairo_function: false,
                         ..ProfilingInfoProcessorParams::default()
                     },
+                    config.print_resource_usage,
                 );
             });
     } else {
@@ -352,6 +364,7 @@ pub fn run_tests(
                     &sierra_program,
                     &statements_functions,
                     &ProfilingInfoProcessorParams::default(),
+                    config.print_resource_usage,
                 );
             });
     }
@@ -399,6 +412,7 @@ fn run_single_test(
                 .or_else(|| {
                     runner.initial_required_gas(func).map(|gas| gas.into_or_panic::<i64>())
                 }),
+            used_resources: result.used_resources,
             profiling_info: result.profiling_info,
         }),
     ))
@@ -412,6 +426,7 @@ fn update_summary(
     sierra_program: &Program,
     statements_functions: &UnorderedHashMap<StatementIdx, String>,
     profiling_params: &ProfilingInfoProcessorParams,
+    print_resource_usage: bool,
 ) {
     let mut wrapped_summary = wrapped_summary.lock().unwrap();
     if wrapped_summary.is_err() {
@@ -425,20 +440,44 @@ fn update_summary(
         }
     };
     let summary = wrapped_summary.as_mut().unwrap();
-    let (res_type, status_str, gas_usage, profiling_info) = match status {
-        Some(TestResult { status: TestStatus::Success, gas_usage, profiling_info }) => {
-            (&mut summary.passed, "ok".bright_green(), gas_usage, profiling_info)
-        }
-        Some(TestResult { status: TestStatus::Fail(run_result), gas_usage, profiling_info }) => {
-            summary.failed_run_results.push(run_result);
-            (&mut summary.failed, "fail".bright_red(), gas_usage, profiling_info)
-        }
-        None => (&mut summary.ignored, "ignored".bright_yellow(), None, None),
+    let (res_type, status_str, gas_usage, used_resources, profiling_info) = if let Some(x) = status
+    {
+        let (res_type, status_str) = match x.status {
+            TestStatus::Success => (&mut summary.passed, "ok".bright_green()),
+            TestStatus::Fail(run_result) => {
+                summary.failed_run_results.push(run_result);
+                (&mut summary.failed, "fail".bright_red())
+            }
+        };
+        (
+            res_type,
+            status_str,
+            x.gas_usage,
+            print_resource_usage.then_some(x.used_resources),
+            x.profiling_info,
+        )
+    } else {
+        (&mut summary.ignored, "ignored".bright_yellow(), None, None, None)
     };
     if let Some(gas_usage) = gas_usage {
         println!("test {name} ... {status_str} (gas usage est.: {gas_usage})");
     } else {
         println!("test {name} ... {status_str}");
+    }
+    if let Some(used_resources) = used_resources {
+        let filtered = used_resources.execution_resources.filter_unused_builtins();
+        println!("    steps: {}", filtered.n_steps);
+        println!("    memory holes: {}", filtered.n_memory_holes);
+        let print_resource_map = |m: HashMap<_, _>, name| {
+            if !m.is_empty() {
+                println!(
+                    "    {name}: ({})",
+                    m.into_iter().sorted().map(|(k, v)| format!("{k:?}: {v}")).join(", ")
+                );
+            }
+        };
+        print_resource_map(filtered.builtin_instance_counter, "builtins");
+        print_resource_map(used_resources.syscalls, "syscalls");
     }
     if let Some(profiling_info) = profiling_info {
         let profiling_processor =
