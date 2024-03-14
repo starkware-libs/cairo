@@ -53,6 +53,7 @@ cairo_lang_test_utils::test_file_test!(
         statements: "statements",
         structure: "structure",
         while_: "while",
+        type_coerce: "type_coerce",
     },
     test_function_diagnostics
 );
