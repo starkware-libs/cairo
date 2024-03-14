@@ -141,9 +141,10 @@ pub fn resolve_const_expr_and_evaluate(
     const_stable_ptr: SyntaxStablePtrId,
     target_type: TypeId,
 ) -> (TypeId, ConstValue) {
-    if let Err(err) = ctx.resolver.inference().conform_ty(value.ty(), target_type) {
-        err.report(ctx.diagnostics, const_stable_ptr);
-    }
+    let inference = &mut ctx.resolver.inference();
+    inference
+        .conform_ty(value.ty(), target_type)
+        .map_err(|_| inference.report_on_pending_error(ctx.diagnostics, const_stable_ptr));
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
         inference_err.report(ctx.diagnostics, stable_ptr.unwrap_or(const_stable_ptr));

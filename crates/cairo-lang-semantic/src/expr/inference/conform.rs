@@ -15,40 +15,40 @@ use crate::{
 
 /// Functions for conforming semantic objects with each other.
 pub trait InferenceConform {
-    fn conform_ty(&mut self, ty0: TypeId, ty1: TypeId) -> Result<TypeId, InferenceError>;
+    fn conform_ty(&mut self, ty0: TypeId, ty1: TypeId) -> InferenceResult<TypeId>;
     fn conform_ty_ex(
         &mut self,
         ty0: TypeId,
         ty1: TypeId,
         ty0_is_self: bool,
-    ) -> Result<(TypeId, usize), InferenceError>;
+    ) -> InferenceResult<(TypeId, usize)>;
     fn conform_const(
         &mut self,
         ty0: ConstValueId,
         ty1: ConstValueId,
-    ) -> Result<ConstValueId, InferenceError>;
+    ) -> InferenceResult<ConstValueId>;
     fn maybe_peel_snapshots(&mut self, ty0_is_self: bool, ty1: TypeId) -> (usize, TypeLongId);
     fn conform_generic_args(
         &mut self,
         gargs0: &[GenericArgumentId],
         gargs1: &[GenericArgumentId],
-    ) -> Result<Vec<GenericArgumentId>, InferenceError>;
+    ) -> InferenceResult<Vec<GenericArgumentId>>;
     fn conform_generic_arg(
         &mut self,
         garg0: GenericArgumentId,
         garg1: GenericArgumentId,
-    ) -> Result<GenericArgumentId, InferenceError>;
+    ) -> InferenceResult<GenericArgumentId>;
     fn conform_impl(&mut self, impl0: ImplId, impl1: ImplId) -> InferenceResult<ImplId>;
     fn conform_traits(
         &mut self,
         trt0: ConcreteTraitId,
         trt1: ConcreteTraitId,
-    ) -> Result<ConcreteTraitId, InferenceError>;
+    ) -> InferenceResult<ConcreteTraitId>;
     fn conform_generic_function(
         &mut self,
         trt0: GenericFunctionId,
         trt1: GenericFunctionId,
-    ) -> Result<GenericFunctionId, InferenceError>;
+    ) -> InferenceResult<GenericFunctionId>;
     fn ty_contains_var(&mut self, ty: TypeId, var: InferenceVar) -> bool;
     fn generic_args_contain_var(
         &mut self,
@@ -62,7 +62,7 @@ pub trait InferenceConform {
 impl<'db> InferenceConform for Inference<'db> {
     /// Conforms ty0 to ty1. Should be called when ty0 should be coerced to ty1. Not symmetric.
     /// Returns the reduced type for ty0, or an error if the type is no coercible.
-    fn conform_ty(&mut self, ty0: TypeId, ty1: TypeId) -> Result<TypeId, InferenceError> {
+    fn conform_ty(&mut self, ty0: TypeId, ty1: TypeId) -> InferenceResult<TypeId> {
         Ok(self.conform_ty_ex(ty0, ty1, false)?.0)
     }
 
@@ -74,7 +74,7 @@ impl<'db> InferenceConform for Inference<'db> {
         ty0: TypeId,
         ty1: TypeId,
         ty0_is_self: bool,
-    ) -> Result<(TypeId, usize), InferenceError> {
+    ) -> InferenceResult<(TypeId, usize)> {
         let ty0 = self.rewrite(ty0).no_err();
         let ty1 = self.rewrite(ty1).no_err();
         if ty0 == never_ty(self.db) || ty0.is_missing(self.db) {
@@ -108,10 +108,10 @@ impl<'db> InferenceConform for Inference<'db> {
             TypeLongId::Concrete(concrete0) => {
                 let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
                 let TypeLongId::Concrete(concrete1) = long_ty1 else {
-                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
+                    return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
                 if concrete0.generic_type(self.db) != concrete1.generic_type(self.db) {
-                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
+                    return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 }
                 let gargs0 = concrete0.generic_args(self.db);
                 let gargs1 = concrete1.generic_args(self.db);
@@ -126,10 +126,10 @@ impl<'db> InferenceConform for Inference<'db> {
             TypeLongId::Tuple(tys0) => {
                 let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
                 let TypeLongId::Tuple(tys1) = long_ty1 else {
-                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
+                    return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
                 if tys0.len() != tys1.len() {
-                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
+                    return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 }
                 let tys = zip_eq(tys0, tys1)
                     .map(|(subty0, subty1)| self.conform_ty(subty0, subty1))
@@ -139,7 +139,7 @@ impl<'db> InferenceConform for Inference<'db> {
             TypeLongId::FixedSizeArray { type_id, size } => {
                 let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
                 let TypeLongId::FixedSizeArray { type_id: type_id1, size: size1 } = long_ty1 else {
-                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
+                    return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
                 let size = self.conform_const(size, size1)?;
                 let ty = self.conform_ty(type_id, type_id1)?;
@@ -150,17 +150,19 @@ impl<'db> InferenceConform for Inference<'db> {
             }
             TypeLongId::Snapshot(ty0) => {
                 let TypeLongId::Snapshot(ty1) = long_ty1 else {
-                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
+                    return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
                 let (ty, n_snapshots) = self.conform_ty_ex(ty0, ty1, ty0_is_self)?;
                 Ok((self.db.intern_type(TypeLongId::Snapshot(ty)), n_snapshots))
             }
-            TypeLongId::GenericParameter(_) => Err(InferenceError::TypeKindMismatch { ty0, ty1 }),
+            TypeLongId::GenericParameter(_) => {
+                Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
+            }
             TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, n_snapshots)),
             TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),
             TypeLongId::Coupon(function_id0) => {
                 let TypeLongId::Coupon(function_id1) = long_ty1 else {
-                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
+                    return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
 
                 let func0 = self.db.lookup_intern_function(function_id0).function;
@@ -170,7 +172,7 @@ impl<'db> InferenceConform for Inference<'db> {
                     self.conform_generic_function(func0.generic_function, func1.generic_function)?;
 
                 if func0.generic_args.len() != func1.generic_args.len() {
-                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
+                    return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 }
 
                 let generic_args =
@@ -194,7 +196,7 @@ impl<'db> InferenceConform for Inference<'db> {
         &mut self,
         id0: ConstValueId,
         id1: ConstValueId,
-    ) -> Result<ConstValueId, InferenceError> {
+    ) -> InferenceResult<ConstValueId> {
         let id0 = self.rewrite(id0).no_err();
         let id1 = self.rewrite(id1).no_err();
         if id0 == id1 {
@@ -211,7 +213,9 @@ impl<'db> InferenceConform for Inference<'db> {
         }
         match const_value0 {
             ConstValue::Var(var) => Ok(self.assign_const(var, id1)?),
-            _ => Err(InferenceError::ConstKindMismatch { const0: id0, const1: id1 }),
+            _ => {
+                Err(self.set_error(InferenceError::ConstKindMismatch { const0: id0, const1: id1 }))
+            }
         }
     }
 
@@ -230,7 +234,7 @@ impl<'db> InferenceConform for Inference<'db> {
         &mut self,
         gargs0: &[GenericArgumentId],
         gargs1: &[GenericArgumentId],
-    ) -> Result<Vec<GenericArgumentId>, InferenceError> {
+    ) -> InferenceResult<Vec<GenericArgumentId>> {
         zip_eq(gargs0, gargs1)
             .map(|(garg0, garg1)| self.conform_generic_arg(*garg0, *garg1))
             .collect::<Result<Vec<_>, _>>()
@@ -241,27 +245,27 @@ impl<'db> InferenceConform for Inference<'db> {
         &mut self,
         garg0: GenericArgumentId,
         garg1: GenericArgumentId,
-    ) -> Result<GenericArgumentId, InferenceError> {
+    ) -> InferenceResult<GenericArgumentId> {
         if garg0 == garg1 {
             return Ok(garg0);
         }
         match garg0 {
             GenericArgumentId::Type(gty0) => {
                 let GenericArgumentId::Type(gty1) = garg1 else {
-                    return Err(InferenceError::GenericArgMismatch { garg0, garg1 });
+                    return Err(self.set_error(InferenceError::GenericArgMismatch { garg0, garg1 }));
                 };
                 Ok(GenericArgumentId::Type(self.conform_ty(gty0, gty1)?))
             }
             GenericArgumentId::Constant(gc0) => {
                 let GenericArgumentId::Constant(gc1) = garg1 else {
-                    return Err(InferenceError::GenericArgMismatch { garg0, garg1 });
+                    return Err(self.set_error(InferenceError::GenericArgMismatch { garg0, garg1 }));
                 };
 
                 Ok(GenericArgumentId::Constant(self.conform_const(gc0, gc1)?))
             }
             GenericArgumentId::Impl(impl0) => {
                 let GenericArgumentId::Impl(impl1) = garg1 else {
-                    return Err(InferenceError::GenericArgMismatch { garg0, garg1 });
+                    return Err(self.set_error(InferenceError::GenericArgMismatch { garg0, garg1 }));
                 };
                 Ok(GenericArgumentId::Impl(self.conform_impl(impl0, impl1)?))
             }
@@ -270,7 +274,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 GenericArgumentId::Constant(_)
                 | GenericArgumentId::Type(_)
                 | GenericArgumentId::Impl(_) => {
-                    Err(InferenceError::GenericArgMismatch { garg0, garg1 })
+                    Err(self.set_error(InferenceError::GenericArgMismatch { garg0, garg1 }))
                 }
             },
         }
@@ -284,30 +288,32 @@ impl<'db> InferenceConform for Inference<'db> {
             return Ok(impl0);
         }
         if let ImplId::ImplVar(var) = impl1 {
-            self.conform_traits(
-                var.get(self.db).concrete_trait_id,
-                self.db.impl_concrete_trait(impl0)?,
-            )?;
+            let impl_concrete_trait = self
+                .db
+                .impl_concrete_trait(impl0)
+                .map_err(|diag_added| self.set_reported_error(diag_added))?;
+            self.conform_traits(var.get(self.db).concrete_trait_id, impl_concrete_trait)?;
             let impl_id = self.rewrite(impl0).no_err();
             return self.assign_impl(var, impl_id);
         }
         match impl0 {
             ImplId::ImplVar(var) => {
-                self.conform_traits(
-                    var.get(self.db).concrete_trait_id,
-                    self.db.impl_concrete_trait(impl1)?,
-                )?;
+                let impl_concrete_trait = self
+                    .db
+                    .impl_concrete_trait(impl1)
+                    .map_err(|diag_added| self.set_reported_error(diag_added))?;
+                self.conform_traits(var.get(self.db).concrete_trait_id, impl_concrete_trait)?;
                 let impl_id = self.rewrite(impl1).no_err();
                 self.assign_impl(var, impl_id)
             }
             ImplId::Concrete(concrete0) => {
                 let ImplId::Concrete(concrete1) = impl1 else {
-                    return Err(InferenceError::ImplKindMismatch { impl0, impl1 });
+                    return Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }));
                 };
                 let concrete0 = self.db.lookup_intern_concrete_impl(concrete0);
                 let concrete1 = self.db.lookup_intern_concrete_impl(concrete1);
                 if concrete0.impl_def_id != concrete1.impl_def_id {
-                    return Err(InferenceError::ImplKindMismatch { impl0, impl1 });
+                    return Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }));
                 }
                 let gargs0 = concrete0.generic_args;
                 let gargs1 = concrete1.generic_args;
@@ -317,7 +323,9 @@ impl<'db> InferenceConform for Inference<'db> {
                     generic_args,
                 })))
             }
-            ImplId::GenericParameter(_) => Err(InferenceError::ImplKindMismatch { impl0, impl1 }),
+            ImplId::GenericParameter(_) => {
+                Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
+            }
         }
     }
 
@@ -326,11 +334,14 @@ impl<'db> InferenceConform for Inference<'db> {
         &mut self,
         trt0: ConcreteTraitId,
         trt1: ConcreteTraitId,
-    ) -> Result<ConcreteTraitId, InferenceError> {
+    ) -> InferenceResult<ConcreteTraitId> {
         let trt0 = self.db.lookup_intern_concrete_trait(trt0);
         let trt1 = self.db.lookup_intern_concrete_trait(trt1);
         if trt0.trait_id != trt1.trait_id {
-            return Err(InferenceError::TraitMismatch { trt0: trt0.trait_id, trt1: trt1.trait_id });
+            return Err(self.set_error(InferenceError::TraitMismatch {
+                trt0: trt0.trait_id,
+                trt1: trt1.trait_id,
+            }));
         }
         let generic_args = self.conform_generic_args(&trt0.generic_args, &trt1.generic_args)?;
         Ok(self
@@ -342,10 +353,12 @@ impl<'db> InferenceConform for Inference<'db> {
         &mut self,
         func0: GenericFunctionId,
         func1: GenericFunctionId,
-    ) -> Result<GenericFunctionId, InferenceError> {
+    ) -> InferenceResult<GenericFunctionId> {
         if let (GenericFunctionId::Impl(id0), GenericFunctionId::Impl(id1)) = (func0, func1) {
             if id0.function != id1.function {
-                return Err(InferenceError::GenericFunctionMismatch { func0, func1 });
+                return Err(
+                    self.set_error(InferenceError::GenericFunctionMismatch { func0, func1 })
+                );
             }
             let function = id0.function;
             let impl_id = self.conform_impl(id0.impl_id, id1.impl_id)?;
@@ -353,7 +366,7 @@ impl<'db> InferenceConform for Inference<'db> {
         }
 
         if func0 != func1 {
-            return Err(InferenceError::GenericFunctionMismatch { func0, func1 });
+            return Err(self.set_error(InferenceError::GenericFunctionMismatch { func0, func1 }));
         }
         Ok(func0)
     }

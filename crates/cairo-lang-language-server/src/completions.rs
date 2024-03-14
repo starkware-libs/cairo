@@ -349,7 +349,7 @@ fn find_methods_for_type(
             };
 
             // Find impls for it.
-            inference.solve().ok();
+            inference.solve(); // ignore the result as nothing can be done with the error, if any.
             if !matches!(
                 inference.trait_solution_set(concrete_trait_id, lookup_context),
                 Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_))

@@ -104,8 +104,10 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
                 self.infer_impl_alias(impl_alias_id, concrete_trait_id, lookup_context, stable_ptr)?
             }
             UninferredImpl::GenericParam(param_id) => {
-                let param =
-                    self.db.generic_param_semantic(param_id).map_err(InferenceError::Failed)?;
+                let param = self
+                    .db
+                    .generic_param_semantic(param_id)
+                    .map_err(|diag_added| self.set_reported_error(diag_added))?;
                 let param = extract_matches!(param, GenericParam::Impl);
                 let imp_concrete_trait_id = param.concrete_trait.unwrap();
                 self.conform_traits(concrete_trait_id, imp_concrete_trait_id)?;
@@ -124,13 +126,19 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<ImplId> {
-        let imp_generic_params = self.db.impl_def_generic_params(impl_def_id)?;
-        let imp_concrete_trait = self.db.impl_def_concrete_trait(impl_def_id)?;
+        let imp_generic_params = self
+            .db
+            .impl_def_generic_params(impl_def_id)
+            .map_err(|diag_added| self.set_reported_error(diag_added))?;
+        let imp_concrete_trait = self
+            .db
+            .impl_def_concrete_trait(impl_def_id)
+            .map_err(|diag_added| self.set_reported_error(diag_added))?;
         if imp_concrete_trait.trait_id(self.db) != concrete_trait_id.trait_id(self.db) {
-            return Err(InferenceError::TraitMismatch {
+            return Err(self.set_error(InferenceError::TraitMismatch {
                 trt0: imp_concrete_trait.trait_id(self.db),
                 trt1: concrete_trait_id.trait_id(self.db),
-            });
+            }));
         }
 
         let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
@@ -156,14 +164,24 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<ImplId> {
-        let impl_alias_generic_params = self.db.impl_alias_generic_params(impl_alias_id)?;
-        let impl_id = self.db.impl_alias_resolved_impl(impl_alias_id)?;
-        let imp_concrete_trait = impl_id.concrete_trait(self.db)?;
+        let impl_alias_generic_params = self
+            .db
+            .impl_alias_generic_params(impl_alias_id)
+            .map_err(|diag_added| self.set_reported_error(diag_added))?;
+        let impl_id = self
+            .db
+            .impl_alias_resolved_impl(impl_alias_id)
+            .map_err(|diag_added| self.set_reported_error(diag_added))?;
+        let imp_concrete_trait = impl_id
+            .concrete_trait(self.db)
+            .map_err(|diag_added| self.set_reported_error(diag_added))?;
         if imp_concrete_trait.trait_id(self.db) != concrete_trait_id.trait_id(self.db) {
-            return Err(InferenceError::TraitMismatch {
+            // TODO(yg): change ret value to be ErrorSet (similar to DiagnosticAdded) and change
+            // InferenceResult to have it instead of ().
+            return Err(self.set_error(InferenceError::TraitMismatch {
                 trt0: imp_concrete_trait.trait_id(self.db),
                 trt1: concrete_trait_id.trait_id(self.db),
-            });
+            }));
         }
 
         let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
@@ -180,7 +198,8 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             db: self.db,
             substitution: &GenericSubstitution::new(&impl_alias_generic_params, &generic_args),
         }
-        .rewrite(impl_id)?)
+        .rewrite(impl_id)
+        .map_err(|diag_added| self.set_reported_error(diag_added))?)
     }
 
     /// Chooses and assignment to generic_params s.t. generic_args will be substituted to
@@ -198,7 +217,9 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             self.infer_generic_args(generic_params, lookup_context, stable_ptr)?;
         let substitution = GenericSubstitution::new(generic_params, &new_generic_args);
         let mut rewriter = SubstitutionRewriter { db: self.db, substitution: &substitution };
-        let generic_args = rewriter.rewrite(generic_args.iter().copied().collect_vec())?;
+        let generic_args = rewriter
+            .rewrite(generic_args.iter().copied().collect_vec())
+            .map_err(|diag_added| self.set_reported_error(diag_added))?;
         self.conform_generic_args(&generic_args, expected_generic_args)?;
         Ok(self.rewrite(new_generic_args).no_err())
     }
@@ -215,7 +236,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         for generic_param in generic_params {
             let generic_param = SubstitutionRewriter { db: self.db, substitution: &substitution }
                 .rewrite(*generic_param)
-                .map_err(InferenceError::Failed)?;
+                .map_err(|diag_added| self.set_reported_error(diag_added))?;
             let generic_arg =
                 self.infer_generic_arg(&generic_param, lookup_context.clone(), stable_ptr)?;
             generic_args.push(generic_arg);
@@ -246,8 +267,10 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         let generic_args =
             match self.infer_generic_args(&generic_params, lookup_context, stable_ptr) {
                 Ok(generic_args) => generic_args,
-                Err(err) => {
-                    inference_error_cb(err);
+                Err(_) => {
+                    if let Some(err) = self.consume_error() {
+                        inference_error_cb(err);
+                    }
                     return None;
                 }
             };
@@ -257,8 +280,10 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         let fixed_param_ty = rewriter.rewrite(first_param.ty).ok()?;
         let (_, n_snapshots) = match self.conform_ty_ex(self_ty, fixed_param_ty, true) {
             Ok(conform) => conform,
-            Err(err) => {
-                inference_error_cb(err);
+            Err(_) => {
+                if let Some(err) = self.consume_error() {
+                    inference_error_cb(err);
+                }
                 return None;
             }
         };
@@ -281,7 +306,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         match param {
             GenericParam::Type(_) => Ok(GenericArgumentId::Type(self.new_type_var(stable_ptr))),
             GenericParam::Impl(param) => Ok(GenericArgumentId::Impl(self.new_impl_var(
-                param.concrete_trait?,
+                param.concrete_trait.map_err(|diag_added| self.set_reported_error(diag_added))?,
                 stable_ptr,
                 lookup_context,
             )?)),
@@ -314,7 +339,9 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<FunctionId> {
-        let generic_params = generic_function.generic_params(self.db)?;
+        let generic_params = generic_function
+            .generic_params(self.db)
+            .map_err(|diag_added| self.set_reported_error(diag_added))?;
         let generic_args = self.infer_generic_args(&generic_params, lookup_context, stable_ptr)?;
         Ok(self.db.intern_function(FunctionLongId {
             function: ConcreteFunction { generic_function, generic_args },
