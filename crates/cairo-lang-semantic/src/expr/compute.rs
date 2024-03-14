@@ -833,8 +833,9 @@ pub fn compute_root_expr(
     return_type: TypeId,
 ) -> Maybe<ExprId> {
     let res = compute_expr_block_semantic(ctx, syntax)?;
-    let res_ty = res.ty();
+    let res_ty = ctx.reduce_ty(res.ty());
     let res = ctx.exprs.alloc(res);
+    let return_type = ctx.reduce_ty(return_type);
     if ctx.resolver.inference().conform_ty(res_ty, return_type).is_err() {
         ctx.diagnostics
             .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res_ty });
@@ -1059,8 +1060,9 @@ fn compute_expr_match_semantic(
     // Unify arm types.
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
     for (_, expr) in patterns_and_exprs.iter() {
+        let expr_ty = ctx.reduce_ty(expr.ty());
         if let Err((match_ty, arm_ty)) =
-            helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr.ty())
+            helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr_ty)
         {
             ctx.diagnostics.report_by_ptr(
                 expr.stable_ptr().untyped(),
@@ -1130,8 +1132,10 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
     };
 
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
+    let if_block_ty = ctx.reduce_ty(if_block.ty());
+    let else_block_ty = ctx.reduce_ty(else_block_ty);
     helper
-        .try_merge_types(&mut ctx.resolver.inference(), ctx.db, if_block.ty())
+        .try_merge_types(&mut ctx.resolver.inference(), ctx.db, if_block_ty)
         .and(helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, else_block_ty))
         .unwrap_or_else(|(block_if_ty, block_else_ty)| {
             ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty });
@@ -2725,6 +2729,7 @@ pub fn compute_statement_semantic(
                     (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
                 }
             };
+            let ty = ctx.reduce_ty(ty);
             match &mut ctx.loop_ctx {
                 None => {
                     return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
