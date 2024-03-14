@@ -1381,7 +1381,7 @@ fn compute_method_function_call_data(
         TraitFunctionId,
     ) -> SemanticDiagnosticKind,
 ) -> Maybe<(FunctionId, ExprAndId, Mutability)> {
-    let self_ty = self_expr.ty();
+    let self_ty = ctx.reduce_ty(self_expr.ty());
     let mut inference_errors = vec![];
     let candidates = filter_candidate_traits(
         ctx,
