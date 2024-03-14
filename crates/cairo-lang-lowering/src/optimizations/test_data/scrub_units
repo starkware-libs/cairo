@@ -1,7 +1,7 @@
-//! > Test return optimizer simple scenario.
+//! > Test test_scrub_units simple scenario.
 
 //! > test_runner_name
-test_return_optimizer
+test_scrub_units
 
 //! > function
 fn foo(a: Option<()>) {
