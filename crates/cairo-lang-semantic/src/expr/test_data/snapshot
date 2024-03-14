@@ -46,11 +46,6 @@ Consider adding or removing snapshots.
     let _y: felt252 = @6;
                       ^^
 
-error: Mismatched types. The type `@core::felt252` cannot be created from a numeric literal.
- --> lib.cairo:2:24
-    let _x: @felt252 = 5;
-                       ^
-
 //! > ==========================================================================
 
 //! > Test coercion failure - no inference.

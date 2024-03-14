@@ -739,11 +739,6 @@ Consider adding or removing snapshots.
     takes_snapshots(x, y);
                        ^
 
-error: Type annotations needed. Failed to infer ?2
- --> lib.cairo:5:5
-    takes_snapshots(x, y);
-    ^*************^
-
 //! > ==========================================================================
 
 //! > Returned type is not inferred.
@@ -771,8 +766,3 @@ error: Unexpected return type. Expected: "core::option::Option::<?0>", found: "c
  --> lib.cairo:1:20
 fn foo() -> Option {
                    ^
-
-error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:1:13
-fn foo() -> Option {
-            ^****^

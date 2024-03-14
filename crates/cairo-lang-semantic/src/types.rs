@@ -24,7 +24,7 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
-use crate::expr::inference::{InferenceData, InferenceId, InferenceResult, TypeVar};
+use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
@@ -527,10 +527,10 @@ pub fn generic_type_generic_params(
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypeInfo {
-    pub droppable: InferenceResult<ImplId>,
-    pub copyable: InferenceResult<ImplId>,
-    pub destruct_impl: InferenceResult<ImplId>,
-    pub panic_destruct_impl: InferenceResult<ImplId>,
+    pub droppable: Result<ImplId, InferenceError>,
+    pub copyable: Result<ImplId, InferenceError>,
+    pub destruct_impl: Result<ImplId, InferenceError>,
+    pub panic_destruct_impl: Result<ImplId, InferenceError>,
 }
 
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
@@ -539,12 +539,22 @@ pub fn get_impl_at_context(
     lookup_context: ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: Option<SyntaxStablePtrId>,
-) -> InferenceResult<ImplId> {
+) -> Result<ImplId, InferenceError> {
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
-    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
-    if let Some((_, err)) = inference.finalize() {
-        return Err(err);
+    // It's ok to consume the errors without reporting as this is a helper function meant to find an
+    // impl and return it, but it's ok if the impl can't be found.
+    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context).map_err(
+        |err_set| {
+            inference
+                .consume_error_without_reporting(err_set)
+                .expect("Error couldn't be already consumed")
+        },
+    )?;
+    if let Err((err_set, _)) = inference.finalize() {
+        return Err(inference
+            .consume_error_without_reporting(err_set)
+            .expect("Error couldn't be already consumed"));
     };
     Ok(inference.rewrite(impl_id).no_err())
 }
