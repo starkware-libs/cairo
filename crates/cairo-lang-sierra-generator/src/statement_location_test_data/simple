@@ -135,11 +135,14 @@ Originating location:
                         ^
 In function: lib.cairo::foo
 label_test::foo::1:
-
+Originating location:
+        MyEnum::A(a) => a,
+                        ^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-    match myEnum {
-    ^************^
+        MyEnum::A(a) => a,
+                        ^
 In function: lib.cairo::foo
 store_temp<u8>([3]) -> ([5])
 Originating location:
@@ -147,9 +150,15 @@ Originating location:
                         ^
 In function: lib.cairo::foo
 label_test::foo::4:
-
+Originating location:
+        MyEnum::B(b) => b,
+                        ^
+In function: lib.cairo::foo
 struct_construct<Tuple<u8>>([5]) -> ([6])
-
+Originating location:
+        MyEnum::B(b) => b,
+                        ^
+In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([6]) -> ([7])
 Originating location:
 fn foo(myEnum: MyEnum) -> u8 {
@@ -171,11 +180,14 @@ fn foo(myEnum: MyEnum) -> u8 {
                              ^
 In function: lib.cairo::foo
 label_test::foo::2:
-
+Originating location:
+fn foo(myEnum: MyEnum) -> u8 {
+                             ^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-    match myEnum {
-    ^************^
+fn foo(myEnum: MyEnum) -> u8 {
+                             ^
 In function: lib.cairo::foo
 struct_deconstruct<Tuple<u8, u8>>([4]) -> ([8], [9])
 Originating location:
@@ -183,9 +195,15 @@ Originating location:
                   ^******^
 In function: lib.cairo::foo
 dup<u8>([9]) -> ([9], [10])
-
+Originating location:
+        u8_overflowing_sub(rhs, lhs).into_is_err()
+        ^**************************^
+In function: integer.cairo::U8PartialOrd::gt
 dup<u8>([8]) -> ([8], [11])
-
+Originating location:
+        u8_overflowing_sub(rhs, lhs).into_is_err()
+        ^**************************^
+In function: integer.cairo::U8PartialOrd::gt
 u8_overflowing_sub([0], [10], [11]) { fallthrough([12], [13]) label_test::foo::5([14], [15]) }
 Originating location:
         u8_overflowing_sub(rhs, lhs).into_is_err()
@@ -197,7 +215,10 @@ Originating location:
         ^**************************^
 In function: integer.cairo::U8PartialOrd::gt
 drop<u8>([13]) -> ()
-
+Originating location:
+        u8_overflowing_sub(rhs, lhs).into_is_err()
+        ^**************************^
+In function: integer.cairo::U8PartialOrd::gt
 u8_wide_mul([8], [9]) -> ([16])
 Originating location:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -219,7 +240,10 @@ Originating location:
         ^************^
 In function: integer.cairo::DowncastableIntTryInto::try_into
 struct_construct<Tuple<u8>>([18]) -> ([20])
-
+Originating location:
+        downcast(self)
+        ^************^
+In function: integer.cairo::DowncastableIntTryInto::try_into
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([20]) -> ([21])
 Originating location:
     fn expect(self: Option<T>, err: felt252) -> T {
@@ -241,19 +265,25 @@ Originating location:
                                                   ^
 In function: option.cairo::OptionTraitImpl::expect
 label_test::foo::7:
-
+Originating location:
+    fn expect(self: Option<T>, err: felt252) -> T {
+                                                  ^
+In function: option.cairo::OptionTraitImpl::expect
 branch_align() -> ()
 Originating location:
-        downcast(self)
-        ^************^
-In function: integer.cairo::DowncastableIntTryInto::try_into
+    fn expect(self: Option<T>, err: felt252) -> T {
+                                                  ^
+In function: option.cairo::OptionTraitImpl::expect
 array_new<felt252>() -> ([22])
 Originating location:
         array_new()
         ^*********^
 In function: array.cairo::ArrayImpl::new
 const_as_immediate<Const<felt252, 608642107937639184217240406363762551>>() -> ([23])
-
+Originating location:
+        array_new()
+        ^*********^
+In function: array.cairo::ArrayImpl::new
 store_temp<felt252>([23]) -> ([23])
 Originating location:
         array_append(ref self, value)
@@ -265,9 +295,15 @@ Originating location:
         ^***************************^
 In function: array.cairo::ArrayImpl::append
 struct_construct<core::panics::Panic>() -> ([25])
-
+Originating location:
+        array_append(ref self, value)
+        ^***************************^
+In function: array.cairo::ArrayImpl::append
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([25], [24]) -> ([26])
-
+Originating location:
+        array_append(ref self, value)
+        ^***************************^
+In function: array.cairo::ArrayImpl::append
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([26]) -> ([27])
 Originating location:
             Option::None => core::panic_with_felt252(err),
@@ -289,16 +325,25 @@ Originating location:
                             ^***************************^
 In function: option.cairo::OptionTraitImpl::expect
 label_test::foo::8:
-
+Originating location:
+            Option::None => core::panic_with_felt252(err),
+                            ^***************************^
+In function: option.cairo::OptionTraitImpl::expect
 label_test::foo::5:
-
+Originating location:
+            Option::None => core::panic_with_felt252(err),
+                            ^***************************^
+In function: option.cairo::OptionTraitImpl::expect
 branch_align() -> ()
 Originating location:
-        u8_overflowing_sub(rhs, lhs).into_is_err()
-        ^**************************^
-In function: integer.cairo::U8PartialOrd::gt
+            Option::None => core::panic_with_felt252(err),
+                            ^***************************^
+In function: option.cairo::OptionTraitImpl::expect
 drop<u8>([15]) -> ()
-
+Originating location:
+            Option::None => core::panic_with_felt252(err),
+                            ^***************************^
+In function: option.cairo::OptionTraitImpl::expect
 u8_overflowing_add([14], [8], [9]) { fallthrough([28], [29]) label_test::foo::9([30], [31]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -310,7 +355,10 @@ Originating location:
         ^**************************^
 In function: integer.cairo::U8Add::add
 struct_construct<Tuple<u8>>([29]) -> ([32])
-
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: integer.cairo::U8Add::add
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([32]) -> ([33])
 Originating location:
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
@@ -332,21 +380,30 @@ Originating location:
                                                                ^
 In function: result.cairo::ResultTraitImpl::expect
 label_test::foo::9:
-
+Originating location:
+    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
+                                                               ^
+In function: result.cairo::ResultTraitImpl::expect
 branch_align() -> ()
 Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^**************************^
-In function: integer.cairo::U8Add::add
+    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
+                                                               ^
+In function: result.cairo::ResultTraitImpl::expect
 drop<u8>([31]) -> ()
-
+Originating location:
+    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
+                                                               ^
+In function: result.cairo::ResultTraitImpl::expect
 array_new<felt252>() -> ([34])
 Originating location:
         array_new()
         ^*********^
 In function: array.cairo::ArrayImpl::new
 const_as_immediate<Const<felt252, 608642104203229548495787928534675319>>() -> ([35])
-
+Originating location:
+        array_new()
+        ^*********^
+In function: array.cairo::ArrayImpl::new
 store_temp<felt252>([35]) -> ([35])
 Originating location:
         array_append(ref self, value)
@@ -358,9 +415,15 @@ Originating location:
         ^***************************^
 In function: array.cairo::ArrayImpl::append
 struct_construct<core::panics::Panic>() -> ([37])
-
+Originating location:
+        array_append(ref self, value)
+        ^***************************^
+In function: array.cairo::ArrayImpl::append
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([37], [36]) -> ([38])
-
+Originating location:
+        array_append(ref self, value)
+        ^***************************^
+In function: array.cairo::ArrayImpl::append
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([38]) -> ([39])
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
@@ -382,10 +445,20 @@ Originating location:
                               ^***************************^
 In function: result.cairo::ResultTraitImpl::expect
 label_test::foo::10:
-
+Originating location:
+            Result::Err(_) => core::panic_with_felt252(err),
+                              ^***************************^
+In function: result.cairo::ResultTraitImpl::expect
 label_test::foo::6:
-
+Originating location:
+            Result::Err(_) => core::panic_with_felt252(err),
+                              ^***************************^
+In function: result.cairo::ResultTraitImpl::expect
 label_test::foo::3:
+Originating location:
+            Result::Err(_) => core::panic_with_felt252(err),
+                              ^***************************^
+In function: result.cairo::ResultTraitImpl::expect
 
 //! > ==========================================================================
 
@@ -460,37 +533,70 @@ Originating location:
                       ^****^
 In function: lib.cairo::main
 const_as_immediate<Const<felt252, 1>>() -> ([5])
-
+Originating location:
+    let a = MyEnum::A((1, 2));
+                      ^****^
+In function: lib.cairo::main
 const_as_immediate<Const<felt252, 2>>() -> ([6])
-
+Originating location:
+    let a = MyEnum::A((1, 2));
+                      ^****^
+In function: lib.cairo::main
 struct_construct<Tuple<felt252, felt252>>([5], [6]) -> ([7])
-
+Originating location:
+    let a = MyEnum::A((1, 2));
+                      ^****^
+In function: lib.cairo::main
 enum_init<test::MyEnum, 1>([7]) -> ([8])
 Originating location:
     let b = MyEnum::B((1, 2));
                       ^****^
 In function: lib.cairo::main
 const_as_immediate<Const<u8, 1>>() -> ([9])
-
+Originating location:
+    let b = MyEnum::B((1, 2));
+                      ^****^
+In function: lib.cairo::main
 const_as_immediate<Const<u8, 2>>() -> ([10])
-
+Originating location:
+    let b = MyEnum::B((1, 2));
+                      ^****^
+In function: lib.cairo::main
 const_as_immediate<Const<u8, 3>>() -> ([11])
-
+Originating location:
+    let b = MyEnum::B((1, 2));
+                      ^****^
+In function: lib.cairo::main
 struct_construct<Tuple<u8, u8, u8>>([9], [10], [11]) -> ([12])
-
+Originating location:
+    let b = MyEnum::B((1, 2));
+                      ^****^
+In function: lib.cairo::main
 enum_init<test::MyEnum, 2>([12]) -> ([13])
 Originating location:
     let c = MyEnum::C((1, 2, 3));
                       ^*******^
 In function: lib.cairo::main
 const_as_immediate<Const<u8, 1>>() -> ([14])
-
+Originating location:
+    let c = MyEnum::C((1, 2, 3));
+                      ^*******^
+In function: lib.cairo::main
 const_as_immediate<Const<u8, 2>>() -> ([15])
-
+Originating location:
+    let c = MyEnum::C((1, 2, 3));
+                      ^*******^
+In function: lib.cairo::main
 const_as_immediate<Const<u8, 9>>() -> ([16])
-
+Originating location:
+    let c = MyEnum::C((1, 2, 3));
+                      ^*******^
+In function: lib.cairo::main
 struct_construct<test::P>([14], [15], [16]) -> ([17])
-
+Originating location:
+    let c = MyEnum::C((1, 2, 3));
+                      ^*******^
+In function: lib.cairo::main
 enum_init<test::MyEnum, 3>([17]) -> ([18])
 Originating location:
     let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
@@ -527,20 +633,35 @@ Originating location:
     ^*******^
 In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([19]) -> ()
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 jump() { label_test::main::5() }
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 label_test::main::1:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([20]) -> ()
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 label_test::main::5:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 store_temp<RangeCheck>([0]) -> ([23])
 Originating location:
 fn main() {
@@ -552,19 +673,25 @@ fn main() {
 ^*********^
 In function: lib.cairo::main
 label_test::main::2:
-
+Originating location:
+fn main() {
+^*********^
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
-In function: lib.cairo::foo
+fn main() {
+^*********^
+In function: lib.cairo::main
 struct_deconstruct<Tuple<u8, u8, u8>>([21]) -> ([24], [25], [26])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                   ^*******^
 In function: lib.cairo::foo
 drop<u8>([25]) -> ()
-
+Originating location:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                  ^*******^
+In function: lib.cairo::foo
 store_temp<u8>([24]) -> ([27])
 Originating location:
     match a {
@@ -581,7 +708,10 @@ Originating location:
     ^*******^
 In function: lib.cairo::foo
 label_test::main::3:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
@@ -593,7 +723,10 @@ Originating location:
                                          ^*****************^
 In function: lib.cairo::foo
 drop<u8>([30]) -> ()
-
+Originating location:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                         ^*****************^
+In function: lib.cairo::foo
 store_temp<u8>([29]) -> ([27])
 Originating location:
     match a {
@@ -605,7 +738,10 @@ Originating location:
     ^*******^
 In function: lib.cairo::foo
 label_test::main::7:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 u8_overflowing_add([0], [27], [28]) { fallthrough([32], [33]) label_test::main::8([34], [35]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -622,14 +758,20 @@ Originating location:
         ^*****************^
 In function: integer.cairo::U8IntoFelt252::into
 drop<felt252>([36]) -> ()
-
+Originating location:
+        u8_to_felt252(self)
+        ^*****************^
+In function: integer.cairo::U8IntoFelt252::into
 store_temp<RangeCheck>([32]) -> ([23])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
 In function: integer.cairo::U8Add::add
 label_test::main::6:
-
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: integer.cairo::U8Add::add
 enum_match<test::MyEnum>([8]) { fallthrough([37]) label_test::main::10([38]) label_test::main::11([39]) label_test::main::12([40]) }
 Originating location:
     match a {
@@ -641,20 +783,35 @@ Originating location:
     ^*******^
 In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([37]) -> ()
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 jump() { label_test::main::14() }
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 label_test::main::10:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([38]) -> ()
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 label_test::main::14:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 store_temp<RangeCheck>([23]) -> ([41])
 Originating location:
 fn main() {
@@ -666,19 +823,25 @@ fn main() {
 ^*********^
 In function: lib.cairo::main
 label_test::main::11:
-
+Originating location:
+fn main() {
+^*********^
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
-In function: lib.cairo::foo
+fn main() {
+^*********^
+In function: lib.cairo::main
 struct_deconstruct<Tuple<u8, u8, u8>>([39]) -> ([42], [43], [44])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                   ^*******^
 In function: lib.cairo::foo
 drop<u8>([43]) -> ()
-
+Originating location:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                  ^*******^
+In function: lib.cairo::foo
 store_temp<u8>([42]) -> ([45])
 Originating location:
     match a {
@@ -695,7 +858,10 @@ Originating location:
     ^*******^
 In function: lib.cairo::foo
 label_test::main::12:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
@@ -707,7 +873,10 @@ Originating location:
                                          ^*****************^
 In function: lib.cairo::foo
 drop<u8>([48]) -> ()
-
+Originating location:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                         ^*****************^
+In function: lib.cairo::foo
 store_temp<u8>([47]) -> ([45])
 Originating location:
     match a {
@@ -719,7 +888,10 @@ Originating location:
     ^*******^
 In function: lib.cairo::foo
 label_test::main::16:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 u8_overflowing_add([23], [45], [46]) { fallthrough([50], [51]) label_test::main::17([52], [53]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -736,14 +908,20 @@ Originating location:
         ^*****************^
 In function: integer.cairo::U8IntoFelt252::into
 drop<felt252>([54]) -> ()
-
+Originating location:
+        u8_to_felt252(self)
+        ^*****************^
+In function: integer.cairo::U8IntoFelt252::into
 store_temp<RangeCheck>([50]) -> ([41])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
 In function: integer.cairo::U8Add::add
 label_test::main::15:
-
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: integer.cairo::U8Add::add
 enum_match<test::MyEnum>([13]) { fallthrough([55]) label_test::main::19([56]) label_test::main::20([57]) label_test::main::21([58]) }
 Originating location:
     match a {
@@ -755,20 +933,35 @@ Originating location:
     ^*******^
 In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([55]) -> ()
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 jump() { label_test::main::23() }
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 label_test::main::19:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([56]) -> ()
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 label_test::main::23:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 store_temp<RangeCheck>([41]) -> ([59])
 Originating location:
 fn main() {
@@ -780,19 +973,25 @@ fn main() {
 ^*********^
 In function: lib.cairo::main
 label_test::main::20:
-
+Originating location:
+fn main() {
+^*********^
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
-In function: lib.cairo::foo
+fn main() {
+^*********^
+In function: lib.cairo::main
 struct_deconstruct<Tuple<u8, u8, u8>>([57]) -> ([60], [61], [62])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                   ^*******^
 In function: lib.cairo::foo
 drop<u8>([61]) -> ()
-
+Originating location:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                  ^*******^
+In function: lib.cairo::foo
 store_temp<u8>([60]) -> ([63])
 Originating location:
     match a {
@@ -809,7 +1008,10 @@ Originating location:
     ^*******^
 In function: lib.cairo::foo
 label_test::main::21:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
@@ -821,7 +1023,10 @@ Originating location:
                                          ^*****************^
 In function: lib.cairo::foo
 drop<u8>([66]) -> ()
-
+Originating location:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                         ^*****************^
+In function: lib.cairo::foo
 store_temp<u8>([65]) -> ([63])
 Originating location:
     match a {
@@ -833,7 +1038,10 @@ Originating location:
     ^*******^
 In function: lib.cairo::foo
 label_test::main::25:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 u8_overflowing_add([41], [63], [64]) { fallthrough([68], [69]) label_test::main::26([70], [71]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -850,14 +1058,20 @@ Originating location:
         ^*****************^
 In function: integer.cairo::U8IntoFelt252::into
 drop<felt252>([72]) -> ()
-
+Originating location:
+        u8_to_felt252(self)
+        ^*****************^
+In function: integer.cairo::U8IntoFelt252::into
 store_temp<RangeCheck>([68]) -> ([59])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
 In function: integer.cairo::U8Add::add
 label_test::main::24:
-
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: integer.cairo::U8Add::add
 enum_match<test::MyEnum>([18]) { fallthrough([73]) label_test::main::28([74]) label_test::main::29([75]) label_test::main::30([76]) }
 Originating location:
     match a {
@@ -869,20 +1083,35 @@ Originating location:
     ^*******^
 In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([73]) -> ()
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 jump() { label_test::main::32() }
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 label_test::main::28:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([74]) -> ()
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 label_test::main::32:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 store_temp<RangeCheck>([59]) -> ([77])
 Originating location:
 fn main() {
@@ -894,19 +1123,25 @@ fn main() {
 ^*********^
 In function: lib.cairo::main
 label_test::main::29:
-
+Originating location:
+fn main() {
+^*********^
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
-In function: lib.cairo::foo
+fn main() {
+^*********^
+In function: lib.cairo::main
 struct_deconstruct<Tuple<u8, u8, u8>>([75]) -> ([78], [79], [80])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                   ^*******^
 In function: lib.cairo::foo
 drop<u8>([79]) -> ()
-
+Originating location:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                  ^*******^
+In function: lib.cairo::foo
 store_temp<u8>([78]) -> ([81])
 Originating location:
     match a {
@@ -923,7 +1158,10 @@ Originating location:
     ^*******^
 In function: lib.cairo::foo
 label_test::main::30:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
@@ -935,7 +1173,10 @@ Originating location:
                                          ^*****************^
 In function: lib.cairo::foo
 drop<u8>([84]) -> ()
-
+Originating location:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                         ^*****************^
+In function: lib.cairo::foo
 store_temp<u8>([83]) -> ([81])
 Originating location:
     match a {
@@ -947,7 +1188,10 @@ Originating location:
     ^*******^
 In function: lib.cairo::foo
 label_test::main::34:
-
+Originating location:
+    match a {
+    ^*******^
+In function: lib.cairo::foo
 u8_overflowing_add([59], [81], [82]) { fallthrough([86], [87]) label_test::main::35([88], [89]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -964,18 +1208,30 @@ Originating location:
         ^*****************^
 In function: integer.cairo::U8IntoFelt252::into
 drop<felt252>([90]) -> ()
-
+Originating location:
+        u8_to_felt252(self)
+        ^*****************^
+In function: integer.cairo::U8IntoFelt252::into
 store_temp<RangeCheck>([86]) -> ([77])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
 In function: integer.cairo::U8Add::add
 label_test::main::33:
-
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: integer.cairo::U8Add::add
 struct_construct<Unit>() -> ([91])
-
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: integer.cairo::U8Add::add
 struct_construct<Tuple<Unit>>([91]) -> ([92])
-
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: integer.cairo::U8Add::add
 enum_init<core::panics::PanicResult::<((),)>, 0>([92]) -> ([93])
 Originating location:
 fn main() {
@@ -992,21 +1248,30 @@ fn main() {
           ^
 In function: lib.cairo::main
 label_test::main::35:
-
+Originating location:
+fn main() {
+          ^
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^**************************^
-In function: integer.cairo::U8Add::add
+fn main() {
+          ^
+In function: lib.cairo::main
 drop<u8>([89]) -> ()
-
+Originating location:
+fn main() {
+          ^
+In function: lib.cairo::main
 array_new<felt252>() -> ([94])
 Originating location:
         array_new()
         ^*********^
 In function: array.cairo::ArrayImpl::new
 const_as_immediate<Const<felt252, 608642104203229548495787928534675319>>() -> ([95])
-
+Originating location:
+        array_new()
+        ^*********^
+In function: array.cairo::ArrayImpl::new
 store_temp<felt252>([95]) -> ([95])
 Originating location:
         array_append(ref self, value)
@@ -1018,9 +1283,15 @@ Originating location:
         ^***************************^
 In function: array.cairo::ArrayImpl::append
 struct_construct<core::panics::Panic>() -> ([97])
-
+Originating location:
+        array_append(ref self, value)
+        ^***************************^
+In function: array.cairo::ArrayImpl::append
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([97], [96]) -> ([98])
-
+Originating location:
+        array_append(ref self, value)
+        ^***************************^
+In function: array.cairo::ArrayImpl::append
 enum_init<core::panics::PanicResult::<((),)>, 1>([98]) -> ([99])
 Originating location:
     let _ = foo(d);
@@ -1042,27 +1313,45 @@ Originating location:
             ^****^
 In function: lib.cairo::main
 label_test::main::36:
-
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 label_test::main::31:
-
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 label_test::main::26:
-
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^**************************^
-In function: integer.cairo::U8Add::add
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 drop<u8>([71]) -> ()
-
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 drop<test::MyEnum>([18]) -> ()
-
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 array_new<felt252>() -> ([100])
 Originating location:
         array_new()
         ^*********^
 In function: array.cairo::ArrayImpl::new
 const_as_immediate<Const<felt252, 608642104203229548495787928534675319>>() -> ([101])
-
+Originating location:
+        array_new()
+        ^*********^
+In function: array.cairo::ArrayImpl::new
 store_temp<felt252>([101]) -> ([101])
 Originating location:
         array_append(ref self, value)
@@ -1074,9 +1363,15 @@ Originating location:
         ^***************************^
 In function: array.cairo::ArrayImpl::append
 struct_construct<core::panics::Panic>() -> ([103])
-
+Originating location:
+        array_append(ref self, value)
+        ^***************************^
+In function: array.cairo::ArrayImpl::append
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([103], [102]) -> ([104])
-
+Originating location:
+        array_append(ref self, value)
+        ^***************************^
+In function: array.cairo::ArrayImpl::append
 enum_init<core::panics::PanicResult::<((),)>, 1>([104]) -> ([105])
 Originating location:
     let _ = foo(c);
@@ -1098,29 +1393,50 @@ Originating location:
             ^****^
 In function: lib.cairo::main
 label_test::main::27:
-
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 label_test::main::22:
-
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 label_test::main::17:
-
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^**************************^
-In function: integer.cairo::U8Add::add
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 drop<u8>([53]) -> ()
-
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 drop<test::MyEnum>([18]) -> ()
-
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 drop<test::MyEnum>([13]) -> ()
-
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 array_new<felt252>() -> ([106])
 Originating location:
         array_new()
         ^*********^
 In function: array.cairo::ArrayImpl::new
 const_as_immediate<Const<felt252, 608642104203229548495787928534675319>>() -> ([107])
-
+Originating location:
+        array_new()
+        ^*********^
+In function: array.cairo::ArrayImpl::new
 store_temp<felt252>([107]) -> ([107])
 Originating location:
         array_append(ref self, value)
@@ -1132,9 +1448,15 @@ Originating location:
         ^***************************^
 In function: array.cairo::ArrayImpl::append
 struct_construct<core::panics::Panic>() -> ([109])
-
+Originating location:
+        array_append(ref self, value)
+        ^***************************^
+In function: array.cairo::ArrayImpl::append
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([109], [108]) -> ([110])
-
+Originating location:
+        array_append(ref self, value)
+        ^***************************^
+In function: array.cairo::ArrayImpl::append
 enum_init<core::panics::PanicResult::<((),)>, 1>([110]) -> ([111])
 Originating location:
     let _ = foo(b);
@@ -1156,31 +1478,55 @@ Originating location:
             ^****^
 In function: lib.cairo::main
 label_test::main::18:
-
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 label_test::main::13:
-
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 label_test::main::8:
-
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^**************************^
-In function: integer.cairo::U8Add::add
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 drop<u8>([35]) -> ()
-
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 drop<test::MyEnum>([18]) -> ()
-
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 drop<test::MyEnum>([13]) -> ()
-
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 drop<test::MyEnum>([8]) -> ()
-
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 array_new<felt252>() -> ([112])
 Originating location:
         array_new()
         ^*********^
 In function: array.cairo::ArrayImpl::new
 const_as_immediate<Const<felt252, 608642104203229548495787928534675319>>() -> ([113])
-
+Originating location:
+        array_new()
+        ^*********^
+In function: array.cairo::ArrayImpl::new
 store_temp<felt252>([113]) -> ([113])
 Originating location:
         array_append(ref self, value)
@@ -1192,9 +1538,15 @@ Originating location:
         ^***************************^
 In function: array.cairo::ArrayImpl::append
 struct_construct<core::panics::Panic>() -> ([115])
-
+Originating location:
+        array_append(ref self, value)
+        ^***************************^
+In function: array.cairo::ArrayImpl::append
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([115], [114]) -> ([116])
-
+Originating location:
+        array_append(ref self, value)
+        ^***************************^
+In function: array.cairo::ArrayImpl::append
 enum_init<core::panics::PanicResult::<((),)>, 1>([116]) -> ([117])
 Originating location:
     let _ = foo(a);
@@ -1216,8 +1568,15 @@ Originating location:
             ^****^
 In function: lib.cairo::main
 label_test::main::9:
-
+Originating location:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
 label_test::main::4:
+Originating location:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
 
 //! > ==========================================================================
 
@@ -1263,7 +1622,10 @@ Originating location:
                       ^************^
 In function: lib.cairo::test_pedersen
 const_as_immediate<Const<felt252, 3>>() -> ([5])
-
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+                      ^************^
+In function: lib.cairo::test_pedersen
 store_temp<felt252>([4]) -> ([4])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
@@ -1280,7 +1642,10 @@ Originating location:
              ^*************************^
 In function: lib.cairo::test_pedersen
 const_as_immediate<Const<felt252, 4>>() -> ([8])
-
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+             ^*************************^
+In function: lib.cairo::test_pedersen
 store_temp<felt252>([7]) -> ([7])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
