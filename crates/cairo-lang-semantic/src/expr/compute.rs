@@ -833,8 +833,9 @@ pub fn compute_root_expr(
     return_type: TypeId,
 ) -> Maybe<ExprId> {
     let res = compute_expr_block_semantic(ctx, syntax)?;
-    let res_ty = res.ty();
+    let res_ty = ctx.reduce_ty(res.ty());
     let res = ctx.exprs.alloc(res);
+    let return_type = ctx.reduce_ty(return_type);
     if ctx.resolver.inference().conform_ty(res_ty, return_type).is_err() {
         ctx.diagnostics
             .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res_ty });
