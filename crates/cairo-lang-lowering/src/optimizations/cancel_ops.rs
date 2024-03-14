@@ -6,6 +6,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, izip, zip_eq, Itertools};
 
+use super::var_renamer::VarRenamer;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
@@ -62,7 +63,7 @@ pub struct CancelOpsContext<'a> {
     use_sites: UnorderedHashMap<VariableId, Vec<StatementLocation>>,
 
     /// Maps a variable to the variable that it was renamed to.
-    var_remapper: CancelOpsRebuilder,
+    var_remapper: VarRenamer,
 
     /// Keeps track of all the aliases created by the renaming.
     aliases: UnorderedHashMap<VariableId, Vec<VariableId>>,
@@ -323,28 +324,5 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
         for var in vars {
             self.add_use_site(var.var_id, statement_location);
         }
-    }
-}
-
-#[derive(Default)]
-pub struct CancelOpsRebuilder {
-    renamed_vars: UnorderedHashMap<VariableId, VariableId>,
-}
-
-impl Rebuilder for CancelOpsRebuilder {
-    fn map_var_id(&mut self, var: VariableId) -> VariableId {
-        let Some(mut new_var_id) = self.renamed_vars.get(&var).cloned() else {
-            return var;
-        };
-        while let Some(new_id) = self.renamed_vars.get(&new_var_id) {
-            new_var_id = *new_id;
-        }
-
-        self.renamed_vars.insert(var, new_var_id);
-        new_var_id
-    }
-
-    fn map_block_id(&mut self, block: BlockId) -> BlockId {
-        block
     }
 }

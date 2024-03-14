@@ -9,6 +9,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
 
+use super::var_renamer::VarRenamer;
 use crate::ids::LocationId;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
@@ -139,7 +140,7 @@ struct SplitStructsContext<'a> {
     /// The variables that were reconstructed as they were needed.
     reconstructed: ReconstructionMapping,
     // A renamer that keeps track of renamed vars.
-    var_remapper: VarRename,
+    var_remapper: VarRenamer,
     // The variables arena.
     variables: &'a mut Arena<Variable>,
 }
@@ -148,7 +149,7 @@ struct SplitStructsContext<'a> {
 fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
     let mut ctx = SplitStructsContext {
         reconstructed: Default::default(),
-        var_remapper: VarRename::default(),
+        var_remapper: VarRenamer::default(),
         variables: &mut lowered.variables,
     };
 
@@ -403,29 +404,5 @@ impl SplitStructsContext<'_> {
                 }
             }
         }
-    }
-}
-
-#[derive(Default)]
-pub struct VarRename {
-    renamed_vars: UnorderedHashMap<VariableId, VariableId>,
-}
-
-impl Rebuilder for VarRename {
-    fn map_var_id(&mut self, var: VariableId) -> VariableId {
-        let Some(mut new_var_id) = self.renamed_vars.get(&var).cloned() else {
-            return var;
-        };
-        while let Some(new_id) = self.renamed_vars.get(&new_var_id) {
-            assert_ne!(new_var_id, *new_id);
-            new_var_id = *new_id;
-        }
-
-        self.renamed_vars.insert(var, new_var_id);
-        new_var_id
-    }
-
-    fn map_block_id(&mut self, block: BlockId) -> BlockId {
-        block
     }
 }
