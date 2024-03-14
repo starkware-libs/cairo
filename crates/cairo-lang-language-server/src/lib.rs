@@ -1428,6 +1428,7 @@ fn get_identifier_hint(
     Some(format!("`{}`", item.full_path(db)))
 }
 
+// TODO: test this
 /// If the node is an expression, retrieves a hover hint for it.
 #[tracing::instrument(level = "trace", skip_all)]
 fn get_expr_hint(db: &dyn DefsGroup, lookup_item_id: LookupItemId) -> Option<Vec<MarkedString>> {
