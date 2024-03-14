@@ -981,9 +981,17 @@ fn compute_arm_semantic(
                         std::collections::hash_map::Entry::Occupied(entry) => {
                             let get_location = || variable.stable_ptr.lookup(db.upcast());
                             let var = entry.get();
-                            let expected_ty = var.ty;
 
-                            if expected_ty != variable.var.ty {
+                            let expected_ty = new_ctx.reduce_ty(var.ty);
+                            let actual_ty = new_ctx.reduce_ty(variable.var.ty);
+
+                            if !variable.var.ty.is_missing(new_ctx.db)
+                                && new_ctx
+                                    .resolver
+                                    .inference()
+                                    .conform_ty(actual_ty, expected_ty)
+                                    .is_err()
+                            {
                                 new_ctx.diagnostics.report(
                                     &get_location(),
                                     WrongType { expected_ty, actual_ty: variable.var.ty },
