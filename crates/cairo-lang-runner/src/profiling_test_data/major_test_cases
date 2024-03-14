@@ -801,9 +801,8 @@ Weight by Cairo function:
   function ec.cairo::EcStateImpl::sub: 10
   function lib.cairo::Felt252PartialEq::eq: 9
   function ec.cairo::EcStateImpl::init: 7
-  function ecdsa.cairo::check_ecdsa_signature: 6
+  function ecdsa.cairo::check_ecdsa_signature: 7
   function ec.cairo::EcPointTryIntoNonZero::try_into: 3
-  function unknown: 1
 Weight by Sierra stack trace:
   test::ecdsa_call: 184
   test::ecdsa_call -> core::ecdsa::check_ecdsa_signature: 170

@@ -207,7 +207,7 @@ pub fn dummy_simple_branch(
 
 /// Generates a dummy return statement.
 pub fn dummy_return_statement(args: &[&str]) -> pre_sierra::StatementWithLocation {
-    return_statement(as_var_id_vec(args))
+    return_statement(as_var_id_vec(args)).into_statement_without_location()
 }
 
 /// Generates a dummy label.
@@ -222,6 +222,7 @@ pub fn dummy_jump_statement(
     id: usize,
 ) -> pre_sierra::StatementWithLocation {
     jump_statement(dummy_concrete_lib_func_id(db, "jump"), label_id_from_usize(db, id))
+        .into_statement_without_location()
 }
 
 /// Returns the [pre_sierra::LabelId] for the given `id`.
