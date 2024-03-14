@@ -59,6 +59,9 @@ struct Args {
     /// Should disable gas calculation.
     #[arg(long)]
     gas_disabled: bool,
+    /// Whether to print resource usage after each test.
+    #[arg(long, default_value_t = false)]
+    print_resource_usage: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -73,6 +76,7 @@ fn main() -> anyhow::Result<()> {
         include_ignored: args.include_ignored,
         run_profiler: args.run_profiler.into(),
         gas_enabled: !args.gas_disabled,
+        print_resource_usage: args.print_resource_usage,
     };
 
     let runner = TestRunner::new(&args.path, args.starknet, args.allow_warnings, config)?;
