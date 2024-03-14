@@ -141,15 +141,20 @@ pub fn resolve_const_expr_and_evaluate(
     const_stable_ptr: SyntaxStablePtrId,
     target_type: TypeId,
 ) -> (TypeId, ConstValue) {
-    if let Err(err) = ctx.resolver.inference().conform_ty(value.ty(), target_type) {
-        err.report(ctx.diagnostics, const_stable_ptr);
+    let inference = &mut ctx.resolver.inference();
+    if let Err(err_set) = inference.conform_ty(value.ty(), target_type) {
+        inference.report_on_pending_error(err_set, ctx.diagnostics, const_stable_ptr);
     }
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
-        inference_err.report(ctx.diagnostics, stable_ptr.unwrap_or(const_stable_ptr));
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            err_set,
+            ctx.diagnostics,
+            err_stable_ptr.unwrap_or(const_stable_ptr),
+        );
     }
     for (_, expr) in ctx.exprs.iter_mut() {
-        *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
+        *expr = inference.rewrite(expr.clone()).no_err();
     }
     match &value.expr {
         Expr::ParamConstant(expr) => (expr.ty, db.lookup_intern_const_value(expr.const_value_id)),

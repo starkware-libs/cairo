@@ -76,7 +76,7 @@ pub fn canonic_trait_solutions(
     db: &dyn SemanticGroup,
     canonical_trait: CanonicalTrait,
     lookup_context: ImplLookupContext,
-) -> InferenceResult<SolutionSet<CanonicalImpl>> {
+) -> Result<SolutionSet<CanonicalImpl>, InferenceError> {
     let mut solver = Solver::new(db, canonical_trait, lookup_context);
     Ok(solver.solution_set(db))
 }
@@ -87,7 +87,7 @@ pub fn canonic_trait_solutions_cycle(
     _cycle: &[String],
     _canonical_trait: &CanonicalTrait,
     _lookup_context: &ImplLookupContext,
-) -> InferenceResult<SolutionSet<CanonicalImpl>> {
+) -> Result<SolutionSet<CanonicalImpl>, InferenceError> {
     Err(InferenceError::Cycle { var: InferenceVar::Impl(LocalImplVarId(0)) })
 }
 

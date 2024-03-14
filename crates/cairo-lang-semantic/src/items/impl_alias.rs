@@ -63,12 +63,16 @@ pub fn priv_impl_alias_semantic_data(
     });
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(impl_alias_ast.stable_ptr().untyped()));
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            err_set,
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(impl_alias_ast.stable_ptr().untyped()),
+        );
     }
-    let resolved_impl = resolver.inference().rewrite(resolved_impl).no_err();
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let resolved_impl = inference.rewrite(resolved_impl).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     let attributes = impl_alias_ast.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
@@ -163,10 +167,15 @@ pub fn impl_alias_generic_params_data(
         module_file_id,
         &impl_alias_ast.generic_params(syntax_db),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, impl_alias_ast.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            err_set,
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(impl_alias_ast.stable_ptr().untyped()),
+        );
+    }
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
