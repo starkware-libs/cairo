@@ -541,7 +541,10 @@ pub trait SemanticGroup:
         &self,
         canonical_trait: inference::canonic::CanonicalTrait,
         lookup_context: ImplLookupContext,
-    ) -> inference::InferenceResult<inference::solver::SolutionSet<inference::canonic::CanonicalImpl>>;
+    ) -> Result<
+        inference::solver::SolutionSet<inference::canonic::CanonicalImpl>,
+        inference::InferenceError,
+    >;
 
     // Impl.
     // =======

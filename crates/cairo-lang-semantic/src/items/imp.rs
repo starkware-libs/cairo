@@ -245,10 +245,15 @@ pub fn impl_def_generic_params_data(
         module_file_id,
         &impl_ast.generic_params(db.upcast()),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, impl_ast.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            err_set,
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()),
+        );
+    }
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
@@ -405,12 +410,16 @@ pub fn priv_impl_declaration_data_inner(
     };
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()));
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            err_set,
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()),
+        );
     }
-    let concrete_trait = resolver.inference().rewrite(concrete_trait).no_err();
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let concrete_trait = inference.rewrite(concrete_trait).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     let attributes = impl_ast.attributes(syntax_db).structurize(syntax_db);
     let mut resolver_data = resolver.data;
@@ -1049,6 +1058,9 @@ pub fn find_candidates_at_context(
 
 /// Checks if an impl of a trait function with a given self_ty exists.
 /// This function does not change the state of the inference context.
+///
+/// `inference_errors` are aggregated here but are not reported here as diagnostics.
+/// The caller has to make sure the diagnostics are reported appropriately.
 pub fn can_infer_impl_by_self(
     ctx: &ComputationContext<'_>,
     inference_errors: &mut Vec<(TraitFunctionId, InferenceError)>,
@@ -1069,8 +1081,11 @@ pub fn can_infer_impl_by_self(
         return false;
     };
     // Find impls for it.
-    if let Err(err) = temp_inference.solve() {
-        inference_errors.push((trait_function_id, err));
+    if let Err(err_set) = temp_inference.solve() {
+        // Error is propagated and will be reported later.
+        if let Some(err) = temp_inference.consume_error_without_reporting(err_set) {
+            inference_errors.push((trait_function_id, err));
+        }
     }
     match temp_inference.trait_solution_set(concrete_trait_id, lookup_context.clone()) {
         Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_)) => true,
@@ -1079,8 +1094,11 @@ pub fn can_infer_impl_by_self(
                 .push((trait_function_id, InferenceError::NoImplsFound { concrete_trait_id }));
             false
         }
-        Err(err) => {
-            inference_errors.push((trait_function_id, err));
+        Err(err_set) => {
+            // Error is propagated and will be reported later.
+            if let Some(err) = temp_inference.consume_error_without_reporting(err_set) {
+                inference_errors.push((trait_function_id, err));
+            }
             false
         }
     }
@@ -1120,15 +1138,14 @@ pub fn infer_impl_by_self(
         .unwrap();
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
-    let generic_function = ctx
-        .resolver
-        .inference()
+    let inference = &mut ctx.resolver.inference();
+    let generic_function = inference
         .infer_trait_generic_function(
             concrete_trait_function_id,
             &impl_lookup_context,
             Some(stable_ptr),
         )
-        .map_err(|err| err.report(ctx.diagnostics, stable_ptr))
+        .map_err(|err_set| inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr))
         .unwrap();
 
     Some((
@@ -1141,6 +1158,9 @@ pub fn infer_impl_by_self(
 
 /// Returns all the trait functions that fit the given function name, can be called on the given
 /// `self_ty`, and have at least one implementation in context.
+///
+/// `inference_errors` are aggregated here but are not reported here as diagnostics.
+/// The caller has to make sure the diagnostics are reported appropriately.
 pub fn filter_candidate_traits(
     ctx: &mut ComputationContext<'_>,
     inference_errors: &mut Vec<(TraitFunctionId, InferenceError)>,
@@ -1416,10 +1436,15 @@ pub fn priv_impl_function_generic_params_data(
         module_file_id,
         &declaration.generic_params(syntax_db),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, function_syntax.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            err_set,
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()),
+        );
+    }
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
@@ -1544,12 +1569,16 @@ pub fn priv_impl_function_declaration_data(
     let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            err_set,
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()),
+        );
     }
-    let signature = resolver.inference().rewrite(signature).no_err();
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let signature = inference.rewrite(signature).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(ImplFunctionDeclarationData {

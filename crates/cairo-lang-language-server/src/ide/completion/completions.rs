@@ -349,6 +349,8 @@ fn find_methods_for_type(
             };
 
             // Find impls for it.
+
+            // ignore the result as nothing can be done with the error, if any.
             inference.solve().ok();
             if !matches!(
                 inference.trait_solution_set(concrete_trait_id, lookup_context),

@@ -125,11 +125,6 @@ error: Unexpected argument type. Expected: "test::bar::<?12, ?13>::Coupon", foun
     z = get_struct();
         ^**********^
 
-error: Type annotations needed. Failed to infer ?8
- --> lib.cairo:22:17
-    let mut y = get_coupon();
-                ^********^
-
 //! > ==========================================================================
 
 //! > Test finding impls.
@@ -214,11 +209,6 @@ error: The __coupon__ argument cannot have modifiers.
  --> lib.cairo:10:28
     bar(1, ref __coupon__: x); // Wrong mutability.
                            ^
-
-error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:5:5
-    bar(1); // Cannot infer S.
-    ^*^
 
 //! > ==========================================================================
 
