@@ -4,7 +4,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::panic::AssertUnwindSafe;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use std::{env, io};
@@ -101,9 +101,11 @@ pub async fn start() {
 ///
 /// Returns a guard that should be dropped when the LS ends, to flush log files.
 fn init_logging() -> Option<impl Drop> {
+    use std::ffi::OsString;
+    use std::fs;
     use std::io::IsTerminal;
 
-    use tracing_flame::FlameLayer;
+    use tracing_chrome::{ChromeLayerBuilder, TraceStyle};
     use tracing_subscriber::filter::{EnvFilter, LevelFilter};
     use tracing_subscriber::fmt::format::FmtSpan;
     use tracing_subscriber::fmt::time::Uptime;
@@ -124,33 +126,43 @@ fn init_logging() -> Option<impl Drop> {
                 .from_env_lossy(),
         );
 
-    let flame_layer = if let Some(path) = env::var_os("CAIRO_LS_LOG_FLAME") {
-        {
-            let path = Path::new(&path).display();
-            eprintln!("this LS run will generate flame data at: {path}");
-            eprintln!();
-            eprintln!("run the following to generate a flamegraph:");
-            eprintln!("inferno-flamegraph {path} > cairols-flamegraph.svg");
-            eprintln!();
-            eprintln!("run the following to generate a flamechart:");
-            eprintln!("inferno-flamegraph {path} --flamechart > cairols-flamegraph.svg");
-            eprintln!();
-            eprintln!("(you might need to run `cargo install inferno` beforehand)");
+    fn env_to_bool(os: Option<OsString>) -> bool {
+        matches!(os.as_ref().and_then(|os| os.to_str()), Some("1") | Some("true"))
+    }
+
+    let profile_layer = if env_to_bool(env::var_os("CAIRO_LS_PROFILE")) {
+        let mut path = PathBuf::from(format!(
+            "./cairols-profile-{}.json",
+            SystemTime::UNIX_EPOCH.elapsed().unwrap().as_micros()
+        ));
+
+        // Create the file now, so that we early panic, and `fs::canonicalize` will work.
+        let profile_file = fs::File::create(&path).expect("Failed to create profile file.");
+
+        // Try to canonicalize the path, so that it's easier to find the file from logs.
+        if let Ok(canonical) = fs::canonicalize(&path) {
+            path = canonical;
         }
 
-        let (mut flame_layer, flame_layer_guard) =
-            FlameLayer::with_file(path).expect("Could not set up flame tracing layer.");
+        eprintln!("this LS run will output tracing profile to: {}", path.display());
+        eprintln!(
+            "open that file with https://ui.perfetto.dev (or chrome://tracing) to analyze it"
+        );
 
-        flame_layer = flame_layer.with_empty_samples(false);
+        let (profile_layer, profile_layer_guard) = ChromeLayerBuilder::new()
+            .writer(profile_file)
+            .trace_style(TraceStyle::Async)
+            .include_args(true)
+            .build();
 
-        guard = Some(flame_layer_guard);
-        Some(flame_layer)
+        guard = Some(profile_layer_guard);
+        Some(profile_layer)
     } else {
         None
     };
 
     tracing::subscriber::set_global_default(
-        tracing_subscriber::registry().with(fmt_layer).with(flame_layer),
+        tracing_subscriber::registry().with(fmt_layer).with(profile_layer),
     )
     .expect("Could not set up global logger.");
 
