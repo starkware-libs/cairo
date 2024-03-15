@@ -234,11 +234,11 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
         }
     }
 
-    fn merge_match(
-        &mut self,
+    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
+        &'b mut self,
         statement_location: StatementLocation,
         match_info: &lowering::MatchInfo,
-        infos: &[Self::Info],
+        infos: Infos,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .map(|(arm, demand)| {

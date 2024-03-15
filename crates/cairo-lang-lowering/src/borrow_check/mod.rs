@@ -196,11 +196,11 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         );
     }
 
-    fn merge_match(
+    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
         &mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        infos: &[Self::Info],
+        infos: Infos,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .map(|(arm, demand)| {
