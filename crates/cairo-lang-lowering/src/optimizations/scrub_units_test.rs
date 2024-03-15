@@ -18,10 +18,10 @@ cairo_lang_test_utils::test_file_test!(
     {
         scrub_units: "scrub_units"
     },
-    test_return_optimizer
+    test_scrub_units
 );
 
-fn test_return_optimizer(
+fn test_scrub_units(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
