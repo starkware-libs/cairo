@@ -69,11 +69,11 @@ impl ReturnOptimizerContext<'_> {
 
     /// Helper function for `merge_match`.
     /// Returns `Option<ReturnInfo>` rather then `AnalyzerInfo` to simplify early return.
-    fn try_merge_match(
+    fn try_merge_match<'b>(
         &mut self,
         (block_id, _statement_idx): StatementLocation,
         match_info: &MatchInfo,
-        infos: &[AnalyzerInfo],
+        infos: impl IntoIterator<Item = &'b AnalyzerInfo> + Clone,
     ) -> Option<ReturnInfo> {
         let MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) = match_info else {
             return None;
@@ -464,12 +464,16 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         }
     }
 
-    fn merge_match(
+    fn merge_match<'b, Infos>(
         &mut self,
         (block_id, _statement_idx): StatementLocation,
         match_info: &'a MatchInfo,
-        infos: &[Self::Info],
-    ) -> Self::Info {
+        infos: Infos,
+    ) -> Self::Info
+    where
+        'a: 'b,
+        Infos: Iterator<Item = &'b Self::Info> + Clone,
+    {
         Self::Info {
             opt_return_info: self.try_merge_match((block_id, _statement_idx), match_info, infos),
         }
