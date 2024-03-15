@@ -427,7 +427,7 @@ impl MatchInfo {
             MatchInfo::Value(s) => std::slice::from_mut(&mut s.input),
         }
     }
-    pub fn arms(&self) -> &Vec<MatchArm> {
+    pub fn arms(&self) -> &[MatchArm] {
         match self {
             MatchInfo::Enum(s) => &s.arms,
             MatchInfo::Extern(s) => &s.arms,

@@ -134,11 +134,11 @@ impl Analyzer<'_> for TopSortContext {
         self.incoming_gotos[target_block_id.0] += 1;
     }
 
-    fn merge_match(
-        &mut self,
+    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
+        &'b mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        _infos: &[Self::Info],
+        _infos: Infos,
     ) -> Self::Info {
         for var_usage in match_info.inputs() {
             self.remappings_ctx.set_used(var_usage.var_id);
