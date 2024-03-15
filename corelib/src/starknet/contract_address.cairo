@@ -2,6 +2,7 @@ use core::zeroable::Zeroable;
 use core::serde::Serde;
 use core::hash::{Hash, HashStateTrait};
 
+/// The value range of this type is `[0, 2**251)`.
 #[derive(Copy, Drop)]
 pub extern type ContractAddress;
 
