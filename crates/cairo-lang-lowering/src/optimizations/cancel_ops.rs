@@ -305,11 +305,11 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
         }
     }
 
-    fn merge_match(
-        &mut self,
+    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
+        &'b mut self,
         statement_location: StatementLocation,
         match_info: &'a MatchInfo,
-        _infos: &[Self::Info],
+        _infos: Infos,
     ) -> Self::Info {
         for var in match_info.inputs() {
             self.add_use_site(var.var_id, statement_location);
