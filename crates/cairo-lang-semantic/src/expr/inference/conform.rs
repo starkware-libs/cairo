@@ -291,7 +291,7 @@ impl<'db> InferenceConform for Inference<'db> {
             let impl_concrete_trait = self
                 .db
                 .impl_concrete_trait(impl0)
-                .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?;
+                .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
             self.conform_traits(var.get(self.db).concrete_trait_id, impl_concrete_trait)?;
             let impl_id = self.rewrite(impl0).no_err();
             return self.assign_impl(var, impl_id);
@@ -301,7 +301,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 let impl_concrete_trait = self
                     .db
                     .impl_concrete_trait(impl1)
-                    .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?;
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
                 self.conform_traits(var.get(self.db).concrete_trait_id, impl_concrete_trait)?;
                 let impl_id = self.rewrite(impl1).no_err();
                 self.assign_impl(var, impl_id)
