@@ -1057,6 +1057,9 @@ pub fn find_candidates_at_context(
 
 /// Checks if an impl of a trait function with a given self_ty exists.
 /// This function does not change the state of the inference context.
+///
+/// `inference_errors` are aggregated here but are not reported here as diagnostics.
+/// The caller has to make sure the diagnostics are reported appropriately.
 pub fn can_infer_impl_by_self(
     ctx: &ComputationContext<'_>,
     inference_errors: &mut Vec<(TraitFunctionId, InferenceError)>,
@@ -1078,7 +1081,7 @@ pub fn can_infer_impl_by_self(
     };
     // Find impls for it.
     if let Err(err_set) = temp_inference.solve() {
-        if let Some(err) = temp_inference.consume_error() {
+        if let Some(err) = temp_inference.consume_error_without_reporting() {
             inference_errors.push((trait_function_id, err));
         }
     }
@@ -1090,7 +1093,7 @@ pub fn can_infer_impl_by_self(
             false
         }
         Err(err_set) => {
-            if let Some(err) = temp_inference.consume_error() {
+            if let Some(err) = temp_inference.consume_error_without_reporting() {
                 inference_errors.push((trait_function_id, err));
             }
             false
@@ -1152,6 +1155,9 @@ pub fn infer_impl_by_self(
 
 /// Returns all the trait functions that fit the given function name, can be called on the given
 /// `self_ty`, and have at least one implementation in context.
+///
+/// `inference_errors` are aggregated here but are not reported here as diagnostics.
+/// The caller has to make sure the diagnostics are reported appropriately.
 pub fn filter_candidate_traits(
     ctx: &mut ComputationContext<'_>,
     inference_errors: &mut Vec<(TraitFunctionId, InferenceError)>,

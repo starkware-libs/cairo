@@ -1408,6 +1408,8 @@ fn compute_method_function_call_data(
                 ),
             ));
         }
+        // TODO(yg): can it happen that there are errors in these 2 cases, which are not getting
+        // reported? Should they?
         [trait_function_id] => trait_function_id,
         [trait_function_id0, trait_function_id1, ..] => {
             return Err(ctx.diagnostics.report_by_ptr(

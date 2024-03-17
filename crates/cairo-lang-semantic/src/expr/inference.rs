@@ -394,21 +394,21 @@ impl<'db> Inference<'db> {
     }
     // TODO(yg): consider receiving a param of type ErrorSet.
     // TODO(yg): consider panicking instead of returning Option.
-    pub fn consume_error(&mut self) -> Option<InferenceError> {
+    pub fn consume_error_without_reporting(&mut self) -> Option<InferenceError> {
         if self.error_status != Err(InferenceErrorStatus::Pending) {
             return None;
         }
         self.error_status = Err(InferenceErrorStatus::Consumed);
-        // TODO(yg): can we do without skip?
+        // TODO(yg): note about it in the doc. Use with caution.
         self.consumed_error = Some(skip_diagnostic());
         mem::take(&mut self.error)
     }
-    pub fn get_consumed_error(&self) -> Option<DiagnosticAdded> {
-        if self.error_status != Err(InferenceErrorStatus::Consumed) {
-            return None;
-        }
-        self.consumed_error
-    }
+    // pub fn get_consumed_error(&self) -> Option<DiagnosticAdded> {
+    //     if self.error_status != Err(InferenceErrorStatus::Consumed) {
+    //         return None;
+    //     }
+    //     self.consumed_error
+    // }
     pub fn report_on_pending_error(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
@@ -418,7 +418,9 @@ impl<'db> Inference<'db> {
             panic!("report_on_pending_error should be called only on error");
         };
         match state_error {
-            InferenceErrorStatus::Consumed => self.consumed_error.unwrap(),
+            InferenceErrorStatus::Consumed => self
+                .consumed_error
+                .expect("consumed_error is not set although error_status is Err(Consumed)"),
             InferenceErrorStatus::Pending => {
                 let diag_added = mem::take(&mut self.error)
                     .expect("error is not set although error_status is Err(Pending)")
@@ -430,9 +432,14 @@ impl<'db> Inference<'db> {
     }
     pub fn set_error(&mut self, err: InferenceError) {
         // TODO(yg): verify error_status is Ok. What if not?
-        self.error_status = Err(InferenceErrorStatus::Pending);
+        self.error_status = if matches!(err, InferenceError::Failed(_)) {
+            Err(InferenceErrorStatus::Consumed)
+        } else {
+            Err(InferenceErrorStatus::Pending)
+        };
         self.error = Some(err);
     }
+    // TODO(ygg): remove. use set_error(Failed()) instead.
     pub fn set_reported_error(&mut self, diag_added: DiagnosticAdded) {
         self.error_status = Err(InferenceErrorStatus::Consumed);
         self.consumed_error = Some(diag_added);

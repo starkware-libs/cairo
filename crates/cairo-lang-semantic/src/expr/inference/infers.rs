@@ -249,6 +249,9 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
     /// Supports snapshot snapshot coercions.
     ///
     /// Returns the deduced type and the number of snapshots that need to be added to it.
+    ///
+    /// `inference_error_cb` is called for inference errors, but they are not reported here as
+    /// diagnostics. The caller has to make sure the diagnostics are reported appropriately.
     fn infer_concrete_trait_by_self(
         &mut self,
         trait_function: TraitFunctionId,
@@ -268,7 +271,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             match self.infer_generic_args(&generic_params, lookup_context, stable_ptr) {
                 Ok(generic_args) => generic_args,
                 Err(_) => {
-                    if let Some(err) = self.consume_error() {
+                    if let Some(err) = self.consume_error_without_reporting() {
                         inference_error_cb(err);
                     }
                     return None;
@@ -281,7 +284,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         let (_, n_snapshots) = match self.conform_ty_ex(self_ty, fixed_param_ty, true) {
             Ok(conform) => conform,
             Err(_) => {
-                if let Some(err) = self.consume_error() {
+                if let Some(err) = self.consume_error_without_reporting() {
                     inference_error_cb(err);
                 }
                 return None;
