@@ -491,15 +491,19 @@ fn compute_expr_unary_semantic(
     };
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
-    let mut inference = &mut ctx.resolver.inference();
+    let inference = &mut ctx.resolver.inference();
     let function = inference
         .infer_trait_function(
             concrete_trait_function,
             &impl_lookup_context,
             Some(syntax.stable_ptr().untyped()),
         )
-        .map_err(|_| {
-            inference.report_on_pending_error(ctx.diagnostics, syntax.stable_ptr().untyped())
+        .map_err(|err_set| {
+            inference.report_on_pending_error(
+                err_set,
+                ctx.diagnostics,
+                syntax.stable_ptr().untyped(),
+            )
         })?;
 
     expr_function_call(
@@ -631,8 +635,12 @@ fn call_core_binary_op(
             &impl_lookup_context,
             Some(syntax.stable_ptr().untyped()),
         )
-        .map_err(|_| {
-            inference.report_on_pending_error(ctx.diagnostics, syntax.stable_ptr().untyped())
+        .map_err(|err_set| {
+            inference.report_on_pending_error(
+                err_set,
+                ctx.diagnostics,
+                syntax.stable_ptr().untyped(),
+            )
         })?;
 
     let sig = ctx.db.concrete_function_signature(function)?;
@@ -847,6 +855,7 @@ pub fn compute_root_expr(
     let inference = &mut ctx.resolver.inference();
     if let Err((err_set, err_stable_ptr)) = inference.finalize() {
         inference.report_on_pending_error(
+            err_set,
             ctx.diagnostics,
             err_stable_ptr.unwrap_or(syntax.stable_ptr().untyped()),
         );
@@ -1578,7 +1587,9 @@ fn maybe_compute_pattern_semantic(
             let inference = &mut ctx.resolver.inference();
             inference
                 .conform_ty(pattern_ty, ctx.db.intern_type(peel_snapshots(ctx.db, ty).1))
-                .map_err(|_| inference.report_on_pending_error(ctx.diagnostics, stable_ptr))?;
+                .map_err(|err_set| {
+                    inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr)
+                })?;
             let ty = ctx.reduce_ty(ty);
             // Peel all snapshot wrappers.
             let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
@@ -1727,9 +1738,9 @@ fn maybe_compute_pattern_semantic(
         }
     };
     let inference = &mut ctx.resolver.inference();
-    inference
-        .conform_ty(pattern.ty(), ty)
-        .map_err(|_| inference.report_on_pending_error(ctx.diagnostics, stable_ptr))?;
+    inference.conform_ty(pattern.ty(), ty).map_err(|err_set| {
+        inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr)
+    })?;
     Ok(pattern)
 }
 
@@ -2045,9 +2056,9 @@ fn new_literal_expr(
         ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
     let lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
-    inference
-        .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
-        .map_err(|_| inference.report_on_pending_error(ctx.diagnostics, stable_ptr.untyped()))?;
+    inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context).map_err(
+        |err_set| inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr.untyped()),
+    )?;
 
     Ok(ExprLiteral { value, ty, stable_ptr })
 }
@@ -2097,9 +2108,9 @@ fn new_string_literal_expr(
         ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
     let lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
-    inference
-        .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
-        .map_err(|_| inference.report_on_pending_error(ctx.diagnostics, stable_ptr.untyped()))?;
+    inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context).map_err(
+        |err_set| inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr.untyped()),
+    )?;
 
     Ok(ExprStringLiteral { value, ty, stable_ptr })
 }
@@ -2176,7 +2187,7 @@ fn method_call_expr(
     let func_name = segment.identifier(syntax_db);
     let generic_args_syntax = segment.generic_args(syntax_db);
     // Save some work. ignore the result. The error, if any, will be reported later.
-    ctx.resolver.inference().solve();
+    ctx.resolver.inference().solve().ok();
 
     let mut candidate_traits = traits_in_context(ctx)?;
 

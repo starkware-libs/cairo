@@ -176,8 +176,6 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             .concrete_trait(self.db)
             .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?;
         if imp_concrete_trait.trait_id(self.db) != concrete_trait_id.trait_id(self.db) {
-            // TODO(yg): change ret value to be ErrorSet (similar to DiagnosticAdded) and change
-            // InferenceResult to have it instead of ().
             return Err(self.set_error(InferenceError::TraitMismatch {
                 trt0: imp_concrete_trait.trait_id(self.db),
                 trt1: concrete_trait_id.trait_id(self.db),
@@ -270,8 +268,8 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         let generic_args =
             match self.infer_generic_args(&generic_params, lookup_context, stable_ptr) {
                 Ok(generic_args) => generic_args,
-                Err(_) => {
-                    if let Some(err) = self.consume_error_without_reporting() {
+                Err(err_set) => {
+                    if let Some(err) = self.consume_error_without_reporting(err_set) {
                         inference_error_cb(err);
                     }
                     return None;
@@ -283,8 +281,8 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         let fixed_param_ty = rewriter.rewrite(first_param.ty).ok()?;
         let (_, n_snapshots) = match self.conform_ty_ex(self_ty, fixed_param_ty, true) {
             Ok(conform) => conform,
-            Err(_) => {
-                if let Some(err) = self.consume_error_without_reporting() {
+            Err(err_set) => {
+                if let Some(err) = self.consume_error_without_reporting(err_set) {
                     inference_error_cb(err);
                 }
                 return None;

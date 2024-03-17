@@ -11,7 +11,7 @@ use cairo_lang_defs::ids::{
     ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, LookupItemId, MemberId,
     ParamId, StructId, TraitFunctionId, TraitId, VarId, VariantId,
 };
-use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
+use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -237,7 +237,7 @@ pub enum InferenceErrorStatus {
     Consumed,
 }
 
-pub type InferenceResult<T> = Result<T, ()>;
+pub type InferenceResult<T> = Result<T, ErrorSet>;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct ImplVarData {
@@ -376,6 +376,13 @@ impl<'db> std::fmt::Debug for Inference<'db> {
     }
 }
 
+/// This struct is used to ensure that when an inference error occurs, it is properly set in the
+/// `Inference` object, and then properly consumed.
+///
+/// It must not be constructed directly. Instead, it is returned by [Inference::set_error].
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub struct ErrorSet;
+
 impl<'db> Inference<'db> {
     fn new(db: &'db dyn SemanticGroup, data: &'db mut InferenceData) -> Self {
         Self { db, data, error_status: Ok(()), error: None, consumed_error: None }
@@ -392,11 +399,15 @@ impl<'db> Inference<'db> {
     fn type_assignment(&self, var_id: LocalTypeVarId) -> Option<TypeId> {
         self.type_assignment.get(&var_id).copied()
     }
-    // TODO(yg): consider receiving a param of type ErrorSet.
+
     /// Consumes the error but doesn't report it. If there is not error, or the error is consumed,
     /// does nothing. This should be used with caution. Always prefer to use
     /// `report_on_pending_error` if possible.
-    pub fn consume_error_without_reporting(&mut self) -> Option<InferenceError> {
+    /// Gets an `ErrorSet` to "enforce" it is only called when an error is set.
+    pub fn consume_error_without_reporting(
+        &mut self,
+        _err_set: ErrorSet,
+    ) -> Option<InferenceError> {
         if self.error_status != Err(InferenceErrorStatus::Pending) {
             panic!("consume_error when there is no pending error");
         }
@@ -404,8 +415,11 @@ impl<'db> Inference<'db> {
         self.consumed_error = Some(skip_diagnostic());
         mem::take(&mut self.error)
     }
+
+    // TODO(ygd): Gets an `ErrorSet` to "enforce" it is only called when an error is set.
     pub fn report_on_pending_error(
         &mut self,
+        _err_set: ErrorSet,
         diagnostics: &mut SemanticDiagnostics,
         stable_ptr: SyntaxStablePtrId,
     ) -> DiagnosticAdded {
@@ -426,7 +440,8 @@ impl<'db> Inference<'db> {
             }
         }
     }
-    pub fn set_error(&mut self, err: InferenceError) {
+
+    pub fn set_error(&mut self, err: InferenceError) -> ErrorSet {
         assert!(self.error_status.is_ok(), "Can't overwrite the error");
         self.error_status = if let InferenceError::Failed(diag_added) = err {
             self.consumed_error = Some(diag_added);
@@ -435,6 +450,11 @@ impl<'db> Inference<'db> {
             self.error = Some(err);
             Err(InferenceErrorStatus::Pending)
         };
+        ErrorSet
+    }
+
+    pub fn is_error_set(&self) -> InferenceResult<()> {
+        if self.error_status.is_err() { Err(ErrorSet) } else { Ok(()) }
     }
 
     /// Allocates a new [TypeVar] for an unknown type that needs to be inferred.
@@ -518,16 +538,14 @@ impl<'db> Inference<'db> {
     /// Returns whether the inference was successful. If not, the error may be found by
     /// `.error_state()`.
     pub fn solve(&mut self) -> InferenceResult<()> {
-        if self.error_status.is_err() {
-            return Err(());
-        }
+        // Stop if an error is already set.
+        self.is_error_set()?;
+
         let mut ambiguous = std::mem::take(&mut self.ambiguous);
         self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
         while let Some(var) = self.pending.pop_front() {
             // First inference error stops inference.
-            if self.solve_single_pending(var).is_err() {
-                return Err(());
-            }
+            self.solve_single_pending(var)?;
         }
         return Ok(());
     }
@@ -572,8 +590,7 @@ impl<'db> Inference<'db> {
 
     /// Finalizes an inference by inferring uninferred numeric literals as felt252.
     // pub fn finalize(&mut self) -> Option<(Option<SyntaxStablePtrId>, InferenceError)> {
-    // TODO(yg): change the ret type to Result<ErrorSet, Option<SyntaxStablePtrId>>.
-    pub fn finalize(&mut self) -> Result<(), ((), Option<SyntaxStablePtrId>)> {
+    pub fn finalize(&mut self) -> Result<(), (ErrorSet, Option<SyntaxStablePtrId>)> {
         let numeric_trait_id = get_core_trait(self.db, "NumericLiteral".into());
         let felt_ty = core_felt252_ty(self.db);
 

@@ -589,8 +589,11 @@ impl<'db> Resolver<'db> {
                         Some(identifier_stable_ptr),
                     )
                     .map_err(|err_set| {
-                        inference
-                            .report_on_pending_error(diagnostics, identifier.stable_ptr().untyped())
+                        inference.report_on_pending_error(
+                            err_set,
+                            diagnostics,
+                            identifier.stable_ptr().untyped(),
+                        )
                     })?;
 
                 Ok(ResolvedConcreteItem::Function(self.specialize_function(
@@ -1012,7 +1015,9 @@ impl<'db> Resolver<'db> {
             let inference = &mut self.data.inference_data.inference(self.db);
             return inference
                 .infer_generic_arg(&generic_param, lookup_context, Some(stable_ptr))
-                .map_err(|err_set| inference.report_on_pending_error(diagnostics, stable_ptr));
+                .map_err(|err_set| {
+                    inference.report_on_pending_error(err_set, diagnostics, stable_ptr)
+                });
         };
 
         Ok(match generic_param {

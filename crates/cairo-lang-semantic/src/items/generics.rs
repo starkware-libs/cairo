@@ -288,6 +288,7 @@ pub fn priv_generic_param_data(
     let inference = &mut resolver.inference();
     if let Err((err_set, err_stable_ptr)) = inference.finalize() {
         inference.report_on_pending_error(
+            err_set,
             &mut diagnostics,
             err_stable_ptr.unwrap_or(generic_param_syntax.stable_ptr().untyped()),
         );
