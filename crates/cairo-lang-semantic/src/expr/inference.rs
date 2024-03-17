@@ -134,7 +134,6 @@ pub enum InferenceVar {
 // TODO(spapini): Add to diagnostics.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum InferenceError {
-    // TODO(yg): should it be renamed to reported?
     Failed(DiagnosticAdded),
     Cycle { var: InferenceVar },
     TypeKindMismatch { ty0: TypeId, ty1: TypeId },
@@ -210,11 +209,6 @@ impl InferenceError {
     }
 }
 
-impl From<DiagnosticAdded> for InferenceError {
-    fn from(value: DiagnosticAdded) -> Self {
-        InferenceError::Failed(value)
-    }
-}
 impl InferenceError {
     pub fn report(
         &self,
@@ -231,13 +225,20 @@ impl InferenceError {
     }
 }
 
+/// This struct is used to ensure that when an inference error occurs, it is properly set in the
+/// `Inference` object, and then properly consumed.
+///
+/// It must not be constructed directly. Instead, it is returned by [Inference::set_error].
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub struct ErrorSet;
+
+pub type InferenceResult<T> = Result<T, ErrorSet>;
+
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum InferenceErrorStatus {
     Pending,
     Consumed,
 }
-
-pub type InferenceResult<T> = Result<T, ErrorSet>;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct ImplVarData {
@@ -376,85 +377,24 @@ impl<'db> std::fmt::Debug for Inference<'db> {
     }
 }
 
-/// This struct is used to ensure that when an inference error occurs, it is properly set in the
-/// `Inference` object, and then properly consumed.
-///
-/// It must not be constructed directly. Instead, it is returned by [Inference::set_error].
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
-pub struct ErrorSet;
-
 impl<'db> Inference<'db> {
     fn new(db: &'db dyn SemanticGroup, data: &'db mut InferenceData) -> Self {
         Self { db, data, error_status: Ok(()), error: None, consumed_error: None }
     }
+
     /// Getter for an [ImplVar].
     fn impl_var(&self, var_id: LocalImplVarId) -> &ImplVar {
         &self.impl_vars[var_id.0]
     }
+
     /// Getter for an impl var assignment.
     pub fn impl_assignment(&self, var_id: LocalImplVarId) -> Option<ImplId> {
         self.impl_assignment.get(&var_id).copied()
     }
+
     // Getter for a type var assignment.
     fn type_assignment(&self, var_id: LocalTypeVarId) -> Option<TypeId> {
         self.type_assignment.get(&var_id).copied()
-    }
-
-    /// Consumes the error but doesn't report it. If there is not error, or the error is consumed,
-    /// does nothing. This should be used with caution. Always prefer to use
-    /// `report_on_pending_error` if possible.
-    /// Gets an `ErrorSet` to "enforce" it is only called when an error is set.
-    pub fn consume_error_without_reporting(
-        &mut self,
-        _err_set: ErrorSet,
-    ) -> Option<InferenceError> {
-        if self.error_status != Err(InferenceErrorStatus::Pending) {
-            panic!("consume_error when there is no pending error");
-        }
-        self.error_status = Err(InferenceErrorStatus::Consumed);
-        self.consumed_error = Some(skip_diagnostic());
-        mem::take(&mut self.error)
-    }
-
-    // TODO(ygd): Gets an `ErrorSet` to "enforce" it is only called when an error is set.
-    pub fn report_on_pending_error(
-        &mut self,
-        _err_set: ErrorSet,
-        diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
-    ) -> DiagnosticAdded {
-        let Err(state_error) = self.error_status else {
-            panic!("report_on_pending_error should be called only on error");
-        };
-        match state_error {
-            InferenceErrorStatus::Consumed => self
-                .consumed_error
-                .expect("consumed_error is not set although error_status is Err(Consumed)"),
-            InferenceErrorStatus::Pending => {
-                let diag_added = mem::take(&mut self.error)
-                    .expect("error is not set although error_status is Err(Pending)")
-                    .report(diagnostics, stable_ptr);
-                self.error_status = Err(InferenceErrorStatus::Consumed);
-                self.consumed_error = Some(diag_added);
-                diag_added
-            }
-        }
-    }
-
-    pub fn set_error(&mut self, err: InferenceError) -> ErrorSet {
-        assert!(self.error_status.is_ok(), "Can't overwrite the error");
-        self.error_status = if let InferenceError::Failed(diag_added) = err {
-            self.consumed_error = Some(diag_added);
-            Err(InferenceErrorStatus::Consumed)
-        } else {
-            self.error = Some(err);
-            Err(InferenceErrorStatus::Pending)
-        };
-        ErrorSet
-    }
-
-    pub fn is_error_set(&self) -> InferenceResult<()> {
-        if self.error_status.is_err() { Err(ErrorSet) } else { Ok(()) }
     }
 
     /// Allocates a new [TypeVar] for an unknown type that needs to be inferred.
@@ -547,7 +487,7 @@ impl<'db> Inference<'db> {
             // First inference error stops inference.
             self.solve_single_pending(var)?;
         }
-        return Ok(());
+        Ok(())
     }
 
     fn solve_single_pending(&mut self, var: LocalImplVarId) -> InferenceResult<()> {
@@ -864,6 +804,74 @@ impl<'db> Inference<'db> {
         }
 
         Ok(SolutionSet::Unique(canonical_impl))
+    }
+
+    // Error handling methods
+    // ======================
+
+    /// Sets an error in the inference state.
+    /// Panics if an error is already set.
+    /// Returns an `ErrorSet` that can be used in reporting the error.
+    pub fn set_error(&mut self, err: InferenceError) -> ErrorSet {
+        assert!(self.error_status.is_ok(), "Can't overwrite the error");
+        self.error_status = if let InferenceError::Failed(diag_added) = err {
+            self.consumed_error = Some(diag_added);
+            Err(InferenceErrorStatus::Consumed)
+        } else {
+            self.error = Some(err);
+            Err(InferenceErrorStatus::Pending)
+        };
+        ErrorSet
+    }
+
+    /// Returns whether an error is set (either pending or consumed).
+    pub fn is_error_set(&self) -> InferenceResult<()> {
+        if self.error_status.is_err() { Err(ErrorSet) } else { Ok(()) }
+    }
+
+    /// Consumes the error but doesn't report it. If there is not error, or the error is consumed,
+    /// does nothing. This should be used with caution. Always prefer to use
+    /// `report_on_pending_error` if possible.
+    /// Gets an `ErrorSet` to "enforce" it is only called when an error is set.
+    pub fn consume_error_without_reporting(
+        &mut self,
+        _err_set: ErrorSet,
+    ) -> Option<InferenceError> {
+        if self.error_status != Err(InferenceErrorStatus::Pending) {
+            panic!("consume_error when there is no pending error");
+        }
+        self.error_status = Err(InferenceErrorStatus::Consumed);
+        self.consumed_error = Some(skip_diagnostic());
+        mem::take(&mut self.error)
+    }
+
+    /// Consumes the pending error, if any, and reports it.
+    /// Should only be called when an error is set, otherwise it panics.
+    /// Gets an `ErrorSet` to "enforce" it is only called when an error is set.
+    /// If an error was set but it's already consumed, it doesn't report it again but returns the
+    /// stored `DiagnosticAdded`.
+    pub fn report_on_pending_error(
+        &mut self,
+        _err_set: ErrorSet,
+        diagnostics: &mut SemanticDiagnostics,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> DiagnosticAdded {
+        let Err(state_error) = self.error_status else {
+            panic!("report_on_pending_error should be called only on error");
+        };
+        match state_error {
+            InferenceErrorStatus::Consumed => self
+                .consumed_error
+                .expect("consumed_error is not set although error_status is Err(Consumed)"),
+            InferenceErrorStatus::Pending => {
+                let diag_added = mem::take(&mut self.error)
+                    .expect("error is not set although error_status is Err(Pending)")
+                    .report(diagnostics, stable_ptr);
+                self.error_status = Err(InferenceErrorStatus::Consumed);
+                self.consumed_error = Some(diag_added);
+                diag_added
+            }
+        }
     }
 }
 

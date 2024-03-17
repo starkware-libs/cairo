@@ -192,12 +192,12 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             stable_ptr,
         )?;
 
-        Ok(SubstitutionRewriter {
+        SubstitutionRewriter {
             db: self.db,
             substitution: &GenericSubstitution::new(&impl_alias_generic_params, &generic_args),
         }
         .rewrite(impl_id)
-        .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?)
+        .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))
     }
 
     /// Chooses and assignment to generic_params s.t. generic_args will be substituted to

@@ -1397,6 +1397,9 @@ fn compute_method_function_call_data(
     ) -> SemanticDiagnosticKind,
 ) -> Maybe<(FunctionId, ExprAndId, Mutability)> {
     let self_ty = ctx.reduce_ty(self_expr.ty());
+    // Inference errors found when looking for candidates. Only relevant in the case of 0 candidates
+    // found. If >0 candidates are found these are ignored as they may describe, e.g., "errors"
+    // indicating certain traits/impls/functions don't match, which is OK as we only look for one.
     let mut inference_errors = vec![];
     let candidates = filter_candidate_traits(
         ctx,
@@ -1417,8 +1420,6 @@ fn compute_method_function_call_data(
                 ),
             ));
         }
-        // TODO(yg): can it happen that there are errors in these 2 cases, which are not getting
-        // reported? Should they?
         [trait_function_id] => trait_function_id,
         [trait_function_id0, trait_function_id1, ..] => {
             return Err(ctx.diagnostics.report_by_ptr(

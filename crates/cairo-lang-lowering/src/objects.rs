@@ -15,7 +15,7 @@ use id_arena::{Arena, Id};
 
 pub mod blocks;
 pub use blocks::BlockId;
-use semantic::expr::inference::{InferenceError, InferenceResult};
+use semantic::expr::inference::InferenceError;
 use semantic::items::constant::ConstValue;
 use semantic::items::imp::ImplId;
 use semantic::MatchArmSelector;
