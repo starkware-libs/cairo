@@ -134,26 +134,51 @@ pub enum InferenceVar {
 // TODO(spapini): Add to diagnostics.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum InferenceError {
-    Failed(DiagnosticAdded),
-    Cycle { var: InferenceVar },
-    TypeKindMismatch { ty0: TypeId, ty1: TypeId },
-    ConstKindMismatch { const0: ConstValueId, const1: ConstValueId },
-    ImplKindMismatch { impl0: ImplId, impl1: ImplId },
-    GenericArgMismatch { garg0: GenericArgumentId, garg1: GenericArgumentId },
-    TraitMismatch { trt0: TraitId, trt1: TraitId },
-    GenericFunctionMismatch { func0: GenericFunctionId, func1: GenericFunctionId },
+    /// An inference error wrapping a previously reported error.
+    Reported(DiagnosticAdded),
+    Cycle {
+        var: InferenceVar,
+    },
+    TypeKindMismatch {
+        ty0: TypeId,
+        ty1: TypeId,
+    },
+    ConstKindMismatch {
+        const0: ConstValueId,
+        const1: ConstValueId,
+    },
+    ImplKindMismatch {
+        impl0: ImplId,
+        impl1: ImplId,
+    },
+    GenericArgMismatch {
+        garg0: GenericArgumentId,
+        garg1: GenericArgumentId,
+    },
+    TraitMismatch {
+        trt0: TraitId,
+        trt1: TraitId,
+    },
+    GenericFunctionMismatch {
+        func0: GenericFunctionId,
+        func1: GenericFunctionId,
+    },
     ConstInferenceNotSupported,
 
     // TODO(spapini): These are only used for external interface. Separate them along with the
     // finalize() function to a wrapper.
-    NoImplsFound { concrete_trait_id: ConcreteTraitId },
+    NoImplsFound {
+        concrete_trait_id: ConcreteTraitId,
+    },
     Ambiguity(Ambiguity),
-    TypeNotInferred { ty: TypeId },
+    TypeNotInferred {
+        ty: TypeId,
+    },
 }
 impl InferenceError {
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
         match self {
-            InferenceError::Failed(_) => "Inference error occurred".into(),
+            InferenceError::Reported(_) => "Inference error occurred".into(),
             InferenceError::Cycle { var: _ } => "Inference cycle detected".into(),
             InferenceError::TypeKindMismatch { ty0, ty1 } => {
                 format!("Type mismatch: `{:?}` and `{:?}`", ty0.debug(db), ty1.debug(db))
@@ -216,7 +241,7 @@ impl InferenceError {
         stable_ptr: SyntaxStablePtrId,
     ) -> DiagnosticAdded {
         match self {
-            InferenceError::Failed(diagnostic_added) => *diagnostic_added,
+            InferenceError::Reported(diagnostic_added) => *diagnostic_added,
             _ => diagnostics.report_by_ptr(
                 stable_ptr,
                 SemanticDiagnosticKind::InternalInferenceError(self.clone()),
@@ -610,7 +635,7 @@ impl<'db> Inference<'db> {
     ) -> InferenceResult<ImplId> {
         let concrete_trait = impl_id
             .concrete_trait(self.db)
-            .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?;
+            .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
         self.conform_traits(self.impl_var(var).concrete_trait_id, concrete_trait)?;
         if let Some(other_impl) = self.impl_assignment(var) {
             return self.conform_impl(impl_id, other_impl);
@@ -752,13 +777,13 @@ impl<'db> Inference<'db> {
             db: self.db,
             substitution: &concrete_impl
                 .substitution(self.db)
-                .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?,
+                .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?,
         };
 
         for garg in self
             .db
             .impl_def_generic_params(concrete_impl.impl_def_id(self.db))
-            .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?
+            .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?
         {
             let GenericParam::NegImpl(neg_impl) = garg else {
                 continue;
@@ -766,9 +791,9 @@ impl<'db> Inference<'db> {
 
             let concrete_trait_id = rewriter
                 .rewrite(neg_impl)
-                .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?
+                .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?
                 .concrete_trait
-                .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?;
+                .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
             for garg in concrete_trait_id.generic_args(self.db) {
                 let GenericArgumentId::Type(ty) = garg else {
                     continue;
@@ -814,7 +839,7 @@ impl<'db> Inference<'db> {
     /// Returns an `ErrorSet` that can be used in reporting the error.
     pub fn set_error(&mut self, err: InferenceError) -> ErrorSet {
         assert!(self.error_status.is_ok(), "Can't overwrite the error");
-        self.error_status = if let InferenceError::Failed(diag_added) = err {
+        self.error_status = if let InferenceError::Reported(diag_added) = err {
             self.consumed_error = Some(diag_added);
             Err(InferenceErrorStatus::Consumed)
         } else {
