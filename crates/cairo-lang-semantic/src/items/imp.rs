@@ -1077,8 +1077,10 @@ pub fn can_infer_impl_by_self(
         return false;
     };
     // Find impls for it.
-    if let Err(err) = temp_inference.solve() {
-        inference_errors.push((trait_function_id, err));
+    if let Err(err_set) = temp_inference.solve() {
+        if let Some(err) = temp_inference.consume_error() {
+            inference_errors.push((trait_function_id, err));
+        }
     }
     match temp_inference.trait_solution_set(concrete_trait_id, lookup_context.clone()) {
         Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_)) => true,
@@ -1087,8 +1089,10 @@ pub fn can_infer_impl_by_self(
                 .push((trait_function_id, InferenceError::NoImplsFound { concrete_trait_id }));
             false
         }
-        Err(err) => {
-            inference_errors.push((trait_function_id, err));
+        Err(err_set) => {
+            if let Some(err) = temp_inference.consume_error() {
+                inference_errors.push((trait_function_id, err));
+            }
             false
         }
     }
@@ -1128,15 +1132,14 @@ pub fn infer_impl_by_self(
         .unwrap();
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
-    let generic_function = ctx
-        .resolver
-        .inference()
+    let inference = &mut ctx.resolver.inference();
+    let generic_function = inference
         .infer_trait_generic_function(
             concrete_trait_function_id,
             &impl_lookup_context,
             Some(stable_ptr),
         )
-        .map_err(|err| err.report(ctx.diagnostics, stable_ptr))
+        .map_err(|err_set| inference.report_on_pending_error(ctx.diagnostics, stable_ptr))
         .unwrap();
 
     Some((

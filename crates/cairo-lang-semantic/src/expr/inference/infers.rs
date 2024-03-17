@@ -305,11 +305,16 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
     ) -> InferenceResult<GenericArgumentId> {
         match param {
             GenericParam::Type(_) => Ok(GenericArgumentId::Type(self.new_type_var(stable_ptr))),
-            GenericParam::Impl(param) => Ok(GenericArgumentId::Impl(self.new_impl_var(
-                param.concrete_trait.map_err(|diag_added| self.set_reported_error(diag_added))?,
-                stable_ptr,
-                lookup_context,
-            )?)),
+            GenericParam::Impl(param) => {
+                let concrete_trait_id = param
+                    .concrete_trait
+                    .map_err(|diag_added| self.set_reported_error(diag_added))?;
+                Ok(GenericArgumentId::Impl(self.new_impl_var(
+                    concrete_trait_id,
+                    stable_ptr,
+                    lookup_context,
+                )?))
+            }
             GenericParam::Const(_) => {
                 Ok(GenericArgumentId::Constant(self.new_const_var(stable_ptr)))
             }

@@ -2,6 +2,7 @@
 
 use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
+use std::mem;
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_debug::DebugWithDb;
@@ -10,7 +11,7 @@ use cairo_lang_defs::ids::{
     ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, LookupItemId, MemberId,
     ParamId, StructId, TraitFunctionId, TraitId, VarId, VariantId,
 };
-use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -230,7 +231,7 @@ impl InferenceError {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum InferenceErrorStatus {
     Pending,
     Consumed,
@@ -392,12 +393,15 @@ impl<'db> Inference<'db> {
         self.type_assignment.get(&var_id).copied()
     }
     // TODO(yg): consider receiving a param of type ErrorSet.
+    // TODO(yg): consider panicking instead of returning Option.
     pub fn consume_error(&mut self) -> Option<InferenceError> {
         if self.error_status != Err(InferenceErrorStatus::Pending) {
             return None;
         }
         self.error_status = Err(InferenceErrorStatus::Consumed);
-        self.error
+        // TODO(yg): can we do without skip?
+        self.consumed_error = Some(skip_diagnostic());
+        mem::take(&mut self.error)
     }
     pub fn get_consumed_error(&self) -> Option<DiagnosticAdded> {
         if self.error_status != Err(InferenceErrorStatus::Consumed) {
@@ -416,17 +420,22 @@ impl<'db> Inference<'db> {
         match state_error {
             InferenceErrorStatus::Consumed => self.consumed_error.unwrap(),
             InferenceErrorStatus::Pending => {
-                self.error_status = Err(InferenceErrorStatus::Consumed);
-                self.error.unwrap().report(diagnostics, stable_ptr)
+                let diag_added = mem::take(&mut self.error)
+                    .expect("error is not set although error_status is Err(Pending)")
+                    .report(diagnostics, stable_ptr);
+                self.set_reported_error(diag_added);
+                diag_added
             }
         }
     }
     pub fn set_error(&mut self, err: InferenceError) {
+        // TODO(yg): verify error_status is Ok. What if not?
         self.error_status = Err(InferenceErrorStatus::Pending);
         self.error = Some(err);
     }
     pub fn set_reported_error(&mut self, diag_added: DiagnosticAdded) {
         self.error_status = Err(InferenceErrorStatus::Consumed);
+        self.consumed_error = Some(diag_added);
         self.error = Some(InferenceError::Failed(diag_added));
     }
 
