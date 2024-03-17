@@ -151,11 +151,11 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         }
     }
 
-    fn merge_match(
-        &mut self,
+    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
+        &'b mut self,
         statement_location: StatementLocation,
         match_info: &MatchInfo,
-        infos: &[Self::Info],
+        infos: Infos,
     ) -> Self::Info {
         let mut info = Self::Info::default();
 

@@ -222,11 +222,11 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         info.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
     }
 
-    fn merge_match(
-        &mut self,
+    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
+        &'b mut self,
         (block_id, _statement_index): StatementLocation,
         match_info: &MatchInfo,
-        infos: &[Self::Info],
+        infos: Infos,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .enumerate()
