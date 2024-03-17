@@ -155,10 +155,10 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         &'b mut self,
         statement_location: StatementLocation,
         match_info: &MatchInfo,
-        infos: Infos,
+        mut infos: Infos,
     ) -> Self::Info {
-        let mut info = Self::Info::default();
-
+        let mut info =
+            if let Some(first) = infos.next() { first.clone() } else { Self::Info::default() };
         for arm_info in infos {
             info.next_use.merge(&arm_info.next_use, |v, _| {
                 *v = statement_location;
