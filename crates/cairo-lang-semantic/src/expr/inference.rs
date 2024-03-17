@@ -615,10 +615,9 @@ impl<'db> Inference<'db> {
         Err((self.set_error(err), self.stable_ptrs.get(&var).copied()))
     }
 
-    // TODO(yg): helper function, doesn't set the error. Consider documenting this or change so that
-    // this function sets the error.
     /// Retrieves the first variable that is still not inferred, or None, if everything is
     /// inferred.
+    /// Does not set the error but return it, which is ok as this is a private helper function.
     fn first_undetermined_variable(&mut self) -> Option<(InferenceVar, InferenceError)> {
         for (id, var) in self.type_vars.iter().enumerate() {
             if self.type_assignment(LocalTypeVarId(id)).is_none() {

@@ -119,9 +119,11 @@ pub fn enum_generic_params_data(
         &enum_ast.generic_params(db.upcast()),
     )?;
     let inference = &mut resolver.inference();
-    inference.finalize().map_err(|(err_set, _)| {
-        // TODO(yg): consider err_stable_ptr.unwrap_or(<>.stable_ptr().untyped()).
-        inference.report_on_pending_error(&mut diagnostics, enum_ast.stable_ptr().untyped());
+    inference.finalize().map_err(|(err_set, err_stable_ptr)| {
+        inference.report_on_pending_error(
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(enum_ast.stable_ptr().untyped()),
+        );
     });
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);

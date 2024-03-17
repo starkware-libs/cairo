@@ -167,9 +167,12 @@ pub fn impl_alias_generic_params_data(
         &impl_alias_ast.generic_params(syntax_db),
     )?;
     let inference = &mut resolver.inference();
-    inference.finalize().map_err(|(err_set, _)| {
+    inference.finalize().map_err(|(err_set, err_stable_ptr)| {
         // TODO(yg): consider err_stable_ptr.unwrap_or(<>.stable_ptr().untyped()).
-        inference.report_on_pending_error(&mut diagnostics, impl_alias_ast.stable_ptr().untyped());
+        inference.report_on_pending_error(
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(impl_alias_ast.stable_ptr().untyped()),
+        );
     });
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);

@@ -255,9 +255,12 @@ pub fn trait_generic_params_data(
     )?;
 
     let inference = &mut resolver.inference();
-    inference.finalize().map_err(|(err_set, _)| {
+    inference.finalize().map_err(|(err_set, err_stable_ptr)| {
         // TODO(yg): consider err_stable_ptr.unwrap_or(<>.stable_ptr().untyped()).
-        inference.report_on_pending_error(&mut diagnostics, trait_ast.stable_ptr().untyped());
+        inference.report_on_pending_error(
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()),
+        );
     });
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);

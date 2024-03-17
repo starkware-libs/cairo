@@ -246,9 +246,12 @@ pub fn impl_def_generic_params_data(
         &impl_ast.generic_params(db.upcast()),
     )?;
     let inference = &mut resolver.inference();
-    inference.finalize().map_err(|(err_set, _)| {
+    inference.finalize().map_err(|(err_set, err_stable_ptr)| {
         // TODO(yg): consider err_stable_ptr.unwrap_or(<>.stable_ptr().untyped()).
-        inference.report_on_pending_error(&mut diagnostics, impl_ast.stable_ptr().untyped());
+        inference.report_on_pending_error(
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()),
+        );
     });
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -1430,9 +1433,12 @@ pub fn priv_impl_function_generic_params_data(
         &declaration.generic_params(syntax_db),
     )?;
     let inference = &mut resolver.inference();
-    inference.finalize().map_err(|(err_set, _)| {
+    inference.finalize().map_err(|(err_set, err_stable_ptr)| {
         // TODO(yg): consider err_stable_ptr.unwrap_or(<>.stable_ptr().untyped()).
-        inference.report_on_pending_error(&mut diagnostics, function_syntax.stable_ptr().untyped());
+        inference.report_on_pending_error(
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()),
+        );
     });
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
