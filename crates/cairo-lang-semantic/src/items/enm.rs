@@ -64,11 +64,14 @@ pub fn priv_enum_declaration_data(
     let attributes = enum_ast.attributes(syntax_db).structurize(syntax_db);
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(enum_ast.stable_ptr().untyped()));
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(enum_ast.stable_ptr().untyped()),
+        );
     }
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(EnumDeclarationData {
@@ -115,10 +118,12 @@ pub fn enum_generic_params_data(
         module_file_id,
         &enum_ast.generic_params(db.upcast()),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, enum_ast.stable_ptr().untyped())
+    let inference = &mut resolver.inference();
+    inference.finalize().map_err(|(err_set, _)| {
+        // TODO(yg): consider err_stable_ptr.unwrap_or(<>.stable_ptr().untyped()).
+        inference.report_on_pending_error(&mut diagnostics, enum_ast.stable_ptr().untyped());
     });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
@@ -224,12 +229,15 @@ pub fn priv_enum_definition_data(
     }
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(enum_ast.stable_ptr().untyped()));
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(enum_ast.stable_ptr().untyped()),
+        );
     }
     for (_, variant) in variant_semantic.iter_mut() {
-        variant.ty = resolver.inference().rewrite(variant.ty).no_err();
+        variant.ty = inference.rewrite(variant.ty).no_err();
     }
 
     let resolver_data = Arc::new(resolver.data);

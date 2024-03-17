@@ -254,10 +254,12 @@ pub fn trait_generic_params_data(
         &trait_ast.generic_params(syntax_db),
     )?;
 
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, trait_ast.stable_ptr().untyped())
+    let inference = &mut resolver.inference();
+    inference.finalize().map_err(|(err_set, _)| {
+        // TODO(yg): consider err_stable_ptr.unwrap_or(<>.stable_ptr().untyped()).
+        inference.report_on_pending_error(&mut diagnostics, trait_ast.stable_ptr().untyped());
     });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
@@ -301,11 +303,14 @@ pub fn priv_trait_declaration_data(
     let attributes = trait_ast.attributes(syntax_db).structurize(syntax_db);
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()));
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()),
+        );
     }
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     let mut resolver_data = resolver.data;
     resolver_data.trait_or_impl_ctx = TraitOrImplContext::Trait { trait_id };

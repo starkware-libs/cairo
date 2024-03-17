@@ -245,10 +245,12 @@ pub fn impl_def_generic_params_data(
         module_file_id,
         &impl_ast.generic_params(db.upcast()),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, impl_ast.stable_ptr().untyped())
+    let inference = &mut resolver.inference();
+    inference.finalize().map_err(|(err_set, _)| {
+        // TODO(yg): consider err_stable_ptr.unwrap_or(<>.stable_ptr().untyped()).
+        inference.report_on_pending_error(&mut diagnostics, impl_ast.stable_ptr().untyped());
     });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
@@ -405,12 +407,15 @@ pub fn priv_impl_declaration_data_inner(
     };
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()));
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()),
+        );
     }
-    let concrete_trait = resolver.inference().rewrite(concrete_trait).no_err();
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let concrete_trait = inference.rewrite(concrete_trait).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     let attributes = impl_ast.attributes(syntax_db).structurize(syntax_db);
     let mut resolver_data = resolver.data;
@@ -1415,10 +1420,12 @@ pub fn priv_impl_function_generic_params_data(
         module_file_id,
         &declaration.generic_params(syntax_db),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, function_syntax.stable_ptr().untyped())
+    let inference = &mut resolver.inference();
+    inference.finalize().map_err(|(err_set, _)| {
+        // TODO(yg): consider err_stable_ptr.unwrap_or(<>.stable_ptr().untyped()).
+        inference.report_on_pending_error(&mut diagnostics, function_syntax.stable_ptr().untyped());
     });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
@@ -1543,12 +1550,15 @@ pub fn priv_impl_function_declaration_data(
     let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            &mut diagnostics,
+            err_stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()),
+        );
     }
-    let signature = resolver.inference().rewrite(signature).no_err();
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let signature = inference.rewrite(signature).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(ImplFunctionDeclarationData {

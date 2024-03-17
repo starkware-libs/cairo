@@ -51,10 +51,12 @@ pub fn type_alias_generic_params_data_helper(
         &type_alias_ast.generic_params(db.upcast()),
     )?;
 
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, type_alias_ast.stable_ptr().untyped())
+    let inference = &mut resolver.inference();
+    inference.finalize().map_err(|(err_set, _)| {
+        // TODO(yg): consider err_stable_ptr.unwrap_or(<>.stable_ptr().untyped()).
+        inference.report_on_pending_error(&mut diagnostics, type_alias_ast.stable_ptr().untyped());
     });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
@@ -78,12 +80,15 @@ pub fn type_alias_semantic_data_helper(
     let ty = resolve_type(db, diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(diagnostics, stable_ptr.unwrap_or(type_alias_ast.stable_ptr().untyped()));
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
+            diagnostics,
+            err_stable_ptr.unwrap_or(type_alias_ast.stable_ptr().untyped()),
+        );
     }
-    let generic_params = resolver.inference().rewrite(generic_params_data.generic_params).no_err();
-    let ty = resolver.inference().rewrite(ty).no_err();
+    let generic_params = inference.rewrite(generic_params_data.generic_params).no_err();
+    let ty = inference.rewrite(ty).no_err();
     let attributes = type_alias_ast.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
     Ok(TypeAliasData { resolved_type: Ok(ty), generic_params, attributes, resolver_data })

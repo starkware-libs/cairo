@@ -285,13 +285,14 @@ pub fn priv_generic_param_data(
         &generic_param_syntax,
         parent_item_id,
     );
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(
+    let inference = &mut resolver.inference();
+    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
+        inference.report_on_pending_error(
             &mut diagnostics,
-            stable_ptr.unwrap_or(generic_param_syntax.stable_ptr().untyped()),
+            err_stable_ptr.unwrap_or(generic_param_syntax.stable_ptr().untyped()),
         );
     }
-    let param_semantic = resolver.inference().rewrite(param_semantic).no_err();
+    let param_semantic = inference.rewrite(param_semantic).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamData {
         generic_param: param_semantic,

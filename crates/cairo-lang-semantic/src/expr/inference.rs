@@ -391,6 +391,7 @@ impl<'db> Inference<'db> {
     fn type_assignment(&self, var_id: LocalTypeVarId) -> Option<TypeId> {
         self.type_assignment.get(&var_id).copied()
     }
+    // TODO(yg): consider receiving a param of type ErrorSet.
     pub fn consume_error(&mut self) -> Option<InferenceError> {
         if self.error_status != Err(InferenceErrorStatus::Pending) {
             return None;
@@ -564,16 +565,15 @@ impl<'db> Inference<'db> {
 
     /// Finalizes an inference by inferring uninferred numeric literals as felt252.
     // pub fn finalize(&mut self) -> Option<(Option<SyntaxStablePtrId>, InferenceError)> {
-    // TODO(yg): consider changing the ret type to Result<(), Option<SyntaxStablePtrId>>. But do it
-    // after InferenceResult<T> is Result<T, ErrorSet>
-    pub fn finalize(&mut self) -> Result<(), Option<SyntaxStablePtrId>> {
+    // TODO(yg): change the ret type to Result<ErrorSet, Option<SyntaxStablePtrId>>.
+    pub fn finalize(&mut self) -> Result<(), ((), Option<SyntaxStablePtrId>)> {
         let numeric_trait_id = get_core_trait(self.db, "NumericLiteral".into());
         let felt_ty = core_felt252_ty(self.db);
 
         // Conform all uninferred numeric literals to felt252.
         loop {
             let mut changed = false;
-            self.solve().map_err(|_| None)?;
+            self.solve().map_err(|err_set| (err_set, None))?;
             for (var, _) in self.ambiguous.clone() {
                 let impl_var = self.impl_var(var).clone();
                 if impl_var.concrete_trait_id.trait_id(self.db) != numeric_trait_id {
@@ -587,8 +587,9 @@ impl<'db> Inference<'db> {
                 if self.rewrite(ty).no_err() == felt_ty {
                     continue;
                 }
-                self.conform_ty(ty, felt_ty)
-                    .map_err(|_| self.stable_ptrs.get(&InferenceVar::Impl(impl_var.id)).copied())?;
+                self.conform_ty(ty, felt_ty).map_err(|err_set| {
+                    (err_set, self.stable_ptrs.get(&InferenceVar::Impl(impl_var.id)).copied())
+                })?;
                 changed = true;
                 break;
             }
@@ -604,12 +605,14 @@ impl<'db> Inference<'db> {
         let Some((var, err)) = self.first_undetermined_variable() else {
             return Ok(());
         };
-        Err(self.stable_ptrs.get(&var).copied())
+        Err((self.set_error(err), self.stable_ptrs.get(&var).copied()))
     }
 
+    // TODO(yg): helper function, doesn't set the error. Consider documenting this or change so that
+    // this function sets the error.
     /// Retrieves the first variable that is still not inferred, or None, if everything is
     /// inferred.
-    pub fn first_undetermined_variable(&mut self) -> Option<(InferenceVar, InferenceError)> {
+    fn first_undetermined_variable(&mut self) -> Option<(InferenceVar, InferenceError)> {
         for (id, var) in self.type_vars.iter().enumerate() {
             if self.type_assignment(LocalTypeVarId(id)).is_none() {
                 let ty = self.db.intern_type(TypeLongId::Var(*var));
@@ -758,7 +761,11 @@ impl<'db> Inference<'db> {
 
         let (canonical_trait, canonicalizer) =
             CanonicalTrait::canonicalize(self.db, self.inference_id, concrete_trait_id);
-        match self.db.canonic_trait_solutions(canonical_trait, lookup_context)? {
+        let solution_set = match self.db.canonic_trait_solutions(canonical_trait, lookup_context) {
+            Ok(solution_set) => solution_set,
+            Err(err) => return Err(self.set_error(err)),
+        };
+        match solution_set {
             SolutionSet::None => Ok(SolutionSet::None),
             SolutionSet::Unique(canonical_impl) => {
                 Ok(SolutionSet::Unique((canonical_impl, canonicalizer)))

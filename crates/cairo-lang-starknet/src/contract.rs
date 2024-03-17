@@ -217,12 +217,13 @@ fn get_impl_aliases_abi_functions(
                     .get_concrete(db)
                     .body(db)
                     .to_option()??;
+                let inference = &mut resolver.inference();
                 assert_eq!(
-                    resolver.inference().finalize(),
+                    inference.finalize(),
                     None,
                     "All inferences should be solved at this point."
                 );
-                Some(resolver.inference().rewrite(concrete_wrapper).no_err())
+                Some(inference.rewrite(concrete_wrapper).no_err())
             }));
         }
     }
