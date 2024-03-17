@@ -94,10 +94,9 @@ Weight by user function (inc. generated):
 Weight by original user function (exc. generated):
   function test::main: 50
 Weight by Cairo function:
-  function lib.cairo::foo: 30
+  function lib.cairo::foo: 31
   function integer.cairo::U8Add::add: 11
   function lib.cairo::main: 8
-  function unknown: 1
 Weight by Sierra stack trace:
   test::main: 50
 Weight by Cairo stack trace:
