@@ -393,22 +393,17 @@ impl<'db> Inference<'db> {
         self.type_assignment.get(&var_id).copied()
     }
     // TODO(yg): consider receiving a param of type ErrorSet.
-    // TODO(yg): consider panicking instead of returning Option.
+    /// Consumes the error but doesn't report it. If there is not error, or the error is consumed,
+    /// does nothing. This should be used with caution. Always prefer to use
+    /// `report_on_pending_error` if possible.
     pub fn consume_error_without_reporting(&mut self) -> Option<InferenceError> {
         if self.error_status != Err(InferenceErrorStatus::Pending) {
-            return None;
+            panic!("consume_error when there is no pending error");
         }
         self.error_status = Err(InferenceErrorStatus::Consumed);
-        // TODO(yg): note about it in the doc. Use with caution.
         self.consumed_error = Some(skip_diagnostic());
         mem::take(&mut self.error)
     }
-    // pub fn get_consumed_error(&self) -> Option<DiagnosticAdded> {
-    //     if self.error_status != Err(InferenceErrorStatus::Consumed) {
-    //         return None;
-    //     }
-    //     self.consumed_error
-    // }
     pub fn report_on_pending_error(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
@@ -425,25 +420,21 @@ impl<'db> Inference<'db> {
                 let diag_added = mem::take(&mut self.error)
                     .expect("error is not set although error_status is Err(Pending)")
                     .report(diagnostics, stable_ptr);
-                self.set_reported_error(diag_added);
+                self.error_status = Err(InferenceErrorStatus::Consumed);
+                self.consumed_error = Some(diag_added);
                 diag_added
             }
         }
     }
     pub fn set_error(&mut self, err: InferenceError) {
-        // TODO(yg): verify error_status is Ok. What if not?
-        self.error_status = if matches!(err, InferenceError::Failed(_)) {
+        assert!(self.error_status.is_ok(), "Can't overwrite the error");
+        self.error_status = if let InferenceError::Failed(diag_added) = err {
+            self.consumed_error = Some(diag_added);
             Err(InferenceErrorStatus::Consumed)
         } else {
+            self.error = Some(err);
             Err(InferenceErrorStatus::Pending)
         };
-        self.error = Some(err);
-    }
-    // TODO(ygg): remove. use set_error(Failed()) instead.
-    pub fn set_reported_error(&mut self, diag_added: DiagnosticAdded) {
-        self.error_status = Err(InferenceErrorStatus::Consumed);
-        self.consumed_error = Some(diag_added);
-        self.error = Some(InferenceError::Failed(diag_added));
     }
 
     /// Allocates a new [TypeVar] for an unknown type that needs to be inferred.
@@ -663,7 +654,7 @@ impl<'db> Inference<'db> {
     ) -> InferenceResult<ImplId> {
         let concrete_trait = impl_id
             .concrete_trait(self.db)
-            .map_err(|diag_added| self.set_reported_error(diag_added))?;
+            .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?;
         self.conform_traits(self.impl_var(var).concrete_trait_id, concrete_trait)?;
         if let Some(other_impl) = self.impl_assignment(var) {
             return self.conform_impl(impl_id, other_impl);
@@ -805,13 +796,13 @@ impl<'db> Inference<'db> {
             db: self.db,
             substitution: &concrete_impl
                 .substitution(self.db)
-                .map_err(|diag_added| self.set_reported_error(diag_added))?,
+                .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?,
         };
 
         for garg in self
             .db
             .impl_def_generic_params(concrete_impl.impl_def_id(self.db))
-            .map_err(|diag_added| self.set_reported_error(diag_added))?
+            .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?
         {
             let GenericParam::NegImpl(neg_impl) = garg else {
                 continue;
@@ -819,9 +810,9 @@ impl<'db> Inference<'db> {
 
             let concrete_trait_id = rewriter
                 .rewrite(neg_impl)
-                .map_err(|diag_added| self.set_reported_error(diag_added))?
+                .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?
                 .concrete_trait
-                .map_err(|diag_added| self.set_reported_error(diag_added))?;
+                .map_err(|diag_added| self.set_error(InferenceError::Failed(diag_added)))?;
             for garg in concrete_trait_id.generic_args(self.db) {
                 let GenericArgumentId::Type(ty) = garg else {
                     continue;

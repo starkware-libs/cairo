@@ -15,7 +15,7 @@ use id_arena::{Arena, Id};
 
 pub mod blocks;
 pub use blocks::BlockId;
-use semantic::expr::inference::InferenceResult;
+use semantic::expr::inference::{InferenceError, InferenceResult};
 use semantic::items::constant::ConstValue;
 use semantic::items::imp::ImplId;
 use semantic::MatchArmSelector;
@@ -188,13 +188,13 @@ pub enum FlatBlockEnd {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Variable {
     /// Can the type be (trivially) dropped.
-    pub droppable: InferenceResult<ImplId>,
+    pub droppable: Result<ImplId, InferenceError>,
     /// Can the type be (trivially) copied.
-    pub copyable: InferenceResult<ImplId>,
+    pub copyable: Result<ImplId, InferenceError>,
     /// A Destruct impl for the type, if found.
-    pub destruct_impl: InferenceResult<ImplId>,
+    pub destruct_impl: Result<ImplId, InferenceError>,
     /// A PanicDestruct impl for the type, if found.
-    pub panic_destruct_impl: InferenceResult<ImplId>,
+    pub panic_destruct_impl: Result<ImplId, InferenceError>,
     /// Semantic type of the variable.
     pub ty: semantic::TypeId,
     /// Location of the variable.

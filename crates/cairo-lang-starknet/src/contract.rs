@@ -220,7 +220,7 @@ fn get_impl_aliases_abi_functions(
                 let inference = &mut resolver.inference();
                 assert_eq!(
                     inference.finalize(),
-                    None,
+                    Ok(()),
                     "All inferences should be solved at this point."
                 );
                 Some(inference.rewrite(concrete_wrapper).no_err())
