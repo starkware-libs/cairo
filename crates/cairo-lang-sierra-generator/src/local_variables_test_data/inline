@@ -36,25 +36,25 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1
-  (v4: core::felt252) <- core::felt252_add(v0, v3)
+  (v2: core::felt252) <- 1
+  (v3: core::felt252) <- core::felt252_add(v0, v2)
 End:
-  Return(v4)
+  Return(v3)
 
 blk2:
 Statements:
-  (v5: core::felt252) <- core::felt252_add(v0, v0)
+  (v4: core::felt252) <- core::felt252_add(v0, v0)
   () <- test::revoke_ap()
 End:
-  Return(v5)
+  Return(v4)
 
 //! > local_variables
-v5
+v4
 
 //! > ==========================================================================
 
@@ -97,32 +97,32 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v3) => blk2,
+    IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
 Statements:
   () <- test::revoke_ap()
-  (v4: core::felt252) <- 1
-  (v5: core::felt252) <- core::felt252_add(v0, v4)
+  (v2: core::felt252) <- 1
+  (v3: core::felt252) <- core::felt252_add(v0, v2)
 End:
-  Goto(blk3, {v5 -> v1})
+  Goto(blk3, {v3 -> v4})
 
 blk2:
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v0)
+  (v5: core::felt252) <- core::felt252_add(v0, v0)
   () <- test::revoke_ap()
 End:
-  Goto(blk3, {v6 -> v1})
+  Goto(blk3, {v5 -> v4})
 
 blk3:
 Statements:
-  (v7: core::felt252) <- core::felt252_add(v1, v0)
+  (v6: core::felt252) <- core::felt252_add(v4, v0)
 End:
-  Return(v7)
+  Return(v6)
 
 //! > local_variables
-v6
+v5
 
 //! > ==========================================================================
 
@@ -157,10 +157,10 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 1
-  (v5: core::felt252) <- core::felt252_add(v0, v1)
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
   () <- test::revoke_ap()
 End:
-  Return(v5)
+  Return(v2)
 
 //! > local_variables
-v5
+v2

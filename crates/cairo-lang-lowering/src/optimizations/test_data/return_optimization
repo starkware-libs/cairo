@@ -176,19 +176,19 @@ blk1:
 Statements:
   (v3: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
 End:
-  Goto(blk3, {v3 -> v6})
+  Goto(blk3, {v3 -> v4})
 
 blk2:
 Statements:
-  (v4: ()) <- struct_construct()
-  (v5: core::option::Option::<core::integer::u16>) <- Option::None(v4)
+  (v5: ()) <- struct_construct()
+  (v6: core::option::Option::<core::integer::u16>) <- Option::None(v5)
 End:
-  Goto(blk3, {v5 -> v6})
+  Goto(blk3, {v6 -> v4})
 
 blk3:
 Statements:
 End:
-  Return(v6)
+  Return(v4)
 
 //! > after
 Parameters: v0: core::option::Option::<core::integer::u16>
@@ -205,15 +205,15 @@ End:
 
 blk2:
 Statements:
-  (v4: ()) <- struct_construct()
-  (v5: core::option::Option::<core::integer::u16>) <- Option::None(v4)
+  (v5: ()) <- struct_construct()
+  (v6: core::option::Option::<core::integer::u16>) <- Option::None(v5)
 End:
-  Return(v5)
+  Return(v6)
 
 blk3:
 Statements:
 End:
-  Return(v6)
+  Return(v4)
 
 //! > ==========================================================================
 
@@ -333,19 +333,19 @@ Statements:
   (v4: test::MyStruct) <- struct_construct()
   (v5: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
 End:
-  Goto(blk3, {v4 -> v9, v5 -> v8})
+  Goto(blk3, {v4 -> v6, v5 -> v7})
 
 blk2:
 Statements:
-  (v6: ()) <- struct_construct()
-  (v7: core::option::Option::<core::integer::u16>) <- Option::None(v6)
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<core::integer::u16>) <- Option::None(v8)
 End:
-  Goto(blk3, {v0 -> v9, v7 -> v8})
+  Goto(blk3, {v0 -> v6, v9 -> v7})
 
 blk3:
 Statements:
 End:
-  Return(v9, v8)
+  Return(v6, v7)
 
 //! > after
 Parameters: v0: test::MyStruct, v1: core::option::Option::<core::integer::u16>
@@ -366,15 +366,15 @@ End:
 
 blk2:
 Statements:
-  (v6: ()) <- struct_construct()
-  (v7: core::option::Option::<core::integer::u16>) <- Option::None(v6)
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<core::integer::u16>) <- Option::None(v8)
 End:
-  Return(v0, v7)
+  Return(v0, v9)
 
 blk3:
 Statements:
 End:
-  Return(v9, v8)
+  Return(v6, v7)
 
 //! > ==========================================================================
 
@@ -420,19 +420,19 @@ Statements:
   (v6: (core::integer::u16, ())) <- struct_construct(v3, v5)
   (v7: core::option::Option::<(core::integer::u16, ())>) <- Option::Some(v6)
 End:
-  Goto(blk3, {v7 -> v10})
+  Goto(blk3, {v7 -> v8})
 
 blk2:
 Statements:
-  (v8: ()) <- struct_construct()
-  (v9: core::option::Option::<(core::integer::u16, ())>) <- Option::None(v8)
+  (v9: ()) <- struct_construct()
+  (v10: core::option::Option::<(core::integer::u16, ())>) <- Option::None(v9)
 End:
-  Goto(blk3, {v9 -> v10})
+  Goto(blk3, {v10 -> v8})
 
 blk3:
 Statements:
 End:
-  Return(v10)
+  Return(v8)
 
 //! > after
 Parameters: v0: core::option::Option::<(core::integer::u16, ())>
@@ -452,15 +452,15 @@ End:
 
 blk2:
 Statements:
-  (v8: ()) <- struct_construct()
-  (v9: core::option::Option::<(core::integer::u16, ())>) <- Option::None(v8)
+  (v9: ()) <- struct_construct()
+  (v10: core::option::Option::<(core::integer::u16, ())>) <- Option::None(v9)
 End:
-  Return(v9)
+  Return(v10)
 
 blk3:
 Statements:
 End:
-  Return(v10)
+  Return(v8)
 
 //! > ==========================================================================
 
@@ -564,18 +564,18 @@ blk1:
 Statements:
   (v4: test::MyEnum) <- MyEnum::A(v2)
 End:
-  Goto(blk3, {v4 -> v6})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v5: test::MyEnum) <- MyEnum::B(v3)
+  (v6: test::MyEnum) <- MyEnum::B(v3)
 End:
-  Goto(blk3, {v5 -> v6})
+  Goto(blk3, {v6 -> v5})
 
 blk3:
 Statements:
 End:
-  Return(v0, v6)
+  Return(v0, v5)
 
 //! > after
 Parameters: v0: core::felt252, v1: test::MyEnum
@@ -592,14 +592,14 @@ End:
 
 blk2:
 Statements:
-  (v5: test::MyEnum) <- MyEnum::B(v3)
+  (v6: test::MyEnum) <- MyEnum::B(v3)
 End:
-  Return(v0, v5)
+  Return(v0, v6)
 
 blk3:
 Statements:
 End:
-  Return(v0, v6)
+  Return(v0, v5)
 
 //! > ==========================================================================
 
@@ -738,10 +738,10 @@ End:
 
 blk3:
 Statements:
-  (v4: core::felt252) <- struct_destructure(v1)
-  (v5: test::FeltWrap) <- struct_construct(v4)
+  (v3: core::felt252) <- struct_destructure(v1)
+  (v4: test::FeltWrap) <- struct_construct(v3)
 End:
-  Return(v5)
+  Return(v4)
 
 //! > after
 Parameters: v0: core::felt252, v1: (core::felt252,)
@@ -765,10 +765,10 @@ End:
 
 blk3:
 Statements:
-  (v4: core::felt252) <- struct_destructure(v1)
-  (v5: test::FeltWrap) <- struct_construct(v4)
+  (v3: core::felt252) <- struct_destructure(v1)
+  (v4: test::FeltWrap) <- struct_construct(v3)
 End:
-  Return(v5)
+  Return(v4)
 
 //! > ==========================================================================
 

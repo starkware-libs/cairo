@@ -91,12 +91,12 @@ foo
 Parameters: v0: test::bar::Coupon
 blk0 (root):
 Statements:
-  (v10: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v12)
+  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::panics::Panic) <- struct_construct()
+  (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v2, v1)
+  (v4: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v3)
 End:
-  Return(v13)
+  Return(v4)
 
 //! > ==========================================================================
 

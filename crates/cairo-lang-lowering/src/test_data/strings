@@ -189,60 +189,60 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v49: core::RangeCheck, v50: core::gas::GasBuiltin
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
+  (v2: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
+  (v3: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v4: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
-  (v16: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
-  (v1: core::felt252) <- 448378203247
-  (v2: core::integer::u32) <- 5
-  (v3: core::byte_array::ByteArray) <- struct_construct(v0, v1, v2)
-  (v17: core::byte_array::ByteArray, v18: @core::byte_array::ByteArray) <- snapshot(v3)
-  (v19: @core::array::Array::<core::bytes_31::bytes31>, v20: @core::felt252, v21: @core::integer::u32) <- struct_destructure(v18)
-  (v22: core::array::Span::<core::bytes_31::bytes31>) <- struct_construct(v19)
-  (v51: core::RangeCheck, v52: core::gas::GasBuiltin, v23: core::panics::PanicResult::<(core::array::Span::<core::bytes_31::bytes31>, core::array::Array::<core::bytes_31::bytes31>, ())>) <- core::array::ArrayTCloneImpl::clone[expr14](v49, v50, v22, v16)
+  (v5: core::felt252) <- 448378203247
+  (v6: core::integer::u32) <- 5
+  (v7: core::byte_array::ByteArray) <- struct_construct(v2, v5, v6)
+  (v8: core::byte_array::ByteArray, v9: @core::byte_array::ByteArray) <- snapshot(v7)
+  (v10: @core::array::Array::<core::bytes_31::bytes31>, v11: @core::felt252, v12: @core::integer::u32) <- struct_destructure(v9)
+  (v13: core::array::Span::<core::bytes_31::bytes31>) <- struct_construct(v10)
+  (v14: core::RangeCheck, v15: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::array::Span::<core::bytes_31::bytes31>, core::array::Array::<core::bytes_31::bytes31>, ())>) <- core::array::ArrayTCloneImpl::clone[expr14](v0, v1, v13, v4)
 End:
-  Match(match_enum(v23) {
-    PanicResult::Ok(v24) => blk1,
-    PanicResult::Err(v25) => blk4,
+  Match(match_enum(v16) {
+    PanicResult::Ok(v17) => blk1,
+    PanicResult::Err(v18) => blk4,
   })
 
 blk1:
 Statements:
-  (v5: core::felt252) <- 35697342966884
-  (v6: core::integer::u32) <- 6
-  (v7: core::byte_array::ByteArray) <- struct_construct(v4, v5, v6)
-  (v26: core::byte_array::ByteArray, v27: @core::byte_array::ByteArray) <- snapshot(v7)
-  (v28: core::array::Span::<core::bytes_31::bytes31>, v29: core::array::Array::<core::bytes_31::bytes31>, v30: ()) <- struct_destructure(v24)
-  (v31: @core::array::Array::<core::bytes_31::bytes31>, v32: @core::felt252, v33: @core::integer::u32) <- struct_destructure(v18)
-  (v34: core::felt252) <- desnap(v32)
-  (v35: @core::array::Array::<core::bytes_31::bytes31>, v36: @core::felt252, v37: @core::integer::u32) <- struct_destructure(v18)
-  (v38: core::integer::u32) <- desnap(v37)
-  (v39: core::byte_array::ByteArray) <- struct_construct(v29, v34, v38)
-  (v53: core::RangeCheck, v54: core::gas::GasBuiltin, v40: core::panics::PanicResult::<(core::byte_array::ByteArray, ())>) <- core::byte_array::ByteArrayImpl::append(v51, v52, v39, v27)
+  (v19: core::felt252) <- 35697342966884
+  (v20: core::integer::u32) <- 6
+  (v21: core::byte_array::ByteArray) <- struct_construct(v3, v19, v20)
+  (v22: core::byte_array::ByteArray, v23: @core::byte_array::ByteArray) <- snapshot(v21)
+  (v24: core::array::Span::<core::bytes_31::bytes31>, v25: core::array::Array::<core::bytes_31::bytes31>, v26: ()) <- struct_destructure(v17)
+  (v27: @core::array::Array::<core::bytes_31::bytes31>, v28: @core::felt252, v29: @core::integer::u32) <- struct_destructure(v9)
+  (v30: core::felt252) <- desnap(v28)
+  (v31: @core::array::Array::<core::bytes_31::bytes31>, v32: @core::felt252, v33: @core::integer::u32) <- struct_destructure(v9)
+  (v34: core::integer::u32) <- desnap(v33)
+  (v35: core::byte_array::ByteArray) <- struct_construct(v25, v30, v34)
+  (v36: core::RangeCheck, v37: core::gas::GasBuiltin, v38: core::panics::PanicResult::<(core::byte_array::ByteArray, ())>) <- core::byte_array::ByteArrayImpl::append(v14, v15, v35, v23)
 End:
-  Match(match_enum(v40) {
-    PanicResult::Ok(v41) => blk2,
-    PanicResult::Err(v42) => blk3,
+  Match(match_enum(v38) {
+    PanicResult::Ok(v39) => blk2,
+    PanicResult::Err(v40) => blk3,
   })
 
 blk2:
 Statements:
-  (v43: core::byte_array::ByteArray, v44: ()) <- struct_destructure(v41)
-  (v45: (core::byte_array::ByteArray,)) <- struct_construct(v43)
-  (v46: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Ok(v45)
+  (v41: core::byte_array::ByteArray, v42: ()) <- struct_destructure(v39)
+  (v43: (core::byte_array::ByteArray,)) <- struct_construct(v41)
+  (v44: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Ok(v43)
 End:
-  Return(v53, v54, v46)
+  Return(v36, v37, v44)
 
 blk3:
 Statements:
-  (v47: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v42)
+  (v45: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v40)
 End:
-  Return(v53, v54, v47)
+  Return(v36, v37, v45)
 
 blk4:
 Statements:
-  (v48: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v25)
+  (v46: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v18)
 End:
-  Return(v51, v52, v48)
+  Return(v14, v15, v46)

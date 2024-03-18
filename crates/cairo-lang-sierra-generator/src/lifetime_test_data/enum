@@ -48,55 +48,55 @@ End:
 
 blk1:
 Statements:
-  (v9: core::felt252) <- 1
-  (v10: test::MyEnum) <- MyEnum::A(v9)
-  (v11: test::MyEnum) <- test::immovable::<test::MyEnum>(v10)
-  (v12: core::felt252) <- 2
-  (v13: test::MyEnum) <- MyEnum::A(v12)
+  (v7: core::felt252) <- 1
+  (v8: test::MyEnum) <- MyEnum::A(v7)
+  (v9: test::MyEnum) <- test::immovable::<test::MyEnum>(v8)
+  (v10: core::felt252) <- 2
+  (v11: test::MyEnum) <- MyEnum::A(v10)
 End:
-  Goto(blk4, {v13 -> v19})
+  Goto(blk4, {v11 -> v12})
 
 blk2:
 Statements:
-  (v21: core::felt252) <- core::felt252_add(v5, v1)
-  (v22: core::felt252) <- core::felt252_add(v21, v2)
-  (v16: test::MyEnum) <- MyEnum::A(v22)
+  (v13: core::felt252) <- core::felt252_add(v5, v1)
+  (v14: core::felt252) <- core::felt252_add(v13, v2)
+  (v15: test::MyEnum) <- MyEnum::A(v14)
 End:
-  Goto(blk4, {v16 -> v19})
+  Goto(blk4, {v15 -> v12})
 
 blk3:
 Statements:
-  (v17: (core::felt252, core::felt252)) <- struct_construct(v2, v3)
-  (v18: test::MyEnum) <- MyEnum::C(v17)
+  (v16: (core::felt252, core::felt252)) <- struct_construct(v2, v3)
+  (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Goto(blk4, {v18 -> v19})
+  Goto(blk4, {v17 -> v12})
 
 blk4:
 Statements:
-  (v20: test::MyEnum) <- test::immovable::<test::MyEnum>(v19)
+  (v18: test::MyEnum) <- test::immovable::<test::MyEnum>(v12)
 End:
   Return(v3)
 
 //! > last_use
 v3: ((BlockId(4), 1), 0)
-v19: ((BlockId(4), 0), 0)
-v18: ((BlockId(3), 2), 0)
-v17: ((BlockId(3), 1), 0)
+v12: ((BlockId(4), 0), 0)
+v17: ((BlockId(3), 2), 0)
+v16: ((BlockId(3), 1), 0)
 v2: ((BlockId(3), 0), 0)
-v16: ((BlockId(2), 3), 0)
-v22: ((BlockId(2), 2), 0)
+v15: ((BlockId(2), 3), 0)
+v14: ((BlockId(2), 2), 0)
 v2: ((BlockId(2), 1), 1)
-v21: ((BlockId(2), 1), 0)
+v13: ((BlockId(2), 1), 0)
 v1: ((BlockId(2), 0), 1)
 v5: ((BlockId(2), 0), 0)
-v13: ((BlockId(1), 5), 0)
-v12: ((BlockId(1), 4), 0)
-v10: ((BlockId(1), 2), 0)
-v9: ((BlockId(1), 1), 0)
+v11: ((BlockId(1), 5), 0)
+v10: ((BlockId(1), 4), 0)
+v8: ((BlockId(1), 2), 0)
+v7: ((BlockId(1), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(4), 0)): v20
-PostStatement((BlockId(1), 2)): v11
+PostStatement((BlockId(4), 0)): v18
+PostStatement((BlockId(1), 2)): v9
 BeginningOfBlock(BlockId(1)): v4, v2, v1
 BeginningOfBlock(BlockId(3)): v6, v1
