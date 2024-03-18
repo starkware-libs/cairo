@@ -1,6 +1,7 @@
 use core::serde::Serde;
 use core::hash::{Hash, HashStateTrait};
 
+/// Represents a Starknet contract class hash.
 /// The value range of this type is `[0, 2**251)`.
 #[derive(Copy, Drop)]
 pub extern type ClassHash;
