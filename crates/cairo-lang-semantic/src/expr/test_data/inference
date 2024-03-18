@@ -305,6 +305,11 @@ error: Type annotations needed. Failed to infer ?1
    MyTrait::foo(Option::None);
                 ^****^
 
+error: Trait `test::MyTrait::<core::option::Option::<?0>>` has multiple implementations, in: `test::MyImpl3`, `test::MyImpl4`
+ --> lib.cairo:17:13
+   MyTrait::foo(Option::None);
+            ^*^
+
 //! > ==========================================================================
 
 //! > Test dot_expr inference.
@@ -624,6 +629,11 @@ error: Type annotations needed. Failed to infer ?0
    let _x = "hello";
             ^*****^
 
+error: Cannot infer trait core::string::StringLiteral::<?0>. First generic argument must be known.
+ --> lib.cairo:2:13
+   let _x = "hello";
+            ^*****^
+
 //! > ==========================================================================
 
 //! > Test impl inference with an impl of a non-existing trait in context.
@@ -749,3 +759,8 @@ error: Type annotations needed. Failed to infer ?2
  --> lib.cairo:6:4
    takes_snapshots(x, y);
    ^*************^
+
+error: Mismatched types. The type `@?2` cannot be created from a numeric literal.
+ --> lib.cairo:4:12
+   let x = 5;
+           ^

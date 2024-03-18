@@ -74,8 +74,8 @@ pub fn extern_type_declaration_generic_params_data(
             ExternItemWithImplGenericsNotSupported,
         );
     }
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, extern_type_syntax.stable_ptr().untyped())
+    resolver.inference().finalize().map(|inference_errs| {
+        inference_errs.report(&mut diagnostics, extern_type_syntax.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -104,11 +104,8 @@ pub fn priv_extern_type_declaration_data(
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(
-            &mut diagnostics,
-            stable_ptr.unwrap_or(extern_type_syntax.stable_ptr().untyped()),
-        );
+    if let Some(inference_errs) = resolver.inference().finalize() {
+        inference_errs.report(&mut diagnostics, extern_type_syntax.stable_ptr().untyped());
     }
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
 

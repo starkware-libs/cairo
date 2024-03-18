@@ -245,8 +245,8 @@ pub fn impl_def_generic_params_data(
         module_file_id,
         &impl_ast.generic_params(db.upcast()),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, impl_ast.stable_ptr().untyped())
+    resolver.inference().finalize().map(|inference_errs| {
+        inference_errs.report(&mut diagnostics, impl_ast.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -405,9 +405,8 @@ pub fn priv_impl_declaration_data_inner(
     };
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()));
+    if let Some(inference_errs) = resolver.inference().finalize() {
+        inference_errs.report(&mut diagnostics, impl_ast.stable_ptr().untyped());
     }
     let concrete_trait = resolver.inference().rewrite(concrete_trait).no_err();
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
@@ -1415,8 +1414,8 @@ pub fn priv_impl_function_generic_params_data(
         module_file_id,
         &declaration.generic_params(syntax_db),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, function_syntax.stable_ptr().untyped())
+    resolver.inference().finalize().map(|inference_errs| {
+        inference_errs.report(&mut diagnostics, function_syntax.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -1543,9 +1542,8 @@ pub fn priv_impl_function_declaration_data(
     let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
+    if let Some(inference_errs) = resolver.inference().finalize() {
+        inference_errs.report(&mut diagnostics, function_syntax.stable_ptr().untyped());
     }
     let signature = resolver.inference().rewrite(signature).no_err();
     let generic_params = resolver.inference().rewrite(generic_params).no_err();

@@ -363,6 +363,39 @@ impl<'db> std::fmt::Debug for Inference<'db> {
     }
 }
 
+#[derive(Debug)]
+pub struct InferenceErrors {
+    errors: Vec<(Option<SyntaxStablePtrId>, InferenceError)>,
+}
+impl InferenceErrors {
+    pub fn new() -> Self {
+        Self { errors: Vec::new() }
+    }
+    pub fn new_single(stable_ptr: Option<SyntaxStablePtrId>, err: InferenceError) -> Self {
+        let mut res = Self { errors: Vec::new() };
+        res.push(stable_ptr, err);
+        res
+    }
+    pub fn push(&mut self, stable_ptr: Option<SyntaxStablePtrId>, err: InferenceError) {
+        self.errors.push((stable_ptr, err));
+    }
+    pub fn report(
+        &self,
+        diagnostics: &mut SemanticDiagnostics,
+        default_stable_ptr: SyntaxStablePtrId,
+    ) {
+        for (stable_ptr, err) in &self.errors {
+            err.report(diagnostics, stable_ptr.unwrap_or(default_stable_ptr));
+        }
+    }
+    pub fn is_empty(&self) -> bool {
+        self.errors.is_empty()
+    }
+    pub fn first(&self) -> InferenceError {
+        self.errors[0].1.clone()
+    }
+}
+
 impl<'db> Inference<'db> {
     /// Getter for an [ImplVar].
     fn impl_var(&self, var_id: LocalImplVarId) -> &ImplVar {
@@ -504,7 +537,7 @@ impl<'db> Inference<'db> {
     }
 
     /// Finalizes an inference by inferring uninferred numeric literals as felt252.
-    pub fn finalize(&mut self) -> Option<(Option<SyntaxStablePtrId>, InferenceError)> {
+    pub fn finalize(&mut self) -> Option<InferenceErrors> {
         let numeric_trait_id = get_core_trait(self.db, "NumericLiteral".into());
         let felt_ty = core_felt252_ty(self.db);
 
@@ -512,7 +545,7 @@ impl<'db> Inference<'db> {
         loop {
             let mut changed = false;
             if let Err(err) = self.solve() {
-                return Some((None, err));
+                return Some(InferenceErrors::new_single(None, err));
             }
             for (var, _) in self.ambiguous.clone() {
                 let impl_var = self.impl_var(var).clone();
@@ -528,7 +561,7 @@ impl<'db> Inference<'db> {
                     continue;
                 }
                 if let Err(err) = self.conform_ty(ty, felt_ty) {
-                    return Some((
+                    return Some(InferenceErrors::new_single(
                         self.stable_ptrs.get(&InferenceVar::Impl(impl_var.id)).copied(),
                         err,
                     ));
@@ -544,8 +577,12 @@ impl<'db> Inference<'db> {
             self.pending.is_empty(),
             "pending should all be solved by this point. Guaranteed by solve()."
         );
-        let (var, err) = self.first_undetermined_variable()?;
-        Some((self.stable_ptrs.get(&var).copied(), err))
+        let mut inference_errors = InferenceErrors::new();
+        while let Some((var, err)) = self.first_undetermined_variable() {
+            inference_errors.push(self.stable_ptrs.get(&var).copied(), err);
+        }
+        // TODO(yg): change later to vector directly, without option.
+        if inference_errors.is_empty() { None } else { Some(inference_errors) }
     }
 
     /// Retrieves the first variable that is still not inferred, or None, if everything is
@@ -554,6 +591,8 @@ impl<'db> Inference<'db> {
         for (id, var) in self.type_vars.iter().enumerate() {
             if self.type_assignment(LocalTypeVarId(id)).is_none() {
                 let ty = self.db.intern_type(TypeLongId::Var(*var));
+                // TODO(yg): do the pops better (all remove(0)s).
+                self.type_vars.remove(0);
                 return Some((InferenceVar::Type(var.id), InferenceError::TypeNotInferred { ty }));
             }
         }
@@ -561,14 +600,16 @@ impl<'db> Inference<'db> {
             let impl_var = self.impl_var(var).clone();
             let concrete_trait_id = impl_var.concrete_trait_id;
             let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
+            self.refuted.remove(0);
             return Some((
                 InferenceVar::Impl(var),
                 InferenceError::NoImplsFound { concrete_trait_id },
             ));
         }
-        if let Some((var, ambiguity)) = self.ambiguous.first() {
-            let var = *var;
+        if let Some((var, ambiguity)) = self.ambiguous.first().cloned() {
+            let var = var;
             // Note: do not rewrite `ambiguity`, since it is expressed in canonical variables.
+            self.ambiguous.remove(0);
             return Some((InferenceVar::Impl(var), InferenceError::Ambiguity(ambiguity.clone())));
         }
         None
