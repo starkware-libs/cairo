@@ -54,7 +54,6 @@ use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
@@ -64,7 +63,7 @@ use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
-use tracing::{debug, error, info, trace_span, warn};
+use tracing::{debug, error, info, trace_span, warn, Instrument};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
 use crate::completions::{colon_colon_completions, dot_completions, generic_completions};
@@ -264,83 +263,117 @@ impl Backend {
         self.db_mutex.lock().await
     }
 
+    /// Locks and gets a server state.
+    #[tracing::instrument(level = "trace", skip_all)]
+    async fn state_mut(&self) -> tokio::sync::MutexGuard<'_, State> {
+        self.state_mutex.lock().await
+    }
+
     // TODO(spapini): Consider managing vfs in a different way, using the
     // client.send_notification::<UpdateVirtualFile> call.
 
     /// Refresh diagnostics and send diffs to client.
     #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_diagnostics(&self) -> LSPResult<()> {
-        let real_state = self.state_mutex.lock().await;
-        let state = real_state.clone();
-        drop(real_state);
-        let (state, res) = self
-            .with_db(|db| {
-                let mut state = state;
-                let mut res = vec![];
-                // Get all files. Try to go over open files first.
-                let mut files_set: OrderedHashSet<_> = state.open_files.iter().cloned().collect();
-                trace_span!("get_all_files").in_scope(|| {
-                    for crate_id in db.crates() {
-                        for module_id in db.crate_modules(crate_id).iter() {
-                            for file_id in
-                                db.module_files(*module_id).unwrap_or_default().iter().copied()
-                            {
-                                files_set.insert(get_uri(db, file_id));
-                            }
-                        }
-                    }
-                });
+        let open_files = self.state_mut().await.open_files.clone();
 
-                // Get all diagnostics.
-                trace_span!("get_all_diagnostics").in_scope(|| {
-                    for uri in files_set.iter().cloned() {
-                        let file_id = file(db, uri.clone());
-                        let new_file_diagnostics = FileDiagnostics {
-                            parser: db.file_syntax_diagnostics(file_id),
-                            semantic: db.file_semantic_diagnostics(file_id).unwrap_or_default(),
-                            lowering: db.file_lowering_diagnostics(file_id).unwrap_or_default(),
-                        };
-                        // Since we are using Arcs, this comparison should be efficient.
-                        if let Some(old_file_diagnostics) = state.file_diagnostics.get(&uri) {
-                            if old_file_diagnostics == &new_file_diagnostics {
-                                continue;
-                            }
-                        }
-                        let mut diags = Vec::new();
-                        get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.parser);
-                        get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.semantic);
-                        get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.lowering);
-                        state.file_diagnostics.insert(uri.clone(), new_file_diagnostics);
-
-                        res.push((uri, diags));
-                    }
-                });
-
-                // Clear old diagnostics.
-                let old_files: Vec<_> = state.file_diagnostics.keys().cloned().collect();
-                trace_span!("clear_old_diagnostics").in_scope(|| {
-                    for uri in old_files {
-                        if files_set.contains(&uri) {
-                            continue;
-                        }
-                        state.file_diagnostics.remove(&uri);
-                        res.push((uri, Vec::new()));
-                    }
-                });
-
-                (state, res)
-            })
-            .await?;
-        let mut real_state = self.state_mutex.lock().await;
-        *real_state = state;
-        drop(real_state);
-
-        for (uri, diags) in res {
-            self.client.publish_diagnostics(uri, diags, None).await
+        // First, refresh diagnostics for each open file.
+        async {
+            for uri in &open_files {
+                self.refresh_file_diagnostics(uri).await;
+            }
         }
+        .instrument(trace_span!("refresh_open_files_diagnostics"))
+        .await;
+
+        // Second, refresh diagnostics for the rest of the compilation unit.
+        let files_set = async {
+            let db = self.db_mut().await;
+            let mut files_set = HashSet::new();
+            for crate_id in db.crates() {
+                for module_id in db.crate_modules(crate_id).iter() {
+                    for file_id in db.module_files(*module_id).unwrap_or_default().iter() {
+                        files_set.insert(get_uri((*db).upcast(), *file_id));
+                    }
+                }
+            }
+            files_set
+        }
+        .instrument(trace_span!("get_all_files"))
+        .await;
+
+        async {
+            for uri in files_set.iter().filter(|uri| !open_files.contains(uri)) {
+                self.refresh_file_diagnostics(uri).await;
+            }
+        }
+        .instrument(trace_span!("refresh_closed_files_diagnostics"))
+        .await;
+
+        // Finally, clear old diagnostics.
+        async {
+            let mut removed_files = Vec::new();
+            self.state_mut().await.file_diagnostics.retain(|uri, _| {
+                let retain = files_set.contains(uri);
+                if !retain {
+                    removed_files.push(uri.clone());
+                }
+                retain
+            });
+            for uri in removed_files {
+                self.client
+                    .publish_diagnostics(uri, Vec::new(), None)
+                    .instrument(trace_span!("publish_diagnostics"))
+                    .await;
+            }
+        }
+        .instrument(trace_span!("clear_old_diagnostics"))
+        .await;
+
         // After handling of all diagnostics attempting to swap the database to reduce memory
         // consumption.
         self.maybe_swap_database().await
+    }
+
+    /// Refresh diagnostics for a single file.
+    #[tracing::instrument(level = "trace", skip_all, fields(%uri))]
+    async fn refresh_file_diagnostics(&self, uri: &Url) {
+        let db = self.db_mut().await;
+
+        let file_id = file(&db, uri.clone());
+        let new_file_diagnostics = FileDiagnostics {
+            parser: trace_span!("file_syntax_diagnostics")
+                .in_scope(|| db.file_syntax_diagnostics(file_id)),
+            semantic: trace_span!("file_semantic_diagnostics")
+                .in_scope(|| db.file_semantic_diagnostics(file_id).unwrap_or_default()),
+            lowering: trace_span!("file_lowering_diagnostics")
+                .in_scope(|| db.file_lowering_diagnostics(file_id).unwrap_or_default()),
+        };
+
+        let mut state = self.state_mut().await;
+
+        // Since we are using Arcs, this comparison should be efficient.
+        if let Some(old_file_diagnostics) = state.file_diagnostics.get(uri) {
+            if old_file_diagnostics == &new_file_diagnostics {
+                return;
+            }
+        }
+        state.file_diagnostics.insert(uri.clone(), new_file_diagnostics.clone());
+
+        drop(state);
+
+        let mut diags = Vec::new();
+        get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
+        get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
+        get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.lowering);
+
+        // Drop database snapshot before we wait for the client responding to our notification.
+        drop(db);
+
+        self.client
+            .publish_diagnostics(uri.clone(), diags, None)
+            .instrument(trace_span!("publish_diagnostics"))
+            .await;
     }
 
     /// Checks if enough time passed since last db swap, and if so, swaps the database.
@@ -362,7 +395,7 @@ impl Backend {
     /// Perform database swap
     #[tracing::instrument(level = "debug", skip_all)]
     async fn swap_database(&self) -> LSPResult<()> {
-        let open_files = self.state_mutex.lock().await.open_files.clone();
+        let open_files = self.state_mut().await.open_files.clone();
         debug!("scheduled");
         let mut new_db = self
             .with_db(|db| {
@@ -376,7 +409,7 @@ impl Backend {
         debug!("initial compilation done");
         let mut db = self.db_mut().await;
         debug!("starting");
-        let state = self.state_mutex.lock().await;
+        let state = self.state_mut().await;
         ensure_exists_in_db(&mut new_db, &db, state.open_files.iter().cloned());
         *db = new_db;
         debug!("done");
@@ -723,7 +756,7 @@ impl LanguageServer for Backend {
         }
 
         let file_id = file(&db, uri.clone());
-        self.state_mutex.lock().await.open_files.insert(uri);
+        self.state_mut().await.open_files.insert(uri);
         db.override_file_content(file_id, Some(Arc::new(params.text_document.text)));
         drop(db);
         self.refresh_diagnostics().await.ok();
@@ -757,7 +790,7 @@ impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let mut db = self.db_mut().await;
-        self.state_mutex.lock().await.open_files.remove(&params.text_document.uri);
+        self.state_mut().await.open_files.remove(&params.text_document.uri);
         let file = file(&db, params.text_document.uri);
         db.override_file_content(file, None);
         drop(db);
