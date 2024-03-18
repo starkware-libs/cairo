@@ -82,7 +82,6 @@ impl fmt::Debug for PhasesFormatter<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let db = self.db;
         let function_id = self.function_id;
-        let strategy = db.default_optimization_strategy();
 
         let mut curr_state =
             (*db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap()).clone();
@@ -110,10 +109,14 @@ impl fmt::Debug for PhasesFormatter<'_> {
         apply_stage("after_add_destructs", &|lowered| add_destructs(db, function_id, lowered));
         apply_stage("scrub_units", &|lowered| scrub_units(db, lowered));
 
-        for phase in db.lookup_intern_strategy(strategy).0 {
-            let name = format!("{phase:?}").to_case(convert_case::Case::Snake);
-            phase.apply(db, function_id, &mut curr_state).unwrap();
-            add_stage_state(&name, &curr_state);
+        for strategy in
+            [db.inlined_function_optimization_strategy(), db.final_optimization_strategy()]
+        {
+            for phase in db.lookup_intern_strategy(strategy).0 {
+                let name = format!("{phase:?}").to_case(convert_case::Case::Snake);
+                phase.apply(db, function_id, &mut curr_state).unwrap();
+                add_stage_state(&name, &curr_state);
+            }
         }
 
         Ok(())
