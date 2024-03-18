@@ -102,10 +102,10 @@ pub trait DefsGroup:
     /// Gets the directory of a module.
     fn module_dir(&self, module_id: ModuleId) -> Maybe<Directory>;
 
-    // TODO: test that
+    // TODO(Marek): test that
     /// Gets the documentation above an item definition.
     fn get_item_documentation(&self, item_id: LookupItemId) -> Option<String>;
-    // TODO: test that
+    // TODO(Marek): test that
     /// Gets the the definition of an item.
     fn get_item_definition(&self, item_id: LookupItemId) -> String;
 
