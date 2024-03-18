@@ -75,16 +75,6 @@ error: Mismatched types. The type `core::bool` cannot be created from a numeric 
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                          ^
 
-error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
- --> lib.cairo:6:46
-const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                             ^
-
-error: Trait has no implementation in context: core::traits::Add::<core::bool>
- --> lib.cairo:6:42
-const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                         ^***^
-
 error: A numeric literal of type core::bool cannot be created.
  --> lib.cairo:6:42
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;

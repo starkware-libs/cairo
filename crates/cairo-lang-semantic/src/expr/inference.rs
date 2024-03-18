@@ -1,6 +1,6 @@
 //! Bidirectional type inference.
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 
@@ -173,6 +173,7 @@ impl InferenceError {
                 "Const generic inference not yet supported.".into()
             }
             InferenceError::NoImplsFound { concrete_trait_id } => {
+                // TODO(yg): consider separating to 3 sub-error kinds.
                 let trait_id = concrete_trait_id.trait_id(db);
                 if trait_id == get_core_trait(db, "NumericLiteral".into()) {
                     let generic_type = extract_matches!(
@@ -379,13 +380,42 @@ impl InferenceErrors {
     pub fn push(&mut self, stable_ptr: Option<SyntaxStablePtrId>, err: InferenceError) {
         self.errors.push((stable_ptr, err));
     }
-    pub fn report(
+    pub fn report_all(
         &self,
         diagnostics: &mut SemanticDiagnostics,
         default_stable_ptr: SyntaxStablePtrId,
     ) {
         for (stable_ptr, err) in &self.errors {
             err.report(diagnostics, stable_ptr.unwrap_or(default_stable_ptr));
+        }
+    }
+    pub fn report_firsts(
+        &self,
+        diagnostics: &mut SemanticDiagnostics,
+        default_stable_ptr: SyntaxStablePtrId,
+    ) {
+        let mut reported = HashSet::new();
+        for (stable_ptr, err) in &self.errors {
+            let location = stable_ptr.unwrap_or(default_stable_ptr);
+            // TODO(yg): is there a better way?
+            let err_kind = match err {
+                InferenceError::Failed(_) => 1,
+                InferenceError::Cycle { .. } => 2,
+                InferenceError::TypeKindMismatch { .. } => 3,
+                InferenceError::ConstKindMismatch { .. } => 4,
+                InferenceError::ImplKindMismatch { .. } => 5,
+                InferenceError::GenericArgMismatch { .. } => 6,
+                InferenceError::TraitMismatch { .. } => 7,
+                InferenceError::GenericFunctionMismatch { .. } => 8,
+                InferenceError::ConstInferenceNotSupported => 9,
+                InferenceError::NoImplsFound { .. } => 10,
+                InferenceError::Ambiguity(_) => 11, // TODO(yg): Consider not aggregating all
+                // ambiguity errors as a single kind.
+                InferenceError::TypeNotInferred { .. } => 12,
+            };
+            if reported.insert(err_kind) {
+                err.report(diagnostics, location);
+            }
         }
     }
     pub fn is_empty(&self) -> bool {
@@ -588,7 +618,8 @@ impl<'db> Inference<'db> {
     /// Retrieves the first variable that is still not inferred, or None, if everything is
     /// inferred.
     pub fn first_undetermined_variable(&mut self) -> Option<(InferenceVar, InferenceError)> {
-        for (id, var) in self.type_vars.iter().enumerate() {
+        // TODO(yg): don't clone.
+        for (id, var) in self.type_vars.clone().iter().enumerate() {
             if self.type_assignment(LocalTypeVarId(id)).is_none() {
                 let ty = self.db.intern_type(TypeLongId::Var(*var));
                 // TODO(yg): do the pops better (all remove(0)s).

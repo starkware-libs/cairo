@@ -171,13 +171,3 @@ error: Mismatched types. The type `test::MyStruct` cannot be created from a nume
  --> lib.cairo:15:9
     d + 0;
         ^
-
-error: Trait has no implementation in context: core::traits::Add::<test::MyStruct>
- --> lib.cairo:15:5
-    d + 0;
-    ^***^
-
-error: Trait has no implementation in context: core::traits::Neg::<test::MyStruct>
- --> lib.cairo:16:5
-    - d;
-    ^*^

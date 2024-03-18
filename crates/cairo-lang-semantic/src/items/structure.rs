@@ -69,7 +69,7 @@ pub fn priv_struct_declaration_data(
 
     // Check fully resolved.
     if let Some(inference_errs) = resolver.inference().finalize() {
-        inference_errs.report(&mut diagnostics, struct_ast.stable_ptr().untyped());
+        inference_errs.report_firsts(&mut diagnostics, struct_ast.stable_ptr().untyped());
     }
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -121,7 +121,7 @@ pub fn struct_generic_params_data(
         &struct_ast.generic_params(db.upcast()),
     )?;
     resolver.inference().finalize().map(|inference_errs| {
-        inference_errs.report(&mut diagnostics, struct_ast.stable_ptr().untyped())
+        inference_errs.report_firsts(&mut diagnostics, struct_ast.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -208,7 +208,7 @@ pub fn priv_struct_definition_data(
 
     // Check fully resolved.
     if let Some(inference_errs) = resolver.inference().finalize() {
-        inference_errs.report(&mut diagnostics, struct_ast.stable_ptr().untyped());
+        inference_errs.report_firsts(&mut diagnostics, struct_ast.stable_ptr().untyped());
     }
     for (_, member) in members.iter_mut() {
         member.ty = resolver.inference().rewrite(member.ty).no_err();

@@ -843,7 +843,7 @@ pub fn compute_root_expr(
 
     // Check fully resolved.
     if let Some(inference_errs) = ctx.resolver.inference().finalize() {
-        inference_errs.report(ctx.diagnostics, syntax.stable_ptr().untyped());
+        inference_errs.report_firsts(ctx.diagnostics, syntax.stable_ptr().untyped());
         return Ok(res);
     }
 

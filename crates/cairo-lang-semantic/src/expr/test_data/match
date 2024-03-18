@@ -86,11 +86,6 @@ error: Mismatched types. The type `core::bool` cannot be created from a numeric 
     match a + 1 {
               ^
 
-error: Trait has no implementation in context: core::traits::Add::<core::bool>
- --> lib.cairo:6:11
-    match a + 1 {
-          ^***^
-
 //! > ==========================================================================
 
 //! > Match incompatible arm types

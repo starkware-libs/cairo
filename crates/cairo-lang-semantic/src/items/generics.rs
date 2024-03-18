@@ -286,7 +286,7 @@ pub fn priv_generic_param_data(
         parent_item_id,
     );
     if let Some(inference_errs) = resolver.inference().finalize() {
-        inference_errs.report(&mut diagnostics, generic_param_syntax.stable_ptr().untyped());
+        inference_errs.report_firsts(&mut diagnostics, generic_param_syntax.stable_ptr().untyped());
     }
     let param_semantic = resolver.inference().rewrite(param_semantic).no_err();
     let resolver_data = Arc::new(resolver.data);

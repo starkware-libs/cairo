@@ -87,11 +87,6 @@ error: Mismatched types. The type `core::bool` cannot be created from a numeric 
     let mut x = 3;
                 ^
 
-error: Trait has no implementation in context: core::traits::AddEq::<core::bool>
- --> lib.cairo:3:5
-    x += true;
-    ^*******^
-
 //! > ==========================================================================
 
 //! > Test /= for an unsupported type.
