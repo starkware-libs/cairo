@@ -246,7 +246,7 @@ pub fn impl_def_generic_params_data(
         &impl_ast.generic_params(db.upcast()),
     )?;
     resolver.inference().finalize().map(|inference_errs| {
-        inference_errs.report(&mut diagnostics, impl_ast.stable_ptr().untyped())
+        inference_errs.report_firsts(&mut diagnostics, impl_ast.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -406,7 +406,7 @@ pub fn priv_impl_declaration_data_inner(
 
     // Check fully resolved.
     if let Some(inference_errs) = resolver.inference().finalize() {
-        inference_errs.report(&mut diagnostics, impl_ast.stable_ptr().untyped());
+        inference_errs.report_firsts(&mut diagnostics, impl_ast.stable_ptr().untyped());
     }
     let concrete_trait = resolver.inference().rewrite(concrete_trait).no_err();
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
@@ -1415,7 +1415,7 @@ pub fn priv_impl_function_generic_params_data(
         &declaration.generic_params(syntax_db),
     )?;
     resolver.inference().finalize().map(|inference_errs| {
-        inference_errs.report(&mut diagnostics, function_syntax.stable_ptr().untyped())
+        inference_errs.report_firsts(&mut diagnostics, function_syntax.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -1543,7 +1543,7 @@ pub fn priv_impl_function_declaration_data(
 
     // Check fully resolved.
     if let Some(inference_errs) = resolver.inference().finalize() {
-        inference_errs.report(&mut diagnostics, function_syntax.stable_ptr().untyped());
+        inference_errs.report_firsts(&mut diagnostics, function_syntax.stable_ptr().untyped());
     }
     let signature = resolver.inference().rewrite(signature).no_err();
     let generic_params = resolver.inference().rewrite(generic_params).no_err();

@@ -93,7 +93,8 @@ pub fn extern_function_declaration_generic_params_data(
         );
     }
     resolver.inference().finalize().map(|inference_errs| {
-        inference_errs.report(&mut diagnostics, extern_function_syntax.stable_ptr().untyped())
+        inference_errs
+            .report_firsts(&mut diagnostics, extern_function_syntax.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -201,7 +202,8 @@ pub fn priv_extern_function_declaration_data(
 
     // Check fully resolved.
     if let Some(inference_errs) = resolver.inference().finalize() {
-        inference_errs.report(&mut diagnostics, extern_function_syntax.stable_ptr().untyped());
+        inference_errs
+            .report_firsts(&mut diagnostics, extern_function_syntax.stable_ptr().untyped());
     }
     let signature = resolver.inference().rewrite(signature).no_err();
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
