@@ -1,6 +1,6 @@
 //! Bidirectional type inference.
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 
@@ -379,13 +379,41 @@ impl InferenceErrors {
     pub fn push(&mut self, stable_ptr: Option<SyntaxStablePtrId>, err: InferenceError) {
         self.errors.push((stable_ptr, err));
     }
-    pub fn report(
+    pub fn report_all(
         &self,
         diagnostics: &mut SemanticDiagnostics,
         default_stable_ptr: SyntaxStablePtrId,
     ) {
         for (stable_ptr, err) in &self.errors {
             err.report(diagnostics, stable_ptr.unwrap_or(default_stable_ptr));
+        }
+    }
+    pub fn report_firsts(
+        &self,
+        diagnostics: &mut SemanticDiagnostics,
+        default_stable_ptr: SyntaxStablePtrId,
+    ) {
+        let mut reported = HashSet::new();
+        for (stable_ptr, err) in &self.errors {
+            let location = stable_ptr.unwrap_or(default_stable_ptr);
+            // TODO(yg): is there a better way?
+            let err_kind = match err {
+                InferenceError::Failed(_) => 1,
+                InferenceError::Cycle { .. } => 2,
+                InferenceError::TypeKindMismatch { .. } => 3,
+                InferenceError::ConstKindMismatch { .. } => 4,
+                InferenceError::ImplKindMismatch { .. } => 5,
+                InferenceError::GenericArgMismatch { .. } => 6,
+                InferenceError::TraitMismatch { .. } => 7,
+                InferenceError::GenericFunctionMismatch { .. } => 8,
+                InferenceError::ConstInferenceNotSupported => 9,
+                InferenceError::NoImplsFound { .. } => 10,
+                InferenceError::Ambiguity(_) => 11,
+                InferenceError::TypeNotInferred { .. } => 12,
+            };
+            if reported.insert((location, err_kind)) {
+                err.report(diagnostics, location);
+            }
         }
     }
     pub fn is_empty(&self) -> bool {

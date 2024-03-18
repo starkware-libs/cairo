@@ -146,7 +146,7 @@ pub fn resolve_const_expr_and_evaluate(
     }
     // Check fully resolved.
     if let Some(inference_errs) = ctx.resolver.inference().finalize() {
-        inference_errs.report(ctx.diagnostics, const_stable_ptr);
+        inference_errs.report_firsts(ctx.diagnostics, const_stable_ptr);
     }
     for (_, expr) in ctx.exprs.iter_mut() {
         *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
