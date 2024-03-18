@@ -165,9 +165,34 @@ pub struct SierraStatementDebugInfo {
     pub code_offset: usize,
     /// The index of the sierra statement in the instructions vector.
     pub instruction_idx: usize,
-    /// The result branch changes of the sierra statement.
+    /// Statement-kind-dependent information.
+    pub additional_kind_info: StatementKindDebugInfo,
+}
+
+/// Additional debug information for a Sierra statement, depending on its kind
+/// (invoke/return/dummy).
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub enum StatementKindDebugInfo {
+    Return(ReturnStatementDebugInfo),
+    Invoke(InvokeStatementDebugInfo),
+    /// Dummy marker for the end of the program. It is used for a fake statement that contains the
+    /// final offset (the size of the program code segment).
+    EndMarker,
+}
+
+/// Additional debug information for a return Sierra statement.
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct ReturnStatementDebugInfo {
+    /// The references of a Sierra return statement.
+    pub ref_values: Vec<ReferenceValue>,
+}
+
+/// Additional debug information for an invoke Sierra statement.
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct InvokeStatementDebugInfo {
+    /// The result branch changes of a Sierra invoke statement.
     pub result_branch_changes: Vec<BranchChanges>,
-    /// The invoke and return references of the sierra statement.
+    /// The references of a Sierra invoke statement.
     pub ref_values: Vec<ReferenceValue>,
 }
 
@@ -331,7 +356,7 @@ pub fn compile(
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
 
-    // Maps statement_idx to program_offset, result_branch_changes, invoke_refs and return_refs.
+    // Maps statement_idx to its debug info.
     // The last value (for statement_idx=number-of-statements)
     // contains the final offset (the size of the program code segment).
     let mut sierra_statement_info: Vec<SierraStatementDebugInfo> =
@@ -357,13 +382,6 @@ pub fn compile(
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
         let statement_idx = StatementIdx(statement_id);
-
-        sierra_statement_info.push(SierraStatementDebugInfo {
-            code_offset: program_offset,
-            instruction_idx: instructions.len(),
-            result_branch_changes: vec![],
-            ref_values: vec![],
-        });
 
         if program_offset > config.max_bytecode_size {
             return Err(Box::new(CompilationError::CodeSizeLimitExceeded));
@@ -402,7 +420,13 @@ pub fn compile(
                 program_offset += ret_instruction.op_size();
                 instructions.push(Instruction::new(InstructionBody::Ret(ret_instruction), false));
 
-                sierra_statement_info[statement_id].ref_values = return_refs;
+                sierra_statement_info.push(SierraStatementDebugInfo {
+                    code_offset: program_offset,
+                    instruction_idx: instructions.len(),
+                    additional_kind_info: StatementKindDebugInfo::Return(
+                        ReturnStatementDebugInfo { ref_values: return_refs },
+                    ),
+                });
             }
             Statement::Invocation(invocation) => {
                 let (annotations, invoke_refs) = program_annotations
@@ -450,9 +474,16 @@ pub fn compile(
                     ..annotations
                 };
 
-                sierra_statement_info[statement_id].result_branch_changes =
-                    compiled_invocation.results.clone();
-                sierra_statement_info[statement_id].ref_values = invoke_refs;
+                sierra_statement_info.push(SierraStatementDebugInfo {
+                    code_offset: program_offset,
+                    instruction_idx: instructions.len(),
+                    additional_kind_info: StatementKindDebugInfo::Invoke(
+                        InvokeStatementDebugInfo {
+                            result_branch_changes: compiled_invocation.results.clone(),
+                            ref_values: invoke_refs,
+                        },
+                    ),
+                });
 
                 let branching_libfunc = compiled_invocation.results.len() > 1;
 
@@ -490,8 +521,7 @@ pub fn compile(
     sierra_statement_info.push(SierraStatementDebugInfo {
         code_offset: program_offset,
         instruction_idx: instructions.len(),
-        result_branch_changes: vec![],
-        ref_values: vec![],
+        additional_kind_info: StatementKindDebugInfo::EndMarker,
     });
 
     let statement_offsets: Vec<usize> =
