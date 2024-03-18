@@ -73,24 +73,25 @@ define_short_id!(
 pub struct OptimizationStrategy(pub Vec<OptimizationPhase>);
 
 impl OptimizationStrategyId {
-    /// Returns the lowering of `function` after applying the strategy to it.
+    /// Applies the optimization strategy phase to the lowering.
+    ///
+    /// Assumes `lowered` is a a lowering of `function`.
     pub fn apply_strategy(
         self,
         db: &dyn LoweringGroup,
         function: ConcreteFunctionWithBodyId,
-    ) -> Maybe<FlatLowered> {
-        let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
-
+        lowered: &mut FlatLowered,
+    ) -> Maybe<()> {
         for phase in db.lookup_intern_strategy(self).0 {
-            phase.apply(db, function, &mut lowered)?;
+            phase.apply(db, function, lowered)?;
         }
 
-        Ok(lowered)
+        Ok(())
     }
 }
 
-/// Query implementation of [crate::db::LoweringGroup::inlined_function_optimization_strategy].
-pub fn inlined_function_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
+/// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
+pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     db.intern_strategy(OptimizationStrategy(vec![
         OptimizationPhase::ApplyInlining,
         OptimizationPhase::ReturnOptimization,
@@ -114,24 +115,9 @@ pub fn inlined_function_optimization_strategy(db: &dyn LoweringGroup) -> Optimiz
     ]))
 }
 
-/// Query implementation of [crate::db::LoweringGroup::default_optimization_strategy].
-pub fn default_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
+/// Query implementation of [crate::db::LoweringGroup::final_optimization_strategy].
+pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     db.intern_strategy(OptimizationStrategy(vec![
-        OptimizationPhase::ApplyInlining,
-        OptimizationPhase::ReturnOptimization,
-        OptimizationPhase::ReorganizeBlocks,
-        // The call to `reorder_statements` before and after `branch_inversion` is intentional.
-        // See description of `branch_inversion` for more details.
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::BranchInversion,
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::CancelOps,
-        OptimizationPhase::ConstFolding,
-        OptimizationPhase::OptimizeMatches,
-        OptimizationPhase::SplitStructs,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::OptimizeMatches,
         OptimizationPhase::LowerImplicits,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
