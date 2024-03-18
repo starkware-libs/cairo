@@ -60,7 +60,7 @@ pub fn compile_cairo_project_at_path(
 ) -> Result<Program> {
     let mut db = RootDatabase::builder().detect_corelib().build()?;
     let main_crate_ids = setup_project(&mut db, path)?;
-    compile_prepared_db(&mut db, main_crate_ids, compiler_config)
+    compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
 }
 
 /// Compiles a Cairo project.
@@ -79,7 +79,7 @@ pub fn compile(
     let mut db = RootDatabase::builder().with_project_config(project_config.clone()).build()?;
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
 
-    compile_prepared_db(&mut db, main_crate_ids, compiler_config)
+    compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
 }
 
 /// Runs Cairo compiler.
@@ -93,15 +93,17 @@ pub fn compile(
 /// # Returns
 /// * `Ok(Program)` - The compiled program.
 /// * `Err(anyhow::Error)` - Compilation failed.
-pub fn compile_prepared_db(
+pub fn compile_prepared_db_program(
     db: &mut RootDatabase,
     main_crate_ids: Vec<CrateId>,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
-    Ok(compile_prepared_db_with_debug_info(db, main_crate_ids, compiler_config)?.program)
+    Ok(compile_prepared_db(db, main_crate_ids, compiler_config)?.program)
 }
 
 /// Runs Cairo compiler.
+///
+/// Similar to `compile_prepared_db_program`, but this function returns all the raw debug information.
 ///
 /// # Arguments
 /// * `db` - Preloaded compilation database.
@@ -112,7 +114,7 @@ pub fn compile_prepared_db(
 /// # Returns
 /// * `Ok(SierraProgramWithDebug)` - The compiled program with debug info.
 /// * `Err(anyhow::Error)` - Compilation failed.
-pub fn compile_prepared_db_with_debug_info(
+pub fn compile_prepared_db(
     db: &mut RootDatabase,
     main_crate_ids: Vec<CrateId>,
     mut compiler_config: CompilerConfig<'_>,
