@@ -23,6 +23,7 @@ use cairo_lang_semantic::items::functions::{
 use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::LookupIntern;
 use clap::Parser;
 use convert_case::Casing;
 use itertools::Itertools;
@@ -110,7 +111,7 @@ impl fmt::Debug for PhasesFormatter<'_> {
         apply_stage("scrub_units", &|lowered| scrub_units(db, lowered));
 
         for strategy in [db.baseline_optimization_strategy(), db.final_optimization_strategy()] {
-            for phase in db.lookup_intern_strategy(strategy).0 {
+            for phase in strategy.lookup_intern(db).0 {
                 let name = format!("{phase:?}").to_case(convert_case::Case::Snake);
                 phase.apply(db, function_id, &mut curr_state).unwrap();
                 add_stage_state(&name, &curr_state);

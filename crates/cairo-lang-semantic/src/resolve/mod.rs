@@ -17,7 +17,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{require, try_extract_matches};
+use cairo_lang_utils::{require, try_extract_matches, LookupIntern};
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -549,7 +549,7 @@ impl<'db> Resolver<'db> {
             }
             ResolvedConcreteItem::Type(ty) => {
                 if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
-                    self.db.lookup_intern_type(*ty)
+                    ty.lookup_intern(self.db)
                 {
                     let enum_id = concrete_enum_id.enum_id(self.db);
                     let variants = self
@@ -570,7 +570,7 @@ impl<'db> Resolver<'db> {
             }
             ResolvedConcreteItem::Trait(concrete_trait_id) => {
                 // Find the relevant function in the trait.
-                let long_trait_id = self.db.lookup_intern_concrete_trait(*concrete_trait_id);
+                let long_trait_id = concrete_trait_id.lookup_intern(self.db);
                 let trait_id = long_trait_id.trait_id;
 
                 let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident)? else {

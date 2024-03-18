@@ -3,7 +3,7 @@ use cairo_lang_defs::ids::UnstableSalsaId;
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
-use cairo_lang_utils::{define_short_id, try_extract_matches};
+use cairo_lang_utils::{define_short_id, try_extract_matches, LookupIntern};
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{ExternFunctionId, FreeFunctionId};
 use semantic::items::functions::GenericFunctionId;
@@ -59,15 +59,13 @@ impl FunctionWithBodyId {
         &self,
         db: &dyn LoweringGroup,
     ) -> cairo_lang_defs::ids::FunctionWithBodyId {
-        db.lookup_intern_lowering_function_with_body(*self).base_semantic_function(db)
+        self.lookup_intern(db).base_semantic_function(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         Ok(db.priv_function_with_body_lowering(*self)?.signature.clone())
     }
     pub fn to_concrete(&self, db: &dyn LoweringGroup) -> Maybe<ConcreteFunctionWithBodyId> {
-        Ok(db.intern_lowering_concrete_function_with_body(
-            db.lookup_intern_lowering_function_with_body(*self).to_concrete(db)?,
-        ))
+        Ok(db.intern_lowering_concrete_function_with_body(self.lookup_intern(db).to_concrete(db)?))
     }
 }
 pub trait SemanticFunctionWithBodyIdEx {
@@ -159,7 +157,7 @@ impl ConcreteFunctionWithBodyId {
         ))
     }
     pub fn get(&self, db: &dyn LoweringGroup) -> ConcreteFunctionWithBodyLongId {
-        db.lookup_intern_lowering_concrete_function_with_body(*self)
+        self.lookup_intern(db)
     }
     pub fn function_with_body_id(&self, db: &dyn LoweringGroup) -> FunctionWithBodyId {
         self.get(db).function_with_body_id(db)
@@ -260,7 +258,7 @@ impl FunctionLongId {
 }
 impl FunctionId {
     pub fn lookup(&self, db: &dyn LoweringGroup) -> FunctionLongId {
-        db.lookup_intern_lowering_function(*self)
+        self.lookup_intern(db)
     }
     pub fn body(&self, db: &dyn LoweringGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
         self.lookup(db).body(db)
@@ -386,7 +384,7 @@ impl LocationId {
     }
 
     pub fn get(&self, db: &dyn LoweringGroup) -> Location {
-        db.lookup_intern_location(*self)
+        self.lookup_intern(db)
     }
 
     // Adds a note to the location.

@@ -10,7 +10,7 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use cairo_lang_utils::{extract_matches, try_extract_matches};
+use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::TypedStablePtr;
 
@@ -327,7 +327,7 @@ fn generic_param_generic_params_list(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
 ) -> Maybe<ast::OptionWrappedGenericParamList> {
-    let generic_param_long_id = db.lookup_intern_generic_param(generic_param_id);
+    let generic_param_long_id = generic_param_id.lookup_intern(db);
 
     // The generic params list is 2 level up the tree.
     let syntax_db = db.upcast();

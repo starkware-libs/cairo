@@ -195,7 +195,7 @@ fn generate_ast_code() -> rust::Tokens {
         use std::sync::Arc;
 
         use cairo_lang_filesystem::span::TextWidth;
-        use cairo_lang_utils::extract_matches;
+        use cairo_lang_utils::{extract_matches, LookupInternUpcast};
         use smol_str::SmolStr;
 
         use super::element_list::ElementList;
@@ -247,7 +247,7 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
                 db: &dyn SyntaxGroup, children: Vec<$(&element_green_name)>
             ) -> $(&green_name) {
                 let width = children.iter().map(|id|
-                    db.lookup_intern_green(id.0).width()).sum();
+                    id.0.lookup_intern(db).width()).sum();
                 $(&green_name)(db.intern_green(Arc::new(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Node {
@@ -299,7 +299,7 @@ fn gen_separated_list_code(
                 db: &dyn SyntaxGroup, children: Vec<$(&element_or_separator_green_name)>
             ) -> $(&green_name) {
                 let width = children.iter().map(|id|
-                    db.lookup_intern_green(id.id()).width()).sum();
+                    id.id().lookup_intern(db).width()).sum();
                 $(&green_name)(db.intern_green(Arc::new(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Node {
@@ -498,8 +498,8 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 })))
             }
             fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-                extract_matches!(&db.lookup_intern_green(
-                    self.node.0.green).details, GreenNodeDetails::Token).clone()
+                extract_matches!(&self.node.0.green.lookup_intern(db).details,
+                    GreenNodeDetails::Token).clone()
             }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -518,7 +518,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
         impl $(&green_name) {
             pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
                 extract_matches!(
-                    &db.lookup_intern_green(self.0).details, GreenNodeDetails::Token).clone()
+                    &self.0.lookup_intern(db).details, GreenNodeDetails::Token).clone()
             }
         }
         impl TypedSyntaxNode for $(&name){
@@ -532,7 +532,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 })))
             }
             fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-                match db.lookup_intern_green(node.0.green).details {
+                match node.0.green.lookup_intern(db).details {
                     GreenNodeDetails::Token(_) => Self { node },
                     GreenNodeDetails::Node { .. } => panic!(
                         "Expected a token {:?}, not an internal node",
@@ -580,7 +580,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         if *key {
             ptr_getters.extend(quote! {
                 pub fn $(&key_name_green)(self, db: &dyn SyntaxGroup) -> $(&child_green) {
-                    let ptr = db.lookup_intern_stable_ptr(self.0);
+                    let ptr = self.0.lookup_intern(db);
                     if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
                         $(&child_green)(key_fields[$key_field_index])
                     } else {
@@ -606,7 +606,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 ) -> Self::Green {
                     let children: Vec<GreenId> = vec![$args];
                     let width = children.iter().copied().map(|id|
-                        db.lookup_intern_green(id).width()).sum();
+                        id.lookup_intern(db).width()).sum();
                     $(&green_name)(db.intern_green(Arc::new(GreenNode {
                         kind: SyntaxKind::$(&name),
                         details: GreenNodeDetails::Node { children, width },
@@ -624,7 +624,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 pub fn new_green(db: &dyn SyntaxGroup, $params) -> $(&green_name) {
                     let children: Vec<GreenId> = vec![$args];
                     let width = children.iter().copied().map(|id|
-                        db.lookup_intern_green(id).width()).sum();
+                        id.lookup_intern(db).width()).sum();
                     $(&green_name)(db.intern_green(Arc::new(GreenNode {
                         kind: SyntaxKind::$(&name),
                         details: GreenNodeDetails::Node { children, width },

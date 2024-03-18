@@ -15,7 +15,7 @@ use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{define_short_id, extract_matches};
+use cairo_lang_utils::{define_short_id, extract_matches, LookupIntern};
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{enrich_lookup_context, Ambiguity, SolutionSet};
@@ -112,7 +112,7 @@ pub struct LocalConstVarId(pub usize);
 define_short_id!(ImplVarId, ImplVar, SemanticGroup, lookup_intern_impl_var);
 impl ImplVarId {
     pub fn get(&self, db: &dyn SemanticGroup) -> ImplVar {
-        db.lookup_intern_impl_var(*self)
+        self.lookup_intern(db)
     }
     pub fn id(&self, db: &dyn SemanticGroup) -> LocalImplVarId {
         self.get(db).id
@@ -773,7 +773,7 @@ impl<'db> Inference<'db> {
         let generic_args = concrete_trait_id.generic_args(self.db);
         match generic_args.first() {
             Some(GenericArgumentId::Type(ty)) => {
-                if let TypeLongId::Var(_) = self.db.lookup_intern_type(*ty) {
+                if let TypeLongId::Var(_) = ty.lookup_intern(self.db) {
                     // Don't try to infer such impls.
                     return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer {
                         concrete_trait_id,
@@ -785,7 +785,7 @@ impl<'db> Inference<'db> {
                 return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer { concrete_trait_id }));
             }
             Some(GenericArgumentId::Constant(const_value)) => {
-                if let ConstValue::Var(_) = self.db.lookup_intern_const_value(*const_value) {
+                if let ConstValue::Var(_) = const_value.lookup_intern(self.db) {
                     // Don't try to infer such impls.
                     return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer {
                         concrete_trait_id,
@@ -1003,7 +1003,7 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, NoError> {
         if let TypeLongId::Var(var) = value {
             if let Some(type_id) = self.type_assignment.get(&var.id) {
-                let mut long_type_id = self.db.lookup_intern_type(*type_id);
+                let mut long_type_id = type_id.lookup_intern(self.db);
                 if let RewriteResult::Modified = self.internal_rewrite(&mut long_type_id)? {
                     *self.type_assignment.get_mut(&var.id).unwrap() =
                         self.db.intern_type(long_type_id.clone());
@@ -1019,7 +1019,7 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, NoError> {
         if let ConstValue::Var(var) = value {
             if let Some(const_value_id) = self.const_assignment.get(&var.id) {
-                let mut const_value = self.db.lookup_intern_const_value(*const_value_id);
+                let mut const_value = const_value_id.lookup_intern(self.db);
                 if let RewriteResult::Modified = self.internal_rewrite(&mut const_value)? {
                     *self.const_assignment.get_mut(&var.id).unwrap() =
                         self.db.intern_const_value(const_value.clone());

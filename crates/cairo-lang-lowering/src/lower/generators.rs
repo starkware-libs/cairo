@@ -3,7 +3,7 @@
 
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, LookupIntern};
 use itertools::chain;
 use semantic::items::constant::ConstValue;
 
@@ -169,7 +169,7 @@ impl Desnap {
         builder: &mut StatementsBuilder,
     ) -> VarUsage {
         let ty = extract_matches!(
-            ctx.db.lookup_intern_type(ctx.variables[self.input.var_id].ty),
+            ctx.variables[self.input.var_id].ty.lookup_intern(ctx.db),
             semantic::TypeLongId::Snapshot
         );
         let output = ctx.new_var(VarRequest { ty, location: self.location });

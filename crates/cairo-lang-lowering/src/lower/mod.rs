@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::{extract_matches, try_extract_matches, ResultHelper};
+use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern, ResultHelper};
 use defs::ids::TopLevelLanguageElementId;
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
@@ -398,7 +398,7 @@ fn wrap_sealed_block_as_function(
             // If the expression is of type never, then the block is unreachable, so add a match on
             // never to make it a viable block end.
             let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
-                ctx.db.lookup_intern_type(ctx.variables[expr.var_id].ty)
+                ctx.variables[expr.var_id].ty.lookup_intern(ctx.db)
             else {
                 unreachable!("Never type must be a concrete enum.");
             };
@@ -663,10 +663,9 @@ fn lower_tuple_like_pattern_helper(
             let tys = match long_type_id {
                 TypeLongId::Tuple(tys) => tys,
                 TypeLongId::FixedSizeArray { type_id, size } => {
-                    let size =
-                        extract_matches!(ctx.db.lookup_intern_const_value(size), ConstValue::Int)
-                            .to_usize()
-                            .unwrap();
+                    let size = extract_matches!(size.lookup_intern(ctx.db), ConstValue::Int)
+                        .to_usize()
+                        .unwrap();
                     vec![type_id; size]
                 }
                 _ => unreachable!("Tuple-like pattern must be a tuple or fixed size array."),
@@ -955,7 +954,7 @@ fn lower_expr_param_constant(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a constant parameter: {:?}", expr.debug(&ctx.expr_formatter));
-    let value = ctx.db.lookup_intern_const_value(expr.const_value_id);
+    let value = expr.const_value_id.lookup_intern(ctx.db);
     let location = ctx.get_location(expr.stable_ptr.untyped());
     Ok(LoweredExpr::AtVariable(
         generators::Const { value, ty: expr.ty, location }.add(ctx, &mut builder.statements),
@@ -994,9 +993,8 @@ fn lower_expr_fixed_size_array(
         semantic::FixedSizeArrayItems::ValueAndSize(value, size) => {
             let lowered_value = lower_expr(ctx, builder, *value)?;
             let var_usage = lowered_value.as_var_usage(ctx, builder)?;
-            let size = extract_matches!(ctx.db.lookup_intern_const_value(*size), ConstValue::Int)
-                .to_usize()
-                .unwrap();
+            let size =
+                extract_matches!(size.lookup_intern(ctx.db), ConstValue::Int).to_usize().unwrap();
             if size == 0 {
                 return Err(LoweringFlowError::Failed(
                     ctx.diagnostics
@@ -1086,7 +1084,7 @@ fn lower_expr_function_call(
     // The following is relevant only to extern functions.
     if expr.function.try_get_extern_function_id(ctx.db.upcast()).is_some() {
         if let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
-            ctx.db.lookup_intern_type(expr.ty)
+            expr.ty.lookup_intern(ctx.db)
         {
             let lowered_expr = LoweredExprExternEnum {
                 function: expr.function,
@@ -1173,7 +1171,7 @@ fn perform_function_call(
             return Err(LoweringFlowError::Match(MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id: extract_matches!(
                     extract_matches!(
-                        ctx.db.lookup_intern_type(ret_ty),
+                        ret_ty.lookup_intern(ctx.db),
                         semantic::TypeLongId::Concrete
                     ),
                     semantic::ConcreteTypeId::Enum

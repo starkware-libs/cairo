@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_proc_macros::SemanticObject;
+use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
@@ -102,7 +103,7 @@ pub fn enrich_lookup_context(
     // Add the defining module of the generic args to the lookup.
     for generic_arg in &generic_args {
         if let GenericArgumentId::Type(ty) = generic_arg {
-            match db.lookup_intern_type(*ty) {
+            match ty.lookup_intern(db) {
                 TypeLongId::Concrete(concrete) => {
                     lookup_context
                         .insert_module(concrete.generic_type(db).module_file_id(db.upcast()).0);

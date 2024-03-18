@@ -25,7 +25,7 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{require, try_extract_matches};
+use cairo_lang_utils::{require, try_extract_matches, LookupIntern};
 use itertools::zip_eq;
 use smol_str::SmolStr;
 use thiserror::Error;
@@ -548,9 +548,8 @@ impl<'a> AbiBuilder<'a> {
             return Ok(());
         }
 
-        let concrete =
-            try_extract_matches!(self.db.lookup_intern_type(type_id), TypeLongId::Concrete)
-                .ok_or(ABIError::UnexpectedType)?;
+        let concrete = try_extract_matches!(type_id.lookup_intern(self.db), TypeLongId::Concrete)
+            .ok_or(ABIError::UnexpectedType)?;
         let (event_kind, source) = match fetch_event_data(self.db, type_id)
             .ok_or(ABIError::EventNotDerived(source))?
         {
@@ -655,7 +654,7 @@ impl<'a> AbiBuilder<'a> {
             return Ok(());
         }
 
-        match self.db.lookup_intern_type(type_id) {
+        match type_id.lookup_intern(self.db) {
             TypeLongId::Concrete(concrete) => self.add_concrete_type(concrete),
             TypeLongId::Tuple(inner_types) => {
                 for ty in inner_types {

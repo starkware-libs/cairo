@@ -6,8 +6,8 @@ use cairo_lang_defs::ids::{
     ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{extract_matches, LookupIntern};
 use itertools::{zip_eq, Itertools};
 
 use crate::db::SemanticGroup;
@@ -397,8 +397,8 @@ impl<'a> SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<
         if let TypeLongId::GenericParameter(generic_param) = value {
             if let Some(generic_arg) = self.substitution.get(generic_param) {
                 let type_id = *extract_matches!(generic_arg, GenericArgumentId::Type);
-                // return self.rewrite(self.db.lookup_intern_type(type_id));
-                *value = self.db.lookup_intern_type(type_id);
+                // return self.rewrite(type_id.lookup_intern(self.db));
+                *value = type_id.lookup_intern(self.db);
                 return Ok(RewriteResult::Modified);
             }
         }
@@ -411,7 +411,7 @@ impl<'a> SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<
             if let Some(generic_arg) = self.substitution.get(param_id) {
                 let const_value_id = extract_matches!(generic_arg, GenericArgumentId::Constant);
 
-                *value = self.db.lookup_intern_const_value(*const_value_id);
+                *value = const_value_id.lookup_intern(self.db);
                 return Ok(RewriteResult::Modified);
             }
         }
