@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
-use cairo_lang_utils::{extract_matches, require};
+use cairo_lang_utils::{extract_matches, require, LookupIntern};
 use syntax::node::green::{GreenNode, GreenNodeDetails};
 use syntax::node::ids::GreenId;
 
@@ -1394,7 +1394,7 @@ impl<'a> Parser<'a> {
         let GreenNode {
             kind: SyntaxKind::ExprPath,
             details: GreenNodeDetails::Node { children: children0, .. },
-        } = &*self.db.lookup_intern_green(expr.0)
+        } = &*expr.0.lookup_intern(self.db)
         else {
             return None;
         };
@@ -1408,7 +1408,7 @@ impl<'a> Parser<'a> {
         let GreenNode {
             kind: SyntaxKind::PathSegmentSimple,
             details: GreenNodeDetails::Node { children: children1, .. },
-        } = &*self.db.lookup_intern_green(path_segment)
+        } = &*path_segment.lookup_intern(self.db)
         else {
             return None;
         };
@@ -1420,7 +1420,7 @@ impl<'a> Parser<'a> {
 
         // Check that it is indeed `TerminalIdentifier`.
         let GreenNode { kind: SyntaxKind::TerminalIdentifier, .. } =
-            self.db.lookup_intern_green(ident).as_ref()
+            ident.lookup_intern(self.db).as_ref()
         else {
             return None;
         };
@@ -1784,7 +1784,7 @@ impl<'a> Parser<'a> {
                         PatternEnum::new_green(self.db, path, inner_pattern.into()).into()
                     }
                     _ => {
-                        let green_node = self.db.lookup_intern_green(path.0);
+                        let green_node = path.0.lookup_intern(self.db);
                         let children = match &green_node.details {
                             GreenNodeDetails::Node { children, width: _ } => children,
                             _ => return Err(TryParseFailure::SkipToken),
@@ -2828,7 +2828,7 @@ fn trivia_total_width(db: &dyn SyntaxGroup, trivia: &[TriviumGreen]) -> TextWidt
 
 /// The width of the trailing trivia, traversing the tree to the bottom right node.
 fn trailing_trivia_width(db: &dyn SyntaxGroup, green_id: GreenId) -> Option<TextWidth> {
-    let node = db.lookup_intern_green(green_id);
+    let node = green_id.lookup_intern(db);
     if node.kind == SyntaxKind::Trivia {
         return Some(node.width());
     }

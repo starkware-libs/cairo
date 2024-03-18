@@ -1,3 +1,4 @@
+use cairo_lang_utils::LookupIntern;
 use itertools::zip_eq;
 
 use super::canonic::ResultNoErrEx;
@@ -83,7 +84,7 @@ impl<'db> InferenceConform for Inference<'db> {
         if ty0 == ty1 {
             return Ok((ty0, 0));
         }
-        let long_ty1 = self.db.lookup_intern_type(ty1);
+        let long_ty1 = ty1.lookup_intern(self.db);
         match long_ty1 {
             TypeLongId::Var(var) => return Ok((self.assign_ty(var, ty0)?, 0)),
             TypeLongId::Missing(_) => return Ok((ty1, 0)),
@@ -92,8 +93,8 @@ impl<'db> InferenceConform for Inference<'db> {
                     if inner_ty == ty0 {
                         return Ok((ty1, 1));
                     }
-                    if !matches!(self.db.lookup_intern_type(ty0), TypeLongId::Snapshot(_)) {
-                        if let TypeLongId::Var(var) = self.db.lookup_intern_type(inner_ty) {
+                    if !matches!(ty0.lookup_intern(self.db), TypeLongId::Snapshot(_)) {
+                        if let TypeLongId::Var(var) = inner_ty.lookup_intern(self.db) {
                             return Ok((self.assign_ty(var, ty0)?, 1));
                         }
                     }
@@ -102,7 +103,7 @@ impl<'db> InferenceConform for Inference<'db> {
             _ => {}
         }
         let n_snapshots = 0;
-        let long_ty0 = self.db.lookup_intern_type(ty0);
+        let long_ty0 = ty0.lookup_intern(self.db);
 
         match long_ty0 {
             TypeLongId::Concrete(concrete0) => {
@@ -165,8 +166,8 @@ impl<'db> InferenceConform for Inference<'db> {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
 
-                let func0 = self.db.lookup_intern_function(function_id0).function;
-                let func1 = self.db.lookup_intern_function(function_id1).function;
+                let func0 = function_id0.lookup_intern(self.db).function;
+                let func1 = function_id1.lookup_intern(self.db).function;
 
                 let generic_function =
                     self.conform_generic_function(func0.generic_function, func1.generic_function)?;
@@ -202,11 +203,11 @@ impl<'db> InferenceConform for Inference<'db> {
         if id0 == id1 {
             return Ok(id0);
         }
-        let const_value0 = self.db.lookup_intern_const_value(id0);
+        let const_value0 = id0.lookup_intern(self.db);
         if matches!(const_value0, ConstValue::Missing(_)) {
             return Ok(id1);
         }
-        match self.db.lookup_intern_const_value(id1) {
+        match id1.lookup_intern(self.db) {
             ConstValue::Missing(_) => return Ok(id1),
             ConstValue::Var(var) => return self.assign_const(var, id0),
             _ => {}
@@ -224,7 +225,7 @@ impl<'db> InferenceConform for Inference<'db> {
         let (n_snapshots, long_ty1) = if ty0_is_self {
             peel_snapshots(self.db, ty1)
         } else {
-            (0, self.db.lookup_intern_type(ty1))
+            (0, ty1.lookup_intern(self.db))
         };
         (n_snapshots, long_ty1)
     }
@@ -310,8 +311,8 @@ impl<'db> InferenceConform for Inference<'db> {
                 let ImplId::Concrete(concrete1) = impl1 else {
                     return Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }));
                 };
-                let concrete0 = self.db.lookup_intern_concrete_impl(concrete0);
-                let concrete1 = self.db.lookup_intern_concrete_impl(concrete1);
+                let concrete0 = concrete0.lookup_intern(self.db);
+                let concrete1 = concrete1.lookup_intern(self.db);
                 if concrete0.impl_def_id != concrete1.impl_def_id {
                     return Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }));
                 }
@@ -335,8 +336,8 @@ impl<'db> InferenceConform for Inference<'db> {
         trt0: ConcreteTraitId,
         trt1: ConcreteTraitId,
     ) -> InferenceResult<ConcreteTraitId> {
-        let trt0 = self.db.lookup_intern_concrete_trait(trt0);
-        let trt1 = self.db.lookup_intern_concrete_trait(trt1);
+        let trt0 = trt0.lookup_intern(self.db);
+        let trt1 = trt1.lookup_intern(self.db);
         if trt0.trait_id != trt1.trait_id {
             return Err(self.set_error(InferenceError::TraitMismatch {
                 trt0: trt0.trait_id,
@@ -403,7 +404,7 @@ impl<'db> InferenceConform for Inference<'db> {
     fn impl_contains_var(&mut self, impl_id: &ImplId, var: InferenceVar) -> bool {
         match impl_id {
             ImplId::Concrete(concrete_impl_id) => self.generic_args_contain_var(
-                &self.db.lookup_intern_concrete_impl(*concrete_impl_id).generic_args,
+                &concrete_impl_id.lookup_intern(self.db).generic_args,
                 var,
             ),
             ImplId::GenericParameter(_) => false,
@@ -441,7 +442,7 @@ impl Inference<'_> {
     /// Assumes ty was already rewritten.
     #[doc(hidden)]
     fn internal_ty_contains_var(&mut self, ty: TypeId, var: InferenceVar) -> bool {
-        match self.db.lookup_intern_type(ty) {
+        match ty.lookup_intern(self.db) {
             TypeLongId::Concrete(concrete) => {
                 let generic_args = concrete.generic_args(self.db);
                 self.generic_args_contain_var(&generic_args, var)
