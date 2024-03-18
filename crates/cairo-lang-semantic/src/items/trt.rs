@@ -255,7 +255,7 @@ pub fn trait_generic_params_data(
     )?;
 
     resolver.inference().finalize().map(|inference_errs| {
-        inference_errs.report(&mut diagnostics, trait_ast.stable_ptr().untyped())
+        inference_errs.report_firsts(&mut diagnostics, trait_ast.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -302,7 +302,7 @@ pub fn priv_trait_declaration_data(
 
     // Check fully resolved.
     if let Some(inference_errs) = resolver.inference().finalize() {
-        inference_errs.report(&mut diagnostics, trait_ast.stable_ptr().untyped());
+        inference_errs.report_firsts(&mut diagnostics, trait_ast.stable_ptr().untyped());
     }
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
 

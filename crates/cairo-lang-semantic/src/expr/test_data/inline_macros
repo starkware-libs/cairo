@@ -298,49 +298,29 @@ error: Type annotations needed. Failed to infer ?2
                      ^*****^
 
 error: Type annotations needed. Failed to infer ?3
- --> lib.cairo[write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?4
- --> lib.cairo[write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+ --> lib.cairo[write_macro]:6:57
+        core::result::Result::Err(err) => core::result::Result::Err(err),
+                                                        ^****^
 
 error: Type annotations needed. Failed to infer ?5
- --> lib.cairo[write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?6
- --> lib.cairo[write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+ --> lib.cairo:21:32
+   write!(f, "{non_existing}").unwrap();
+                               ^****^
 
 error: Type annotations needed. Failed to infer ?7
- --> lib.cairo[write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
+ --> lib.cairo[write_macro]:3:22
+    match core::fmt::Display::fmt(__write_macro_arg0__, ref f) {
                      ^*****^
 
 error: Type annotations needed. Failed to infer ?8
- --> lib.cairo[write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?9
- --> lib.cairo[write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+ --> lib.cairo[write_macro]:7:57
+        core::result::Result::Err(err) => core::result::Result::Err(err),
+                                                        ^****^
 
 error: Type annotations needed. Failed to infer ?10
- --> lib.cairo[write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?11
- --> lib.cairo[write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+ --> lib.cairo:24:34
+   write!(f, "{}", non_existing).unwrap();
+                                 ^****^
 
 error: Cannot infer trait core::fmt::Display::<?7>. First generic argument must be known.
  --> lib.cairo[write_macro]:3:31
@@ -549,69 +529,49 @@ error: Type annotations needed. Failed to infer ?2
                      ^*****^
 
 error: Type annotations needed. Failed to infer ?3
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+ --> lib.cairo[writeln_macro]:4:73
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0xa, 1);
+                                                                        ^*^
 
 error: Type annotations needed. Failed to infer ?4
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+ --> lib.cairo[writeln_macro]:4:78
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0xa, 1);
+                                                                             ^
 
 error: Type annotations needed. Failed to infer ?5
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?6
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+ --> lib.cairo[writeln_macro]:7:57
+        core::result::Result::Err(err) => core::result::Result::Err(err),
+                                                        ^****^
 
 error: Type annotations needed. Failed to infer ?7
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?8
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+ --> lib.cairo:21:34
+   writeln!(f, "{non_existing}").unwrap();
+                                 ^****^
 
 error: Type annotations needed. Failed to infer ?9
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
+ --> lib.cairo[writeln_macro]:3:22
+    match core::fmt::Display::fmt(__write_macro_arg0__, ref f) {
                      ^*****^
 
 error: Type annotations needed. Failed to infer ?10
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+ --> lib.cairo[writeln_macro]:5:73
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0xa, 1);
+                                                                        ^*^
 
 error: Type annotations needed. Failed to infer ?11
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+ --> lib.cairo[writeln_macro]:5:78
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0xa, 1);
+                                                                             ^
 
 error: Type annotations needed. Failed to infer ?12
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?13
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+ --> lib.cairo[writeln_macro]:8:57
+        core::result::Result::Err(err) => core::result::Result::Err(err),
+                                                        ^****^
 
 error: Type annotations needed. Failed to infer ?14
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?15
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+ --> lib.cairo:24:36
+   writeln!(f, "{}", non_existing).unwrap();
+                                   ^****^
 
 error: Cannot infer trait core::fmt::Display::<?2>. First generic argument must be known.
  --> lib.cairo[writeln_macro]:2:31
@@ -724,54 +684,44 @@ error: Type annotations needed. Failed to infer ?5
                      ^*****^
 
 error: Type annotations needed. Failed to infer ?6
- --> lib.cairo[format_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro__) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?7
- --> lib.cairo[format_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro__) {
-                     ^*****^
+ --> lib.cairo[format_macro][write_macro]:6:57
+        core::result::Result::Err(err) => core::result::Result::Err(err),
+                                                        ^****^
 
 error: Type annotations needed. Failed to infer ?8
- --> lib.cairo[format_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro__) {
-                     ^*****^
+ --> lib.cairo[format_macro]:2:82
+    let mut __formatter_for_format_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Type annotations needed. Failed to infer ?9
- --> lib.cairo[format_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro__) {
+ --> lib.cairo[format_macro][write_macro]:3:22
+    match core::fmt::Display::fmt(__write_macro_arg0__, ref __formatter_for_format_macro__) {
                      ^*****^
 
 error: Type annotations needed. Failed to infer ?10
- --> lib.cairo[format_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro__) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?11
- --> lib.cairo[format_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro__) {
-                     ^*****^
+ --> lib.cairo[format_macro][write_macro]:7:57
+        core::result::Result::Err(err) => core::result::Result::Err(err),
+                                                        ^****^
 
 error: Type annotations needed. Failed to infer ?12
- --> lib.cairo[format_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro__) {
-                     ^*****^
+ --> lib.cairo[format_macro]:2:82
+    let mut __formatter_for_format_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Type annotations needed. Failed to infer ?13
- --> lib.cairo[format_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro__) {
-                     ^*****^
+ --> lib.cairo[format_macro]:2:82
+    let mut __formatter_for_format_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Type annotations needed. Failed to infer ?14
- --> lib.cairo[format_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro__) {
-                     ^*****^
+ --> lib.cairo[format_macro]:2:82
+    let mut __formatter_for_format_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Type annotations needed. Failed to infer ?15
- --> lib.cairo[format_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro__) {
-                     ^*****^
+ --> lib.cairo[format_macro]:2:82
+    let mut __formatter_for_format_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Cannot infer trait core::fmt::Display::<?5>. First generic argument must be known.
  --> lib.cairo[format_macro][write_macro]:2:31
@@ -884,54 +834,44 @@ error: Type annotations needed. Failed to infer ?5
                      ^*****^
 
 error: Type annotations needed. Failed to infer ?6
- --> lib.cairo[print_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?7
- --> lib.cairo[print_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[print_macro][write_macro]:6:57
+        core::result::Result::Err(err) => core::result::Result::Err(err),
+                                                        ^****^
 
 error: Type annotations needed. Failed to infer ?8
- --> lib.cairo[print_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[print_macro]:2:82
+    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Type annotations needed. Failed to infer ?9
- --> lib.cairo[print_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
+ --> lib.cairo[print_macro][write_macro]:3:22
+    match core::fmt::Display::fmt(__write_macro_arg0__, ref __formatter_for_print_macros__) {
                      ^*****^
 
 error: Type annotations needed. Failed to infer ?10
- --> lib.cairo[print_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?11
- --> lib.cairo[print_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[print_macro][write_macro]:7:57
+        core::result::Result::Err(err) => core::result::Result::Err(err),
+                                                        ^****^
 
 error: Type annotations needed. Failed to infer ?12
- --> lib.cairo[print_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[print_macro]:2:82
+    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Type annotations needed. Failed to infer ?13
- --> lib.cairo[print_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[print_macro]:2:82
+    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Type annotations needed. Failed to infer ?14
- --> lib.cairo[print_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[print_macro]:2:82
+    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Type annotations needed. Failed to infer ?15
- --> lib.cairo[print_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[print_macro]:2:82
+    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Cannot infer trait core::fmt::Display::<?5>. First generic argument must be known.
  --> lib.cairo[print_macro][write_macro]:2:31
@@ -1044,74 +984,64 @@ error: Type annotations needed. Failed to infer ?5
                      ^*****^
 
 error: Type annotations needed. Failed to infer ?6
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[println_macro][writeln_macro]:4:102
+            core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0xa, 1);
+                                                                                                     ^*^
 
 error: Type annotations needed. Failed to infer ?7
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[println_macro][writeln_macro]:4:107
+            core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0xa, 1);
+                                                                                                          ^
 
 error: Type annotations needed. Failed to infer ?8
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?9
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[println_macro][writeln_macro]:7:57
+        core::result::Result::Err(err) => core::result::Result::Err(err),
+                                                        ^****^
 
 error: Type annotations needed. Failed to infer ?10
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[println_macro]:2:82
+    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Type annotations needed. Failed to infer ?11
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
+ --> lib.cairo[println_macro][writeln_macro]:3:22
+    match core::fmt::Display::fmt(__write_macro_arg0__, ref __formatter_for_print_macros__) {
                      ^*****^
 
 error: Type annotations needed. Failed to infer ?12
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[println_macro][writeln_macro]:5:102
+            core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0xa, 1);
+                                                                                                     ^*^
 
 error: Type annotations needed. Failed to infer ?13
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[println_macro][writeln_macro]:5:107
+            core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0xa, 1);
+                                                                                                          ^
 
 error: Type annotations needed. Failed to infer ?14
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?15
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[println_macro][writeln_macro]:8:57
+        core::result::Result::Err(err) => core::result::Result::Err(err),
+                                                        ^****^
 
 error: Type annotations needed. Failed to infer ?16
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[println_macro]:2:82
+    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Type annotations needed. Failed to infer ?17
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[println_macro]:2:82
+    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Type annotations needed. Failed to infer ?18
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[println_macro]:2:82
+    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Type annotations needed. Failed to infer ?19
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+ --> lib.cairo[println_macro]:2:82
+    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                 ^*****^
 
 error: Cannot infer trait core::fmt::Display::<?5>. First generic argument must be known.
  --> lib.cairo[println_macro][writeln_macro]:2:31
@@ -1219,54 +1149,44 @@ error: Type annotations needed. Failed to infer ?4
                      ^*****^
 
 error: Type annotations needed. Failed to infer ?5
- --> lib.cairo[panic_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?6
- --> lib.cairo[panic_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
-                     ^*****^
+ --> lib.cairo[panic_macro][write_macro]:6:57
+        core::result::Result::Err(err) => core::result::Result::Err(err),
+                                                        ^****^
 
 error: Type annotations needed. Failed to infer ?7
- --> lib.cairo[panic_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
-                     ^*****^
+ --> lib.cairo[panic_macro]:2:81
+    let mut __formatter_for_panic_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                ^*****^
 
 error: Type annotations needed. Failed to infer ?8
- --> lib.cairo[panic_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
+ --> lib.cairo[panic_macro][write_macro]:3:22
+    match core::fmt::Display::fmt(__write_macro_arg0__, ref __formatter_for_panic_macro__) {
                      ^*****^
 
 error: Type annotations needed. Failed to infer ?9
- --> lib.cairo[panic_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
-                     ^*****^
-
-error: Type annotations needed. Failed to infer ?10
- --> lib.cairo[panic_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
-                     ^*****^
+ --> lib.cairo[panic_macro][write_macro]:7:57
+        core::result::Result::Err(err) => core::result::Result::Err(err),
+                                                        ^****^
 
 error: Type annotations needed. Failed to infer ?11
- --> lib.cairo[panic_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
-                     ^*****^
+ --> lib.cairo[panic_macro]:2:81
+    let mut __formatter_for_panic_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                ^*****^
 
 error: Type annotations needed. Failed to infer ?12
- --> lib.cairo[panic_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
-                     ^*****^
+ --> lib.cairo[panic_macro]:2:81
+    let mut __formatter_for_panic_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                ^*****^
 
 error: Type annotations needed. Failed to infer ?13
- --> lib.cairo[panic_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
-                     ^*****^
+ --> lib.cairo[panic_macro]:2:81
+    let mut __formatter_for_panic_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                ^*****^
 
 error: Type annotations needed. Failed to infer ?14
- --> lib.cairo[panic_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
-                     ^*****^
+ --> lib.cairo[panic_macro]:2:81
+    let mut __formatter_for_panic_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                                ^*****^
 
 error: Cannot infer trait core::fmt::Display::<?4>. First generic argument must be known.
  --> lib.cairo[panic_macro][write_macro]:2:31

@@ -65,7 +65,7 @@ pub fn priv_enum_declaration_data(
 
     // Check fully resolved.
     if let Some(inference_errs) = resolver.inference().finalize() {
-        inference_errs.report(&mut diagnostics, enum_ast.stable_ptr().untyped());
+        inference_errs.report_firsts(&mut diagnostics, enum_ast.stable_ptr().untyped());
     }
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
@@ -115,7 +115,7 @@ pub fn enum_generic_params_data(
         &enum_ast.generic_params(db.upcast()),
     )?;
     resolver.inference().finalize().map(|inference_errs| {
-        inference_errs.report(&mut diagnostics, enum_ast.stable_ptr().untyped())
+        inference_errs.report_firsts(&mut diagnostics, enum_ast.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -224,7 +224,7 @@ pub fn priv_enum_definition_data(
 
     // Check fully resolved.
     if let Some(inference_errs) = resolver.inference().finalize() {
-        inference_errs.report(&mut diagnostics, enum_ast.stable_ptr().untyped());
+        inference_errs.report_firsts(&mut diagnostics, enum_ast.stable_ptr().untyped());
     }
     for (_, variant) in variant_semantic.iter_mut() {
         variant.ty = resolver.inference().rewrite(variant.ty).no_err();

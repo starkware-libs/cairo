@@ -131,35 +131,20 @@ error: Type annotations needed. Failed to infer ?8
     let mut y = get_coupon();
                 ^********^
 
-error: Type annotations needed. Failed to infer ?9
- --> lib.cairo:22:17
-    let mut y = get_coupon();
-                ^********^
-
 error: Type annotations needed. Failed to infer ?10
- --> lib.cairo:22:17
-    let mut y = get_coupon();
-                ^********^
-
-error: Type annotations needed. Failed to infer ?11
- --> lib.cairo:22:17
-    let mut y = get_coupon();
-                ^********^
+ --> lib.cairo:23:9
+    y = get_coupon2();
+        ^*********^
 
 error: Type annotations needed. Failed to infer ?12
- --> lib.cairo:22:17
-    let mut y = get_coupon();
-                ^********^
-
-error: Type annotations needed. Failed to infer ?13
- --> lib.cairo:22:17
-    let mut y = get_coupon();
+ --> lib.cairo:25:17
+    let mut z = get_coupon();
                 ^********^
 
 error: Type annotations needed. Failed to infer ?14
- --> lib.cairo:22:17
-    let mut y = get_coupon();
-                ^********^
+ --> lib.cairo:26:9
+    z = get_struct();
+        ^********^
 
 //! > ==========================================================================
 
@@ -253,75 +238,50 @@ error: Type annotations needed. Failed to infer ?0
     bar(1); // Cannot infer S.
     ^*^
 
-error: Type annotations needed. Failed to infer ?1
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
-    ^*^
-
 error: Type annotations needed. Failed to infer ?2
- --> lib.cairo:7:5
+ --> lib.cairo:7:9
     bar(1); // Cannot infer S.
-    ^*^
+        ^
 
 error: Type annotations needed. Failed to infer ?3
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
-    ^*^
-
-error: Type annotations needed. Failed to infer ?4
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
+ --> lib.cairo:8:5
+    bar(1, __coupon__: x); // Valid call. S is inferred from the coupon.
     ^*^
 
 error: Type annotations needed. Failed to infer ?5
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
-    ^*^
+ --> lib.cairo:8:9
+    bar(1, __coupon__: x); // Valid call. S is inferred from the coupon.
+        ^
 
 error: Type annotations needed. Failed to infer ?6
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
-    ^*^
-
-error: Type annotations needed. Failed to infer ?7
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
-    ^*^
+ --> lib.cairo:10:5
+    bar2(1, __coupon__: x); // Wrong coupon type.
+    ^**^
 
 error: Type annotations needed. Failed to infer ?8
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
-    ^*^
+ --> lib.cairo:10:10
+    bar2(1, __coupon__: x); // Wrong coupon type.
+         ^
 
 error: Type annotations needed. Failed to infer ?9
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
-    ^*^
-
-error: Type annotations needed. Failed to infer ?10
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
+ --> lib.cairo:11:5
+    bar(1, mut __coupon__: x); // Wrong mutability.
     ^*^
 
 error: Type annotations needed. Failed to infer ?11
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
-    ^*^
+ --> lib.cairo:11:9
+    bar(1, mut __coupon__: x); // Wrong mutability.
+        ^
 
 error: Type annotations needed. Failed to infer ?12
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
-    ^*^
-
-error: Type annotations needed. Failed to infer ?13
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
+ --> lib.cairo:12:5
+    bar(1, ref __coupon__: x); // Wrong mutability.
     ^*^
 
 error: Type annotations needed. Failed to infer ?14
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
-    ^*^
+ --> lib.cairo:12:9
+    bar(1, ref __coupon__: x); // Wrong mutability.
+        ^
 
 //! > ==========================================================================
 

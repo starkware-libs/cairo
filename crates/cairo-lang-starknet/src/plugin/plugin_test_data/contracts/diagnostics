@@ -1014,44 +1014,44 @@ error: Type annotations needed. Failed to infer ?2
                                 ^*************^
 
 error: Type annotations needed. Failed to infer ?3
- --> lib.cairo[contract]:32:33
-    let __arg_x = core::option::OptionTraitImpl::expect(
-                                ^*************^
+ --> lib.cairo[contract]:34:9
+        'Failed to deserialize param #1'
+        ^******************************^
 
 error: Type annotations needed. Failed to infer ?4
- --> lib.cairo[contract]:32:33
-    let __arg_x = core::option::OptionTraitImpl::expect(
-                                ^*************^
+ --> lib.cairo[contract]:36:25
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+                        ^*******^
 
 error: Type annotations needed. Failed to infer ?5
- --> lib.cairo[contract]:32:33
-    let __arg_x = core::option::OptionTraitImpl::expect(
-                                ^*************^
+ --> lib.cairo[contract]:36:52
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+                                                   ^****************************^
 
 error: Type annotations needed. Failed to infer ?6
- --> lib.cairo[contract]:32:33
-    let __arg_x = core::option::OptionTraitImpl::expect(
-                                ^*************^
+ --> lib.cairo[contract]:37:19
+    core::option::OptionTraitImpl::expect(
+                  ^*************^
 
 error: Type annotations needed. Failed to infer ?7
- --> lib.cairo[contract]:32:33
-    let __arg_x = core::option::OptionTraitImpl::expect(
-                                ^*************^
+ --> lib.cairo[contract]:38:70
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+                                                                     ^**********^
 
 error: Type annotations needed. Failed to infer ?8
- --> lib.cairo[contract]:32:33
-    let __arg_x = core::option::OptionTraitImpl::expect(
-                                ^*************^
+ --> lib.cairo:6:8
+    fn foo<T>(ref self: ContractState, x: T) {
+       ^*^
 
 error: Type annotations needed. Failed to infer ?9
- --> lib.cairo[contract]:32:33
-    let __arg_x = core::option::OptionTraitImpl::expect(
-                                ^*************^
+ --> lib.cairo[contract]:42:19
+    let mut arr = ArrayTrait::new();
+                  ^********^
 
 error: Type annotations needed. Failed to infer ?10
- --> lib.cairo[contract]:32:33
-    let __arg_x = core::option::OptionTraitImpl::expect(
-                                ^*************^
+ --> lib.cairo[contract]:45:18
+    core::array::ArrayTrait::span(@arr)
+                 ^********^
 
 error: Cannot infer trait core::serde::Serde::<?0>. First generic argument must be known.
  --> lib.cairo[contract]:33:34
@@ -5804,19 +5804,19 @@ error: Type annotations needed. Failed to infer ?4
                                                                 ^**********^
 
 error: Type annotations needed. Failed to infer ?5
- --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
-                                                                ^**********^
+ --> lib.cairo:60:46
+            get_dep_component!(Comp1, @self).foo1();
+                                             ^**^
 
 error: Type annotations needed. Failed to infer ?6
  --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
+                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(@self);
                                                                 ^**********^
 
 error: Type annotations needed. Failed to infer ?7
- --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
-                                                                ^**********^
+ --> lib.cairo:61:46
+            get_dep_component!(@self, @self).foo1();
+                                             ^**^
 
 error: Type annotations needed. Failed to infer ?8
  --> lib.cairo[get_dep_component_inline_macro]:3:65
@@ -5824,56 +5824,51 @@ error: Type annotations needed. Failed to infer ?8
                                                                 ^**********^
 
 error: Type annotations needed. Failed to infer ?9
- --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
-                                                                ^**********^
+ --> lib.cairo:62:46
+            get_dep_component!(Comp1, Comp1).foo1();
+                                             ^**^
 
 error: Type annotations needed. Failed to infer ?10
  --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
+                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(@self);
                                                                 ^**********^
 
 error: Type annotations needed. Failed to infer ?11
  --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
+                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(@self);
                                                                 ^**********^
 
 error: Type annotations needed. Failed to infer ?12
- --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
-                                                                ^**********^
+ --> lib.cairo:64:63
+            get_dep_component!(@self, super::NotHasComponent).foo1();
+                                                              ^**^
 
 error: Type annotations needed. Failed to infer ?13
- --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
-                                                                ^**********^
+ --> lib.cairo:65:47
+            let not_contract_state: felt252 = 0;
+                                              ^
 
 error: Type annotations needed. Failed to infer ?14
  --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
+                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(not_contract_state);
                                                                 ^**********^
 
 error: Type annotations needed. Failed to infer ?15
- --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
-                                                                ^**********^
+ --> lib.cairo:66:59
+            get_dep_component!(not_contract_state, Comp1).foo1();
+                                                          ^**^
 
 error: Type annotations needed. Failed to infer ?16
  --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
+                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(@self);
                                                                 ^**********^
 
 error: Type annotations needed. Failed to infer ?17
- --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
-                                                                ^**********^
-
-error: Cannot infer trait test::component1::HasComponent::<?17>. First generic argument must be known.
  --> lib.cairo:67:56
             get_dep_component!(@self, NonExistingImpl).foo1();
                                                        ^**^
 
-error: Cannot infer trait test::component1::Comp1HelperTrait::<?17, ?24>. First generic argument must be known.
+error: Cannot infer trait test::component1::HasComponent::<?17>. First generic argument must be known.
  --> lib.cairo:67:56
             get_dep_component!(@self, NonExistingImpl).foo1();
                                                        ^**^
@@ -5888,27 +5883,12 @@ error: Cannot infer trait test::component1::HasComponent::<?5>. First generic ar
             get_dep_component!(Comp1, @self).foo1();
                                              ^**^
 
-error: Cannot infer trait test::component1::Comp1HelperTrait::<?5, ?7>. First generic argument must be known.
- --> lib.cairo:60:46
-            get_dep_component!(Comp1, @self).foo1();
-                                             ^**^
-
 error: Cannot infer trait test::component1::HasComponent::<?7>. First generic argument must be known.
  --> lib.cairo:61:46
             get_dep_component!(@self, @self).foo1();
                                              ^**^
 
-error: Cannot infer trait test::component1::Comp1HelperTrait::<?7, ?10>. First generic argument must be known.
- --> lib.cairo:61:46
-            get_dep_component!(@self, @self).foo1();
-                                             ^**^
-
 error: Cannot infer trait test::component1::HasComponent::<?12>. First generic argument must be known.
- --> lib.cairo:64:63
-            get_dep_component!(@self, super::NotHasComponent).foo1();
-                                                              ^**^
-
-error: Cannot infer trait test::component1::Comp1HelperTrait::<?12, ?17>. First generic argument must be known.
  --> lib.cairo:64:63
             get_dep_component!(@self, super::NotHasComponent).foo1();
                                                               ^**^
@@ -6683,56 +6663,51 @@ error: Type annotations needed. Failed to infer ?2
                                                 ^**^
 
 error: Type annotations needed. Failed to infer ?3
- --> lib.cairo:53:49
-            get_dep_component_mut!(Comp1, self).foo1();
-                                                ^**^
+ --> lib.cairo[get_dep_component_inline_macro]:3:69
+                let mut __get_dep_component_macro_temp_contract__ = HasComponent::get_contract_mut(ref self);
+                                                                    ^**********^
 
 error: Type annotations needed. Failed to infer ?4
- --> lib.cairo:53:49
-            get_dep_component_mut!(Comp1, self).foo1();
-                                                ^**^
+ --> lib.cairo:54:52
+            get_dep_component_mut!(ref self, self).foo1();
+                                                   ^**^
 
 error: Type annotations needed. Failed to infer ?5
- --> lib.cairo:53:49
-            get_dep_component_mut!(Comp1, self).foo1();
-                                                ^**^
+ --> lib.cairo[get_dep_component_inline_macro]:3:69
+                let mut __get_dep_component_macro_temp_contract__ = HasComponent::get_contract_mut(ref Comp1);
+                                                                    ^**********^
 
 error: Type annotations needed. Failed to infer ?6
- --> lib.cairo:53:49
-            get_dep_component_mut!(Comp1, self).foo1();
-                                                ^**^
+ --> lib.cairo:55:54
+            get_dep_component_mut!(ref Comp1, Comp1).foo1();
+                                                     ^**^
 
 error: Type annotations needed. Failed to infer ?7
- --> lib.cairo:53:49
-            get_dep_component_mut!(Comp1, self).foo1();
-                                                ^**^
+ --> lib.cairo[get_dep_component_inline_macro]:3:69
+                let mut __get_dep_component_macro_temp_contract__ = HasComponent::get_contract_mut(ref self);
+                                                                    ^**********^
 
 error: Type annotations needed. Failed to infer ?8
- --> lib.cairo:53:49
-            get_dep_component_mut!(Comp1, self).foo1();
+ --> lib.cairo:57:49
+            get_dep_component_mut!(self, Comp1).foo1();
                                                 ^**^
 
 error: Type annotations needed. Failed to infer ?9
- --> lib.cairo:53:49
-            get_dep_component_mut!(Comp1, self).foo1();
-                                                ^**^
+ --> lib.cairo:58:53
+            get_dep_component_mut!(mut self, Comp1).foo1();
+                                                    ^**^
 
 error: Type annotations needed. Failed to infer ?10
- --> lib.cairo:53:49
-            get_dep_component_mut!(Comp1, self).foo1();
-                                                ^**^
+ --> lib.cairo:59:57
+            get_dep_component_mut!(ref ref self, Comp1).foo1();
+                                                        ^**^
 
 error: Type annotations needed. Failed to infer ?11
- --> lib.cairo:53:49
-            get_dep_component_mut!(Comp1, self).foo1();
-                                                ^**^
-
-error: Cannot infer trait test::component1::HasComponent::<?11>. First generic argument must be known.
  --> lib.cairo:60:57
             get_dep_component_mut!(ref mut self, Comp1).foo1();
                                                         ^**^
 
-error: Cannot infer trait test::component1::Comp1HelperTrait::<?11, ?18>. First generic argument must be known.
+error: Cannot infer trait test::component1::HasComponent::<?11>. First generic argument must be known.
  --> lib.cairo:60:57
             get_dep_component_mut!(ref mut self, Comp1).foo1();
                                                         ^**^
@@ -6742,17 +6717,7 @@ error: Cannot infer trait test::component1::HasComponent::<?10>. First generic a
             get_dep_component_mut!(ref ref self, Comp1).foo1();
                                                         ^**^
 
-error: Cannot infer trait test::component1::Comp1HelperTrait::<?10, ?16>. First generic argument must be known.
- --> lib.cairo:59:57
-            get_dep_component_mut!(ref ref self, Comp1).foo1();
-                                                        ^**^
-
 error: Cannot infer trait test::component1::HasComponent::<?9>. First generic argument must be known.
- --> lib.cairo:58:53
-            get_dep_component_mut!(mut self, Comp1).foo1();
-                                                    ^**^
-
-error: Cannot infer trait test::component1::Comp1HelperTrait::<?9, ?14>. First generic argument must be known.
  --> lib.cairo:58:53
             get_dep_component_mut!(mut self, Comp1).foo1();
                                                     ^**^
@@ -6762,17 +6727,7 @@ error: Cannot infer trait test::component1::HasComponent::<?8>. First generic ar
             get_dep_component_mut!(self, Comp1).foo1();
                                                 ^**^
 
-error: Cannot infer trait test::component1::Comp1HelperTrait::<?8, ?12>. First generic argument must be known.
- --> lib.cairo:57:49
-            get_dep_component_mut!(self, Comp1).foo1();
-                                                ^**^
-
 error: Cannot infer trait test::component1::HasComponent::<?4>. First generic argument must be known.
- --> lib.cairo:54:52
-            get_dep_component_mut!(ref self, self).foo1();
-                                                   ^**^
-
-error: Cannot infer trait test::component1::Comp1HelperTrait::<?4, ?6>. First generic argument must be known.
  --> lib.cairo:54:52
             get_dep_component_mut!(ref self, self).foo1();
                                                    ^**^
@@ -6783,11 +6738,6 @@ error: Cannot infer trait test::component3::HasComponent::<?5>. First generic ar
                                                                                   ^**************^
 
 error: Cannot infer trait test::component1::HasComponent::<?2>. First generic argument must be known.
- --> lib.cairo:53:49
-            get_dep_component_mut!(Comp1, self).foo1();
-                                                ^**^
-
-error: Cannot infer trait test::component1::Comp1HelperTrait::<?2, ?3>. First generic argument must be known.
  --> lib.cairo:53:49
             get_dep_component_mut!(Comp1, self).foo1();
                                                 ^**^
