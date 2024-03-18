@@ -6,7 +6,7 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::Terminal;
-use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
+use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern, OptionFrom};
 use num_bigint::BigInt;
 use num_traits::{Num, Signed, ToPrimitive, Zero};
 use smol_str::SmolStr;
@@ -296,7 +296,7 @@ pub fn get_enum_concrete_variant(
     variant_name: &str,
 ) -> ConcreteVariant {
     let ty = get_ty_by_name(db, module_id, enum_name.into(), generic_args);
-    let concrete_ty = extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete);
+    let concrete_ty = extract_matches!(ty.lookup_intern(db), TypeLongId::Concrete);
     let concrete_enum_id = extract_matches!(concrete_ty, ConcreteTypeId::Enum);
     let enum_id = concrete_enum_id.enum_id(db);
     let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
@@ -361,7 +361,7 @@ pub fn unwrap_error_propagation_type(
     db: &dyn SemanticGroup,
     ty: TypeId,
 ) -> Option<ErrorPropagationType> {
-    match db.lookup_intern_type(ty) {
+    match ty.lookup_intern(db) {
         // Only enums may be `Result` and `Option` types.
         TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
             if let [ok_variant, err_variant] =
@@ -778,10 +778,9 @@ pub fn validate_literal(
 
 /// Returns the type if the inner value of a `NonZero` type, if it is wrapped in one.
 pub fn try_extract_nz_wrapped_type(db: &dyn SemanticGroup, ty: TypeId) -> Option<TypeId> {
-    let concrete_ty = try_extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete)?;
+    let concrete_ty = try_extract_matches!(ty.lookup_intern(db), TypeLongId::Concrete)?;
     let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
-    let ConcreteExternTypeLongId { extern_type_id, generic_args } =
-        db.lookup_intern_concrete_extern_type(extern_ty);
+    let ConcreteExternTypeLongId { extern_type_id, generic_args } = extern_ty.lookup_intern(db);
     let [GenericArgumentId::Type(inner)] = generic_args[..] else { return None };
     (extern_type_id.name(db.upcast()) == "NonZero").then_some(inner)
 }

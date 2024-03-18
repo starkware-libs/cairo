@@ -1,4 +1,5 @@
 use cairo_lang_semantic as semantic;
+use cairo_lang_utils::LookupIntern;
 
 use super::context::LoweringContext;
 use super::LoweredExpr;
@@ -12,7 +13,7 @@ pub fn extern_facade_return_tys(
     ctx: &mut LoweringContext<'_, '_>,
     ret_ty: semantic::TypeId,
 ) -> Vec<semantic::TypeId> {
-    if let semantic::TypeLongId::Tuple(tys) = ctx.db.lookup_intern_type(ret_ty) {
+    if let semantic::TypeLongId::Tuple(tys) = ret_ty.lookup_intern(ctx.db) {
         tys
     } else {
         vec![ret_ty]
@@ -29,7 +30,7 @@ pub fn extern_facade_expr(
     returns: Vec<VariableId>,
     location: LocationId,
 ) -> LoweredExpr {
-    if let semantic::TypeLongId::Tuple(subtypes) = ctx.db.lookup_intern_type(ty) {
+    if let semantic::TypeLongId::Tuple(subtypes) = ty.lookup_intern(ctx.db) {
         assert_eq!(returns.len(), subtypes.len());
         // TODO(ilya): Use tuple item location for each item.
         LoweredExpr::Tuple {

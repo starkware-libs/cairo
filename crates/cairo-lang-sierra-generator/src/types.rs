@@ -10,7 +10,7 @@ use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
-use cairo_lang_utils::{extract_matches, try_extract_matches};
+use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern};
 use itertools::chain;
 use num_traits::ToPrimitive;
 use semantic::items::constant::ConstValue;
@@ -25,7 +25,7 @@ pub fn get_concrete_type_id(
     db: &dyn SierraGenGroup,
     type_id: semantic::TypeId,
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
-    match db.lookup_intern_type(type_id) {
+    match type_id.lookup_intern(db) {
         semantic::TypeLongId::Snapshot(inner_ty)
             if db.type_info(ImplLookupContext::default(), inner_ty)?.copyable.is_ok() =>
         {
@@ -88,7 +88,7 @@ pub fn get_concrete_long_type_id(
             .collect::<Maybe<_>>()?,
         })
     };
-    Ok(match db.lookup_intern_type(type_id) {
+    Ok(match type_id.lookup_intern(db) {
         semantic::TypeLongId::Concrete(ty) => {
             match ty {
                 semantic::ConcreteTypeId::Struct(_) => {
@@ -186,7 +186,7 @@ pub fn type_dependencies(
     db: &dyn SierraGenGroup,
     type_id: semantic::TypeId,
 ) -> Maybe<Arc<Vec<semantic::TypeId>>> {
-    Ok(match db.lookup_intern_type(type_id) {
+    Ok(match type_id.lookup_intern(db) {
         semantic::TypeLongId::Concrete(ty) => match ty {
             semantic::ConcreteTypeId::Struct(structure) => db
                 .concrete_struct_members(structure)?

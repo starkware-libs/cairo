@@ -19,6 +19,7 @@ use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 use tracing::debug;
 
@@ -35,7 +36,7 @@ pub fn generic_completions(
 
     // Crates.
     completions.extend(db.crate_configs().keys().map(|crate_id| CompletionItem {
-        label: db.lookup_intern_crate(*crate_id).name().into(),
+        label: crate_id.lookup_intern(db).name().into(),
         kind: Some(CompletionItemKind::MODULE),
         ..CompletionItem::default()
     }));
@@ -169,7 +170,7 @@ pub fn colon_colon_completions(
                     .collect()
             })
             .unwrap_or_default(),
-        ResolvedConcreteItem::Type(ty) => match db.lookup_intern_type(ty) {
+        ResolvedConcreteItem::Type(ty) => match ty.lookup_intern(db) {
             TypeLongId::Concrete(ConcreteTypeId::Enum(enum_id)) => db
                 .enum_variants(enum_id.enum_id(db))
                 .unwrap_or_default()

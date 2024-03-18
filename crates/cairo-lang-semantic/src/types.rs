@@ -8,7 +8,7 @@ use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, PHANTOM_ATTR};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
+use cairo_lang_utils::{define_short_id, try_extract_matches, LookupIntern, OptionFrom};
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::Zero;
@@ -58,7 +58,7 @@ define_short_id!(TypeId, TypeLongId, SemanticGroup, lookup_intern_type);
 semantic_object_for_id!(TypeId, lookup_intern_type, intern_type, TypeLongId);
 impl TypeId {
     pub fn lookup(&self, db: &dyn SemanticGroup) -> TypeLongId {
-        db.lookup_intern_type(*self)
+        self.lookup_intern(db)
     }
 
     pub fn missing(db: &dyn SemanticGroup, diag_added: DiagnosticAdded) -> Self {
@@ -66,12 +66,12 @@ impl TypeId {
     }
 
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        db.lookup_intern_type(*self).format(db)
+        self.lookup_intern(db).format(db)
     }
 
     /// Returns [Maybe::Err] if the type is [TypeLongId::Missing].
     pub fn check_not_missing(&self, db: &dyn SemanticGroup) -> Maybe<()> {
-        if let TypeLongId::Missing(diag_added) = db.lookup_intern_type(*self) {
+        if let TypeLongId::Missing(diag_added) = self.lookup_intern(db) {
             Err(diag_added)
         } else {
             Ok(())
@@ -85,12 +85,12 @@ impl TypeId {
 
     /// Returns `true` if the type is `()`.
     pub fn is_unit(&self, db: &dyn SemanticGroup) -> bool {
-        matches!(db.lookup_intern_type(*self), TypeLongId::Tuple(types) if types.is_empty())
+        matches!(self.lookup_intern(db), TypeLongId::Tuple(types) if types.is_empty())
     }
 
     /// Returns the [TypeHead] for a type if available.
     pub fn head(&self, db: &dyn SemanticGroup) -> Option<TypeHead> {
-        db.lookup_intern_type(*self).head(db)
+        self.lookup_intern(db).head(db)
     }
 
     /// Returns true if the type does not depend on any generics.
@@ -231,7 +231,7 @@ fn implize_type_recursive(
 
     // Finally, reduce/implize the impl type itself, if possible.
 
-    let TypeLongId::ImplType(mut impl_type_id) = db.lookup_intern_type(type_to_reduce) else {
+    let TypeLongId::ImplType(mut impl_type_id) = type_to_reduce.lookup_intern(db) else {
         // Nothing to implize.
         return Ok(type_to_reduce);
     };
@@ -311,22 +311,18 @@ impl ConcreteTypeId {
     }
     pub fn generic_type(&self, db: &dyn SemanticGroup) -> GenericTypeId {
         match self {
-            ConcreteTypeId::Struct(id) => {
-                GenericTypeId::Struct(db.lookup_intern_concrete_struct(*id).struct_id)
-            }
-            ConcreteTypeId::Enum(id) => {
-                GenericTypeId::Enum(db.lookup_intern_concrete_enum(*id).enum_id)
-            }
+            ConcreteTypeId::Struct(id) => GenericTypeId::Struct(id.lookup_intern(db).struct_id),
+            ConcreteTypeId::Enum(id) => GenericTypeId::Enum(id.lookup_intern(db).enum_id),
             ConcreteTypeId::Extern(id) => {
-                GenericTypeId::Extern(db.lookup_intern_concrete_extern_type(*id).extern_type_id)
+                GenericTypeId::Extern(id.lookup_intern(db).extern_type_id)
             }
         }
     }
     pub fn generic_args(&self, db: &dyn SemanticGroup) -> Vec<semantic::GenericArgumentId> {
         match self {
-            ConcreteTypeId::Struct(id) => db.lookup_intern_concrete_struct(*id).generic_args,
-            ConcreteTypeId::Enum(id) => db.lookup_intern_concrete_enum(*id).generic_args,
-            ConcreteTypeId::Extern(id) => db.lookup_intern_concrete_extern_type(*id).generic_args,
+            ConcreteTypeId::Struct(id) => id.lookup_intern(db).generic_args,
+            ConcreteTypeId::Enum(id) => id.lookup_intern(db).generic_args,
+            ConcreteTypeId::Extern(id) => id.lookup_intern(db).generic_args,
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -380,18 +376,18 @@ impl ConcreteTypeId {
     ) {
         match self {
             ConcreteTypeId::Struct(id) => {
-                let long_id = db.lookup_intern_concrete_struct(*id);
+                let long_id = id.lookup_intern(db);
                 let new_long_id =
                     ConcreteStructLongId { generic_args: new_generic_args, ..long_id };
                 *self = ConcreteTypeId::Struct(db.intern_concrete_struct(new_long_id));
             }
             ConcreteTypeId::Enum(id) => {
-                let long_id = db.lookup_intern_concrete_enum(*id);
+                let long_id = id.lookup_intern(db);
                 let new_long_id = ConcreteEnumLongId { generic_args: new_generic_args, ..long_id };
                 *self = ConcreteTypeId::Enum(db.intern_concrete_enum(new_long_id));
             }
             ConcreteTypeId::Extern(id) => {
-                let long_id = db.lookup_intern_concrete_extern_type(*id);
+                let long_id = id.lookup_intern(db);
                 let new_long_id =
                     ConcreteExternTypeLongId { generic_args: new_generic_args, ..long_id };
                 *self = ConcreteTypeId::Extern(db.intern_concrete_extern_type(new_long_id));
@@ -428,7 +424,7 @@ semantic_object_for_id!(
 );
 impl ConcreteStructId {
     pub fn struct_id(&self, db: &dyn SemanticGroup) -> StructId {
-        db.lookup_intern_concrete_struct(*self).struct_id
+        self.lookup_intern(db).struct_id
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteStructLongId {
@@ -465,7 +461,7 @@ semantic_object_for_id!(
 );
 impl ConcreteEnumId {
     pub fn enum_id(&self, db: &dyn SemanticGroup) -> EnumId {
-        db.lookup_intern_concrete_enum(*self).enum_id
+        self.lookup_intern(db).enum_id
     }
 }
 
@@ -488,7 +484,7 @@ semantic_object_for_id!(
 );
 impl ConcreteExternTypeId {
     pub fn extern_type_id(&self, db: &dyn SemanticGroup) -> ExternTypeId {
-        db.lookup_intern_concrete_extern_type(*self).extern_type_id
+        self.lookup_intern(db).extern_type_id
     }
 }
 
@@ -588,7 +584,7 @@ pub fn maybe_resolve_type(
         {
             let ty = resolve_type(db, diagnostics, resolver, &unary_syntax.expr(syntax_db));
             if let Some(desnapped_ty) =
-                try_extract_matches!(db.lookup_intern_type(ty), TypeLongId::Snapshot)
+                try_extract_matches!(ty.lookup_intern(db), TypeLongId::Snapshot)
             {
                 desnapped_ty
             } else {
@@ -713,7 +709,7 @@ pub fn get_impl_at_context(
 
 /// Query implementation of [crate::db::SemanticGroup::single_value_type].
 pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
-    Ok(match db.lookup_intern_type(ty) {
+    Ok(match ty.lookup_intern(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(id) => {
                 for member in db.struct_members(id.struct_id(db))?.values() {
@@ -751,7 +747,7 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         | TypeLongId::ImplType(_) => false,
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
-                || matches!(db.lookup_intern_const_value(size),
+                || matches!(size.lookup_intern(db),
                             ConstValue::Int(value) if value.is_zero())
         }
     })
@@ -778,7 +774,7 @@ pub fn type_info(
 }
 
 pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
-    match db.lookup_intern_type(ty) {
+    match ty.lookup_intern(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
         TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
@@ -794,7 +790,7 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
 }
 
 pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
-    match db.lookup_intern_type(ty) {
+    match ty.lookup_intern(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_var_free(db),
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_var_free(db)),
         TypeLongId::Snapshot(ty) => ty.is_var_free(db),
@@ -810,10 +806,10 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
 /// Peels all wrapping Snapshot (`@`) from the type.
 /// Returns the number of peeled snapshots and the inner type.
 pub fn peel_snapshots(db: &dyn SemanticGroup, ty: TypeId) -> (usize, TypeLongId) {
-    let mut long_ty = db.lookup_intern_type(ty);
+    let mut long_ty = ty.lookup_intern(db);
     let mut n_snapshots = 0;
     while let TypeLongId::Snapshot(ty) = long_ty {
-        long_ty = db.lookup_intern_type(ty);
+        long_ty = ty.lookup_intern(db);
         n_snapshots += 1;
     }
     (n_snapshots, long_ty)

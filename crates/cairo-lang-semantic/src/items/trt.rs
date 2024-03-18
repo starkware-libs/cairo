@@ -12,10 +12,10 @@ use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructuri
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::{define_short_id, LookupIntern};
 use itertools::chain;
 use smol_str::SmolStr;
 
@@ -76,10 +76,10 @@ semantic_object_for_id!(
 );
 impl ConcreteTraitId {
     pub fn trait_id(&self, db: &dyn SemanticGroup) -> TraitId {
-        db.lookup_intern_concrete_trait(*self).trait_id
+        self.lookup_intern(db).trait_id
     }
     pub fn generic_args(&self, db: &dyn SemanticGroup) -> Vec<GenericArgumentId> {
-        db.lookup_intern_concrete_trait(*self).generic_args
+        self.lookup_intern(db).generic_args
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.trait_id(db).name(db.upcast())
@@ -147,11 +147,11 @@ impl ConcreteTraitGenericFunctionId {
     }
 
     pub fn trait_function(&self, db: &dyn SemanticGroup) -> TraitFunctionId {
-        db.lookup_intern_concrete_trait_function(*self).trait_function
+        self.lookup_intern(db).trait_function
     }
 
     pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
-        db.lookup_intern_concrete_trait_function(*self).concrete_trait
+        self.lookup_intern(db).concrete_trait
     }
 }
 
@@ -199,11 +199,11 @@ impl ConcreteTraitTypeId {
     }
 
     pub fn trait_type(&self, db: &dyn SemanticGroup) -> TraitTypeId {
-        db.lookup_intern_concrete_trait_type(*self).trait_type
+        self.lookup_intern(db).trait_type
     }
 
     pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
-        db.lookup_intern_concrete_trait_type(*self).concrete_trait
+        self.lookup_intern(db).concrete_trait
     }
 }
 
@@ -391,7 +391,7 @@ pub fn trait_functions(
         .function_asts
         .keys()
         .map(|function_id| {
-            let function_long_id = db.lookup_intern_trait_function(*function_id);
+            let function_long_id = function_id.lookup_intern(db);
             (function_long_id.name(db.upcast()), *function_id)
         })
         .collect())
@@ -416,7 +416,7 @@ pub fn trait_types(
         .item_type_asts
         .keys()
         .map(|type_id| {
-            let type_long_id = db.lookup_intern_trait_type(*type_id);
+            let type_long_id = type_id.lookup_intern(db);
             (type_long_id.name(db.upcast()), *type_id)
         })
         .collect())

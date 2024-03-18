@@ -8,7 +8,7 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use smol_str::SmolStr;
 
 use super::generics::{semantic_generic_params, GenericParamsData};
@@ -251,7 +251,7 @@ pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         //   always have the correct number of generic arguments.
         let db = self.upcast();
         let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;
-        let generic_args = db.lookup_intern_concrete_struct(concrete_struct_id).generic_args;
+        let generic_args = concrete_struct_id.lookup_intern(db).generic_args;
         let substitution = GenericSubstitution::new(&generic_params, &generic_args);
 
         let generic_members =

@@ -1,5 +1,5 @@
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_utils::define_short_id;
+use cairo_lang_utils::{define_short_id, LookupIntern};
 
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
@@ -82,7 +82,7 @@ impl OptimizationStrategyId {
         function: ConcreteFunctionWithBodyId,
         lowered: &mut FlatLowered,
     ) -> Maybe<()> {
-        for phase in db.lookup_intern_strategy(self).0 {
+        for phase in self.lookup_intern(db).0 {
             phase.apply(db, function, lowered)?;
         }
 
