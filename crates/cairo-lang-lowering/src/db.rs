@@ -11,7 +11,7 @@ use cairo_lang_semantic::{self as semantic, corelib, ConcreteTypeId, TypeId, Typ
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{extract_matches, Upcast};
+use cairo_lang_utils::{extract_matches, LookupIntern, Upcast};
 use defs::ids::NamedLanguageElementId;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -374,7 +374,7 @@ fn priv_function_with_body_lowering(
 ) -> Maybe<Arc<FlatLowered>> {
     let semantic_function_id = function_id.base_semantic_function(db);
     let multi_lowering = db.priv_function_with_body_multi_lowering(semantic_function_id)?;
-    let lowered = match &db.lookup_intern_lowering_function_with_body(function_id) {
+    let lowered = match &function_id.lookup_intern(db) {
         ids::FunctionWithBodyLongId::Semantic(_) => multi_lowering.main_lowering.clone(),
         ids::FunctionWithBodyLongId::Generated { element, .. } => {
             multi_lowering.generated_lowerings[element].clone()
@@ -583,7 +583,7 @@ fn extract_coupon_function(
     else {
         return Ok(None);
     };
-    let name = db.lookup_intern_extern_function(extern_function_id).name(db.upcast());
+    let name = extern_function_id.lookup_intern(db).name(db.upcast());
     if !(name == "coupon_buy" || name == "coupon_refund") {
         return Ok(None);
     }
@@ -592,7 +592,7 @@ fn extract_coupon_function(
     let [semantic::GenericArgumentId::Type(type_id)] = concrete_function.generic_args[..] else {
         panic!("Unexpected generic_args for coupon_buy().");
     };
-    let semantic::TypeLongId::Coupon(coupon_function) = db.lookup_intern_type(type_id) else {
+    let semantic::TypeLongId::Coupon(coupon_function) = type_id.lookup_intern(db) else {
         panic!("Unexpected generic_args for coupon_buy().");
     };
 
@@ -733,7 +733,7 @@ fn file_lowering_diagnostics(
 }
 
 fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
-    match db.lookup_intern_type(ty) {
+    match ty.lookup_intern(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(struct_id) => db
                 .concrete_struct_members(struct_id)
@@ -763,9 +763,7 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
         TypeLongId::Snapshot(ty) => db.type_size(ty),
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.type_size(type_id)
-                * extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
-                    .to_usize()
-                    .unwrap()
+                * extract_matches!(size.lookup_intern(db), ConstValue::Int).to_usize().unwrap()
         }
         TypeLongId::Coupon(_) => 0,
         TypeLongId::GenericParameter(_)

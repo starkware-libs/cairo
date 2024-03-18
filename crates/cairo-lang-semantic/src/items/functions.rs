@@ -14,7 +14,7 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, require, try_extract_matches, OptionFrom};
+use cairo_lang_utils::{define_short_id, require, try_extract_matches, LookupIntern, OptionFrom};
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
 use syntax::attribute::consts::MUST_USE_ATTR;
@@ -260,7 +260,7 @@ define_short_id!(FunctionId, FunctionLongId, SemanticGroup, lookup_intern_functi
 semantic_object_for_id!(FunctionId, lookup_intern_function, intern_function, FunctionLongId);
 impl FunctionId {
     pub fn lookup(&self, db: &dyn SemanticGroup) -> FunctionLongId {
-        db.lookup_intern_function(*self)
+        self.lookup_intern(db)
     }
 
     pub fn get_concrete(&self, db: &dyn SemanticGroup) -> ConcreteFunction {
@@ -386,7 +386,7 @@ impl ConcreteFunctionWithBody {
                 GenericSubstitution::new(&db.free_function_generic_params(f)?, &self.generic_args)
             }
             GenericFunctionWithBodyId::Impl(f) => {
-                let concrete_impl = db.lookup_intern_concrete_impl(f.concrete_impl_id);
+                let concrete_impl = f.concrete_impl_id.lookup_intern(db);
                 GenericSubstitution::new(
                     &chain!(
                         db.impl_function_generic_params(f.function)?,
@@ -516,7 +516,7 @@ semantic_object_for_id!(
 );
 impl ConcreteFunctionWithBodyId {
     fn get(&self, db: &dyn SemanticGroup) -> ConcreteFunctionWithBody {
-        db.lookup_intern_concrete_function_with_body(*self)
+        self.lookup_intern(db)
     }
     pub fn function_with_body_id(&self, db: &dyn SemanticGroup) -> FunctionWithBodyId {
         self.get(db).function_with_body_id()
@@ -761,7 +761,7 @@ pub fn concrete_function_signature(
     function_id: FunctionId,
 ) -> Maybe<Signature> {
     let ConcreteFunction { generic_function, generic_args, .. } =
-        db.lookup_intern_function(function_id).function;
+        function_id.lookup_intern(db).function;
     let generic_params = generic_function.generic_params(db)?;
     let generic_signature = generic_function.generic_signature(db)?;
     // TODO(spapini): When trait generics are supported, they need to be substituted

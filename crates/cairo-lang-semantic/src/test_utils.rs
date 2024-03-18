@@ -18,7 +18,7 @@ use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
+use cairo_lang_utils::{extract_matches, LookupIntern, OptionFrom, Upcast};
 use once_cell::sync::Lazy;
 
 use crate::db::{SemanticDatabase, SemanticGroup};
@@ -380,7 +380,7 @@ fn get_recursive_module_semantic_diagnostics(
 
 /// Returns true if the given submodule is inline (i.e. has a body), false otherwise.
 fn is_submodule_inline(db: &dyn SemanticGroup, submodule: SubmoduleId) -> bool {
-    let SubmoduleLongId(_, ptr) = db.lookup_intern_submodule(submodule);
+    let SubmoduleLongId(_, ptr) = submodule.lookup_intern(db);
     match ptr.lookup(db.upcast()).body(db.upcast()) {
         ast::MaybeModuleBody::Some(_) => true,
         ast::MaybeModuleBody::None(_) => false,

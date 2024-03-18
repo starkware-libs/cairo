@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_lang_utils::define_short_id;
+use cairo_lang_utils::{define_short_id, LookupIntern};
 use path_clean::PathClean;
 use smol_str::SmolStr;
 
@@ -30,7 +30,7 @@ impl CrateLongId {
 define_short_id!(CrateId, CrateLongId, FilesGroup, lookup_intern_crate);
 impl CrateId {
     pub fn name(&self, db: &dyn FilesGroup) -> SmolStr {
-        db.lookup_intern_crate(*self).name()
+        self.lookup_intern(db).name()
     }
 }
 
@@ -121,12 +121,12 @@ impl VirtualFile {
 }
 
 define_short_id!(FileId, FileLongId, FilesGroup, lookup_intern_file);
-impl FileId {
+impl<'b> FileId {
     pub fn new(db: &dyn FilesGroup, path: PathBuf) -> FileId {
         db.intern_file(FileLongId::OnDisk(path.clean()))
     }
-    pub fn file_name(self, db: &dyn FilesGroup) -> String {
-        match db.lookup_intern_file(self) {
+    pub fn file_name(self, db: &'b dyn FilesGroup) -> String {
+        match self.lookup_intern(db) {
             FileLongId::OnDisk(path) => {
                 path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
             }
@@ -134,13 +134,13 @@ impl FileId {
         }
     }
     pub fn full_path(self, db: &dyn FilesGroup) -> String {
-        match db.lookup_intern_file(self) {
+        match self.lookup_intern(db) {
             FileLongId::OnDisk(path) => path.to_str().unwrap_or("<unknown>").to_string(),
             FileLongId::Virtual(vf) => vf.full_path(db),
         }
     }
     pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
-        match db.lookup_intern_file(self) {
+        match self.lookup_intern(db) {
             FileLongId::OnDisk(_) => FileKind::Module,
             FileLongId::Virtual(vf) => vf.kind.clone(),
         }
