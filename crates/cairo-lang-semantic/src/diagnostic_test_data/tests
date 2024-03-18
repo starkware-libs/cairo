@@ -4,7 +4,7 @@
 // TODO(spapini): Remove duplicated diagnostics.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 1 + foo()
@@ -30,7 +30,7 @@ error: Function not found.
 //! > Test function lookup
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -73,7 +73,7 @@ error: Identifier not found.
 //! > Test duplicate 'ref'.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -98,7 +98,7 @@ fn foo(ref ref v: felt252) {
 //! > Test bad argument for ref param (not a variable).
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -122,7 +122,7 @@ error: ref argument must be a variable.
 //! > Test bad argument for ref param (variable not mutable).
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -147,7 +147,7 @@ error: ref argument must be a mutable variable.
 //! > Test numerical literal of unsupported type.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -185,7 +185,7 @@ error: Mismatched types. The type `core::bool` cannot be created from a numeric 
 //! > Test use cycle
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -216,7 +216,7 @@ error: Cycle detected while resolving 'use' items.
 //! > Test bad use
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -238,7 +238,7 @@ use bad_module_name;
 //! > Test diagnostic after skipped attribute
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -268,7 +268,7 @@ error: Identifier not found.
 //! > Test unused variable.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -298,7 +298,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > Test unhandled Option.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -320,7 +320,7 @@ warning: Unhandled `#[must_use]` type `core::option::Option::<core::felt252>`
 //! > Test unhandled Result.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -342,7 +342,7 @@ warning: Unhandled `#[must_use]` type `core::result::Result::<core::felt252, cor
 //! > Test unhandled must use function.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -367,8 +367,10 @@ warning: Unhandled `#[must_use]` function.
 
 //! > Test unhandled must use impl function.
 
+//! > TODO(gil): fix and change `expect_diagnostics` to true.
+
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: *)
 
 //! > expr_code
 {
@@ -395,7 +397,7 @@ impl imp of trt {
 //! > Test unhandled must use trait function.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -426,7 +428,7 @@ warning: Unhandled `#[must_use]` function.
 //! > Test unhandled must use method.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -455,10 +457,10 @@ warning: Unhandled `#[must_use]` function.
 
 //! > ==========================================================================
 
-//! > Test tail expression must use function.
+//! > Test tail expression is considered a use of a must use function.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: false)
 
 //! > expr_code
 {
@@ -480,7 +482,7 @@ fn must_use_function() -> felt252 {
 //! > Test usage of unstable.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
