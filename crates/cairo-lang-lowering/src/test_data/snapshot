@@ -24,9 +24,8 @@ blk0 (root):
 Statements:
   (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
   () <- test::bar(v2)
-  (v3: ()) <- struct_construct()
 End:
-  Return(v3)
+  Return()
 
 //! > ==========================================================================
 
@@ -51,6 +50,7 @@ struct A {
     a: Array::<felt252>,
     b: felt252,
 }
+#[inline(never)]
 fn bar(a: @Array::<felt252>, b: @felt252) {
 }
 
@@ -64,9 +64,9 @@ blk0 (root):
 Statements:
   (v1: @core::array::Array::<core::felt252>, v2: @core::felt252) <- struct_destructure(v0)
   (v3: @core::array::Array::<core::felt252>, v4: @core::felt252) <- struct_destructure(v0)
-  (v5: ()) <- test::bar(v1, v4)
+  () <- test::bar(v1, v4)
   (v6: @core::array::Array::<core::felt252>, v7: @core::felt252) <- struct_destructure(v0)
-  (v8: ()) <- test::bar(v6, v7)
+  () <- test::bar(v6, v7)
 End:
   Return(v0)
 
@@ -96,10 +96,13 @@ enum A {
     B: felt252,
     C: (felt252, Array::<felt252>),
 }
+#[inline(never)]
 fn bar0(a: @Array::<felt252>) {
 }
+#[inline(never)]
 fn bar1(b: @felt252) {
 }
+#[inline(never)]
 fn bar2(c: @felt252, d: @Array::<felt252>) {
 }
 
@@ -120,20 +123,20 @@ End:
 
 blk1:
 Statements:
-  (v6: ()) <- test::bar0(v1)
+  () <- test::bar0(v1)
 End:
   Return(v0)
 
 blk2:
 Statements:
-  (v7: ()) <- test::bar1(v2)
+  () <- test::bar1(v2)
 End:
   Return(v0)
 
 blk3:
 Statements:
   (v4: @core::felt252, v5: @core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v8: ()) <- test::bar2(v4, v5)
+  () <- test::bar2(v4, v5)
 End:
   Return(v0)
 

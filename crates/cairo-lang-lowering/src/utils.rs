@@ -2,7 +2,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
-    MatchInfo, Statement, StatementCall, StatementDesnap, StatementEnumConstruct, StatementLiteral,
+    MatchInfo, Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
     StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
     VarUsage, VariableId,
 };
@@ -24,14 +24,14 @@ pub trait RebuilderEx: Rebuilder {
     /// Rebuilds the statement with renamed var and block ids.
     fn rebuild_statement(&mut self, statement: &Statement) -> Statement {
         let mut statement = match statement {
-            Statement::Literal(stmt) => Statement::Literal(StatementLiteral {
+            Statement::Const(stmt) => Statement::Const(StatementConst {
                 value: stmt.value.clone(),
                 output: self.map_var_id(stmt.output),
             }),
             Statement::Call(stmt) => Statement::Call(StatementCall {
                 function: stmt.function,
                 inputs: stmt.inputs.iter().map(|v| self.map_var_usage(*v)).collect(),
-                coupon_input: stmt.coupon_input.map(|v| self.map_var_usage(v)),
+                with_coupon: stmt.with_coupon,
                 outputs: stmt.outputs.iter().map(|v| self.map_var_id(*v)).collect(),
                 location: stmt.location,
             }),
@@ -52,11 +52,11 @@ pub trait RebuilderEx: Rebuilder {
                 input: self.map_var_usage(stmt.input),
                 output: self.map_var_id(stmt.output),
             }),
-            Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot {
-                input: self.map_var_usage(stmt.input),
-                output_original: self.map_var_id(stmt.output_original),
-                output_snapshot: self.map_var_id(stmt.output_snapshot),
-            }),
+            Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot::new(
+                self.map_var_usage(stmt.input),
+                self.map_var_id(stmt.original()),
+                self.map_var_id(stmt.snapshot()),
+            )),
             Statement::Desnap(stmt) => Statement::Desnap(StatementDesnap {
                 input: self.map_var_usage(stmt.input),
                 output: self.map_var_id(stmt.output),
@@ -80,8 +80,9 @@ pub trait RebuilderEx: Rebuilder {
     /// Rebuilds the block end with renamed var and block ids.
     fn rebuild_end(&mut self, end: &FlatBlockEnd) -> FlatBlockEnd {
         let mut end = match end {
-            FlatBlockEnd::Return(returns) => FlatBlockEnd::Return(
+            FlatBlockEnd::Return(returns, location) => FlatBlockEnd::Return(
                 returns.iter().map(|var_usage| self.map_var_usage(*var_usage)).collect(),
+                *location,
             ),
             FlatBlockEnd::Panic(data) => FlatBlockEnd::Panic(self.map_var_usage(*data)),
             FlatBlockEnd::Goto(block_id, remapping) => {

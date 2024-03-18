@@ -1,9 +1,8 @@
-use std::collections::HashMap;
 use std::iter;
 
 use cairo_lang_casm::ap_change::{ApChangeError, ApplyApChange};
 use cairo_lang_sierra::edit_state::{put_results, take_args};
-use cairo_lang_sierra::ids::{FunctionId, VarId};
+use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId, VarId};
 use cairo_lang_sierra::program::{BranchInfo, Function, StatementIdx};
 use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -21,13 +20,17 @@ use crate::invocations::{ApTrackingChange, BranchChanges};
 use crate::metadata::Metadata;
 use crate::references::{
     build_function_parameters_refs, check_types_match, IntroductionPoint,
-    OutputReferenceValueIntroductionPoint, ReferenceValue, ReferencesError, StatementRefs,
+    OutputReferenceValueIntroductionPoint, ReferenceExpression, ReferenceValue, ReferencesError,
+    StatementRefs,
 };
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum AnnotationError {
-    #[error("#{0}: Inconsistent references annotations.")]
-    InconsistentReferencesAnnotation(StatementIdx),
+    #[error("#{statement_idx}: Inconsistent references annotations: {error}")]
+    InconsistentReferencesAnnotation {
+        statement_idx: StatementIdx,
+        error: InconsistentReferenceError,
+    },
     #[error("#{source_statement_idx}->#{destination_statement_idx}: Annotation was already set.")]
     AnnotationAlreadySet {
         source_statement_idx: StatementIdx,
@@ -90,6 +93,25 @@ pub enum AnnotationError {
     },
 }
 
+/// Error representing an inconsistency in the references annotations.
+#[derive(Error, Debug, Eq, PartialEq)]
+pub enum InconsistentReferenceError {
+    #[error("Variable {var} type mismatch. Expected `{expected}`, got `{actual}`.")]
+    TypeMismatch { var: VarId, expected: ConcreteTypeId, actual: ConcreteTypeId },
+    #[error("Variable {var} expression mismatch. Expected `{expected}`, got `{actual}`.")]
+    ExpressionMismatch { var: VarId, expected: ReferenceExpression, actual: ReferenceExpression },
+    #[error("Variable {var} stack index mismatch. Expected `{expected:?}`, got `{actual:?}`.")]
+    StackIndexMismatch { var: VarId, expected: Option<usize>, actual: Option<usize> },
+    #[error("Variable {var} introduction point mismatch. Expected `{expected}`, got `{actual}`.")]
+    IntroductionPointMismatch { var: VarId, expected: IntroductionPoint, actual: IntroductionPoint },
+    #[error("Variable count mismatch.")]
+    VariableCountMismatch,
+    #[error("Missing expected variable {0}.")]
+    VariableMissing(VarId),
+    #[error("Ap tracking is disabled while trying to merge {0}.")]
+    ApTrackingDisabled(VarId),
+}
+
 /// Annotation that represent the state at each program statement.
 #[derive(Clone, Debug)]
 pub struct StatementAnnotations {
@@ -106,11 +128,14 @@ pub struct StatementAnnotations {
 pub struct ProgramAnnotations {
     /// Optional per statement annotation.
     per_statement_annotations: Vec<Option<StatementAnnotations>>,
+    /// The indices of the statements that are the targets of backwards jumps.
+    backwards_jump_indices: UnorderedHashSet<StatementIdx>,
 }
 impl ProgramAnnotations {
-    fn new(n_statements: usize) -> Self {
+    fn new(n_statements: usize, backwards_jump_indices: UnorderedHashSet<StatementIdx>) -> Self {
         ProgramAnnotations {
             per_statement_annotations: iter::repeat_with(|| None).take(n_statements).collect(),
+            backwards_jump_indices,
         }
     }
 
@@ -118,12 +143,13 @@ impl ProgramAnnotations {
     /// and metadata for the program.
     pub fn create(
         n_statements: usize,
+        backwards_jump_indices: UnorderedHashSet<StatementIdx>,
         functions: &[Function],
         metadata: &Metadata,
         gas_usage_check: bool,
         type_sizes: &TypeSizeMap,
     ) -> Result<Self, AnnotationError> {
-        let mut annotations = ProgramAnnotations::new(n_statements);
+        let mut annotations = ProgramAnnotations::new(n_statements, backwards_jump_indices);
         for func in functions {
             annotations.set_or_assert(
                 func.entry_point,
@@ -169,9 +195,12 @@ impl ProgramAnnotations {
                     statement_idx,
                     error,
                 })?;
-                if !self.test_references_consistency(&annotations, expected_annotations) {
-                    return Err(AnnotationError::InconsistentReferencesAnnotation(statement_idx));
-                }
+                self.test_references_consistency(&annotations, expected_annotations).map_err(
+                    |error| AnnotationError::InconsistentReferencesAnnotation {
+                        statement_idx,
+                        error,
+                    },
+                )?;
 
                 // Note that we ignore annotations here.
                 // a flow cannot converge with a branch target.
@@ -183,53 +212,82 @@ impl ProgramAnnotations {
         Ok(())
     }
 
-    /// Returns whether or not `actual` and `expected` references are consistent.
+    /// Checks whether or not `actual` and `expected` references are consistent.
+    /// Returns an error representing the inconsistency.
     fn test_references_consistency(
         &self,
         actual: &StatementAnnotations,
         expected: &StatementAnnotations,
-    ) -> bool {
+    ) -> Result<(), InconsistentReferenceError> {
         // Check if there is a mismatch at the number of variables.
         if actual.refs.len() != expected.refs.len() {
-            return false;
+            return Err(InconsistentReferenceError::VariableCountMismatch);
         }
         let ap_tracking_enabled =
             matches!(actual.environment.ap_tracking, ApTracking::Enabled { .. });
         for (var_id, actual_ref) in actual.refs.iter() {
             // Check if the variable exists in just one of the branches.
             let Some(expected_ref) = expected.refs.get(var_id) else {
-                return false;
+                return Err(InconsistentReferenceError::VariableMissing(var_id.clone()));
             };
             // Check if the variable doesn't match on type, expression or stack information.
-            if !(actual_ref.ty == expected_ref.ty
-                && actual_ref.expression == expected_ref.expression
-                && actual_ref.stack_idx == expected_ref.stack_idx)
-            {
-                return false;
+            if actual_ref.ty != expected_ref.ty {
+                return Err(InconsistentReferenceError::TypeMismatch {
+                    var: var_id.clone(),
+                    expected: expected_ref.ty.clone(),
+                    actual: actual_ref.ty.clone(),
+                });
             }
-            if !test_var_consistency(actual_ref, expected_ref, ap_tracking_enabled) {
-                return false;
+            if actual_ref.expression != expected_ref.expression {
+                return Err(InconsistentReferenceError::ExpressionMismatch {
+                    var: var_id.clone(),
+                    expected: expected_ref.expression.clone(),
+                    actual: actual_ref.expression.clone(),
+                });
             }
+            if actual_ref.stack_idx != expected_ref.stack_idx {
+                return Err(InconsistentReferenceError::StackIndexMismatch {
+                    var: var_id.clone(),
+                    expected: expected_ref.stack_idx,
+                    actual: actual_ref.stack_idx,
+                });
+            }
+            test_var_consistency(var_id, actual_ref, expected_ref, ap_tracking_enabled)?;
         }
-        true
+        Ok(())
     }
 
     /// Returns the result of applying take_args to the StatementAnnotations at statement_idx.
+    /// Can be called only once per item, the item is removed from the annotations, and can no
+    /// longer be used for merges.
     pub fn get_annotations_after_take_args<'a>(
-        &self,
+        &mut self,
         statement_idx: StatementIdx,
         ref_ids: impl Iterator<Item = &'a VarId>,
     ) -> Result<(StatementAnnotations, Vec<ReferenceValue>), AnnotationError> {
-        let statement_annotations = self.per_statement_annotations[statement_idx.0]
-            .as_ref()
-            .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?
-            .clone();
-
-        let (statement_refs, taken_refs) =
-            take_args(statement_annotations.refs, ref_ids).map_err(|error| {
-                AnnotationError::MissingReferenceError { statement_idx, var_id: error.var_id() }
-            })?;
-        Ok((StatementAnnotations { refs: statement_refs, ..statement_annotations }, taken_refs))
+        let existing = self.per_statement_annotations[statement_idx.0]
+            .as_mut()
+            .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?;
+        let mut updated = if self.backwards_jump_indices.contains(&statement_idx) {
+            existing.clone()
+        } else {
+            std::mem::replace(
+                existing,
+                StatementAnnotations {
+                    refs: Default::default(),
+                    function_id: existing.function_id.clone(),
+                    // Merging with this data is no longer allowed.
+                    convergence_allowed: false,
+                    environment: existing.environment.clone(),
+                },
+            )
+        };
+        let refs = std::mem::take(&mut updated.refs);
+        let (statement_refs, taken_refs) = take_args(refs, ref_ids).map_err(|error| {
+            AnnotationError::MissingReferenceError { statement_idx, var_id: error.var_id() }
+        })?;
+        updated.refs = statement_refs;
+        Ok((updated, taken_refs))
     }
 
     /// Propagates the annotations from `statement_idx` to 'destination_statement_idx'.
@@ -241,7 +299,7 @@ impl ProgramAnnotations {
         &mut self,
         source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
-        annotations: &StatementAnnotations,
+        mut annotations: StatementAnnotations,
         branch_info: &BranchInfo,
         branch_changes: BranchChanges,
         must_set: bool,
@@ -253,34 +311,22 @@ impl ProgramAnnotations {
             });
         }
 
-        let mut new_refs: StatementRefs =
-            HashMap::with_capacity(annotations.refs.len() + branch_changes.refs.len());
-        for (var_id, ref_value) in &annotations.refs {
-            new_refs.insert(
-                var_id.clone(),
-                ReferenceValue {
-                    expression: ref_value
-                        .expression
-                        .clone()
-                        .apply_ap_change(branch_changes.ap_change)
-                        .map_err(|error| AnnotationError::ApChangeError {
-                            var_id: var_id.clone(),
-                            source_statement_idx,
-                            destination_statement_idx,
-                            error,
-                        })?,
-                    ty: ref_value.ty.clone(),
-                    stack_idx: if branch_changes.clear_old_stack {
-                        None
-                    } else {
-                        ref_value.stack_idx
-                    },
-                    introduction_point: ref_value.introduction_point.clone(),
-                },
-            );
+        for (var_id, ref_value) in annotations.refs.iter_mut() {
+            if branch_changes.clear_old_stack {
+                ref_value.stack_idx = None;
+            }
+            ref_value.expression =
+                std::mem::replace(&mut ref_value.expression, ReferenceExpression::zero_sized())
+                    .apply_ap_change(branch_changes.ap_change)
+                    .map_err(|error| AnnotationError::ApChangeError {
+                        var_id: var_id.clone(),
+                        source_statement_idx,
+                        destination_statement_idx,
+                        error,
+                    })?;
         }
         let mut refs = put_results(
-            new_refs,
+            annotations.refs,
             zip_eq(
                 &branch_info.results,
                 branch_changes.refs.into_iter().map(|value| ReferenceValue {
@@ -318,7 +364,7 @@ impl ProgramAnnotations {
         let stack_size = if let Some(new_stack_size) = new_stack_size_opt {
             // The number of stack elements which were removed.
             let stack_removal = branch_changes.new_stack_size - new_stack_size;
-            for r in refs.values_mut() {
+            for (_, r) in refs.iter_mut() {
                 // Subtract the number of stack elements removed. If the result is negative,
                 // `stack_idx` is set to `None` and the variable is removed from the stack.
                 r.stack_idx =
@@ -356,12 +402,12 @@ impl ProgramAnnotations {
             destination_statement_idx,
             StatementAnnotations {
                 refs,
-                function_id: annotations.function_id.clone(),
+                function_id: annotations.function_id,
                 convergence_allowed: !must_set,
                 environment: Environment {
                     ap_tracking,
                     stack_size,
-                    frame_state: annotations.environment.frame_state.clone(),
+                    frame_state: annotations.environment.frame_state,
                     gas_wallet: annotations
                         .environment
                         .gas_wallet
@@ -427,26 +473,36 @@ impl ProgramAnnotations {
     }
 }
 
-/// Returns whether or not the references `actual` and `expected` are consistent and can be merged
+/// Checks whether or not the references `actual` and `expected` are consistent and can be merged
 /// in a way that will be re-compilable.
+/// Returns an error representing the inconsistency.
 fn test_var_consistency(
+    var_id: &VarId,
     actual: &ReferenceValue,
     expected: &ReferenceValue,
     ap_tracking_enabled: bool,
-) -> bool {
+) -> Result<(), InconsistentReferenceError> {
     // If the variable is on the stack, it can always be merged.
     if actual.stack_idx.is_some() {
-        return true;
+        return Ok(());
     }
     // If the variable is not ap-dependent it can always be merged.
     // Note: This makes the assumption that empty variables are always mergeable.
     if actual.expression.can_apply_unknown() {
-        return true;
+        return Ok(());
     }
     // Ap tracking must be enabled when merging non-stack ap-dependent variables.
     if !ap_tracking_enabled {
-        return false;
+        return Err(InconsistentReferenceError::ApTrackingDisabled(var_id.clone()));
     }
     // Merged variables must have the same introduction point.
-    actual.introduction_point == expected.introduction_point
+    if actual.introduction_point == expected.introduction_point {
+        Ok(())
+    } else {
+        Err(InconsistentReferenceError::IntroductionPointMismatch {
+            var: var_id.clone(),
+            expected: expected.introduction_point.clone(),
+            actual: actual.introduction_point.clone(),
+        })
+    }
 }

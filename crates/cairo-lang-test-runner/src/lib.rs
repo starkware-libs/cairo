@@ -15,7 +15,7 @@ use cairo_lang_runner::casm_run::format_next_item;
 use cairo_lang_runner::profiling::{
     ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
-use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
+use cairo_lang_runner::{ProfilingInfoCollectionConfig, RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
@@ -192,7 +192,7 @@ impl TestCompiler {
         let db = &mut {
             let mut b = RootDatabase::builder();
             b.detect_corelib();
-            b.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
+            b.with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]));
             b.with_plugin_suite(test_plugin_suite());
             if starknet {
                 b.with_plugin_suite(starknet_plugin_suite());
@@ -308,10 +308,11 @@ pub fn run_tests(
             compute_runtime_costs: false,
         }),
         contracts_info,
-        run_profiler,
+        if run_profiler { Some(ProfilingInfoCollectionConfig::default()) } else { None },
     )
     .with_context(|| "Failed setting up runner.")?;
-    println!("running {} tests", named_tests.len());
+    let suffix = if named_tests.len() != 1 { "s" } else { "" };
+    println!("running {} test{}", named_tests.len(), suffix);
     let wrapped_summary = Mutex::new(Ok(TestsSummary {
         passed: vec![],
         failed: vec![],

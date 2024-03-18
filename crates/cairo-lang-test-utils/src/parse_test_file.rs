@@ -319,12 +319,18 @@ pub fn run_test_file(
     let filename = path.file_name().unwrap().to_str().unwrap();
     let is_fix_mode = std::env::var("CAIRO_FIX_TESTS") == Ok("1".into());
     let tests = parse_test_file(path)?;
+    let filter = std::env::var("CAIRO_TEST_FILTER").unwrap_or_default();
+
     let mut new_tests = OrderedHashMap::<String, Test>::default();
 
     let mut errors = Vec::new();
     let mut passed_tests = 0;
     let mut failed_tests = Vec::new();
     for (test_name, test) in tests {
+        if !test_name.contains(&filter) {
+            new_tests.insert(test_name.to_string(), test);
+            continue;
+        }
         let line_num = test.line_num;
         let test_path = format!(r#"{runner_name}::{filename}::"{test_name}" (line: {line_num})"#);
         let full_filename = std::fs::canonicalize(path)?;

@@ -49,7 +49,7 @@ pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                         function,
                         inputs,
                         outputs,
-                        coupon_input: None,
+                        with_coupon: false,
                         ..
                     }) if function == &bool_not_func_id && outputs[..] == [info.input.var_id] => {
                         Some(inputs[0])

@@ -8,12 +8,12 @@ use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
 use indoc::indoc;
 
-/// Command line args parser.
-/// Exits with 0/1 if the input is formatted correctly/incorrectly.
+/// Compiles a Sierra file to CASM.
+/// Exits with 0/1 if the compilation succeeds/fails.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
-    /// The file to compile
+    /// The path of the file to compile.
     file: String,
     output: String,
 }

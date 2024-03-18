@@ -3,8 +3,6 @@
 
 use std::collections::HashMap;
 
-use itertools::Itertools;
-
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage,
 };
@@ -32,12 +30,15 @@ pub trait Analyzer<'a> {
         remapping: &VarRemapping,
     ) {
     }
-    fn merge_match(
-        &mut self,
+    fn merge_match<'b, Infos>(
+        &'b mut self,
         statement_location: StatementLocation,
         match_info: &'a MatchInfo,
-        infos: &[Self::Info],
-    ) -> Self::Info;
+        infos: Infos,
+    ) -> Self::Info
+    where
+        'a: 'b,
+        Infos: Iterator<Item = &'b Self::Info> + Clone;
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
@@ -76,7 +77,7 @@ impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
 
     /// Gets the analysis info from the start of a block.
     fn calc_block_info(&mut self, block_id: BlockId) {
-        let mut info = self.get_end_info(block_id, &self.lowered.blocks[block_id].end);
+        let mut info = self.get_end_info(block_id);
 
         // Go through statements backwards, and update info.
         for (i, stmt) in self.lowered.blocks[block_id].statements.iter().enumerate().rev() {
@@ -105,7 +106,7 @@ impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
                 dfs_stack.push(*target_block_id);
                 true
             }
-            FlatBlockEnd::Goto(_, _) | FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) => false,
+            FlatBlockEnd::Goto(_, _) | FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => false,
             FlatBlockEnd::Match { info } => {
                 let mut missing_cache = false;
                 for arm in info.arms() {
@@ -119,8 +120,9 @@ impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
         }
     }
 
-    /// Gets the analysis info from a [FlatBlockEnd] onwards.
-    fn get_end_info(&mut self, block_id: BlockId, block_end: &'a FlatBlockEnd) -> TAnalyzer::Info {
+    /// Gets the analysis info from the block's end onwards.
+    fn get_end_info(&mut self, block_id: BlockId) -> TAnalyzer::Info {
+        let block_end = &self.lowered.blocks[block_id].end;
         let statement_location = (block_id, self.lowered.blocks[block_id].statements.len());
         match block_end {
             FlatBlockEnd::NotSet => unreachable!(),
@@ -134,19 +136,14 @@ impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
                 );
                 info
             }
-            FlatBlockEnd::Return(vars) => self.analyzer.info_from_return(statement_location, vars),
+            FlatBlockEnd::Return(vars, _location) => {
+                self.analyzer.info_from_return(statement_location, vars)
+            }
             FlatBlockEnd::Panic(data) => self.analyzer.info_from_panic(statement_location, data),
             FlatBlockEnd::Match { info } => {
-                let arm_infos = info
-                    .arms()
-                    .iter()
-                    .rev()
-                    .map(|arm| self.block_info[&arm.block_id].clone())
-                    .collect_vec()
-                    .into_iter()
-                    .rev()
-                    .collect_vec();
-                self.analyzer.merge_match(statement_location, info, &arm_infos[..])
+                let arm_infos =
+                    info.arms().iter().map(|arm| self.block_info.get(&arm.block_id).unwrap());
+                self.analyzer.merge_match(statement_location, info, arm_infos)
             }
         }
     }

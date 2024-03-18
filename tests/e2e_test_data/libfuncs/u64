@@ -194,9 +194,11 @@ test::foo: OrderedHashMap({Const: 500})
 type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<u64, 12> = Const<u64, 12> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u64, 11> = Const<u64, 11> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc u64_const<11> = u64_const<11>;
-libfunc u64_const<12> = u64_const<12>;
+libfunc const_as_immediate<Const<u64, 11>> = const_as_immediate<Const<u64, 11>>;
+libfunc const_as_immediate<Const<u64, 12>> = const_as_immediate<Const<u64, 12>>;
 libfunc store_temp<u64> = store_temp<u64>;
 libfunc u64_eq = u64_eq;
 libfunc branch_align = branch_align;
@@ -205,8 +207,8 @@ libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
 
-u64_const<11>() -> ([0]); // 0
-u64_const<12>() -> ([1]); // 1
+const_as_immediate<Const<u64, 11>>() -> ([0]); // 0
+const_as_immediate<Const<u64, 12>>() -> ([1]); // 1
 store_temp<u64>([0]) -> ([0]); // 2
 u64_eq([0], [1]) { fallthrough() 9() }; // 3
 branch_align() -> (); // 4
@@ -328,17 +330,18 @@ test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<u64, 1234> = Const<u64, 1234> [storable: false, drop: false, dup: false, zero_sized: false];
 type NonZero<u64> = NonZero<u64> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u64_is_zero = u64_is_zero;
 libfunc branch_align = branch_align;
-libfunc u64_const<1234> = u64_const<1234>;
+libfunc const_as_immediate<Const<u64, 1234>> = const_as_immediate<Const<u64, 1234>>;
 libfunc store_temp<u64> = store_temp<u64>;
 libfunc unwrap_non_zero<u64> = unwrap_non_zero<u64>;
 
 u64_is_zero([0]) { fallthrough() 5([1]) }; // 0
 branch_align() -> (); // 1
-u64_const<1234>() -> ([2]); // 2
+const_as_immediate<Const<u64, 1234>>() -> ([2]); // 2
 store_temp<u64>([2]) -> ([2]); // 3
 return([2]); // 4
 branch_align() -> (); // 5

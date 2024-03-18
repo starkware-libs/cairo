@@ -214,6 +214,7 @@ pub enum Expr {
     FieldInitShorthand(ExprFieldInitShorthand),
     Indexed(ExprIndexed),
     InlineMacro(ExprInlineMacro),
+    FixedSizeArray(ExprFixedSizeArray),
     Missing(ExprMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -331,6 +332,11 @@ impl From<ExprInlineMacroPtr> for ExprPtr {
         Self(value.0)
     }
 }
+impl From<ExprFixedSizeArrayPtr> for ExprPtr {
+    fn from(value: ExprFixedSizeArrayPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingPtr> for ExprPtr {
     fn from(value: ExprMissingPtr) -> Self {
         Self(value.0)
@@ -441,6 +447,11 @@ impl From<ExprInlineMacroGreen> for ExprGreen {
         Self(value.0)
     }
 }
+impl From<ExprFixedSizeArrayGreen> for ExprGreen {
+    fn from(value: ExprFixedSizeArrayGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingGreen> for ExprGreen {
     fn from(value: ExprMissingGreen) -> Self {
         Self(value.0)
@@ -497,6 +508,9 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::ExprInlineMacro => {
                 Expr::InlineMacro(ExprInlineMacro::from_syntax_node(db, node))
             }
+            SyntaxKind::ExprFixedSizeArray => {
+                Expr::FixedSizeArray(ExprFixedSizeArray::from_syntax_node(db, node))
+            }
             SyntaxKind::ExprMissing => Expr::Missing(ExprMissing::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Expr"),
         }
@@ -524,6 +538,7 @@ impl TypedSyntaxNode for Expr {
             Expr::FieldInitShorthand(x) => x.as_syntax_node(),
             Expr::Indexed(x) => x.as_syntax_node(),
             Expr::InlineMacro(x) => x.as_syntax_node(),
+            Expr::FixedSizeArray(x) => x.as_syntax_node(),
             Expr::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -556,6 +571,7 @@ impl Expr {
             SyntaxKind::ExprFieldInitShorthand => true,
             SyntaxKind::ExprIndexed => true,
             SyntaxKind::ExprInlineMacro => true,
+            SyntaxKind::ExprFixedSizeArray => true,
             SyntaxKind::ExprMissing => true,
             _ => false,
         }
@@ -3760,7 +3776,7 @@ impl ExprWhile {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         while_kw: TerminalWhileGreen,
-        condition: ExprGreen,
+        condition: ConditionGreen,
         body: ExprBlockGreen,
     ) -> ExprWhileGreen {
         let children: Vec<GreenId> = vec![while_kw.0, condition.0, body.0];
@@ -3775,8 +3791,8 @@ impl ExprWhile {
     pub fn while_kw(&self, db: &dyn SyntaxGroup) -> TerminalWhile {
         TerminalWhile::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn condition(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+    pub fn condition(&self, db: &dyn SyntaxGroup) -> Condition {
+        Condition::from_syntax_node(db, self.children[1].clone())
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
         ExprBlock::from_syntax_node(db, self.children[2].clone())
@@ -3804,7 +3820,7 @@ impl TypedSyntaxNode for ExprWhile {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalWhile::missing(db).0,
-                    Expr::missing(db).0,
+                    Condition::missing(db).0,
                     ExprBlock::missing(db).0,
                 ],
                 width: TextWidth::default(),
@@ -4280,6 +4296,303 @@ impl TypedSyntaxNode for ExprInlineMacro {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ExprInlineMacroPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprFixedSizeArray {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl ExprFixedSizeArray {
+    pub const INDEX_LBRACK: usize = 0;
+    pub const INDEX_EXPRS: usize = 1;
+    pub const INDEX_SIZE: usize = 2;
+    pub const INDEX_RBRACK: usize = 3;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrack: TerminalLBrackGreen,
+        exprs: ExprListGreen,
+        size: OptionFixedSizeArraySizeGreen,
+        rbrack: TerminalRBrackGreen,
+    ) -> ExprFixedSizeArrayGreen {
+        let children: Vec<GreenId> = vec![lbrack.0, exprs.0, size.0, rbrack.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ExprFixedSizeArrayGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::ExprFixedSizeArray,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl ExprFixedSizeArray {
+    pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
+        TerminalLBrack::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn exprs(&self, db: &dyn SyntaxGroup) -> ExprList {
+        ExprList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn size(&self, db: &dyn SyntaxGroup) -> OptionFixedSizeArraySize {
+        OptionFixedSizeArraySize::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
+        TerminalRBrack::from_syntax_node(db, self.children[3].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprFixedSizeArrayPtr(pub SyntaxStablePtrId);
+impl ExprFixedSizeArrayPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> ExprFixedSizeArray {
+        ExprFixedSizeArray::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprFixedSizeArrayGreen(pub GreenId);
+impl TypedSyntaxNode for ExprFixedSizeArray {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprFixedSizeArray);
+    type StablePtr = ExprFixedSizeArrayPtr;
+    type Green = ExprFixedSizeArrayGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprFixedSizeArrayGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::ExprFixedSizeArray,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalLBrack::missing(db).0,
+                    ExprList::missing(db).0,
+                    OptionFixedSizeArraySize::missing(db).0,
+                    TerminalRBrack::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprFixedSizeArray,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprFixedSizeArray
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprFixedSizeArrayPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct FixedSizeArraySize {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl FixedSizeArraySize {
+    pub const INDEX_SEMICOLON: usize = 0;
+    pub const INDEX_SIZE: usize = 1;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        semicolon: TerminalSemicolonGreen,
+        size: ExprGreen,
+    ) -> FixedSizeArraySizeGreen {
+        let children: Vec<GreenId> = vec![semicolon.0, size.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        FixedSizeArraySizeGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::FixedSizeArraySize,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl FixedSizeArraySize {
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
+        TerminalSemicolon::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn size(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct FixedSizeArraySizePtr(pub SyntaxStablePtrId);
+impl FixedSizeArraySizePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> FixedSizeArraySize {
+        FixedSizeArraySize::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct FixedSizeArraySizeGreen(pub GreenId);
+impl TypedSyntaxNode for FixedSizeArraySize {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::FixedSizeArraySize);
+    type StablePtr = FixedSizeArraySizePtr;
+    type Green = FixedSizeArraySizeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        FixedSizeArraySizeGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::FixedSizeArraySize,
+            details: GreenNodeDetails::Node {
+                children: vec![TerminalSemicolon::missing(db).0, Expr::missing(db).0],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::FixedSizeArraySize,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::FixedSizeArraySize
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        FixedSizeArraySizePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionFixedSizeArraySize {
+    Empty(OptionFixedSizeArraySizeEmpty),
+    FixedSizeArraySize(FixedSizeArraySize),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionFixedSizeArraySizePtr(pub SyntaxStablePtrId);
+impl OptionFixedSizeArraySizePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> OptionFixedSizeArraySize {
+        OptionFixedSizeArraySize::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionFixedSizeArraySizeEmptyPtr> for OptionFixedSizeArraySizePtr {
+    fn from(value: OptionFixedSizeArraySizeEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<FixedSizeArraySizePtr> for OptionFixedSizeArraySizePtr {
+    fn from(value: FixedSizeArraySizePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<OptionFixedSizeArraySizeEmptyGreen> for OptionFixedSizeArraySizeGreen {
+    fn from(value: OptionFixedSizeArraySizeEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<FixedSizeArraySizeGreen> for OptionFixedSizeArraySizeGreen {
+    fn from(value: FixedSizeArraySizeGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionFixedSizeArraySizeGreen(pub GreenId);
+impl TypedSyntaxNode for OptionFixedSizeArraySize {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionFixedSizeArraySizePtr;
+    type Green = OptionFixedSizeArraySizeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionFixedSizeArraySizeEmpty => OptionFixedSizeArraySize::Empty(
+                OptionFixedSizeArraySizeEmpty::from_syntax_node(db, node),
+            ),
+            SyntaxKind::FixedSizeArraySize => OptionFixedSizeArraySize::FixedSizeArraySize(
+                FixedSizeArraySize::from_syntax_node(db, node),
+            ),
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionFixedSizeArraySize"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionFixedSizeArraySize::Empty(x) => x.as_syntax_node(),
+            OptionFixedSizeArraySize::FixedSizeArraySize(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionFixedSizeArraySizePtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionFixedSizeArraySize {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionFixedSizeArraySizeEmpty => true,
+            SyntaxKind::FixedSizeArraySize => true,
+            _ => false,
+        }
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionFixedSizeArraySizeEmpty {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl OptionFixedSizeArraySizeEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionFixedSizeArraySizeEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        OptionFixedSizeArraySizeEmptyGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::OptionFixedSizeArraySizeEmpty,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl OptionFixedSizeArraySizeEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionFixedSizeArraySizeEmptyPtr(pub SyntaxStablePtrId);
+impl OptionFixedSizeArraySizeEmptyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> OptionFixedSizeArraySizeEmpty {
+        OptionFixedSizeArraySizeEmpty::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionFixedSizeArraySizeEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionFixedSizeArraySizeEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionFixedSizeArraySizeEmpty);
+    type StablePtr = OptionFixedSizeArraySizeEmptyPtr;
+    type Green = OptionFixedSizeArraySizeEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionFixedSizeArraySizeEmptyGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::OptionFixedSizeArraySizeEmpty,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionFixedSizeArraySizeEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionFixedSizeArraySizeEmpty
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionFixedSizeArraySizeEmptyPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5145,6 +5458,7 @@ pub enum Pattern {
     Struct(PatternStruct),
     Tuple(PatternTuple),
     Enum(PatternEnum),
+    FixedSizeArray(PatternFixedSizeArray),
     Path(ExprPath),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5207,6 +5521,11 @@ impl From<PatternEnumPtr> for PatternPtr {
         Self(value.0)
     }
 }
+impl From<PatternFixedSizeArrayPtr> for PatternPtr {
+    fn from(value: PatternFixedSizeArrayPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprPathPtr> for PatternPtr {
     fn from(value: ExprPathPtr) -> Self {
         Self(value.0)
@@ -5262,6 +5581,11 @@ impl From<PatternEnumGreen> for PatternGreen {
         Self(value.0)
     }
 }
+impl From<PatternFixedSizeArrayGreen> for PatternGreen {
+    fn from(value: PatternFixedSizeArrayGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprPathGreen> for PatternGreen {
     fn from(value: ExprPathGreen) -> Self {
         Self(value.0)
@@ -5299,6 +5623,9 @@ impl TypedSyntaxNode for Pattern {
             SyntaxKind::PatternStruct => Pattern::Struct(PatternStruct::from_syntax_node(db, node)),
             SyntaxKind::PatternTuple => Pattern::Tuple(PatternTuple::from_syntax_node(db, node)),
             SyntaxKind::PatternEnum => Pattern::Enum(PatternEnum::from_syntax_node(db, node)),
+            SyntaxKind::PatternFixedSizeArray => {
+                Pattern::FixedSizeArray(PatternFixedSizeArray::from_syntax_node(db, node))
+            }
             SyntaxKind::ExprPath => Pattern::Path(ExprPath::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Pattern"),
         }
@@ -5315,6 +5642,7 @@ impl TypedSyntaxNode for Pattern {
             Pattern::Struct(x) => x.as_syntax_node(),
             Pattern::Tuple(x) => x.as_syntax_node(),
             Pattern::Enum(x) => x.as_syntax_node(),
+            Pattern::FixedSizeArray(x) => x.as_syntax_node(),
             Pattern::Path(x) => x.as_syntax_node(),
         }
     }
@@ -5336,6 +5664,7 @@ impl Pattern {
             SyntaxKind::PatternStruct => true,
             SyntaxKind::PatternTuple => true,
             SyntaxKind::PatternEnum => true,
+            SyntaxKind::PatternFixedSizeArray => true,
             SyntaxKind::ExprPath => true,
             _ => false,
         }
@@ -5668,6 +5997,88 @@ impl TypedSyntaxNode for PatternTuple {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         PatternTuplePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct PatternFixedSizeArray {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl PatternFixedSizeArray {
+    pub const INDEX_LBRACK: usize = 0;
+    pub const INDEX_PATTERNS: usize = 1;
+    pub const INDEX_RBRACK: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrack: TerminalLBrackGreen,
+        patterns: PatternListGreen,
+        rbrack: TerminalRBrackGreen,
+    ) -> PatternFixedSizeArrayGreen {
+        let children: Vec<GreenId> = vec![lbrack.0, patterns.0, rbrack.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        PatternFixedSizeArrayGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::PatternFixedSizeArray,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl PatternFixedSizeArray {
+    pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
+        TerminalLBrack::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn patterns(&self, db: &dyn SyntaxGroup) -> PatternList {
+        PatternList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
+        TerminalRBrack::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PatternFixedSizeArrayPtr(pub SyntaxStablePtrId);
+impl PatternFixedSizeArrayPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> PatternFixedSizeArray {
+        PatternFixedSizeArray::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PatternFixedSizeArrayGreen(pub GreenId);
+impl TypedSyntaxNode for PatternFixedSizeArray {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternFixedSizeArray);
+    type StablePtr = PatternFixedSizeArrayPtr;
+    type Green = PatternFixedSizeArrayGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        PatternFixedSizeArrayGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::PatternFixedSizeArray,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalLBrack::missing(db).0,
+                    PatternList::missing(db).0,
+                    TerminalRBrack::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::PatternFixedSizeArray,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::PatternFixedSizeArray
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        PatternFixedSizeArrayPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

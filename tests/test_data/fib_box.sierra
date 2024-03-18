@@ -1,4 +1,5 @@
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
@@ -15,7 +16,7 @@ libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc dup<Box<felt252>> = dup<Box<felt252>>;
 libfunc felt252_add = felt252_add;
 libfunc into_box<felt252> = into_box<felt252>;
-libfunc felt252_const<1> = felt252_const<1>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 libfunc felt252_sub = felt252_sub;
 libfunc function_call<user@examples::fib_box::fib> = function_call<user@examples::fib_box::fib>;
 
@@ -39,7 +40,7 @@ store_temp<felt252>([8]) -> ([8]); // 16
 felt252_add([6], [8]) -> ([9]); // 17
 store_temp<felt252>([9]) -> ([9]); // 18
 into_box<felt252>([9]) -> ([10]); // 19
-felt252_const<1>() -> ([11]); // 20
+const_as_immediate<Const<felt252, 1>>() -> ([11]); // 20
 felt252_sub([3], [11]) -> ([12]); // 21
 store_temp<felt252>([12]) -> ([12]); // 22
 into_box<felt252>([12]) -> ([13]); // 23

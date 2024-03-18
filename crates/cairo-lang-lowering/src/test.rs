@@ -1,38 +1,28 @@
-use std::ops::Deref;
+use std::collections::HashMap;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticNote, DiagnosticsBuilder};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
+use cairo_lang_syntax::node::Terminal;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::chain;
+use cairo_lang_utils::{extract_matches, Upcast};
+use itertools::Itertools;
 use pretty_assertions::assert_eq;
+use semantic::test_utils::setup_test_module_ex;
 
-use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::db::LoweringGroup;
-use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::fmt::LoweredFormatter;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
-use crate::implicits::lower_implicits;
-use crate::inline::apply_inlining;
-use crate::optimizations::branch_inversion;
-use crate::optimizations::cancel_ops::cancel_ops;
-use crate::optimizations::const_folding::const_folding;
-use crate::optimizations::match_optimizer::optimize_matches;
-use crate::optimizations::remappings::optimize_remappings;
-use crate::optimizations::reorder_statements::reorder_statements;
-use crate::optimizations::return_optimization::return_optimization;
-use crate::panic::lower_panics;
-use crate::reorganize_blocks::reorganize_blocks;
-use crate::test::branch_inversion::branch_inversion;
 use crate::test_utils::LoweringDatabaseForTesting;
 use crate::FlatLowered;
+
 cairo_lang_test_utils::test_file_test!(
     lowering,
     "src/test_data",
@@ -48,6 +38,7 @@ cairo_lang_test_utils::test_file_test!(
         error_propagate :"error_propagate",
         generics :"generics",
         extern_ :"extern",
+        fixed_size_array :"fixed_size_array",
         arm_pattern_destructure :"arm_pattern_destructure",
         if_ :"if",
         implicits :"implicits",
@@ -67,15 +58,6 @@ cairo_lang_test_utils::test_file_test!(
     test_function_lowering
 );
 
-cairo_lang_test_utils::test_file_test!(
-    lowering_phases,
-    "src/test_data",
-    {
-        tests :"lowering_phases",
-    },
-    test_function_lowering_phases
-);
-
 fn test_function_lowering(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
@@ -91,7 +73,7 @@ fn test_function_lowering(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let lowered = db.concrete_function_with_body_lowered(function_id);
+    let lowered = db.final_concrete_function_with_body_lowered(function_id);
     if let Ok(lowered) = &lowered {
         assert!(
             lowered.blocks.iter().all(|(_, b)| b.is_set()),
@@ -107,83 +89,6 @@ fn test_function_lowering(
         ("lowering_diagnostics".into(), diagnostics.format(db)),
         ("lowering_flat".into(), lowering_format),
     ]))
-}
-
-/// Tests all the lowering phases of a function (tracking logic in
-/// `concrete_function_with_body_lowered`).
-/// Can be used to debug cases where the transition of a specific lowering phase fails.
-fn test_function_lowering_phases(
-    inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
-) -> TestRunnerResult {
-    let db = LoweringDatabaseForTesting::default();
-
-    let (test_function, semantic_diagnostics) = setup_test_function(
-        &db,
-        inputs["function"].as_str(),
-        inputs["function_name"].as_str(),
-        inputs["module_code"].as_str(),
-    )
-    .split();
-    if !semantic_diagnostics.is_empty() {
-        panic!("Got semantic diagnostics: {semantic_diagnostics}");
-    }
-    let function_id =
-        ConcreteFunctionWithBodyId::from_semantic(&db, test_function.concrete_function_id);
-
-    let before_all = db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap();
-    assert!(
-        before_all.blocks.iter().all(|(_, b)| b.is_set()),
-        "There should not be any unset blocks"
-    );
-    let mut stage_states = OrderedHashMap::<String, String>::default();
-    let mut add_stage_state = |name: &str, lowered: &FlatLowered| {
-        stage_states.insert(name.into(), formatted_lowered(&db, lowered));
-    };
-    add_stage_state("before_all", &before_all);
-    let mut curr_state = before_all.deref().clone();
-    let mut apply_stage = |name: &str, stage: &dyn Fn(&mut FlatLowered)| {
-        (*stage)(&mut curr_state);
-        add_stage_state(name, &curr_state);
-    };
-    apply_stage("after_inlining", &|lowered| apply_inlining(&db, function_id, lowered).unwrap());
-    apply_stage("after_add_withdraw_gas", &|lowered| {
-        add_withdraw_gas(&db, function_id, lowered).unwrap()
-    });
-    apply_stage("after_lower_panics", &|lowered| {
-        *lowered = lower_panics(&db, function_id, lowered).unwrap();
-    });
-    apply_stage("after_return_optimization", &|lowered| return_optimization(&db, lowered));
-    apply_stage("after_add_destructs", &|lowered| add_destructs(&db, function_id, lowered));
-    apply_stage("after_optimize_remappings1", &optimize_remappings);
-    apply_stage("after_reorder_statements1", &|lowered| reorder_statements(&db, lowered));
-    apply_stage("after_branch_inversion", &|lowered| branch_inversion(&db, lowered));
-    apply_stage("after_reorder_statements2", &|lowered| reorder_statements(&db, lowered));
-    apply_stage("const_folding", &|lowered| const_folding(&db, lowered));
-    apply_stage("after_optimize_matches", &optimize_matches);
-    apply_stage("after_lower_implicits", &|lowered| lower_implicits(&db, function_id, lowered));
-    apply_stage("after_optimize_remappings2", &optimize_remappings);
-    apply_stage("cancel_ops", &cancel_ops);
-    apply_stage("after_reorder_statements3", &|lowered| reorder_statements(&db, lowered));
-    apply_stage("after_optimize_remappings3", &optimize_remappings);
-    apply_stage("after_reorganize_blocks (final)", &reorganize_blocks);
-
-    let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();
-
-    // This asserts that we indeed follow the logic of `concrete_function_with_body_lowered`.
-    // If something is changed there, it should be changed here too.
-    assert_eq!(*after_all, curr_state);
-
-    let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
-
-    TestRunnerResult::success(OrderedHashMap::from_iter(chain!(
-        [
-            ("semantic_diagnostics".into(), semantic_diagnostics),
-            ("lowering_diagnostics".into(), diagnostics.format(&db)),
-        ]
-        .into_iter(),
-        stage_states.into_iter()
-    )))
 }
 
 fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
@@ -227,7 +132,7 @@ a = a * 3
 ^*******^"}
     );
 
-    let mut builder = DiagnosticsBuilder::new();
+    let mut builder = DiagnosticsBuilder::default();
 
     builder.add(LoweringDiagnostic {
         location,
@@ -249,4 +154,57 @@ a = a * 3
 
 "}
     );
+}
+
+#[test]
+fn test_sizes() {
+    let db = &mut LoweringDatabaseForTesting::default();
+    let type_to_size = [
+        ("u8", 1),
+        ("u256", 2),
+        ("felt252", 1),
+        ("()", 0),
+        ("(u8, u16)", 2),
+        ("(u8, u256, u32)", 4),
+        ("Array<u8>", 2),
+        ("Array<u256>", 2),
+        ("Array<felt252>", 2),
+        ("Result<(), ()>", 1),
+        ("Result<(), u16>", 2),
+        ("Result<(), u256>", 3),
+        ("Result<u8, ()>", 2),
+        ("Result<u8, u16>", 2),
+        ("Result<u8, u256>", 3),
+        ("Result<u256, ()>", 3),
+        ("Result<u256, u16>", 3),
+        ("Result<u256, u256>", 3),
+        ("[u256; 10]", 20),
+        ("[felt252; 7]", 7),
+        ("@[felt252; 7]", 7),
+        ("core::cmp::min::<u8>::Coupon", 0),
+    ];
+
+    let test_module = setup_test_module_ex(
+        db,
+        &type_to_size
+            .iter()
+            .enumerate()
+            .map(|(i, (ty_str, _))| format!("type T{i} = {ty_str};\n"))
+            .join(""),
+        None,
+    )
+    .unwrap();
+    let db: &LoweringDatabaseForTesting = db;
+    let type_aliases = db.module_type_aliases(test_module.module_id).unwrap();
+    assert_eq!(type_aliases.len(), type_to_size.len());
+    let alias_expected_size = HashMap::<_, _>::from_iter(
+        type_to_size.iter().enumerate().map(|(i, (_, size))| (format!("T{i}"), *size)),
+    );
+    for (alias_id, alias) in type_aliases.iter() {
+        let ty = db.module_type_alias_resolved_type(*alias_id).unwrap();
+        let size = db.type_size(ty);
+        let alias_name = alias.name(db.upcast()).text(db.upcast());
+        let expected_size = alias_expected_size[alias_name.as_str()];
+        assert_eq!(size, expected_size, "Wrong size for type alias `{}`", ty.format(db.upcast()));
+    }
 }

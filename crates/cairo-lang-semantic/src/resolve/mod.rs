@@ -1,17 +1,16 @@
 use std::iter::Peekable;
 use std::marker::PhantomData;
-use std::ops::{Deref, DerefMut, Neg};
+use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
-    ModuleId, TraitId,
+    ModuleId, TraitId, TraitOrImplContext,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
-use cairo_lang_syntax::node::ast::Expr;
 use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -27,16 +26,17 @@ use crate::corelib::{core_submodule, get_submodule};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
+use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId};
 use crate::items::visibility;
-use crate::literals::LiteralLongId;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{are_coupons_enabled, resolve_type};
 use crate::{
@@ -101,6 +101,8 @@ pub struct ResolverData {
     pub resolved_items: ResolvedItems,
     /// Inference data for the resolver.
     pub inference_data: InferenceData,
+    /// The trait/impl context the resolver is currently in. Used to resolve "Self::" paths.
+    pub trait_or_impl_ctx: TraitOrImplContext,
 }
 impl ResolverData {
     pub fn new(module_file_id: ModuleFileId, inference_id: InferenceId) -> Self {
@@ -110,6 +112,7 @@ impl ResolverData {
             generic_params: Default::default(),
             resolved_items: Default::default(),
             inference_data: InferenceData::new(inference_id),
+            trait_or_impl_ctx: TraitOrImplContext::None,
         }
     }
     pub fn clone_with_inference_id(
@@ -123,6 +126,7 @@ impl ResolverData {
             generic_params: self.generic_params.clone(),
             resolved_items: self.resolved_items.clone(),
             inference_data: self.inference_data.clone_with_inference_id(db, inference_id),
+            trait_or_impl_ctx: self.trait_or_impl_ctx,
         }
     }
 }
@@ -167,16 +171,7 @@ impl<'db> Resolver<'db> {
         module_file_id: ModuleFileId,
         inference_id: InferenceId,
     ) -> Self {
-        Self::with_data(
-            db,
-            ResolverData {
-                module_file_id,
-                generic_param_by_name: Default::default(),
-                generic_params: Default::default(),
-                resolved_items: Default::default(),
-                inference_data: InferenceData::new(inference_id),
-            },
-        )
+        Self::with_data(db, ResolverData::new(module_file_id, inference_id))
     }
 
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
@@ -243,8 +238,7 @@ impl<'db> Resolver<'db> {
             (callbacks.resolve_path_first_segment)(self, diagnostics, &mut segments)?;
 
         // Follow modules.
-        while segments.peek().is_some() {
-            let segment = segments.next().unwrap();
+        while let Some(segment) = segments.next() {
             (callbacks.validate_segment)(diagnostics, segment)?;
             let identifier = segment.identifier_ast(syntax_db);
             let generic_args = segment.generic_args(syntax_db);
@@ -316,6 +310,7 @@ impl<'db> Resolver<'db> {
         if let Some(base_module) = self.try_handle_super_segments(diagnostics, segments) {
             return Ok(ResolvedConcreteItem::Module(base_module?));
         }
+
         let db = self.db;
         let syntax_db = db.upcast();
         Ok(match segments.peek().unwrap() {
@@ -332,6 +327,15 @@ impl<'db> Resolver<'db> {
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
                 let identifier = simple_segment.ident(syntax_db);
+
+                if let Some(resolved_item) =
+                    resolve_self_segment(db, diagnostics, &identifier, self.data.trait_or_impl_ctx)
+                {
+                    // The first segment is "Self". Consume it and return.
+                    segments.next().unwrap();
+                    return resolved_item;
+                }
+
                 if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
                     self.resolved_items.mark_concrete(db, segments.next().unwrap(), local_item)
                 } else if let Some(module_id) = self.determine_base_module(&identifier) {
@@ -350,6 +354,7 @@ impl<'db> Resolver<'db> {
             }
         })
     }
+
     /// Resolves a generic item, given a path.
     /// Guaranteed to result in at most one diagnostic.
     pub fn resolve_generic_path(
@@ -499,29 +504,41 @@ impl<'db> Resolver<'db> {
     fn resolve_path_next_segment_concrete(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        item: &ResolvedConcreteItem,
+        containing_item: &ResolvedConcreteItem,
         identifier: &ast::TerminalIdentifier,
         generic_args_syntax: Option<Vec<ast::GenericArg>>,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedConcreteItem> {
         let syntax_db = self.db.upcast();
         let ident = identifier.text(syntax_db);
-        match item {
+
+        if identifier.text(syntax_db) == "Self" {
+            return Err(diagnostics.report(identifier, SelfMustBeFirst));
+        }
+
+        match containing_item {
             ResolvedConcreteItem::Module(module_id) => {
+                // Prefix "super" segments should be removed earlier. Middle "super" segments are
+                // not allowed.
                 if ident == "super" {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 }
-                let item_info = self
+                let inner_item_info = self
                     .db
                     .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                self.validate_item_visibility(diagnostics, *module_id, identifier, &item_info);
-                let generic_item =
-                    ResolvedGenericItem::from_module_item(self.db, item_info.item_id)?;
+                self.validate_item_visibility(
+                    diagnostics,
+                    *module_id,
+                    identifier,
+                    &inner_item_info,
+                );
+                let inner_generic_item =
+                    ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
                 Ok(self.specialize_generic_module_item(
                     diagnostics,
                     identifier,
-                    generic_item,
+                    inner_generic_item,
                     generic_args_syntax,
                 )?)
             }
@@ -651,13 +668,6 @@ impl<'db> Resolver<'db> {
                 )?)
             }
             ResolvedGenericItem::GenericTypeAlias(module_type_alias_id) => {
-                // Check for cycles in this type alias definition.
-                // TODO(orizi): Handle this without using `priv_module_type_alias_semantic_data`.
-                self.db
-                    .priv_module_type_alias_semantic_data(module_type_alias_id)?
-                    .type_alias_data
-                    .check_no_cycle()?;
-
                 let ty = self.db.module_type_alias_resolved_type(module_type_alias_id)?;
                 let generic_params =
                     self.db.module_type_alias_generic_params(module_type_alias_id)?;
@@ -673,10 +683,6 @@ impl<'db> Resolver<'db> {
                 ResolvedConcreteItem::Type(ty)
             }
             ResolvedGenericItem::GenericImplAlias(impl_alias_id) => {
-                // Check for cycles in this type alias definition.
-                // TODO(orizi): Handle this without using `priv_impl_alias_semantic_data`.
-                self.db.priv_impl_alias_semantic_data(impl_alias_id)?.check_no_cycle()?;
-
                 let impl_id = self.db.impl_alias_resolved_impl(impl_alias_id)?;
                 let generic_params = self.db.impl_alias_generic_params(impl_alias_id)?;
                 let generic_args = self.resolve_generic_args(
@@ -716,20 +722,25 @@ impl<'db> Resolver<'db> {
     fn resolve_path_next_segment_generic(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        item: &ResolvedGenericItem,
+        containing_item: &ResolvedGenericItem,
         identifier: &ast::TerminalIdentifier,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedGenericItem> {
         let syntax_db = self.db.upcast();
         let ident = identifier.text(syntax_db);
-        match item {
+        match containing_item {
             ResolvedGenericItem::Module(module_id) => {
-                let item_info = self
+                let inner_item_info = self
                     .db
                     .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                self.validate_item_visibility(diagnostics, *module_id, identifier, &item_info);
-                ResolvedGenericItem::from_module_item(self.db, item_info.item_id)
+                self.validate_item_visibility(
+                    diagnostics,
+                    *module_id,
+                    identifier,
+                    &inner_item_info,
+                );
+                ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
                 let variants = self.db.enum_variants(*enum_id)?;
@@ -760,7 +771,9 @@ impl<'db> Resolver<'db> {
                 GenericKind::Type => ResolvedConcreteItem::Type(
                     self.db.intern_type(TypeLongId::GenericParameter(*generic_param_id)),
                 ),
-                GenericKind::Const => todo!("Add a variant to ConstId."),
+                GenericKind::Const => {
+                    ResolvedConcreteItem::ConstGenericParameter(*generic_param_id)
+                }
                 GenericKind::Impl => {
                     ResolvedConcreteItem::Impl(ImplId::GenericParameter(*generic_param_id))
                 }
@@ -838,10 +851,6 @@ impl<'db> Resolver<'db> {
         impl_def_id: ImplDefId,
         generic_args: Vec<ast::GenericArg>,
     ) -> Maybe<ConcreteImplId> {
-        // Check for cycles in this type alias definition.
-        // TODO(orizi): Handle this without using `priv_impl_declaration_data`.
-        self.db.priv_impl_declaration_data(impl_def_id)?.check_no_cycle()?;
-
         // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
         let generic_params = self
             .db
@@ -1011,57 +1020,48 @@ impl<'db> Resolver<'db> {
                 let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
                 GenericArgumentId::Type(ty)
             }
-            GenericParam::Const(_) => {
+            GenericParam::Const(const_param) => {
                 // TODO(spapini): Currently no bound checks are performed. Move literal validation
                 // to inference finalization and use inference here. This will become more relevant
                 // when we support constant expressions, which need inference.
-                // TODO(mkaput): This is a dumb heuristic, the expr here should be const-evaluated.
-                let syntax_db = self.db.upcast();
+                let environment = Environment::empty();
+                let mut resolver =
+                    Resolver::new(self.db, self.module_file_id, InferenceId::Canonical);
 
-                let value = match generic_arg_syntax {
-                    Expr::Literal(literal) => literal.numeric_value(syntax_db).unwrap_or_default(),
-                    Expr::ShortString(literal) => {
-                        literal.numeric_value(self.db.upcast()).unwrap_or_default()
-                    }
-                    Expr::Path(path) => {
-                        let ResolvedConcreteItem::Constant(constant_id) = self
-                            .resolve_concrete_path(
-                                diagnostics,
-                                path,
-                                NotFoundItemType::Identifier,
-                            )?
-                        else {
-                            return Err(diagnostics.report(path, UnknownLiteral));
-                        };
+                for param in self.generic_params.iter() {
+                    resolver.add_generic_param(*param);
+                }
 
-                        let crate::Expr::Literal(const_expr_literal) =
-                            self.db.constant_semantic_data(constant_id)?.value
-                        else {
-                            return Err(diagnostics.report(path, UnknownLiteral));
-                        };
-                        const_expr_literal.value
-                    }
-                    // TODO(yuval): support string const generic arguments?
-                    Expr::Unary(unary) => {
-                        if !matches!(unary.op(syntax_db), ast::UnaryOperator::Minus(_)) {
-                            return Err(diagnostics.report(generic_arg_syntax, UnknownLiteral));
-                        }
+                let mut ctx = ComputationContext::new(
+                    self.db,
+                    diagnostics,
+                    None,
+                    resolver,
+                    None,
+                    environment,
+                );
+                let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
 
-                        if let Expr::Literal(literal) = unary.expr(syntax_db) {
-                            literal.numeric_value(syntax_db).unwrap_or_default().neg()
-                        } else {
-                            return Err(diagnostics.report(generic_arg_syntax, UnknownLiteral));
-                        }
-                    }
+                let (_, const_value) = resolve_const_expr_and_evaluate(
+                    self.db,
+                    &mut ctx,
+                    &value,
+                    generic_arg_syntax.stable_ptr().untyped(),
+                    const_param.ty,
+                );
 
-                    _ => {
-                        return Err(diagnostics.report(generic_arg_syntax, UnknownLiteral));
-                    }
-                };
-
-                let literal = LiteralLongId { value };
-                GenericArgumentId::Literal(self.db.intern_literal(literal))
+                match const_value {
+                    ConstValue::Int(value) => GenericArgumentId::Constant(
+                        self.db.intern_const_value(ConstValue::Int(value)),
+                    ),
+                    ConstValue::Generic(generic_param_id) => GenericArgumentId::Constant(
+                        self.db.intern_const_value(ConstValue::Generic(generic_param_id)),
+                    ),
+                    ConstValue::Missing(err) => return Err(err),
+                    _ => unreachable!("Invalid const value."),
+                }
             }
+
             GenericParam::Impl(param) => {
                 let expr_path = try_extract_matches!(generic_arg_syntax, ast::Expr::Path)
                     .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
@@ -1094,7 +1094,6 @@ impl<'db> Resolver<'db> {
             }
         })
     }
-
     /// Should visibility checks not actually happen for lookups in this module.
     // TODO(orizi): Remove this check when performing a major Cairo update.
     pub fn ignore_visibility_checks(&self, module_id: ModuleId) -> bool {
@@ -1121,6 +1120,36 @@ impl<'db> Resolver<'db> {
             diagnostics.report(identifier, ItemNotVisible { item_id: item_info.item_id });
         }
     }
+}
+
+/// Resolves the segment if it's "Self". Returns the Some(ResolvedConcreteItem) or Some(Err) if
+/// segment == "Self" or None otherwise.
+fn resolve_self_segment(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    identifier: &ast::TerminalIdentifier,
+    trait_or_impl_ctx: TraitOrImplContext,
+) -> Option<Maybe<ResolvedConcreteItem>> {
+    if identifier.text(db.upcast()) != "Self" {
+        return None;
+    }
+
+    Some(match trait_or_impl_ctx {
+        TraitOrImplContext::None => Err(diagnostics.report(identifier, SelfNotSupportedInContext)),
+        TraitOrImplContext::Trait { trait_id } => {
+            let concrete_trait_id =
+                db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args: vec![] });
+            Ok(ResolvedConcreteItem::Trait(concrete_trait_id))
+        }
+        TraitOrImplContext::Impl { impl_def_id } => {
+            let impl_id =
+                ImplId::Concrete(db.intern_concrete_impl(ConcreteImplLongId {
+                    impl_def_id,
+                    generic_args: vec![],
+                }));
+            Ok(ResolvedConcreteItem::Impl(impl_id))
+        }
+    })
 }
 
 /// Extracts the edition of a crate.

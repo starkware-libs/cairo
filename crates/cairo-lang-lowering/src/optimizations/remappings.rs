@@ -16,7 +16,10 @@ use crate::{BlockId, FlatBlockEnd, FlatLowered, VarRemapping, VariableId};
 
 /// Visits all the reachable remappings in the function, calls `f` on each one and returns a vector
 /// indicating which blocks are reachable.
-fn visit_remappings<F: FnMut(&VarRemapping)>(lowered: &mut FlatLowered, mut f: F) -> Vec<bool> {
+pub(crate) fn visit_remappings<F: FnMut(&VarRemapping)>(
+    lowered: &mut FlatLowered,
+    mut f: F,
+) -> Vec<bool> {
     let mut stack = vec![BlockId::root()];
     let mut visited = vec![false; lowered.blocks.len()];
     while let Some(block_id) = stack.pop() {
@@ -32,7 +35,7 @@ fn visit_remappings<F: FnMut(&VarRemapping)>(lowered: &mut FlatLowered, mut f: F
             FlatBlockEnd::Match { info } => {
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
             }
-            FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) => {}
+            FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => {}
             FlatBlockEnd::NotSet => unreachable!(),
         }
     }
@@ -42,9 +45,9 @@ fn visit_remappings<F: FnMut(&VarRemapping)>(lowered: &mut FlatLowered, mut f: F
 
 /// Context for the optimize remappings optimization.
 #[derive(Default)]
-struct Context {
+pub(crate) struct Context {
     /// Maps a destination variable to the source variables that are remapped to it.
-    dest_to_srcs: HashMap<VariableId, Vec<VariableId>>,
+    pub dest_to_srcs: HashMap<VariableId, Vec<VariableId>>,
     /// Cache of a mapping from variable id in the old lowering to variable id in the new lowering.
     /// This mapping is built on demand.
     var_representatives: HashMap<VariableId, VariableId>,
@@ -52,8 +55,9 @@ struct Context {
     variable_used: HashSet<VariableId>,
 }
 impl Context {
-    /// Marks `var` as used.
-    fn set_used(&mut self, var: VariableId) {
+    /// Find the `canonical` variable that `var` maps to and mark it as used.
+    pub fn set_used(&mut self, var: VariableId) {
+        let var = self.map_var_id(var);
         if self.variable_used.insert(var) {
             for src in self.dest_to_srcs.get(&var).cloned().unwrap_or_default() {
                 self.set_used(src);
@@ -114,26 +118,22 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
 
         for stmt in &block.statements {
             for var_usage in stmt.inputs() {
-                let var = ctx.map_var_id(var_usage.var_id);
-                ctx.set_used(var);
+                ctx.set_used(var_usage.var_id);
             }
         }
         match &block.end {
-            FlatBlockEnd::Return(returns) => {
+            FlatBlockEnd::Return(returns, _location) => {
                 for var_usage in returns {
-                    let var_usage = ctx.map_var_usage(*var_usage);
                     ctx.set_used(var_usage.var_id);
                 }
             }
             FlatBlockEnd::Panic(data) => {
-                let var_usage = ctx.map_var_usage(*data);
-                ctx.set_used(var_usage.var_id);
+                ctx.set_used(data.var_id);
             }
             FlatBlockEnd::Goto(_, _) => {}
             FlatBlockEnd::Match { info } => {
                 for var_usage in info.inputs() {
-                    let var = ctx.map_var_id(var_usage.var_id);
-                    ctx.set_used(var);
+                    ctx.set_used(var_usage.var_id);
                 }
             }
             FlatBlockEnd::NotSet => unreachable!(),

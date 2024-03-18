@@ -30,19 +30,15 @@ label_test::foo::0:
 dup<felt252>([0]) -> ([0], [1])
 felt252_is_zero([1]) { fallthrough() label_test::foo::1([2]) }
 branch_align() -> ()
-dup<felt252>([0]) -> ([0], [3])
-struct_construct<Tuple<felt252, felt252>>([3], [0]) -> ([4])
-store_temp<Tuple<felt252, felt252>>([4]) -> ([5])
 jump() { label_test::foo::3() }
 label_test::foo::1:
 branch_align() -> ()
 drop<NonZero<felt252>>([2]) -> ()
-dup<felt252>([0]) -> ([0], [6])
-struct_construct<Tuple<felt252, felt252>>([6], [0]) -> ([7])
-store_temp<Tuple<felt252, felt252>>([7]) -> ([5])
 label_test::foo::3:
-function_call<user@test::immovable::<(core::felt252, core::felt252)>>([5]) -> ([8])
-drop<Tuple<felt252, felt252>>([8]) -> ()
-struct_construct<Unit>() -> ([9])
-return([9])
+dup<felt252>([0]) -> ([0], [3])
+struct_construct<Tuple<felt252, felt252>>([3], [0]) -> ([4])
+store_temp<Tuple<felt252, felt252>>([4]) -> ([4])
+function_call<user@test::immovable::<(core::felt252, core::felt252)>>([4]) -> ([5])
+drop<Tuple<felt252, felt252>>([5]) -> ()
+return()
 label_test::foo::2:

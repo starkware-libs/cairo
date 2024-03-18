@@ -25,13 +25,13 @@ foo
 //! > sierra_code
 felt252_is_zero([0]) { fallthrough() label_test::foo::0([1]) }
 branch_align() -> ()
-felt252_const<1>() -> ([2])
+const_as_immediate<Const<felt252, 1>>() -> ([2])
 PushValues([2]: felt252) -> ([2])
 return([2])
 label_test::foo::0:
 branch_align() -> ()
 drop<NonZero<felt252>>([1]) -> ()
-felt252_const<2>() -> ([3])
+const_as_immediate<Const<felt252, 2>>() -> ([3])
 PushValues([3]: felt252) -> ([3])
 return([3])
 label_test::foo::1:
@@ -43,17 +43,17 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v14) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt252) <- 1u
+  (v8: core::felt252) <- 1
 End:
-  Return(v1)
+  Return(v8)
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 2u
+  (v10: core::felt252) <- 2
 End:
-  Return(v3)
+  Return(v10)

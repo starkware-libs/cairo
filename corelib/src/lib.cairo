@@ -99,11 +99,11 @@ impl BoolIntoFelt252 of Into<bool, felt252> {
 }
 pub mod boolean;
 
-// General purpose implicits.
+/// General purpose implicits.
 pub extern type RangeCheck;
 pub extern type SegmentArena;
 
-// felt252.
+/// felt252.
 mod felt_252;
 use felt_252::{Felt252One, Felt252Zero};
 
@@ -116,7 +116,17 @@ impl Felt252Serde of Serde<felt252> {
         output.append(*self);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<felt252> {
-        Option::Some(*serialized.pop_front()?)
+        let mut snapshot = serialized.snapshot;
+        match core::array::array_snapshot_pop_front(ref snapshot) {
+            Option::Some(x) => {
+                serialized = Span { snapshot };
+                Option::Some(*x.unbox())
+            },
+            Option::None => {
+                serialized = Span { snapshot };
+                Option::None
+            },
+        }
     }
 }
 
@@ -215,46 +225,46 @@ impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
 extern fn drop<T>(obj: T) nopanic;
 
-// Boxes.
+/// Boxes.
 pub mod box;
 use box::{Box, BoxTrait};
 
-// Nullable
+/// Nullable
 pub mod nullable;
 use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
 
-// Array.
+/// Array.
 pub mod array;
 use array::{Array, ArrayTrait};
 
-// Span.
+/// Span.
 use array::{Span, SpanTrait};
 
-// Dictionary.
+/// Dictionary.
 pub mod dict;
 use dict::{
     Felt252Dict, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash, Felt252DictTrait
 };
 
-// Result.
+/// Result.
 pub mod result;
 use result::{Result, ResultTrait};
 
-// Option.
+/// Option.
 pub mod option;
 use option::{Option, OptionTrait};
 
-// Clone.
+/// Clone.
 pub mod clone;
 use clone::Clone;
 
-// EC.
+/// EC.
 pub mod ec;
 use ec::{EcOp, EcPoint, EcState};
 
 pub mod ecdsa;
 
-// Integer.
+/// Integer.
 pub mod integer;
 use integer::{
     i8, I8IntoFelt252, i16, I16IntoFelt252, i32, I32IntoFelt252, i64, I64IntoFelt252, i128,
@@ -264,21 +274,21 @@ use integer::{
     U128IntoFelt252, Felt252IntoU256, Bitwise
 };
 
-// Math.
+/// Math.
 pub mod math;
 
-// Num.
+/// Num.
 pub mod num;
 
-// Cmp.
+/// Cmp.
 pub mod cmp;
 
-// Gas.
+/// Gas.
 pub mod gas;
 use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
 
-// Panics.
+/// Panics.
 pub mod panics;
 use panics::{panic, Panic, PanicResult};
 
@@ -296,64 +306,64 @@ pub fn assert(cond: bool, err_code: felt252) {
     }
 }
 
-// Serialization and Deserialization.
+/// Serialization and Deserialization.
 pub mod serde;
 
-// Hash functions.
+/// Hash functions.
 pub mod hash;
 
 pub mod keccak;
 
-// Pedersen
+/// Pedersen
 pub mod pedersen;
 use pedersen::Pedersen;
 
-// Poseidon
+/// Poseidon
 pub mod poseidon;
 use poseidon::Poseidon;
 
-// Debug.
+/// Debug.
 pub mod debug;
 
 pub mod fmt;
 
-// Starknet
+/// Starknet
 pub mod starknet;
 use starknet::System;
 
-// Internals.
+/// Internals.
 pub mod internal;
 
-// Zeroable.
+/// Zeroable.
 pub mod zeroable;
 use zeroable::{Zeroable, NonZero};
 
-// bytes31.
+/// bytes31.
 pub mod bytes_31;
 use bytes_31::{
     bytes31, bytes31_const, Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait,
     Felt252TryIntoBytes31
 };
 
-// BytesArray.
+/// BytesArray.
 pub mod byte_array;
 use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
 
-// String.
+/// String.
 pub mod string;
 use string::StringLiteral;
 
-// to_byte_array.
+/// to_byte_array.
 pub mod to_byte_array;
 
 #[cfg(test)]
 mod test;
 
-// Module for testing only.
+/// Module for testing only.
 pub mod testing;
 
-// Metaprogramming.
+/// Metaprogramming.
 pub mod metaprogramming;
 
-// Preludes.
+/// Preludes.
 mod prelude;

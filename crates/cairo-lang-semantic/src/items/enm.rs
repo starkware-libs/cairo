@@ -156,8 +156,7 @@ pub struct Variant {
     pub idx: usize,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteVariant {
     pub concrete_enum_id: ConcreteEnumId,
     pub id: VariantId,
@@ -177,8 +176,7 @@ pub struct ValueSelectorArm {
 }
 
 /// Selector pattern of a match arm.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum MatchArmSelector {
     VariantId(ConcreteVariant),
     Value(ValueSelectorArm),

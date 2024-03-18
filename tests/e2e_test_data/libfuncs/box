@@ -144,8 +144,8 @@ test::foo@0([0]: Box<core::integer::u256>) -> (core::integer::u256);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo() -> Box::<()> {
-    BoxTrait::new(())
+fn foo(e: ()) -> Box::<()> {
+    BoxTrait::new(e)
 }
 
 //! > casm
@@ -159,14 +159,12 @@ test::foo: OrderedHashMap({Const: 100})
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc into_box<Unit> = into_box<Unit>;
 
-struct_construct<Unit>() -> ([0]); // 0
-into_box<Unit>([0]) -> ([1]); // 1
-return([1]); // 2
+into_box<Unit>([0]) -> ([1]); // 0
+return([1]); // 1
 
-test::foo@0() -> (Box<Unit>);
+test::foo@0([0]: Unit) -> (Box<Unit>);
 
 //! > ==========================================================================
 
@@ -191,11 +189,13 @@ type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: f
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 
 libfunc unbox<Unit> = unbox<Unit>;
+libfunc drop<Unit> = drop<Unit>;
 
 unbox<Unit>([0]) -> ([1]); // 0
-return([1]); // 1
+drop<Unit>([1]) -> (); // 1
+return(); // 2
 
-test::foo@0([0]: Box<Unit>) -> (Unit);
+test::foo@0([0]: Box<Unit>) -> ();
 
 //! > ==========================================================================
 
@@ -206,8 +206,8 @@ SmallE2ETestRunner
 
 //! > cairo
 struct Empty {}
-fn foo() -> Box::<Empty> {
-    BoxTrait::new(Empty{})
+fn foo(e: Empty) -> Box::<Empty> {
+    BoxTrait::new(e)
 }
 
 //! > casm
@@ -221,14 +221,12 @@ test::foo: OrderedHashMap({Const: 100})
 type test::Empty = Struct<ut@test::Empty> [storable: true, drop: true, dup: true, zero_sized: true];
 type Box<test::Empty> = Box<test::Empty> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc struct_construct<test::Empty> = struct_construct<test::Empty>;
 libfunc into_box<test::Empty> = into_box<test::Empty>;
 
-struct_construct<test::Empty>() -> ([0]); // 0
-into_box<test::Empty>([0]) -> ([1]); // 1
-return([1]); // 2
+into_box<test::Empty>([0]) -> ([1]); // 0
+return([1]); // 1
 
-test::foo@0() -> (Box<test::Empty>);
+test::foo@0([0]: test::Empty) -> (Box<test::Empty>);
 
 //! > ==========================================================================
 

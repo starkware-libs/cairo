@@ -3,7 +3,7 @@
 mod test;
 
 use cairo_lang_semantic::MatchArmSelector;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
@@ -28,40 +28,61 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     analysis.get_root_info();
     let ctx = analysis.analyzer;
 
-    let mut target_blocks = UnorderedHashSet::<_>::default();
-    for FixInfo { statement_location, target_block, remapping } in ctx.fixes.into_iter() {
-        let block = &mut lowered.blocks[statement_location.0];
+    let mut new_blocks = vec![];
+    let mut next_block_id = BlockId(lowered.blocks.len());
 
+    // Fixes were added in reverse order, so we apply them in reverse.
+    // Either order is will result in correct code, but this way variables with smaller ids appear
+    // earlier.
+    for FixInfo { statement_location, match_block, arm_idx, target_block, remapping } in
+        ctx.fixes.into_iter().rev()
+    {
+        let block = &mut lowered.blocks[statement_location.0];
         assert_eq!(
             block.statements.len() - 1,
             statement_location.1,
             "The optimization can only be applied to the last statement in the block."
         );
         block.statements.pop();
-
         block.end = FlatBlockEnd::Goto(target_block, remapping);
-        target_blocks.insert(target_block);
-    }
 
-    // Fix match arms not to jump directly to blocks that have incoming gotos.
-    let mut new_blocks = vec![];
-    let mut next_block_id = BlockId(lowered.blocks.len());
-    for block in lowered.blocks.iter_mut() {
-        if let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, .. }) } =
-            &mut block.end
-        {
-            for arm in arms {
-                if target_blocks.contains(&arm.block_id) {
-                    new_blocks.push(FlatBlock {
-                        statements: vec![],
-                        end: FlatBlockEnd::Goto(arm.block_id, VarRemapping::default()),
-                    });
-
-                    arm.block_id = next_block_id;
-                    next_block_id = next_block_id.next_block_id();
-                }
-            }
+        if statement_location.0 == match_block {
+            // The match was removed, no need to fix it.
+            continue;
         }
+
+        let block = &mut lowered.blocks[match_block];
+        let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, location, .. }) } =
+            &mut block.end
+        else {
+            unreachable!("match block should end with a match.");
+        };
+
+        let arm = arms.get_mut(arm_idx).unwrap();
+        if target_block != arm.block_id {
+            // The match arm was already fixed, no need to fix it again.
+            continue;
+        }
+
+        // Fix match arm not to jump directly to a block that has an incoming gotos and add
+        // remapping that matches the goto above.
+        let arm_var = arm.var_ids.get_mut(0).unwrap();
+        let orig_var = *arm_var;
+        *arm_var = lowered.variables.alloc(lowered.variables[orig_var].clone());
+        new_blocks.push(FlatBlock {
+            statements: vec![],
+            end: FlatBlockEnd::Goto(
+                arm.block_id,
+                VarRemapping {
+                    remapping: OrderedHashMap::from_iter([(
+                        orig_var,
+                        VarUsage { var_id: *arm_var, location: *location },
+                    )]),
+                },
+            ),
+        });
+        arm.block_id = next_block_id;
+        next_block_id = next_block_id.next_block_id();
     }
 
     for block in new_blocks.into_iter() {
@@ -107,11 +128,9 @@ impl MatchOptimizerContext {
         let mut demand = candidate.arm_demands[arm_idx].clone();
 
         let mut remapping = VarRemapping::default();
-        if demand.vars.contains_key(var_id) {
-            // The input to EnumConstruct should be available as `var_id`
-            // in `arm.block_id`
-            remapping.insert(*var_id, *input);
-        }
+        // The input to EnumConstruct should be available as `var_id`
+        // in `arm.block_id`
+        remapping.insert(*var_id, *input);
 
         demand.apply_remapping(
             self,
@@ -119,7 +138,13 @@ impl MatchOptimizerContext {
         );
         info.demand = demand;
 
-        self.fixes.push(FixInfo { statement_location, target_block: arm.block_id, remapping });
+        self.fixes.push(FixInfo {
+            statement_location,
+            match_block: candidate.match_block,
+            arm_idx,
+            target_block: arm.block_id,
+            remapping,
+        });
         true
     }
 }
@@ -132,7 +157,11 @@ impl DemandReporter<VariableId> for MatchOptimizerContext {
 pub struct FixInfo {
     /// The location that needs to be fixed,
     statement_location: (BlockId, usize),
-    /// The block That we want to jump to.
+    /// The block with the match statement that we want to jump over.
+    match_block: BlockId,
+    /// The index of the arm that we want to jump to.
+    arm_idx: usize,
+    /// The target block to jump to.
     target_block: BlockId,
     /// The variable remapping that should be applied.
     remapping: VarRemapping,
@@ -145,6 +174,9 @@ struct OptimizationCandidate<'a> {
 
     /// The match arms of the extern match that we are optimizing.
     match_arms: &'a [MatchArm],
+
+    /// The block that the match is in.
+    match_block: BlockId,
 
     /// The demands at the arms.
     arm_demands: Vec<MatchOptimizerDemand>,
@@ -165,7 +197,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         stmt: &Statement,
     ) {
         if !self.statement_can_be_optimized_out(stmt, info, statement_location) {
-            info.demand.variables_introduced(self, &stmt.outputs(), ());
+            info.demand.variables_introduced(self, stmt.outputs(), ());
             info.demand.variables_used(
                 self,
                 stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
@@ -206,13 +238,17 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         }
     }
 
-    fn merge_match(
-        &mut self,
-        _statement_location: StatementLocation,
+    fn merge_match<'b, Infos>(
+        &'b mut self,
+        (block_id, _statement_idx): StatementLocation,
         match_info: &'a MatchInfo,
-        infos: &[Self::Info],
-    ) -> Self::Info {
-        let arm_demands = zip_eq(match_info.arms(), infos)
+        infos: Infos,
+    ) -> Self::Info
+    where
+        'a: 'b,
+        Infos: Iterator<Item = &'b Self::Info> + Clone,
+    {
+        let arm_demands = zip_eq(match_info.arms(), infos.clone())
             .map(|(arm, info)| {
                 let mut demand = info.demand.clone();
                 demand.variables_introduced(self, &arm.var_ids, ());
@@ -231,7 +267,8 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                 Some(OptimizationCandidate {
                     match_variable: input.var_id,
                     match_arms: arms,
-                    arm_demands: infos.iter().map(|info| info.demand.clone()).collect(),
+                    match_block: block_id,
+                    arm_demands: infos.map(|info| info.demand.clone()).collect(),
                 })
             }
 

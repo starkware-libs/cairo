@@ -38,7 +38,7 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v3: core::felt252) <- 1
 End:
   Return(v3)
 
@@ -74,14 +74,14 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v14) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt252) <- 1u
+  (v8: core::felt252) <- 1
 End:
-  Return(v1)
+  Return(v8)
 
 blk2:
 Statements:
@@ -116,23 +116,25 @@ foo
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+  (v1: core::felt252) <- 0
+  (v13: core::felt252) <- core::felt252_sub(v1, v0)
 End:
-  Match(match core::felt252_is_zero(v0) {
+  Match(match core::felt252_is_zero(v13) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v14) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt252) <- 10u
+  (v8: core::felt252) <- 10
 End:
-  Return(v1)
+  Return(v8)
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 20u
+  (v10: core::felt252) <- 20
 End:
-  Return(v3)
+  Return(v10)
 
 //! > ==========================================================================
 
@@ -163,26 +165,26 @@ foo
 Parameters: v0: core::felt252, v1: core::felt252, v2: core::felt252, v3: core::felt252
 blk0 (root):
 Statements:
-  (v11: core::felt252) <- core::felt252_add(v0, v1)
-  (v12: core::felt252) <- core::felt252_sub(v2, v3)
-  (v13: core::felt252) <- core::felt252_sub(v11, v12)
+  (v16: core::felt252) <- core::felt252_add(v0, v1)
+  (v17: core::felt252) <- core::felt252_sub(v2, v3)
+  (v20: core::felt252) <- core::felt252_sub(v16, v17)
 End:
-  Match(match core::felt252_is_zero(v13) {
+  Match(match core::felt252_is_zero(v20) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v8) => blk2,
+    IsZeroResult::NonZero(v21) => blk2,
   })
 
 blk1:
 Statements:
-  (v7: core::felt252) <- 0u
+  (v12: core::felt252) <- 0
 End:
-  Return(v7)
+  Return(v12)
 
 blk2:
 Statements:
-  (v9: core::felt252) <- 1u
+  (v14: core::felt252) <- 1
 End:
-  Return(v9)
+  Return(v14)
 
 //! > ==========================================================================
 
@@ -226,12 +228,12 @@ End:
 
 blk2:
 Statements:
-  (v11: core::felt252) <- 5u
-  (v43: core::felt252) <- core::felt252_sub(v0, v11)
+  (v11: core::felt252) <- 5
+  (v34: core::felt252) <- core::felt252_sub(v0, v11)
 End:
-  Match(match core::felt252_is_zero(v43) {
+  Match(match core::felt252_is_zero(v34) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero(v36) => blk5,
+    IsZeroResult::NonZero(v35) => blk5,
   })
 
 blk3:
@@ -241,13 +243,13 @@ End:
 
 blk4:
 Statements:
-  (v20: core::felt252) <- 0u
+  (v20: core::felt252) <- 0
 End:
   Return(v20)
 
 blk5:
 Statements:
-  (v22: core::felt252) <- 1u
+  (v22: core::felt252) <- 1
 End:
   Return(v22)
 
@@ -309,7 +311,7 @@ End:
 
 blk4:
 Statements:
-  (v4: core::felt252) <- 0u
+  (v4: core::felt252) <- 0
 End:
   Return(v4)
 
@@ -349,7 +351,7 @@ extern fn a() -> myEnum nopanic;
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 0u
+  (v0: core::felt252) <- 0
 End:
   Match(match test::a() {
     myEnum::A(v1) => blk1,
@@ -380,7 +382,7 @@ End:
 
 blk5:
 Statements:
-  (v4: core::felt252) <- 1u
+  (v4: core::felt252) <- 1
   (v7: core::felt252) <- core::felt252_add(v3, v4)
 End:
   Return(v7)
@@ -421,12 +423,12 @@ extern fn a() -> myEnum nopanic;
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 0u
-  (v1: core::felt252) <- 5u
-  (v4: core::felt252) <- 6u
-  (v39: core::felt252) <- core::felt252_sub(v1, v4)
+  (v0: core::felt252) <- 0
+  (v1: core::felt252) <- 5
+  (v4: core::felt252) <- 6
+  (v30: core::felt252) <- core::felt252_sub(v1, v4)
 End:
-  Match(match core::felt252_is_zero(v39) {
+  Match(match core::felt252_is_zero(v30) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v31) => blk2,
   })
@@ -436,14 +438,14 @@ Statements:
   (v32: ()) <- struct_construct()
   (v33: core::bool) <- bool::True(v32)
 End:
-  Goto(blk3, {v33 -> v34})
+  Goto(blk3, {v33 -> v7})
 
 blk2:
 Statements:
-  (v35: ()) <- struct_construct()
-  (v36: core::bool) <- bool::False(v35)
+  (v34: ()) <- struct_construct()
+  (v35: core::bool) <- bool::False(v34)
 End:
-  Goto(blk3, {v36 -> v34})
+  Goto(blk3, {v35 -> v7})
 
 blk3:
 Statements:
@@ -457,7 +459,7 @@ End:
 blk4:
 Statements:
 End:
-  Match(match_enum(v34) {
+  Match(match_enum(v7) {
     bool::False(v16) => blk5,
     bool::True(v17) => blk6,
   })
@@ -469,14 +471,14 @@ End:
 
 blk6:
 Statements:
-  (v37: core::felt252) <- core::felt252_add(v0, v8)
+  (v36: core::felt252) <- core::felt252_add(v0, v8)
 End:
-  Goto(blk14, {v37 -> v25})
+  Goto(blk14, {v36 -> v25})
 
 blk7:
 Statements:
 End:
-  Match(match_enum(v34) {
+  Match(match_enum(v7) {
     bool::False(v19) => blk8,
     bool::True(v20) => blk9,
   })
@@ -494,7 +496,7 @@ End:
 blk10:
 Statements:
 End:
-  Match(match_enum(v34) {
+  Match(match_enum(v7) {
     bool::False(v22) => blk11,
     bool::True(v23) => blk12,
   })
@@ -516,10 +518,10 @@ End:
 
 blk14:
 Statements:
-  (v26: core::felt252) <- 1u
-  (v38: core::felt252) <- core::felt252_add(v25, v26)
+  (v26: core::felt252) <- 1
+  (v37: core::felt252) <- core::felt252_add(v25, v26)
 End:
-  Return(v38)
+  Return(v37)
 
 //! > ==========================================================================
 
@@ -628,7 +630,7 @@ enum myEnum {
 Parameters: v0: test::myEnum
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0u
+  (v1: core::felt252) <- 0
 End:
   Match(match_enum(v0) {
     myEnum::A(v2) => blk1,
@@ -653,9 +655,9 @@ End:
 
 blk4:
 Statements:
-  (v5: core::felt252) <- 5u
+  (v5: core::felt252) <- 5
   (v10: core::felt252) <- core::felt252_add(v1, v5)
-  (v8: core::felt252) <- 1u
+  (v8: core::felt252) <- 1
   (v11: core::felt252) <- core::felt252_add(v10, v8)
 End:
   Return(v11)
@@ -701,7 +703,7 @@ error: Unreachable else clause.
 Parameters: v0: test::myEnum
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0u
+  (v1: core::felt252) <- 0
 End:
   Match(match_enum(v0) {
     myEnum::A(v2) => blk1,
@@ -726,9 +728,9 @@ End:
 
 blk4:
 Statements:
-  (v5: core::felt252) <- 5u
+  (v5: core::felt252) <- 5
   (v10: core::felt252) <- core::felt252_add(v1, v5)
-  (v8: core::felt252) <- 1u
+  (v8: core::felt252) <- 1
   (v11: core::felt252) <- core::felt252_add(v10, v8)
 End:
   Return(v11)
@@ -771,3 +773,69 @@ error: Unsupported type in if-let. Type: `test::MyStruct`.
 
 //! > lowering_flat
 Parameters: v0: test::MyStruct
+
+//! > ==========================================================================
+
+//! > Test if let in loop
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: myEnum) -> felt252 {
+    loop {
+        // Some statements to prevent the loop function from being inlined.
+        let mut x = 0;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        if let _ = a {
+            break 2;
+        }
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop, Copy)]
+enum myEnum {
+    A: felt252,
+    B: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::myEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    myEnum::A(v2) => blk1,
+    myEnum::B(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v4: core::felt252) <- 2
+End:
+  Return(v4)

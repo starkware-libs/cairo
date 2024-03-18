@@ -40,7 +40,7 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_free_function(&self, id: FreeFunctionLongId) -> FreeFunctionId;
     #[salsa::interned]
-    fn intern_impl_type(&self, id: ImplTypeLongId) -> ImplTypeId;
+    fn intern_impl_type_def(&self, id: ImplTypeDefLongId) -> ImplTypeDefId;
     #[salsa::interned]
     fn intern_impl_function(&self, id: ImplFunctionLongId) -> ImplFunctionId;
     #[salsa::interned]
@@ -375,9 +375,11 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
 
                     // If this is an inline module, copy its generation file info from the parent
                     // module, from the file where this submodule was defined.
-                    main_file_info = parent_module_data.generated_file_infos
-                        [submodule_id.file_index(db).0]
-                        .clone();
+                    main_file_info = parent_module_data
+                        .generated_file_infos
+                        .into_iter()
+                        .nth(submodule_id.file_index(db).0)
+                        .unwrap();
                     body.items(syntax_db)
                 }
                 MaybeModuleBody::None(_) => file_syntax.items(syntax_db),

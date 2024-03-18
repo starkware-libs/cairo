@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::MemberId;
+use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -175,7 +175,7 @@ impl BlockBuilder {
                 )
             })?;
 
-        self.finalize(ctx, FlatBlockEnd::Return(chain!(refs, [expr]).collect()));
+        self.finalize(ctx, FlatBlockEnd::Return(chain!(refs, [expr]).collect(), location));
         Ok(())
     }
 

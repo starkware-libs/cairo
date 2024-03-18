@@ -2,7 +2,7 @@ use anyhow::{bail, Context};
 use cairo_felt::Felt252;
 use cairo_lang_defs::ids::{
     FileIndex, FreeFunctionId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
-    ModuleItemId, SubmoduleId,
+    ModuleItemId, NamedLanguageElementId, SubmoduleId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
@@ -315,10 +315,9 @@ fn analyze_contract<T: SierraIdReplacer>(
     let item =
         db.module_item_by_name(contract.module_id(), "TEST_CLASS_HASH".into()).unwrap().unwrap();
     let constant_id = extract_matches!(item, ModuleItemId::Constant);
-    let value =
-        extract_matches!(db.constant_semantic_data(constant_id).unwrap().value, Expr::Literal)
-            .value;
-    let class_hash: Felt252 = value.into();
+    let constant = db.constant_semantic_data(constant_id).unwrap();
+    let class_hash: Felt252 =
+        extract_matches!(&constant.exprs[constant.value], Expr::Literal).value.clone().into();
 
     // Extract functions.
     let SemanticEntryPoints { external, l1_handler, constructor } =

@@ -62,7 +62,7 @@ fn block_generator_test(
     let lowering_diagnostics =
         db.function_with_body_lowering_diagnostics(function_id.function_with_body_id(db)).unwrap();
 
-    let lowered = match db.concrete_function_with_body_lowered(function_id) {
+    let lowered = match db.final_concrete_function_with_body_lowered(function_id) {
         Ok(lowered) if !lowered.blocks.is_empty() => lowered,
         _ => {
             return TestRunnerResult::success(OrderedHashMap::from([
@@ -87,9 +87,9 @@ fn block_generator_test(
 
     let mut expected_sierra_code = String::default();
 
-    let statements = generate_block_code(&mut expr_generator_context, BlockId::root()).unwrap();
-    for statement in &statements {
-        expected_sierra_code.push_str(&replace_sierra_ids(db, statement).statement.to_string(db));
+    generate_block_code(&mut expr_generator_context, BlockId::root()).unwrap();
+    for statement in expr_generator_context.statements() {
+        expected_sierra_code.push_str(&replace_sierra_ids(db, &statement).statement.to_string(db));
         expected_sierra_code.push('\n');
     }
 

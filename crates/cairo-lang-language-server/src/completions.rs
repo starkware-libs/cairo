@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{
     FunctionWithBodyId, ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
-    ModuleItemId, TopLevelLanguageElementId, TraitFunctionId,
+    ModuleItemId, NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextOffset;
@@ -20,9 +20,11 @@ use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
+use tracing::debug;
 
 use crate::{find_node_module, from_pos};
 
+#[tracing::instrument(level = "trace", skip_all)]
 pub fn generic_completions(
     db: &(dyn SemanticGroup + 'static),
     module_file_id: ModuleFileId,
@@ -108,6 +110,7 @@ fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> Completio
     }
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 pub fn colon_colon_completions(
     db: &(dyn SemanticGroup + 'static),
     module_file_id: ModuleFileId,
@@ -182,6 +185,7 @@ pub fn colon_colon_completions(
     })
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 pub fn dot_completions(
     db: &dyn SemanticGroup,
     file_id: FileId,
@@ -208,7 +212,7 @@ pub fn dot_completions(
     // Get the type.
     let ty = semantic_expr.ty();
     if ty.is_missing(db) {
-        eprintln!("Type is missing");
+        debug!("type is missing");
         return None;
     }
 
@@ -256,6 +260,7 @@ pub fn dot_completions(
 }
 
 /// Returns a completion item for a method.
+#[tracing::instrument(level = "trace", skip_all)]
 fn completion_for_method(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
@@ -291,6 +296,7 @@ fn completion_for_method(
 }
 
 /// Checks if a module has a trait in scope.
+#[tracing::instrument(level = "trace", skip_all)]
 fn module_has_trait(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
@@ -308,6 +314,7 @@ fn module_has_trait(
 }
 
 /// Finds all methods that can be called on a type.
+#[tracing::instrument(level = "trace", skip_all)]
 fn find_methods_for_type(
     db: &dyn SemanticGroup,
     mut resolver: Resolver<'_>,
@@ -337,7 +344,7 @@ fn find_methods_for_type(
                 Some(stable_ptr),
                 |_| {},
             ) else {
-                eprintln!("Can't fit");
+                debug!("can't fit");
                 continue;
             };
 

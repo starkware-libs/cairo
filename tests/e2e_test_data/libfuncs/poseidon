@@ -55,60 +55,34 @@ fn foo(s0: felt252, s1: felt252, s2: felt252) -> felt252 {
 
 //! > casm
 [ap + 0] = 0, ap++;
-jmp rel 16 if [ap + -1] != 0;
-ap += 3;
-[ap + 0] = 0, ap++;
-[ap + 0] = [fp + -6], ap++;
-[ap + 0] = [ap + -2] + [fp + -5], ap++;
-[ap + 0] = 0, ap++;
-[ap + 0] = 0, ap++;
-[ap + 0] = 1, ap++;
-jmp rel 19;
-[ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [ap + -2] + [fp + -5], ap++;
+[ap + 0] = [ap + -2] + [fp + -4], ap++;
 [ap + 0] = 0, ap++;
 [ap + -3] = [[fp + -6] + 0];
 [ap + -2] = [[fp + -6] + 1];
 [ap + -1] = [[fp + -6] + 2];
+[ap + 0] = 0, ap++;
 [ap + 0] = [fp + -6] + 6, ap++;
 [ap + 0] = [[fp + -6] + 3], ap++;
 [ap + 0] = [[fp + -6] + 4], ap++;
 [ap + 0] = [[fp + -6] + 5], ap++;
-[ap + 0] = 0, ap++;
-jmp rel 12 if [ap + -1] != 0;
+jmp rel 12 if [ap + -5] != 0;
 ap += 1;
-[ap + 0] = [ap + -6], ap++;
-[ap + 0] = [ap + -6] + [fp + -4], ap++;
-[ap + 0] = [ap + -6], ap++;
-[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5] + [fp + -3], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
 [ap + 0] = 1, ap++;
 jmp rel 13;
-[ap + 0] = [ap + -3] + [fp + -4], ap++;
-[ap + -5] = [[ap + -6] + 0];
-[ap + -1] = [[ap + -6] + 1];
-[ap + -3] = [[ap + -6] + 2];
-[ap + 0] = [ap + -6] + 6, ap++;
-[ap + 0] = [[ap + -7] + 3], ap++;
-[ap + 0] = [[ap + -8] + 4], ap++;
-[ap + 0] = [[ap + -9] + 5], ap++;
-[ap + 0] = 0, ap++;
-jmp rel 12 if [ap + -1] != 0;
-ap += 1;
-[ap + 0] = [ap + -6], ap++;
-[ap + 0] = [ap + -6] + [fp + -3], ap++;
-[ap + 0] = [ap + -6], ap++;
-[ap + 0] = [ap + -6], ap++;
-[ap + 0] = 1, ap++;
-jmp rel 13;
-[ap + 0] = [ap + -3] + [fp + -3], ap++;
-[ap + -5] = [[ap + -6] + 0];
-[ap + -1] = [[ap + -6] + 1];
-[ap + -3] = [[ap + -6] + 2];
-[ap + 0] = [ap + -6] + 6, ap++;
-[ap + 0] = [[ap + -7] + 3], ap++;
-[ap + 0] = [[ap + -8] + 4], ap++;
-[ap + 0] = [[ap + -9] + 5], ap++;
+[ap + 0] = [ap + -2] + [fp + -3], ap++;
+[ap + -4] = [[ap + -5] + 0];
+[ap + -1] = [[ap + -5] + 1];
+[ap + -2] = [[ap + -5] + 2];
+[ap + 0] = [ap + -5] + 6, ap++;
+[ap + 0] = [[ap + -6] + 3], ap++;
+[ap + 0] = [[ap + -7] + 4], ap++;
+[ap + 0] = [[ap + -8] + 5], ap++;
 [ap + 0] = 0, ap++;
 jmp rel 11 if [ap + -1] != 0;
 [ap + 0] = [ap + -4] + 1, ap++;
@@ -127,129 +101,96 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Poseidon: 4, Const: 4100})
+test::foo: OrderedHashMap({Poseidon: 3, Const: 3000})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
-type Poseidon = Poseidon [storable: true, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::poseidon::HashState = Struct<ut@core::poseidon::HashState, felt252, felt252, felt252, core::bool> [storable: true, drop: true, dup: true, zero_sized: false];
+type Poseidon = Poseidon [storable: true, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc felt252_const<0> = felt252_const<0>;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc felt252_add = felt252_add;
+libfunc hades_permutation = hades_permutation;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc store_temp<Poseidon> = store_temp<Poseidon>;
 libfunc enum_match<core::bool> = enum_match<core::bool>;
 libfunc branch_align = branch_align;
 libfunc drop<Unit> = drop<Unit>;
-libfunc store_temp<felt252> = store_temp<felt252>;
-libfunc felt252_add = felt252_add;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc struct_construct<core::poseidon::HashState> = struct_construct<core::poseidon::HashState>;
-libfunc store_temp<Poseidon> = store_temp<Poseidon>;
-libfunc store_temp<core::poseidon::HashState> = store_temp<core::poseidon::HashState>;
 libfunc jump = jump;
-libfunc hades_permutation = hades_permutation;
-libfunc struct_deconstruct<core::poseidon::HashState> = struct_deconstruct<core::poseidon::HashState>;
-libfunc felt252_const<1> = felt252_const<1>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 libfunc drop<felt252> = drop<felt252>;
 
-felt252_const<0>() -> ([4]); // 0
-felt252_const<0>() -> ([5]); // 1
-felt252_const<0>() -> ([6]); // 2
-struct_construct<Unit>() -> ([7]); // 3
-enum_init<core::bool, 0>([7]) -> ([8]); // 4
-store_temp<core::bool>([8]) -> ([8]); // 5
-enum_match<core::bool>([8]) { fallthrough([9]) 17([10]) }; // 6
-branch_align() -> (); // 7
-drop<Unit>([9]) -> (); // 8
-store_temp<felt252>([4]) -> ([4]); // 9
-felt252_add([4], [1]) -> ([11]); // 10
-struct_construct<Unit>() -> ([12]); // 11
-enum_init<core::bool, 1>([12]) -> ([13]); // 12
-struct_construct<core::poseidon::HashState>([11], [5], [6], [13]) -> ([14]); // 13
-store_temp<Poseidon>([0]) -> ([15]); // 14
-store_temp<core::poseidon::HashState>([14]) -> ([16]); // 15
-jump() { 30() }; // 16
-branch_align() -> (); // 17
-drop<Unit>([10]) -> (); // 18
-store_temp<felt252>([5]) -> ([5]); // 19
-felt252_add([5], [1]) -> ([17]); // 20
-store_temp<felt252>([4]) -> ([4]); // 21
-store_temp<felt252>([17]) -> ([17]); // 22
-store_temp<felt252>([6]) -> ([6]); // 23
-hades_permutation([0], [4], [17], [6]) -> ([18], [19], [20], [21]); // 24
-struct_construct<Unit>() -> ([22]); // 25
-enum_init<core::bool, 0>([22]) -> ([23]); // 26
-struct_construct<core::poseidon::HashState>([19], [20], [21], [23]) -> ([24]); // 27
-store_temp<Poseidon>([18]) -> ([15]); // 28
-store_temp<core::poseidon::HashState>([24]) -> ([16]); // 29
-struct_deconstruct<core::poseidon::HashState>([16]) -> ([25], [26], [27], [28]); // 30
-enum_match<core::bool>([28]) { fallthrough([29]) 41([30]) }; // 31
-branch_align() -> (); // 32
-drop<Unit>([29]) -> (); // 33
-felt252_add([25], [2]) -> ([31]); // 34
-struct_construct<Unit>() -> ([32]); // 35
-enum_init<core::bool, 1>([32]) -> ([33]); // 36
-struct_construct<core::poseidon::HashState>([31], [26], [27], [33]) -> ([34]); // 37
-store_temp<Poseidon>([15]) -> ([35]); // 38
-store_temp<core::poseidon::HashState>([34]) -> ([36]); // 39
-jump() { 51() }; // 40
-branch_align() -> (); // 41
-drop<Unit>([30]) -> (); // 42
-felt252_add([26], [2]) -> ([37]); // 43
-store_temp<felt252>([37]) -> ([37]); // 44
-hades_permutation([15], [25], [37], [27]) -> ([38], [39], [40], [41]); // 45
-struct_construct<Unit>() -> ([42]); // 46
-enum_init<core::bool, 0>([42]) -> ([43]); // 47
-struct_construct<core::poseidon::HashState>([39], [40], [41], [43]) -> ([44]); // 48
-store_temp<Poseidon>([38]) -> ([35]); // 49
-store_temp<core::poseidon::HashState>([44]) -> ([36]); // 50
-struct_deconstruct<core::poseidon::HashState>([36]) -> ([45], [46], [47], [48]); // 51
-enum_match<core::bool>([48]) { fallthrough([49]) 62([50]) }; // 52
-branch_align() -> (); // 53
-drop<Unit>([49]) -> (); // 54
-felt252_add([45], [3]) -> ([51]); // 55
-struct_construct<Unit>() -> ([52]); // 56
-enum_init<core::bool, 1>([52]) -> ([53]); // 57
-struct_construct<core::poseidon::HashState>([51], [46], [47], [53]) -> ([54]); // 58
-store_temp<Poseidon>([35]) -> ([55]); // 59
-store_temp<core::poseidon::HashState>([54]) -> ([56]); // 60
-jump() { 72() }; // 61
-branch_align() -> (); // 62
-drop<Unit>([50]) -> (); // 63
-felt252_add([46], [3]) -> ([57]); // 64
-store_temp<felt252>([57]) -> ([57]); // 65
-hades_permutation([35], [45], [57], [47]) -> ([58], [59], [60], [61]); // 66
-struct_construct<Unit>() -> ([62]); // 67
-enum_init<core::bool, 0>([62]) -> ([63]); // 68
-struct_construct<core::poseidon::HashState>([59], [60], [61], [63]) -> ([64]); // 69
-store_temp<Poseidon>([58]) -> ([55]); // 70
-store_temp<core::poseidon::HashState>([64]) -> ([56]); // 71
-struct_deconstruct<core::poseidon::HashState>([56]) -> ([65], [66], [67], [68]); // 72
-enum_match<core::bool>([68]) { fallthrough([69]) 85([70]) }; // 73
-branch_align() -> (); // 74
-drop<Unit>([69]) -> (); // 75
-felt252_const<1>() -> ([71]); // 76
-felt252_add([65], [71]) -> ([72]); // 77
-store_temp<felt252>([72]) -> ([72]); // 78
-hades_permutation([55], [72], [66], [67]) -> ([73], [74], [75], [76]); // 79
-drop<felt252>([75]) -> (); // 80
-drop<felt252>([76]) -> (); // 81
-store_temp<Poseidon>([73]) -> ([73]); // 82
-store_temp<felt252>([74]) -> ([74]); // 83
-return([73], [74]); // 84
-branch_align() -> (); // 85
-drop<Unit>([70]) -> (); // 86
-felt252_const<1>() -> ([77]); // 87
-felt252_add([66], [77]) -> ([78]); // 88
-store_temp<felt252>([78]) -> ([78]); // 89
-hades_permutation([55], [65], [78], [67]) -> ([79], [80], [81], [82]); // 90
-drop<felt252>([81]) -> (); // 91
-drop<felt252>([82]) -> (); // 92
-store_temp<Poseidon>([79]) -> ([79]); // 93
-store_temp<felt252>([80]) -> ([80]); // 94
-return([79], [80]); // 95
+const_as_immediate<Const<felt252, 0>>() -> ([4]); // 0
+store_temp<felt252>([4]) -> ([4]); // 1
+felt252_add([4], [1]) -> ([5]); // 2
+const_as_immediate<Const<felt252, 0>>() -> ([6]); // 3
+store_temp<felt252>([6]) -> ([6]); // 4
+felt252_add([6], [2]) -> ([7]); // 5
+const_as_immediate<Const<felt252, 0>>() -> ([8]); // 6
+store_temp<felt252>([5]) -> ([5]); // 7
+store_temp<felt252>([7]) -> ([7]); // 8
+store_temp<felt252>([8]) -> ([8]); // 9
+hades_permutation([0], [5], [7], [8]) -> ([9], [10], [11], [12]); // 10
+struct_construct<Unit>() -> ([13]); // 11
+enum_init<core::bool, 0>([13]) -> ([14]); // 12
+store_temp<core::bool>([14]) -> ([14]); // 13
+store_temp<Poseidon>([9]) -> ([9]); // 14
+store_temp<felt252>([10]) -> ([10]); // 15
+store_temp<felt252>([11]) -> ([11]); // 16
+store_temp<felt252>([12]) -> ([12]); // 17
+enum_match<core::bool>([14]) { fallthrough([15]) 30([16]) }; // 18
+branch_align() -> (); // 19
+drop<Unit>([15]) -> (); // 20
+felt252_add([10], [3]) -> ([17]); // 21
+struct_construct<Unit>() -> ([18]); // 22
+enum_init<core::bool, 1>([18]) -> ([19]); // 23
+store_temp<Poseidon>([9]) -> ([20]); // 24
+store_temp<felt252>([17]) -> ([21]); // 25
+store_temp<felt252>([11]) -> ([22]); // 26
+store_temp<felt252>([12]) -> ([23]); // 27
+store_temp<core::bool>([19]) -> ([24]); // 28
+jump() { 42() }; // 29
+branch_align() -> (); // 30
+drop<Unit>([16]) -> (); // 31
+felt252_add([11], [3]) -> ([25]); // 32
+store_temp<felt252>([25]) -> ([25]); // 33
+hades_permutation([9], [10], [25], [12]) -> ([26], [27], [28], [29]); // 34
+struct_construct<Unit>() -> ([30]); // 35
+enum_init<core::bool, 0>([30]) -> ([31]); // 36
+store_temp<Poseidon>([26]) -> ([20]); // 37
+store_temp<felt252>([27]) -> ([21]); // 38
+store_temp<felt252>([28]) -> ([22]); // 39
+store_temp<felt252>([29]) -> ([23]); // 40
+store_temp<core::bool>([31]) -> ([24]); // 41
+enum_match<core::bool>([24]) { fallthrough([32]) 54([33]) }; // 42
+branch_align() -> (); // 43
+drop<Unit>([32]) -> (); // 44
+const_as_immediate<Const<felt252, 1>>() -> ([34]); // 45
+felt252_add([21], [34]) -> ([35]); // 46
+store_temp<felt252>([35]) -> ([35]); // 47
+hades_permutation([20], [35], [22], [23]) -> ([36], [37], [38], [39]); // 48
+drop<felt252>([38]) -> (); // 49
+drop<felt252>([39]) -> (); // 50
+store_temp<Poseidon>([36]) -> ([36]); // 51
+store_temp<felt252>([37]) -> ([37]); // 52
+return([36], [37]); // 53
+branch_align() -> (); // 54
+drop<Unit>([33]) -> (); // 55
+const_as_immediate<Const<felt252, 1>>() -> ([40]); // 56
+felt252_add([22], [40]) -> ([41]); // 57
+store_temp<felt252>([41]) -> ([41]); // 58
+hades_permutation([20], [21], [41], [23]) -> ([42], [43], [44], [45]); // 59
+drop<felt252>([44]) -> (); // 60
+drop<felt252>([45]) -> (); // 61
+store_temp<Poseidon>([42]) -> ([42]); // 62
+store_temp<felt252>([43]) -> ([43]); // 63
+return([42], [43]); // 64
 
 test::foo@0([0]: Poseidon, [1]: felt252, [2]: felt252, [3]: felt252) -> (Poseidon, felt252);

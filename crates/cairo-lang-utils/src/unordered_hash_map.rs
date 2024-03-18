@@ -2,6 +2,8 @@
 #[path = "unordered_hash_map_test.rs"]
 mod test;
 
+#[cfg(not(feature = "std"))]
+use alloc::vec;
 use core::borrow::Borrow;
 use core::hash::{BuildHasher, Hash};
 use core::ops::Index;
@@ -11,6 +13,8 @@ pub use std::collections::hash_map::Entry;
 use std::collections::hash_map::RandomState;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
+#[cfg(feature = "std")]
+use std::vec;
 
 #[cfg(not(feature = "std"))]
 pub use hashbrown::hash_map::Entry;
@@ -44,7 +48,7 @@ where
     BH: BuildHasher,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.0.eq(&other.0)
+        self.0 == other.0
     }
 }
 
@@ -73,10 +77,10 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     ///
     /// The key may be any borrowed form of the map's key type, but [`Hash`] and [`Eq`] on the
     /// borrowed form *must* match those for the key type.
-    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&Value>
+    pub fn get<Q>(&self, key: &Q) -> Option<&Value>
     where
         Key: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.0.get(key)
     }
@@ -85,10 +89,10 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     ///
     /// The key may be any borrowed form of the map's key type, but [`Hash`] and [`Eq`] on the
     /// borrowed form *must* match those for the key type.
-    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut Value>
+    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut Value>
     where
         Key: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.0.get_mut(key)
     }
@@ -109,10 +113,10 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     ///
     /// The key may be any borrowed form of the map's key type, but Hash and Eq on the borrowed form
     /// must match those for the key type.
-    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<Value>
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<Value>
     where
         Key: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.0.remove(key)
     }
@@ -229,9 +233,8 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     /// the order of the output OrderedHashMap is undefined (nondeterministic).
     /// This can be used to convert an unordered map to an ordered map (mostly when the unordered
     /// map was used for intermediate processing).
-    pub fn iter_sorted_by_key<TargetKey, F>(&self, f: F) -> impl Iterator<Item = (&Key, &Value)>
+    pub fn iter_sorted_by_key<TargetKey, F>(&self, f: F) -> vec::IntoIter<(&Key, &Value)>
     where
-        Key: Ord,
         TargetKey: Ord,
         F: FnMut(&(&Key, &Value)) -> TargetKey,
     {
@@ -239,7 +242,7 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     }
 
     /// A consuming version of `iter_sorted_by_key`.
-    pub fn into_iter_sorted_by_key<TargetKey, F>(self, f: F) -> impl Iterator<Item = (Key, Value)>
+    pub fn into_iter_sorted_by_key<TargetKey, F>(self, f: F) -> vec::IntoIter<(Key, Value)>
     where
         TargetKey: Ord,
         F: FnMut(&(Key, Value)) -> TargetKey,
@@ -248,13 +251,55 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     }
 
     /// Creates a new map with only the elements from the original map for which the given predicate
-    /// returns `true`.
+    /// returns `true`. Consuming.
     pub fn filter<P>(self, mut p: P) -> Self
     where
         BH: Default,
         P: FnMut(&Key, &Value) -> bool,
     {
         Self(self.0.into_iter().filter(|(key, value)| p(key, value)).collect())
+    }
+
+    /// Non consuming version of `filter`. Only clones the filtered entries. Requires `Key` and
+    /// `Value` to implement `Clone`.
+    pub fn filter_cloned<P>(&self, mut p: P) -> Self
+    where
+        BH: Default,
+        P: FnMut(&Key, &Value) -> bool,
+        Key: Clone,
+        Value: Clone,
+    {
+        Self(
+            self.0
+                .iter()
+                .filter_map(
+                    |(key, value)| {
+                        if p(key, value) { Some((key.clone(), value.clone())) } else { None }
+                    },
+                )
+                .collect(),
+        )
+    }
+
+    /// Merges the map with another map. If a key is present in both maps, the given merge function
+    /// is used to combine the values.
+    pub fn merge<M>(&mut self, other: &Self, merge: M)
+    where
+        BH: Clone,
+        M: Fn(&mut Value, &Value),
+        Key: Clone,
+        Value: Clone,
+    {
+        for (key, value) in &other.0 {
+            match self.0.entry(key.clone()) {
+                Entry::Occupied(mut e) => {
+                    merge(e.get_mut(), value);
+                }
+                Entry::Vacant(e) => {
+                    e.insert(value.clone());
+                }
+            }
+        }
     }
 }
 

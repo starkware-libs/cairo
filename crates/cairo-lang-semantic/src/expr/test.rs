@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, VarId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, NamedLanguageElementId, VarId};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -33,6 +33,7 @@ cairo_lang_test_utils::test_file_test!(
         coupon: "coupon",
         enum_: "enum",
         error_propagate: "error_propagate",
+        fixed_size_array: "fixed_size_array",
         function_call: "function_call",
         generics: "generics",
         if_: "if",
@@ -69,9 +70,11 @@ cairo_lang_test_utils::test_file_test!(
         literals: "literals",
         match_: "match",
         if_: "if",
+        loop_: "loop",
         operator: "operator",
         structure: "structure",
         tuple: "tuple",
+        while_: "while",
     },
     test_expr_semantics
 );

@@ -4,14 +4,14 @@
 SmallE2ETestRunner
 
 //! > cairo
-extern type Const<T, const VALUE: T>;
-extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<felt252> nopanic;
+const V: felt252 = 100;
 
-fn foo() -> Box<felt252> {
-    const_as_box::<Const<felt252, 100>, 0>()
-}
+fn bar() -> felt252 { V }
+fn foo() -> Box<felt252> { BoxTrait::new(V) }
 
 //! > casm
+[ap + 0] = 100, ap++;
+ret;
 call rel 5;
 [ap + 0] = [ap + -1] + 4, ap++;
 ret;
@@ -19,19 +19,26 @@ ret;
 dw 100;
 
 //! > function_costs
+test::bar: OrderedHashMap({Const: 100})
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
-type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
+libfunc const_as_immediate<Const<felt252, 100>> = const_as_immediate<Const<felt252, 100>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc const_as_box<Const<felt252, 100>, 0> = const_as_box<Const<felt252, 100>, 0>;
 
-const_as_box<Const<felt252, 100>, 0>() -> ([0]); // 0
-return([0]); // 1
+const_as_immediate<Const<felt252, 100>>() -> ([0]); // 0
+store_temp<felt252>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<felt252, 100>, 0>() -> ([0]); // 3
+return([0]); // 4
 
-test::foo@0() -> (Box<felt252>);
+test::bar@0() -> (felt252);
+test::foo@3() -> (Box<felt252>);
 
 //! > ==========================================================================
 
@@ -41,14 +48,14 @@ test::foo@0() -> (Box<felt252>);
 SmallE2ETestRunner
 
 //! > cairo
-extern type Const<T, const VALUE: T>;
-extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<u8> nopanic;
+const V: u8 = 100;
 
-fn foo() -> Box<u8> {
-    const_as_box::<Const<u8, 100>, 0>()
-}
+fn bar() -> u8 { V }
+fn foo() -> Box<u8> { BoxTrait::new(V) }
 
 //! > casm
+[ap + 0] = 100, ap++;
+ret;
 call rel 5;
 [ap + 0] = [ap + -1] + 4, ap++;
 ret;
@@ -56,19 +63,26 @@ ret;
 dw 100;
 
 //! > function_costs
+test::bar: OrderedHashMap({Const: 100})
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<u8> = Box<u8> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<u8, 100> = Const<u8, 100> [storable: false, drop: false, dup: false, zero_sized: false];
-type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
 
+libfunc const_as_immediate<Const<u8, 100>> = const_as_immediate<Const<u8, 100>>;
+libfunc store_temp<u8> = store_temp<u8>;
 libfunc const_as_box<Const<u8, 100>, 0> = const_as_box<Const<u8, 100>, 0>;
 
-const_as_box<Const<u8, 100>, 0>() -> ([0]); // 0
-return([0]); // 1
+const_as_immediate<Const<u8, 100>>() -> ([0]); // 0
+store_temp<u8>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<u8, 100>, 0>() -> ([0]); // 3
+return([0]); // 4
 
-test::foo@0() -> (Box<u8>);
+test::bar@0() -> (u8);
+test::foo@3() -> (Box<u8>);
 
 //! > ==========================================================================
 
@@ -78,14 +92,14 @@ test::foo@0() -> (Box<u8>);
 SmallE2ETestRunner
 
 //! > cairo
-extern type Const<T, const VALUE: T>;
-extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<i16> nopanic;
+const V: i16 = -1000;
 
-fn foo() -> Box<i16> {
-    const_as_box::<Const<i16, -1000>, 0>()
-}
+fn bar() -> i16 { V }
+fn foo() -> Box<i16> { BoxTrait::new(V) }
 
 //! > casm
+[ap + 0] = -1000, ap++;
+ret;
 call rel 5;
 [ap + 0] = [ap + -1] + 4, ap++;
 ret;
@@ -93,19 +107,26 @@ ret;
 dw -1000;
 
 //! > function_costs
+test::bar: OrderedHashMap({Const: 100})
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
+type i16 = i16 [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<i16> = Box<i16> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<i16, -1000> = Const<i16, -1000> [storable: false, drop: false, dup: false, zero_sized: false];
-type i16 = i16 [storable: true, drop: true, dup: true, zero_sized: false];
 
+libfunc const_as_immediate<Const<i16, -1000>> = const_as_immediate<Const<i16, -1000>>;
+libfunc store_temp<i16> = store_temp<i16>;
 libfunc const_as_box<Const<i16, -1000>, 0> = const_as_box<Const<i16, -1000>, 0>;
 
-const_as_box<Const<i16, -1000>, 0>() -> ([0]); // 0
-return([0]); // 1
+const_as_immediate<Const<i16, -1000>>() -> ([0]); // 0
+store_temp<i16>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<i16, -1000>, 0>() -> ([0]); // 3
+return([0]); // 4
 
-test::foo@0() -> (Box<i16>);
+test::bar@0() -> (i16);
+test::foo@3() -> (Box<i16>);
 
 //! > ==========================================================================
 
@@ -115,18 +136,24 @@ test::foo@0() -> (Box<i16>);
 SmallE2ETestRunner
 
 //! > cairo
-mod value { extern type Const<T, const VALUE: T>; }
-mod struct2 { extern type Const<T, C0, C1>; }
-extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<u256> nopanic;
+const V1: u256 = 0x2000000000000000000000000000000010;
+const V2: u256 = u256 { low: 0x10, high: 0x20 };
 
-fn foo() -> Box<u256> {
-    const_as_box::<
-        struct2::Const<u256, value::Const<u128, 0x10>, value::Const<u128, 0x20>>,
-        0
-    >()
-}
+fn bar1() -> u256 { V1 }
+fn bar2() -> u256 { V2 }
+fn foo1() -> Box<u256> { BoxTrait::new(V1) }
+fn foo2() -> Box<u256> { BoxTrait::new(V2) }
 
 //! > casm
+[ap + 0] = 16, ap++;
+[ap + 0] = 32, ap++;
+ret;
+[ap + 0] = 16, ap++;
+[ap + 0] = 32, ap++;
+ret;
+call rel 10;
+[ap + 0] = [ap + -1] + 9, ap++;
+ret;
 call rel 5;
 [ap + 0] = [ap + -1] + 4, ap++;
 ret;
@@ -135,22 +162,38 @@ dw 16;
 dw 32;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::bar1: OrderedHashMap({Const: 200})
+test::bar2: OrderedHashMap({Const: 200})
+test::foo1: OrderedHashMap({Const: 300})
+test::foo2: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type Box<core::integer::u256> = Box<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
-type Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>> = Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>> [storable: false, drop: false, dup: false, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<core::integer::u256> = Box<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>> = Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<u128, 32> = Const<u128, 32> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<u128, 16> = Const<u128, 16> [storable: false, drop: false, dup: false, zero_sized: false];
 
+libfunc const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>> = const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>;
+libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
 libfunc const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0> = const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>;
 
-const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>() -> ([0]); // 0
-return([0]); // 1
+const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>() -> ([0]); // 0
+store_temp<core::integer::u256>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>() -> ([0]); // 3
+store_temp<core::integer::u256>([0]) -> ([0]); // 4
+return([0]); // 5
+const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>() -> ([0]); // 6
+return([0]); // 7
+const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>() -> ([0]); // 8
+return([0]); // 9
 
-test::foo@0() -> (Box<core::integer::u256>);
+test::bar1@0() -> (core::integer::u256);
+test::bar2@3() -> (core::integer::u256);
+test::foo1@6() -> (Box<core::integer::u256>);
+test::foo2@8() -> (Box<core::integer::u256>);
 
 //! > ==========================================================================
 
@@ -160,15 +203,12 @@ test::foo@0() -> (Box<core::integer::u256>);
 SmallE2ETestRunner
 
 //! > cairo
-mod struct0 { extern type Const<T>; }
-mod enum_value { extern type Const<T, const VARIANT_INDEX: felt252, V>; }
-extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<bool> nopanic;
-
-fn foo() -> Box<bool> {
-    const_as_box::<enum_value::Const<bool, 0, struct0::Const<()>>, 0>()
-}
+fn bar() -> bool { false }
+fn foo() -> Box<bool> { BoxTrait::new(false) }
 
 //! > casm
+[ap + 0] = 0, ap++;
+ret;
 call rel 5;
 [ap + 0] = [ap + -1] + 4, ap++;
 ret;
@@ -176,21 +216,30 @@ ret;
 dw 0;
 
 //! > function_costs
+test::bar: OrderedHashMap({Const: 100})
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type Box<core::bool> = Box<core::bool> [storable: true, drop: true, dup: true, zero_sized: false];
-type Const<core::bool, 0, Const<Unit>> = Const<core::bool, 0, Const<Unit>> [storable: false, drop: false, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<core::bool, 0, Const<Unit>> = Const<core::bool, 0, Const<Unit>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Box<core::bool> = Box<core::bool> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<Unit> = Const<Unit> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc const_as_box<Const<core::bool, 0, Const<Unit>>, 0> = const_as_box<Const<core::bool, 0, Const<Unit>>, 0>;
 
-const_as_box<Const<core::bool, 0, Const<Unit>>, 0>() -> ([0]); // 0
-return([0]); // 1
+struct_construct<Unit>() -> ([0]); // 0
+enum_init<core::bool, 0>([0]) -> ([1]); // 1
+store_temp<core::bool>([1]) -> ([1]); // 2
+return([1]); // 3
+const_as_box<Const<core::bool, 0, Const<Unit>>, 0>() -> ([0]); // 4
+return([0]); // 5
 
-test::foo@0() -> (Box<core::bool>);
+test::bar@0() -> (core::bool);
+test::foo@4() -> (Box<core::bool>);
 
 //! > ==========================================================================
 
@@ -200,29 +249,22 @@ test::foo@0() -> (Box<core::bool>);
 SmallE2ETestRunner
 
 //! > cairo
-mod enum_value { extern type Const<T, const VARIANT_INDEX: felt252, V>; }
-mod value { extern type Const<T, const VALUE: T>; }
-mod struct2 { extern type Const<T, C0, C1>; }
-extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<ThreeOptions> nopanic;
-
 enum ThreeOptions {
     A: felt252,
     B: u256,
     C,
 }
 
-fn foo() -> Box<ThreeOptions> {
-    const_as_box::<
-        enum_value::Const<
-            ThreeOptions,
-            1,
-            struct2::Const<u256, value::Const<u128, 0x10>, value::Const<u128, 0x20>>,
-        >,
-        0
-    >()
-}
+const V: ThreeOptions = ThreeOptions::B(u256 { low: 0x10, high: 0x20 });
+
+fn bar() -> ThreeOptions { V }
+fn foo() -> Box<ThreeOptions> { BoxTrait::new(V) }
 
 //! > casm
+[ap + 0] = 3, ap++;
+[ap + 0] = 16, ap++;
+[ap + 0] = 32, ap++;
+ret;
 call rel 5;
 [ap + 0] = [ap + -1] + 4, ap++;
 ret;
@@ -232,26 +274,33 @@ dw 16;
 dw 32;
 
 //! > function_costs
+test::bar: OrderedHashMap({Const: 300})
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type Box<test::ThreeOptions> = Box<test::ThreeOptions> [storable: true, drop: true, dup: true, zero_sized: false];
-type Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>> = Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type test::ThreeOptions = Enum<ut@test::ThreeOptions, felt252, core::integer::u256, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<test::ThreeOptions> = Box<test::ThreeOptions> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>> = Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>> = Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<u128, 32> = Const<u128, 32> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<u128, 16> = Const<u128, 16> [storable: false, drop: false, dup: false, zero_sized: false];
 
+libfunc const_as_immediate<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>> = const_as_immediate<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>>;
+libfunc store_temp<test::ThreeOptions> = store_temp<test::ThreeOptions>;
 libfunc const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0> = const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0>;
 
-const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0>() -> ([0]); // 0
-return([0]); // 1
+const_as_immediate<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>>() -> ([0]); // 0
+store_temp<test::ThreeOptions>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0>() -> ([0]); // 3
+return([0]); // 4
 
-test::foo@0() -> (Box<test::ThreeOptions>);
+test::bar@0() -> (test::ThreeOptions);
+test::foo@3() -> (Box<test::ThreeOptions>);
 
 //! > ==========================================================================
 
@@ -261,21 +310,22 @@ test::foo@0() -> (Box<test::ThreeOptions>);
 SmallE2ETestRunner
 
 //! > cairo
-mod enum_value { extern type Const<T, const VARIANT_INDEX: felt252, V>; }
-mod value { extern type Const<T, const VALUE: T>; }
-extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<ThreeOptions> nopanic;
-
 enum ThreeOptions {
     A: felt252,
     B: u256,
     C,
 }
 
-fn foo() -> Box<ThreeOptions> {
-    const_as_box::<enum_value::Const<ThreeOptions, 0, value::Const<felt252, 1337>>, 0>()
-}
+const V: ThreeOptions = ThreeOptions::A(1337);
+
+fn bar() -> ThreeOptions { V }
+fn foo() -> Box<ThreeOptions> { BoxTrait::new(V) }
 
 //! > casm
+[ap + 0] = 5, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 1337, ap++;
+ret;
 call rel 5;
 [ap + 0] = [ap + -1] + 4, ap++;
 ret;
@@ -285,24 +335,31 @@ dw 0;
 dw 1337;
 
 //! > function_costs
+test::bar: OrderedHashMap({Const: 300})
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type Box<test::ThreeOptions> = Box<test::ThreeOptions> [storable: true, drop: true, dup: true, zero_sized: false];
-type Const<test::ThreeOptions, 0, Const<felt252, 1337>> = Const<test::ThreeOptions, 0, Const<felt252, 1337>> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type test::ThreeOptions = Enum<ut@test::ThreeOptions, felt252, core::integer::u256, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<test::ThreeOptions> = Box<test::ThreeOptions> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<test::ThreeOptions, 0, Const<felt252, 1337>> = Const<test::ThreeOptions, 0, Const<felt252, 1337>> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 1337> = Const<felt252, 1337> [storable: false, drop: false, dup: false, zero_sized: false];
 
+libfunc const_as_immediate<Const<test::ThreeOptions, 0, Const<felt252, 1337>>> = const_as_immediate<Const<test::ThreeOptions, 0, Const<felt252, 1337>>>;
+libfunc store_temp<test::ThreeOptions> = store_temp<test::ThreeOptions>;
 libfunc const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0> = const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0>;
 
-const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0>() -> ([0]); // 0
-return([0]); // 1
+const_as_immediate<Const<test::ThreeOptions, 0, Const<felt252, 1337>>>() -> ([0]); // 0
+store_temp<test::ThreeOptions>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0>() -> ([0]); // 3
+return([0]); // 4
 
-test::foo@0() -> (Box<test::ThreeOptions>);
+test::bar@0() -> (test::ThreeOptions);
+test::foo@3() -> (Box<test::ThreeOptions>);
 
 //! > ==========================================================================
 
@@ -312,32 +369,38 @@ test::foo@0() -> (Box<test::ThreeOptions>);
 SmallE2ETestRunner
 
 //! > cairo
-mod enum_value { extern type Const<T, const VARIANT_INDEX: felt252, V>; }
-mod value { extern type Const<T, const VALUE: T>; }
-mod struct0 { extern type Const<T>; }
-mod struct2 { extern type Const<T, C0, C1>; }
-extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<
-    (ThreeOptions, ThreeOptions)
-> nopanic;
-
 enum ThreeOptions {
     A: felt252,
     B: (u256, u256),
     C,
 }
 
-fn foo() -> Box<(ThreeOptions, ThreeOptions)> {
-    const_as_box::<
-        struct2::Const<
-            (ThreeOptions, ThreeOptions),
-            enum_value::Const<ThreeOptions, 0, value::Const<felt252, 1337>>,
-            enum_value::Const<ThreeOptions, 2, struct0::Const<()>>,
-        >,
-        0
-    >()
+struct ThreeOptionsPair {
+    a: ThreeOptions,
+    b: ThreeOptions,
 }
 
+const V: ThreeOptionsPair = ThreeOptionsPair {
+    a: ThreeOptions::A(1337),
+    b: ThreeOptions::C,
+};
+
+
+fn bar() -> ThreeOptionsPair { V }
+fn foo() -> Box<ThreeOptionsPair> { BoxTrait::new(V) }
+
 //! > casm
+[ap + 0] = 5, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 1337, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
 call rel 5;
 [ap + 0] = [ap + -1] + 4, ap++;
 ret;
@@ -354,29 +417,36 @@ dw 0;
 dw 0;
 
 //! > function_costs
+test::bar: OrderedHashMap({Const: 1000})
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type Box<Tuple<test::ThreeOptions, test::ThreeOptions>> = Box<Tuple<test::ThreeOptions, test::ThreeOptions>> [storable: true, drop: true, dup: true, zero_sized: false];
-type Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>> = Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<core::integer::u256, core::integer::u256> = Struct<ut@Tuple, core::integer::u256, core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type test::ThreeOptions = Enum<ut@test::ThreeOptions, felt252, Tuple<core::integer::u256, core::integer::u256>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type Tuple<test::ThreeOptions, test::ThreeOptions> = Struct<ut@Tuple, test::ThreeOptions, test::ThreeOptions> [storable: true, drop: true, dup: true, zero_sized: false];
+type test::ThreeOptionsPair = Struct<ut@test::ThreeOptionsPair, test::ThreeOptions, test::ThreeOptions> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<test::ThreeOptionsPair> = Box<test::ThreeOptionsPair> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>> = Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<test::ThreeOptions, 2, Const<Unit>> = Const<test::ThreeOptions, 2, Const<Unit>> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<test::ThreeOptions, 0, Const<felt252, 1337>> = Const<test::ThreeOptions, 0, Const<felt252, 1337>> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<Unit> = Const<Unit> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 1337> = Const<felt252, 1337> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0> = const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0>;
+libfunc const_as_immediate<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>> = const_as_immediate<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>>;
+libfunc store_temp<test::ThreeOptionsPair> = store_temp<test::ThreeOptionsPair>;
+libfunc const_as_box<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0> = const_as_box<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0>;
 
-const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0>() -> ([0]); // 0
-return([0]); // 1
+const_as_immediate<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>>() -> ([0]); // 0
+store_temp<test::ThreeOptionsPair>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0>() -> ([0]); // 3
+return([0]); // 4
 
-test::foo@0() -> (Box<Tuple<test::ThreeOptions, test::ThreeOptions>>);
+test::bar@0() -> (test::ThreeOptionsPair);
+test::foo@3() -> (Box<test::ThreeOptionsPair>);
 
 //! > ==========================================================================
 
@@ -386,20 +456,17 @@ test::foo@0() -> (Box<Tuple<test::ThreeOptions, test::ThreeOptions>>);
 SmallE2ETestRunner
 
 //! > cairo
-extern type Const<T, const VALUE: T>;
-extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<felt252> nopanic;
-
 fn foo() -> (Box<felt252>, BuiltinCosts) {
-    (const_as_box::<Const<felt252, 100>, 0>(), get_builtin_costs())
+    (BoxTrait::new(100), get_builtin_costs())
 }
 
 //! > casm
-call rel 11;
-[ap + 0] = [ap + -1] + 10, ap++;
-call rel 9;
-[ap + 0] = [ap + -1] + 8, ap++;
-[ap + 0] = [ap + -4], ap++;
-[ap + 0] = [[ap + -2] + 0], ap++;
+call rel 13;
+[ap + 0] = [ap + -1] + 12, ap++;
+call rel 7;
+[ap + 0] = [ap + -1] + 6, ap++;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [[ap + -5] + 0], ap++;
 ret;
 ret;
 dw 100;
@@ -408,20 +475,20 @@ dw 100;
 test::foo: OrderedHashMap({Const: 800})
 
 //! > sierra_code
-type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<Box<felt252>, BuiltinCosts> = Struct<ut@Tuple, Box<felt252>, BuiltinCosts> [storable: true, drop: true, dup: true, zero_sized: false];
-type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc const_as_box<Const<felt252, 100>, 0> = const_as_box<Const<felt252, 100>, 0>;
 libfunc get_builtin_costs = get_builtin_costs;
+libfunc const_as_box<Const<felt252, 100>, 0> = const_as_box<Const<felt252, 100>, 0>;
 libfunc struct_construct<Tuple<Box<felt252>, BuiltinCosts>> = struct_construct<Tuple<Box<felt252>, BuiltinCosts>>;
 libfunc store_temp<Tuple<Box<felt252>, BuiltinCosts>> = store_temp<Tuple<Box<felt252>, BuiltinCosts>>;
 
-const_as_box<Const<felt252, 100>, 0>() -> ([0]); // 0
-get_builtin_costs() -> ([1]); // 1
-struct_construct<Tuple<Box<felt252>, BuiltinCosts>>([0], [1]) -> ([2]); // 2
+get_builtin_costs() -> ([0]); // 0
+const_as_box<Const<felt252, 100>, 0>() -> ([1]); // 1
+struct_construct<Tuple<Box<felt252>, BuiltinCosts>>([1], [0]) -> ([2]); // 2
 store_temp<Tuple<Box<felt252>, BuiltinCosts>>([2]) -> ([2]); // 3
 return([2]); // 4
 
@@ -518,24 +585,10 @@ test::foo@0() -> (Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, 
 SmallE2ETestRunner
 
 //! > cairo
-use core::box::BoxTrait;
-mod value { extern type Const<T, const VALUE: T>; }
-mod struct4 { extern type Const<T, C0, C1, C2, C3>; }
-extern fn const_as_box<T, const SEGMENT_INDEX: felt252>()
- -> Box<(felt252, felt252, felt252, felt252)> nopanic;
-pub extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
+extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
 
 fn foo() -> @Array<felt252> {
-    span_from_tuple(const_as_box::<
-        struct4::Const<
-            (felt252, felt252, felt252, felt252),
-            value::Const<felt252, 100>,
-            value::Const<felt252, 200>,
-            value::Const<felt252, 300>,
-            value::Const<felt252, 400>,
-        >,
-        0,
-    >().as_snapshot())
+    span_from_tuple(BoxTrait::new((100, 200, 300, 400)).as_snapshot())
 }
 
 //! > casm
@@ -590,30 +643,17 @@ test::foo: OrderedHashMap({Const: 500})
 SmallE2ETestRunner
 
 //! > cairo
-use core::box::BoxTrait;
-mod value { extern type Const<T, const VALUE: T>; }
-mod struct4 { extern type Const<T, C0, C1, C2, C3>; }
 type quad_felt252 = (felt252, felt252, felt252, felt252);
-extern fn const_as_box<T, const SEGMENT_INDEX: felt252>()
- -> Box<(quad_felt252, quad_felt252, quad_felt252, quad_felt252)> nopanic;
-pub extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<quad_felt252> nopanic;
 
-type C100 = value::Const<felt252, 100>;
-type C200 = value::Const<felt252, 200>;
-type C300 = value::Const<felt252, 300>;
-type C400 = value::Const<felt252, 400>;
+extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<quad_felt252> nopanic;
 
 fn foo() -> @Array<quad_felt252> {
-    span_from_tuple(const_as_box::<
-        struct4::Const<
-            (quad_felt252, quad_felt252, quad_felt252, quad_felt252),
-            struct4::Const<quad_felt252, C100, C200, C300, C400>,
-            struct4::Const<quad_felt252, C200, C300, C400, C100>,
-            struct4::Const<quad_felt252, C300, C400, C100, C200>,
-            struct4::Const<quad_felt252, C400, C100, C200, C300>,
-        >,
-        0,
-    >().as_snapshot())
+    span_from_tuple(BoxTrait::new((
+        (100, 200, 300, 400),
+        (200, 300, 400, 100),
+        (300, 400, 100, 200),
+        (400, 100, 200, 300),
+    )).as_snapshot())
 }
 
 //! > casm
@@ -676,3 +716,258 @@ test::foo@0() -> (Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 500})
+
+//! > ==========================================================================
+
+//! > const NonZero<felt252>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+const V: NonZero<felt252> = 100;
+
+fn bar() -> NonZero<felt252> { V }
+fn foo() -> Box<NonZero<felt252>> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 100, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 100;
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<NonZero<felt252>> = Box<NonZero<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<NonZero<felt252>, Const<felt252, 100>> = Const<NonZero<felt252>, Const<felt252, 100>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<NonZero<felt252>, Const<felt252, 100>>> = const_as_immediate<Const<NonZero<felt252>, Const<felt252, 100>>>;
+libfunc store_temp<NonZero<felt252>> = store_temp<NonZero<felt252>>;
+libfunc const_as_box<Const<NonZero<felt252>, Const<felt252, 100>>, 0> = const_as_box<Const<NonZero<felt252>, Const<felt252, 100>>, 0>;
+
+const_as_immediate<Const<NonZero<felt252>, Const<felt252, 100>>>() -> ([0]); // 0
+store_temp<NonZero<felt252>>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<NonZero<felt252>, Const<felt252, 100>>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (NonZero<felt252>);
+test::foo@3() -> (Box<NonZero<felt252>>);
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 100})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > const NonZero<u8>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+const V: NonZero<u8> = 100;
+
+fn bar() -> NonZero<u8> { V }
+fn foo() -> Box<NonZero<u8>> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 100, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 100;
+
+//! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<u8> = NonZero<u8> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<NonZero<u8>> = Box<NonZero<u8>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<NonZero<u8>, Const<u8, 100>> = Const<NonZero<u8>, Const<u8, 100>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u8, 100> = Const<u8, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<NonZero<u8>, Const<u8, 100>>> = const_as_immediate<Const<NonZero<u8>, Const<u8, 100>>>;
+libfunc store_temp<NonZero<u8>> = store_temp<NonZero<u8>>;
+libfunc const_as_box<Const<NonZero<u8>, Const<u8, 100>>, 0> = const_as_box<Const<NonZero<u8>, Const<u8, 100>>, 0>;
+
+const_as_immediate<Const<NonZero<u8>, Const<u8, 100>>>() -> ([0]); // 0
+store_temp<NonZero<u8>>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<NonZero<u8>, Const<u8, 100>>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (NonZero<u8>);
+test::foo@3() -> (Box<NonZero<u8>>);
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 100})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > const NonZero<u256> 0 low.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+const V: NonZero<u256> = 0x2000000000000000000000000000000000;
+
+fn bar() -> NonZero<u256> { V }
+fn foo() -> Box<NonZero<u256>> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 0, ap++;
+[ap + 0] = 32, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 0;
+dw 32;
+
+//! > sierra_code
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<core::integer::u256> = NonZero<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<NonZero<core::integer::u256>> = Box<NonZero<core::integer::u256>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>> = Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>> = Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 32> = Const<u128, 32> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 0> = Const<u128, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>> = const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>>;
+libfunc store_temp<NonZero<core::integer::u256>> = store_temp<NonZero<core::integer::u256>>;
+libfunc const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>, 0> = const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>, 0>;
+
+const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>>() -> ([0]); // 0
+store_temp<NonZero<core::integer::u256>>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (NonZero<core::integer::u256>);
+test::foo@3() -> (Box<NonZero<core::integer::u256>>);
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 200})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > const NonZero<u256> 0 high.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+const V: NonZero<u256> = 16;
+
+fn bar() -> NonZero<u256> { V }
+fn foo() -> Box<NonZero<u256>> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 16, ap++;
+[ap + 0] = 0, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 16;
+dw 0;
+
+//! > sierra_code
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<core::integer::u256> = NonZero<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<NonZero<core::integer::u256>> = Box<NonZero<core::integer::u256>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>> = Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>> = Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 0> = Const<u128, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 16> = Const<u128, 16> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>> = const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>>;
+libfunc store_temp<NonZero<core::integer::u256>> = store_temp<NonZero<core::integer::u256>>;
+libfunc const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>, 0> = const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>, 0>;
+
+const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>>() -> ([0]); // 0
+store_temp<NonZero<core::integer::u256>>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (NonZero<core::integer::u256>);
+test::foo@3() -> (Box<NonZero<core::integer::u256>>);
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 200})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > const NonZero<u512> 0 high.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::integer::u512;
+
+mod value { extern type Const<T, const VALUE: T>; }
+mod struct4 { extern type Const<T, C0, C1, C2, C3>; }
+mod nz { extern type Const<T, C>; }
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<NonZero<u512>> nopanic;
+
+fn foo() -> Box<NonZero<u512>> {
+    const_as_box::<
+        nz::Const<
+            NonZero<u512>,
+            struct4::Const<
+                u512,
+                value::Const<u128, 0>,
+                value::Const<u128, 0>,
+                value::Const<u128, 16>,
+                value::Const<u128, 0>,
+            >,
+        >,
+        0,
+    >()
+}
+
+//! > casm
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 0;
+dw 0;
+dw 16;
+dw 0;
+
+//! > sierra_code
+type Box<NonZero<core::integer::u512>> = Box<NonZero<core::integer::u512>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>> = Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u512 = Struct<ut@core::integer::u512, u128, u128, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<core::integer::u512> = NonZero<core::integer::u512> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>> = Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 16> = Const<u128, 16> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 0> = Const<u128, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_box<Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>>, 0> = const_as_box<Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>>, 0>;
+
+const_as_box<Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>>, 0>() -> ([0]); // 0
+return([0]); // 1
+
+test::foo@0() -> (Box<NonZero<core::integer::u512>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})

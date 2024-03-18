@@ -7,11 +7,7 @@ extern crate alloc;
 
 #[cfg(not(feature = "std"))]
 use alloc::boxed::Box;
-#[cfg(not(feature = "std"))]
-use alloc::sync::Arc;
 use core::fmt;
-#[cfg(feature = "std")]
-use std::sync::Arc;
 
 pub mod bigint;
 pub mod byte_array;
@@ -160,10 +156,4 @@ impl<T: ?Sized> UpcastMut<T> for T {
     fn upcast_mut(&mut self) -> &mut T {
         self
     }
-}
-
-// TODO(yuval): use Arc::unwrap_or_clone once it's stable.
-/// Moves the content out of the Arc if possible, otherwise just clones it.
-pub fn arc_unwrap_or_clone<T: Clone>(arc: Arc<T>) -> T {
-    Arc::try_unwrap(arc).unwrap_or_else(|arc| (*arc).clone())
 }

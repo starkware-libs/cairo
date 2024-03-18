@@ -98,7 +98,7 @@ jump() { label_test::foo::3() }
 label_test::foo::1:
 branch_align() -> ()
 drop<Unit>([6]) -> ()
-felt252_const<1>() -> ([8])
+const_as_immediate<Const<felt252, 1>>() -> ([8])
 store_temp<felt252>([8]) -> ([1])
 label_test::foo::3:
 store_local<felt252>([2], [1]) -> ([1])
@@ -267,10 +267,12 @@ struct MyStruct2 {
     value: felt252,
 }
 
+#[inline(never)]
 fn get_value_1(strct: MyStruct1) -> felt252{
     strct.strct.value
 }
 
+#[inline(never)]
 fn get_value_2(strct: MyStruct2) -> felt252{
     strct.value
 }
@@ -289,7 +291,7 @@ label_test::foo::0:
 alloc_local<test::MyStruct2>() -> ([1])
 finalize_locals() -> ()
 disable_ap_tracking() -> ()
-felt252_const<12>() -> ([2])
+const_as_immediate<Const<felt252, 12>>() -> ([2])
 store_temp<felt252>([2]) -> ([2])
 function_call<user@test::immovable::<core::felt252>>([2]) -> ([3])
 struct_construct<test::MyStruct2>([3]) -> ([4])
@@ -364,14 +366,14 @@ felt252_is_zero([1]) { fallthrough() label_test::foo::1([5]) }
 branch_align() -> ()
 function_call<user@test::revoke_ap>() -> ([6])
 drop<felt252>([6]) -> ()
-felt252_const<1>() -> ([7])
+const_as_immediate<Const<felt252, 1>>() -> ([7])
 felt252_add([2], [7]) -> ([8])
 store_temp<felt252>([8]) -> ([8])
 return([8])
 label_test::foo::1:
 branch_align() -> ()
 drop<NonZero<felt252>>([5]) -> ()
-felt252_const<2>() -> ([9])
+const_as_immediate<Const<felt252, 2>>() -> ([9])
 felt252_add([2], [9]) -> ([10])
 store_temp<felt252>([10]) -> ([10])
 return([10])

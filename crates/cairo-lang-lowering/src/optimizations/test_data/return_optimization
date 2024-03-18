@@ -643,7 +643,7 @@ enum MyEnum {
 Parameters: v0: core::felt252, v1: test::MyEnum
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- 3u
+  (v2: core::felt252) <- 3
 End:
   Match(match_enum(v1) {
     MyEnum::A(v3) => blk1,
@@ -669,7 +669,7 @@ End:
 Parameters: v0: core::felt252, v1: test::MyEnum
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- 3u
+  (v2: core::felt252) <- 3
 End:
   Match(match_enum(v1) {
     MyEnum::A(v3) => blk1,
@@ -690,3 +690,127 @@ blk3:
 Statements:
 End:
   Return(v0, v2)
+
+//! > ==========================================================================
+
+//! > Deconstruct + construct with different type (optimization does not apply).
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(a: felt252, b: (felt252,)) -> FeltWrap {
+
+  // create goto, since the return optimization works on block boundaries.
+  let (value,) = match a {
+     0 => b,
+     _ => b,
+  };
+
+  FeltWrap { value }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct FeltWrap {
+    value: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: (core::felt252,)
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v4: core::felt252) <- struct_destructure(v1)
+  (v5: test::FeltWrap) <- struct_construct(v4)
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::felt252, v1: (core::felt252,)
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v4: core::felt252) <- struct_destructure(v1)
+  (v5: test::FeltWrap) <- struct_construct(v4)
+End:
+  Return(v5)
+
+//! > ==========================================================================
+
+//! > return inside a block
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(a: (felt252,)) -> (felt252,) {
+  let (v,) = a;
+  (v,)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: (core::felt252,)
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- struct_destructure(v0)
+  (v2: (core::felt252,)) <- struct_construct(v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: (core::felt252,)
+blk0 (root):
+Statements:
+End:
+  Return(v0)

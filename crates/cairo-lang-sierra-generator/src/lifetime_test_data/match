@@ -20,7 +20,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v15) => blk2,
   })
 
 blk1:
@@ -30,17 +30,17 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 0u
+  (v10: core::felt252) <- 0
 End:
-  Return(v3)
+  Return(v10)
 
 //! > last_use
-v3: ((BlockId(2), 1), 0)
+v10: ((BlockId(2), 1), 0)
 v1: ((BlockId(1), 0), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(2)): v2, v1
+BeginningOfBlock(BlockId(2)): v15, v1
 
 //! > ==========================================================================
 
@@ -67,7 +67,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v15) => blk2,
   })
 
 blk1:
@@ -86,7 +86,7 @@ v1: ((BlockId(1), 0), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(2)): v2
+BeginningOfBlock(BlockId(2)): v15
 
 //! > ==========================================================================
 
@@ -112,36 +112,29 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v17) => blk2,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk3, {})
+  Return()
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 3u
-  (v7: core::felt252) <- core::felt252_add(v1, v3)
+  (v10: core::felt252) <- 3
+  (v22: core::felt252) <- core::felt252_add(v1, v10)
 End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
-  (v6: ()) <- struct_construct()
-End:
-  Return(v6)
+  Return()
 
 //! > last_use
-v6: ((BlockId(3), 1), 0)
-v3: ((BlockId(2), 1), 1)
+v10: ((BlockId(2), 1), 1)
 v1: ((BlockId(2), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(2), 1)): v7
-BeginningOfBlock(BlockId(2)): v2
+PostStatement((BlockId(2), 1)): v22
+BeginningOfBlock(BlockId(2)): v17
 BeginningOfBlock(BlockId(1)): v1
 
 //! > ==========================================================================
@@ -180,74 +173,57 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v38) => blk2,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 1u
-  (v14: core::felt252) <- core::felt252_sub(v0, v3)
+  (v12: core::felt252) <- 1
+  (v45: core::felt252) <- core::felt252_sub(v0, v12)
 End:
-  Match(match core::felt252_is_zero(v14) {
+  Match(match core::felt252_is_zero(v45) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero(v9) => blk7,
+    IsZeroResult::NonZero(v46) => blk6,
   })
 
 blk3:
 Statements:
-  (v15: core::felt252) <- core::felt252_sub(v0, v1)
+  (v53: core::felt252) <- core::felt252_sub(v0, v1)
 End:
-  Match(match core::felt252_is_zero(v15) {
+  Match(match core::felt252_is_zero(v53) {
     IsZeroResult::Zero => blk4,
-    IsZeroResult::NonZero(v6) => blk5,
+    IsZeroResult::NonZero(v54) => blk5,
   })
 
 blk4:
 Statements:
 End:
-  Goto(blk6, {})
+  Return()
 
 blk5:
 Statements:
 End:
-  Goto(blk6, {})
+  Return()
 
 blk6:
 Statements:
 End:
-  Goto(blk8, {})
-
-blk7:
-Statements:
-End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
-End:
-  Goto(blk9, {})
-
-blk9:
-Statements:
-  (v13: ()) <- struct_construct()
-End:
-  Return(v13)
+  Return()
 
 //! > last_use
-v13: ((BlockId(9), 1), 0)
-v15: ((BlockId(3), 1), 0)
+v53: ((BlockId(3), 1), 0)
 v1: ((BlockId(3), 0), 1)
 v0: ((BlockId(3), 0), 0)
-v14: ((BlockId(2), 2), 0)
-v3: ((BlockId(2), 1), 1)
+v45: ((BlockId(2), 2), 0)
+v12: ((BlockId(2), 1), 1)
 
 //! > drops
-BeginningOfBlock(BlockId(5)): v6
-BeginningOfBlock(BlockId(7)): v9, v1, v0
-BeginningOfBlock(BlockId(2)): v2
+BeginningOfBlock(BlockId(5)): v54
+BeginningOfBlock(BlockId(6)): v46, v1, v0
+BeginningOfBlock(BlockId(2)): v38
 BeginningOfBlock(BlockId(1)): v1, v0

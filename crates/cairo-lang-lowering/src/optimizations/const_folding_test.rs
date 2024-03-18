@@ -8,6 +8,8 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
+use crate::inline::apply_inlining;
+use crate::optimizations::cancel_ops::cancel_ops;
 use crate::optimizations::const_folding::const_folding;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::reorganize_blocks::reorganize_blocks;
@@ -37,13 +39,13 @@ fn test_match_optimizer(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let mut before = db
-        .priv_concrete_function_with_body_postinline_lowered(function_id)
-        .unwrap()
-        .deref()
-        .clone();
+    let mut before =
+        db.concrete_function_with_body_postpanic_lowered(function_id).unwrap().deref().clone();
+
+    apply_inlining(db, function_id, &mut before).unwrap();
     optimize_remappings(&mut before);
     reorganize_blocks(&mut before);
+    cancel_ops(&mut before);
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
     let mut after = before.clone();

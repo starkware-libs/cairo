@@ -26,9 +26,9 @@ struct MyStruct {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+  (v2: core::felt252) <- 3
+  (v3: core::felt252) <- 7
   (v1: ()) <- struct_construct()
-  (v2: core::felt252) <- 3u
-  (v3: core::felt252) <- 7u
   (v4: (core::felt252, core::felt252)) <- struct_construct(v2, v3)
   (v5: test::MyStruct) <- struct_construct(v1, v0, v4)
 End:
@@ -136,10 +136,10 @@ struct MyStruct {
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 1u
-  (v2: core::felt252) <- 2u
-  (v3: (core::felt252, core::felt252)) <- struct_construct(v1, v2)
+  (v1: core::felt252) <- 1
+  (v2: core::felt252) <- 2
   (v4: (), v5: core::felt252, v6: (core::felt252, core::felt252)) <- struct_destructure(v0)
+  (v3: (core::felt252, core::felt252)) <- struct_construct(v1, v2)
   (v7: test::MyStruct) <- struct_construct(v4, v5, v3)
 End:
   Return(v7)
@@ -178,8 +178,8 @@ blk0 (root):
 Statements:
   (v0: core::felt252, v1: core::felt252) <- test::f2()
   (v4: core::felt252) <- test::f1()
-  (v2: (core::felt252, core::felt252)) <- struct_construct(v0, v1)
   (v3: ()) <- struct_construct()
+  (v2: (core::felt252, core::felt252)) <- struct_construct(v0, v1)
   (v5: test::MyStruct) <- struct_construct(v4, v3, v2)
 End:
   Return(v5)

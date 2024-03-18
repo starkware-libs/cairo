@@ -6,6 +6,7 @@ use cairo_lang_utils::define_short_id;
 
 use super::db::SyntaxGroup;
 use super::green::GreenNode;
+use super::kind::SyntaxKind;
 use super::SyntaxNode;
 use crate::node::stable_ptr::SyntaxStablePtr;
 
@@ -47,6 +48,7 @@ impl SyntaxStablePtrId {
         }
     }
     /// Returns the stable pointer of the parent of this stable pointer.
+    /// Assumes that the parent exists (that is, `self` is not the root). Panics otherwise.
     pub fn parent(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
         let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(*self) else {
             panic!()
@@ -58,11 +60,20 @@ impl SyntaxStablePtrId {
     /// n = 1: return the parent.
     /// n = 2: return the grand parent.
     /// And so on...
+    /// Assumes that the `n`th parent exists. Panics otherwise.
     pub fn nth_parent(&self, db: &dyn SyntaxGroup, n: usize) -> SyntaxStablePtrId {
         let mut ptr = *self;
         for _ in 0..n {
             ptr = ptr.parent(db);
         }
         ptr
+    }
+    /// Returns the kind of this stable pointer.
+    /// Assumes that `self` is not the root. Panics otherwise.
+    pub fn kind(&self, db: &dyn SyntaxGroup) -> SyntaxKind {
+        let SyntaxStablePtr::Child { kind, .. } = db.lookup_intern_stable_ptr(*self) else {
+            panic!()
+        };
+        kind
     }
 }

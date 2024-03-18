@@ -117,7 +117,7 @@ End:
 
 blk1:
 Statements:
-  (v2: core::felt252) <- 0u
+  (v2: core::felt252) <- 0
   (v3: (core::felt252,)) <- struct_construct(v2)
 End:
   Goto(blk3, {v3 -> v5})
@@ -146,7 +146,7 @@ End:
 
 blk1:
 Statements:
-  (v2: core::felt252) <- 0u
+  (v2: core::felt252) <- 0
   (v3: (core::felt252,)) <- struct_construct(v2)
 End:
   Goto(blk3, {v3 -> v5})
@@ -198,63 +198,115 @@ extern fn cosume(arg: (felt252, Array<felt252>)) nopanic;
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v16: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v2: core::felt252) <- 10u
-  (v17: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v16, v2)
-  (v5: core::felt252) <- 11u
-  (v19: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v17, v5)
-  (v8: core::felt252) <- 12u
-  (v21: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v19, v8)
-  (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v21)
+  (v23: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::felt252) <- 10
+  (v24: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v2)
+  (v5: core::felt252) <- 11
+  (v25: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v5)
+  (v8: core::felt252) <- 12
+  (v26: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v25, v8)
+  (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v26)
+  (v12: core::felt252, v13: @core::felt252) <- snapshot(v0)
+  (v14: core::felt252) <- 0
+  (v15: core::felt252, v16: @core::felt252) <- snapshot(v14)
+  (v27: core::felt252) <- desnap(v13)
+  (v28: core::felt252) <- desnap(v16)
+  (v29: core::felt252) <- core::felt252_sub(v27, v28)
 End:
-  Match(match core::felt252_is_zero(v0) {
+  Match(match core::felt252_is_zero(v29) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v14) => blk2,
+    IsZeroResult::NonZero(v30) => blk2,
   })
 
 blk1:
 Statements:
-  (v12: core::felt252, v13: core::array::Array::<core::felt252>) <- struct_destructure(v11)
+  (v31: ()) <- struct_construct()
+  (v32: core::bool) <- bool::True(v31)
 End:
-  Return(v12)
+  Goto(blk3, {v32 -> v17})
 
 blk2:
 Statements:
-  () <- test::cosume(v11)
-  (v15: core::felt252) <- 1u
+  (v33: ()) <- struct_construct()
+  (v34: core::bool) <- bool::False(v33)
 End:
-  Return(v15)
+  Goto(blk3, {v34 -> v17})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v17) {
+    bool::False(v21) => blk4,
+    bool::True(v18) => blk5,
+  })
+
+blk4:
+Statements:
+  () <- test::cosume(v11)
+  (v22: core::felt252) <- 1
+End:
+  Return(v22)
+
+blk5:
+Statements:
+  (v19: core::felt252, v20: core::array::Array::<core::felt252>) <- struct_destructure(v11)
+End:
+  Return(v19)
 
 //! > after
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v16: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v2: core::felt252) <- 10u
-  (v17: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v16, v2)
-  (v5: core::felt252) <- 11u
-  (v19: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v17, v5)
-  (v8: core::felt252) <- 12u
-  (v21: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v19, v8)
-  (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v21)
+  (v23: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::felt252) <- 10
+  (v24: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v2)
+  (v5: core::felt252) <- 11
+  (v25: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v5)
+  (v8: core::felt252) <- 12
+  (v26: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v25, v8)
+  (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v26)
+  (v14: core::felt252) <- 0
+  (v29: core::felt252) <- core::felt252_sub(v0, v14)
 End:
-  Match(match core::felt252_is_zero(v0) {
+  Match(match core::felt252_is_zero(v29) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v14) => blk2,
+    IsZeroResult::NonZero(v30) => blk2,
   })
 
 blk1:
 Statements:
-  (v12: core::felt252, v13: core::array::Array::<core::felt252>) <- struct_destructure(v11)
+  (v31: ()) <- struct_construct()
+  (v32: core::bool) <- bool::True(v31)
 End:
-  Return(v12)
+  Goto(blk3, {v32 -> v17})
 
 blk2:
 Statements:
-  () <- test::cosume(v11)
-  (v15: core::felt252) <- 1u
+  (v33: ()) <- struct_construct()
+  (v34: core::bool) <- bool::False(v33)
 End:
-  Return(v15)
+  Goto(blk3, {v34 -> v17})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v17) {
+    bool::False(v21) => blk4,
+    bool::True(v18) => blk5,
+  })
+
+blk4:
+Statements:
+  () <- test::cosume(v11)
+  (v22: core::felt252) <- 1
+End:
+  Return(v22)
+
+blk5:
+Statements:
+  (v19: core::felt252, v20: core::array::Array::<core::felt252>) <- struct_destructure(v11)
+End:
+  Return(v19)
 
 //! > ==========================================================================
 
@@ -326,14 +378,39 @@ foo
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v2: core::panics::PanicResult::<(core::integer::u32,)>) <- core::integer::U32Add::add(v0, v0)
 End:
-  Match(match_enum(v2) {
-    PanicResult::Ok(v3) => blk1,
-    PanicResult::Err(v5) => blk2,
+  Match(match core::integer::u32_overflowing_add(v0, v0) {
+    Result::Ok(v9) => blk1,
+    Result::Err(v10) => blk2,
   })
 
 blk1:
+Statements:
+  (v11: (core::integer::u32,)) <- struct_construct(v9)
+  (v12: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v11)
+End:
+  Goto(blk3, {v12 -> v2})
+
+blk2:
+Statements:
+  (v13: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v14: core::felt252) <- 155785504323917466144735657540098748279
+  (v15: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v13, v14)
+  (v16: core::panics::Panic) <- struct_construct()
+  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v16, v15)
+  (v18: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v17)
+End:
+  Goto(blk3, {v18 -> v2})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v2) {
+    PanicResult::Ok(v3) => blk4,
+    PanicResult::Err(v5) => blk5,
+  })
+
+blk4:
 Statements:
   (v4: core::integer::u32) <- struct_destructure(v3)
   (v6: (core::integer::u32,)) <- struct_construct(v4)
@@ -341,7 +418,7 @@ Statements:
 End:
   Return(v7)
 
-blk2:
+blk5:
 Statements:
   (v8: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v5)
 End:
@@ -351,20 +428,45 @@ End:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v2: core::panics::PanicResult::<(core::integer::u32,)>) <- core::integer::U32Add::add(v0, v0)
 End:
-  Match(match_enum(v2) {
-    PanicResult::Ok(v3) => blk1,
-    PanicResult::Err(v5) => blk2,
+  Match(match core::integer::u32_overflowing_add(v0, v0) {
+    Result::Ok(v9) => blk1,
+    Result::Err(v10) => blk2,
   })
 
 blk1:
+Statements:
+  (v11: (core::integer::u32,)) <- struct_construct(v9)
+  (v12: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v11)
+End:
+  Goto(blk3, {v12 -> v2})
+
+blk2:
+Statements:
+  (v13: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v14: core::felt252) <- 155785504323917466144735657540098748279
+  (v15: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v13, v14)
+  (v16: core::panics::Panic) <- struct_construct()
+  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v16, v15)
+  (v18: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v17)
+End:
+  Goto(blk3, {v18 -> v2})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v2) {
+    PanicResult::Ok(v3) => blk4,
+    PanicResult::Err(v5) => blk5,
+  })
+
+blk4:
 Statements:
   (v7: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v3)
 End:
   Return(v7)
 
-blk2:
+blk5:
 Statements:
   (v8: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v5)
 End:
@@ -446,57 +548,109 @@ foo
 Parameters: v0: (core::integer::u32,), v1: core::felt252
 blk0 (root):
 Statements:
+  (v2: core::felt252, v3: @core::felt252) <- snapshot(v1)
+  (v4: core::felt252) <- 0
+  (v5: core::felt252, v6: @core::felt252) <- snapshot(v4)
+  (v16: core::felt252) <- desnap(v3)
+  (v17: core::felt252) <- desnap(v6)
+  (v18: core::felt252) <- core::felt252_sub(v16, v17)
 End:
-  Match(match core::felt252_is_zero(v1) {
+  Match(match core::felt252_is_zero(v18) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v3) => blk2,
+    IsZeroResult::NonZero(v19) => blk2,
   })
 
 blk1:
 Statements:
-  (v2: core::integer::u32) <- struct_destructure(v0)
+  (v20: ()) <- struct_construct()
+  (v21: core::bool) <- bool::True(v20)
 End:
-  Goto(blk3, {v2 -> v5})
+  Goto(blk3, {v21 -> v7})
 
 blk2:
 Statements:
-  (v4: core::integer::u32) <- struct_destructure(v0)
+  (v22: ()) <- struct_construct()
+  (v23: core::bool) <- bool::False(v22)
 End:
-  Goto(blk3, {v4 -> v5})
+  Goto(blk3, {v23 -> v7})
 
 blk3:
 Statements:
-  (v6: core::integer::u32, v7: @core::integer::u32) <- snapshot(v5)
-  (v8: core::integer::u32) <- desnap(v7)
 End:
-  Return(v8)
+  Match(match_enum(v7) {
+    bool::False(v10) => blk4,
+    bool::True(v8) => blk5,
+  })
+
+blk4:
+Statements:
+  (v11: core::integer::u32) <- struct_destructure(v0)
+End:
+  Goto(blk6, {v11 -> v12})
+
+blk5:
+Statements:
+  (v9: core::integer::u32) <- struct_destructure(v0)
+End:
+  Goto(blk6, {v9 -> v12})
+
+blk6:
+Statements:
+  (v13: core::integer::u32, v14: @core::integer::u32) <- snapshot(v12)
+  (v15: core::integer::u32) <- desnap(v14)
+End:
+  Return(v15)
 
 //! > after
 Parameters: v0: (core::integer::u32,), v1: core::felt252
 blk0 (root):
 Statements:
+  (v4: core::felt252) <- 0
+  (v18: core::felt252) <- core::felt252_sub(v1, v4)
 End:
-  Match(match core::felt252_is_zero(v1) {
+  Match(match core::felt252_is_zero(v18) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v3) => blk2,
+    IsZeroResult::NonZero(v19) => blk2,
   })
 
 blk1:
 Statements:
-  (v2: core::integer::u32) <- struct_destructure(v0)
+  (v20: ()) <- struct_construct()
+  (v21: core::bool) <- bool::True(v20)
 End:
-  Goto(blk3, {v2 -> v5})
+  Goto(blk3, {v21 -> v7})
 
 blk2:
 Statements:
-  (v4: core::integer::u32) <- struct_destructure(v0)
+  (v22: ()) <- struct_construct()
+  (v23: core::bool) <- bool::False(v22)
 End:
-  Goto(blk3, {v4 -> v5})
+  Goto(blk3, {v23 -> v7})
 
 blk3:
 Statements:
 End:
-  Return(v5)
+  Match(match_enum(v7) {
+    bool::False(v10) => blk4,
+    bool::True(v8) => blk5,
+  })
+
+blk4:
+Statements:
+  (v11: core::integer::u32) <- struct_destructure(v0)
+End:
+  Goto(blk6, {v11 -> v12})
+
+blk5:
+Statements:
+  (v9: core::integer::u32) <- struct_destructure(v0)
+End:
+  Goto(blk6, {v9 -> v12})
+
+blk6:
+Statements:
+End:
+  Return(v12)
 
 //! > ==========================================================================
 

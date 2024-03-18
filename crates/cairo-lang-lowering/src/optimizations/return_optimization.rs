@@ -9,6 +9,7 @@ use semantic::MatchArmSelector;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
+use crate::ids::LocationId;
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure, VarRemapping,
@@ -27,16 +28,26 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     let ctx = ReturnOptimizerContext { db, lowered, fixes: vec![] };
     let mut analysis =
         BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
-    analysis.get_root_info();
-    let ctx = analysis.analyzer;
+    let info = analysis.get_root_info();
+    let mut ctx = analysis.analyzer;
 
-    for FixInfo { block_id, return_vars } in ctx.fixes.into_iter() {
+    if info.early_return_possible() {
+        ctx.fixes.push(FixInfo {
+            location: (BlockId::root(), 0),
+            return_info: info.opt_return_info.clone().unwrap(),
+        });
+    }
+
+    for FixInfo { location: (block_id, statement_idx), return_info } in ctx.fixes.into_iter() {
         let block = &mut lowered.blocks[block_id];
+        block.statements.truncate(statement_idx);
         block.end = FlatBlockEnd::Return(
-            return_vars
+            return_info
+                .returned_vars
                 .iter()
                 .map(|var_info| *extract_matches!(var_info, ValueInfo::Var))
                 .collect_vec(),
+            return_info.location,
         )
     }
 }
@@ -63,14 +74,55 @@ impl ReturnOptimizerContext<'_> {
     fn is_droppable(&self, var_id: VariableId) -> bool {
         self.lowered.variables[var_id].droppable.is_ok()
     }
+
+    /// Helper function for `merge_match`.
+    /// Returns `Option<ReturnInfo>` rather then `AnalyzerInfo` to simplify early return.
+    fn try_merge_match<'b>(
+        &mut self,
+        match_info: &MatchInfo,
+        infos: impl IntoIterator<Item = &'b AnalyzerInfo> + Clone,
+    ) -> Option<ReturnInfo> {
+        let MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) = match_info else {
+            return None;
+        };
+        if arms.is_empty() {
+            return None;
+        }
+
+        let input_info = self.get_var_info(input);
+        let mut opt_last_info = None;
+        for (arm, info) in arms.iter().zip(infos) {
+            let mut curr_info = info.clone();
+            curr_info.apply_match_arm(self.is_droppable(input.var_id), &input_info, arm);
+
+            if !curr_info.early_return_possible() {
+                return None;
+            }
+
+            match curr_info.opt_return_info {
+                Some(return_info)
+                    if opt_last_info
+                        .map(|x: ReturnInfo| x.returned_vars == return_info.returned_vars)
+                        .unwrap_or(true) =>
+                {
+                    // If this is the first iteration or the returned var are the same as the
+                    // previous iteration, then the optimization is still applicable.
+                    opt_last_info = Some(return_info)
+                }
+                _ => return None,
+            }
+        }
+
+        Some(opt_last_info.unwrap())
+    }
 }
 
 /// Information about a fix that should be applied to the lowering.
 pub struct FixInfo {
-    /// a block id of a block that can be fixed to return `return_vars`.
-    block_id: BlockId,
-    /// The variables that should be returned by the block.
-    return_vars: Vec<ValueInfo>,
+    /// A location where we `return_vars` can be returned.
+    location: StatementLocation,
+    /// The return info at the fix location.
+    return_info: ReturnInfo,
 }
 
 /// Information about the value that should be returned from the function.
@@ -82,6 +134,8 @@ pub enum ValueInfo {
     Interchangeable(semantic::TypeId),
     /// The value is the result of a StructConstruct statement.
     StructConstruct {
+        /// The type of the struct.
+        ty: semantic::TypeId,
         /// The inputs to the StructConstruct statement.
         var_infos: Vec<ValueInfo>,
     },
@@ -112,7 +166,7 @@ impl ValueInfo {
     {
         match self {
             ValueInfo::Var(var_usage) => *self = f(var_usage),
-            ValueInfo::StructConstruct { ref mut var_infos } => {
+            ValueInfo::StructConstruct { ty: _, ref mut var_infos } => {
                 for var_info in var_infos.iter_mut() {
                     var_info.apply(f);
                 }
@@ -139,8 +193,9 @@ impl ValueInfo {
                     OpResult::NoChange
                 }
             }
-            ValueInfo::StructConstruct { var_infos } => {
-                let mut cancels_out = var_infos.len() == stmt.outputs.len();
+            ValueInfo::StructConstruct { ty, var_infos } => {
+                let mut cancels_out = ty == &ctx.lowered.variables[stmt.input.var_id].ty
+                    && var_infos.len() == stmt.outputs.len();
                 for (var_info, output) in var_infos.iter().zip(stmt.outputs.iter()) {
                     if !cancels_out {
                         break;
@@ -199,7 +254,7 @@ impl ValueInfo {
                     OpResult::NoChange
                 }
             }
-            ValueInfo::StructConstruct { ref mut var_infos } => {
+            ValueInfo::StructConstruct { ty: _, ref mut var_infos } => {
                 let mut input_consumed = false;
                 for var_info in var_infos.iter_mut() {
                     match var_info.apply_match_arm(input, arm) {
@@ -245,21 +300,39 @@ impl ValueInfo {
 
 /// Information about the current state of the analyzer.
 /// Used to track the value that should be returned from the function at the current
-/// analysis point or None if it is unknown.
+/// analysis point
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReturnInfo {
+    returned_vars: Vec<ValueInfo>,
+    location: LocationId,
+}
+
+/// A wrapper around `ReturnInfo` that makes it optional.
+/// None indicates that the return info is unknown.
 /// If early_return_possible() returns true, the function can return early as the return value is
 /// already known.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AnalyzerInfo {
-    opt_returned_vars: Option<Vec<ValueInfo>>,
+    opt_return_info: Option<ReturnInfo>,
 }
 
 impl AnalyzerInfo {
+    /// Creates a state of the analyzer where the the return optimization is not applicable.
+    fn invalidated() -> Self {
+        AnalyzerInfo { opt_return_info: None }
+    }
+
+    /// Invalidates the state of the analyzer, identifying early return is no longer possible.
+    fn invalidate(&mut self) {
+        *self = Self::invalidated();
+    }
+
     /// Applies the given function to the returned_vars
     fn apply<F>(&mut self, f: &F)
     where
         F: Fn(&VarUsage) -> ValueInfo,
     {
-        let Some(ref mut returned_vars) = self.opt_returned_vars else {
+        let Some(ReturnInfo { ref mut returned_vars, .. }) = self.opt_return_info else {
             return;
         };
 
@@ -275,18 +348,13 @@ impl AnalyzerInfo {
         });
     }
 
-    /// Invalidates the state of the analyzer, identifying early return is no longer possible.
-    fn invalidate(&mut self) {
-        self.opt_returned_vars = None;
-    }
-
     /// Updates the info to the state before the StructDeconstruct statement.
     fn apply_deconstruct(
         &mut self,
         ctx: &ReturnOptimizerContext<'_>,
         stmt: &StatementStructDestructure,
     ) {
-        let Some(ref mut returned_vars) = self.opt_returned_vars else { return };
+        let Some(ReturnInfo { ref mut returned_vars, .. }) = self.opt_return_info else { return };
 
         let mut input_consumed = false;
         for var_info in returned_vars.iter_mut() {
@@ -309,7 +377,7 @@ impl AnalyzerInfo {
 
     /// Updates the info to the state before match arm.
     fn apply_match_arm(&mut self, is_droppable: bool, input: &ValueInfo, arm: &MatchArm) {
-        let Some(ref mut returned_vars) = self.opt_returned_vars else { return };
+        let Some(ReturnInfo { ref mut returned_vars, .. }) = self.opt_return_info else { return };
 
         let mut input_consumed = false;
         for var_info in returned_vars.iter_mut() {
@@ -332,7 +400,7 @@ impl AnalyzerInfo {
 
     /// Returns true if the an early return is possible according to 'self'.
     fn early_return_possible(&self) -> bool {
-        let Some(ref returned_vars) = self.opt_returned_vars else { return false };
+        let Some(ReturnInfo { ref returned_vars, .. }) = self.opt_return_info else { return false };
 
         returned_vars.iter().all(|var_info| match var_info {
             ValueInfo::Var(_) => true,
@@ -349,9 +417,11 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
-        _statement_location: StatementLocation,
+        (block_idx, statement_idx): StatementLocation,
         stmt: &'a Statement,
     ) {
+        let opt_orig_info = if info.early_return_possible() { Some(info.clone()) } else { None };
+
         match stmt {
             Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
                 // Note that the ValueInfo::StructConstruct can only be removed by
@@ -360,6 +430,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 info.replace(
                     *output,
                     ValueInfo::StructConstruct {
+                        ty: self.lowered.variables[*output].ty,
                         var_infos: inputs.iter().map(|input| self.get_var_info(input)).collect(),
                     },
                 );
@@ -377,12 +448,21 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
             }
             _ => info.invalidate(),
         }
+
+        if let Some(return_info) = opt_orig_info {
+            if !info.early_return_possible() {
+                self.fixes.push(FixInfo {
+                    location: (block_idx, statement_idx + 1),
+                    return_info: return_info.opt_return_info.unwrap(),
+                });
+            }
+        }
     }
 
     fn visit_goto(
         &mut self,
         info: &mut Self::Info,
-        (block_id, _statement_idx): StatementLocation,
+        _statement_location: StatementLocation,
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
@@ -393,62 +473,51 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 ValueInfo::Var(*var_usage)
             }
         });
-
-        if info.early_return_possible() {
-            self.fixes
-                .push(FixInfo { block_id, return_vars: info.opt_returned_vars.clone().unwrap() });
-        }
     }
 
-    fn merge_match(
+    fn merge_match<'b, Infos>(
         &mut self,
-        (block_id, _statement_idx): StatementLocation,
+        _statement_location: StatementLocation,
         match_info: &'a MatchInfo,
-        infos: &[Self::Info],
-    ) -> Self::Info {
-        let MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) = match_info else {
-            return AnalyzerInfo { opt_returned_vars: None };
-        };
-        if arms.is_empty() {
-            return AnalyzerInfo { opt_returned_vars: None };
-        }
-
-        let input_info = self.get_var_info(input);
-        let mut opt_last_info = None;
-        for (arm, info) in arms.iter().zip(infos) {
-            let mut curr_info = info.clone();
-            curr_info.apply_match_arm(self.is_droppable(input.var_id), &input_info, arm);
-
-            if !curr_info.early_return_possible() {
-                return AnalyzerInfo { opt_returned_vars: None };
-            }
-
-            if let Some(prev_info) = &opt_last_info {
-                if prev_info != &curr_info {
-                    return AnalyzerInfo { opt_returned_vars: None };
+        infos: Infos,
+    ) -> Self::Info
+    where
+        'a: 'b,
+        Infos: Iterator<Item = &'b Self::Info> + Clone,
+    {
+        let opt_return_info = self.try_merge_match(match_info, infos.clone());
+        if opt_return_info.is_none() {
+            // If the optimization is not applicable before the match, check if it is applicable
+            // in the arms.
+            for (arm, info) in match_info.arms().iter().zip(infos) {
+                if info.early_return_possible() {
+                    self.fixes.push(FixInfo {
+                        location: (arm.block_id, 0),
+                        return_info: info.opt_return_info.clone().unwrap(),
+                    });
                 }
-            } else {
-                opt_last_info = Some(curr_info);
             }
         }
-
-        let last_info = opt_last_info.unwrap();
-        let return_vars = last_info.opt_returned_vars.clone().unwrap();
-        self.fixes.push(FixInfo { block_id, return_vars });
-        last_info
+        Self::Info { opt_return_info }
     }
 
     fn info_from_return(
         &mut self,
-        _statement_location: StatementLocation,
+        (block_id, _statement_idx): StatementLocation,
         vars: &'a [VarUsage],
     ) -> Self::Info {
+        let location = match &self.lowered.blocks[block_id].end {
+            FlatBlockEnd::Return(_vars, location) => *location,
+            _ => unreachable!(),
+        };
+
         // Note that `self.get_var_info` is not used here because ValueInfo::Interchangeable is
         // supported only inside other ValueInfo variants.
         AnalyzerInfo {
-            opt_returned_vars: Some(
-                vars.iter().map(|var_usage| ValueInfo::Var(*var_usage)).collect(),
-            ),
+            opt_return_info: Some(ReturnInfo {
+                returned_vars: vars.iter().map(|var_usage| ValueInfo::Var(*var_usage)).collect(),
+                location,
+            }),
         }
     }
 }

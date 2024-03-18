@@ -23,14 +23,14 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v13) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt252) <- 0u
+  (v8: core::felt252) <- 0
 End:
-  Return(v1)
+  Return(v8)
 
 blk2:
 Statements:
@@ -39,10 +39,10 @@ End:
 
 //! > last_use
 v0: ((BlockId(2), 0), 0)
-v1: ((BlockId(1), 1), 0)
+v8: ((BlockId(1), 1), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(2)): v2
+BeginningOfBlock(BlockId(2)): v13
 BeginningOfBlock(BlockId(1)): v0
 
 //! > ==========================================================================
@@ -107,26 +107,26 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v3) => blk2,
+    IsZeroResult::NonZero(v15) => blk2,
   })
 
 blk1:
 Statements:
-  (v2: core::felt252) <- 1u
+  (v9: core::felt252) <- 1
 End:
-  Return(v2)
+  Return(v9)
 
 blk2:
 Statements:
-  (v4: core::felt252) <- 2u
+  (v11: core::felt252) <- 2
 End:
-  Return(v4)
+  Return(v11)
 
 //! > last_use
-v4: ((BlockId(2), 1), 0)
-v2: ((BlockId(1), 1), 0)
+v11: ((BlockId(2), 1), 0)
+v9: ((BlockId(1), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(2)): v3
+BeginningOfBlock(BlockId(2)): v15
 BeginningOfBlock(BlockId(0)): v1

@@ -1094,7 +1094,6 @@ impl<'a> Parser<'a> {
         lbrace_allowed: LbraceAllowed,
     ) -> TryParseResult<ExprGreen> {
         let mut expr = self.try_parse_atom_or_unary(lbrace_allowed)?;
-
         while let Some(precedence) = get_post_operator_precedence(self.peek().kind) {
             if precedence >= parent_precedence {
                 return Ok(expr);
@@ -1180,6 +1179,7 @@ impl<'a> Parser<'a> {
                 // [LbraceAllowed::Forbid].
                 Ok(self.expect_parenthesized_expr())
             }
+            SyntaxKind::TerminalLBrack => Ok(self.expect_fixed_size_array_expr().into()),
             SyntaxKind::TerminalLBrace if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.parse_block().into())
             }
@@ -1215,6 +1215,7 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalIdentifier => Ok(self.parse_type_path().into()),
             SyntaxKind::TerminalLParen => Ok(self.expect_type_tuple_expr()),
+            SyntaxKind::TerminalLBrack => Ok(self.expect_type_fixed_size_array_expr()),
             _ => {
                 // TODO(yuval): report to diagnostics.
                 Err(TryParseFailure::SkipToken)
@@ -1492,6 +1493,32 @@ impl<'a> Parser<'a> {
         .into()
     }
 
+    /// Assumes the current token is LBrack.
+    /// Expected pattern: `\[<type_expr>; <expr>\]`.
+    /// Returns a GreenId of a node with kind ExprFixedSizeArray.
+    fn expect_type_fixed_size_array_expr(&mut self) -> ExprGreen {
+        let lbrack = self.take::<TerminalLBrack>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
+            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+                Self::try_parse_type_expr,
+                is_of_kind!(rbrack, semicolon),
+                "type expression",
+            );
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        let size_expr = self.parse_expr();
+        let fixed_size_array_size =
+            FixedSizeArraySize::new_green(self.db, semicolon, size_expr).into();
+        let rbrack = self.parse_token::<TerminalRBrack>();
+        ExprFixedSizeArray::new_green(
+            self.db,
+            lbrack,
+            ExprList::new_green(self.db, exprs),
+            fixed_size_array_size,
+            rbrack,
+        )
+        .into()
+    }
+
     /// Assumes the current token is DotDot.
     /// Expected pattern: `\.\.<Expr>`
     fn expect_struct_argument_tail(&mut self) -> StructArgTailGreen {
@@ -1599,13 +1626,7 @@ impl<'a> Parser<'a> {
     fn expect_if_expr(&mut self) -> ExprIfGreen {
         let if_kw = self.take::<TerminalIf>();
 
-        let condition = if self.peek().kind == SyntaxKind::TerminalLet {
-            self.expect_let_condition_expr().into()
-        } else {
-            let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
-            ConditionGreen::from(ConditionExpr::new_green(self.db, condition))
-        };
-
+        let condition = self.parse_condition_expr();
         let if_block = self.parse_block();
         let else_clause = if self.peek().kind == SyntaxKind::TerminalElse {
             let else_kw = self.take::<TerminalElse>();
@@ -1621,26 +1642,32 @@ impl<'a> Parser<'a> {
         ExprIf::new_green(self.db, if_kw, condition, if_block, else_clause)
     }
 
-    /// Expected pattern: `let <pattern> = <expr>`.
-    fn expect_let_condition_expr(&mut self) -> ConditionLetGreen {
-        let let_kw = self.take::<TerminalLet>();
-        let pattern_list = self
-        .parse_separated_list_inner::<Pattern, TerminalOr, PatternListOrElementOrSeparatorGreen>(
-            Self::try_parse_pattern,
-            is_of_kind!(eq),
-            "pattern",
-            Some(ParserDiagnosticKind::DisallowedTrailingSeparatorOr),
-        );
+    /// Parses condition exprs of the form `<expr>` or `let <pattern> = <expr>`.
+    fn parse_condition_expr(&mut self) -> ConditionGreen {
+        if self.peek().kind == SyntaxKind::TerminalLet {
+            let let_kw = self.take::<TerminalLet>();
+            let pattern_list = self
+            .parse_separated_list_inner::<Pattern, TerminalOr, PatternListOrElementOrSeparatorGreen>(
+                Self::try_parse_pattern,
+                is_of_kind!(eq),
+                "pattern",
+                Some(ParserDiagnosticKind::DisallowedTrailingSeparatorOr),
+            );
 
-        let pattern_list_green = if pattern_list.is_empty() {
-            self.create_and_report_missing::<PatternListOr>(ParserDiagnosticKind::MissingPatteren)
+            let pattern_list_green = if pattern_list.is_empty() {
+                self.create_and_report_missing::<PatternListOr>(
+                    ParserDiagnosticKind::MissingPatteren,
+                )
+            } else {
+                PatternListOr::new_green(self.db, pattern_list)
+            };
+            let eq = self.parse_token::<TerminalEq>();
+            let expr: ExprGreen = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+            ConditionLet::new_green(self.db, let_kw, pattern_list_green, eq, expr).into()
         } else {
-            PatternListOr::new_green(self.db, pattern_list)
-        };
-        let eq = self.parse_token::<TerminalEq>();
-        let expr: ExprGreen = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
-
-        ConditionLet::new_green(self.db, let_kw, pattern_list_green, eq, expr)
+            let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+            ConditionExpr::new_green(self.db, condition).into()
+        }
     }
 
     /// Assumes the current token is `Loop`.
@@ -1653,13 +1680,40 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is `While`.
-    /// Expected pattern: `while <expr> <block>`.
+    /// Expected pattern: `while <condition> <block>`.
     fn expect_while_expr(&mut self) -> ExprWhileGreen {
         let while_kw = self.take::<TerminalWhile>();
-        let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let condition = self.parse_condition_expr();
         let body = self.parse_block();
 
         ExprWhile::new_green(self.db, while_kw, condition, body)
+    }
+
+    /// Assumes the current token is LBrack.
+    /// Expected pattern: `\[<expr>; <expr>\]`.
+    fn expect_fixed_size_array_expr(&mut self) -> ExprFixedSizeArrayGreen {
+        let lbrack = self.take::<TerminalLBrack>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
+            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+                Self::try_parse_expr,
+                is_of_kind!(rbrack, semicolon),
+                "expression",
+            );
+        let size_green = if self.peek().kind == SyntaxKind::TerminalSemicolon {
+            let semicolon = self.take::<TerminalSemicolon>();
+            let size = self.parse_expr();
+            FixedSizeArraySize::new_green(self.db, semicolon, size).into()
+        } else {
+            OptionFixedSizeArraySizeEmpty::new_green(self.db).into()
+        };
+        let rbrack = self.parse_token::<TerminalRBrack>();
+        ExprFixedSizeArray::new_green(
+            self.db,
+            lbrack,
+            ExprList::new_green(self.db, exprs),
+            size_green,
+            rbrack,
+        )
     }
 
     /// Returns a GreenId of a node with a MatchArm kind or TryParseFailure if a match arm can't be
@@ -1767,6 +1821,20 @@ impl<'a> Parser<'a> {
                 ));
                 let rparen = self.parse_token::<TerminalRParen>();
                 PatternTuple::new_green(self.db, lparen, patterns, rparen).into()
+            }
+            SyntaxKind::TerminalLBrack => {
+                let lbrack = self.take::<TerminalLBrack>();
+                let patterns = PatternList::new_green(self.db,  self.parse_separated_list::<
+                    Pattern,
+                    TerminalComma,
+                    PatternListElementOrSeparatorGreen>
+                (
+                    Self::try_parse_pattern,
+                    is_of_kind!(rbrack, block, rbrace, module_item_kw),
+                    "pattern",
+                ));
+                let rbrack = self.parse_token::<TerminalRBrack>();
+                PatternFixedSizeArray::new_green(self.db, lbrack, patterns, rbrack).into()
             }
             _ => return Err(TryParseFailure::SkipToken),
         })

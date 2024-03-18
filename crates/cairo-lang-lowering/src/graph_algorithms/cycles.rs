@@ -40,10 +40,8 @@ pub fn contains_cycle(
     function_id: ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Maybe<bool> {
-    let direct_callees = db.concrete_function_with_body_postinline_direct_callees_with_body(
-        function_id,
-        dependency_type,
-    )?;
+    let direct_callees =
+        db.concrete_function_with_body_direct_callees_with_body(function_id, dependency_type)?;
     for callee in direct_callees {
         if db.contains_cycle(callee, dependency_type)? {
             return Ok(true);

@@ -1,0 +1,1011 @@
+//! > Test struct folding.
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+   let b = (a,);
+   let c = (b,);
+   let (d,)  = c;
+   let (e,)  = d;
+   e
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: (core::felt252,)) <- struct_construct(v0)
+  (v2: ((core::felt252,),)) <- struct_construct(v1)
+  (v3: (core::felt252,)) <- struct_destructure(v2)
+  (v4: core::felt252) <- struct_destructure(v3)
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
+//! > Test destruct after merge
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+   let (b,) = match a {
+      0 => (0,),
+      _ => (a,),
+   };
+   b
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 0
+  (v3: (core::felt252,)) <- struct_construct(v2)
+End:
+  Goto(blk3, {v3 -> v5})
+
+blk2:
+Statements:
+  (v4: (core::felt252,)) <- struct_construct(v0)
+End:
+  Goto(blk3, {v4 -> v5})
+
+blk3:
+Statements:
+  (v6: core::felt252) <- struct_destructure(v5)
+End:
+  Return(v6)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 0
+End:
+  Goto(blk3, {v2 -> v7})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v0 -> v7})
+
+blk3:
+Statements:
+End:
+  Return(v7)
+
+//! > ==========================================================================
+
+//! > Test use in one arm 
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+   let arr = array![10, 11, 12];
+
+   let c = (a, arr);
+   if a == 0 {
+     let (a, _arr) = c;
+     return a;
+   } else {
+      cosume(c);
+      return 1;
+   }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn cosume(arg: (felt252, Array<felt252>)) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v23: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::felt252) <- 10
+  (v24: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v2)
+  (v5: core::felt252) <- 11
+  (v25: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v5)
+  (v8: core::felt252) <- 12
+  (v26: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v25, v8)
+  (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v26)
+  (v12: core::felt252, v13: @core::felt252) <- snapshot(v0)
+  (v14: core::felt252) <- 0
+  (v15: core::felt252, v16: @core::felt252) <- snapshot(v14)
+  (v27: core::felt252) <- desnap(v13)
+  (v28: core::felt252) <- desnap(v16)
+  (v29: core::felt252) <- core::felt252_sub(v27, v28)
+End:
+  Match(match core::felt252_is_zero(v29) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v30) => blk2,
+  })
+
+blk1:
+Statements:
+  (v31: ()) <- struct_construct()
+  (v32: core::bool) <- bool::True(v31)
+End:
+  Goto(blk3, {v32 -> v17})
+
+blk2:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::bool) <- bool::False(v33)
+End:
+  Goto(blk3, {v34 -> v17})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v17) {
+    bool::False(v21) => blk4,
+    bool::True(v18) => blk5,
+  })
+
+blk4:
+Statements:
+  () <- test::cosume(v11)
+  (v22: core::felt252) <- 1
+End:
+  Return(v22)
+
+blk5:
+Statements:
+  (v19: core::felt252, v20: core::array::Array::<core::felt252>) <- struct_destructure(v11)
+End:
+  Return(v19)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v23: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::felt252) <- 10
+  (v24: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v2)
+  (v5: core::felt252) <- 11
+  (v25: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v5)
+  (v8: core::felt252) <- 12
+  (v26: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v25, v8)
+  (v12: core::felt252, v13: @core::felt252) <- snapshot(v0)
+  (v14: core::felt252) <- 0
+  (v15: core::felt252, v16: @core::felt252) <- snapshot(v14)
+  (v27: core::felt252) <- desnap(v13)
+  (v28: core::felt252) <- desnap(v16)
+  (v29: core::felt252) <- core::felt252_sub(v27, v28)
+End:
+  Match(match core::felt252_is_zero(v29) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v30) => blk2,
+  })
+
+blk1:
+Statements:
+  (v31: ()) <- struct_construct()
+  (v32: core::bool) <- bool::True(v31)
+End:
+  Goto(blk3, {v32 -> v17})
+
+blk2:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::bool) <- bool::False(v33)
+End:
+  Goto(blk3, {v34 -> v17})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v17) {
+    bool::False(v21) => blk4,
+    bool::True(v18) => blk5,
+  })
+
+blk4:
+Statements:
+  (v35: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v26)
+  () <- test::cosume(v35)
+  (v22: core::felt252) <- 1
+End:
+  Return(v22)
+
+blk5:
+Statements:
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
+//! > Test destructure after merge.
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+   let tuple = match a {
+      0 => (1, (2, 3)),
+      _ => {
+        let tuple = (a, (2, a));
+        use_tuple(tuple);
+        tuple
+      },
+   };
+   let (b, (c, d)) = tuple;
+   b + c + d
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_tuple<T>(a: (felt252, T)) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 1
+  (v3: core::felt252) <- 2
+  (v4: core::felt252) <- 3
+  (v5: (core::felt252, core::felt252)) <- struct_construct(v3, v4)
+  (v6: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v2, v5)
+End:
+  Goto(blk3, {v6 -> v10})
+
+blk2:
+Statements:
+  (v7: core::felt252) <- 2
+  (v8: (core::felt252, core::felt252)) <- struct_construct(v7, v0)
+  (v9: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v0, v8)
+  () <- test::use_tuple::<(core::felt252, core::felt252)>(v9)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk3:
+Statements:
+  (v11: core::felt252, v12: (core::felt252, core::felt252)) <- struct_destructure(v10)
+  (v13: core::felt252, v14: core::felt252) <- struct_destructure(v12)
+  (v17: core::felt252) <- core::felt252_add(v11, v13)
+  (v18: core::felt252) <- core::felt252_add(v17, v14)
+End:
+  Return(v18)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 1
+  (v3: core::felt252) <- 2
+  (v4: core::felt252) <- 3
+End:
+  Goto(blk3, {v2 -> v19, v3 -> v21, v4 -> v22})
+
+blk2:
+Statements:
+  (v7: core::felt252) <- 2
+  (v8: (core::felt252, core::felt252)) <- struct_construct(v7, v0)
+  (v9: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v0, v8)
+  () <- test::use_tuple::<(core::felt252, core::felt252)>(v9)
+End:
+  Goto(blk3, {v0 -> v19, v7 -> v21, v0 -> v22})
+
+blk3:
+Statements:
+  (v17: core::felt252) <- core::felt252_add(v19, v21)
+  (v18: core::felt252) <- core::felt252_add(v17, v22)
+End:
+  Return(v18)
+
+//! > ==========================================================================
+
+//! > Test construct after destruct.
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) -> (felt252, felt252) {
+   let b = (a, a);
+   let tuple = match a {
+      0 => {
+        b
+      },
+      _ =>  {
+        let (c, _) = b;
+        (c, c)
+      },
+   };
+  tuple
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_tuple<T>(a: (felt252, T)) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: (core::felt252, core::felt252)) <- struct_construct(v0, v0)
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v1 -> v6})
+
+blk2:
+Statements:
+  (v3: core::felt252, v4: core::felt252) <- struct_destructure(v1)
+  (v5: (core::felt252, core::felt252)) <- struct_construct(v3, v3)
+End:
+  Goto(blk3, {v5 -> v6})
+
+blk3:
+Statements:
+End:
+  Return(v6)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v0 -> v7, v0 -> v8})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v0 -> v7, v0 -> v8})
+
+blk3:
+Statements:
+  (v6: (core::felt252, core::felt252)) <- struct_construct(v7, v8)
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Test split var used in two arms (Optimization does not apply.)
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) {
+   let b = (a, a);
+   match a {
+      0 => {
+        let (_, _) = b;
+        use_tuple(b);
+      },
+      _ =>  {
+        let (_, _) = b;
+        use_tuple(b);
+      },
+   };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_tuple<T>(a: (felt252, T)) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: (core::felt252, core::felt252)) <- struct_construct(v0, v0)
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  () <- test::use_tuple::<core::felt252>(v1)
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  () <- test::use_tuple::<core::felt252>(v1)
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: (core::felt252, core::felt252)) <- struct_construct(v0, v0)
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  () <- test::use_tuple::<core::felt252>(v1)
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  () <- test::use_tuple::<core::felt252>(v1)
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test tuple constructed only in one arm.
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) -> felt252{
+   let b = (a, a);
+   let c = if a == 0 {
+      (a, b)
+   } else {
+      get_tuple()
+   };
+   if a == 0{
+      let (d, e) = c;
+      if d == 0 {
+        let (f, g) = e;
+        return f + g;
+      }
+   }
+   return a;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_tuple<T>(a: (felt252, T)) nopanic;
+
+extern fn get_tuple<T>() -> (felt252, T) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: (core::felt252, core::felt252)) <- struct_construct(v0, v0)
+  (v2: core::felt252, v3: @core::felt252) <- snapshot(v0)
+  (v4: core::felt252) <- 0
+  (v5: core::felt252, v6: @core::felt252) <- snapshot(v4)
+  (v36: core::felt252) <- desnap(v3)
+  (v37: core::felt252) <- desnap(v6)
+  (v38: core::felt252) <- core::felt252_sub(v36, v37)
+End:
+  Match(match core::felt252_is_zero(v38) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v39) => blk2,
+  })
+
+blk1:
+Statements:
+  (v40: ()) <- struct_construct()
+  (v41: core::bool) <- bool::True(v40)
+End:
+  Goto(blk3, {v41 -> v7})
+
+blk2:
+Statements:
+  (v42: ()) <- struct_construct()
+  (v43: core::bool) <- bool::False(v42)
+End:
+  Goto(blk3, {v43 -> v7})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v7) {
+    bool::False(v10) => blk4,
+    bool::True(v8) => blk5,
+  })
+
+blk4:
+Statements:
+  (v11: core::felt252, v12: (core::felt252, core::felt252)) <- test::get_tuple::<(core::felt252, core::felt252)>()
+  (v13: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v11, v12)
+End:
+  Goto(blk6, {v13 -> v14})
+
+blk5:
+Statements:
+  (v9: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v2, v1)
+End:
+  Goto(blk6, {v9 -> v14})
+
+blk6:
+Statements:
+  (v15: core::felt252, v16: @core::felt252) <- snapshot(v2)
+  (v17: core::felt252) <- 0
+  (v18: core::felt252, v19: @core::felt252) <- snapshot(v17)
+  (v44: core::felt252) <- desnap(v16)
+  (v45: core::felt252) <- desnap(v19)
+  (v46: core::felt252) <- core::felt252_sub(v44, v45)
+End:
+  Match(match core::felt252_is_zero(v46) {
+    IsZeroResult::Zero => blk7,
+    IsZeroResult::NonZero(v47) => blk8,
+  })
+
+blk7:
+Statements:
+  (v48: ()) <- struct_construct()
+  (v49: core::bool) <- bool::True(v48)
+End:
+  Goto(blk9, {v49 -> v20})
+
+blk8:
+Statements:
+  (v50: ()) <- struct_construct()
+  (v51: core::bool) <- bool::False(v50)
+End:
+  Goto(blk9, {v51 -> v20})
+
+blk9:
+Statements:
+End:
+  Match(match_enum(v20) {
+    bool::False(v35) => blk10,
+    bool::True(v21) => blk11,
+  })
+
+blk10:
+Statements:
+End:
+  Goto(blk16, {})
+
+blk11:
+Statements:
+  (v22: core::felt252, v23: (core::felt252, core::felt252)) <- struct_destructure(v14)
+  (v24: core::felt252, v25: @core::felt252) <- snapshot(v22)
+  (v26: core::felt252) <- 0
+  (v27: core::felt252, v28: @core::felt252) <- snapshot(v26)
+  (v52: core::felt252) <- desnap(v25)
+  (v53: core::felt252) <- desnap(v28)
+  (v54: core::felt252) <- core::felt252_sub(v52, v53)
+End:
+  Match(match core::felt252_is_zero(v54) {
+    IsZeroResult::Zero => blk12,
+    IsZeroResult::NonZero(v55) => blk13,
+  })
+
+blk12:
+Statements:
+  (v56: ()) <- struct_construct()
+  (v57: core::bool) <- bool::True(v56)
+End:
+  Goto(blk14, {v57 -> v29})
+
+blk13:
+Statements:
+  (v58: ()) <- struct_construct()
+  (v59: core::bool) <- bool::False(v58)
+End:
+  Goto(blk14, {v59 -> v29})
+
+blk14:
+Statements:
+End:
+  Match(match_enum(v29) {
+    bool::False(v34) => blk15,
+    bool::True(v30) => blk17,
+  })
+
+blk15:
+Statements:
+End:
+  Goto(blk16, {})
+
+blk16:
+Statements:
+End:
+  Return(v15)
+
+blk17:
+Statements:
+  (v31: core::felt252, v32: core::felt252) <- struct_destructure(v23)
+  (v60: core::felt252) <- core::felt252_add(v31, v32)
+End:
+  Return(v60)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::felt252, v3: @core::felt252) <- snapshot(v0)
+  (v4: core::felt252) <- 0
+  (v5: core::felt252, v6: @core::felt252) <- snapshot(v4)
+  (v36: core::felt252) <- desnap(v3)
+  (v37: core::felt252) <- desnap(v6)
+  (v38: core::felt252) <- core::felt252_sub(v36, v37)
+End:
+  Match(match core::felt252_is_zero(v38) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v39) => blk2,
+  })
+
+blk1:
+Statements:
+  (v40: ()) <- struct_construct()
+  (v41: core::bool) <- bool::True(v40)
+End:
+  Goto(blk3, {v41 -> v7})
+
+blk2:
+Statements:
+  (v42: ()) <- struct_construct()
+  (v43: core::bool) <- bool::False(v42)
+End:
+  Goto(blk3, {v43 -> v7})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v7) {
+    bool::False(v10) => blk4,
+    bool::True(v8) => blk5,
+  })
+
+blk4:
+Statements:
+  (v11: core::felt252, v12: (core::felt252, core::felt252)) <- test::get_tuple::<(core::felt252, core::felt252)>()
+  (v65: core::felt252, v66: core::felt252) <- struct_destructure(v12)
+End:
+  Goto(blk6, {v11 -> v61, v65 -> v63, v66 -> v64})
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {v2 -> v61, v0 -> v63, v0 -> v64})
+
+blk6:
+Statements:
+  (v15: core::felt252, v16: @core::felt252) <- snapshot(v2)
+  (v17: core::felt252) <- 0
+  (v18: core::felt252, v19: @core::felt252) <- snapshot(v17)
+  (v44: core::felt252) <- desnap(v16)
+  (v45: core::felt252) <- desnap(v19)
+  (v46: core::felt252) <- core::felt252_sub(v44, v45)
+End:
+  Match(match core::felt252_is_zero(v46) {
+    IsZeroResult::Zero => blk7,
+    IsZeroResult::NonZero(v47) => blk8,
+  })
+
+blk7:
+Statements:
+  (v48: ()) <- struct_construct()
+  (v49: core::bool) <- bool::True(v48)
+End:
+  Goto(blk9, {v49 -> v20})
+
+blk8:
+Statements:
+  (v50: ()) <- struct_construct()
+  (v51: core::bool) <- bool::False(v50)
+End:
+  Goto(blk9, {v51 -> v20})
+
+blk9:
+Statements:
+End:
+  Match(match_enum(v20) {
+    bool::False(v35) => blk10,
+    bool::True(v21) => blk11,
+  })
+
+blk10:
+Statements:
+End:
+  Goto(blk16, {})
+
+blk11:
+Statements:
+  (v24: core::felt252, v25: @core::felt252) <- snapshot(v61)
+  (v26: core::felt252) <- 0
+  (v27: core::felt252, v28: @core::felt252) <- snapshot(v26)
+  (v52: core::felt252) <- desnap(v25)
+  (v53: core::felt252) <- desnap(v28)
+  (v54: core::felt252) <- core::felt252_sub(v52, v53)
+End:
+  Match(match core::felt252_is_zero(v54) {
+    IsZeroResult::Zero => blk12,
+    IsZeroResult::NonZero(v55) => blk13,
+  })
+
+blk12:
+Statements:
+  (v56: ()) <- struct_construct()
+  (v57: core::bool) <- bool::True(v56)
+End:
+  Goto(blk14, {v57 -> v29})
+
+blk13:
+Statements:
+  (v58: ()) <- struct_construct()
+  (v59: core::bool) <- bool::False(v58)
+End:
+  Goto(blk14, {v59 -> v29})
+
+blk14:
+Statements:
+End:
+  Match(match_enum(v29) {
+    bool::False(v34) => blk15,
+    bool::True(v30) => blk17,
+  })
+
+blk15:
+Statements:
+End:
+  Goto(blk16, {})
+
+blk16:
+Statements:
+End:
+  Return(v15)
+
+blk17:
+Statements:
+  (v60: core::felt252) <- core::felt252_add(v63, v64)
+End:
+  Return(v60)
+
+//! > ==========================================================================
+
+//! > Test split a struct with a non-dup members.
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252, e: ThreeCases) -> (felt252, NonDupStruct) {
+   let b = (a, NonDupStruct { a });
+   match e {
+      ThreeCases::One => {
+        let (_, non_dup) = b;
+        use_struct(non_dup);
+        (a, NonDupStruct { a: 0 })
+      },
+      ThreeCases::Two => {
+        let (_, non_dup) = b;
+        use_struct(non_dup);
+        (a, NonDupStruct { a: 1 })
+      },
+      ThreeCases::Three =>  {
+        use_tuple(b);
+        (a, NonDupStruct { a: 0 })
+      },
+   }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_tuple<T>(a: (felt252, T)) nopanic;
+extern fn use_struct(a: NonDupStruct) nopanic;
+
+struct NonDupStruct {
+  a: felt252,
+}
+
+enum ThreeCases {
+  One,
+  Two,
+  Three,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: test::ThreeCases
+blk0 (root):
+Statements:
+  (v2: test::NonDupStruct) <- struct_construct(v0)
+  (v3: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v2)
+End:
+  Match(match_enum(v1) {
+    ThreeCases::One(v4) => blk1,
+    ThreeCases::Two(v5) => blk2,
+    ThreeCases::Three(v6) => blk3,
+  })
+
+blk1:
+Statements:
+  (v7: core::felt252, v8: test::NonDupStruct) <- struct_destructure(v3)
+  () <- test::use_struct(v8)
+  (v9: core::felt252) <- 0
+  (v10: test::NonDupStruct) <- struct_construct(v9)
+  (v11: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v10)
+End:
+  Goto(blk4, {v11 -> v20})
+
+blk2:
+Statements:
+  (v12: core::felt252, v13: test::NonDupStruct) <- struct_destructure(v3)
+  () <- test::use_struct(v13)
+  (v14: core::felt252) <- 1
+  (v15: test::NonDupStruct) <- struct_construct(v14)
+  (v16: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v15)
+End:
+  Goto(blk4, {v16 -> v20})
+
+blk3:
+Statements:
+  () <- test::use_tuple::<test::NonDupStruct>(v3)
+  (v17: core::felt252) <- 0
+  (v18: test::NonDupStruct) <- struct_construct(v17)
+  (v19: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v18)
+End:
+  Goto(blk4, {v19 -> v20})
+
+blk4:
+Statements:
+End:
+  Return(v20)
+
+//! > after
+Parameters: v0: core::felt252, v1: test::ThreeCases
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    ThreeCases::One(v4) => blk1,
+    ThreeCases::Two(v5) => blk2,
+    ThreeCases::Three(v6) => blk3,
+  })
+
+blk1:
+Statements:
+  (v27: test::NonDupStruct) <- struct_construct(v0)
+  () <- test::use_struct(v27)
+  (v9: core::felt252) <- 0
+End:
+  Goto(blk4, {v0 -> v21, v9 -> v23})
+
+blk2:
+Statements:
+  (v26: test::NonDupStruct) <- struct_construct(v0)
+  () <- test::use_struct(v26)
+  (v14: core::felt252) <- 1
+End:
+  Goto(blk4, {v0 -> v21, v14 -> v23})
+
+blk3:
+Statements:
+  (v24: test::NonDupStruct) <- struct_construct(v0)
+  (v25: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v24)
+  () <- test::use_tuple::<test::NonDupStruct>(v25)
+  (v17: core::felt252) <- 0
+End:
+  Goto(blk4, {v0 -> v21, v17 -> v23})
+
+blk4:
+Statements:
+  (v22: test::NonDupStruct) <- struct_construct(v23)
+  (v20: (core::felt252, test::NonDupStruct)) <- struct_construct(v21, v22)
+End:
+  Return(v20)

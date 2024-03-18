@@ -24,10 +24,8 @@ foo
 Parameters: v0: test::bar::Coupon
 blk0 (root):
 Statements:
-  (v1: ()) <- test::bar(__coupon__: v0)
-  (v2: ()) <- struct_construct()
 End:
-  Return(v2)
+  Return()
 
 //! > ==========================================================================
 
@@ -95,9 +93,12 @@ foo
 Parameters: v0: test::bar::Coupon
 blk0 (root):
 Statements:
-  (v3: core::panics::PanicResult::<((),)>) <- test::bar(__coupon__: v0)
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v11: core::panics::Panic) <- struct_construct()
+  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
+  (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v12)
 End:
-  Return(v3)
+  Return(v13)
 
 //! > ==========================================================================
 
@@ -127,7 +128,5 @@ foo
 Parameters: v0: test::bar::Coupon
 blk0 (root):
 Statements:
-  (v1: ()) <- test::bar(__coupon__: v0)
-  (v2: ()) <- struct_construct()
 End:
-  Return(v2)
+  Return()

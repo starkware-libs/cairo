@@ -23,7 +23,7 @@ pub const FEATURE_ATTR: &str = "feature";
 pub const IMPLICIT_PRECEDENCE_ATTR: &str = "implicit_precedence";
 
 /// An attribute for the declaration of a starknet interface.
-/// It is used in the starkent crate, however it is defined here because it is currently used in the
+/// It is used in the starknet crate, however it is defined here because it is currently used in the
 /// corelib.
 /// TODO(Gil): Remove this once `starknet` is removed from corelib.
 pub const STARKNET_INTERFACE_ATTR: &str = "starknet::interface";

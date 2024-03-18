@@ -5,8 +5,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplFunctionId,
-    LanguageElementId, ModuleFileId, ModuleItemId, ParamLongId, TopLevelLanguageElementId,
-    TraitFunctionId,
+    LanguageElementId, ModuleFileId, ModuleItemId, NamedLanguageElementId, ParamLongId,
+    TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_filesystem::ids::UnstableSalsaId;
@@ -20,6 +20,7 @@ use smol_str::SmolStr;
 use syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
 
 use super::attribute::SemanticQueryAttrs;
+use super::constant::ConstValue;
 use super::imp::ImplId;
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -39,10 +40,13 @@ use crate::{
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ImplGenericFunctionId {
     // TODO(spapini): Consider making these private and enforcing invariants in the ctor.
+    /// The impl the function is in.
     pub impl_id: ImplId,
+    /// The trait function this impl function implements.
     pub function: TraitFunctionId,
 }
 impl ImplGenericFunctionId {
+    /// Gets the impl function language element, if self.impl_id is of a concrete impl.
     pub fn impl_function(&self, db: &dyn SemanticGroup) -> Maybe<Option<ImplFunctionId>> {
         match self.impl_id {
             ImplId::Concrete(concrete_impl_id) => {
@@ -78,6 +82,15 @@ impl ImplGenericFunctionId {
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
         format!("{}::{}", self.impl_id.name(db.upcast()), self.function.name(db.upcast())).into()
+    }
+}
+impl DebugWithDb<dyn SemanticGroup> for ImplGenericFunctionId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
     }
 }
 
@@ -434,7 +447,9 @@ fn generic_params_to_args(
             GenericParam::Type(param) => Ok(GenericArgumentId::Type(
                 db.intern_type(crate::TypeLongId::GenericParameter(param.id)),
             )),
-            GenericParam::Const(_) => todo!("Support const generic arguments"),
+            GenericParam::Const(param) => Ok(GenericArgumentId::Constant(
+                db.intern_const_value(ConstValue::Generic(param.id)),
+            )),
             GenericParam::Impl(param) => {
                 Ok(GenericArgumentId::Impl(ImplId::GenericParameter(param.id)))
             }

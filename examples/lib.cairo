@@ -1,3 +1,4 @@
+mod complex_input;
 mod corelib_usage;
 mod enum_flow;
 mod fib;

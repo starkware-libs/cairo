@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::{Context, Result};
 use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
@@ -21,19 +23,18 @@ use cairo_lang_starknet::contract::{
 };
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use cairo_lang_starknet_classes::casm_contract_class::ENTRY_POINT_COST;
-use cairo_lang_utils::arc_unwrap_or_clone;
 use cairo_lang_utils::ordered_hash_map::{
     deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
 };
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, Itertools};
+pub use plugin::TestPlugin;
 use serde::{Deserialize, Serialize};
 pub use test_config::{try_extract_test_config, TestConfig};
 
 mod inline_macros;
 pub mod plugin;
 pub mod test_config;
-pub use plugin::TestPlugin;
 
 const TEST_ATTR: &str = "test";
 const SHOULD_PANIC_ATTR: &str = "should_panic";
@@ -84,7 +85,7 @@ pub fn compile_test_prepared_db(
             })
             .collect();
     let all_tests = find_all_tests(db, test_crate_ids.clone());
-    let SierraProgramWithDebug { program: sierra_program, debug_info } = arc_unwrap_or_clone(
+    let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
         db.get_sierra_program_for_functions(
             chain!(
                 all_entry_points.into_iter(),
@@ -186,6 +187,10 @@ pub fn test_plugin_suite() -> PluginSuite {
     suite
         .add_plugin::<TestPlugin>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertEqMacro>()
-        .add_inline_macro_plugin::<inline_macros::assert::AssertNeMacro>();
+        .add_inline_macro_plugin::<inline_macros::assert::AssertNeMacro>()
+        .add_inline_macro_plugin::<inline_macros::assert::AssertLtMacro>()
+        .add_inline_macro_plugin::<inline_macros::assert::AssertLeMacro>()
+        .add_inline_macro_plugin::<inline_macros::assert::AssertGtMacro>()
+        .add_inline_macro_plugin::<inline_macros::assert::AssertGeMacro>();
     suite
 }

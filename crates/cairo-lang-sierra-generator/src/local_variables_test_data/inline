@@ -41,20 +41,20 @@ End:
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
-  (v8: core::felt252) <- core::felt252_add(v0, v3)
+  (v3: core::felt252) <- 1
+  (v4: core::felt252) <- core::felt252_add(v0, v3)
 End:
-  Return(v8)
+  Return(v4)
 
 blk2:
 Statements:
-  (v9: core::felt252) <- core::felt252_add(v0, v0)
-  (v6: ()) <- test::revoke_ap()
+  (v5: core::felt252) <- core::felt252_add(v0, v0)
+  () <- test::revoke_ap()
 End:
-  Return(v9)
+  Return(v5)
 
 //! > local_variables
-v9
+v5
 
 //! > ==========================================================================
 
@@ -102,27 +102,27 @@ End:
 
 blk1:
 Statements:
-  (v4: ()) <- test::revoke_ap()
-  (v5: core::felt252) <- 1u
-  (v11: core::felt252) <- core::felt252_add(v0, v5)
+  () <- test::revoke_ap()
+  (v4: core::felt252) <- 1
+  (v5: core::felt252) <- core::felt252_add(v0, v4)
 End:
-  Goto(blk3, {v11 -> v1})
+  Goto(blk3, {v5 -> v1})
 
 blk2:
 Statements:
-  (v12: core::felt252) <- core::felt252_add(v0, v0)
-  (v8: ()) <- test::revoke_ap()
+  (v6: core::felt252) <- core::felt252_add(v0, v0)
+  () <- test::revoke_ap()
 End:
-  Goto(blk3, {v12 -> v1})
+  Goto(blk3, {v6 -> v1})
 
 blk3:
 Statements:
-  (v10: core::felt252) <- core::felt252_add(v1, v0)
+  (v7: core::felt252) <- core::felt252_add(v1, v0)
 End:
-  Return(v10)
+  Return(v7)
 
 //! > local_variables
-v12
+v6
 
 //! > ==========================================================================
 
@@ -156,9 +156,9 @@ fn revoke_ap() {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 1u
+  (v1: core::felt252) <- 1
   (v5: core::felt252) <- core::felt252_add(v0, v1)
-  (v4: ()) <- test::revoke_ap()
+  () <- test::revoke_ap()
 End:
   Return(v5)
 

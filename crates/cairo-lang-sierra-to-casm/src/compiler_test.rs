@@ -2,7 +2,6 @@ use cairo_lang_sierra::ProgramParser;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::indoc;
-use pretty_assertions;
 use test_case::test_case;
 
 use super::SierraToCasmConfig;

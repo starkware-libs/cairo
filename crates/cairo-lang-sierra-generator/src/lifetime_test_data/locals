@@ -27,7 +27,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v1) => blk2,
+    IsZeroResult::NonZero(v16) => blk2,
   })
 
 blk1:
@@ -37,19 +37,19 @@ End:
 
 blk2:
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v0)
-  (v3: core::felt252) <- 0u
-  (v4: core::felt252) <- test::foo(v3)
+  (v21: core::felt252) <- core::felt252_add(v0, v0)
+  (v10: core::felt252) <- 0
+  (v11: core::felt252) <- test::foo(v10)
 End:
-  Return(v6)
+  Return(v21)
 
 //! > last_use
-v6: ((BlockId(2), 3), 0)
-v3: ((BlockId(2), 2), 0)
+v21: ((BlockId(2), 3), 0)
+v10: ((BlockId(2), 2), 0)
 v0: ((BlockId(2), 0), 1)
 v0: ((BlockId(1), 0), 0)
 
 //! > drops
-PostStatement((BlockId(2), 2)): v4
-BeginningOfBlock(BlockId(2)): v1
-BeginningOfBlock(BlockId(1)): UninitializedLocal(v6)
+PostStatement((BlockId(2), 2)): v11
+BeginningOfBlock(BlockId(2)): v16
+BeginningOfBlock(BlockId(1)): UninitializedLocal(v21)

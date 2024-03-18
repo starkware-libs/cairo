@@ -164,7 +164,7 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
         let implicits = block_body_implicits(ctx, block_id)?;
         // End.
         match &mut ctx.lowered.blocks[block_id].end {
-            FlatBlockEnd::Return(rets) => {
+            FlatBlockEnd::Return(rets, _location) => {
                 rets.splice(0..0, implicits.iter().cloned());
             }
             FlatBlockEnd::Panic(_) => {

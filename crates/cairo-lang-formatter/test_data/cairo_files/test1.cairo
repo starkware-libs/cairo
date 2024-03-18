@@ -27,7 +27,7 @@ let z = 5; z +=4; 5 + Struct{a: 5, b: Struct2{_gg: ()}}; let df =6;{let k = 1; l
 }
 
 fn bar < T > (x:T)->T{
-let x:T=1;}
+let x:T=1;     let x:[u32;3]=[1,2, 3]; let[a,b,c]=x;}
 
 
 struct A{} struct B{}

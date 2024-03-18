@@ -112,16 +112,12 @@ impl TerminalString {
 
 /// Interpret the given text as a string with the given delimiter. Returns the text and the suffix.
 fn string_value(text: &str, delimiter: char) -> Option<(String, &str)> {
-    let Some((prefix, text)) = text.split_once(delimiter) else {
-        return None;
-    };
+    let (prefix, text) = text.split_once(delimiter)?;
     if !prefix.is_empty() {
         unreachable!();
     }
 
-    let Some((text, suffix)) = text.rsplit_once(delimiter) else {
-        return None;
-    };
+    let (text, suffix) = text.rsplit_once(delimiter)?;
 
     let text = unescape(text).ok()?;
 

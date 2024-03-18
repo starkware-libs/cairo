@@ -3,9 +3,6 @@ use std::sync::{Arc, Mutex};
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
-use cairo_lang_filesystem::db::FilesGroupEx;
-use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::optimizations::config::OptimizationConfig;
 use cairo_lang_semantic::test_utils::setup_test_module;
@@ -21,7 +18,6 @@ use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::test_lock;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{arc_unwrap_or_clone, Upcast};
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 
@@ -29,15 +25,16 @@ use once_cell::sync::Lazy;
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
 static SHARED_DB_WITH_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
-    db.set_optimization_config(Arc::new(OptimizationConfig::no_movable_functions()));
+    db.set_optimization_config(Arc::new(
+        OptimizationConfig::default().with_minimal_movable_functions(),
+    ));
     Mutex::new(db)
 });
 static SHARED_DB_NO_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
-    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
-    let add_withdraw_gas_flag_id = FlagId::new(db.upcast(), "add_withdraw_gas");
-    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
-
-    db.set_optimization_config(Arc::new(OptimizationConfig::no_movable_functions()));
+    let mut db = RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
+    db.set_optimization_config(Arc::new(
+        OptimizationConfig::default().with_minimal_movable_functions(),
+    ));
     Mutex::new(db)
 });
 
@@ -68,6 +65,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         felt252_dict: "felt252_dict",
         felt252_downcast: "felt252_downcast",
         felt252: "felt252",
+        fixed_size_array: "fixed_size_array",
         i128: "i128",
         i16: "i16",
         i32: "i32",
@@ -188,7 +186,7 @@ fn run_e2e_test(
 
     // Compile to Sierra.
     let SierraProgramWithDebug { program: sierra_program, .. } =
-        arc_unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id]).unwrap());
+        Arc::unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id]).unwrap());
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
     let sierra_program_str = sierra_program.to_string();
 

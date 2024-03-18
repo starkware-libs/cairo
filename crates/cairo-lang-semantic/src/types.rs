@@ -1,26 +1,32 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, StructId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplTypeDefId, ModuleFileId,
+    NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::Itertools;
+use num_bigint::BigInt;
+use num_traits::Zero;
+use smol_str::SmolStr;
 
 use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
-    concrete_panic_destruct_trait,
+    concrete_panic_destruct_trait, get_usize_ty,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{InferenceData, InferenceId, InferenceResult, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
+use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
@@ -36,6 +42,10 @@ pub enum TypeLongId {
     GenericParameter(GenericParamId),
     Var(TypeVar),
     Coupon(FunctionId),
+    FixedSizeArray {
+        type_id: TypeId,
+        size: ConstValueId,
+    },
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -89,6 +99,7 @@ impl TypeId {
             TypeLongId::Var(_) => false,
             TypeLongId::Missing(_) => false,
             TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
+            TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
         }
     }
 }
@@ -110,6 +121,9 @@ impl TypeLongId {
             TypeLongId::Var(var) => format!("?{}", var.id.0),
             TypeLongId::Coupon(function_id) => format!("{}::Coupon", function_id.full_name(db)),
             TypeLongId::Missing(_) => "<missing>".to_string(),
+            TypeLongId::FixedSizeArray { type_id, size } => {
+                format!("[{}; {:?}]", type_id.format(db), size.debug(db.elongate()))
+            }
         }
     }
 
@@ -120,6 +134,7 @@ impl TypeLongId {
             TypeLongId::Tuple(_) => TypeHead::Tuple,
             TypeLongId::Snapshot(inner) => TypeHead::Snapshot(Box::new(inner.head(db)?)),
             TypeLongId::Coupon(_) => TypeHead::Coupon,
+            TypeLongId::FixedSizeArray { .. } => TypeHead::FixedSizeArray,
             TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
                 return None;
             }
@@ -145,6 +160,7 @@ pub enum TypeHead {
     Snapshot(Box<TypeHead>),
     Tuple,
     Coupon,
+    FixedSizeArray,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
@@ -324,6 +340,52 @@ impl ConcreteExternTypeId {
     }
 }
 
+/// An impl item of kind type.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct ImplTypeId {
+    /// The impl the item type is in.
+    impl_id: ImplId,
+    /// The trait type this impl type "implements".
+    ty: TraitTypeId,
+}
+impl ImplTypeId {
+    /// Creates a new impl type id. For an impl type of a concrete impl, asserts that the trait
+    /// type belongs to the same trait that the impl implements (panics if not).
+    pub fn new(impl_id: ImplId, ty: TraitTypeId, db: &dyn SemanticGroup) -> Self {
+        if let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_id {
+            let impl_def_id = concrete_impl.impl_def_id(db);
+            assert_eq!(Ok(ty.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
+        }
+
+        ImplTypeId { impl_id, ty }
+    }
+    pub fn impl_id(&self) -> ImplId {
+        self.impl_id
+    }
+    pub fn ty(&self) -> TraitTypeId {
+        self.ty
+    }
+    /// Gets the impl type def (language element), if `self.impl_id` is of a concrete impl.
+    pub fn impl_type_def(&self, db: &dyn SemanticGroup) -> Maybe<Option<ImplTypeDefId>> {
+        match self.impl_id {
+            ImplId::Concrete(concrete_impl_id) => concrete_impl_id.get_impl_type_def(db, self.ty),
+            ImplId::GenericParameter(_) | ImplId::ImplVar(_) => Ok(None),
+        }
+    }
+    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("{}::{}", self.impl_id.name(db.upcast()), self.ty.name(db.upcast())).into()
+    }
+}
+impl DebugWithDb<dyn SemanticGroup> for ImplTypeId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
+    }
+}
+
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path.
 pub fn resolve_type(
@@ -381,10 +443,74 @@ pub fn maybe_resolve_type(
                 return Err(diagnostics.report(ty_syntax, DesnapNonSnapshot));
             }
         }
+        ast::Expr::FixedSizeArray(array_syntax) => {
+            let [ty] = &array_syntax.exprs(syntax_db).elements(syntax_db)[..] else {
+                return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeNonSingleType));
+            };
+            let ty = resolve_type(db, diagnostics, resolver, ty);
+            let size = match extract_fixed_size_array_size(db, diagnostics, array_syntax, resolver)?
+            {
+                Some(size) => size,
+                None => {
+                    return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeEmptySize));
+                }
+            };
+            db.intern_type(TypeLongId::FixedSizeArray { type_id: ty, size })
+        }
         _ => {
             return Err(diagnostics.report(ty_syntax, UnknownType));
         }
     })
+}
+
+/// Extracts the size of a fixed size array, or none if the size is missing. Reports an error if the
+/// size is not a numeric literal.
+pub fn extract_fixed_size_array_size(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    syntax: &ast::ExprFixedSizeArray,
+    resolver: &Resolver<'_>,
+) -> Maybe<Option<ConstValueId>> {
+    let syntax_db = db.upcast();
+    match syntax.size(syntax_db) {
+        ast::OptionFixedSizeArraySize::FixedSizeArraySize(size_clause) => {
+            let environment = Environment::empty();
+            let resolver = Resolver::with_data(
+                db,
+                (resolver.data).clone_with_inference_id(db, resolver.inference_data.inference_id),
+            );
+            let mut ctx =
+                ComputationContext::new(db, diagnostics, None, resolver, None, environment);
+            let size_expr_syntax = size_clause.size(syntax_db);
+            let size = compute_expr_semantic(&mut ctx, &size_expr_syntax);
+            let (_, const_value) = resolve_const_expr_and_evaluate(
+                db,
+                &mut ctx,
+                &size,
+                size_expr_syntax.stable_ptr().untyped(),
+                get_usize_ty(db),
+            );
+            match &const_value {
+                ConstValue::Int(_) => Ok(Some(db.intern_const_value(const_value))),
+                ConstValue::Generic(_) => Ok(Some(db.intern_const_value(const_value))),
+
+                _ => Err(diagnostics.report(syntax, FixedSizeArrayNonNumericSize)),
+            }
+        }
+        ast::OptionFixedSizeArraySize::Empty(_) => Ok(None),
+    }
+}
+
+/// Verifies that a given fixed size array size is within limits, and adds a diagnostic if not.
+pub fn verify_fixed_size_array_size(
+    diagnostics: &mut SemanticDiagnostics,
+    size: &BigInt,
+    syntax: &ast::ExprFixedSizeArray,
+) -> Maybe<()> {
+    if size > &BigInt::from(i16::MAX) {
+        return Err(diagnostics.report(syntax, FixedSizeArraySizeTooBig));
+    }
+    Ok(())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_type_generic_params].
@@ -402,7 +528,7 @@ pub fn generic_type_generic_params(
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypeInfo {
     pub droppable: InferenceResult<ImplId>,
-    pub duplicatable: InferenceResult<ImplId>,
+    pub copyable: InferenceResult<ImplId>,
     pub destruct_impl: InferenceResult<ImplId>,
     pub panic_destruct_impl: InferenceResult<ImplId>,
 }
@@ -460,6 +586,11 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         semantic::TypeLongId::Var(_) => false,
         semantic::TypeLongId::Missing(_) => false,
         semantic::TypeLongId::Coupon(_) => false,
+        semantic::TypeLongId::FixedSizeArray { type_id, size } => {
+            db.single_value_type(type_id)?
+                || matches!(db.lookup_intern_const_value(size),
+                            ConstValue::Int(value) if value.is_zero())
+        }
     })
 }
 
@@ -474,13 +605,13 @@ pub fn type_info(
     // Dummy stable pointer for type inference variables, since inference is disabled.
     let droppable =
         get_impl_at_context(db, lookup_context.clone(), concrete_drop_trait(db, ty), None);
-    let duplicatable =
+    let copyable =
         get_impl_at_context(db, lookup_context.clone(), concrete_copy_trait(db, ty), None);
     let destruct_impl =
         get_impl_at_context(db, lookup_context.clone(), concrete_destruct_trait(db, ty), None);
     let panic_destruct_impl =
         get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
-    Ok(TypeInfo { droppable, duplicatable, destruct_impl, panic_destruct_impl })
+    Ok(TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl })
 }
 
 /// Peels all wrapping Snapshot (`@`) from the type.

@@ -12,11 +12,11 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::{Arena, Id};
-use itertools::chain;
-use num_bigint::BigInt;
+
 pub mod blocks;
 pub use blocks::BlockId;
 use semantic::expr::inference::InferenceResult;
+use semantic::items::constant::ConstValue;
 use semantic::items::imp::ImplId;
 use semantic::MatchArmSelector;
 
@@ -174,7 +174,7 @@ pub enum FlatBlockEnd {
     /// the end of the lowering phase.
     NotSet,
     /// This block ends with a `return` statement, exiting the function.
-    Return(Vec<VarUsage>),
+    Return(Vec<VarUsage>, LocationId),
     /// This block ends with a panic.
     Panic(VarUsage),
     /// This block ends with a jump to a different block.
@@ -189,8 +189,8 @@ pub enum FlatBlockEnd {
 pub struct Variable {
     /// Can the type be (trivially) dropped.
     pub droppable: InferenceResult<ImplId>,
-    /// Can the type be (trivially) duplicated.
-    pub duplicatable: InferenceResult<ImplId>,
+    /// Can the type be (trivially) copied.
+    pub copyable: InferenceResult<ImplId>,
     /// A Destruct impl for the type, if found.
     pub destruct_impl: InferenceResult<ImplId>,
     /// A PanicDestruct impl for the type, if found.
@@ -205,8 +205,7 @@ pub struct Variable {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement {
     // Values.
-    // TODO(spapini): Consts.
-    Literal(StatementLiteral),
+    Const(StatementConst),
 
     // Flow control.
     Call(StatementCall),
@@ -222,32 +221,45 @@ pub enum Statement {
     Desnap(StatementDesnap),
 }
 impl Statement {
-    pub fn inputs(&self) -> Vec<VarUsage> {
+    pub fn inputs(&self) -> &[VarUsage] {
         match &self {
-            Statement::Literal(_stmt) => vec![],
-            Statement::Call(stmt) => stmt.all_inputs(),
-            Statement::StructConstruct(stmt) => stmt.inputs.clone(),
-            Statement::StructDestructure(stmt) => vec![stmt.input],
-            Statement::EnumConstruct(stmt) => vec![stmt.input],
-            Statement::Snapshot(stmt) => vec![stmt.input],
-            Statement::Desnap(stmt) => vec![stmt.input],
+            Statement::Const(_stmt) => &[],
+            Statement::Call(stmt) => stmt.inputs.as_slice(),
+            Statement::StructConstruct(stmt) => stmt.inputs.as_slice(),
+            Statement::StructDestructure(stmt) => std::slice::from_ref(&stmt.input),
+            Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.input),
+            Statement::Snapshot(stmt) => std::slice::from_ref(&stmt.input),
+            Statement::Desnap(stmt) => std::slice::from_ref(&stmt.input),
         }
     }
-    pub fn outputs(&self) -> Vec<VariableId> {
+
+    pub fn inputs_mut(&mut self) -> &mut [VarUsage] {
+        match self {
+            Statement::Const(_stmt) => &mut [],
+            Statement::Call(stmt) => stmt.inputs.as_mut_slice(),
+            Statement::StructConstruct(stmt) => stmt.inputs.as_mut_slice(),
+            Statement::StructDestructure(stmt) => std::slice::from_mut(&mut stmt.input),
+            Statement::EnumConstruct(stmt) => std::slice::from_mut(&mut stmt.input),
+            Statement::Snapshot(stmt) => std::slice::from_mut(&mut stmt.input),
+            Statement::Desnap(stmt) => std::slice::from_mut(&mut stmt.input),
+        }
+    }
+
+    pub fn outputs(&self) -> &[VariableId] {
         match &self {
-            Statement::Literal(stmt) => vec![stmt.output],
-            Statement::Call(stmt) => stmt.outputs.clone(),
-            Statement::StructConstruct(stmt) => vec![stmt.output],
-            Statement::StructDestructure(stmt) => stmt.outputs.clone(),
-            Statement::EnumConstruct(stmt) => vec![stmt.output],
-            Statement::Snapshot(stmt) => vec![stmt.output_original, stmt.output_snapshot],
-            Statement::Desnap(stmt) => vec![stmt.output],
+            Statement::Const(stmt) => std::slice::from_ref(&stmt.output),
+            Statement::Call(stmt) => stmt.outputs.as_slice(),
+            Statement::StructConstruct(stmt) => std::slice::from_ref(&stmt.output),
+            Statement::StructDestructure(stmt) => stmt.outputs.as_slice(),
+            Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.output),
+            Statement::Snapshot(stmt) => stmt.outputs.as_slice(),
+            Statement::Desnap(stmt) => std::slice::from_ref(&stmt.output),
         }
     }
     pub fn location(&self) -> Option<LocationId> {
         // TODO(Gil): Add location to all statements.
         match &self {
-            Statement::Literal(_) => None,
+            Statement::Const(_) => None,
             Statement::Call(stmt) => Some(stmt.location),
             Statement::StructConstruct(_) => None,
             Statement::StructDestructure(stmt) => Some(stmt.input.location),
@@ -258,11 +270,11 @@ impl Statement {
     }
 }
 
-/// A statement that binds a literal value to a variable.
+/// A statement that binds a const value to a variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StatementLiteral {
-    /// The value of the literal.
-    pub value: BigInt,
+pub struct StatementConst {
+    /// The value of the const.
+    pub value: ConstValue,
     /// The variable to bind the value to.
     pub output: VariableId,
 }
@@ -274,19 +286,13 @@ pub struct StatementCall {
     pub function: FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VarUsage>,
-    /// The coupon input of the function call, if used. See
+    /// Is the last input a coupon for the function call. See
     /// [semantic::ExprFunctionCall::coupon_arg] for more information.
-    pub coupon_input: Option<VarUsage>,
+    pub with_coupon: bool,
     /// New variables to be introduced into the current scope from the function outputs.
     pub outputs: Vec<VariableId>,
     /// Location for the call.
     pub location: LocationId,
-}
-impl StatementCall {
-    /// Returns all the inputs of the function, including the coupon is exists.
-    pub fn all_inputs(&self) -> Vec<VarUsage> {
-        chain!(&self.inputs, &self.coupon_input).cloned().collect()
-    }
 }
 
 /// A statement that construct a variant of an enum with a single argument, and binds it to a
@@ -322,8 +328,18 @@ pub struct StatementStructDestructure {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementSnapshot {
     pub input: VarUsage,
-    pub output_original: VariableId,
-    pub output_snapshot: VariableId,
+    outputs: [VariableId; 2],
+}
+impl StatementSnapshot {
+    pub fn new(input: VarUsage, output_original: VariableId, output_snapshot: VariableId) -> Self {
+        Self { input, outputs: [output_original, output_snapshot] }
+    }
+    pub fn original(&self) -> VariableId {
+        self.outputs[0]
+    }
+    pub fn snapshot(&self) -> VariableId {
+        self.outputs[1]
+    }
 }
 
 /// A statement that desnaps a variable.
@@ -396,14 +412,22 @@ pub enum MatchInfo {
     Value(MatchEnumValue),
 }
 impl MatchInfo {
-    pub fn inputs(&self) -> Vec<VarUsage> {
+    pub fn inputs(&self) -> &[VarUsage] {
         match self {
-            MatchInfo::Enum(s) => vec![s.input],
-            MatchInfo::Extern(s) => s.inputs.clone(),
-            MatchInfo::Value(s) => vec![s.input],
+            MatchInfo::Enum(s) => std::slice::from_ref(&s.input),
+            MatchInfo::Extern(s) => s.inputs.as_slice(),
+            MatchInfo::Value(s) => std::slice::from_ref(&s.input),
         }
     }
-    pub fn arms(&self) -> &Vec<MatchArm> {
+
+    pub fn inputs_mut(&mut self) -> &mut [VarUsage] {
+        match self {
+            MatchInfo::Enum(s) => std::slice::from_mut(&mut s.input),
+            MatchInfo::Extern(s) => s.inputs.as_mut_slice(),
+            MatchInfo::Value(s) => std::slice::from_mut(&mut s.input),
+        }
+    }
+    pub fn arms(&self) -> &[MatchArm] {
         match self {
             MatchInfo::Enum(s) => &s.arms,
             MatchInfo::Extern(s) => &s.arms,

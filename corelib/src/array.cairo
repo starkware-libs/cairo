@@ -13,7 +13,7 @@ extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
 extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
 extern fn array_pop_front_consume<T>(arr: Array<T>) -> Option<(Array<T>, Box<T>)> nopanic;
-extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
+pub(crate) extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 extern fn array_snapshot_pop_back<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 #[panic_with('Index out of bounds', array_at)]
 extern fn array_get<T>(
@@ -132,7 +132,7 @@ fn deserialize_array_helper<T, +Serde<T>, +Drop<T>>(
 
 // Span.
 pub struct Span<T> {
-    snapshot: @Array<T>
+    pub(crate) snapshot: @Array<T>
 }
 
 impl SpanCopy<T> of Copy<Span<T>>;

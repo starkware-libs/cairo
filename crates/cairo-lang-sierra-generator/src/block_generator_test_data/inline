@@ -34,12 +34,12 @@ fn bar(a: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 2u
-  (v6: core::felt252) <- core::felt252_sub(v0, v1)
+  (v3: core::felt252) <- 2
+  (v13: core::felt252) <- core::felt252_sub(v0, v3)
 End:
-  Match(match core::felt252_is_zero(v6) {
+  Match(match core::felt252_is_zero(v13) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk4,
+    IsZeroResult::NonZero(v14) => blk4,
   })
 
 blk1:
@@ -47,20 +47,20 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v7) => blk3,
+    IsZeroResult::NonZero(v19) => blk3,
   })
 
 blk2:
 Statements:
-  (v8: core::felt252) <- 1u
+  (v20: core::felt252) <- 1
 End:
-  Return(v8)
+  Return(v20)
 
 blk3:
 Statements:
-  (v9: core::felt252) <- 0u
+  (v21: core::felt252) <- 0
 End:
-  Return(v9)
+  Return(v21)
 
 blk4:
 Statements:
@@ -68,20 +68,20 @@ End:
   Return(v0)
 
 //! > sierra_code
-felt252_const<2>() -> ([0])
+const_as_immediate<Const<felt252, 2>>() -> ([0])
 dup<felt252>([1]) -> ([1], [2])
 felt252_sub([2], [0]) -> ([3])
 felt252_is_zero([3]) { fallthrough() label_test::foo::0([4]) }
 branch_align() -> ()
 felt252_is_zero([1]) { fallthrough() label_test::foo::2([5]) }
 branch_align() -> ()
-felt252_const<1>() -> ([6])
+const_as_immediate<Const<felt252, 1>>() -> ([6])
 PushValues([6]: felt252) -> ([6])
 return([6])
 label_test::foo::2:
 branch_align() -> ()
 drop<NonZero<felt252>>([5]) -> ()
-felt252_const<0>() -> ([7])
+const_as_immediate<Const<felt252, 0>>() -> ([7])
 PushValues([7]: felt252) -> ([7])
 return([7])
 label_test::foo::3:

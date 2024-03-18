@@ -3,67 +3,24 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
-use num_traits::Zero;
 use semantic::types::peel_snapshots;
-use semantic::{Condition, ExprFunctionCallArg, MatchArmSelector, TypeLongId};
+use semantic::{Condition, MatchArmSelector, TypeLongId};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
 use super::lowered_expr_to_block_scope_end;
 use crate::diagnostic::LoweringDiagnosticKind::{self};
 use crate::diagnostic::{MatchDiagnostic, MatchError, MatchKind};
-use crate::ids::{LocationId, SemanticFunctionIdEx};
+use crate::ids::LocationId;
 use crate::lower::context::VarRequest;
 use crate::lower::lower_match::{
     lower_concrete_enum_match, lower_expr_match_tuple, lower_optimized_extern_match,
     MatchArmWrapper, TupleInfo,
 };
 use crate::lower::{
-    create_subscope_with_bound_refs, generators, lower_block, lower_expr, lower_expr_to_var_usage,
+    create_subscope_with_bound_refs, lower_block, lower_expr, lower_expr_to_var_usage,
 };
-use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo};
-
-#[allow(dead_code)]
-enum IfCondition {
-    BoolExpr(semantic::ExprId),
-    Eq(semantic::ExprId, semantic::ExprId),
-}
-
-/// Analyzes the condition of an if statement into an [IfCondition] tree, to allow different
-/// optimizations.
-// TODO(lior): Make it an actual tree (handling && and ||).
-fn analyze_condition(ctx: &LoweringContext<'_, '_>, expr_id: semantic::ExprId) -> IfCondition {
-    let expr = &ctx.function_body.exprs[expr_id];
-    let semantic::Expr::FunctionCall(function_call) = expr else {
-        return IfCondition::BoolExpr(expr_id);
-    };
-    if function_call.function != corelib::felt252_eq(ctx.db.upcast()) {
-        return IfCondition::BoolExpr(expr_id);
-    };
-    let [expr_a, expr_b] = &function_call.args[..] else {
-        return IfCondition::BoolExpr(expr_id);
-    };
-    let ExprFunctionCallArg::Value(expr_a) = expr_a else {
-        return IfCondition::BoolExpr(expr_id);
-    };
-    let ExprFunctionCallArg::Value(expr_b) = expr_b else {
-        return IfCondition::BoolExpr(expr_id);
-    };
-    let expr_a = &ctx.function_body.exprs[*expr_a];
-    let expr_b = &ctx.function_body.exprs[*expr_b];
-    let semantic::Expr::Snapshot(expr_a) = expr_a else {
-        return IfCondition::BoolExpr(expr_id);
-    };
-    let semantic::Expr::Snapshot(expr_b) = expr_b else {
-        return IfCondition::BoolExpr(expr_id);
-    };
-    IfCondition::Eq(expr_a.inner, expr_b.inner)
-}
-
-fn is_zero(ctx: &LoweringContext<'_, '_>, expr_id: semantic::ExprId) -> bool {
-    let expr = &ctx.function_body.exprs[expr_id];
-    matches!(expr, semantic::Expr::Literal(literal) if literal.value.is_zero())
-}
+use crate::{MatchArm, MatchEnumInfo, MatchInfo};
 
 /// Lowers an expression of type [semantic::ExprIf].
 pub fn lower_expr_if(
@@ -72,19 +29,14 @@ pub fn lower_expr_if(
     expr: &semantic::ExprIf,
 ) -> LoweringResult<LoweredExpr> {
     match &expr.condition {
-        Condition::BoolExpr(expr_condition) => match analyze_condition(ctx, *expr_condition) {
-            IfCondition::BoolExpr(_) => lower_expr_if_bool(ctx, builder, expr, *expr_condition),
-            IfCondition::Eq(expr_a, expr_b) => {
-                lower_expr_if_eq(ctx, builder, expr, *expr_condition, expr_a, expr_b)
-            }
-        },
+        Condition::BoolExpr(condition) => lower_expr_if_bool(ctx, builder, expr, *condition),
         Condition::Let(matched_expr, patterns) => {
             lower_expr_if_let(ctx, builder, expr, *matched_expr, patterns)
         }
     }
 }
 
-/// Lowers an expression of type [semantic::ExprIf], for the case of [IfCondition::BoolExpr].
+/// Lowers an expression of type [semantic::ExprIf].
 pub fn lower_expr_if_bool(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
@@ -132,85 +84,6 @@ pub fn lower_expr_if_bool(
                 arm_selector: MatchArmSelector::VariantId(corelib::true_variant(semantic_db)),
                 block_id: block_main_id,
                 var_ids: vec![main_block_var_id],
-            },
-        ],
-        location: if_location,
-    });
-    builder.merge_and_end_with_match(ctx, match_info, vec![block_main, block_else], if_location)
-}
-
-/// Lowers an expression of type [semantic::ExprIf], for the case of [IfCondition::Eq].
-pub fn lower_expr_if_eq(
-    ctx: &mut LoweringContext<'_, '_>,
-    builder: &mut BlockBuilder,
-    expr: &semantic::ExprIf,
-    condition: semantic::ExprId,
-    expr_a: semantic::ExprId,
-    expr_b: semantic::ExprId,
-) -> LoweringResult<LoweredExpr> {
-    log::trace!(
-        "Started lowering of an if-eq-zero expression: {:?}",
-        expr.debug(&ctx.expr_formatter)
-    );
-    let if_location = ctx.get_location(expr.stable_ptr.untyped());
-    let match_input = if is_zero(ctx, expr_b) {
-        lower_expr_to_var_usage(ctx, builder, expr_a)?
-    } else if is_zero(ctx, expr_a) {
-        lower_expr_to_var_usage(ctx, builder, expr_b)?
-    } else {
-        let lowered_a = lower_expr_to_var_usage(ctx, builder, expr_a)?;
-        let lowered_b = lower_expr_to_var_usage(ctx, builder, expr_b)?;
-        let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
-        let call_result = generators::Call {
-            function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),
-            inputs: vec![lowered_a, lowered_b],
-            coupon_input: None,
-            extra_ret_tys: vec![],
-            ret_tys: vec![ret_ty],
-            location: ctx.get_location(ctx.function_body.exprs[condition].stable_ptr().untyped()),
-        }
-        .add(ctx, &mut builder.statements);
-        call_result.returns.into_iter().next().unwrap()
-    };
-
-    let semantic_db = ctx.db.upcast();
-
-    // Main block.
-    let subscope_main = create_subscope_with_bound_refs(ctx, builder);
-    let block_main_id = subscope_main.block_id;
-    let body_expr = ctx.function_body.exprs[expr.if_block].clone();
-    let block_main =
-        lower_block(ctx, subscope_main, extract_matches!(&body_expr, semantic::Expr::Block))
-            .map_err(LoweringFlowError::Failed)?;
-
-    // Else block.
-    let non_zero_type =
-        corelib::core_nonzero_ty(semantic_db, corelib::core_felt252_ty(semantic_db));
-    let subscope_else = create_subscope_with_bound_refs(ctx, builder);
-    let block_else_id = subscope_else.block_id;
-
-    let else_block_input_var_id =
-        ctx.new_var(VarRequest { ty: non_zero_type, location: if_location });
-    let block_else = lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location)
-        .map_err(LoweringFlowError::Failed)?;
-
-    let match_info = MatchInfo::Extern(MatchExternInfo {
-        function: corelib::core_felt252_is_zero(semantic_db).lowered(ctx.db),
-        inputs: vec![match_input],
-        arms: vec![
-            MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_zero_variant(
-                    semantic_db,
-                )),
-                block_id: block_main_id,
-                var_ids: vec![],
-            },
-            MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_nonzero_variant(
-                    semantic_db,
-                )),
-                block_id: block_else_id,
-                var_ids: vec![else_block_input_var_id],
             },
         ],
         location: if_location,

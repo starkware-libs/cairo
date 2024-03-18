@@ -7,18 +7,47 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId};
 
+/// The default threshold for inlining small functions. Decided according to sample contracts
+/// profiling.
+// TODO(Gil): Expose this as a configuration in the project toml.
+const DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD: usize = 24;
+
 /// A configuration struct that controls the behavior of the optimization passes.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct OptimizationConfig {
     /// A list of functions that can be moved during the reorder_statements optimization.
     pub moveable_functions: Vec<String>,
+    /// The size of functions (in lowering statements) below which they are marked as
+    /// `should_inline`.
+    pub inline_small_functions_threshold: usize,
 }
 
 impl OptimizationConfig {
-    /// A configuration where the list of movable functions is empty.
-    /// Used to make tests easier to write.
-    pub fn no_movable_functions() -> Self {
-        Self { moveable_functions: vec![] }
+    /// Sets the list of moveable functions.
+    pub fn with_moveable_functions(mut self, moveable_functions: Vec<String>) -> Self {
+        self.moveable_functions = moveable_functions;
+        self
+    }
+    /// Sets the list of moveable functions to a minimal set, useful for testing.
+    pub fn with_minimal_movable_functions(self) -> Self {
+        self.with_moveable_functions(vec!["felt252_sub".into()])
+    }
+    /// Sets the threshold for inlining small functions.
+    pub fn with_inline_small_functions_threshold(
+        mut self,
+        inline_small_functions_threshold: usize,
+    ) -> Self {
+        self.inline_small_functions_threshold = inline_small_functions_threshold;
+        self
+    }
+}
+
+impl Default for OptimizationConfig {
+    fn default() -> Self {
+        Self {
+            moveable_functions: vec![],
+            inline_small_functions_threshold: DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD,
+        }
     }
 }
 

@@ -68,7 +68,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0xe8fd97ed2950722a36523186b7f01aeba6db1a2faedf427e91639a6252388a;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
