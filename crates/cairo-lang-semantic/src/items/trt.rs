@@ -254,8 +254,8 @@ pub fn trait_generic_params_data(
         &trait_ast.generic_params(syntax_db),
     )?;
 
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, trait_ast.stable_ptr().untyped())
+    resolver.inference().finalize().map(|inference_errs| {
+        inference_errs.report(&mut diagnostics, trait_ast.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -301,9 +301,8 @@ pub fn priv_trait_declaration_data(
     let attributes = trait_ast.attributes(syntax_db).structurize(syntax_db);
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()));
+    if let Some(inference_errs) = resolver.inference().finalize() {
+        inference_errs.report(&mut diagnostics, trait_ast.stable_ptr().untyped());
     }
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
 

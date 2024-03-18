@@ -842,8 +842,8 @@ pub fn compute_root_expr(
     }
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
-        inference_err.report(ctx.diagnostics, stable_ptr.unwrap_or(syntax.stable_ptr().untyped()));
+    if let Some(inference_errs) = ctx.resolver.inference().finalize() {
+        inference_errs.report(ctx.diagnostics, syntax.stable_ptr().untyped());
         return Ok(res);
     }
 

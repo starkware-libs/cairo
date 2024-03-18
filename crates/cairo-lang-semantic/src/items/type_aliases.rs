@@ -51,8 +51,8 @@ pub fn type_alias_generic_params_data_helper(
         &type_alias_ast.generic_params(db.upcast()),
     )?;
 
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, type_alias_ast.stable_ptr().untyped())
+    resolver.inference().finalize().map(|inference_errs| {
+        inference_errs.report(&mut diagnostics, type_alias_ast.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -78,9 +78,8 @@ pub fn type_alias_semantic_data_helper(
     let ty = resolve_type(db, diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(diagnostics, stable_ptr.unwrap_or(type_alias_ast.stable_ptr().untyped()));
+    if let Some(inference_errs) = resolver.inference().finalize() {
+        inference_errs.report(diagnostics, type_alias_ast.stable_ptr().untyped());
     }
     let generic_params = resolver.inference().rewrite(generic_params_data.generic_params).no_err();
     let ty = resolver.inference().rewrite(ty).no_err();
