@@ -103,7 +103,8 @@ pub fn compile_prepared_db_program(
 
 /// Runs Cairo compiler.
 ///
-/// Similar to `compile_prepared_db_program`, but this function returns all the raw debug information.
+/// Similar to `compile_prepared_db_program`, but this function returns all the raw debug
+/// information.
 ///
 /// # Arguments
 /// * `db` - Preloaded compilation database.
