@@ -387,24 +387,23 @@ pub fn get_concrete_libfunc_id(
 
     let mut generic_args = vec![];
     for generic_arg in &concrete_function.generic_args {
-        generic_args.push(match generic_arg {
+        match generic_arg {
             semantic::GenericArgumentId::Type(ty) => {
                 // TODO(lior): How should the following unwrap() be handled?
-                GenericArg::Type(db.get_concrete_type_id(*ty).unwrap())
+                generic_args.push(GenericArg::Type(db.get_concrete_type_id(*ty).unwrap()))
             }
-            semantic::GenericArgumentId::Constant(value_id) => GenericArg::Value(extract_matches!(
-                db.lookup_intern_const_value(*value_id),
-                ConstValue::Int,
-                "Only integer constants are supported."
-            )),
-
-            semantic::GenericArgumentId::Impl(_) => {
-                panic!("Extern function with impl generics are not supported.")
+            semantic::GenericArgumentId::Constant(value_id) => {
+                generic_args.push(GenericArg::Value(extract_matches!(
+                    db.lookup_intern_const_value(*value_id),
+                    ConstValue::Int,
+                    "Only integer constants are supported."
+                )))
             }
+            semantic::GenericArgumentId::Impl(_) => {}
             semantic::GenericArgumentId::NegImpl => {
                 panic!("Extern function with neg impl generics are not supported.")
             }
-        });
+        };
     }
 
     (None, generic_libfunc_id(db, extern_id, generic_args))

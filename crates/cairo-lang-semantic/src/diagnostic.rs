@@ -565,7 +565,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::DivisionByZero => "Division by zero.".into(),
             SemanticDiagnosticKind::ExternItemWithImplGenericsNotSupported => {
-                "Extern items with impl generics are not supported".into()
+                "Extern types with impl generics are not supported".into()
             }
             SemanticDiagnosticKind::MissingSemicolon => "Missing semicolon".into(),
             SemanticDiagnosticKind::TraitMismatch { expected_trt, actual_trt } => {

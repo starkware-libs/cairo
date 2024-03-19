@@ -152,11 +152,6 @@ impl AnotherImpl of AnotherTrait::<felt252> {}
 foo
 
 //! > expected_diagnostics
-error: Extern items with impl generics are not supported
- --> lib.cairo:4:15
-extern fn hoo<impl C: MyTrait::<felt252>>() nopanic;
-              ^************************^
-
 error: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::AnotherTrait::<core::felt252>`.
  --> lib.cairo:10:11
     bar::<AnotherImpl>();
