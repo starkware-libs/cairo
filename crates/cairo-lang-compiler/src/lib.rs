@@ -60,7 +60,7 @@ pub fn compile_cairo_project_at_path(
 ) -> Result<Program> {
     let mut db = RootDatabase::builder().detect_corelib().build()?;
     let main_crate_ids = setup_project(&mut db, path)?;
-    compile_prepared_db(&mut db, main_crate_ids, compiler_config)
+    compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
 }
 
 /// Compiles a Cairo project.
@@ -79,7 +79,7 @@ pub fn compile(
     let mut db = RootDatabase::builder().with_project_config(project_config.clone()).build()?;
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
 
-    compile_prepared_db(&mut db, main_crate_ids, compiler_config)
+    compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
 }
 
 /// Runs Cairo compiler.
@@ -93,22 +93,45 @@ pub fn compile(
 /// # Returns
 /// * `Ok(Program)` - The compiled program.
 /// * `Err(anyhow::Error)` - Compilation failed.
+pub fn compile_prepared_db_program(
+    db: &mut RootDatabase,
+    main_crate_ids: Vec<CrateId>,
+    compiler_config: CompilerConfig<'_>,
+) -> Result<Program> {
+    Ok(compile_prepared_db(db, main_crate_ids, compiler_config)?.program)
+}
+
+/// Runs Cairo compiler.
+///
+/// Similar to `compile_prepared_db_program`, but this function returns all the raw debug
+/// information.
+///
+/// # Arguments
+/// * `db` - Preloaded compilation database.
+/// * `main_crate_ids` - [`CrateId`]s to compile. Do not include dependencies here, only pass
+///   top-level crates in order to eliminate unused code. Use
+///   `db.intern_crate(CrateLongId::Real(name))` in order to obtain [`CrateId`] from its name.
+/// * `compiler_config` - The compiler configuration.
+/// # Returns
+/// * `Ok(SierraProgramWithDebug)` - The compiled program with debug info.
+/// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db(
     db: &mut RootDatabase,
     main_crate_ids: Vec<CrateId>,
     mut compiler_config: CompilerConfig<'_>,
-) -> Result<Program> {
+) -> Result<SierraProgramWithDebug> {
     compiler_config.diagnostics_reporter.ensure(db)?;
 
-    let SierraProgramWithDebug { program: mut sierra_program, .. } = Arc::unwrap_or_clone(
+    let mut sierra_program_with_debug = Arc::unwrap_or_clone(
         db.get_sierra_program(main_crate_ids)
             .to_option()
             .context("Compilation failed without any diagnostics")?,
     );
 
     if compiler_config.replace_ids {
-        sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
+        sierra_program_with_debug.program =
+            replace_sierra_ids_in_program(db, &sierra_program_with_debug.program);
     }
 
-    Ok(sierra_program)
+    Ok(sierra_program_with_debug)
 }
