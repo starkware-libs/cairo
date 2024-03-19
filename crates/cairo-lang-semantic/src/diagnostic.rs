@@ -564,8 +564,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "This expression is not supported as constant.".into()
             }
             SemanticDiagnosticKind::DivisionByZero => "Division by zero.".into(),
-            SemanticDiagnosticKind::ExternItemWithImplGenericsNotSupported => {
-                "Extern items with impl generics are not supported".into()
+            SemanticDiagnosticKind::ExternTypeWithImplGenericsNotSupported => {
+                "Extern types with impl generics are not supported.".into()
+            }
+            SemanticDiagnosticKind::ImplGenericsAfterNonImplGenericsInExternFunction => {
+                "Non-impl generics following an impl generic in an extern function are not \
+                 supported."
+                    .into()
             }
             SemanticDiagnosticKind::MissingSemicolon => "Missing semicolon".into(),
             SemanticDiagnosticKind::TraitMismatch { expected_trt, actual_trt } => {
@@ -1035,7 +1040,8 @@ pub enum SemanticDiagnosticKind {
     },
     UnsupportedConstant,
     DivisionByZero,
-    ExternItemWithImplGenericsNotSupported,
+    ExternTypeWithImplGenericsNotSupported,
+    ImplGenericsAfterNonImplGenericsInExternFunction,
     MissingSemicolon,
     TraitMismatch {
         expected_trt: semantic::ConcreteTraitId,
