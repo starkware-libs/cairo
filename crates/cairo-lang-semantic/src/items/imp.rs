@@ -549,12 +549,9 @@ pub fn impl_type_by_trait_type(
 
     let defs_db = db.upcast();
     let name = trait_type_id.name(defs_db);
-    for impl_type_id in db.priv_impl_definition_data(impl_def_id)?.item_type_asts.keys() {
-        if db.lookup_intern_impl_type_def(*impl_type_id).name(defs_db) == name {
-            return Ok(Some(*impl_type_id));
-        }
-    }
-    Ok(None)
+    db.impl_item_by_name(impl_def_id, name).map(|maybe_item_id| {
+        maybe_item_id.and_then(|item_id| try_extract_matches!(item_id, ImplItemId::Type))
+    })
 }
 
 // --- Computation ---
