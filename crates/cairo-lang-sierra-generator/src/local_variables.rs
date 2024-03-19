@@ -155,7 +155,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
         let Ok(branch_info) = self.analyze_statement(stmt) else {
             return;
         };
-        info.demand.variables_introduced(self, &stmt.outputs(), ());
+        info.demand.variables_introduced(self, stmt.outputs(), ());
         self.revoke_if_needed(info, branch_info);
         info.demand
             .variables_used(self, stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())));
@@ -176,11 +176,11 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
             .apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
     }
 
-    fn merge_match(
-        &mut self,
+    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
+        &'b mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        infos: &[Self::Info],
+        infos: Infos,
     ) -> Maybe<AnalysisInfo> {
         let mut arm_demands = vec![];
         let mut known_ap_change = true;
@@ -196,7 +196,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
             let branch_info = self.analyze_branch(
                 &libfunc_signature.param_signatures,
                 &branch_signature,
-                &inputs,
+                inputs,
                 &arm.var_ids,
             );
             self.revoke_if_needed(&mut info, branch_info);
@@ -355,27 +355,30 @@ impl<'a> FindLocalsContext<'a> {
         let inputs = statement.inputs();
         let outputs = statement.outputs();
         let branch_info = match statement {
-            lowering::Statement::Literal(statement_literal) => {
+            lowering::Statement::Const(statement_literal) => {
                 self.constants.insert(statement_literal.output);
                 BranchInfo { known_ap_change: true }
             }
             lowering::Statement::Call(statement_call) => {
-                let (_, concrete_function_id) =
-                    get_concrete_libfunc_id(self.db, statement_call.function);
+                let (_, concrete_function_id) = get_concrete_libfunc_id(
+                    self.db,
+                    statement_call.function,
+                    statement_call.with_coupon,
+                );
 
-                self.analyze_call(concrete_function_id, &inputs, &outputs)
+                self.analyze_call(concrete_function_id, inputs, outputs)
             }
             lowering::Statement::StructConstruct(statement_struct_construct) => {
                 let ty = self.db.get_concrete_type_id(
                     self.lowered_function.variables[statement_struct_construct.output].ty,
                 )?;
-                self.analyze_call(struct_construct_libfunc_id(self.db, ty), &inputs, &outputs)
+                self.analyze_call(struct_construct_libfunc_id(self.db, ty), inputs, outputs)
             }
             lowering::Statement::StructDestructure(statement_struct_destructure) => {
                 let ty = self.db.get_concrete_type_id(
                     self.lowered_function.variables[statement_struct_destructure.input.var_id].ty,
                 )?;
-                self.analyze_call(struct_deconstruct_libfunc_id(self.db, ty)?, &inputs, &outputs)
+                self.analyze_call(struct_deconstruct_libfunc_id(self.db, ty)?, inputs, outputs)
             }
             lowering::Statement::EnumConstruct(statement_enum_construct) => {
                 let ty = self.db.get_concrete_type_id(
@@ -383,19 +386,17 @@ impl<'a> FindLocalsContext<'a> {
                 )?;
                 self.analyze_call(
                     enum_init_libfunc_id(self.db, ty, statement_enum_construct.variant.idx),
-                    &inputs,
-                    &outputs,
+                    inputs,
+                    outputs,
                 )
             }
             lowering::Statement::Snapshot(statement_snapshot) => {
-                self.aliases
-                    .insert(statement_snapshot.output_original, statement_snapshot.input.var_id);
-                self.aliases
-                    .insert(statement_snapshot.output_snapshot, statement_snapshot.input.var_id);
+                self.aliases.insert(statement_snapshot.original(), statement_snapshot.input.var_id);
+                self.aliases.insert(statement_snapshot.snapshot(), statement_snapshot.input.var_id);
                 self.const_aliases
-                    .insert(statement_snapshot.output_original, statement_snapshot.input.var_id);
+                    .insert(statement_snapshot.original(), statement_snapshot.input.var_id);
                 self.const_aliases
-                    .insert(statement_snapshot.output_snapshot, statement_snapshot.input.var_id);
+                    .insert(statement_snapshot.snapshot(), statement_snapshot.input.var_id);
                 BranchInfo { known_ap_change: true }
             }
             lowering::Statement::Desnap(statement_desnap) => {
@@ -421,7 +422,7 @@ impl<'a> FindLocalsContext<'a> {
     fn get_match_libfunc_signature(&self, match_info: &MatchInfo) -> Maybe<LibfuncSignature> {
         Ok(match match_info {
             MatchInfo::Extern(s) => {
-                let (_, concrete_function_id) = get_concrete_libfunc_id(self.db, s.function);
+                let (_, concrete_function_id) = get_concrete_libfunc_id(self.db, s.function, false);
                 get_libfunc_signature(self.db, concrete_function_id)
             }
             MatchInfo::Enum(s) => {

@@ -121,7 +121,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
 
     fn dup(&mut self, position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
         let var = &self.lowered.variables[var_id];
-        if let Err(inference_error) = var.duplicatable.clone() {
+        if let Err(inference_error) = var.copyable.clone() {
             self.success = Err(self.diagnostics.report_by_location(
                 next_usage_position
                     .get(self.db)
@@ -142,7 +142,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _statement_location: StatementLocation,
         stmt: &Statement,
     ) {
-        info.variables_introduced(self, &stmt.outputs(), None);
+        info.variables_introduced(self, stmt.outputs(), None);
         match stmt {
             Statement::Call(stmt) => {
                 if let Ok(signature) = stmt.function.signature(self.db) {
@@ -164,7 +164,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
             }
             Statement::Desnap(stmt) => {
                 let var = &self.lowered.variables[stmt.output];
-                if let Err(inference_error) = var.duplicatable.clone() {
+                if let Err(inference_error) = var.copyable.clone() {
                     self.success = Err(self.diagnostics.report_by_location(
                         var.location.get(self.db).with_note(DiagnosticNote::text_only(
                             inference_error.format(self.db.upcast()),
@@ -196,11 +196,11 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         );
     }
 
-    fn merge_match(
+    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
         &mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        infos: &[Self::Info],
+        infos: Infos,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .map(|(arm, demand)| {

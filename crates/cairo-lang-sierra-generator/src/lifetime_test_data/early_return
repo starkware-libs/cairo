@@ -28,7 +28,7 @@ End:
 
 blk1:
 Statements:
-  (v8: core::felt252) <- 0u
+  (v8: core::felt252) <- 0
 End:
   Return(v8)
 
@@ -112,13 +112,13 @@ End:
 
 blk1:
 Statements:
-  (v9: core::felt252) <- 1u
+  (v9: core::felt252) <- 1
 End:
   Return(v9)
 
 blk2:
 Statements:
-  (v11: core::felt252) <- 2u
+  (v11: core::felt252) <- 2
 End:
   Return(v11)
 

@@ -125,16 +125,17 @@ async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
     ctx.log.error("failed to start CairoLS");
     throw new Error("failed to start CairoLS");
   }
-  ctx.log.debug(
-    `using CairoLS: ${serverExecutable.command} ${serverExecutable.args?.join(" ") ?? ""}`.trimEnd(),
-  );
+
+  insertLanguageServerExtraEnv(serverExecutable, ctx);
+
+  ctx.log.debug(`using CairoLS: ${quoteServerExecutable(serverExecutable)}`);
 
   const run = serverExecutable;
 
   const debug = structuredClone(serverExecutable);
   debug.options ??= {};
   debug.options.env ??= {};
-  debug.options.env["CAIRO_LS_LOG"] = "cairo_lang_language_server=debug";
+  debug.options.env["CAIRO_LS_LOG"] ??= "cairo_lang_language_server=debug";
 
   return { run, debug };
 }
@@ -162,4 +163,34 @@ async function determineLanguageServerExecutableProvider(
   }
 
   return await standalone();
+}
+
+function insertLanguageServerExtraEnv(
+  serverExecutable: lc.Executable,
+  ctx: Context,
+) {
+  const extraEnv = ctx.config.get("languageServerExtraEnv");
+  serverExecutable.options ??= {};
+  serverExecutable.options.env ??= {};
+  Object.assign(serverExecutable.options.env, extraEnv);
+}
+
+function quoteServerExecutable(serverExecutable: lc.Executable): string {
+  const parts: string[] = [];
+
+  if (serverExecutable.options?.env) {
+    for (const [key, value] of Object.entries(serverExecutable.options.env)) {
+      parts.push(`${key}=${value}`);
+    }
+  }
+
+  parts.push(serverExecutable.command);
+
+  if (serverExecutable.args) {
+    for (const arg of serverExecutable.args) {
+      parts.push(arg);
+    }
+  }
+
+  return parts.filter((s) => s.trim()).join(" ");
 }

@@ -54,7 +54,7 @@ error: Unexpected argument type. Expected: "core::integer::u128", found: "core::
     a - b
         ^
 
-error: Unexpected return type. Expected: "()", found: "?17".
+error: Unexpected return type. Expected: "()", found: "core::integer::u128".
  --> lib.cairo:1:48
 fn foo(a: u128, b: bool) implicits(RangeCheck) {
                                                ^

@@ -8,6 +8,7 @@ use num_bigint::BigInt;
 
 use super::fmt::ExprFormatter;
 use super::pattern::Pattern;
+use crate::items::constant::ConstValueId;
 use crate::{semantic, ConcreteStructId, FunctionId, TypeId};
 
 pub type PatternId = Id<Pattern>;
@@ -134,6 +135,8 @@ pub enum Expr {
     EnumVariantCtor(ExprEnumVariantCtor),
     PropagateError(ExprPropagateError),
     Constant(ExprConstant),
+    ParamConstant(ExprParamConstant),
+    FixedSizeArray(ExprFixedSizeArray),
     Missing(ExprMissing),
 }
 impl Expr {
@@ -158,7 +161,9 @@ impl Expr {
             Expr::EnumVariantCtor(expr) => expr.ty,
             Expr::PropagateError(expr) => expr.ok_variant.ty,
             Expr::Constant(expr) => expr.ty,
+            Expr::ParamConstant(expr) => expr.ty,
             Expr::Missing(expr) => expr.ty,
+            Expr::FixedSizeArray(expr) => expr.ty,
         }
     }
     pub fn stable_ptr(&self) -> ast::ExprPtr {
@@ -182,7 +187,9 @@ impl Expr {
             Expr::EnumVariantCtor(expr) => expr.stable_ptr,
             Expr::PropagateError(expr) => expr.stable_ptr,
             Expr::Constant(expr) => expr.stable_ptr,
+            Expr::ParamConstant(expr) => expr.stable_ptr,
             Expr::Missing(expr) => expr.stable_ptr,
+            Expr::FixedSizeArray(expr) => expr.stable_ptr,
         }
     }
 
@@ -203,6 +210,25 @@ pub struct ExprTuple {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprFixedSizeArray {
+    pub items: FixedSizeArrayItems,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+/// Either a vector of items, if all was written in the code i.e. ([10, 11, 12] or [10, 10, 10]), or
+/// a value and a size, if the array was written as ([10; 3]).
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub enum FixedSizeArrayItems {
+    Items(Vec<ExprId>),
+    ValueAndSize(ExprId, ConstValueId),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
@@ -318,6 +344,10 @@ pub enum ExprFunctionCallArg {
 pub struct ExprFunctionCall {
     pub function: FunctionId,
     pub args: Vec<ExprFunctionCallArg>,
+    /// The `__coupon__` argument of the function call, if used. Attaching a coupon to a function
+    /// means that the coupon is used instead of reducing the cost of the called function from the
+    /// gas wallet. In particular, the cost of such a call is constant.
+    pub coupon_arg: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
@@ -487,6 +517,16 @@ pub struct ExprPropagateError {
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprConstant {
     pub constant_id: ConstantId,
+    pub ty: semantic::TypeId,
+    #[dont_rewrite]
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprParamConstant {
+    pub const_value_id: ConstValueId,
     pub ty: semantic::TypeId,
     #[dont_rewrite]
     #[hide_field_debug_with_db]

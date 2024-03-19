@@ -5,7 +5,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplFunctionId,
-    LanguageElementId, ModuleItemId, NamedLanguageElementId, ParamLongId,
+    LanguageElementId, ModuleFileId, ModuleItemId, NamedLanguageElementId, ParamLongId,
     TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
@@ -20,6 +20,7 @@ use smol_str::SmolStr;
 use syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
 
 use super::attribute::SemanticQueryAttrs;
+use super::constant::ConstValue;
 use super::imp::ImplId;
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -39,10 +40,13 @@ use crate::{
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ImplGenericFunctionId {
     // TODO(spapini): Consider making these private and enforcing invariants in the ctor.
+    /// The impl the function is in.
     pub impl_id: ImplId,
+    /// The trait function this impl function implements.
     pub function: TraitFunctionId,
 }
 impl ImplGenericFunctionId {
+    /// Gets the impl function language element, if self.impl_id is of a concrete impl.
     pub fn impl_function(&self, db: &dyn SemanticGroup) -> Maybe<Option<ImplFunctionId>> {
         match self.impl_id {
             ImplId::Concrete(concrete_impl_id) => {
@@ -78,6 +82,15 @@ impl ImplGenericFunctionId {
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
         format!("{}::{}", self.impl_id.name(db.upcast()), self.function.name(db.upcast())).into()
+    }
+}
+impl DebugWithDb<dyn SemanticGroup> for ImplGenericFunctionId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
     }
 }
 
@@ -144,6 +157,25 @@ impl GenericFunctionId {
             GenericFunctionId::Impl(impl_function) => impl_function.format(db.upcast()),
         }
     }
+    /// Returns the ModuleFileId of the function's definition if possible.
+    pub fn module_file_id(&self, db: &dyn SemanticGroup) -> Option<ModuleFileId> {
+        match self {
+            GenericFunctionId::Free(free_function) => {
+                Some(free_function.module_file_id(db.upcast()))
+            }
+            GenericFunctionId::Extern(extern_function) => {
+                Some(extern_function.module_file_id(db.upcast()))
+            }
+            GenericFunctionId::Impl(impl_generic_function_id) => {
+                // Return the module file of the impl containing the function.
+                if let ImplId::Concrete(concrete_impl_id) = impl_generic_function_id.impl_id {
+                    Some(concrete_impl_id.impl_def_id(db).module_file_id(db.upcast()))
+                } else {
+                    None
+                }
+            }
+        }
+    }
     /// Returns whether the function has the `#[must_use]` attribute.
     pub fn is_must_use(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
         match self {
@@ -158,6 +190,16 @@ impl GenericFunctionId {
             GenericFunctionId::Free(id) => id.find_attr(db, UNSTABLE_ATTR),
             GenericFunctionId::Impl(id) => id.function.find_attr(db, UNSTABLE_ATTR),
             GenericFunctionId::Extern(_) => Ok(None),
+        }
+    }
+
+    /// Returns true if the function does not depend on any generics.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        match self {
+            GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => true,
+            GenericFunctionId::Impl(impl_generic_function) => {
+                impl_generic_function.impl_id.is_fully_concrete(db)
+            }
         }
     }
 }
@@ -220,6 +262,16 @@ impl FunctionId {
 
     pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
         self.get_concrete(db).full_name(db)
+    }
+
+    /// Returns true if the function does not depend on any generics.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        let func = self.get_concrete(db);
+        func.generic_function.is_fully_concrete(db)
+            && func
+                .generic_args
+                .iter()
+                .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
     }
 }
 
@@ -395,7 +447,9 @@ fn generic_params_to_args(
             GenericParam::Type(param) => Ok(GenericArgumentId::Type(
                 db.intern_type(crate::TypeLongId::GenericParameter(param.id)),
             )),
-            GenericParam::Const(_) => todo!("Support const generic arguments"),
+            GenericParam::Const(param) => Ok(GenericArgumentId::Constant(
+                db.intern_const_value(ConstValue::Generic(param.id)),
+            )),
             GenericParam::Impl(param) => {
                 Ok(GenericArgumentId::Impl(ImplId::GenericParameter(param.id)))
             }

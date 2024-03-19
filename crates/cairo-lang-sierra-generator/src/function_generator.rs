@@ -17,12 +17,12 @@ use crate::db::SierraGenGroup;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::{find_variable_lifetime, SierraGenVar};
 use crate::local_variables::{analyze_ap_changes, AnalyzeApChangesResult};
-use crate::pre_sierra::{self, StatementWithLocation};
+use crate::pre_sierra;
 use crate::store_variables::{add_store_statements, LibfuncInfo, LocalVariables};
 use crate::utils::{
     alloc_local_libfunc_id, disable_ap_tracking_libfunc_id, finalize_locals_libfunc_id,
     get_concrete_libfunc_id, get_libfunc_signature, revoke_ap_tracking_libfunc_id,
-    simple_statement,
+    simple_basic_statement,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -70,10 +70,12 @@ fn get_function_code(
         ap_tracking_configuration,
     );
 
-    // If the function starts with revoke_ap_tracking then we can avoid
-    // the first disable_ap_tracking.
+    // If the function starts with `revoke_ap_tracking` then we can avoid
+    // the first `disable_ap_tracking`.
     if let Some(lowering::Statement::Call(call_stmt)) = root_block.statements.first() {
-        if get_concrete_libfunc_id(db, call_stmt.function).1 == revoke_ap_tracking_libfunc_id(db) {
+        if get_concrete_libfunc_id(db, call_stmt.function, false).1
+            == revoke_ap_tracking_libfunc_id(db)
+        {
             context.set_ap_tracking(false);
         }
     }
@@ -95,27 +97,31 @@ fn get_function_code(
 
     let ret_types = vec![db.get_concrete_type_id(signature.return_type)?];
 
-    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![label];
+    context.push_statement(label);
 
-    let (sierra_local_variables, allocate_local_statements) =
-        allocate_local_variables(&mut context, &local_variables)?;
-    statements.extend(allocate_local_statements);
+    let sierra_local_variables = allocate_local_variables(&mut context, &local_variables)?;
 
     // Revoking ap tracking as the first non-local command for unknown ap-change function, to allow
     // proper ap-equation solving. TODO(orizi): Fix the solver to not require this constraint.
     if !known_ap_change && context.get_ap_tracking() {
-        statements.push(simple_statement(disable_ap_tracking_libfunc_id(db), &[], &[]));
+        context.push_statement(simple_basic_statement(
+            disable_ap_tracking_libfunc_id(db),
+            &[],
+            &[],
+        ));
         context.set_ap_tracking(false);
     }
 
     // Generate the function's code.
-    statements.extend(generate_block_code(&mut context, BlockId::root())?);
+    generate_block_code(&mut context, BlockId::root())?;
+    let db = context.get_db();
+    let statements = context.statements();
 
     let statements = add_store_statements(
-        context.get_db(),
+        db,
         statements,
         &|concrete_lib_func_id: ConcreteLibfuncId| -> LibfuncInfo {
-            LibfuncInfo { signature: get_libfunc_signature(context.get_db(), concrete_lib_func_id) }
+            LibfuncInfo { signature: get_libfunc_signature(db, concrete_lib_func_id) }
         },
         sierra_local_variables,
         &parameters,
@@ -141,15 +147,14 @@ fn get_function_code(
 fn allocate_local_variables(
     context: &mut ExprGeneratorContext<'_>,
     local_variables: &OrderedHashSet<lowering::VariableId>,
-) -> Maybe<(LocalVariables, Vec<StatementWithLocation>)> {
-    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
+) -> Maybe<LocalVariables> {
     let mut sierra_local_variables =
         OrderedHashMap::<cairo_lang_sierra::ids::VarId, cairo_lang_sierra::ids::VarId>::default();
     for lowering_var_id in local_variables.iter() {
         let sierra_var_id = context.get_sierra_variable(*lowering_var_id);
         let uninitialized_local_var_id =
             context.get_sierra_variable(SierraGenVar::UninitializedLocal(*lowering_var_id));
-        statements.push(simple_statement(
+        context.push_statement(simple_basic_statement(
             alloc_local_libfunc_id(
                 context.get_db(),
                 context.get_variable_sierra_type(*lowering_var_id)?,
@@ -163,8 +168,12 @@ fn allocate_local_variables(
 
     // Add finalize_locals() statement.
     if !local_variables.is_empty() {
-        statements.push(simple_statement(finalize_locals_libfunc_id(context.get_db()), &[], &[]));
+        context.push_statement(simple_basic_statement(
+            finalize_locals_libfunc_id(context.get_db()),
+            &[],
+            &[],
+        ));
     }
 
-    Ok((sierra_local_variables, statements))
+    Ok(sierra_local_variables)
 }

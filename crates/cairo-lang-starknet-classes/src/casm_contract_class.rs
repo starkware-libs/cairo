@@ -19,7 +19,7 @@ use cairo_lang_sierra::extensions::structure::StructType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
-use cairo_lang_sierra_to_casm::compiler::CompilationError;
+use cairo_lang_sierra_to_casm::compiler::{CompilationError, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
@@ -38,8 +38,14 @@ use starknet_crypto::{poseidon_hash_many, FieldElement};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
-use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id, VersionId};
+use crate::compiler_version::{
+    current_compiler_version_id, current_sierra_version_id, VersionId,
+    CONTRACT_SEGMENTATION_MINOR_VERSION,
+};
 use crate::contract_class::{ContractClass, ContractEntryPoint};
+use crate::contract_segmentation::{
+    compute_bytecode_segment_lengths, NestedIntList, SegmentationError,
+};
 use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
 use crate::keccak::starknet_keccak;
 
@@ -63,6 +69,8 @@ pub enum StarknetSierraCompilationError {
     MetadataError(#[from] MetadataError),
     #[error(transparent)]
     AllowedLibfuncsError(#[from] AllowedLibfuncsError),
+    #[error(transparent)]
+    SegmentationError(#[from] SegmentationError),
     #[error("Invalid entry point.")]
     EntryPointError,
     #[error("Missing arguments in the entry point.")]
@@ -101,6 +109,8 @@ pub struct CasmContractClass {
     pub prime: BigUint,
     pub compiler_version: String,
     pub bytecode: Vec<BigUintAsHex>,
+    #[serde(skip_serializing_if = "skip_if_none")]
+    pub bytecode_segment_lengths: Option<NestedIntList>,
     pub hints: Vec<(usize, Vec<Hint>)>,
 
     // Optional pythonic hints in a format that can be executed by the python vm.
@@ -115,15 +125,7 @@ impl CasmContractClass {
         let external_funcs_hash = self.entry_points_hash(&self.entry_points_by_type.external);
         let l1_handlers_hash = self.entry_points_hash(&self.entry_points_by_type.l1_handler);
         let constructors_hash = self.entry_points_hash(&self.entry_points_by_type.constructor);
-        let bytecode_hash = poseidon_hash_many(
-            &self
-                .bytecode
-                .iter()
-                .map(|big_uint| {
-                    FieldElement::from_byte_slice_be(&big_uint.value.to_bytes_be()).unwrap()
-                })
-                .collect_vec(),
-        );
+        let bytecode_hash = self.compute_bytecode_hash();
 
         // Compute total hash by hashing each component on top of the previous one.
         Felt252::from_bytes_be(
@@ -137,6 +139,14 @@ impl CasmContractClass {
             .to_bytes_be(),
         )
     }
+
+    /// Returns the lengths of the bytecode segments.
+    ///
+    /// If the length field is missing, the entire bytecode is considered a single segment.
+    pub fn get_bytecode_segment_lengths(&self) -> NestedIntList {
+        self.bytecode_segment_lengths.clone().unwrap_or(NestedIntList::Leaf(self.bytecode.len()))
+    }
+
     /// Returns the hash for a set of entry points.
     fn entry_points_hash(&self, entry_points: &[CasmContractEntryPoint]) -> FieldElement {
         let mut entry_point_hash_elements = vec![];
@@ -154,6 +164,44 @@ impl CasmContractClass {
             ));
         }
         poseidon_hash_many(&entry_point_hash_elements)
+    }
+
+    /// Returns the bytecode hash.
+    fn compute_bytecode_hash(&self) -> FieldElement {
+        let mut bytecode_iter = self.bytecode.iter().map(|big_uint| {
+            FieldElement::from_byte_slice_be(&big_uint.value.to_bytes_be()).unwrap()
+        });
+
+        let (len, bytecode_hash) =
+            bytecode_hash_node(&mut bytecode_iter, &self.get_bytecode_segment_lengths());
+        assert_eq!(len, self.bytecode.len());
+
+        bytecode_hash
+    }
+}
+
+/// Computes the hash of a bytecode segment. See the documentation of `bytecode_hash_node` in
+/// the Starknet OS.
+///
+/// Returns the length of the processed segment and its hash.
+fn bytecode_hash_node(
+    iter: &mut impl Iterator<Item = FieldElement>,
+    node: &NestedIntList,
+) -> (usize, FieldElement) {
+    match node {
+        NestedIntList::Leaf(len) => {
+            let data = &iter.take(*len).collect_vec();
+            assert_eq!(data.len(), *len);
+            (*len, poseidon_hash_many(data))
+        }
+        NestedIntList::Node(nodes) => {
+            // Compute `1 + poseidon(len0, hash0, len1, hash1, ...)`.
+            let inner_nodes = nodes.iter().map(|node| bytecode_hash_node(iter, node)).collect_vec();
+            let hash = poseidon_hash_many(
+                &inner_nodes.iter().flat_map(|(len, hash)| [(*len).into(), *hash]).collect_vec(),
+            ) + 1u32.into();
+            (inner_nodes.iter().map(|(len, _)| len).sum(), hash)
+        }
     }
 }
 
@@ -289,6 +337,7 @@ impl CasmContractClass {
     pub fn from_contract_class(
         contract_class: ContractClass,
         add_pythonic_hints: bool,
+        max_bytecode_size: usize,
     ) -> Result<Self, StarknetSierraCompilationError> {
         let prime = Felt252::prime();
         for felt252 in &contract_class.sierra_program {
@@ -366,12 +415,16 @@ impl CasmContractClass {
                 .collect(),
             linear_gas_solver: no_eq_solver,
             linear_ap_change_solver: no_eq_solver,
+            skip_non_linear_solver_comparisons: false,
+            compute_runtime_costs: false,
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
 
-        let gas_usage_check = true;
-        let cairo_program =
-            cairo_lang_sierra_to_casm::compiler::compile(&program, &metadata, gas_usage_check)?;
+        let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
+            &program,
+            &metadata,
+            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size },
+        )?;
 
         let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
         let bytecode = bytecode
@@ -382,7 +435,14 @@ impl CasmContractClass {
                     value: if big_int.is_negative() { &prime - reminder } else { reminder },
                 }
             })
-            .collect();
+            .collect_vec();
+
+        let bytecode_segment_lengths =
+            if sierra_version.minor >= CONTRACT_SEGMENTATION_MINOR_VERSION {
+                Some(compute_bytecode_segment_lengths(&program, &cairo_program, bytecode.len())?)
+            } else {
+                None
+            };
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
             RangeCheckType::id(),
@@ -494,6 +554,7 @@ impl CasmContractClass {
             prime,
             compiler_version,
             bytecode,
+            bytecode_segment_lengths,
             hints,
             pythonic_hints,
             entry_points_by_type: CasmContractEntryPoints {

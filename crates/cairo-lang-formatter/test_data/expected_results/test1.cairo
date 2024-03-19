@@ -31,6 +31,8 @@ fn foo(x: T) -> S {
 
 fn bar<T>(x: T) -> T {
     let x: T = 1;
+    let x: [u32; 3] = [1, 2, 3];
+    let [a, b, c] = x;
 }
 
 

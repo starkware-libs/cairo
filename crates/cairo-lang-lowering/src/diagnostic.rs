@@ -80,6 +80,14 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "Inner patterns are not in this context.".into()
             }
             LoweringDiagnosticKind::Unsupported => "Unsupported feature.".into(),
+            LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => {
+                "Fixed size array inner type must implement the `Copy` trait when the array size \
+                 is greater than 1."
+                    .into()
+            },
+            LoweringDiagnosticKind::EmptyRepeatedElementFixedSizeArray => {
+                "Fixed size array repeated element size must be greater than 0.".into()
+            },
         }
     }
 
@@ -199,6 +207,8 @@ pub enum LoweringDiagnosticKind {
     MemberPathLoop,
     NoPanicFunctionCycle,
     LiteralError(LiteralError),
+    FixedSizeArrayNonCopyableType,
+    EmptyRepeatedElementFixedSizeArray,
     UnsupportedPattern,
     Unsupported,
 }

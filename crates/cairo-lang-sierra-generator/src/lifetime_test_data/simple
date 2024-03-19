@@ -25,7 +25,7 @@ Statements:
   (v8: core::felt252) <- core::felt252_add(v0, v0)
   (v9: core::felt252) <- core::felt252_add(v8, v8)
   (v10: core::felt252) <- core::felt252_add(v9, v9)
-  (v5: core::felt252) <- 1u
+  (v5: core::felt252) <- 1
   (v11: core::felt252) <- core::felt252_add(v9, v5)
 End:
   Return(v8)

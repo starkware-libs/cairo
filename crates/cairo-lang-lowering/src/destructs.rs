@@ -206,9 +206,9 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         (block_id, statement_index): StatementLocation,
         stmt: &Statement,
     ) {
-        self.set_post_stmt_destruct(&stmt.outputs(), info, block_id, statement_index);
+        self.set_post_stmt_destruct(stmt.outputs(), info, block_id, statement_index);
         // Since we need to insert destructor call right after the statement.
-        info.variables_introduced(self, &stmt.outputs(), (block_id, statement_index + 1));
+        info.variables_introduced(self, stmt.outputs(), (block_id, statement_index + 1));
         info.variables_used(self, stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())));
     }
 
@@ -222,11 +222,11 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         info.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
     }
 
-    fn merge_match(
-        &mut self,
+    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
+        &'b mut self,
         (block_id, _statement_index): StatementLocation,
         match_info: &MatchInfo,
-        infos: &[Self::Info],
+        infos: Infos,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .enumerate()
@@ -359,6 +359,7 @@ pub fn add_destructs(
                     stmts.push(StatementCall {
                         function: semantic_function.lowered(db),
                         inputs: vec![VarUsage { var_id: plain_destruct.var_id, location }],
+                        with_coupon: false,
                         outputs: vec![output_var],
                         location: lowered.variables[plain_destruct.var_id].location,
                     })
@@ -383,6 +384,7 @@ pub fn add_destructs(
                             VarUsage { var_id: last_panic_var, location },
                             VarUsage { var_id: panic_destruct.var_id, location },
                         ],
+                        with_coupon: false,
                         outputs: vec![new_panic_var, output_var],
                         location,
                     });

@@ -68,7 +68,7 @@ impl EquationGenerator {
         Self {
             future_costs,
             equations: OrderedHashMap::from_iter(
-                CostTokenType::iter().map(|token_type| (*token_type, vec![])),
+                CostTokenType::iter_casm_tokens().map(|token_type| (*token_type, vec![])),
             ),
         }
     }
@@ -93,9 +93,11 @@ impl StatementFutureCost for EquationGenerator {
         if let Some(other) = entry {
             other
         } else {
-            entry.insert(CostExprMap::from_iter(CostTokenType::iter().map(|token_type| {
-                (*token_type, CostExpr::from_var(Var::StatementFuture(*idx, *token_type)))
-            })))
+            entry.insert(CostExprMap::from_iter(CostTokenType::iter_casm_tokens().map(
+                |token_type| {
+                    (*token_type, CostExpr::from_var(Var::StatementFuture(*idx, *token_type)))
+                },
+            )))
         }
     }
 }

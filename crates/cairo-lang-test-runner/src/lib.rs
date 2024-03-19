@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::vec::IntoIter;
 
 use anyhow::{bail, Context, Result};
@@ -8,7 +8,9 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::db::FilesGroupEx;
+use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::ids::{CrateId, FlagId};
 use cairo_lang_runner::casm_run::format_next_item;
 use cairo_lang_runner::profiling::{
     ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
@@ -190,14 +192,15 @@ impl TestCompiler {
         let db = &mut {
             let mut b = RootDatabase::builder();
             b.detect_corelib();
-            b.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
+            b.with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]));
             b.with_plugin_suite(test_plugin_suite());
             if starknet {
                 b.with_plugin_suite(starknet_plugin_suite());
             }
-
             b.build()?
         };
+        let add_redeposit_gas_flag_id = FlagId::new(db, "add_redeposit_gas");
+        db.set_flag(add_redeposit_gas_flag_id, Some(Arc::new(Flag::AddRedepositGas(true))));
 
         let main_crate_ids = setup_project(db, Path::new(&path))?;
         let mut reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_ids);
@@ -301,6 +304,8 @@ pub fn run_tests(
             function_set_costs,
             linear_gas_solver: true,
             linear_ap_change_solver: true,
+            skip_non_linear_solver_comparisons: false,
+            compute_runtime_costs: false,
         }),
         contracts_info,
         if run_profiler { Some(ProfilingInfoCollectionConfig::default()) } else { None },

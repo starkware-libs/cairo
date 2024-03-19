@@ -7,6 +7,7 @@ use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
+use std::{env, io};
 
 use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
@@ -29,7 +30,7 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
-use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextWidth};
+use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -42,7 +43,7 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::items::us::get_use_segments;
 use cairo_lang_semantic::resolve::{AsSegments, ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{Mutability, SemanticDiagnostic, TypeLongId};
+use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -63,8 +64,7 @@ use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
-use tracing::warn;
-use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+use tracing::{debug, error, info, trace_span, warn};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
 use crate::completions::{colon_colon_completions, dot_completions, generic_completions};
@@ -81,16 +81,9 @@ const DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL: u64 = 300;
 
 #[tokio::main]
 pub async fn start() {
-    tracing_subscriber::fmt()
-        .with_writer(std::io::stderr)
-        .with_env_filter(
-            EnvFilter::builder()
-                .with_default_directive(LevelFilter::WARN.into())
-                .with_env_var("CAIRO_LS_LOG")
-                .from_env_lossy(),
-        )
-        .with_ansi(false)
-        .init();
+    let _log_guard = init_logging();
+
+    info!("language server starting");
 
     let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
 
@@ -100,6 +93,80 @@ pub async fn start() {
         .custom_method("vfs/provide", Backend::vfs_provide)
         .finish();
     Server::new(stdin, stdout, socket).serve(service).await;
+
+    info!("language server stopped");
+}
+
+/// Initialize logging infrastructure for the language server.
+///
+/// Returns a guard that should be dropped when the LS ends, to flush log files.
+fn init_logging() -> Option<impl Drop> {
+    use std::ffi::OsString;
+    use std::fs;
+    use std::io::IsTerminal;
+
+    use tracing_chrome::{ChromeLayerBuilder, TraceStyle};
+    use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+    use tracing_subscriber::fmt::format::FmtSpan;
+    use tracing_subscriber::fmt::time::Uptime;
+    use tracing_subscriber::fmt::Layer;
+    use tracing_subscriber::prelude::*;
+
+    let mut guard = None;
+
+    let fmt_layer = Layer::new()
+        .with_writer(io::stderr)
+        .with_timer(Uptime::default())
+        .with_ansi(io::stderr().is_terminal())
+        .with_span_events(FmtSpan::CLOSE)
+        .with_filter(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::WARN.into())
+                .with_env_var("CAIRO_LS_LOG")
+                .from_env_lossy(),
+        );
+
+    fn env_to_bool(os: Option<OsString>) -> bool {
+        matches!(os.as_ref().and_then(|os| os.to_str()), Some("1") | Some("true"))
+    }
+
+    let profile_layer = if env_to_bool(env::var_os("CAIRO_LS_PROFILE")) {
+        let mut path = PathBuf::from(format!(
+            "./cairols-profile-{}.json",
+            SystemTime::UNIX_EPOCH.elapsed().unwrap().as_micros()
+        ));
+
+        // Create the file now, so that we early panic, and `fs::canonicalize` will work.
+        let profile_file = fs::File::create(&path).expect("Failed to create profile file.");
+
+        // Try to canonicalize the path, so that it's easier to find the file from logs.
+        if let Ok(canonical) = fs::canonicalize(&path) {
+            path = canonical;
+        }
+
+        eprintln!("this LS run will output tracing profile to: {}", path.display());
+        eprintln!(
+            "open that file with https://ui.perfetto.dev (or chrome://tracing) to analyze it"
+        );
+
+        let (profile_layer, profile_layer_guard) = ChromeLayerBuilder::new()
+            .writer(profile_file)
+            .trace_style(TraceStyle::Async)
+            .include_args(true)
+            .build();
+
+        guard = Some(profile_layer_guard);
+        Some(profile_layer)
+    } else {
+        None
+    };
+
+    tracing::subscriber::set_global_default(
+        tracing_subscriber::registry().with(fmt_layer).with(profile_layer),
+    )
+    .expect("Could not set up global logger.");
+
+    guard
 }
 
 fn configured_db() -> RootDatabase {
@@ -113,6 +180,7 @@ fn configured_db() -> RootDatabase {
 }
 
 /// Makes sure that all open files exist in the new db, with their current changes.
+#[tracing::instrument(level = "trace", skip_all)]
 fn ensure_exists_in_db(
     new_db: &mut RootDatabase,
     old_db: &RootDatabase,
@@ -167,7 +235,7 @@ impl Backend {
             scarb,
             last_replace: tokio::sync::Mutex::new(SystemTime::now()),
             db_replace_interval: Duration::from_secs(
-                std::env::var("CAIRO_LSP_DB_REPLACE_INTERVAL")
+                env::var("CAIRO_LSP_DB_REPLACE_INTERVAL")
                     .ok()
                     .and_then(|value| value.parse::<u64>().ok())
                     .unwrap_or(DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL),
@@ -185,12 +253,13 @@ impl Backend {
         let db = db_mut.snapshot();
         drop(db_mut);
         std::panic::catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
-            eprintln!("Caught panic in LSP worker thread.");
+            error!("caught panic in LSP worker thread");
             LSPError::internal_error()
         })
     }
 
     /// Locks and gets a database instance.
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn db_mut(&self) -> tokio::sync::MutexGuard<'_, RootDatabase> {
         self.db_mutex.lock().await
     }
@@ -198,7 +267,8 @@ impl Backend {
     // TODO(spapini): Consider managing vfs in a different way, using the
     // client.send_notification::<UpdateVirtualFile> call.
 
-    // Refresh diagnostics and send diffs to client.
+    /// Refresh diagnostics and send diffs to client.
+    #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_diagnostics(&self) -> LSPResult<()> {
         let real_state = self.state_mutex.lock().await;
         let state = real_state.clone();
@@ -209,48 +279,54 @@ impl Backend {
                 let mut res = vec![];
                 // Get all files. Try to go over open files first.
                 let mut files_set: OrderedHashSet<_> = state.open_files.iter().cloned().collect();
-                for crate_id in db.crates() {
-                    for module_id in db.crate_modules(crate_id).iter() {
-                        for file_id in
-                            db.module_files(*module_id).unwrap_or_default().iter().copied()
-                        {
-                            files_set.insert(get_uri(db, file_id));
+                trace_span!("get_all_files").in_scope(|| {
+                    for crate_id in db.crates() {
+                        for module_id in db.crate_modules(crate_id).iter() {
+                            for file_id in
+                                db.module_files(*module_id).unwrap_or_default().iter().copied()
+                            {
+                                files_set.insert(get_uri(db, file_id));
+                            }
                         }
                     }
-                }
+                });
 
                 // Get all diagnostics.
-                for uri in files_set.iter().cloned() {
-                    let file_id = file(db, uri.clone());
-                    let new_file_diagnostics = FileDiagnostics {
-                        parser: db.file_syntax_diagnostics(file_id),
-                        semantic: db.file_semantic_diagnostics(file_id).unwrap_or_default(),
-                        lowering: db.file_lowering_diagnostics(file_id).unwrap_or_default(),
-                    };
-                    // Since we are using Arcs, this comparison should be efficient.
-                    if let Some(old_file_diagnostics) = state.file_diagnostics.get(&uri) {
-                        if old_file_diagnostics == &new_file_diagnostics {
-                            continue;
+                trace_span!("get_all_diagnostics").in_scope(|| {
+                    for uri in files_set.iter().cloned() {
+                        let file_id = file(db, uri.clone());
+                        let new_file_diagnostics = FileDiagnostics {
+                            parser: db.file_syntax_diagnostics(file_id),
+                            semantic: db.file_semantic_diagnostics(file_id).unwrap_or_default(),
+                            lowering: db.file_lowering_diagnostics(file_id).unwrap_or_default(),
+                        };
+                        // Since we are using Arcs, this comparison should be efficient.
+                        if let Some(old_file_diagnostics) = state.file_diagnostics.get(&uri) {
+                            if old_file_diagnostics == &new_file_diagnostics {
+                                continue;
+                            }
                         }
-                    }
-                    let mut diags = Vec::new();
-                    get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.parser);
-                    get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.semantic);
-                    get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.lowering);
-                    state.file_diagnostics.insert(uri.clone(), new_file_diagnostics);
+                        let mut diags = Vec::new();
+                        get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.parser);
+                        get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.semantic);
+                        get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.lowering);
+                        state.file_diagnostics.insert(uri.clone(), new_file_diagnostics);
 
-                    res.push((uri, diags));
-                }
+                        res.push((uri, diags));
+                    }
+                });
 
                 // Clear old diagnostics.
                 let old_files: Vec<_> = state.file_diagnostics.keys().cloned().collect();
-                for uri in old_files {
-                    if files_set.contains(&uri) {
-                        continue;
+                trace_span!("clear_old_diagnostics").in_scope(|| {
+                    for uri in old_files {
+                        if files_set.contains(&uri) {
+                            continue;
+                        }
+                        state.file_diagnostics.remove(&uri);
+                        res.push((uri, Vec::new()));
                     }
-                    state.file_diagnostics.remove(&uri);
-                    res.push((uri, Vec::new()));
-                }
+                });
 
                 (state, res)
             })
@@ -268,6 +344,7 @@ impl Backend {
     }
 
     /// Checks if enough time passed since last db swap, and if so, swaps the database.
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn maybe_swap_database(&self) -> LSPResult<()> {
         let Ok(mut last_replace) = self.last_replace.try_lock() else {
             // Another thread is already swapping the database.
@@ -277,8 +354,16 @@ impl Backend {
             // Not enough time passed since last swap.
             return Ok(());
         }
+        let result = self.swap_database().await;
+        *last_replace = SystemTime::now();
+        result
+    }
+
+    /// Perform database swap
+    #[tracing::instrument(level = "debug", skip_all)]
+    async fn swap_database(&self) -> LSPResult<()> {
         let open_files = self.state_mutex.lock().await.open_files.clone();
-        eprintln!("DB swap - scheduled.");
+        debug!("scheduled");
         let mut new_db = self
             .with_db(|db| {
                 let mut new_db = configured_db();
@@ -286,20 +371,20 @@ impl Backend {
                 new_db
             })
             .await?;
-        eprintln!("DB swap - initial setup done.");
+        debug!("initial setup done");
         self.ensure_diagnostics_queries_up_to_date(&mut new_db, open_files.into_iter()).await;
-        eprintln!("DB swap - initial compilation done.");
+        debug!("initial compilation done");
         let mut db = self.db_mut().await;
-        eprintln!("DB swap - starting.");
+        debug!("starting");
         let state = self.state_mutex.lock().await;
         ensure_exists_in_db(&mut new_db, &db, state.open_files.iter().cloned());
         *db = new_db;
-        *last_replace = SystemTime::now();
-        eprintln!("DB swap - done.");
+        debug!("done");
         Ok(())
     }
 
     /// Ensures that all diagnostics are up to date.
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn ensure_diagnostics_queries_up_to_date(
         &self,
         db: &mut RootDatabase,
@@ -326,6 +411,7 @@ impl Backend {
         }
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     pub async fn vfs_provide(
         &self,
         params: ProvideVirtualFileRequest,
@@ -342,6 +428,7 @@ impl Backend {
     /// The value is set by the user under the `cairo1.corelibPath` key in client configuration.
     /// The value is not required to be set.
     /// The path may omit the `corelib/src` or `src` suffix.
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn get_corelib_fallback_path(&self) -> Option<PathBuf> {
         const CORELIB_CONFIG_SECTION: &str = "cairo1.corelibPath";
         let item = vec![ConfigurationItem {
@@ -385,6 +472,7 @@ impl Backend {
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: PathBuf) {
         let corelib_fallback = self.get_corelib_fallback_path().await;
         if self.scarb.is_scarb_project(file_path.clone()) {
@@ -443,11 +531,12 @@ impl Backend {
         // Fallback to a single file.
         if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
             let file_path_s = file_path.to_string_lossy();
-            eprintln!("Error loading file {file_path_s} as a single crate: {err}");
+            error!("error loading file {file_path_s} as a single crate: {err}");
         }
     }
 
     /// Reload crate detection for all open files.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub async fn reload(&self) -> LSPResult<()> {
         let mut db = self.db_mut().await;
         for uri in self.state_mutex.lock().await.open_files.iter() {
@@ -502,6 +591,7 @@ impl TryFrom<String> for ServerCommands {
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
+    #[tracing::instrument(level = "debug", skip_all)]
     async fn initialize(&self, _: InitializeParams) -> LSPResult<InitializeResult> {
         Ok(InitializeResult {
             server_info: None,
@@ -541,11 +631,13 @@ impl LanguageServer for Backend {
                 document_formatting_provider: Some(OneOf::Left(true)),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
                 definition_provider: Some(OneOf::Left(true)),
+                code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
                 ..ServerCapabilities::default()
             },
         })
     }
 
+    #[tracing::instrument(level = "debug", skip_all)]
     async fn initialized(&self, _: InitializedParams) {
         // Register patterns for client file watcher.
         // This is used to detect changes to Scarb.toml and invalidate .cairo files.
@@ -577,6 +669,7 @@ impl LanguageServer for Backend {
 
     async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {}
 
+    #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_watched_files(&self, params: DidChangeWatchedFilesParams) {
         // Invalidate changed cairo files.
         let mut db = self.db_mut().await;
@@ -595,6 +688,7 @@ impl LanguageServer for Backend {
         }
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(command = params.command))]
     async fn execute_command(&self, params: ExecuteCommandParams) -> LSPResult<Option<Value>> {
         let command = ServerCommands::try_from(params.command);
         if let Ok(cmd) = command {
@@ -614,6 +708,7 @@ impl LanguageServer for Backend {
         Ok(None)
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let mut db = self.db_mut().await;
         let uri = params.text_document.uri;
@@ -634,12 +729,13 @@ impl LanguageServer for Backend {
         self.refresh_diagnostics().await.ok();
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
         let text =
             if let [TextDocumentContentChangeEvent { text, .. }] = &params.content_changes[..] {
                 text
             } else {
-                eprintln!("Unexpected format of document change.");
+                error!("unexpected format of document change");
                 return;
             };
         let mut db = self.db_mut().await;
@@ -650,6 +746,7 @@ impl LanguageServer for Backend {
         self.refresh_diagnostics().await.ok();
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_save(&self, params: DidSaveTextDocumentParams) {
         let mut db = self.db_mut().await;
         let file = file(&db, params.text_document.uri);
@@ -657,6 +754,7 @@ impl LanguageServer for Backend {
         db.override_file_content(file, None);
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let mut db = self.db_mut().await;
         self.state_mutex.lock().await.open_files.remove(&params.text_document.uri);
@@ -666,11 +764,11 @@ impl LanguageServer for Backend {
         self.refresh_diagnostics().await.ok();
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document_position.text_document.uri))]
     async fn completion(&self, params: CompletionParams) -> LSPResult<Option<CompletionResponse>> {
         self.with_db(|db| {
             let text_document_position = params.text_document_position;
             let file_uri = text_document_position.text_document.uri;
-            eprintln!("Complete {file_uri}");
             let file_id = file(db, file_uri);
             let mut position = text_document_position.position;
             position.character = position.character.saturating_sub(1);
@@ -679,7 +777,7 @@ impl LanguageServer for Backend {
 
             // Find module.
             let module_id = find_node_module(db, file_id, node.clone()).on_none(|| {
-                eprintln!("Completion failed. Failed to find module.");
+                error!("completion failed: failed to find module");
             })?;
             let file_index = FileIndex(0);
             let module_file_id = ModuleFileId(module_id, file_index);
@@ -716,6 +814,7 @@ impl LanguageServer for Backend {
         .await
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn semantic_tokens_full(
         &self,
         params: SemanticTokensParams,
@@ -724,7 +823,7 @@ impl LanguageServer for Backend {
             let file_uri = params.text_document.uri;
             let file = file(db, file_uri.clone());
             let Ok(node) = db.file_syntax(file) else {
-                eprintln!("Semantic analysis failed. File '{file_uri}' does not exist.");
+                error!("semantic analysis failed: file '{file_uri}' does not exist");
                 return None;
             };
 
@@ -740,6 +839,7 @@ impl LanguageServer for Backend {
         .await
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn formatting(
         &self,
         params: DocumentFormattingParams,
@@ -748,18 +848,18 @@ impl LanguageServer for Backend {
             let file_uri = params.text_document.uri;
             let file = file(db, file_uri.clone());
             let node = db.file_syntax(file).ok().on_none(|| {
-                eprintln!("Formatting failed. File '{file_uri}' does not exist.");
+                error!("formatting failed: file '{file_uri}' does not exist");
             })?;
             db.file_syntax_diagnostics(file).check_error_free().ok().on_none(|| {
-                eprintln!("Formatting failed. Cannot properly parse '{file_uri}' exist.");
+                error!("formatting failed: cannot properly parse '{file_uri}' exist");
             })?;
             let new_text = get_formatted_file(db.upcast(), &node, FormatterConfig::default());
 
             let file_summary = db.file_summary(file).on_none(|| {
-                eprintln!("Formatting failed. Cannot get summary for file '{file_uri}'.");
+                error!("formatting failed: cannot get summary for file '{file_uri}'");
             })?;
             let old_line_count = file_summary.line_count().try_into().ok().on_none(|| {
-                eprintln!("Formatting failed. Line count out of bound in file '{file_uri}'.");
+                error!("formatting failed: line count out of bound in file '{file_uri}'");
             })?;
 
             Some(vec![TextEdit {
@@ -773,35 +873,24 @@ impl LanguageServer for Backend {
         .await
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document_position_params.text_document.uri))]
     async fn hover(&self, params: HoverParams) -> LSPResult<Option<Hover>> {
         self.with_db(|db| {
             let file_uri = params.text_document_position_params.text_document.uri;
-            eprintln!("Hover {file_uri}");
             let file_id = file(db, file_uri);
             let position = params.text_document_position_params.position;
-            let (node, lookup_items) = get_node_and_lookup_items(db, file_id, position)?;
-            let lookup_item_id = lookup_items.into_iter().next()?;
-            let function_id = match lookup_item_id {
-                LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
-                    FunctionWithBodyId::Free(free_function_id)
-                }
-                LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
-                    FunctionWithBodyId::Impl(impl_function_id)
-                }
-                _ => {
-                    return None;
-                }
-            };
-
+            // Get the item id of the definition.
+            let (found_file, span) = get_definition_location(db, file_id, position)?;
+            // Get the documentation and declaration of the item.
+            let (_, lookup_items) = get_node_and_lookup_items(
+                db,
+                found_file,
+                from_pos(span.start.position_in_file(db.upcast(), found_file)?),
+            )?;
             // Build texts.
             let mut hints = Vec::new();
-            if let Some(hint) = get_pattern_hint(db, function_id, node.clone()) {
-                hints.push(MarkedString::String(hint));
-            } else if let Some(hint) = get_expr_hint(db, function_id, node.clone()) {
-                hints.push(hint);
-            };
-            if let Some(hint) = get_identifier_hint(db, lookup_item_id, node) {
-                hints.push(MarkedString::String(hint));
+            if let Some(hint) = get_expr_hint(db.upcast(), lookup_items.into_iter().next()?) {
+                hints.extend(hint);
             };
 
             Some(Hover { contents: HoverContents::Array(hints), range: None })
@@ -809,35 +898,20 @@ impl LanguageServer for Backend {
         .await
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document_position_params.text_document.uri))]
     async fn goto_definition(
         &self,
         params: GotoDefinitionParams,
     ) -> LSPResult<Option<GotoDefinitionResponse>> {
-        eprintln!("Goto definition");
         self.with_db(|db| {
-            let syntax_db = db.upcast();
             let file_uri = params.text_document_position_params.text_document.uri;
-            let file = file(db, file_uri.clone());
             let position = params.text_document_position_params.position;
-            let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
-            if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
-                return None;
-            }
-            let identifier =
-                ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-            let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
-            let node = stable_ptr.lookup(syntax_db);
-            let found_file = stable_ptr.file_id(syntax_db);
-            let span = node.span_without_trivia(syntax_db);
-            let width = span.width();
             let (found_file, span) =
-                get_originating_location(db.upcast(), found_file, span.start_only());
+                get_definition_location(db, file(db.upcast(), file_uri), position)?;
             let found_uri = get_uri(db, found_file);
 
             let start = from_pos(span.start.position_in_file(db.upcast(), found_file).unwrap());
-            let end = from_pos(
-                span.end.add_width(width).position_in_file(db.upcast(), found_file).unwrap(),
-            );
+            let end = from_pos(span.end.position_in_file(db.upcast(), found_file).unwrap());
             Some(GotoDefinitionResponse::Scalar(Location {
                 uri: found_uri,
                 range: Range { start, end },
@@ -845,8 +919,94 @@ impl LanguageServer for Backend {
         })
         .await
     }
+
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    async fn code_action(&self, params: CodeActionParams) -> LSPResult<Option<CodeActionResponse>> {
+        self.with_db(|db| {
+            let mut actions = Vec::with_capacity(params.context.diagnostics.len());
+            let file_id = file(db, params.text_document.uri.clone());
+            let (node, _lookup_items) = get_node_and_lookup_items(db, file_id, params.range.start)?;
+            for diagnostic in params.context.diagnostics.iter() {
+                actions.extend(
+                    get_code_actions_for_diagnostic(db, &node, diagnostic, &params)
+                        .into_iter()
+                        .map(CodeActionOrCommand::from),
+                );
+            }
+            Some(actions)
+        })
+        .await
+    }
 }
 
+/// Generate code actions for a given diagnostic.
+///
+/// # Arguments
+///
+/// * `db` - A reference to the Salsa database.
+/// * `node` - The syntax node where the diagnostic is located.
+/// * `diagnostic` - The diagnostic for which to generate code actions.
+/// * `params` - The parameters for the code action request.
+///
+/// # Returns
+///
+/// A vector of [`CodeAction`] objects that can be applied to resolve the diagnostic.
+fn get_code_actions_for_diagnostic(
+    db: &dyn SemanticGroup,
+    node: &SyntaxNode,
+    diagnostic: &Diagnostic,
+    params: &CodeActionParams,
+) -> Vec<CodeAction> {
+    let code = match &diagnostic.code {
+        Some(NumberOrString::String(code)) => code,
+        Some(NumberOrString::Number(code)) => {
+            debug!("diagnostic code is not a string: `{code}`");
+            return vec![];
+        }
+        None => {
+            debug!("diagnostic code is missing");
+            return vec![];
+        }
+    };
+
+    match code.as_str() {
+        "E0001" => {
+            vec![unused_variable(db, node, diagnostic.clone(), params.text_document.uri.clone())]
+        }
+        code => {
+            debug!("no code actions for diagnostic code: {code}");
+            vec![]
+        }
+    }
+}
+
+/// Create a code action that prefixes an unused variable with an `_`.
+#[tracing::instrument(level = "trace", skip_all)]
+fn unused_variable(
+    db: &dyn SemanticGroup,
+    node: &SyntaxNode,
+    diagnostic: Diagnostic,
+    uri: Url,
+) -> CodeAction {
+    CodeAction {
+        title: format!("Rename to `_{}`", node.get_text(db.upcast())),
+        edit: Some(WorkspaceEdit {
+            changes: Some(HashMap::from_iter([(
+                uri,
+                // The diagnostic range is just the first char of the variable name so we can just
+                // pass an underscore as the new text it won't replace the current variable name
+                // and it will prefix it with `_`
+                vec![TextEdit { range: diagnostic.range, new_text: "_".to_owned() }],
+            )])),
+            document_changes: None,
+            change_annotations: None,
+        }),
+        diagnostics: Some(vec![diagnostic]),
+        ..Default::default()
+    }
+}
+
+#[tracing::instrument(level = "trace", skip_all)]
 fn find_definition(
     db: &RootDatabase,
     file: FileId,
@@ -857,7 +1017,7 @@ fn find_definition(
         if parent.kind(db) == SyntaxKind::ItemModule {
             let containing_module_id =
                 find_node_module(db, file, parent.clone()).on_none(|| {
-                    eprintln!("`find_definition` failed. Failed to find module.");
+                    error!("`find_definition` failed: could not find module");
                 })?;
 
             let submodule_id = db.intern_submodule(SubmoduleLongId(
@@ -884,6 +1044,7 @@ fn find_definition(
     None
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn resolved_concrete_item_def(
     db: &dyn SemanticGroup,
     item: ResolvedConcreteItem,
@@ -903,6 +1064,7 @@ fn resolved_concrete_item_def(
     }
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> SyntaxStablePtrId {
     match item {
         ResolvedGenericItem::Constant(item) => item.untyped_stable_ptr(db),
@@ -949,8 +1111,9 @@ enum CompletionKind {
     ColonColon(Vec<PathSegment>),
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
-    eprintln!("node.kind: {:#?}", node.kind(db));
+    debug!("node.kind: {:#?}", node.kind(db));
     match node.kind(db) {
         SyntaxKind::TerminalDot => {
             let parent = node.parent().unwrap();
@@ -960,12 +1123,12 @@ fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
         }
         SyntaxKind::TerminalColonColon => {
             let parent = node.parent().unwrap();
-            eprintln!("parent.kind: {:#?}", parent.kind(db));
+            debug!("parent.kind: {:#?}", parent.kind(db));
             if parent.kind(db) == SyntaxKind::ExprPath {
                 return completion_kind_from_path_node(db, parent);
             }
             let grandparent = parent.parent().unwrap();
-            eprintln!("grandparent.kind: {:#?}", grandparent.kind(db));
+            debug!("grandparent.kind: {:#?}", grandparent.kind(db));
             if grandparent.kind(db) == SyntaxKind::ExprPath {
                 return completion_kind_from_path_node(db, grandparent);
             }
@@ -978,41 +1141,41 @@ fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
             } else if grandparent.kind(db) == SyntaxKind::UsePathSingle {
                 (ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, grandparent)), false)
             } else {
-                eprintln!("Generic");
+                debug!("Generic");
                 return CompletionKind::ColonColon(vec![]);
             };
             let mut segments = vec![];
             let Ok(()) = get_use_segments(db.upcast(), &use_ast, &mut segments) else {
-                eprintln!("Generic");
+                debug!("Generic");
                 return CompletionKind::ColonColon(vec![]);
             };
             if should_pop {
                 segments.pop();
             }
-            eprintln!("ColonColon");
+            debug!("ColonColon");
             return CompletionKind::ColonColon(segments);
         }
         SyntaxKind::TerminalIdentifier => {
             let parent = node.parent().unwrap();
-            eprintln!("parent.kind: {:#?}", parent.kind(db));
+            debug!("parent.kind: {:#?}", parent.kind(db));
             let grandparent = parent.parent().unwrap();
-            eprintln!("grandparent.kind: {:#?}", grandparent.kind(db));
+            debug!("grandparent.kind: {:#?}", grandparent.kind(db));
             if grandparent.kind(db) == SyntaxKind::ExprPath {
                 if db.get_children(grandparent.clone())[0].stable_ptr() != parent.stable_ptr() {
                     // Not first segment.
-                    eprintln!("Not first segment");
+                    debug!("Not first segment");
                     return completion_kind_from_path_node(db, grandparent);
                 }
                 // First segment.
                 let grandgrandparent = grandparent.parent().unwrap();
-                eprintln!("grandgrandparent.kind: {:#?}", grandgrandparent.kind(db));
+                debug!("grandgrandparent.kind: {:#?}", grandgrandparent.kind(db));
                 if grandgrandparent.kind(db) == SyntaxKind::ExprBinary {
                     let expr = ast::ExprBinary::from_syntax_node(db, grandgrandparent.clone());
                     if matches!(
                         ast::ExprBinary::from_syntax_node(db, grandgrandparent).op(db),
                         ast::BinaryOperator::Dot(_)
                     ) {
-                        eprintln!("Dot");
+                        debug!("Dot");
                         return CompletionKind::Dot(expr);
                     }
                 }
@@ -1023,24 +1186,25 @@ fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
                 let Ok(()) =
                     get_use_segments(db.upcast(), &ast::UsePath::Leaf(use_ast), &mut segments)
                 else {
-                    eprintln!("Generic");
+                    debug!("Generic");
                     return CompletionKind::ColonColon(vec![]);
                 };
                 segments.pop();
-                eprintln!("ColonColon");
+                debug!("ColonColon");
                 return CompletionKind::ColonColon(segments);
             }
         }
         _ => (),
     }
-    eprintln!("Generic");
+    debug!("Generic");
     CompletionKind::ColonColon(vec![])
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn completion_kind_from_path_node(db: &RootDatabase, parent: SyntaxNode) -> CompletionKind {
-    eprintln!("completion_kind_from_path_node: {}", parent.clone().get_text_without_trivia(db));
+    debug!("completion_kind_from_path_node: {}", parent.clone().get_text_without_trivia(db));
     let expr = ast::ExprPath::from_syntax_node(db, parent);
-    eprintln!("has_tail: {}", expr.has_tail(db));
+    debug!("has_tail: {}", expr.has_tail(db));
     let mut segments = expr.to_segments(db);
     if expr.has_tail(db) {
         segments.pop();
@@ -1050,6 +1214,7 @@ fn completion_kind_from_path_node(db: &RootDatabase, parent: SyntaxNode) -> Comp
 
 /// If the ast node is a lookup item, return the corresponding id. Otherwise, return None.
 /// See [LookupItemId].
+#[tracing::instrument(level = "trace", skip_all)]
 fn lookup_item_from_ast(
     db: &dyn SemanticGroup,
     module_file_id: ModuleFileId,
@@ -1157,6 +1322,7 @@ fn lookup_item_from_ast(
 
 /// Given a position in a file, return the syntax node for the token at that position, and all the
 /// lookup items above this node.
+#[tracing::instrument(level = "trace", skip_all)]
 fn get_node_and_lookup_items(
     db: &(dyn SemanticGroup + 'static),
     file: FileId,
@@ -1168,15 +1334,15 @@ fn get_node_and_lookup_items(
 
     // Get syntax for file.
     let syntax = db.file_syntax(file).to_option().on_none(|| {
-        eprintln!("`get_node_and_lookup_items` failed. File '{filename}' does not exist.");
+        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
     })?;
 
     // Get file summary and content.
     let file_summary = db.file_summary(file).on_none(|| {
-        eprintln!("`get_node_and_lookup_items` failed. File '{filename}' does not exist.");
+        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
     })?;
     let content = db.file_content(file).on_none(|| {
-        eprintln!("`get_node_and_lookup_items` failed. File '{filename}' does not exist.");
+        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
     })?;
 
     // Find offset for position.
@@ -1185,7 +1351,7 @@ fn get_node_and_lookup_items(
 
     // Find module.
     let module_id = find_node_module(db, file, node.clone()).on_none(|| {
-        eprintln!("`get_node_and_lookup_items` failed. Failed to find module.");
+        error!("`get_node_and_lookup_items` failed: failed to find module");
     })?;
     let file_index = FileIndex(0);
     let module_file_id = ModuleFileId(module_id, file_index);
@@ -1205,24 +1371,26 @@ fn get_node_and_lookup_items(
     }
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn position_to_offset(
     file_summary: Arc<FileSummary>,
     position: Position,
     content: &str,
 ) -> Option<TextOffset> {
     let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
-        eprintln!("Hover failed. Position out of bounds.");
+        error!("hover failed: position out of bounds");
     })?;
     let mut chars_it = offset.take_from(content).chars();
     for _ in 0..position.character {
         let c = chars_it.next().on_none(|| {
-            eprintln!("Position does not exist.");
+            error!("position does not exist");
         })?;
         offset = offset.add_width(TextWidth::from_char(c));
     }
     Some(offset)
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn find_node_module(
     db: &dyn SemanticGroup,
     main_file: FileId,
@@ -1254,6 +1422,7 @@ fn find_node_module(
 }
 
 /// If the node is an identifier, retrieves a hover hint for it.
+#[tracing::instrument(level = "trace", skip_all)]
 fn get_identifier_hint(
     db: &(dyn SemanticGroup + 'static),
     lookup_item_id: LookupItemId,
@@ -1272,49 +1441,52 @@ fn get_identifier_hint(
 }
 
 /// If the node is an expression, retrieves a hover hint for it.
-fn get_expr_hint(
-    db: &(dyn SemanticGroup + 'static),
-    function_id: FunctionWithBodyId,
-    node: SyntaxNode,
-) -> Option<MarkedString> {
-    let semantic_expr = nearest_semantic_expr(db, node, function_id)?;
-    let text = match semantic_expr {
-        cairo_lang_semantic::Expr::FunctionCall(call) => {
-            let args = if let Ok(signature) =
-                call.function.get_concrete(db).generic_function.generic_signature(db.upcast())
-            {
-                signature
-                    .params
-                    .iter()
-                    .map(|arg| {
-                        let mutability = match arg.mutability {
-                            Mutability::Immutable => "",
-                            Mutability::Mutable => "mut ",
-                            Mutability::Reference => "ref ",
-                        };
-                        format!("{mutability}{}: {}", arg.name, arg.ty.format(db.upcast()))
-                    })
-                    .collect::<Vec<String>>()
-                    .join(", ")
+#[tracing::instrument(level = "trace", skip_all)]
+fn get_expr_hint(db: &dyn DefsGroup, lookup_item_id: LookupItemId) -> Option<Vec<MarkedString>> {
+    let mut hints = vec![];
+    let definition = db.get_item_definition(lookup_item_id);
+    hints.push(MarkedString::from_language_code("cairo".to_owned(), definition));
+    let documentation = db.get_item_documentation(lookup_item_id).unwrap_or_default();
+    // Add a separator.
+    if !documentation.is_empty() {
+        hints.push(MarkedString::String("\n---\n".to_string()));
+    }
+    let mut doc = "".to_string();
+    let mut is_cairo_string = false;
+    for line in documentation.lines() {
+        if line.starts_with("```") {
+            // If is_cairo_string is true it means that we end the code block so append the code
+            // in a cairo formatted string.
+            hints.push(if is_cairo_string {
+                MarkedString::from_language_code("cairo".to_owned(), doc)
             } else {
-                "".to_owned()
-            };
-            let mut s = format!(
-                "fn {}({}) -> {}",
-                call.function.name(db.upcast()),
-                args,
-                call.ty.format(db.upcast())
-            );
-            s.retain(|c| c != '"');
-            s
+                // else append a regular string.
+                MarkedString::from_markdown(doc)
+            });
+            // Switch the variable to properly format the following block.
+            is_cairo_string = !is_cairo_string;
+            // reset the string to start the next block.
+            doc = "".to_string();
+            continue;
         }
-        _ => semantic_expr.ty().format(db),
-    };
-    // Format the hover text.
-    Some(MarkedString::from_language_code("cairo".to_owned(), text))
+        // Append the current block string.
+        doc += if let Some(stripped) = line.strip_prefix("///") {
+            stripped
+        } else if let Some(stripped) = line.strip_prefix("//!") {
+            stripped
+        } else {
+            line
+        };
+        // add new line to have a proper formatting.
+        doc += "\n";
+    }
+    hints.push(MarkedString::from_markdown(doc));
+
+    Some(hints)
 }
 
 /// Returns the semantic expression for the current node.
+#[tracing::instrument(level = "trace", skip_all)]
 fn nearest_semantic_expr(
     db: &dyn SemanticGroup,
     mut node: SyntaxNode,
@@ -1336,6 +1508,7 @@ fn nearest_semantic_expr(
 }
 
 /// If the node is a pattern, retrieves a hover hint for it.
+#[tracing::instrument(level = "trace", skip_all)]
 fn get_pattern_hint(
     db: &(dyn SemanticGroup + 'static),
     function_id: FunctionWithBodyId,
@@ -1347,6 +1520,7 @@ fn get_pattern_hint(
 }
 
 /// Returns the semantic pattern for the current node.
+#[tracing::instrument(level = "trace", skip_all)]
 fn nearest_semantic_pat(
     db: &dyn SemanticGroup,
     mut node: SyntaxNode,
@@ -1367,6 +1541,7 @@ fn nearest_semantic_pat(
     }
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn update_crate_roots(
     db: &mut dyn SemanticGroup,
     source_paths: Vec<(CrateLongId, PathBuf, CrateSettings)>,
@@ -1412,6 +1587,7 @@ fn update_crate_roots(
 /// This approach allows compiling crates that do not define `lib.cairo` file.
 /// For example, single file crates can be created this way.
 /// The actual single file module is defined as `mod` item in created lib file.
+#[tracing::instrument(level = "trace", skip_all)]
 fn inject_virtual_wrapper_lib(db: &mut dyn SemanticGroup, components: Vec<(CrateId, String)>) {
     for (crate_id, file_stem) in components {
         let module_id = ModuleId::CrateRoot(crate_id);
@@ -1463,6 +1639,7 @@ fn get_range(db: &dyn FilesGroup, location: &DiagnosticLocation) -> Range {
 }
 
 /// Converts internal diagnostics to LSP format.
+#[tracing::instrument(level = "trace", skip_all)]
 fn get_diagnostics<T: DiagnosticEntry>(
     db: &T::DbType,
     diags: &mut Vec<Diagnostic>,
@@ -1497,7 +1674,40 @@ fn get_diagnostics<T: DiagnosticEntry>(
                 Severity::Error => DiagnosticSeverity::ERROR,
                 Severity::Warning => DiagnosticSeverity::WARNING,
             }),
+            code: diagnostic.error_code().map(|code| NumberOrString::String(code.to_string())),
             ..Diagnostic::default()
         });
     }
+}
+
+/// Returns the file id and span of the definition of an expression from its position.
+///
+/// # Arguments
+///
+/// * `db` - Preloaded compilation database
+/// * `uri` - Uri of the expression position
+/// * `position` - Position of the expression
+///
+/// # Returns
+///
+/// The [FileId] and [TextSpan] of the expression definition if found.
+pub fn get_definition_location(
+    db: &RootDatabase,
+    file: FileId,
+    position: Position,
+) -> Option<(FileId, TextSpan)> {
+    let syntax_db = db.upcast();
+    let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
+    if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
+        return None;
+    }
+    let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
+    let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
+    let node = stable_ptr.lookup(syntax_db);
+    let found_file = stable_ptr.file_id(syntax_db);
+    let span = node.span_without_trivia(syntax_db);
+    let width = span.width();
+    let (file_id, mut span) = get_originating_location(db.upcast(), found_file, span.start_only());
+    span.end = span.end.add_width(width);
+    Some((file_id, span))
 }

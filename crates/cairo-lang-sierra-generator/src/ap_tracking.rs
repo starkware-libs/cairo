@@ -90,7 +90,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
         stmt: &Statement,
     ) {
         for var_id in stmt.outputs() {
-            info.vars.swap_remove(&var_id);
+            info.vars.swap_remove(var_id);
         }
 
         info.variables_used(
@@ -123,11 +123,11 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
         );
     }
 
-    fn merge_match(
-        &mut self,
+    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
+        &'b mut self,
         (block_id, _statement_index): StatementLocation,
         match_info: &MatchInfo,
-        infos: &[Self::Info],
+        infos: Infos,
     ) -> Self::Info {
         // Find all the variables that are alive after this block convergence.
         // A variable is alive after a converges if it is a alive in some block that is reachable

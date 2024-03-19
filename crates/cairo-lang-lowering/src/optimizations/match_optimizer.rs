@@ -197,7 +197,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         stmt: &Statement,
     ) {
         if !self.statement_can_be_optimized_out(stmt, info, statement_location) {
-            info.demand.variables_introduced(self, &stmt.outputs(), ());
+            info.demand.variables_introduced(self, stmt.outputs(), ());
             info.demand.variables_used(
                 self,
                 stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
@@ -238,13 +238,17 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         }
     }
 
-    fn merge_match(
-        &mut self,
+    fn merge_match<'b, Infos>(
+        &'b mut self,
         (block_id, _statement_idx): StatementLocation,
         match_info: &'a MatchInfo,
-        infos: &[Self::Info],
-    ) -> Self::Info {
-        let arm_demands = zip_eq(match_info.arms(), infos)
+        infos: Infos,
+    ) -> Self::Info
+    where
+        'a: 'b,
+        Infos: Iterator<Item = &'b Self::Info> + Clone,
+    {
+        let arm_demands = zip_eq(match_info.arms(), infos.clone())
             .map(|(arm, info)| {
                 let mut demand = info.demand.clone();
                 demand.variables_introduced(self, &arm.var_ids, ());
@@ -264,7 +268,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                     match_variable: input.var_id,
                     match_arms: arms,
                     match_block: block_id,
-                    arm_demands: infos.iter().map(|info| info.demand.clone()).collect(),
+                    arm_demands: infos.map(|info| info.demand.clone()).collect(),
                 })
             }
 

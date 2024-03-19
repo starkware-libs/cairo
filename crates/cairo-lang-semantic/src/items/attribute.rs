@@ -1,10 +1,9 @@
 use cairo_lang_defs::ids::{
-    EnumId, FreeFunctionId, FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, ImplTypeId,
-    ModuleId, StructId, SubmoduleId, TraitFunctionId, TraitId, TraitTypeId,
+    EnumId, FreeFunctionId, FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId,
+    ImplTypeDefId, ModuleId, StructId, SubmoduleId, TraitFunctionId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::TypedSyntaxNode;
 
 use crate::db::SemanticGroup;
 use crate::{ConcreteEnumId, ConcreteStructId};
@@ -65,21 +64,7 @@ pub trait SemanticQueryAttrs {
         Ok(self
             .query_attr(db, attr_name)?
             .iter()
-            .any(|attr| is_single_arg_attr(db, attr, arg_name)))
-    }
-}
-
-/// Checks if the given attribute has a single argument with the given name.
-fn is_single_arg_attr(db: &dyn SemanticGroup, attr: &Attribute, arg_name: &str) -> bool {
-    match &attr.args[..] {
-        [arg] => match &arg.variant {
-            cairo_lang_syntax::attribute::structured::AttributeArgVariant::Unnamed {
-                value,
-                ..
-            } => value.as_syntax_node().get_text_without_trivia(db.upcast()) == arg_name,
-            _ => false,
-        },
-        _ => false,
+            .any(|attr| attr.is_single_unnamed_arg(db.upcast(), arg_name)))
     }
 }
 
@@ -150,7 +135,7 @@ impl SemanticQueryAttrs for TraitFunctionId {
     }
 }
 
-impl SemanticQueryAttrs for ImplTypeId {
+impl SemanticQueryAttrs for ImplTypeDefId {
     fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
         db.impl_type_attributes(*self)
     }

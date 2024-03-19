@@ -9,6 +9,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
 
+use super::var_renamer::VarRenamer;
 use crate::ids::LocationId;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
@@ -18,7 +19,7 @@ use crate::{
 
 /// Splits all the variables that were created by struct_construct and
 /// reintroduces the struct_construct statement when needed.
-/// Note that if a member is used after the struct then is means that that struct is duplicatable.
+/// Note that if a member is used after the struct then is means that that struct is copyable.
 
 pub fn split_structs(lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
@@ -92,7 +93,7 @@ fn get_var_split(lowered: &mut FlatLowered) -> SplitMapping {
             FlatBlockEnd::Match { info } => {
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
             }
-            FlatBlockEnd::Return(_) => {}
+            FlatBlockEnd::Return(..) => {}
             FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),
         }
     }
@@ -139,7 +140,7 @@ struct SplitStructsContext<'a> {
     /// The variables that were reconstructed as they were needed.
     reconstructed: ReconstructionMapping,
     // A renamer that keeps track of renamed vars.
-    var_remapper: VarRename,
+    var_remapper: VarRenamer,
     // The variables arena.
     variables: &'a mut Arena<Variable>,
 }
@@ -148,7 +149,7 @@ struct SplitStructsContext<'a> {
 fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
     let mut ctx = SplitStructsContext {
         reconstructed: Default::default(),
-        var_remapper: VarRename::default(),
+        var_remapper: VarRenamer::default(),
         variables: &mut lowered.variables,
     };
 
@@ -229,7 +230,7 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
                     );
                 }
             }
-            FlatBlockEnd::Return(vars) => {
+            FlatBlockEnd::Return(vars, _location) => {
                 for var in vars.iter_mut() {
                     var.var_id = ctx.maybe_reconstruct_var(
                         &split,
@@ -290,42 +291,53 @@ impl SplitStructsContext<'_> {
             return var_id;
         };
 
-        // If the variable was defined in the same block or it is non-duplicatable then we can
+        let inputs = split_info
+            .vars
+            .iter()
+            .map(|input_var_id| VarUsage {
+                var_id: self.maybe_reconstruct_var(
+                    split,
+                    *input_var_id,
+                    block_id,
+                    statements,
+                    location,
+                ),
+                location,
+            })
+            .collect_vec();
+
+        // If the variable was defined in the same block or it is non-copyable then we can
         // reconstruct it before the first usage. If not we need to reconstruct it at the
         // end of the of the original block as it might be used by more then one of the
         // children.
-        let (opt_block_id, reconstructed_var_id) = if block_id == split_info.block_id
-            || self.variables[var_id].duplicatable.is_err()
-        {
+        if block_id == split_info.block_id || self.variables[var_id].copyable.is_err() {
             let reconstructed_var_id = if block_id == split_info.block_id {
-                // If the reconstruction is in the original block we can reuse the variable id.
+                // If the reconstruction is in the original block we can reuse the variable id
+                // and mark the variable as reconstructed.
+                self.reconstructed.insert(var_id, None);
                 var_id
             } else {
                 // Use a new variable id in case the variable is also reconstructed elsewhere.
                 self.variables.alloc(self.variables[var_id].clone())
             };
 
-            let reconstruct_stmt = StatementStructConstruct {
-                inputs: split_info
-                    .vars
-                    .iter()
-                    .map(|var_id| VarUsage {
-                        var_id: self
-                            .maybe_reconstruct_var(split, *var_id, block_id, statements, location),
-                        location,
-                    })
-                    .collect_vec(),
+            statements.push(Statement::StructConstruct(StatementStructConstruct {
+                inputs,
                 output: reconstructed_var_id,
-            };
-            statements.push(Statement::StructConstruct(reconstruct_stmt));
+            }));
 
-            (None, reconstructed_var_id)
+            reconstructed_var_id
         } else {
-            (Some(split_info.block_id), var_id)
-        };
+            // All the inputs should use the original var names.
+            assert!(
+                zip_eq(&inputs, &split_info.vars)
+                    .all(|(input, var_id)| input.var_id == self.var_remapper.map_var_id(*var_id))
+            );
 
-        self.reconstructed.insert(var_id, opt_block_id);
-        reconstructed_var_id
+            // Mark `var_id` for reconstruction at the end of `split_info.block_id`
+            self.reconstructed.insert(var_id, Some(split_info.block_id));
+            var_id
+        }
     }
 
     /// Given an iterator over the original remapping, rebuilds the remapping with the given
@@ -392,29 +404,5 @@ impl SplitStructsContext<'_> {
                 }
             }
         }
-    }
-}
-
-#[derive(Default)]
-pub struct VarRename {
-    renamed_vars: UnorderedHashMap<VariableId, VariableId>,
-}
-
-impl Rebuilder for VarRename {
-    fn map_var_id(&mut self, var: VariableId) -> VariableId {
-        let Some(mut new_var_id) = self.renamed_vars.get(&var).cloned() else {
-            return var;
-        };
-        while let Some(new_id) = self.renamed_vars.get(&new_var_id) {
-            assert_ne!(new_var_id, *new_id);
-            new_var_id = *new_id;
-        }
-
-        self.renamed_vars.insert(var, new_var_id);
-        new_var_id
-    }
-
-    fn map_block_id(&mut self, block: BlockId) -> BlockId {
-        block
     }
 }

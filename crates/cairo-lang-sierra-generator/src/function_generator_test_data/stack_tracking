@@ -32,8 +32,10 @@ label_test::foo::0:
 function_call<user@test::get_val>() -> ([0])
 struct_deconstruct<Tuple<u32, Unit, u32>>([0]) -> ([1], [2], [3])
 drop<Unit>([2]) -> ()
-function_call<user@test::test_func>([1], [3]) -> ([4])
-return([4])
+store_temp<u32>([1]) -> ([1])
+store_temp<u32>([3]) -> ([3])
+function_call<user@test::test_func>([1], [3]) -> ()
+return()
 
 //! > ==========================================================================
 
@@ -73,7 +75,6 @@ dup<Tuple<felt252, felt252>>([0]) -> ([0], [1])
 struct_deconstruct<Tuple<felt252, felt252>>([1]) -> ([2], [3])
 drop<felt252>([2]) -> ()
 drop<felt252>([3]) -> ()
-store_temp<Tuple<felt252, felt252>>([0]) -> ([0])
 return([0])
 
 //! > ==========================================================================
@@ -113,8 +114,5 @@ function_call<user@test::get_val>() -> ([0])
 snapshot_take<Array<felt252>>([0]) -> ([1], [2])
 drop<Array<felt252>>([1]) -> ()
 struct_construct<core::array::Span::<core::felt252>>([2]) -> ([3])
-store_temp<core::array::Span::<core::felt252>>([3]) -> ([3])
-function_call<user@test::test_func>([3]) -> ([4])
-drop<Unit>([4]) -> ()
-struct_construct<Unit>() -> ([5])
-return([5])
+function_call<user@test::test_func>([3]) -> ()
+return()

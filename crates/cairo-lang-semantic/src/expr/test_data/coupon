@@ -1,0 +1,260 @@
+//! > Test coupon type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+type A = foo::Coupon;
+type B = bar::Coupon; // Invalid: missing type annotation.
+type C = bar::<u8>::Coupon;
+type D = extern_func::Coupon;
+type E = foo::UnknownIdentifier;
+
+struct MyStruct {
+    a: foo::Coupon,
+}
+
+fn bar<T>(x: T) {
+}
+
+fn foo(x: foo::Coupon) {
+    x.a;
+}
+
+extern fn extern_func() nopanic;
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo:2:10
+type B = bar::Coupon; // Invalid: missing type annotation.
+         ^*^
+
+error: Coupon cannot be used with extern functions.
+ --> lib.cairo:4:23
+type D = extern_func::Coupon;
+                      ^****^
+
+error: Invalid path.
+ --> lib.cairo:5:15
+type E = foo::UnknownIdentifier;
+              ^***************^
+
+error: Type "test::foo::Coupon" has no members.
+ --> lib.cairo:15:7
+    x.a;
+      ^
+
+//! > ==========================================================================
+
+//! > Test coupon inference conform.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+struct MyStruct<S> {
+    a: S,
+}
+
+fn bar<S, T>() {}
+fn bar2<S, T>() {}
+
+fn get_coupon<S, T>() -> bar::<S, T>::Coupon {}
+fn get_coupon2<S, T>() -> bar2::<S, T>::Coupon {}
+fn get_struct<S>() -> MyStruct<S> {}
+
+//! > function
+fn foo() {
+    let mut x = get_coupon();
+    x = get_coupon::<u8>();
+    x = get_coupon::<_, u16>();
+    x.a;
+
+    let mut x_snap = @get_coupon();
+    x_snap = @get_coupon::<u8>();
+    x_snap = @get_coupon::<_, u16>();
+    x_snap.a;
+
+    let mut y = get_coupon();
+    y = get_coupon2();
+
+    let mut z = get_coupon();
+    z = get_struct();
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "test::bar::<S, T>::Coupon", found: "()".
+ --> lib.cairo:8:46
+fn get_coupon<S, T>() -> bar::<S, T>::Coupon {}
+                                             ^^
+
+error: Unexpected return type. Expected: "test::bar2::<S, T>::Coupon", found: "()".
+ --> lib.cairo:9:48
+fn get_coupon2<S, T>() -> bar2::<S, T>::Coupon {}
+                                               ^^
+
+error: Unexpected return type. Expected: "test::MyStruct::<S>", found: "()".
+ --> lib.cairo:10:35
+fn get_struct<S>() -> MyStruct<S> {}
+                                  ^^
+
+error: Type "test::bar::<core::integer::u8, core::integer::u16>::Coupon" has no members.
+ --> lib.cairo:15:7
+    x.a;
+      ^
+
+error: Type "@test::bar::<core::integer::u8, core::integer::u16>::Coupon" has no members.
+ --> lib.cairo:20:12
+    x_snap.a;
+           ^
+
+error: Unexpected argument type. Expected: "test::bar::<?8, ?9>::Coupon", found: "test::bar2::<?10, ?11>::Coupon".
+ --> lib.cairo:23:9
+    y = get_coupon2();
+        ^***********^
+
+error: Unexpected argument type. Expected: "test::bar::<?12, ?13>::Coupon", found: "test::MyStruct::<?14>".
+ --> lib.cairo:26:9
+    z = get_struct();
+        ^**********^
+
+error: Type annotations needed. Failed to infer ?8
+ --> lib.cairo:22:17
+    let mut y = get_coupon();
+                ^********^
+
+//! > ==========================================================================
+
+//! > Test finding impls.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+mod m {
+    fn bar() {}
+    fn bar_no_drop() {}
+    impl DropBarCoupon of Drop<bar::Coupon>;
+
+    #[generate_trait]
+    pub impl MyImpl<T> of MyTrait<T> {
+        fn trait_fn() {}
+    }
+    impl DropMyImplCoupon<T> of Drop<MyImpl::<T>::trait_fn::Coupon>;
+}
+
+fn use_drop<A, +Drop<A>>(x: A) {}
+
+//! > function
+fn foo0(x: m::bar::Coupon) {
+    use_drop(x);
+}
+
+fn foo1(x: m::bar_no_drop::Coupon) {
+    use_drop(x);
+}
+
+fn foo2(x: m::MyImpl::<u8>::trait_fn::Coupon) {
+    use_drop(x);
+}
+
+//! > function_name
+foo0
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::traits::Drop::<test::m::bar_no_drop::Coupon>
+ --> lib.cairo:19:5
+    use_drop(x);
+    ^******^
+
+//! > ==========================================================================
+
+//! > Test coupon_call.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+fn bar<S, T>(x: T) {
+}
+
+fn bar2<S, T>(x: T) {
+}
+
+//! > function
+fn foo(x: bar::<u8, u16>::Coupon) {
+    bar(1); // Cannot infer S.
+    bar(1, __coupon__: x); // Valid call. S is inferred from the coupon.
+
+    bar2(1, __coupon__: x); // Wrong coupon type.
+    bar(1, mut __coupon__: x); // Wrong mutability.
+    bar(1, ref __coupon__: x); // Wrong mutability.
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "test::bar2::<?6, ?7>::Coupon", found: "test::bar::<core::integer::u8, core::integer::u16>::Coupon".
+ --> lib.cairo:10:25
+    bar2(1, __coupon__: x); // Wrong coupon type.
+                        ^
+
+error: The __coupon__ argument cannot have modifiers.
+ --> lib.cairo:11:28
+    bar(1, mut __coupon__: x); // Wrong mutability.
+                           ^
+
+error: The __coupon__ argument cannot have modifiers.
+ --> lib.cairo:12:28
+    bar(1, ref __coupon__: x); // Wrong mutability.
+                           ^
+
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo:7:5
+    bar(1); // Cannot infer S.
+    ^*^
+
+//! > ==========================================================================
+
+//! > Test coupon disabled.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+
+//! > function
+fn foo(x: foo::Coupon) {
+    foo(x, __coupon__: x);
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error: Coupons are disabled in the current crate.
+You can enable them by enabling the coupons experimental feature in the crate config.
+ --> lib.cairo:1:16
+fn foo(x: foo::Coupon) {
+               ^****^
+
+error: Wrong number of arguments. Expected 1, found: 2
+ --> lib.cairo:2:5
+    foo(x, __coupon__: x);
+    ^*******************^
+
+//! > crate_settings
+edition = "2023_01"
+
+[experimental_features]
+negative_impls = false
+coupons = false

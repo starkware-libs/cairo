@@ -298,3 +298,57 @@ mod callable {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > No impls found for method on a concrete self. 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    3_u16.bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn bar(self: T);
+}
+
+//! > expected_diagnostics
+error: Method `bar` could not be called on type `core::integer::u16`.
+Candidate `MyTrait::bar` inference failed with: Trait has no implementation in context: test::MyTrait::<core::integer::u16>
+ --> lib.cairo:5:11
+    3_u16.bar();
+          ^*^
+
+//! > ==========================================================================
+
+//! > No impls found for method on a type-var self. 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    (3_u16 + 3_u16).bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn bar(self: T);
+}
+
+//! > expected_diagnostics
+error: Method `bar` could not be called on type `core::integer::u16`.
+Candidate `MyTrait::bar` inference failed with: Trait has no implementation in context: test::MyTrait::<core::integer::u16>
+ --> lib.cairo:5:21
+    (3_u16 + 3_u16).bar();
+                    ^*^

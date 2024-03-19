@@ -1,0 +1,1081 @@
+//! > Missing reference
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+
+return([2]);
+
+test_program@0() -> (felt252);
+
+//! > error
+#0: [2] is undefined.
+
+//! > ==========================================================================
+
+//! > Reference override
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+libfunc felt252_dup = dup<felt252>;
+
+felt252_dup([1]) -> ([1], [2]);
+felt252_dup([2]) -> ([1], [2]);
+return();
+
+test_program@0([1]: felt252) -> ();
+
+//! > error
+#1->#2: [1] was overridden.
+
+//! > ==========================================================================
+
+//! > Invalid return reference
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+
+return([2]);
+
+test_program@0([2]: felt252) -> (felt252);
+
+//! > error
+#0: Return arguments are not on the stack.
+
+//! > ==========================================================================
+
+//! > undeclared libfunc
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+
+store_temp_felt252([1]) -> ([1]);
+
+test_program@0([1]: felt252) -> ();
+
+//! > error
+Error from program registry: Could not find requested libfunc `store_temp_felt252`.
+
+//! > ==========================================================================
+
+//! > Concrete libfunc Id used twice
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+
+libfunc store_temp_felt252 = store_temp<felt252>;
+libfunc store_temp_felt252 = store_temp<felt252>;
+
+//! > error
+Error from program registry: Used concrete libfunc id `store_temp_felt252` twice.
+
+//! > ==========================================================================
+
+//! > Invalid reference expression for felt252_add
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+libfunc felt252_add = felt252_add;
+
+felt252_add([1], [2]) -> ([4]);
+felt252_add([3], [4]) -> ([5]);
+return([5]);
+
+test_program@0([1]: felt252, [2]: felt252, [3]: felt252) -> (felt252);
+
+//! > error
+#1: One of the arguments does not satisfy the requirements of the libfunc.
+
+//! > ==========================================================================
+
+//! > Types mismatch
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type u128 = u128;
+libfunc felt252_add = felt252_add;
+felt252_add([1], [2]) -> ([3]);
+return([3]);
+
+test_program@0([1]: u128, [2]: u128) -> (felt252);
+
+//! > error
+#0: One of the arguments does not match the expected type of the libfunc or return statement.
+
+//! > ==========================================================================
+
+//! > Invalid entry point
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+test_program@25() -> ();
+
+//! > error
+InvalidStatementIdx
+
+//! > ==========================================================================
+
+//! > Bad Declaration
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+
+return();
+
+foo@0([1]: felt252, [1]: felt252) -> ();
+
+//! > error
+#0: Invalid function declaration.
+
+//! > ==========================================================================
+
+//! > Unknown type
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+return();
+
+foo@0([0]: BadType) -> ();
+
+//! > error
+Error from program registry: Could not find requested type `BadType`.
+
+//! > ==========================================================================
+
+//! > Missing references for statement
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+return();
+
+//! > error
+MissingAnnotationsForStatement
+
+//! > ==========================================================================
+
+//! > type ordering bad for building size map
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type NonZeroFelt252 = NonZero<felt252>;
+type felt252 = felt252;
+
+//! > error
+Error from program registry: Error during type specialization of `NonZeroFelt252`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > input count mismatch
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+libfunc felt252_add = felt252_add;
+felt252_add([1], [2], [3]) -> ([4]);
+return();
+test_program@0([1]: felt252, [2]: felt252, [3]: felt252) -> ();
+
+//! > error
+Error from program registry: #0: Libfunc invocation input count mismatch
+
+//! > ==========================================================================
+
+//! > output count mismatch
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+libfunc felt252_add = felt252_add;
+felt252_add([1], [2]) -> ([3], [4]);
+test_program@0([1]: felt252, [2]: felt252) -> ();
+
+//! > error
+Error from program registry: #0: Libfunc invocation branch #0 result count mismatch
+
+//! > ==========================================================================
+
+//! > branch count mismatch
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+libfunc felt252_add = felt252_add;
+felt252_add([1], [2]) { 0([3]) 1([3]) };
+test_program@0([1]: felt252, [2]: felt252) -> ();
+
+//! > error
+Error from program registry: #0: Libfunc invocation branch count mismatch
+
+//! > ==========================================================================
+
+//! > fallthrough mismatch
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+libfunc felt252_add = felt252_add;
+felt252_add([1], [2]) { 0([3]) };
+test_program@0([1]: felt252, [2]: felt252) -> ();
+
+//! > error
+Error from program registry: #0: Libfunc invocation branch #0 target mismatch
+
+//! > ==========================================================================
+
+//! > Dangling references
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+libfunc felt252_dup = dup<felt252>;
+
+felt252_dup([1]) -> ([1], [2]);
+return ([1]);
+test_program@0([1]: felt252) -> ();
+
+//! > error
+[2] is dangling at #1.
+
+//! > ==========================================================================
+
+//! > Inconsistent references - different locations on stack
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type NonZeroFelt252 = NonZero<felt252>;
+
+libfunc branch_align = branch_align;
+libfunc felt252_dup = dup<felt252>;
+libfunc jump = jump;
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc store_temp_felt252 = store_temp<felt252>;
+libfunc drop_nz_felt252 = drop<NonZeroFelt252>;
+
+felt252_dup([1]) -> ([1], [2]);
+felt252_dup([1]) -> ([1], [3]);
+felt252_is_zero([1]) { fallthrough() 7([1]) };
+branch_align() -> ();
+store_temp_felt252([2]) -> ([2]);
+store_temp_felt252([3]) -> ([3]);
+jump() { 11() };
+branch_align() -> ();
+drop_nz_felt252([1]) -> ();
+store_temp_felt252([3]) -> ([3]);
+store_temp_felt252([2]) -> ([2]);
+return ([2], [3]);
+
+test_program@0([1]: felt252) -> (felt252, felt252);
+
+//! > error
+#11: Inconsistent references annotations: Variable [3] expression mismatch. Expected `[[ap + -1]]`, got `[[ap + -2]]`.
+
+//! > ==========================================================================
+
+//! > Inconsistent references - unaligned area
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type NonZeroFelt252 = NonZero<felt252>;
+
+libfunc branch_align = branch_align;
+libfunc felt252_dup = dup<felt252>;
+libfunc felt252_drop = drop<felt252>;
+libfunc jump = jump;
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc store_temp_felt252 = store_temp<felt252>;
+libfunc drop_nz_felt252 = drop<NonZeroFelt252>;
+
+felt252_dup([1]) -> ([1], [2]);
+felt252_dup([1]) -> ([1], [3]);
+felt252_is_zero([1]) { fallthrough() 8([1]) };
+branch_align() -> ();
+store_temp_felt252([2]) -> ([2]);
+// Store and drop to break the stack so it can't be tracked.
+store_temp_felt252([3]) -> ([3]);
+felt252_drop([3]) -> ();
+jump() { 13() };
+branch_align() -> ();
+drop_nz_felt252([1]) -> ();
+store_temp_felt252([2]) -> ([2]);
+// Store and drop to break the stack so it can't be tracked.
+store_temp_felt252([3]) -> ([3]);
+felt252_drop([3]) -> ();
+return ([2]); // The failed merge statement #13.
+
+test_program@0([1]: felt252) -> (felt252);
+
+//! > error
+#13: Inconsistent references annotations: Variable [2] introduction point mismatch. Expected `#4->#5[0]`, got `#10->#11[0]`.
+
+//! > ==========================================================================
+
+//! > Inconsistent ap tracking base.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type NonZeroFelt252 = NonZero<felt252>;
+
+libfunc branch_align = branch_align;
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc enable_ap_tracking = enable_ap_tracking;
+libfunc jump = jump;
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc drop_nz_felt252 = drop<NonZeroFelt252>;
+
+disable_ap_tracking() -> ();
+felt252_is_zero([1]) { fallthrough() 5([1]) };
+branch_align() -> ();
+enable_ap_tracking() -> ();
+jump() { 8() };
+branch_align() -> ();
+drop_nz_felt252([1]) -> ();
+enable_ap_tracking() -> ();
+return (); // The failed merge statement #8.
+
+test_program@0([1]: felt252) -> ();
+
+//! > error
+#8: Inconsistent ap tracking.
+
+//! > ==========================================================================
+
+//! > Enabling ap tracking when already enabled.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+libfunc enable_ap_tracking = enable_ap_tracking;
+
+enable_ap_tracking() -> ();
+return ();
+
+test_program@0() -> ();
+
+//! > error
+#0: Attempting to enable ap tracking when already enabled.
+
+//! > ==========================================================================
+
+//! > Invalid return type
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type NonZeroFelt252 = NonZero<felt252>;
+
+libfunc branch_align = branch_align;
+libfunc felt252_dup = dup<felt252>;
+libfunc felt252_drop = drop<felt252>;
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc store_temp_felt252 = store_temp<felt252>;
+libfunc store_temp_nz_felt252 = store_temp<NonZeroFelt252>;
+
+felt252_is_zero([1]) { fallthrough() 4([1]) };
+branch_align() -> ();
+store_temp_felt252([2]) -> ([2]);
+return ([2]);
+branch_align() -> ();
+felt252_drop([2]) -> ();
+store_temp_nz_felt252([1]) -> ([1]);
+return ([1]);
+
+test_program@0([1]: felt252, [2]: felt252) -> (felt252);
+
+//! > error
+#7: One of the arguments does not match the expected type of the libfunc or return statement.
+
+//! > ==========================================================================
+
+//! > Ap change error
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+
+libfunc felt252_dup = dup<felt252>;
+libfunc felt252_drop = drop<felt252>;
+libfunc store_temp_felt252 = store_temp<felt252>;
+libfunc call_foo = function_call<user@foo>;
+
+store_temp_felt252([1]) -> ([1]);
+felt252_dup([1]) -> ([1], [2]);
+call_foo([2]) -> ();
+store_temp_felt252([1]) -> ([1]);
+felt252_drop([1]) -> ();
+return();
+
+foo@0([1]: felt252) -> ();
+
+//! > error
+#2->#3: Got 'Unknown ap change' error while moving [1].
+
+//! > ==========================================================================
+
+//! > Inconsistent ap tracking.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type NonZeroFelt252 = NonZero<felt252>;
+
+libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc branch_align = branch_align;
+libfunc felt252_drop = drop<felt252>;
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc felt252_unwrap_non_zero = unwrap_non_zero<felt252>;
+libfunc jump = jump;
+
+felt252_is_zero([1]) { fallthrough() 4([1]) };
+branch_align() -> ();
+revoke_ap_tracking() -> ();
+jump() { 7() };
+branch_align() -> ();
+felt252_unwrap_non_zero([1]) -> ([1]);
+felt252_drop([1]) -> ();
+return ();
+
+foo@0([1]: felt252) -> ();
+
+//! > error
+#7: Inconsistent ap tracking.
+
+//! > ==========================================================================
+
+//! > Invalid finalize_locals 1
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+libfunc finalize_locals = finalize_locals;
+
+finalize_locals () -> ();
+finalize_locals () -> ();
+return ();
+
+test_program@0() -> ();
+
+//! > error
+#1: finalize_locals is not allowed at this point.
+
+//! > ==========================================================================
+
+//! > Invalid finalize_locals 2
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+
+libfunc finalize_locals = finalize_locals;
+libfunc store_temp_felt252 = store_temp<felt252>;
+libfunc call_foo = function_call<user@foo>;
+
+store_temp_felt252([1]) -> ([1]);
+call_foo([1]) -> ();
+finalize_locals() -> ();
+return ();
+
+foo@0([1]: felt252) -> ();
+
+//! > error
+#2: finalize_locals is not allowed at this point.
+
+//! > ==========================================================================
+
+//! > Invalid alloc_local
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type UninitializedFelt252 = Uninitialized<felt252>;
+
+libfunc alloc_local_felt252 = alloc_local<felt252>;
+libfunc store_temp_felt252 = store_temp<felt252>;
+
+alloc_local_felt252() -> ([2]);
+store_temp_felt252([1]) -> ([1]);
+alloc_local_felt252() -> ([3]);
+return ();
+
+foo@0([1]: felt252) -> ();
+
+//! > error
+#2: alloc_local is not allowed at this point.
+
+//! > ==========================================================================
+
+//! > missing finalize_locals
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type UninitializedFelt252 = Uninitialized<felt252>;
+
+libfunc alloc_local_felt252 = alloc_local<felt252>;
+libfunc store_local_felt252 = store_local<felt252>;
+libfunc felt252_drop = drop<felt252>;
+
+alloc_local_felt252() -> ([2]);
+store_local_felt252([2], [1]) -> ([2]);
+felt252_drop([2]) -> ();
+return ();
+
+foo@0([1]: felt252) -> ();
+
+//! > error
+#3: locals were allocated but finalize_locals was not called.
+
+//! > ==========================================================================
+
+//! > store_temp<Uninitialized<felt252>()
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type UninitializedFelt252 = Uninitialized<felt252>;
+
+libfunc alloc_local_felt252 = alloc_local<felt252>;
+libfunc store_temp_felt252 = store_temp<UninitializedFelt252>;
+libfunc drop_felt252 = drop<UninitializedFelt252>;
+
+alloc_local_felt252() -> ([1]);
+store_temp_felt252([1]) -> ([1]);
+drop_felt252([1]) -> ();
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during libfunc specialization of store_temp_felt252: Could not specialize libfunc `store_temp` with generic_args: [UninitializedFelt252]. Error: Provided generic argument is unsupported.
+
+//! > ==========================================================================
+
+//! > Statement in two functions
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+return ();
+
+foo@0() -> ();
+bar@0() -> ();
+
+//! > error
+#0: Belongs to two different functions.
+
+//! > ==========================================================================
+
+//! > Alloc local after re-enabling ap tracking
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type UninitializedFelt252 = Uninitialized<felt252>;
+
+libfunc enable_ap_tracking = enable_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc alloc_local_felt252 = alloc_local<felt252>;
+
+disable_ap_tracking() -> ();
+enable_ap_tracking() -> ();
+alloc_local_felt252() -> ([1]);
+
+return ();
+
+foo@0() -> ();
+
+//! > error
+#2: alloc_local is not allowed at this point.
+
+//! > ==========================================================================
+
+//! > Function that uses unstorable types
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type UninitializedFelt252 = Uninitialized<felt252>;
+
+return ();
+
+foo@0([1]: UninitializedFelt252) -> ();
+
+//! > error
+Error from program registry: Function `foo`'s parameter type `UninitializedFelt252` is not storable.
+
+//! > ==========================================================================
+
+//! > Invalid const data.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u8 = u8;
+type Const<u8, 5, 3> = Const<u8, 5, 3>;
+
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `Const<u8, 5, 3>`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > Out of range const data.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u8 = u8;
+type Const<u8, 256> = Const<u8, 256>;
+
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `Const<u8, 256>`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > Non constable const type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type ECPoint = ECPoint;
+type Const<ECPoint, 5> = Const<ECPoint, 5>;
+
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ECPoint`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > Mismatched number of const struct members.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type Const<felt252, 5> = Const<felt252, 5>;
+type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
+type Const<
+    Tuple<felt252, felt252>,
+    Const<felt252, 5>
+> = Const<
+    Tuple<felt252, felt252>,
+    Const<felt252, 5>
+>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `Const<Tuple<felt252, felt252>, Const<felt252, 5>>`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > Mismatched types of const struct members.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type u8 = u8;
+type Const<felt252, 5> = Const<felt252, 5>;
+type Tuple<u8, u8> = Struct<ut@Tuple, u8, u8>;
+type Const<
+    Tuple<u8, u8>,
+    Const<felt252, 5>,
+    Const<felt252, 5>
+> = Const<
+    Tuple<u8, u8>,
+    Const<felt252, 5>,
+    Const<felt252, 5>
+>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `Const<Tuple<u8, u8>, Const<felt252, 5>, Const<felt252, 5>>`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > Zero const NonZero u128 type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u128 = u128;
+type NonZero<u128> = NonZero<u128>;
+type ConstZeroU128 = Const<u128, 0>;
+type ConstNzZeroU128 = Const<NonZero<u128>, ConstZeroU128>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ConstNzZeroU128`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > Zero const NonZero u256 type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u128 = u128;
+type u256 = Struct<ut@u256, u128, u128>;
+type NonZero<u256> = NonZero<u256>;
+type ConstZeroU128 = Const<u128, 0>;
+type ConstZeroU256 = Const<u256, ConstZeroU128, ConstZeroU128>;
+type ConstNzZeroU256 = Const<NonZero<u256>, ConstZeroU256>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ConstNzZeroU256`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > const NonZero enum type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type Unit = Struct<ut@Unit>;
+type Const<Unit> = Const<Unit>;
+type E = Enum<ut@E, Unit, Unit>;
+type NonZero<E> = NonZero<E>;
+type ConstE = Const<E, 0, Const<Unit>>;
+type ConstNzE = Const<NonZero<E>, ConstE>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ConstNzE`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > const NonZero empty struct type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type Unit = Struct<ut@Unit>;
+type NonZero<Unit> = NonZero<Unit>;
+type ConstUnit = Const<Unit>;
+type ConstNzUnit = Const<NonZero<Unit>, ConstUnit>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ConstNzUnit`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > const NonZero non-flat structure.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u128 = u128;
+type u256 = Struct<ut@core::integer::u256, u128, u128>;
+type wrapped_u256 = Struct<ut@wrapped_u256, u256>;
+type NonZero<u256> = NonZero<u256>;
+type ConstU128 = Const<u128, 1>;
+type ConstU256 = Const<u256, ConstU128, ConstU128>;
+type ConstWrappedU256 = Const<wrapped_u256, ConstU256>;
+type ConstNzWrappedU256 = Const<NonZero<wrapped_u256>, ConstWrappedU256>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ConstNzWrappedU256`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > const NonZero u256 like structure.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u128 = u128;
+type u256 = Struct<ut@core::integer::u256_wrong, u128, u128>;
+type NonZero<u256> = NonZero<u256>;
+type ConstU128 = Const<u128, 1>;
+type ConstU256 = Const<u256, ConstU128, ConstU128>;
+type ConstNzU256 = Const<NonZero<u256>, ConstU256>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ConstNzU256`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > Const segments with hole.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type BoxFelt252 = Box<felt252>;
+type Const = Const<felt252, 5>;
+
+libfunc usage0 = const_as_box<Const, 0>;
+libfunc usage1 = const_as_box<Const, 1>;
+libfunc usage3 = const_as_box<Const, 3>;
+
+return ();
+
+foo@0() -> ();
+
+//! > error
+Const segments must appear in ascending order without holes.
+
+//! > ==========================================================================
+
+//! > Unordered const segments.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type BoxFelt252 = Box<felt252>;
+type Const = Const<felt252, 5>;
+
+libfunc usage0 = const_as_box<Const, 0>;
+libfunc usage2 = const_as_box<Const, 2>;
+libfunc usage1 = const_as_box<Const, 1>;
+
+return ();
+
+foo@0() -> ();
+
+//! > error
+Const segments must appear in ascending order without holes.
+
+//! > ==========================================================================
+
+//! > Recursively buy coupon
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type Coupon = Coupon<user@test::recursive_buy>;
+type Unit = Struct<ut@Tuple>;
+
+libfunc coupon_buy = coupon_buy<Coupon>;
+libfunc drop_coupon = drop<Coupon>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+
+coupon_buy() -> ([0]);
+drop_coupon([0]) -> ();
+struct_construct<Unit>() -> ([1]);
+return([1]);
+
+test::recursive_buy@0() -> (Unit);
+
+//! > metadata
+gas
+
+//! > error
+found an unexpected cycle during cost computation
+
+//! > ==========================================================================
+
+//! > Recursively refund coupon
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type Coupon = Coupon<user@test::recursive_refund>;
+type Unit = Struct<ut@Tuple>;
+
+libfunc coupon_refund = coupon_refund<Coupon>;
+libfunc drop_coupon = drop<Coupon>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+
+coupon_refund([0]) -> ();
+struct_construct<Unit>() -> ([1]);
+return([1]);
+
+test::recursive_refund@0([0]: Coupon) -> (Unit);
+
+//! > metadata
+gas
+
+//! > error
+found an unexpected cycle during cost computation
+
+//! > ==========================================================================
+
+//! > Code size too large
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+
+libfunc store_temp<felt252> = store_temp<felt252>;
+
+store_temp<felt252>([1]) -> ([1]);
+store_temp<felt252>([1]) -> ([1]);
+return ([1]);
+
+test_program@0([1]: felt252) -> (felt252);
+
+//! > max_bytecode_size
+2
+
+//! > error
+Code size limit exceeded.
+
+//! > ==========================================================================
+
+//! > Code size too large from consts
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type Box<felt252> = Box<felt252>;
+type C0 = Const<felt252, 0>;
+type C1 = Const<felt252, 1>;
+
+libfunc usage0 = const_as_box<C0, 0>; // 1 for segment, 1 for data.
+libfunc usage1 = const_as_box<C1, 0>; // 0 for segment, 1 for data.
+
+return (); // 1 for return.
+
+foo@0() -> ();
+
+//! > max_bytecode_size
+3
+
+//! > error
+Code size limit exceeded.
+
+//! > ==========================================================================
+
+//! > Code size too large from consts multi segment
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type Box<felt252> = Box<felt252>;
+type C = Const<felt252, 0>;
+
+libfunc usage0 = const_as_box<C, 0>; // 1 for segment, 1 for data.
+libfunc usage1 = const_as_box<C, 1>; // 1 for segment, 1 for data.
+
+return (); // 1 for return.
+
+foo@0() -> ();
+
+//! > max_bytecode_size
+4
+
+//! > error
+Code size limit exceeded.

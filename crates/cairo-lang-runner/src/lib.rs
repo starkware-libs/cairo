@@ -1,9 +1,9 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
 
-use ark_std::iterable::Iterable;
 use cairo_felt::Felt252;
 use cairo_lang_casm::hints::Hint;
+use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
@@ -21,7 +21,7 @@ use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{Function, GenStatement, GenericArg, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
-use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
+use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, calc_metadata_ap_change_only, Metadata, MetadataComputationConfig, MetadataError,
 };
@@ -112,6 +112,9 @@ pub enum RunResultValue {
 pub fn token_gas_cost(token_type: CostTokenType) -> usize {
     match token_type {
         CostTokenType::Const => 1,
+        CostTokenType::Step | CostTokenType::Hole | CostTokenType::RangeCheck => {
+            panic!("Token type {:?} has no gas cost.", token_type)
+        }
         CostTokenType::Pedersen => 4130,
         CostTokenType::Poseidon => 500,
         CostTokenType::Bitwise => 594,
@@ -123,7 +126,7 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
 #[derive(Debug)]
 pub enum Arg {
     Value(Felt252),
-    Array(Vec<Felt252>),
+    Array(Vec<Arg>),
 }
 impl From<Felt252> for Arg {
     fn from(value: Felt252) -> Self {
@@ -188,7 +191,7 @@ impl SierraCasmRunner {
         let casm_program = cairo_lang_sierra_to_casm::compiler::compile(
             &sierra_program,
             &metadata,
-            gas_usage_check,
+            SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX },
         )?;
 
         // Find all contracts.
@@ -215,7 +218,7 @@ impl SierraCasmRunner {
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = Self::create_code_footer();
         let (hints_dict, string_to_hint) =
-            build_hints_dict(chain!(entry_code.iter(), self.casm_program.instructions.iter()));
+            build_hints_dict(chain!(&entry_code, &self.casm_program.instructions));
         let assembled_program = self.casm_program.clone().assemble_ex(&entry_code, &footer);
 
         let mut hint_processor = CairoHintProcessor {
@@ -582,26 +585,8 @@ impl SierraCasmRunner {
             (EcOpType::ID, 4),
             (PoseidonType::ID, 3),
         ]);
-        // Load all array args content to memory.
-        let mut array_args_data = vec![];
         let mut ap_offset: i16 = 0;
-        for arg in args {
-            let Arg::Array(values) = arg else { continue };
-            array_args_data.push(ap_offset);
-            casm_extend! {ctx,
-                %{ memory[ap + 0] = segments.add() %}
-                ap += 1;
-            }
-            for (i, v) in values.iter().enumerate() {
-                let arr_at: i16 = (i + 1).into_or_panic();
-                casm_extend! {ctx,
-                    [ap + 0] = (v.to_bigint());
-                    [ap + 0] = [[ap - arr_at] + i.into_or_panic()], ap++;
-                }
-            }
-            ap_offset += (1 + values.len()).into_or_panic::<i16>();
-        }
-        let mut array_args_data_iter = array_args_data.iter();
+        let mut array_args_data_iter = prep_array_args(&mut ctx, args, &mut ap_offset).into_iter();
         let after_arrays_data_offset = ap_offset;
         if param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID) {
             casm_extend! {ctx,
@@ -653,27 +638,9 @@ impl SierraCasmRunner {
                     let Some((arg_index, arg)) = arg_iter.next() else {
                         break;
                     };
-                    match arg {
-                        Arg::Value(value) => {
-                            casm_extend! {ctx,
-                                [ap + 0] = (value.to_bigint()), ap++;
-                            }
-                            ap_offset += 1;
-                        }
-                        Arg::Array(values) => {
-                            let offset = -ap_offset + array_args_data_iter.next().unwrap();
-                            casm_extend! {ctx,
-                                [ap + 0] = [ap + (offset)], ap++;
-                                [ap + 0] = [ap - 1] + (values.len()), ap++;
-                            }
-                            ap_offset += 2;
-                            if ap_offset > param_ap_offset_end {
-                                return Err(RunnerError::ArgumentUnaligned {
-                                    param_index,
-                                    arg_index,
-                                });
-                            }
-                        }
+                    add_arg_to_stack(&mut ctx, arg, &mut ap_offset, &mut array_args_data_iter);
+                    if ap_offset > param_ap_offset_end {
+                        return Err(RunnerError::ArgumentUnaligned { param_index, arg_index });
                     }
                 }
                 param_index += 1;
@@ -820,6 +787,67 @@ pub fn initialize_vm(context: RunFunctionContext<'_>) -> Result<(), Box<CairoRun
     vm.insert_value((vm.get_pc() + context.data_len).unwrap(), builtin_cost_segment)
         .map_err(|e| Box::new(e.into()))?;
     Ok(())
+}
+
+/// The information on an array argument that was added to the stack.
+struct ArrayDataInfo {
+    /// The offset of the pointer to the array data in the stack.
+    ptr_offset: i16,
+    /// The size of the array data in the stack.
+    size: i16,
+}
+
+/// Adds an argument to the stack, updating the ap_offset and the array_data_iter.
+fn add_arg_to_stack(
+    ctx: &mut CasmContext,
+    arg: &Arg,
+    ap_offset: &mut i16,
+    array_data_iter: &mut impl Iterator<Item = ArrayDataInfo>,
+) {
+    match arg {
+        Arg::Value(value) => {
+            casm_extend! {ctx,
+                [ap + 0] = (value.to_bigint()), ap++;
+            }
+            *ap_offset += 1;
+        }
+        Arg::Array(_) => {
+            let info = array_data_iter.next().unwrap();
+            casm_extend! {ctx,
+                [ap + 0] = [ap + (info.ptr_offset - *ap_offset)], ap++;
+                [ap + 0] = [ap - 1] + (info.size), ap++;
+            }
+            *ap_offset += 2;
+        }
+    }
+}
+
+/// Prepares the array arguments for the stack, updating the ap_offset and returning the
+/// array_args_data.
+fn prep_array_args(ctx: &mut CasmContext, args: &[Arg], ap_offset: &mut i16) -> Vec<ArrayDataInfo> {
+    let mut array_args_data = vec![];
+    for arg in args {
+        let Arg::Array(values) = arg else { continue };
+        let mut inner_array_args_data = prep_array_args(ctx, values, ap_offset).into_iter();
+        casm_extend! {ctx,
+            %{ memory[ap + 0] = segments.add() %}
+            ap += 1;
+        }
+
+        let ptr_offset = *ap_offset;
+        *ap_offset += 1;
+        let data_offset = *ap_offset;
+        for arg in values {
+            add_arg_to_stack(ctx, arg, ap_offset, &mut inner_array_args_data);
+        }
+        let ptr = *ap_offset - ptr_offset;
+        let size = *ap_offset - data_offset;
+        for i in 0..size {
+            casm_extend! {ctx, [ap + (i - size)] = [[ap - ptr] + i]; }
+        }
+        array_args_data.push(ArrayDataInfo { ptr_offset, size });
+    }
+    array_args_data
 }
 
 /// Creates the metadata required for a Sierra program lowering to casm.

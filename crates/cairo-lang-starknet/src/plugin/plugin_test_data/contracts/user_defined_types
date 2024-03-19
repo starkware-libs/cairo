@@ -298,7 +298,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x22a6a9ef9e77b4a6859543ea1095bf317324bd00f9420953f068bcafc59b605;
 
 
@@ -467,7 +467,7 @@ impl SimpleEnumSerde of core::serde::Serde::<SimpleEnum> {
 starknet_derive:
 
 impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<SimpleEnum> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<SimpleEnum> {
         let idx = starknet::Store::<felt252>::read(address_domain, base)?;
         match idx {
             1 => {
@@ -489,7 +489,7 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
             }
         }
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: SimpleEnum) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: SimpleEnum) -> starknet::SyscallResult<()> {
         match value {
             SimpleEnum::A(x) => {
                 starknet::Store::write(address_domain, base, 1)?;
@@ -502,7 +502,7 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
         };
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<SimpleEnum> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<SimpleEnum> {
         let idx = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
         match idx {
             1 => {
@@ -525,7 +525,7 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
         }
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: SimpleEnum) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: SimpleEnum) -> starknet::SyscallResult<()> {
         match value {
             SimpleEnum::A(x) => {
                 starknet::Store::write_at_offset(address_domain, base, offset, 1)?;
@@ -573,7 +573,7 @@ impl EnumWithDefaultSerde of core::serde::Serde::<EnumWithDefault> {
 starknet_derive:
 
 impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<EnumWithDefault> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<EnumWithDefault> {
         let idx = starknet::Store::<felt252>::read(address_domain, base)?;
         match idx {
             1 => {
@@ -602,7 +602,7 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
             }
         }
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: EnumWithDefault) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: EnumWithDefault) -> starknet::SyscallResult<()> {
         match value {
             EnumWithDefault::A(x) => {
                 starknet::Store::write(address_domain, base, 1)?;
@@ -619,7 +619,7 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
         };
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<EnumWithDefault> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<EnumWithDefault> {
         let idx = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
         match idx {
             1 => {
@@ -649,7 +649,7 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
         }
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: EnumWithDefault) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: EnumWithDefault) -> starknet::SyscallResult<()> {
         match value {
             EnumWithDefault::A(x) => {
                 starknet::Store::write_at_offset(address_domain, base, offset, 1)?;

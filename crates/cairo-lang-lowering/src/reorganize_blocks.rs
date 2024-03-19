@@ -74,7 +74,7 @@ pub fn reorganize_blocks(lowered: &mut FlatLowered) {
                 statements.push(rebuilder.rebuild_statement(stmt));
             }
             if let FlatBlockEnd::Goto(target_block_id, remappings) = &block.end {
-                if rebuilder.block_remapping.get(target_block_id).is_none() {
+                if !rebuilder.block_remapping.contains_key(target_block_id) {
                     assert!(
                         rebuilder.rebuild_remapping(remappings).is_empty(),
                         "Remapping should be empty."
@@ -127,20 +127,18 @@ impl Analyzer<'_> for TopSortContext {
         _info: &mut Self::Info,
         _statement_location: StatementLocation,
         target_block_id: BlockId,
-        remapping: &VarRemapping,
+        // Note that the remappings of a goto are not considered a usage, Later usages (such as a
+        // merge) would catch them if used.
+        _remapping: &VarRemapping,
     ) {
         self.incoming_gotos[target_block_id.0] += 1;
-
-        for var_usage in remapping.values() {
-            self.remappings_ctx.set_used(var_usage.var_id);
-        }
     }
 
-    fn merge_match(
-        &mut self,
+    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
+        &'b mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        _infos: &[Self::Info],
+        _infos: Infos,
     ) -> Self::Info {
         for var_usage in match_info.inputs() {
             self.remappings_ctx.set_used(var_usage.var_id);

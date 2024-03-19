@@ -27,7 +27,7 @@ extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 #[generate_trait]
 pub impl ArrayImpl<T> of ArrayTrait<T> {
     #[inline(always)]
-    fn new() -> Array<T> {
+    fn new() -> Array<T> nopanic {
         array_new()
     }
     #[inline(always)]

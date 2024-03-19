@@ -56,11 +56,13 @@ export class StandaloneLS implements LanguageServerExecutableProvider {
     const exec: Required<Pick<lc.Executable, "options">> & lc.Executable = {
       command: this.path,
       options: {
-        env: {
-          SCARB: this.scarb?.path,
-        },
+        env: {},
       },
     };
+
+    if (this.scarb?.path) {
+      exec.options.env["SCARB"] = this.scarb.path;
+    }
 
     const cwd = this.workspaceFolder?.uri.fsPath;
     if (cwd != undefined) {

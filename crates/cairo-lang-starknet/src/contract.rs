@@ -315,10 +315,9 @@ fn analyze_contract<T: SierraIdReplacer>(
     let item =
         db.module_item_by_name(contract.module_id(), "TEST_CLASS_HASH".into()).unwrap().unwrap();
     let constant_id = extract_matches!(item, ModuleItemId::Constant);
-    let value =
-        extract_matches!(db.constant_semantic_data(constant_id).unwrap().value, Expr::Literal)
-            .value;
-    let class_hash = value.into();
+    let constant = db.constant_semantic_data(constant_id).unwrap();
+    let class_hash: Felt252 =
+        extract_matches!(&constant.exprs[constant.value], Expr::Literal).value.clone().into();
 
     // Extract functions.
     let SemanticEntryPoints { external, l1_handler, constructor } =
@@ -351,6 +350,6 @@ pub fn get_selector_and_sierra_function<T: SierraIdReplacer>(
 ) -> (Felt252, FunctionId) {
     let function_id = function_with_body.value.function_id(db.upcast()).expect("Function error.");
     let sierra_id = replacer.replace_function_id(&db.intern_sierra_function(function_id));
-    let selector = starknet_keccak(function_with_body.alias.as_bytes()).into();
+    let selector: Felt252 = starknet_keccak(function_with_body.alias.as_bytes()).into();
     (selector, sierra_id)
 }

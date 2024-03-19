@@ -4,6 +4,7 @@ mod test;
 
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::DependencyType;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::program::GenStatement;
 
@@ -18,7 +19,7 @@ pub fn get_ap_change(
 ) -> Maybe<SierraApChange> {
     // The implementation of get_ap_change() may call this function recursively. To guarantee no
     // salsa query cycles are created, we first verify that there are no cycles.
-    if db.contains_cycle(function_id)? {
+    if db.contains_cycle(function_id, DependencyType::Call)? {
         return Ok(SierraApChange::Unknown);
     }
 

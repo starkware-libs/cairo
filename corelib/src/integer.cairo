@@ -9,6 +9,8 @@ use core::array::SpanTrait;
 pub trait NumericLiteral<T>;
 impl NumericLiteralfelt252 of NumericLiteral<felt252>;
 
+impl NumericLiteralNonZero<T, +NumericLiteral<T>> of NumericLiteral<NonZero<T>>;
+
 #[derive(Copy, Drop)]
 pub extern type u128;
 impl NumericLiteralu128 of NumericLiteral<u128>;
@@ -230,6 +232,7 @@ impl U128PartialOrd of PartialOrd<u128> {
 }
 
 pub extern type Bitwise;
+/// Returns the bitwise operations (AND, XOR, OR) between `lhs` and `rhs`.
 extern fn bitwise(lhs: u128, rhs: u128) -> (u128, u128, u128) implicits(Bitwise) nopanic;
 impl U128BitAnd of BitAnd<u128> {
     #[inline(always)]
@@ -2856,3 +2859,188 @@ impl I128OverflowingAdd of core::num::traits::OverflowingAdd<i128> {
         }
     }
 }
+
+// OverflowingSub implementations
+impl U8OverflowingSub of core::num::traits::OverflowingSub<u8> {
+    fn overflowing_sub(self: u8, v: u8) -> (u8, bool) {
+        match u8_overflowing_sub(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U16OverflowingSub of core::num::traits::OverflowingSub<u16> {
+    fn overflowing_sub(self: u16, v: u16) -> (u16, bool) {
+        match u16_overflowing_sub(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U32OverflowingSub of core::num::traits::OverflowingSub<u32> {
+    fn overflowing_sub(self: u32, v: u32) -> (u32, bool) {
+        match u32_overflowing_sub(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U64OverflowingSub of core::num::traits::OverflowingSub<u64> {
+    fn overflowing_sub(self: u64, v: u64) -> (u64, bool) {
+        match u64_overflowing_sub(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U128OverflowingSub of core::num::traits::OverflowingSub<u128> {
+    fn overflowing_sub(self: u128, v: u128) -> (u128, bool) {
+        match u128_overflowing_sub(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U256OverflowingSub of core::num::traits::OverflowingSub<u256> {
+    fn overflowing_sub(self: u256, v: u256) -> (u256, bool) {
+        u256_overflow_sub(self, v)
+    }
+}
+
+impl I8OverflowingSub of core::num::traits::OverflowingSub<i8> {
+    fn overflowing_sub(self: i8, v: i8) -> (i8, bool) {
+        match i8_overflowing_sub_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I16OverflowingSub of core::num::traits::OverflowingSub<i16> {
+    fn overflowing_sub(self: i16, v: i16) -> (i16, bool) {
+        match i16_overflowing_sub_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I32OverflowingSub of core::num::traits::OverflowingSub<i32> {
+    fn overflowing_sub(self: i32, v: i32) -> (i32, bool) {
+        match i32_overflowing_sub_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I64OverflowingSub of core::num::traits::OverflowingSub<i64> {
+    fn overflowing_sub(self: i64, v: i64) -> (i64, bool) {
+        match i64_overflowing_sub_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I128OverflowingSub of core::num::traits::OverflowingSub<i128> {
+    fn overflowing_sub(self: i128, v: i128) -> (i128, bool) {
+        match i128_overflowing_sub_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+// OverflowingMul implementations
+impl U8OverflowingMul of core::num::traits::OverflowingMul<u8> {
+    fn overflowing_mul(self: u8, v: u8) -> (u8, bool) {
+        let wide_result = u8_wide_mul(self, v);
+        let MASK: u16 = BoundedInt::<u8>::max().into();
+        let (v_low, _, v_with_low_masked) = u16_bitwise(wide_result, MASK);
+        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+    }
+}
+
+impl U16OverflowingMul of core::num::traits::OverflowingMul<u16> {
+    fn overflowing_mul(self: u16, v: u16) -> (u16, bool) {
+        let wide_result = u16_wide_mul(self, v);
+        let MASK: u32 = BoundedInt::<u16>::max().into();
+        let (v_low, _, v_with_low_masked) = u32_bitwise(wide_result, MASK);
+        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+    }
+}
+
+impl U32OverflowingMul of core::num::traits::OverflowingMul<u32> {
+    fn overflowing_mul(self: u32, v: u32) -> (u32, bool) {
+        let wide_result = u32_wide_mul(self, v);
+        let MASK: u64 = BoundedInt::<u32>::max().into();
+        let (v_low, _, v_with_low_masked) = u64_bitwise(wide_result, MASK);
+        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+    }
+}
+
+impl U64OverflowingMul of core::num::traits::OverflowingMul<u64> {
+    fn overflowing_mul(self: u64, v: u64) -> (u64, bool) {
+        let wide_result = u64_wide_mul(self, v);
+        let MASK: u128 = BoundedInt::<u64>::max().into();
+        let (v_low, _, v_with_low_masked) = bitwise(wide_result, MASK);
+        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+    }
+}
+
+impl U128OverflowingMul of core::num::traits::OverflowingMul<u128> {
+    fn overflowing_mul(self: u128, v: u128) -> (u128, bool) {
+        u128_overflowing_mul(self, v)
+    }
+}
+
+impl U256OverflowingMul of core::num::traits::OverflowingMul<u256> {
+    fn overflowing_mul(self: u256, v: u256) -> (u256, bool) {
+        u256_overflow_mul(self, v)
+    }
+}
+
+/// WrappingAdd implementations
+impl U8WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u8>;
+impl U16WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u16>;
+impl U32WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u32>;
+impl U64WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u64>;
+impl U128WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u128>;
+impl U256WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u256>;
+impl I8WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i8>;
+impl I16WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i16>;
+impl I32WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i32>;
+impl I64WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i64>;
+impl I128WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i128>;
+
+/// WrappingSub implementations
+impl U8WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<u8>;
+impl U16WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<u16>;
+impl U32WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<u32>;
+impl U64WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<u64>;
+impl U128WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<u128>;
+impl U256WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<u256>;
+impl I8WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<i8>;
+impl I16WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<i16>;
+impl I32WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<i32>;
+impl I64WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<i64>;
+impl I128WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<i128>;
+
+/// WrappingMul implementations
+impl U8WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u8>;
+impl U16WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u16>;
+impl U32WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u32>;
+impl U64WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u64>;
+impl U128WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u128>;
+impl U256WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u256>;

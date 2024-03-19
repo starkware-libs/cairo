@@ -2,28 +2,37 @@ use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
-use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
+use cairo_lang_sierra::extensions::core::{
+    CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
+};
+use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
+use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
-use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
+use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{
     BranchTarget, GenericArg, Invocation, Program, Statement, StatementIdx,
 };
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use cairo_lang_sierra_type_size::get_type_size_map;
+use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
+use num_traits::{ToPrimitive, Zero};
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
+use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
     check_references_on_stack, compile_invocation, InvocationError, ProgramInfo,
 };
 use crate::metadata::Metadata;
 use crate::references::{check_types_match, ReferencesError};
-use crate::relocations::{relocate_instructions, CodeOffset, RelocationEntry};
+use crate::relocations::{relocate_instructions, RelocationEntry};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -56,6 +65,29 @@ pub enum CompilationError {
     ConstDataMismatch,
     #[error("Unsupported const type.")]
     UnsupportedConstType,
+    #[error("Const segments must appear in ascending order without holes.")]
+    ConstSegmentsOutOfOrder,
+    #[error("Code size limit exceeded.")]
+    CodeSizeLimitExceeded,
+    #[error("Unknown function id in metadata.")]
+    MetadataUnknownFunctionId,
+    #[error("Statement #{0} out of bounds in metadata.")]
+    MetadataStatementOutOfBound(StatementIdx),
+    #[error("Statement #{0} should not have gas variables.")]
+    StatementNotSupportingGasVariables(StatementIdx),
+    #[error("Statement #{0} should not have ap-change variables.")]
+    StatementNotSupportingApChangeVariables(StatementIdx),
+    #[error("Expected all gas variables to be positive.")]
+    MetadataNegativeGasVariable,
+}
+
+/// Configuration for the Sierra to CASM compilation.
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+pub struct SierraToCasmConfig {
+    /// Whether to check the gas usage of the program.
+    pub gas_usage_check: bool,
+    /// CASM bytecode size limit.
+    pub max_bytecode_size: usize,
 }
 
 /// The casm program representation.
@@ -63,7 +95,7 @@ pub enum CompilationError {
 pub struct CairoProgram {
     pub instructions: Vec<Instruction>,
     pub debug_info: CairoProgramDebugInfo,
-    pub const_segment_info: ConstSegmentInfo,
+    pub consts_info: ConstsInfo,
 }
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -73,21 +105,21 @@ impl Display for CairoProgram {
                 writeln!(f, "{instruction}; // {bytecode_offset}")?;
                 bytecode_offset += instruction.body.op_size();
             }
-            for const_allocation in self.const_segment_info.const_allocations.values() {
+            for segment in self.consts_info.segments.values() {
                 writeln!(f, "ret; // {bytecode_offset}")?;
                 bytecode_offset += 1;
-                for value in &const_allocation.values {
+                for value in &segment.values {
                     writeln!(f, "dw {value}; // {bytecode_offset}")?;
+                    bytecode_offset += 1;
                 }
-                bytecode_offset += 1;
             }
         } else {
             for instruction in &self.instructions {
                 writeln!(f, "{instruction};")?;
             }
-            for const_allocation in self.const_segment_info.const_allocations.values() {
+            for segment in self.consts_info.segments.values() {
                 writeln!(f, "ret;")?;
-                for value in &const_allocation.values {
+                for value in &segment.values {
                     writeln!(f, "dw {value};")?;
                 }
             }
@@ -121,11 +153,11 @@ impl CairoProgram {
             .assemble()
             .encode()[..]
         else {
-            panic!("Ret instruction is a single word")
+            panic!("`ret` instruction should be a single word.")
         };
-        for const_allocation in self.const_segment_info.const_allocations.values() {
+        for segment in self.consts_info.segments.values() {
             bytecode.push(ret_bytecode.clone());
-            bytecode.extend(const_allocation.values.clone());
+            bytecode.extend(segment.values.clone());
         }
         for instruction in footer {
             assert!(
@@ -155,75 +187,84 @@ pub struct CairoProgramDebugInfo {
     pub sierra_statement_info: Vec<SierraStatementDebugInfo>,
 }
 
-/// A builder for the const segment information.
-#[derive(Debug, Default)]
-pub struct ConstSegmentInfoBuilder {
-    used_const_types: OrderedHashSet<ConcreteTypeId>,
-}
-
-impl ConstSegmentInfoBuilder {
-    /// Inserts a const type into the builder, to be added to the const segment.
-    pub fn insert(&mut self, const_type: &ConcreteTypeId) {
-        self.used_const_types.insert(const_type.clone());
-    }
-    /// Builds the const segment information.
-    pub fn build(
-        self,
-        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
-    ) -> Result<ConstSegmentInfo, CompilationError> {
-        let mut const_allocations = OrderedHashMap::default();
-        let mut const_segment_size = 0;
-        for const_type in self.used_const_types {
-            let const_allocation = ConstAllocation {
-                offset: const_segment_size,
-                values: extract_const_value(registry, &const_type).unwrap(),
-            };
-            const_segment_size += const_allocation.values.len() + 1;
-            const_allocations.insert(const_type.clone(), const_allocation);
-        }
-        Ok(ConstSegmentInfo { const_allocations, const_segment_size })
-    }
-}
-
-/// The data of a single const in the const segment.
-#[derive(Debug, Eq, PartialEq, Default, Clone)]
-pub struct ConstAllocation {
-    /// The offset of the const within the constants segment.
-    pub offset: CodeOffset,
-    /// The values to be stored in the const segment.
-    pub values: Vec<BigInt>,
-}
-
 /// The information about the constants used in the program.
 #[derive(Debug, Eq, PartialEq, Default, Clone)]
-pub struct ConstSegmentInfo {
-    /// A map between the const type and the data of the const.
-    pub const_allocations: OrderedHashMap<ConcreteTypeId, ConstAllocation>,
-    /// The size of the constants segment.
-    pub const_segment_size: usize,
+pub struct ConstsInfo {
+    pub segments: OrderedHashMap<u32, ConstSegment>,
+    pub total_segments_size: usize,
+}
+impl ConstsInfo {
+    /// Creates a new `ConstSegmentsInfo` from the given libfuncs.
+    pub fn new<'a>(
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+        type_sizes: &TypeSizeMap,
+        libfunc_ids: impl Iterator<Item = &'a ConcreteLibfuncId>,
+        const_segments_max_size: usize,
+    ) -> Result<Self, CompilationError> {
+        let mut segments_data_size = 0;
+        let mut segments = OrderedHashMap::default();
+        for id in libfunc_ids {
+            if let CoreConcreteLibfunc::Const(ConstConcreteLibfunc::AsBox(as_box)) =
+                registry.get_libfunc(id).unwrap()
+            {
+                let segment: &mut ConstSegment = segments.entry(as_box.segment_id).or_default();
+                let const_data =
+                    extract_const_value(registry, type_sizes, &as_box.const_type).unwrap();
+                segments_data_size += const_data.len();
+                segment.const_offset.insert(as_box.const_type.clone(), segment.values.len());
+                segment.values.extend(const_data);
+                if segments_data_size + segments.len() > const_segments_max_size {
+                    return Err(CompilationError::CodeSizeLimitExceeded);
+                }
+            }
+        }
+        // Check that the segments were declared in order and without holes.
+        if segments
+            .keys()
+            .enumerate()
+            .any(|(i, segment_id)| i != segment_id.into_or_panic::<usize>())
+        {
+            return Err(CompilationError::ConstSegmentsOutOfOrder);
+        }
+
+        let mut total_segments_size = 0;
+        for (_, segment) in segments.iter_mut() {
+            segment.segment_offset = total_segments_size;
+            // Add 1 for the `ret` instruction.
+            total_segments_size += 1 + segment.values.len();
+        }
+        Ok(Self { segments, total_segments_size })
+    }
+}
+
+/// The data for a single segment.
+#[derive(Debug, Eq, PartialEq, Default, Clone)]
+pub struct ConstSegment {
+    /// The values in the segment.
+    pub values: Vec<BigInt>,
+    /// The offset of each const within the segment.
+    pub const_offset: UnorderedHashMap<ConcreteTypeId, usize>,
+    /// The offset of the segment relative to the end of the code segment.
+    pub segment_offset: usize,
 }
 
 /// Gets a concrete type, if it is a const type returns a vector of the values to be stored in the
 /// const segment.
 fn extract_const_value(
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    type_sizes: &TypeSizeMap,
     ty: &ConcreteTypeId,
 ) -> Result<Vec<BigInt>, CompilationError> {
     let mut values = Vec::new();
     let mut types_stack = vec![ty.clone()];
     while let Some(ty) = types_stack.pop() {
-        let const_type =
-            if let cairo_lang_sierra::extensions::core::CoreTypeConcrete::Const(const_type) =
-                registry.get_type(&ty).unwrap()
-            {
-                const_type
-            } else {
-                return Err(CompilationError::UnsupportedConstType);
-            };
+        let CoreTypeConcrete::Const(const_type) = registry.get_type(&ty).unwrap() else {
+            return Err(CompilationError::UnsupportedConstType);
+        };
         let inner_type = registry.get_type(&const_type.inner_ty).unwrap();
         match inner_type {
-            cairo_lang_sierra::extensions::core::CoreTypeConcrete::Struct(_) => {
-                // Add the struct members types to the stack.
+            CoreTypeConcrete::Struct(_) => {
+                // Add the struct members' types to the stack in reverse order.
                 for arg in const_type.inner_data.iter().rev() {
                     match arg {
                         GenericArg::Type(arg_ty) => types_stack.push(arg_ty.clone()),
@@ -231,26 +272,41 @@ fn extract_const_value(
                     }
                 }
             }
-            cairo_lang_sierra::extensions::core::CoreTypeConcrete::Enum(_) => {
+            CoreTypeConcrete::Enum(enm) => {
                 // The first argument is the variant selector, the second is the variant data.
-                match const_type.inner_data.as_slice() {
-                    [GenericArg::Value(selector), GenericArg::Type(ty)] => {
-                        values.push(selector.clone());
+                match &const_type.inner_data[..] {
+                    [GenericArg::Value(variant_index), GenericArg::Type(ty)] => {
+                        let variant_index = variant_index.to_usize().unwrap();
+                        values.push(
+                            get_variant_selector(enm.variants.len(), variant_index).unwrap().into(),
+                        );
+                        let full_enum_size: usize =
+                            type_sizes[&const_type.inner_ty].into_or_panic();
+                        let variant_size: usize =
+                            type_sizes[&enm.variants[variant_index]].into_or_panic();
+                        // Padding with zeros to full enum size.
+                        values.extend(itertools::repeat_n(
+                            BigInt::zero(),
+                            // Subtract 1 due to the variant selector.
+                            full_enum_size - variant_size - 1,
+                        ));
                         types_stack.push(ty.clone());
                     }
                     _ => return Err(CompilationError::ConstDataMismatch),
                 }
             }
-            _ => values.extend(
-                const_type
-                    .inner_data
-                    .iter()
-                    .map(|arg| match arg {
-                        GenericArg::Value(value) => Ok(value.clone()),
-                        _ => Err(CompilationError::ConstDataMismatch),
-                    })
-                    .collect::<Result<Vec<BigInt>, CompilationError>>()?,
-            ),
+            CoreTypeConcrete::NonZero(_) => match &const_type.inner_data[..] {
+                [GenericArg::Type(inner)] => {
+                    types_stack.push(inner.clone());
+                }
+                _ => return Err(CompilationError::ConstDataMismatch),
+            },
+            _ => match &const_type.inner_data[..] {
+                [GenericArg::Value(value)] => {
+                    values.push(value.clone());
+                }
+                _ => return Err(CompilationError::ConstDataMismatch),
+            },
         };
     }
     Ok(values)
@@ -280,10 +336,12 @@ pub fn check_basic_structure(
     }
 }
 
+/// Compiles `program` from Sierra to CASM using `metadata` for information regarding AP changes
+/// and gas usage, and config additional compilation flavours.
 pub fn compile(
     program: &Program,
     metadata: &Metadata,
-    gas_usage_check: bool,
+    config: SierraToCasmConfig,
 ) -> Result<CairoProgram, Box<CompilationError>> {
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
@@ -291,20 +349,32 @@ pub fn compile(
     // contains the final offset (the size of the program code segment).
     let mut statement_offsets = Vec::with_capacity(program.statements.len());
     let mut statement_indices = Vec::with_capacity(program.statements.len());
-
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new_with_ap_change(
         program,
         metadata.ap_change_info.function_ap_change.clone(),
     )
     .map_err(CompilationError::ProgramRegistryError)?;
-    let mut const_segment_info_builder = ConstSegmentInfoBuilder::default();
+    validate_metadata(program, &registry, metadata)?;
     let type_sizes = get_type_size_map(program, &registry)
         .ok_or(CompilationError::FailedBuildingTypeInformation)?;
+    let mut backwards_jump_indices = UnorderedHashSet::<_>::default();
+    for (statement_id, statement) in program.statements.iter().enumerate() {
+        if let Statement::Invocation(invocation) = statement {
+            for branch in &invocation.branches {
+                if let BranchTarget::Statement(target) = branch.target {
+                    if target.0 < statement_id {
+                        backwards_jump_indices.insert(target);
+                    }
+                }
+            }
+        }
+    }
     let mut program_annotations = ProgramAnnotations::create(
         program.statements.len(),
+        backwards_jump_indices,
         &program.funcs,
         metadata,
-        gas_usage_check,
+        config.gas_usage_check,
         &type_sizes,
     )
     .map_err(|err| Box::new(err.into()))?;
@@ -315,6 +385,9 @@ pub fn compile(
         let statement_idx = StatementIdx(statement_id);
         statement_indices.push(instructions.len());
         statement_offsets.push(program_offset);
+        if program_offset > config.max_bytecode_size {
+            return Err(Box::new(CompilationError::CodeSizeLimitExceeded));
+        }
         match statement {
             Statement::Return(ref_ids) => {
                 let (annotations, return_refs) = program_annotations
@@ -369,13 +442,18 @@ pub fn compile(
                 })?;
                 invoke_refs.iter().for_each(|r| r.validate(&type_sizes));
                 let compiled_invocation = compile_invocation(
-                    ProgramInfo { metadata, type_sizes: &type_sizes },
+                    ProgramInfo {
+                        metadata,
+                        type_sizes: &type_sizes,
+                        const_data_values: &|ty| {
+                            extract_const_value(&registry, &type_sizes, ty).unwrap()
+                        },
+                    },
                     invocation,
                     libfunc,
                     statement_idx,
                     &invoke_refs,
                     annotations.environment,
-                    &mut const_segment_info_builder,
                 )
                 .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
@@ -391,15 +469,20 @@ pub fn compile(
                 }
                 instructions.extend(compiled_invocation.instructions);
 
-                let updated_annotations = StatementAnnotations {
+                let branching_libfunc = compiled_invocation.results.len() > 1;
+                // Using a vector of annotations for the loop allows us to clone the annotations
+                // only in the case of more the 1 branch, which is less common.
+                let mut all_updated_annotations = vec![StatementAnnotations {
                     environment: compiled_invocation.environment,
                     ..annotations
-                };
+                }];
+                while all_updated_annotations.len() < compiled_invocation.results.len() {
+                    all_updated_annotations.push(all_updated_annotations[0].clone());
+                }
 
-                let branching_libfunc = compiled_invocation.results.len() > 1;
-
-                for (branch_info, branch_changes) in
+                for ((branch_info, branch_changes), updated_annotations) in
                     zip_eq(&invocation.branches, compiled_invocation.results)
+                        .zip(all_updated_annotations)
                 {
                     let destination_statement_idx = statement_idx.next(&branch_info.target);
                     if branching_libfunc
@@ -418,7 +501,7 @@ pub fn compile(
                         .propagate_annotations(
                             statement_idx,
                             destination_statement_idx,
-                            &updated_annotations,
+                            updated_annotations,
                             branch_info,
                             branch_changes,
                             branching_libfunc,
@@ -431,12 +514,21 @@ pub fn compile(
     // Push the final offset and index at the end of the vectors.
     statement_indices.push(instructions.len());
     statement_offsets.push(program_offset);
-    let const_segment_info = const_segment_info_builder.build(&registry)?;
-    relocate_instructions(&relocations, &statement_offsets, &const_segment_info, &mut instructions);
+    let const_segments_max_size = config
+        .max_bytecode_size
+        .checked_sub(program_offset)
+        .ok_or_else(|| Box::new(CompilationError::CodeSizeLimitExceeded))?;
+    let consts_info = ConstsInfo::new(
+        &registry,
+        &type_sizes,
+        program.libfunc_declarations.iter().map(|ld| &ld.id),
+        const_segments_max_size,
+    )?;
+    relocate_instructions(&relocations, &statement_offsets, &consts_info, &mut instructions);
 
     Ok(CairoProgram {
         instructions,
-        const_segment_info,
+        consts_info,
         debug_info: CairoProgramDebugInfo {
             sierra_statement_info: zip_eq(statement_offsets, statement_indices)
                 .map(|(code_offset, instruction_idx)| SierraStatementDebugInfo {
@@ -446,6 +538,68 @@ pub fn compile(
                 .collect(),
         },
     })
+}
+
+/// Runs basic validations on the given metadata.
+pub fn validate_metadata(
+    program: &Program,
+    registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    metadata: &Metadata,
+) -> Result<(), CompilationError> {
+    // Function validations.
+    for function_id in metadata.ap_change_info.function_ap_change.keys() {
+        registry
+            .get_function(function_id)
+            .map_err(|_| CompilationError::MetadataUnknownFunctionId)?;
+    }
+    for (function_id, costs) in metadata.gas_info.function_costs.iter() {
+        registry
+            .get_function(function_id)
+            .map_err(|_| CompilationError::MetadataUnknownFunctionId)?;
+        for (_token_type, value) in costs.iter() {
+            if *value < 0 {
+                return Err(CompilationError::MetadataNegativeGasVariable);
+            }
+        }
+    }
+
+    // Get the libfunc for the given statement index, or an error.
+    let get_libfunc = |idx: &StatementIdx| -> Result<&CoreConcreteLibfunc, CompilationError> {
+        if let Statement::Invocation(invocation) =
+            program.get_statement(idx).ok_or(CompilationError::MetadataStatementOutOfBound(*idx))?
+        {
+            registry
+                .get_libfunc(&invocation.libfunc_id)
+                .map_err(CompilationError::ProgramRegistryError)
+        } else {
+            Err(CompilationError::StatementNotSupportingApChangeVariables(*idx))
+        }
+    };
+
+    // Statement validations.
+    for idx in metadata.ap_change_info.variable_values.keys() {
+        if !matches!(get_libfunc(idx)?, CoreConcreteLibfunc::BranchAlign(_)) {
+            return Err(CompilationError::StatementNotSupportingApChangeVariables(*idx));
+        }
+    }
+    for ((idx, _token), value) in metadata.gas_info.variable_values.iter() {
+        if *value < 0 {
+            return Err(CompilationError::MetadataNegativeGasVariable);
+        }
+        if !matches!(
+            get_libfunc(idx)?,
+            CoreConcreteLibfunc::BranchAlign(_)
+                | CoreConcreteLibfunc::Coupon(CouponConcreteLibfunc::Refund(_))
+                | CoreConcreteLibfunc::Gas(
+                    GasConcreteLibfunc::WithdrawGas(_)
+                        | GasConcreteLibfunc::BuiltinWithdrawGas(_)
+                        | GasConcreteLibfunc::RedepositGas(_)
+                )
+        ) {
+            return Err(CompilationError::StatementNotSupportingGasVariables(*idx));
+        }
+    }
+    Ok(())
 }
 
 /// Returns true if `statement` is an invocation of the branch_align libfunc.

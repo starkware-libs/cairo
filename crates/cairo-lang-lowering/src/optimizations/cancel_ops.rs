@@ -6,6 +6,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, izip, zip_eq, Itertools};
 
+use super::var_renamer::VarRenamer;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
@@ -62,7 +63,7 @@ pub struct CancelOpsContext<'a> {
     use_sites: UnorderedHashMap<VariableId, Vec<StatementLocation>>,
 
     /// Maps a variable to the variable that it was renamed to.
-    var_remapper: CancelOpsRebuilder,
+    var_remapper: VarRenamer,
 
     /// Keeps track of all the aliases created by the renaming.
     aliases: UnorderedHashMap<VariableId, Vec<VariableId>>,
@@ -177,7 +178,7 @@ impl<'a> CancelOpsContext<'a> {
                 }
 
                 if !(can_remove_struct_destructure
-                    || self.lowered.variables[stmt.input.var_id].duplicatable.is_ok())
+                    || self.lowered.variables[stmt.input.var_id].copyable.is_ok())
                 {
                     // We can't remove any of of the construct statements.
                     self.stmts_to_remove.truncate(self.stmts_to_remove.len() - constructs.len());
@@ -213,7 +214,7 @@ impl<'a> CancelOpsContext<'a> {
                     || stmt
                         .inputs
                         .iter()
-                        .all(|input| self.lowered.variables[input.var_id].duplicatable.is_ok()))
+                        .all(|input| self.lowered.variables[input.var_id].copyable.is_ok()))
                 {
                     // We can't remove any of the destructure statements.
                     self.stmts_to_remove.truncate(self.stmts_to_remove.len() - destructures.len());
@@ -240,7 +241,7 @@ impl<'a> CancelOpsContext<'a> {
                 let desnaps = filter_use_sites(
                     &self.use_sites,
                     &self.aliases,
-                    &stmt.output_snapshot,
+                    &stmt.snapshot(),
                     |location| {
                         if let Some(Statement::Desnap(desnap_stmt)) =
                             self.lowered.blocks[location.0].statements.get(location.1)
@@ -256,12 +257,12 @@ impl<'a> CancelOpsContext<'a> {
 
                 let new_var = if can_remove_snap {
                     self.stmts_to_remove.push(statement_location);
-                    self.rename_var(stmt.output_original, stmt.input.var_id);
+                    self.rename_var(stmt.original(), stmt.input.var_id);
                     stmt.input.var_id
                 } else if desnaps.is_empty()
-                    && self.lowered.variables[stmt.input.var_id].duplicatable.is_err()
+                    && self.lowered.variables[stmt.input.var_id].copyable.is_err()
                 {
-                    stmt.output_original
+                    stmt.original()
                 } else {
                     stmt.input.var_id
                 };
@@ -304,11 +305,11 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
         }
     }
 
-    fn merge_match(
-        &mut self,
+    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
+        &'b mut self,
         statement_location: StatementLocation,
         match_info: &'a MatchInfo,
-        _infos: &[Self::Info],
+        _infos: Infos,
     ) -> Self::Info {
         for var in match_info.inputs() {
             self.add_use_site(var.var_id, statement_location);
@@ -323,28 +324,5 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
         for var in vars {
             self.add_use_site(var.var_id, statement_location);
         }
-    }
-}
-
-#[derive(Default)]
-pub struct CancelOpsRebuilder {
-    renamed_vars: UnorderedHashMap<VariableId, VariableId>,
-}
-
-impl Rebuilder for CancelOpsRebuilder {
-    fn map_var_id(&mut self, var: VariableId) -> VariableId {
-        let Some(mut new_var_id) = self.renamed_vars.get(&var).cloned() else {
-            return var;
-        };
-        while let Some(new_id) = self.renamed_vars.get(&new_var_id) {
-            new_var_id = *new_id;
-        }
-
-        self.renamed_vars.insert(var, new_var_id);
-        new_var_id
-    }
-
-    fn map_block_id(&mut self, block: BlockId) -> BlockId {
-        block
     }
 }

@@ -77,10 +77,10 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     ///
     /// The key may be any borrowed form of the map's key type, but [`Hash`] and [`Eq`] on the
     /// borrowed form *must* match those for the key type.
-    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&Value>
+    pub fn get<Q>(&self, key: &Q) -> Option<&Value>
     where
         Key: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.0.get(key)
     }
@@ -89,10 +89,10 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     ///
     /// The key may be any borrowed form of the map's key type, but [`Hash`] and [`Eq`] on the
     /// borrowed form *must* match those for the key type.
-    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut Value>
+    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut Value>
     where
         Key: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.0.get_mut(key)
     }
@@ -113,10 +113,10 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     ///
     /// The key may be any borrowed form of the map's key type, but Hash and Eq on the borrowed form
     /// must match those for the key type.
-    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<Value>
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<Value>
     where
         Key: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.0.remove(key)
     }
@@ -279,6 +279,27 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
                 )
                 .collect(),
         )
+    }
+
+    /// Merges the map with another map. If a key is present in both maps, the given merge function
+    /// is used to combine the values.
+    pub fn merge<M>(&mut self, other: &Self, merge: M)
+    where
+        BH: Clone,
+        M: Fn(&mut Value, &Value),
+        Key: Clone,
+        Value: Clone,
+    {
+        for (key, value) in &other.0 {
+            match self.0.entry(key.clone()) {
+                Entry::Occupied(mut e) => {
+                    merge(e.get_mut(), value);
+                }
+                Entry::Vacant(e) => {
+                    e.insert(value.clone());
+                }
+            }
+        }
     }
 }
 
