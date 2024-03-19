@@ -143,7 +143,11 @@ fn foo() {
 trait MyTrait<T> {}
 impl MyImpl of MyTrait<felt252> {}
 fn bar<impl C: MyTrait<felt252>>() {}
+extern type A<impl C: MyTrait<felt252>>;
+extern type B<T>;
 extern fn hoo<impl C: MyTrait<felt252>>() nopanic;
+extern fn ioo<T, impl C: MyTrait<felt252>, S>() nopanic;
+
 
 trait AnotherTrait<T> {}
 impl AnotherImpl of AnotherTrait<felt252> {}
@@ -152,13 +156,18 @@ impl AnotherImpl of AnotherTrait<felt252> {}
 foo
 
 //! > expected_diagnostics
-error: Extern items with impl generics are not supported
+error: Extern types with impl generics are not supported
  --> lib.cairo:4:15
-extern fn hoo<impl C: MyTrait<felt252>>() nopanic;
+extern type A<impl C: MyTrait<felt252>>;
               ^**********************^
 
+error: Impl generics in extern functions must be the last parameters
+ --> lib.cairo:7:18
+extern fn ioo<T, impl C: MyTrait<felt252>, S>() nopanic;
+                 ^**********************^
+
 error: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::AnotherTrait::<core::felt252>`.
- --> lib.cairo:10:11
+ --> lib.cairo:14:11
     bar::<AnotherImpl>();
           ^*********^
 
