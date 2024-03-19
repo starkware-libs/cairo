@@ -165,6 +165,12 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
             });
         }
 
+        for arm in match_info.arms() {
+            for var_id in &arm.var_ids {
+                info.next_use.remove(var_id);
+            }
+        }
+
         for var_usage in match_info.inputs() {
             info.next_use.insert(var_usage.var_id, statement_location);
         }
