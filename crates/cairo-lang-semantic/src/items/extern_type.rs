@@ -71,7 +71,7 @@ pub fn extern_type_declaration_generic_params_data(
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
         diagnostics.report_by_ptr(
             param.stable_ptr(db.upcast()).untyped(),
-            ExternItemWithImplGenericsNotSupported,
+            ExternTypesWithImplGenericsNotSupported,
         );
     }
     resolver.inference().finalize().map(|(_, inference_err)| {
