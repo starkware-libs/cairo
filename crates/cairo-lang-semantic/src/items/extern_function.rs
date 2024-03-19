@@ -86,12 +86,18 @@ pub fn extern_function_declaration_generic_params_data(
         module_file_id,
         &declaration.generic_params(syntax_db),
     )?;
-    if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
-        diagnostics.report_by_ptr(
-            param.stable_ptr(db.upcast()).untyped(),
-            ExternItemWithImplGenericsNotSupported,
-        );
+    let mut got_generic_impl = false;
+    for param in &generic_params {
+        if param.kind() == GenericKind::Impl {
+            got_generic_impl = true;
+        } else if got_generic_impl {
+            diagnostics.report_by_ptr(
+                param.stable_ptr(db.upcast()).untyped(),
+                ExternFunctionsGenericArgsNonImplFollowingImpl,
+            );
+        }
     }
+
     resolver.inference().finalize().map(|(_, inference_err)| {
         inference_err.report(&mut diagnostics, extern_function_syntax.stable_ptr().untyped())
     });
