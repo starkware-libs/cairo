@@ -30,7 +30,7 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
-use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextWidth};
+use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -43,7 +43,7 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::items::us::get_use_segments;
 use cairo_lang_semantic::resolve::{AsSegments, ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{Mutability, SemanticDiagnostic, TypeLongId};
+use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -879,29 +879,18 @@ impl LanguageServer for Backend {
             let file_uri = params.text_document_position_params.text_document.uri;
             let file_id = file(db, file_uri);
             let position = params.text_document_position_params.position;
-            let (node, lookup_items) = get_node_and_lookup_items(db, file_id, position)?;
-            let lookup_item_id = lookup_items.into_iter().next()?;
-            let function_id = match lookup_item_id {
-                LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
-                    FunctionWithBodyId::Free(free_function_id)
-                }
-                LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
-                    FunctionWithBodyId::Impl(impl_function_id)
-                }
-                _ => {
-                    return None;
-                }
-            };
-
+            // Get the item id of the definition.
+            let (found_file, span) = get_definition_location(db, file_id, position)?;
+            // Get the documentation and declaration of the item.
+            let (_, lookup_items) = get_node_and_lookup_items(
+                db,
+                found_file,
+                from_pos(span.start.position_in_file(db.upcast(), found_file)?),
+            )?;
             // Build texts.
             let mut hints = Vec::new();
-            if let Some(hint) = get_pattern_hint(db, function_id, node.clone()) {
-                hints.push(MarkedString::String(hint));
-            } else if let Some(hint) = get_expr_hint(db, function_id, node.clone()) {
-                hints.push(hint);
-            };
-            if let Some(hint) = get_identifier_hint(db, lookup_item_id, node) {
-                hints.push(MarkedString::String(hint));
+            if let Some(hint) = get_expr_hint(db.upcast(), lookup_items.into_iter().next()?) {
+                hints.extend(hint);
             };
 
             Some(Hover { contents: HoverContents::Array(hints), range: None })
@@ -915,29 +904,14 @@ impl LanguageServer for Backend {
         params: GotoDefinitionParams,
     ) -> LSPResult<Option<GotoDefinitionResponse>> {
         self.with_db(|db| {
-            let syntax_db = db.upcast();
             let file_uri = params.text_document_position_params.text_document.uri;
-            let file = file(db, file_uri.clone());
             let position = params.text_document_position_params.position;
-            let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
-            if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
-                return None;
-            }
-            let identifier =
-                ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-            let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
-            let node = stable_ptr.lookup(syntax_db);
-            let found_file = stable_ptr.file_id(syntax_db);
-            let span = node.span_without_trivia(syntax_db);
-            let width = span.width();
             let (found_file, span) =
-                get_originating_location(db.upcast(), found_file, span.start_only());
+                get_definition_location(db, file(db.upcast(), file_uri), position)?;
             let found_uri = get_uri(db, found_file);
 
             let start = from_pos(span.start.position_in_file(db.upcast(), found_file).unwrap());
-            let end = from_pos(
-                span.end.add_width(width).position_in_file(db.upcast(), found_file).unwrap(),
-            );
+            let end = from_pos(span.end.position_in_file(db.upcast(), found_file).unwrap());
             Some(GotoDefinitionResponse::Scalar(Location {
                 uri: found_uri,
                 range: Range { start, end },
@@ -1468,46 +1442,47 @@ fn get_identifier_hint(
 
 /// If the node is an expression, retrieves a hover hint for it.
 #[tracing::instrument(level = "trace", skip_all)]
-fn get_expr_hint(
-    db: &(dyn SemanticGroup + 'static),
-    function_id: FunctionWithBodyId,
-    node: SyntaxNode,
-) -> Option<MarkedString> {
-    let semantic_expr = nearest_semantic_expr(db, node, function_id)?;
-    let text = match semantic_expr {
-        cairo_lang_semantic::Expr::FunctionCall(call) => {
-            let args = if let Ok(signature) =
-                call.function.get_concrete(db).generic_function.generic_signature(db.upcast())
-            {
-                signature
-                    .params
-                    .iter()
-                    .map(|arg| {
-                        let mutability = match arg.mutability {
-                            Mutability::Immutable => "",
-                            Mutability::Mutable => "mut ",
-                            Mutability::Reference => "ref ",
-                        };
-                        format!("{mutability}{}: {}", arg.name, arg.ty.format(db.upcast()))
-                    })
-                    .collect::<Vec<String>>()
-                    .join(", ")
+fn get_expr_hint(db: &dyn DefsGroup, lookup_item_id: LookupItemId) -> Option<Vec<MarkedString>> {
+    let mut hints = vec![];
+    let definition = db.get_item_definition(lookup_item_id);
+    hints.push(MarkedString::from_language_code("cairo".to_owned(), definition));
+    let documentation = db.get_item_documentation(lookup_item_id).unwrap_or_default();
+    // Add a separator.
+    if !documentation.is_empty() {
+        hints.push(MarkedString::String("\n---\n".to_string()));
+    }
+    let mut doc = "".to_string();
+    let mut is_cairo_string = false;
+    for line in documentation.lines() {
+        if line.starts_with("```") {
+            // If is_cairo_string is true it means that we end the code block so append the code
+            // in a cairo formatted string.
+            hints.push(if is_cairo_string {
+                MarkedString::from_language_code("cairo".to_owned(), doc)
             } else {
-                "".to_owned()
-            };
-            let mut s = format!(
-                "fn {}({}) -> {}",
-                call.function.name(db.upcast()),
-                args,
-                call.ty.format(db.upcast())
-            );
-            s.retain(|c| c != '"');
-            s
+                // else append a regular string.
+                MarkedString::from_markdown(doc)
+            });
+            // Switch the variable to properly format the following block.
+            is_cairo_string = !is_cairo_string;
+            // reset the string to start the next block.
+            doc = "".to_string();
+            continue;
         }
-        _ => semantic_expr.ty().format(db),
-    };
-    // Format the hover text.
-    Some(MarkedString::from_language_code("cairo".to_owned(), text))
+        // Append the current block string.
+        doc += if let Some(stripped) = line.strip_prefix("///") {
+            stripped
+        } else if let Some(stripped) = line.strip_prefix("//!") {
+            stripped
+        } else {
+            line
+        };
+        // add new line to have a proper formatting.
+        doc += "\n";
+    }
+    hints.push(MarkedString::from_markdown(doc));
+
+    Some(hints)
 }
 
 /// Returns the semantic expression for the current node.
@@ -1703,4 +1678,36 @@ fn get_diagnostics<T: DiagnosticEntry>(
             ..Diagnostic::default()
         });
     }
+}
+
+/// Returns the file id and span of the definition of an expression from its position.
+///
+/// # Arguments
+///
+/// * `db` - Preloaded compilation database
+/// * `uri` - Uri of the expression position
+/// * `position` - Position of the expression
+///
+/// # Returns
+///
+/// The [FileId] and [TextSpan] of the expression definition if found.
+pub fn get_definition_location(
+    db: &RootDatabase,
+    file: FileId,
+    position: Position,
+) -> Option<(FileId, TextSpan)> {
+    let syntax_db = db.upcast();
+    let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
+    if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
+        return None;
+    }
+    let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
+    let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
+    let node = stable_ptr.lookup(syntax_db);
+    let found_file = stable_ptr.file_id(syntax_db);
+    let span = node.span_without_trivia(syntax_db);
+    let width = span.width();
+    let (file_id, mut span) = get_originating_location(db.upcast(), found_file, span.start_only());
+    span.end = span.end.add_width(width);
+    Some((file_id, span))
 }
