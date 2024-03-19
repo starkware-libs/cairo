@@ -437,8 +437,6 @@ pub struct ImplDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
 
     // AST maps.
-
-    // TODO(yg): separate pr: wrap with arc?
     function_asts: OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>,
     item_type_asts: Arc<OrderedHashMap<ImplTypeDefId, ast::ItemTypeAlias>>,
 
@@ -539,19 +537,6 @@ pub fn impl_type_by_id(
     Ok(impl_types.get(&impl_type_id).cloned())
 }
 
-// TODO(yg): remove/ separate pr.
-macro_rules! debug_assert_eq {
-    ($lhs:expr, $rhs:expr, $db:expr) => {
-        if $lhs != $rhs {
-            panic!(
-                "Assertion: `left == right` failed:\n  left: {:?}\n right: {:?}",
-                $lhs.debug($db.elongate()),
-                $rhs.debug($db.elongate())
-            );
-        }
-    };
-}
-
 /// Query implementation of [crate::db::SemanticGroup::impl_type_by_trait_type].
 pub fn impl_type_by_trait_type(
     db: &dyn SemanticGroup,
@@ -573,13 +558,9 @@ pub fn impl_type_by_trait_type(
 
     let defs_db = db.upcast();
     let name = trait_type_id.name(defs_db);
-    // TODO(yg): use impl_item_by_name?
-    for impl_type_id in db.priv_impl_definition_data(impl_def_id)?.item_type_asts.keys() {
-        if db.lookup_intern_impl_type_def(*impl_type_id).name(defs_db) == name {
-            return Ok(Some(*impl_type_id));
-        }
-    }
-    Ok(None)
+    db.impl_item_by_name(impl_def_id, name).map(|maybe_item_id| {
+        maybe_item_id.and_then(|item_id| try_extract_matches!(item_id, ImplItemId::Type))
+    })
 }
 
 // --- Computation ---
@@ -1574,6 +1555,7 @@ pub fn priv_impl_function_declaration_data(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
     }
+    // TODO(yg): implize instead?
     let signature = resolver.inference().rewrite(signature).no_err();
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
 

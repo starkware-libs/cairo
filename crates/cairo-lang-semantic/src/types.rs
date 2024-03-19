@@ -374,7 +374,7 @@ fn reduce_trait_impl_type(
 ) -> ImplTypeId {
     let ImplTypeId { impl_id, ty } = impl_type_id;
     // TODO(yg): matches.
-    let crate::items::imp::ImplId::ImplVar(_) = impl_id else {
+    if !matches!(impl_id, crate::items::imp::ImplId::ImplVar(_)) {
         println!("yg returning early");
         return impl_type_id;
     };

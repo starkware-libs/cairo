@@ -206,9 +206,7 @@ impl<'ctx> ComputationContext<'ctx> {
             .report_by_ptr(stable_ptr, UnsupportedOutsideOfFunction { feature_name }))
     }
 
-    // TODO(yg): find a more distinguished name (different verb) for those two.
-    // TODO(yg): separate pr: is this right? Check why self is mut?
-    /// Assigns the most known concrete type to the given type, according to previous knowledge.
+    // TODO(yg): find a more distinguished name (different verb) for those two: implize.
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
         // TODO(spapini): Propagate error to diagnostics.
         self.resolver.inference().rewrite(ty).unwrap()
@@ -1170,8 +1168,7 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
     let if_block_ty = ctx.reduce_ty(if_block.ty());
     let else_block_ty = ctx.reduce_ty(else_block_ty);
-    // TODO(yg): separate pr: first can be done inside new*.
-    let if_block_ty = ctx.reduce_impl_type_if_possible(if_block.ty())?;
+    let if_block_ty = ctx.reduce_impl_type_if_possible(if_block_ty)?;
     let else_block_ty = ctx.reduce_impl_type_if_possible(else_block_ty)?;
     helper
         .try_merge_types(&mut ctx.resolver.inference(), ctx.db, if_block_ty)
@@ -2591,21 +2588,6 @@ fn get_function_implized_signature(
         "yg2 impl_generic_function.impl_id: {:?}",
         impl_generic_function.impl_id.debug(db.elongate())
     );
-    // let inference_id = if let ImplId::ImplVar(impl_var) = impl_generic_function.impl_id {
-    //     // TODO(yg): remove.
-    //     panic!();
-    //     // impl_var.get(db).inference_id
-    // } else {
-    //     // TODO(yg): remove.
-    //     // panic!();
-    //     InferenceId::NoContext
-    // };
-
-    // TODO(yg): ResolverData::clone()
-    // let resolver_data = impl_def_id.resolver_data(db)?;
-    // let inference_id = resolver_data.inference_data.inference_id;
-    // let resolver_data = resolver_data.clone_with_inference_id(db, inference_id);
-    // let mut resolver = Resolver::with_data(db, resolver_data);
 
     let mut tmp_inference_data = impl_def_id.resolver_data(db)?.inference_data.temporary_clone();
     let mut tmp_inference = tmp_inference_data.inference(db);

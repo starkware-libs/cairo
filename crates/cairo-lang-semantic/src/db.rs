@@ -635,7 +635,6 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
     ) -> Maybe<items::imp::ImplDefinitionData>;
 
-    // TODO(yg): rename all queries to impl_type_def... and the params too.
     // Impl type.
     // ================
     /// Returns the semantic diagnostics of an impl item type.

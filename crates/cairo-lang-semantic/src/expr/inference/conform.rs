@@ -155,7 +155,6 @@ impl<'db> InferenceConform for Inference<'db> {
                 let (ty, n_snapshots) = self.conform_ty_ex(ty0, ty1, ty0_is_self)?;
                 Ok((self.db.intern_type(TypeLongId::Snapshot(ty)), n_snapshots))
             }
-            // TODO(yg): maybe if can be resolved, (impl is concrete), resolve it here?
             TypeLongId::GenericParameter(_) | TypeLongId::ImplType(_) => {
                 Err(InferenceError::TypeKindMismatch { ty0, ty1 })
             }

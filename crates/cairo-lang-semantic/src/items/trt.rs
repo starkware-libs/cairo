@@ -783,9 +783,16 @@ pub fn priv_trait_function_declaration_data(
         &mut environment,
     );
 
-    // TODO(yg): consider doing those 2 together to get the diags in the order of parameters. + doc
-    change_bad_types_to_missing(db, &mut diagnostics, &mut signature, &signature_syntax, trait_id);
+    // Trait types aren't allowed, change them to missing (and report it as diagnostics).
+    change_non_self_impl_types_to_missing(
+        db,
+        &mut diagnostics,
+        &mut signature,
+        &signature_syntax,
+        trait_id,
+    );
 
+    // More validations on the signature (but doesn't mutate signature).
     validate_trait_function_signature(
         db,
         &mut diagnostics,
@@ -820,8 +827,9 @@ pub fn priv_trait_function_declaration_data(
     })
 }
 
-// TODO(yg): doc.
-fn change_bad_types_to_missing(
+/// Fixes trait types (`SomeTrait::SomeType`) of a signature to missing, but not `Self::SomeType`.
+/// This is used in traits as such trait types are forbidden in trait function signatures.
+fn change_non_self_impl_types_to_missing(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     sig: &mut semantic::Signature,

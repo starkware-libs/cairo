@@ -149,7 +149,7 @@ pub fn priv_free_function_declaration_data(
     let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
 
     let signature_syntax = declaration.signature(syntax_db);
-    let mut signature = semantic::Signature::from_ast(
+    let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
@@ -157,7 +157,7 @@ pub fn priv_free_function_declaration_data(
         FunctionTitleId::Free(free_function_id),
         &mut environment,
     );
-    // TODO(yg): uncomment?
+    // TODO(yg): remove?
     // implize_signature(db, &mut signature, &mut resolver, None)?;
 
     let attributes = free_function_syntax.attributes(syntax_db).structurize(syntax_db);
