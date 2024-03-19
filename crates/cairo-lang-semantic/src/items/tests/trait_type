@@ -670,7 +670,7 @@ error: Trait has no implementation in context: test::AnotherTrait
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(16)::AnotherType`.
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(17)::AnotherType`.
  --> lib.cairo:10:16
     fn foo2(x: AnotherTrait::AnotherType) {}
                ^***********************^
@@ -690,7 +690,7 @@ error: Trait has no implementation in context: test::AnotherTrait
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                            ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(18)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(19)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:12:40
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                                        ^*******^
@@ -1063,13 +1063,19 @@ fn generic_args(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
 fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
     (x, y)
 }
+fn fix_sized_array(x: [MyTrait::MyType1; 3]) -> [MyTrait::MyType2; 3] {
+    x
+}
 fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
     x
 }
-fn complex1(x: @(MyTrait::MyType1, Option<@Result<MyTrait::MyType2, (@MyTrait::MyType3, MyTrait::MyType4)>>)) -> @(u32, Option<@Result<u32, (@u32, u32)>>) {
+fn snapshot2(x: @MyTrait::MyType1) -> @@MyTrait::MyType2 {
+    @x
+}
+fn complex1(x: @(MyTrait::MyType1, Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>)) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
     x
 }
-fn complex2(x: @(u32, Option<@Result<u32, (@u32, u32)>>)) -> @(MyTrait::MyType1, Option<@Result<MyTrait::MyType2, (@MyTrait::MyType3, MyTrait::MyType4)>>) {
+fn complex2(x: @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>)) -> @(MyTrait::MyType1, Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>) {
     x
 }
 
@@ -1107,13 +1113,19 @@ fn generic_args(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
 fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
     (x, y)
 }
+fn fix_sized_array(x: [MyTrait::MyType1; 3]) -> [MyTrait::MyType2; 3] {
+    x
+}
 fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
     x
 }
-fn complex1(x: @(MyTrait::MyType1, Option<@Result<MyTrait::MyType2, (@MyTrait::MyType3, MyTrait::MyType4)>>)) -> @(u32, Option<@Result<u32, (@u32, u32)>>) {
+fn snapshot2(x: @MyTrait::MyType1) -> @@MyTrait::MyType2 {
+    @x
+}
+fn complex1(x: @(MyTrait::MyType1, Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>)) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
     x
 }
-fn complex2(x: @(u32, Option<@Result<u32, (@u32, u32)>>)) -> @(MyTrait::MyType1, Option<@Result<MyTrait::MyType2, (@MyTrait::MyType3, MyTrait::MyType4)>>) {
+fn complex2(x: @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>)) -> @(MyTrait::MyType1, Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>) {
     x
 }
 
@@ -1128,20 +1140,30 @@ error: Unexpected return type. Expected: "(core::integer::u32, core::integer::u1
 fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
                                                                                            ^
 
+error: Unexpected return type. Expected: "[core::integer::u32; 3]", found: "[core::integer::u16; 3]".
+ --> lib.cairo:19:71
+fn fix_sized_array(x: [MyTrait::MyType1; 3]) -> [MyTrait::MyType2; 3] {
+                                                                      ^
+
 error: Unexpected return type. Expected: "@@core::integer::u32", found: "@@core::integer::u16".
- --> lib.cairo:19:58
+ --> lib.cairo:22:58
 fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
                                                          ^
 
-error: Unexpected return type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<core::integer::u32, (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<core::integer::u32, (@core::integer::u32, core::integer::u32)>>)".
- --> lib.cairo:22:156
-fn complex1(x: @(MyTrait::MyType1, Option<@Result<MyTrait::MyType2, (@MyTrait::MyType3, MyTrait::MyType4)>>)) -> @(u32, Option<@Result<u32, (@u32, u32)>>) {
-                                                                                                                                                           ^
+error: Unexpected return type. Expected: "@@core::integer::u32", found: "@@core::integer::u16".
+ --> lib.cairo:25:58
+fn snapshot2(x: @MyTrait::MyType1) -> @@MyTrait::MyType2 {
+                                                         ^
 
-error: Unexpected return type. Expected: "@(core::integer::u16, core::option::Option::<@core::result::Result::<core::integer::u32, (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u32, core::option::Option::<@core::result::Result::<core::integer::u32, (@core::integer::u32, core::integer::u32)>>)".
- --> lib.cairo:25:156
-fn complex2(x: @(u32, Option<@Result<u32, (@u32, u32)>>)) -> @(MyTrait::MyType1, Option<@Result<MyTrait::MyType2, (@MyTrait::MyType3, MyTrait::MyType4)>>) {
-                                                                                                                                                           ^
+error: Unexpected return type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)".
+ --> lib.cairo:28:182
+fn complex1(x: @(MyTrait::MyType1, Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>)) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
+                                                                                                                                                                                     ^
+
+error: Unexpected return type. Expected: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)".
+ --> lib.cairo:31:182
+fn complex2(x: @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>)) -> @(MyTrait::MyType1, Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>) {
+                                                                                                                                                                                     ^
 
 //! > ==========================================================================
 

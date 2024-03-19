@@ -834,7 +834,6 @@ fn change_non_self_impl_types_to_missing(
     diagnostics: &mut SemanticDiagnostics,
     sig: &mut semantic::Signature,
     sig_syntax: &ast::FunctionSignature,
-    // TODO(yg): remove if disallowing all.
     context_trait_id: TraitId,
 ) {
     let syntax_db = db.upcast();
@@ -855,18 +854,6 @@ fn change_non_self_impl_types_to_missing(
             sig.return_type = db.intern_type(TypeLongId::Missing(diag_added));
         }
     }
-    // TODO(yg): disallow all:
-    // if matches!(sig.return_type.lookup(db), TypeLongId::ImplType(_)) {
-    //     let diag_added = diagnostics.report(
-    //         &(extract_matches!(
-    //             sig_syntax.ret_ty(syntax_db),
-    //             OptionReturnTypeClause::ReturnTypeClause
-    //         ))
-    //         .ty(syntax_db),
-    //         crate::diagnostic::SemanticDiagnosticKind::TraitTypeUnsupportedInTrait,
-    //     );
-    //     sig.return_type = db.intern_type(TypeLongId::Missing(diag_added));
-    // }
 
     for (idx, param) in sig.params.iter_mut().enumerate() {
         if let TypeLongId::ImplType(impl_type_id) = param.ty.lookup(db) {
@@ -883,14 +870,6 @@ fn change_non_self_impl_types_to_missing(
                 param.ty = db.intern_type(TypeLongId::Missing(diag_added));
             }
         }
-        // TODO(yg): disallow all:
-        // if matches!(param.ty.lookup(db), TypeLongId::ImplType(_)) {
-        //     let diag_added = diagnostics.report(
-        //         &sig_syntax.parameters(syntax_db).elements(syntax_db)[idx],
-        //         crate::diagnostic::SemanticDiagnosticKind::TraitTypeUnsupportedInTrait,
-        //     );
-        //     param.ty = db.intern_type(TypeLongId::Missing(diag_added));
-        // }
     }
 }
 

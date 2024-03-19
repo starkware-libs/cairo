@@ -103,13 +103,12 @@ impl TypeId {
             TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
             TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
             TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
-            TypeLongId::GenericParameter(_) => false,
-            TypeLongId::Var(_) => false,
-            TypeLongId::Missing(_) => false,
+            TypeLongId::GenericParameter(_)
+            | TypeLongId::Var(_)
+            | TypeLongId::Missing(_)
+            | TypeLongId::ImplType(_) => false,
             TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
             TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
-            TypeLongId::ImplType(_) => false, /* TODO(yg): I've put false here for now for
-                                               * tests to work, but what's the right logic here? */
         }
     }
 }
@@ -152,12 +151,12 @@ impl TypeLongId {
             TypeLongId::Snapshot(inner) => TypeHead::Snapshot(Box::new(inner.head(db)?)),
             TypeLongId::Coupon(_) => TypeHead::Coupon,
             TypeLongId::FixedSizeArray { .. } => TypeHead::FixedSizeArray,
-            TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
+            TypeLongId::GenericParameter(_)
+            | TypeLongId::Var(_)
+            | TypeLongId::Missing(_)
+            | TypeLongId::ImplType(_) => {
                 return None;
             }
-            TypeLongId::ImplType(_) => return None, /* TODO(yg): I've put this here to make tests
-                                                     * pass, but what't the right logic? If None,
-                                                     * unite with other Nones. */
         })
     }
 }
@@ -243,11 +242,12 @@ pub fn reduce_impl_type_if_possible_inner(
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
         | TypeLongId::ImplType(_)
+        | TypeLongId::Coupon(_)
         | TypeLongId::Missing(_) => {}
-        TypeLongId::Coupon(_) => todo!(), // TODO(yg)
-        TypeLongId::FixedSizeArray { type_id, size } => {} /* TODO(yg): i've put it here for
-                                            * tests to pass, but what is the
-                                            * right behavior? */
+        TypeLongId::FixedSizeArray { type_id, .. } => {
+            *type_id =
+                reduce_impl_type_if_possible_inner(db, *type_id, trait_or_impl_context, inference)?
+        }
     }
     let type_to_reduce = db.intern_type(long_ty);
     println!(
@@ -419,9 +419,9 @@ fn reduce_trait_impl_type(
     // Ok(Some(ty))
 }
 
-/// Head of a type. A non-param non-variable type has a head, which represents the kind of the root
-/// node in its type tree. This is used for caching queries for fast lookups when the type is not
-/// completely inferred yet.
+/// Head of a type. A type that is not one of {generic param, type variable, impl type} has a head,
+/// which represents the kind of the root node in its type tree. This is used for caching queries
+/// for fast lookups when the type is not completely inferred yet.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum TypeHead {
     Concrete(GenericTypeId),
@@ -876,16 +876,16 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
             true
         }
         TypeLongId::Snapshot(ty) => db.single_value_type(ty)?,
-        TypeLongId::GenericParameter(_) => false,
-        TypeLongId::Var(_) => false,
-        TypeLongId::Missing(_) => false,
-        TypeLongId::Coupon(_) => false,
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::Missing(_)
+        | TypeLongId::Coupon(_)
+        | TypeLongId::ImplType(_) => false,
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
                 || matches!(db.lookup_intern_const_value(size),
                             ConstValue::Int(value) if value.is_zero())
         }
-        TypeLongId::ImplType(_) => todo!(), // TODO(yg)
     })
 }
 
