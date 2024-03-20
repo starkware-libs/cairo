@@ -170,7 +170,7 @@ fn init_logging() -> Option<impl Drop> {
 
 fn configured_db() -> RootDatabase {
     let db = RootDatabase::builder()
-        .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
+        .with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]))
         .with_plugin_suite(starknet_plugin_suite())
         .with_plugin_suite(test_plugin_suite())
         .build()
