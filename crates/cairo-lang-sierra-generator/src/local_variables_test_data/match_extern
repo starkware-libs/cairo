@@ -95,10 +95,18 @@ foo
 fn foo(x: felt252) -> felt252 {
     let x1 = x + x;
     let x2 = x1 + x1;
-    let x3 = if x2 == 0 { 1 } else { 2 };
+    let x3 = if x2 == 0 {
+        1
+    } else {
+        2
+    };
     // The "if" revokes "x1".
     x1 + x3;
-    let x4 = if x1 == 0 { 1 } else { 2 };
+    let x4 = if x1 == 0 {
+        1
+    } else {
+        2
+    };
     revoke_ap();
     x4
 }

@@ -4,8 +4,7 @@
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo(x: (felt252, felt252)) {
-}
+fn foo(x: (felt252, felt252)) {}
 
 //! > function_name
 foo
@@ -23,9 +22,9 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(s2: Struct2) {
-    let Struct2{member1: _, member2: _, member3: _} = s2;
-    let Struct2{member1: _, member2: _, ..} = s2;
-    let Struct2{member1: _, member2: _, member3: Struct1{member1: _a,..}} = s2;
+    let Struct2 { member1: _, member2: _, member3: _ } = s2;
+    let Struct2 { member1: _, member2: _, .. } = s2;
+    let Struct2 { member1: _, member2: _, member3: Struct1 { member1: _a, .. } } = s2;
 }
 
 //! > function_name
@@ -87,17 +86,16 @@ fn foo(s: MyStruct) {
 foo
 
 //! > module_code
-struct MyStruct {
-}
+struct MyStruct {}
 
 //! > expected_diagnostics
 error: Struct "test::MyStruct" has no member "a"
- --> lib.cairo:4:20
+ --> lib.cairo:3:20
     let MyStruct { a, b } = s;
                    ^
 
 error: Struct "test::MyStruct" has no member "b"
- --> lib.cairo:4:23
+ --> lib.cairo:3:23
     let MyStruct { a, b } = s;
                       ^
 

@@ -5,11 +5,11 @@ test_match_optimizer
 
 //! > function
 fn foo() -> Option<u16> {
-   let v = get_option();
-   match v {
+    let v = get_option();
+    match v {
         Option::Some(_) => Option::Some(1_u16),
         Option::None => Option::None,
-   }
+    }
 }
 
 //! > function_name
@@ -139,19 +139,19 @@ test_match_optimizer
 
 //! > function
 fn foo(a: felt252) -> Option<u16> {
-   let v = get_option();
+    let v = get_option();
 
-   // The following instruction should block the optimization.
-   core::internal::revoke_ap_tracking();
-   let v1 = match v {
+    // The following instruction should block the optimization.
+    core::internal::revoke_ap_tracking();
+    let v1 = match v {
         Option::Some(_) => Option::Some(1_u16),
         Option::None => Option::None,
-   };
-   match v1 {
+    };
+    match v1 {
         // v1 is used after the match.
         Option::Some(_) => v1,
         Option::None => Option::Some(2_u16),
-   }
+    }
 }
 
 //! > function_name
@@ -315,11 +315,11 @@ test_match_optimizer
 
 //! > function
 fn foo() -> felt252 {
-   let opt = get_option();
-   match opt {
-      Option::Some(x) => Option::Some(x + 3),
-      Option::None => Option::None
-   }.unwrap()
+    let opt = get_option();
+    match opt {
+        Option::Some(x) => Option::Some(x + 3),
+        Option::None => Option::None
+    }.unwrap()
 }
 
 //! > function_name
@@ -657,13 +657,13 @@ test_match_optimizer
 //! > function
 fn foo(a: MyEnum) -> u32 {
     let b = match a {
-       MyEnum::A(_) => MyEnum::A(5),
-       MyEnum::B(_) => a,
+        MyEnum::A(_) => MyEnum::A(5),
+        MyEnum::B(_) => a,
     };
 
     match b {
-       MyEnum::A(x) => x,
-       MyEnum::B(x) => x,
+        MyEnum::A(x) => x,
+        MyEnum::B(x) => x,
     }
 }
 

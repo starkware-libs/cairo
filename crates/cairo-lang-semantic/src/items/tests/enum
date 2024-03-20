@@ -6,7 +6,7 @@ test_function_diagnostics
 //! > function
 fn foo(a: A::<felt252>) -> felt252 {
     match a {
-        A::Variant0(t) => {t}
+        A::Variant0(t) => { t }
     }
 }
 

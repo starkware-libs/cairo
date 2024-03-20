@@ -31,17 +31,15 @@ test_partial_parser_tree(expect_diagnostics: false)
 //! > cairo_code
 mod my_mod {
     trait Foo<T>;
-    impl FooImpl<S> of Foo::<S> {
+    impl FooImpl<S> of Foo<S> {
         fn foo(a: int) -> felt252 {
             return a;
         }
     }
 
-    fn test() {
-    }
+    fn test() {}
 
-    struct MyStruct {
-    }
+    struct MyStruct {}
 }
 
 //! > top_level_kind

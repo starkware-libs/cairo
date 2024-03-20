@@ -751,7 +751,9 @@ mod test_contract {
     // {} instead of ().
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
     // Too many arguments.
-    component!(path: super::test_component, storage: test_component_storage, event: ABC, another: x);
+    component!(
+        path: super::test_component, storage: test_component_storage, event: ABC, another: x
+    );
     // Too few arguments.
     component!(path: super::test_component, storage: test_component_storage);
 }
@@ -782,7 +784,9 @@ mod test_contract {
     // {} instead of ().
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
     // Too many arguments.
-    component!(path: super::test_component, storage: test_component_storage, event: ABC, another: x);
+    component!(
+        path: super::test_component, storage: test_component_storage, event: ABC, another: x
+    );
     // Too few arguments.
     component!(path: super::test_component, storage: test_component_storage);
 }
@@ -881,7 +885,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x2cffa3f882c4d652a366356180352e5af2bb4ea9b0e50532f2a0f11f077643a;
+pub const TEST_CLASS_HASH: felt252 = 0x215c44bbf0e7c3b987e93bf1597778322461e87fd0059894735b0464ce94aff;
 
 
 pub mod __external {
@@ -963,11 +967,11 @@ error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<
 
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
  --> lib.cairo:24:5
-    component!(path: super::test_component, storage: test_component_storage, event: ABC, another: x);
-    ^***********************************************************************************************^
+    component!(
+    ^*********^
 
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
- --> lib.cairo:26:5
+ --> lib.cairo:28:5
     component!(path: super::test_component, storage: test_component_storage);
     ^***********************************************************************^
 
@@ -2327,7 +2331,7 @@ mod test_contract {
     #[derive(Drop, starknet::Event)]
     enum Event {
         Comp1Event: super::component1::Event,
-        // Comp2Event: super::component2::Event,
+    // Comp2Event: super::component2::Event,
     }
 
     #[external(v0)]
@@ -2383,7 +2387,7 @@ mod test_contract {
     #[derive(Drop, starknet::Event)]
     enum Event {
         Comp1Event: super::component1::Event,
-        // Comp2Event: super::component2::Event,
+    // Comp2Event: super::component2::Event,
     }
 
     #[external(v0)]
@@ -2561,7 +2565,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0xa09b926ceb282d29edce76bb84e4aeb97f1a82ce15099322f1c2869a49b549;
+pub const TEST_CLASS_HASH: felt252 = 0x3aa40c01c626d72d07c8dbda3c92460e7f71827931a5429b93fc69603190369;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {

@@ -17,7 +17,9 @@ foo
 
 //! > module_code
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > semantic_diagnostics
 

@@ -16,7 +16,9 @@ fn foo(ref arr: Array<felt252>) {
 
 //! > module_code
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {

@@ -64,7 +64,7 @@ impl MyImplAlias = other_mod::other_other_mod::MyImpl;
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo(x:Option<Box<usize>>) -> usize {
+fn foo(x: Option<Box<usize>>) -> usize {
     MyTrait::foo(x)
 }
 
@@ -96,7 +96,7 @@ impl MyImplAlias<T> = other_mod::other_other_mod::MyImpl<Box<T>>;
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo(x:Option<Box<usize>>) -> usize {
+fn foo(x: Option<Box<usize>>) -> usize {
     MyTrait::foo(x)
 }
 

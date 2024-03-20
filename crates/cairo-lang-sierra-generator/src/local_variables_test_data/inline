@@ -87,7 +87,7 @@ fn bar(x: felt252) -> felt252 {
 
 // Revokes ap since this function is recursive.
 fn revoke_ap() {
-  revoke_ap()
+    revoke_ap()
 }
 
 //! > lowering_format
@@ -149,7 +149,7 @@ fn bar(x: felt252) -> felt252 {
 
 // Revokes ap since this function is recursive.
 fn revoke_ap() {
-  revoke_ap()
+    revoke_ap()
 }
 
 //! > lowering_format

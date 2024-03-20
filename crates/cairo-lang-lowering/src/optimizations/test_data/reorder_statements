@@ -5,16 +5,16 @@ test_reorder_statements
 
 //! > function
 fn foo() -> felt252 {
-   let opt = get_option();
+    let opt = get_option();
 
-   let _unused = 17;
-   let _unused2 = ();
+    let _unused = 17;
+    let _unused2 = ();
 
-   let one = 1;
-   let two = 2;
-   let three = 3;
+    let one = 1;
+    let two = 2;
+    let three = 3;
 
-   match opt {
+    match opt {
         Option::Some(_) => one + two,
         Option::None => {
             let four = 4;
@@ -23,7 +23,7 @@ fn foo() -> felt252 {
                 Option::None => one,
             }
         }
-   }
+    }
 }
 
 //! > function_name
@@ -187,15 +187,15 @@ test_reorder_statements
 
 //! > function
 fn foo() {
-   let a = true;
+    let a = true;
 
-   let b = !a;
-   !!a;
+    let b = !a;
+    !!a;
 
-   match get_option() {
+    match get_option() {
         Option::Some(_) => a,
         Option::None => false ^ b,
-   };
+    };
 }
 
 //! > function_name
@@ -283,8 +283,8 @@ test_reorder_statements
 
 //! > function
 fn foo(a: felt252) {
-   let b = NonDupStruct { a };
-   let NonDupStruct { a: _ } = b;
+    let b = NonDupStruct { a };
+    let NonDupStruct { a: _ } = b;
 }
 
 //! > function_name
@@ -292,7 +292,7 @@ foo
 
 //! > module_code
 struct NonDupStruct {
-  a: felt252,
+    a: felt252,
 }
 
 //! > semantic_diagnostics

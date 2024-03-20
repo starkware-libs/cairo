@@ -19,7 +19,9 @@ fn non_extern(_a: some_type) -> Option::<(felt252, other)> nopanic {
 extern fn generic<T>(t: T, v: felt252) -> Result::<T, Err> nopanic;
 
 #[panic_with('5', wrapped_possibly_panic)]
-fn possibly_panic() -> Result::<felt252, Err> { Result::<felt252, Err>::Ok(1) }
+fn possibly_panic() -> Result::<felt252, Err> {
+    Result::<felt252, Err>::Ok(1)
+}
 
 //! > expanded_cairo_code
 #[panic_with('1', foo_improved)]
@@ -37,7 +39,9 @@ fn non_extern(_a: some_type) -> Option::<(felt252, other)> nopanic {
 extern fn generic<T>(t: T, v: felt252) -> Result::<T, Err> nopanic;
 
 #[panic_with('5', wrapped_possibly_panic)]
-fn possibly_panic() -> Result::<felt252, Err> { Result::<felt252, Err>::Ok(1) }
+fn possibly_panic() -> Result::<felt252, Err> {
+    Result::<felt252, Err>::Ok(1)
+}
 fn foo_improved(a: felt252, ref b: other) -> () {
     match foo(a, ref b) {
         Option::Some (v) => {

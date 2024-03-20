@@ -14,7 +14,7 @@ fn foo() -> Option::<felt252> {
 foo
 
 //! > module_code
-trait AnotherTrait{
+trait AnotherTrait {
     fn is_some(self: felt252) -> bool;
 }
 impl OtherImpl of AnotherTrait {
@@ -47,29 +47,33 @@ fn foo() -> Option::<felt252> {
 foo
 
 //! > module_code
-trait MyTrait<T>{
+trait MyTrait<T> {
     fn is_bla(self: Option::<T>) -> bool;
     fn is_bar(self: Option::<T>) -> bool;
 }
-impl MyTraitImpl<T> of MyTrait::<T> {
+impl MyTraitImpl<T> of MyTrait<T> {
     fn is_bla(self: Option<T>) -> bool {
         match self {
             Option::Some(_) => true,
             Option::None => false,
         }
     }
-    fn is_bar(self: Option::<T>) -> bool { true }
+    fn is_bar(self: Option::<T>) -> bool {
+        true
+    }
 }
-impl AnotherMyTraitImpl<T> of MyTrait::<felt252> {
+impl AnotherMyTraitImpl<T> of MyTrait<felt252> {
     fn is_bla(self: Option::<felt252>) -> bool {
         match self {
             Option::Some(_) => true,
             Option::None => false,
         }
     }
-    fn is_bar(self: Option::<felt252>) -> bool { true }
+    fn is_bar(self: Option::<felt252>) -> bool {
+        true
+    }
 }
-trait AnotherTrait{
+trait AnotherTrait {
     fn is_bar(self: Option::<bool>) -> bool;
 }
 impl AnotherTraitImpl of AnotherTrait {
@@ -80,22 +84,22 @@ impl AnotherTraitImpl of AnotherTrait {
 
 //! > expected_diagnostics
 error: Method `is_foo` not found on type `core::option::Option::<?0>`. Did you import the correct trait and impl?
- --> lib.cairo:33:7
+ --> lib.cairo:37:7
     x.is_foo();
       ^****^
 
 error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: MyTrait::is_bar and AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
- --> lib.cairo:36:7
+ --> lib.cairo:40:7
     y.is_bar();
       ^****^
 
 error: Invalid member expression.
- --> lib.cairo:37:7
+ --> lib.cairo:41:7
     y.SomeOtherPrefix::is_bar();
       ^***********************^
 
 error: Candidate impl test::AnotherMyTraitImpl::<?0> has an unused generic parameter.
- --> lib.cairo:34:7
+ --> lib.cairo:38:7
     x.is_bla();
       ^****^
 
@@ -119,7 +123,7 @@ fn bar<T, impl CallableImpl: callable::CallableTrait<T>>(x: T) {
     x.call();
 }
 mod callable {
-    trait CallableTrait<T>{
+    trait CallableTrait<T> {
         fn call(self: T);
     }
     impl U8Callable of CallableTrait<u8> {
@@ -145,14 +149,11 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar<T,
-        impl X: unknown,
-        impl CallableImpl: callable::CallableTrait<T>
-     >(x: T) {
+fn bar<T, impl X: unknown, impl CallableImpl: callable::CallableTrait<T>>(x: T) {
     x.call();
 }
 mod callable {
-    trait CallableTrait<T>{
+    trait CallableTrait<T> {
         fn call(self: T);
     }
     impl U8Callable of CallableTrait<u8> {
@@ -162,12 +163,12 @@ mod callable {
 
 //! > expected_diagnostics
 error: Trait not found.
- --> lib.cairo:2:17
-        impl X: unknown,
-                ^*****^
+ --> lib.cairo:1:19
+fn bar<T, impl X: unknown, impl CallableImpl: callable::CallableTrait<T>>(x: T) {
+                  ^*****^
 
 error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:16:5
+ --> lib.cairo:13:5
     bar(3_u8);
     ^*^
 
@@ -191,7 +192,7 @@ fn bar(x: u8) {
     x.call();
 }
 mod callable {
-    trait CallableTrait<T>{
+    trait CallableTrait<T> {
         fn call(self: T);
     }
 }
@@ -221,7 +222,7 @@ fn bar(x: u8) {
     x.call();
 }
 mod callable {
-    trait CallableTrait<T>{
+    trait CallableTrait<T> {
         fn call(self: T);
     }
     impl U8Callable of CallableTrait<u8> {
@@ -255,7 +256,7 @@ fn bar(x: u8) {
     x.call();
 }
 mod callable {
-    trait CallableTrait<T>{
+    trait CallableTrait<T> {
         fn call(self: T);
     }
     impl U8Callable of CallableTrait<u8> {
@@ -286,7 +287,7 @@ fn bar(x: u8) {
     x.call();
 }
 mod callable {
-    trait CallableTrait<T>{
+    trait CallableTrait<T> {
         fn call(self: T);
     }
     impl U8Callable of CallableTrait<u8> {

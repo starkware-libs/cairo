@@ -5,7 +5,7 @@ check_variable_lifetime
 
 //! > function_code
 fn foo(a: felt252) -> felt252 {
-  bar(a)
+    bar(a)
 }
 
 //! > function_name
@@ -14,10 +14,10 @@ foo
 //! > module_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
-  if a == 0 {
-    return 1;
-  }
-  0
+    if a == 0 {
+        return 1;
+    }
+    0
 }
 
 //! > lowering_format
@@ -59,11 +59,11 @@ check_variable_lifetime
 
 //! > function_code
 fn foo(a: felt252) -> felt252 {
-  if a == 2 {
-    bar(a)
-  } else {
-    a
-  }
+    if a == 2 {
+        bar(a)
+    } else {
+        a
+    }
 }
 
 //! > function_name
@@ -72,10 +72,10 @@ foo
 //! > module_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
-  if a == 0 {
-    return 1;
-  }
-  0
+    if a == 0 {
+        return 1;
+    }
+    0
 }
 
 //! > lowering_format
@@ -139,7 +139,7 @@ foo
 
 //! > function_code
 fn foo(x: felt252) -> felt252 {
-   bar(x)
+    bar(x)
 }
 
 //! > module_code
@@ -156,7 +156,7 @@ fn bar(x: felt252) -> felt252 {
 }
 
 fn revoke_tempvars() {
-  revoke_tempvars()
+    revoke_tempvars()
 }
 
 //! > lowering_format
@@ -202,7 +202,7 @@ foo
 
 //! > function_code
 fn foo(data: Array::<felt252>) -> Array::<felt252> {
-     bar(data)
+    bar(data)
 }
 
 //! > module_code

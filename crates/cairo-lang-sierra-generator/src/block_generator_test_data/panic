@@ -5,7 +5,7 @@ block_generator_test
 
 //! > function
 fn foo(opt: Option<felt252>) -> felt252 {
-  expect(opt)
+    expect(opt)
 }
 
 //! > function_name
@@ -14,18 +14,18 @@ foo
 //! > module_code
 #[inline(always)]
 fn expect(opt: Option<felt252>) -> felt252 {
-   match opt {
-      Option::Some(x) => x,
-      Option::None => no_inline_panic(),
-  }
+    match opt {
+        Option::Some(x) => x,
+        Option::None => no_inline_panic(),
+    }
 }
 
 
 #[inline(never)]
 fn no_inline_panic() -> never {
-  let mut data = array![];
-  data.append(1);
-  panic(data)
+    let mut data = array![];
+    data.append(1);
+    panic(data)
 }
 
 //! > semantic_diagnostics

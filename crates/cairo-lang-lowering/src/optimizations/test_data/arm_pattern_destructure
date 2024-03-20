@@ -23,14 +23,14 @@ foo
 
 //! > module_code
 enum MyEnum {
-  a: (felt252, (felt252, felt252)),
-  b: (felt252, (felt252, felt252)),
-  c: (felt252, (felt252, felt252)),
-  d: (felt252, felt252),
-  e: (felt252, felt252),
-  f: (felt252,),
-  g: (felt252,),
-  h: felt252
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252
 }
 extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
