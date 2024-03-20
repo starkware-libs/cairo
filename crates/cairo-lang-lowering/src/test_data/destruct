@@ -4,8 +4,8 @@
 test_function_lowering
 
 //! > function
-fn foo(flag: bool) -> Option<A>{
-    let a = A{};
+fn foo(flag: bool) -> Option<A> {
+    let a = A {};
     if flag {
         Option::Some(a)
     } else {
@@ -19,15 +19,15 @@ foo
 //! > module_code
 use integer::u128_overflowing_add;
 struct A {}
-impl ADestruct of Destruct::<A> {
-  #[inline(never)]
-  fn destruct(self: A) nopanic {
-    // Use RangeCheck, a previously unused implicit.
-    match u128_overflowing_add(1_u128, 2_u128) {
-      Result::Ok(v) => v,
-      Result::Err(v) => v,
-    };
-  }
+impl ADestruct of Destruct<A> {
+    #[inline(never)]
+    fn destruct(self: A) nopanic {
+        // Use RangeCheck, a previously unused implicit.
+        match u128_overflowing_add(1_u128, 2_u128) {
+            Result::Ok(v) => v,
+            Result::Err(v) => v,
+        };
+    }
 }
 
 //! > semantic_diagnostics
@@ -68,15 +68,17 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(d: Felt252Dict<felt252>){
-  get_total_signed_weight(d);
+fn foo(d: Felt252Dict<felt252>) {
+    get_total_signed_weight(d);
 }
 
 //! > function_name
 foo
 
 //! > module_code
-fn get_total_signed_weight(used_keys: Felt252Dict<felt252>) -> u128 { 1_u128 }
+fn get_total_signed_weight(used_keys: Felt252Dict<felt252>) -> u128 {
+    1_u128
+}
 
 //! > semantic_diagnostics
 
@@ -98,10 +100,10 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: A, b: B){
-  may_panic();
-  may_panic();
-  panic_with_felt252('123');
+fn foo(a: A, b: B) {
+    may_panic();
+    may_panic();
+    panic_with_felt252('123');
 }
 
 //! > function_name
@@ -110,23 +112,23 @@ foo
 //! > module_code
 #[inline(never)]
 fn may_panic() {
-  panic_with_felt252('123');
+    panic_with_felt252('123');
 }
 
 struct A {}
 impl APanicDestruct of PanicDestruct<A> {
-  #[inline(never)]
-  fn panic_destruct(self: A, ref panic: Panic) nopanic {
-    let A {} = self;
-  }
+    #[inline(never)]
+    fn panic_destruct(self: A, ref panic: Panic) nopanic {
+        let A { } = self;
+    }
 }
 
 struct B {}
 impl BPanicDestruct of PanicDestruct<B> {
-  #[inline(never)]
-  fn panic_destruct(self: B, ref panic: Panic) nopanic {
-    let B {} = self;
-  }
+    #[inline(never)]
+    fn panic_destruct(self: B, ref panic: Panic) nopanic {
+        let B { } = self;
+    }
 }
 
 //! > semantic_diagnostics
@@ -195,10 +197,10 @@ test_function_lowering
 
 //! > function
 fn foo(a: bool, d: A) -> A {
-  if a {
-    may_panic();
-  }
-  return d;
+    if a {
+        may_panic();
+    }
+    return d;
 }
 
 //! > function_name
@@ -207,15 +209,15 @@ foo
 //! > module_code
 #[inline(never)]
 fn may_panic() {
-  panic_with_felt252('123');
+    panic_with_felt252('123');
 }
 
 struct A {}
 impl APanicDestruct of PanicDestruct<A> {
-  #[inline(never)]
-  fn panic_destruct(self: A, ref panic: Panic) nopanic {
-    let A {} = self;
-  }
+    #[inline(never)]
+    fn panic_destruct(self: A, ref panic: Panic) nopanic {
+        let A { } = self;
+    }
 }
 
 //! > semantic_diagnostics
@@ -276,7 +278,7 @@ test_function_lowering
 
 //! > function
 fn foo(a: Option<()>) {
-  bar::<(), MyDestruct>(a.expect('Should be Some.'))
+    bar::<(), MyDestruct>(a.expect('Should be Some.'))
 }
 
 //! > function_name
@@ -284,8 +286,7 @@ foo
 
 //! > module_code
 #[inline]
-fn bar<T, +Destruct<T>>(a: T) {
-}
+fn bar<T, +Destruct<T>>(a: T) {}
 
 pub impl MyDestruct of Destruct<()> {
     #[inline(always)]
@@ -338,8 +339,8 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(){
-    let _a = A{};
+fn foo() {
+    let _a = A {};
 }
 
 //! > function_name
@@ -347,10 +348,9 @@ foo
 
 //! > module_code
 struct A {}
-impl ADestruct of Destruct::<A> {
-  #[inline(always)]
-  fn destruct(self: A) nopanic {
-  }
+impl ADestruct of Destruct<A> {
+    #[inline(always)]
+    fn destruct(self: A) nopanic {}
 }
 
 //! > semantic_diagnostics

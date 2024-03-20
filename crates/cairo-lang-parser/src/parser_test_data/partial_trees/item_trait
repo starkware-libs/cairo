@@ -70,9 +70,8 @@ test_partial_parser_tree(expect_diagnostics: false)
 trait Foo<T> {
     fn foo<S>(x: T, y: S);
 }
-impl FooImpl<W> of Foo::<u8> {
-    fn foo<W>(x: u8, y: W) {
-    }
+impl FooImpl<W> of Foo<u8> {
+    fn foo<W>(x: u8, y: W) {}
 }
 
 //! > top_level_kind
@@ -120,7 +119,7 @@ FunctionWithBody
         ├── trait_path (kind: ExprPath)
         │   └── item #0 (kind: PathSegmentWithGenericArgs)
         │       ├── ident (kind: TokenIdentifier): 'Foo'
-        │       ├── separator (kind: TokenColonColon): '::'
+        │       ├── separator (kind: OptionTerminalColonColonEmpty) []
         │       └── generic_args (kind: GenericArgs)
         │           ├── langle (kind: TokenLT): '<'
         │           ├── generic_args (kind: GenericArgList)

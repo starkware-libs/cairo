@@ -80,7 +80,9 @@ test_abi_failure(expect_diagnostics: true)
 
 //! > cairo_code
 #[derive(Drop, starknet::Event)]
-enum A { Dup: B, }
+enum A {
+    Dup: B,
+}
 #[derive(Drop, starknet::Event)]
 struct B {}
 
@@ -103,7 +105,7 @@ Event `test::test_contract::Event` has duplicate selector `Dup`.
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: Event `test::test_contract::Event` has duplicate selector `Dup`.
- --> lib.cairo:16:9
+ --> lib.cairo:18:9
         Dup: super::B,
         ^***********^
 
@@ -221,9 +223,7 @@ mod contract {
     impl Impl of Trait {
         #[constructor]
         fn constructor(
-            ref self: ContractState,
-            param_a: starknet::ClassHash,
-            param_b: Array<felt252>,
+            ref self: ContractState, param_a: starknet::ClassHash, param_b: Array<felt252>,
         ) {}
         #[external(v0)]
         fn __validate_deploy__(
@@ -245,6 +245,6 @@ mod contract {
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: `__validate_deploy__` entry point must match the constructor.
- --> lib.cairo:15:9
+ --> lib.cairo:13:9
         #[external(v0)]
         ^*************^

@@ -14,16 +14,16 @@ foo
 
 //! > module_code
 struct A {
-  b: B,
-  f: felt252,
-  f2: felt252
+    b: B,
+    f: felt252,
+    f2: felt252
 }
 struct B {
-  f: felt252,
-  c: C
+    f: felt252,
+    c: C
 }
 struct C {
-  f: felt252,
+    f: felt252,
 }
 extern fn mutate(ref f: felt252) nopanic;
 
@@ -55,8 +55,8 @@ test_function_lowering
 
 //! > function
 fn foo(ref my_struct: MyStruct) {
-  let result = sub_three(my_struct.value);
-  my_struct.value = result;
+    let result = sub_three(my_struct.value);
+    my_struct.value = result;
 }
 
 //! > function_name
@@ -71,7 +71,7 @@ struct MyStruct {
 
 #[inline(never)]
 fn sub_three(value: felt252) -> felt252 {
-  value - 3
+    value - 3
 }
 
 //! > semantic_diagnostics

@@ -126,7 +126,7 @@ block_generator_test
 
 //! > function
 fn foo() -> felt252 {
-  felt252_add(3, 6)
+    felt252_add(3, 6)
 }
 
 //! > function_name

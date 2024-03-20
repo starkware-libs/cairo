@@ -10,9 +10,9 @@ foo
 fn foo(x: felt252) -> felt252 {
     let x2 = immovable(x + x);
     revoke_ap();
-    let s = immovable(MyStruct{a: x, b: x2});
-    let _s2 = immovable(MyStruct{a: s.a, b: 0});
-    let s3 = immovable(MyStruct{a: x, b: 1});
+    let s = immovable(MyStruct { a: x, b: x2 });
+    let _s2 = immovable(MyStruct { a: s.a, b: 0 });
+    let s3 = immovable(MyStruct { a: x, b: 1 });
     revoke_ap();
     s3.a
 }
@@ -28,10 +28,12 @@ struct MyStruct {
     b: felt252,
 }
 
-impl MyStructDrop of Drop::<MyStruct>;
+impl MyStructDrop of Drop<MyStruct>;
 
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > lowering_format
 Parameters: v0: core::felt252
@@ -69,9 +71,9 @@ foo
 
 //! > function_code
 fn foo() -> felt252 {
-  let a = immovable(MyStruct { a: 12 }.a);
-  internal::revoke_ap_tracking();
-  a
+    let a = immovable(MyStruct { a: 12 }.a);
+    internal::revoke_ap_tracking();
+    a
 }
 
 //! > module_code
@@ -79,10 +81,12 @@ struct MyStruct {
     a: felt252,
 }
 
-impl MyStructDrop of Drop::<MyStruct>;
+impl MyStructDrop of Drop<MyStruct>;
 
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > lowering_format
 Parameters:

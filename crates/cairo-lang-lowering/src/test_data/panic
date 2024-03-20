@@ -5,11 +5,11 @@ test_function_lowering
 
 //! > function
 fn foo(ref x: felt252, a: bool) -> felt252 {
-  x = 7;
-  let mut data = array![];
-  data.append(1);
-  let _y = panic(data);
-  5
+    x = 7;
+    let mut data = array![];
+    data.append(1);
+    let _y = panic(data);
+    5
 }
 
 //! > function_name
@@ -43,8 +43,12 @@ test_function_lowering
 
 //! > function
 fn foo(ref x: felt252, ref a: bool) -> felt252 {
-  if true { x = 7; } else { x = 6; };
-  bar(ref a)
+    if true {
+        x = 7;
+    } else {
+        x = 6;
+    };
+    bar(ref a)
 }
 
 //! > function_name
@@ -53,10 +57,10 @@ foo
 //! > module_code
 #[inline(never)]
 fn bar(ref a: bool) -> felt252 {
-  let mut data = array![];
-  data.append(1);
-  let _y = panic(data);
-  5
+    let mut data = array![];
+    data.append(1);
+    let _y = panic(data);
+    5
 }
 
 //! > semantic_diagnostics

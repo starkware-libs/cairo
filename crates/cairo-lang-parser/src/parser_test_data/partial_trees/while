@@ -42,7 +42,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 fn f() {
     while let Some(x) = 2 {
         break 5;
-    } 
+    }
 }
 
 //! > top_level_kind

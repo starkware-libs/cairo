@@ -123,7 +123,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   let _a: () = 3_felt252;
+    let _a: () = 3_felt252;
 }
 
 //! > function_name
@@ -133,6 +133,6 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "()", found: "core::felt252".
- --> lib.cairo:2:17
-   let _a: () = 3_felt252;
-                ^*******^
+ --> lib.cairo:2:18
+    let _a: () = 3_felt252;
+                 ^*******^

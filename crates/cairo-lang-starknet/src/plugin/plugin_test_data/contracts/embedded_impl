@@ -23,7 +23,9 @@ impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
 #[starknet::contract]
 mod empty_contract {
     #[storage]
-    struct Storage { value: felt252, }
+    struct Storage {
+        value: felt252,
+    }
 
     #[abi(embed_v0)]
     impl WorkingUsage = super::OutsideImpl<ContractState>;
@@ -51,7 +53,9 @@ impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
 #[starknet::contract]
 mod empty_contract {
     #[storage]
-    struct Storage { value: felt252, }
+    struct Storage {
+        value: felt252,
+    }
 
     #[abi(embed_v0)]
     impl WorkingUsage = super::OutsideImpl<ContractState>;
@@ -573,7 +577,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x2642978564a46e618664a6067eb6f36304e4408bd713c2bc8c637d865371013;
+pub const TEST_CLASS_HASH: felt252 = 0x24989c51cc02d16815c925171e8167063fde5b6487bb15a58d126a7bc4f3591;
 
 impl ContractStateOutsideImpl of
     super::UnsafeNewContractStateTraitForOutsideImpl<ContractState> {
@@ -648,8 +652,7 @@ trait OutsideTraitWithDestruct<TContractState> {
 
 #[starknet::embeddable]
 impl OutsideImplWithDestruct<
-    TContractState,
-    impl DisallowedDestruct: Destruct<TContractState>,
+    TContractState, impl DisallowedDestruct: Destruct<TContractState>,
 > of OutsideTraitWithDestruct<TContractState> {
     fn ret_3(self: @TContractState) -> felt252 {
         3
@@ -663,8 +666,7 @@ trait OutsideTraitWithPanicDestruct<TContractState> {
 
 #[starknet::embeddable]
 impl OutsideImplWithPanicDestruct<
-    TContractState,
-    impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>
 > of OutsideTraitWithPanicDestruct<TContractState> {
     fn ret_5(self: @TContractState) -> felt252 {
         5
@@ -693,8 +695,7 @@ trait OutsideTraitWithDestruct<TContractState> {
 
 #[starknet::embeddable]
 impl OutsideImplWithDestruct<
-    TContractState,
-    impl DisallowedDestruct: Destruct<TContractState>,
+    TContractState, impl DisallowedDestruct: Destruct<TContractState>,
 > of OutsideTraitWithDestruct<TContractState> {
     fn ret_3(self: @TContractState) -> felt252 {
         3
@@ -708,8 +709,7 @@ trait OutsideTraitWithPanicDestruct<TContractState> {
 
 #[starknet::embeddable]
 impl OutsideImplWithPanicDestruct<
-    TContractState,
-    impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>
 > of OutsideTraitWithPanicDestruct<TContractState> {
     fn ret_5(self: @TContractState) -> felt252 {
         5
@@ -846,8 +846,7 @@ trait UnsafeNewContractStateTraitForOutsideImplWithDestruct<
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__OutsideImplWithDestruct__ret_3<TContractState,
-    impl DisallowedDestruct: Destruct<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OutsideImplWithDestruct__ret_3<TContractState, impl DisallowedDestruct: Destruct<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -996,8 +995,7 @@ trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState,
-    impl DisallowedPanicDestruct: PanicDestruct<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -1528,14 +1526,14 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
- --> lib.cairo:9:5
-    impl DisallowedDestruct: Destruct<TContractState>,
-    ^***********************************************^
+ --> lib.cairo:8:21
+    TContractState, impl DisallowedDestruct: Destruct<TContractState>,
+                    ^***********************************************^
 
 error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
- --> lib.cairo:24:5
-    impl DisallowedPanicDestruct: PanicDestruct<TContractState>
-    ^*********************************************************^
+ --> lib.cairo:22:21
+    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+                    ^*********************************************************^
 
 //! > ==========================================================================
 
@@ -1552,8 +1550,7 @@ trait OutsideTraitWithDrop<TContractState> {
 
 #[starknet::embeddable]
 impl OutsideImplWithDrop<
-    TContractState,
-    +Drop<TContractState>,
+    TContractState, +Drop<TContractState>,
 > of OutsideTraitWithDrop<TContractState> {
     fn ret_8(self: @TContractState) -> felt252 {
         8
@@ -1579,8 +1576,7 @@ trait OutsideTraitWithDrop<TContractState> {
 
 #[starknet::embeddable]
 impl OutsideImplWithDrop<
-    TContractState,
-    +Drop<TContractState>,
+    TContractState, +Drop<TContractState>,
 > of OutsideTraitWithDrop<TContractState> {
     fn ret_8(self: @TContractState) -> felt252 {
         8
@@ -1714,8 +1710,7 @@ trait UnsafeNewContractStateTraitForOutsideImplWithDrop<
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__OutsideImplWithDrop__ret_8<TContractState,
-    +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithDrop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OutsideImplWithDrop__ret_8<TContractState, +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithDrop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
