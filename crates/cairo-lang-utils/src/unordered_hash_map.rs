@@ -10,6 +10,8 @@ use core::ops::Index;
 #[cfg(feature = "std")]
 pub use std::collections::hash_map::Entry;
 #[cfg(feature = "std")]
+use std::collections::hash_map::OccupiedEntry;
+#[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
@@ -281,19 +283,20 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
         )
     }
 
-    /// Merges the map with another map. If a key is present in both maps, the given merge function
-    /// is used to combine the values.
-    pub fn merge<M>(&mut self, other: &Self, merge: M)
+    #[cfg(feature = "std")]
+    /// Merges the map with another map. If a key is present in both maps, the given handler
+    /// function is used to combine the values.
+    pub fn merge<HandleDuplicate>(&mut self, other: &Self, handle_duplicate: HandleDuplicate)
     where
         BH: Clone,
-        M: Fn(&mut Value, &Value),
+        HandleDuplicate: Fn(OccupiedEntry<'_, Key, Value>, &Value),
         Key: Clone,
         Value: Clone,
     {
         for (key, value) in &other.0 {
             match self.0.entry(key.clone()) {
-                Entry::Occupied(mut e) => {
-                    merge(e.get_mut(), value);
+                Entry::Occupied(e) => {
+                    handle_duplicate(e, value);
                 }
                 Entry::Vacant(e) => {
                     e.insert(value.clone());

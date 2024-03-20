@@ -136,3 +136,28 @@ fn test_filter() {
 
     assert_eq!(filtered, expected);
 }
+
+#[cfg(feature = "std")]
+#[test]
+fn test_merge() {
+    // Test merge with a closure that removes the element.
+    let mut value = UnorderedHashMap::<_, _>::from_iter([(1, 11), (2, 12), (3, 13)]);
+    value.merge(&UnorderedHashMap::<_, _>::from_iter([(1, 21), (2, 22)]), |e, _| {
+        e.remove();
+    });
+    assert_eq!(value, UnorderedHashMap::from_iter([(3, 13)]));
+
+    // Test merge with a closure that updates the element.
+    let mut value = UnorderedHashMap::<_, _>::from_iter([(1, 11), (2, 12), (3, 13)]);
+    value.merge(&UnorderedHashMap::<_, _>::from_iter([(1, 21), (2, 22)]), |mut e, _| {
+        *e.get_mut() += 20;
+    });
+    assert_eq!(value, UnorderedHashMap::from_iter([(1, 31), (2, 32), (3, 13)]));
+
+    // Test merge with a closure that overrides the elements and adds a new one.
+    let mut value = UnorderedHashMap::<_, _>::from_iter([(1, 11), (2, 12), (3, 13)]);
+    value.merge(&UnorderedHashMap::<_, _>::from_iter([(1, 21), (2, 22), (4, 24)]), |mut e, v| {
+        *e.get_mut() = *v;
+    });
+    assert_eq!(value, UnorderedHashMap::from_iter([(1, 21), (2, 22), (3, 13), (4, 24)]));
+}
