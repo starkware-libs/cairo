@@ -12,9 +12,10 @@ mod component {
     struct Storage {}
 
     #[embeddable_as(MyImpl)]
-    impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>> of MyTrait<ComponentState<TContractState>> {
-        fn do_nothing(self: @ComponentState<TContractState>) {
-        }
+    impl MyInnerImpl<
+        TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+    > of MyTrait<ComponentState<TContractState>> {
+        fn do_nothing(self: @ComponentState<TContractState>) {}
     }
 }
 
@@ -34,9 +35,10 @@ mod component {
     struct Storage {}
 
     #[embeddable_as(MyImpl)]
-    impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>> of MyTrait<ComponentState<TContractState>> {
-        fn do_nothing(self: @ComponentState<TContractState>) {
-        }
+    impl MyInnerImpl<
+        TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+    > of MyTrait<ComponentState<TContractState>> {
+        fn do_nothing(self: @ComponentState<TContractState>) {}
     }
 }
 
@@ -378,7 +380,8 @@ pub trait HasComponent<TContractState> {
 
 #[starknet::embeddable]
 pub impl MyImpl<
-    TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+
 > of MyTrait<TContractState> {
     
     fn do_nothing(self: @TContractState) {

@@ -34,14 +34,13 @@ foo
 
 //! > module_code
 mod internal {
-    fn bar<T, +PartialEq<T>>(a: @T, b: @T) {
-    }
+    fn bar<T, +PartialEq<T>>(a: @T, b: @T) {}
 }
 use NonExisting;
 use internal::bar;
 
 //! > expected_diagnostics
 error: Identifier not found.
- --> lib.cairo:5:5
+ --> lib.cairo:4:5
 use NonExisting;
     ^*********^

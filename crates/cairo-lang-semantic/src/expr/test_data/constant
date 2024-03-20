@@ -35,7 +35,7 @@ mod my_module {
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo() { }
+fn foo() {}
 
 //! > function_name
 foo
@@ -50,7 +50,9 @@ const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
 
 // Non-corelib impl, preventing the missing operator warning.
 impl Felt252Div of Div<felt252> {
-    fn div(lhs: felt252, rhs: felt252) -> felt252 { core::felt252_div(lhs, rhs.try_into().unwrap()) }
+    fn div(lhs: felt252, rhs: felt252) -> felt252 {
+        core::felt252_div(lhs, rhs.try_into().unwrap())
+    }
 }
 const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
 
@@ -86,7 +88,7 @@ const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                              ^
 
 error: This expression is not supported as constant.
- --> lib.cairo:12:47
+ --> lib.cairo:14:47
 const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
                                               ^***^
 
@@ -98,7 +100,7 @@ const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo() { }
+fn foo() {}
 
 //! > function_name
 foo
@@ -125,7 +127,7 @@ const DEFAULT_VAR: bool = 1;
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo() { }
+fn foo() {}
 
 //! > function_name
 foo
@@ -152,7 +154,7 @@ const B: u8 = -1;
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo() { }
+fn foo() {}
 
 //! > function_name
 foo
@@ -187,7 +189,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> (felt252, felt252, u256, i8) {
-  (FELT_WRAPAROUND_OVER, FELT_WRAPAROUND_UNDER, U256_CALCULATION, BASIC_CALCULATION)
+    (FELT_WRAPAROUND_OVER, FELT_WRAPAROUND_UNDER, U256_CALCULATION, BASIC_CALCULATION)
 }
 
 //! > function_name
@@ -204,8 +206,12 @@ const ZERO_NON_ZERO: NonZero<u8> = 0;
 const BASIC_CALCULATION: i8 = 120 + 7;
 const CALCULATION_WITH_OVERFLOW: i8 = 120 + 10;
 const CALCULATION_WITH_DIVISION: u8 = 120 / 0;
-const FELT_WRAPAROUND_OVER: felt252 = 0x800000000000011000000000000000000000000000000000000000000000000 + 2;
-const FELT_WRAPAROUND_UNDER: felt252 = -0x800000000000011000000000000000000000000000000000000000000000000 - 2;
+const FELT_WRAPAROUND_OVER: felt252 =
+    0x800000000000011000000000000000000000000000000000000000000000000
+    + 2;
+const FELT_WRAPAROUND_UNDER: felt252 =
+    -0x800000000000011000000000000000000000000000000000000000000000000
+    - 2;
 const U256_VALUE: u256 = 0x180000000000000000000000000000001;
 const U256_CALCULATION: u256 = U256_VALUE * 8;
 
@@ -217,13 +223,10 @@ struct ComplexStruct {
     e: bool,
 }
 
-const COMPLEX_STRUCT: ComplexStruct = ComplexStruct {
-    a: 1,
-    b: {IN_RANGE_NEGATIVE1},
-    c: OUT_OF_RANGE_NEGATIVE2,
-    d: 0,
-    e: true,
-};
+const COMPLEX_STRUCT: ComplexStruct =
+    ComplexStruct { a: 1, b: {
+        IN_RANGE_NEGATIVE1
+    }, c: OUT_OF_RANGE_NEGATIVE2, d: 0, e: true, };
 
 const CONST_MEMBER: u8 = COMPLEX_STRUCT.a;
 
@@ -305,6 +308,6 @@ const CALCULATION_WITH_DIVISION: u8 = 120 / 0;
                                       ^*****^
 
 error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
- --> lib.cairo:28:8
-    d: 0,
-       ^
+ --> lib.cairo:31:38
+    }, c: OUT_OF_RANGE_NEGATIVE2, d: 0, e: true, };
+                                     ^

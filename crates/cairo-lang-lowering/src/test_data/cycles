@@ -56,11 +56,11 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(x: felt252) {  
-  match core::gas::withdraw_gas() {
-    Option::Some(_) => foo(x),
-    Option::None => {}
-  }
+fn foo(x: felt252) {
+    match core::gas::withdraw_gas() {
+        Option::Some(_) => foo(x),
+        Option::None => {}
+    }
 }
 
 //! > function_name
@@ -102,10 +102,10 @@ test_function_lowering
 
 //! > function
 fn foo(x: felt252, costs: core::gas::BuiltinCosts) nopanic {
-  match core::gas::withdraw_gas_all(costs) {
-    Option::Some(_) => foo(x, costs),
-    Option::None => {}
-  }
+    match core::gas::withdraw_gas_all(costs) {
+        Option::Some(_) => foo(x, costs),
+        Option::None => {}
+    }
 }
 
 //! > function_name

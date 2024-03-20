@@ -4,8 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo() {
-}
+fn foo() {}
 
 //! > function_name
 foo
@@ -33,7 +32,9 @@ test_function_lowering
 //! > function
 fn foo(a: felt252) -> felt252 {
     return a + a * a;
-    5;6;7
+    5;
+    6;
+    7
 }
 
 //! > function_name
@@ -46,8 +47,8 @@ foo
 //! > lowering_diagnostics
 error: Unreachable code
  --> lib.cairo:3:5
-    5;6;7
-    ^**^
+    5;
+    ^^
 
 //! > lowering_flat
 Parameters: v0: core::felt252
@@ -68,7 +69,7 @@ test_function_lowering
 //! > function
 fn foo(a: never) -> felt252 {
     match a {};
-    1+2
+    1 + 2
 }
 
 //! > function_name
@@ -127,10 +128,21 @@ test_function_lowering
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-  let x = {7;};
-  {x;}
-  let _y = if 1 == 1 { 6 } else { 7 };
-  foo(3) + 5 * {3; a + 0}
+    let x = {
+        7;
+    };
+    {
+        x;
+    }
+    let _y = if 1 == 1 {
+        6
+    } else {
+        7
+    };
+    foo(3) + 5 * {
+        3;
+        a + 0
+    }
 }
 
 //! > function_name
@@ -222,15 +234,15 @@ test_function_lowering
 
 //! > function
 fn foo(x: MyEnum) -> felt252 {
-  match x {
-    MyEnum::A(_inner) => {return 5;},
-    MyEnum::B(inner) => {inner},
-    MyEnum::C(inner) => {
-      // A workaround to drop inner.
-      let (_a, _b) = inner.unbox();
-      7
+    match x {
+        MyEnum::A(_inner) => { return 5; },
+        MyEnum::B(inner) => { inner },
+        MyEnum::C(inner) => {
+            // A workaround to drop inner.
+            let (_a, _b) = inner.unbox();
+            7
+        }
     }
-  }
 }
 
 //! > function_name
@@ -238,9 +250,9 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: (),
-  B: felt252,
-  C: Box::<((), felt252)>,
+    A: (),
+    B: felt252,
+    C: Box::<((), felt252)>,
 }
 
 //! > semantic_diagnostics
@@ -284,15 +296,15 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a : Array::<felt252, 5>) -> felt252 {
-  felt252_const::<17>()
+fn foo(a: Array::<felt252, 5>) -> felt252 {
+    felt252_const::<17>()
 }
 
 //! > function_name
 foo
 
 //! > module_code
-type Array<T,const N: usize> = (T,felt252);
+type Array<T, const N: usize> = (T, felt252);
 
 //! > semantic_diagnostics
 
@@ -317,8 +329,8 @@ TODO(spapini): Make this a semantic diagnostic.
 test_function_lowering
 
 //! > function
-fn foo(mut a : felt252) -> felt252 {
-  bar(ref a, ref a)
+fn foo(mut a: felt252) -> felt252 {
+    bar(ref a, ref a)
 }
 
 //! > function_name
@@ -326,10 +338,10 @@ foo
 
 //! > module_code
 #[inline(never)]
-fn bar(ref a: felt252, ref b: felt252) -> felt252  {
-  a = 0;
-  b = 1;
-  a + b
+fn bar(ref a: felt252, ref b: felt252) -> felt252 {
+    a = 0;
+    b = 1;
+    a + b
 }
 
 //! > semantic_diagnostics
@@ -353,7 +365,7 @@ test_function_lowering
 
 //! > function
 fn foo(mut data: Span::<felt252>) -> u128 {
-   serde::Serde::<u128>::deserialize(ref data)
+    serde::Serde::<u128>::deserialize(ref data)
 }
 
 //! > function_name

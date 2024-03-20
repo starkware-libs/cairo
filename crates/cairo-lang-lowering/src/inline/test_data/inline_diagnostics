@@ -6,8 +6,8 @@ test_function_inlining
 //! > function
 #[inline(always)]
 fn foo(ref a: felt252, b: felt252) -> felt252 {
-  foo(ref a, b);
-  b
+    foo(ref a, b);
+    b
 }
 
 //! > function_name
@@ -133,17 +133,17 @@ foo
 
 //! > function
 fn foo(n: felt252) -> felt252 {
-  bar(n)
+    bar(n)
 }
 
 //! > module_code
 #[inline(always)]
 fn bar(n: felt252) -> felt252 {
-  if n == 0 {
-    return 1;
-  } else {
-    return 1;
-  }
+    if n == 0 {
+        return 1;
+    } else {
+        return 1;
+    }
 }
 
 //! > semantic_diagnostics

@@ -21,7 +21,9 @@ fn revoke_ap() -> felt252 {
 }
 
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > semantic_diagnostics
 
@@ -59,10 +61,10 @@ test_function_generator
 
 //! > function
 fn foo(x: @u32) {
-  *x + 1;
-  if true {
-    *x + 2;
-  }
+    *x + 1;
+    if true {
+        *x + 2;
+    }
 }
 
 //! > function_name

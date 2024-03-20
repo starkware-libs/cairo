@@ -5,9 +5,9 @@ test_function_lowering
 
 //! > function
 fn foo() {
-    let a = (1,2);
+    let a = (1, 2);
     let (_x, _y) = immovable(a);
-    let (_x, _y) = immovable((1,2));
+    let (_x, _y) = immovable((1, 2));
 }
 
 //! > function_name
@@ -15,7 +15,9 @@ foo
 
 //! > module_code
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > semantic_diagnostics
 

@@ -1016,6 +1016,7 @@ dependencies = [
 name = "cairo-lang-test-utils"
 version = "2.6.3"
 dependencies = [
+ "cairo-lang-formatter",
  "cairo-lang-utils",
  "colored",
  "env_logger 0.10.2",

@@ -118,14 +118,14 @@ foo
 
 //! > module_code
 enum MyEnum {
-  a: (felt252, (felt252, felt252)),
-  b: (felt252, (felt252, felt252)),
-  c: (felt252, (felt252, felt252)),
-  d: (felt252, felt252),
-  e: (felt252, felt252),
-  f: (felt252,),
-  g: (felt252,),
-  h: felt252
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252
 }
 extern fn bar(ref a: felt252) -> MyEnum nopanic;
 
@@ -216,14 +216,14 @@ foo
 
 //! > module_code
 enum MyEnum {
-  a: (felt252, (felt252, felt252)),
-  b: (felt252, (felt252, felt252)),
-  c: (felt252, (felt252, felt252)),
-  d: (felt252, felt252),
-  e: (felt252, felt252),
-  f: (felt252,),
-  g: (felt252,),
-  h: felt252
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252
 }
 extern fn bar() -> MyEnum nopanic;
 
@@ -297,14 +297,14 @@ test_function_lowering
 //! > function
 fn foo(mut z: felt252) {
     match bar(ref z) {
-      MyEnum::a((_x, (_y, _z))) => {},
-      MyEnum::b((_x, _y)) => {},
-      MyEnum::c(_x) => {},
-      MyEnum::d((_x, _y)) => {},
-      MyEnum::e(_x) => {},
-      MyEnum::f((_x,)) => {},
-      MyEnum::g(_x) => {},
-      MyEnum::h(_x) => {},
+        MyEnum::a((_x, (_y, _z))) => {},
+        MyEnum::b((_x, _y)) => {},
+        MyEnum::c(_x) => {},
+        MyEnum::d((_x, _y)) => {},
+        MyEnum::e(_x) => {},
+        MyEnum::f((_x,)) => {},
+        MyEnum::g(_x) => {},
+        MyEnum::h(_x) => {},
     }
 }
 
@@ -313,14 +313,14 @@ foo
 
 //! > module_code
 enum MyEnum {
-  a: (felt252, (felt252, felt252)),
-  b: (felt252, (felt252, felt252)),
-  c: (felt252, (felt252, felt252)),
-  d: (felt252, felt252),
-  e: (felt252, felt252),
-  f: (felt252,),
-  g: (felt252,),
-  h: felt252
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252
 }
 extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
@@ -411,14 +411,14 @@ foo
 
 //! > module_code
 enum MyEnum {
-  a: (felt252, (felt252, felt252)),
-  b: (felt252, (felt252, felt252)),
-  c: (felt252, (felt252, felt252)),
-  d: (felt252, felt252),
-  e: (felt252, felt252),
-  f: (felt252,),
-  g: (felt252,),
-  h: felt252
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252
 }
 extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 

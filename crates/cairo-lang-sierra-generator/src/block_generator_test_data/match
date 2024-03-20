@@ -131,11 +131,11 @@ End:
 block_generator_test
 
 //! > function
-fn foo(opt : Option<@felt252>) -> felt252 {
-  match opt {
-    Option::Some(x) => *x,
-    Option::None => 0,
-  }
+fn foo(opt: Option<@felt252>) -> felt252 {
+    match opt {
+        Option::Some(x) => *x,
+        Option::None => 0,
+    }
 }
 
 //! > function_name

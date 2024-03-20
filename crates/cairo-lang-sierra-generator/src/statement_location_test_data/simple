@@ -85,13 +85,11 @@ fn foo(myEnum: MyEnum) -> u8 {
     match myEnum {
         MyEnum::A(a) => a,
         MyEnum::B(b) => b,
-        MyEnum::C((c1, c2)) => {
-            if c1 > c2 {
-                c1 + c2
-            } else {
-                c1 * c2
-            }
-        }
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+            c1 + c2
+        } else {
+            c1 * c2
+        } }
     }
 }
 
@@ -191,7 +189,7 @@ fn foo(myEnum: MyEnum) -> u8 {
 In function: lib.cairo::foo
 struct_deconstruct<Tuple<u8, u8>>([4]) -> ([8], [9])
 Originating location:
-        MyEnum::C((c1, c2)) => {
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
                   ^******^
 In function: lib.cairo::foo
 dup<u8>([9]) -> ([9], [10])

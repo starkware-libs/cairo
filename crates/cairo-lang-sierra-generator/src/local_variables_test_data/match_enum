@@ -8,26 +8,26 @@ foo
 
 //! > function_code
 fn foo() -> felt252 {
-  let x = bar();
-  let literal = 2;
-  let w1 = non_literal();
-  let y = match x {
-    MyEnum::A(a) => {
-      revoke_ap();
-      a + a
-    },
-    MyEnum::B(b) => {
-      // 'b' is not revoked.
-      b + b + b
-    }
-  };
-  // 'w1' is revoked because of the revoke_ap() inside the match.
-  let _w2 = w1 + w1;
-  // 'literal' is not revoked since it is a const.
-  let _w3 = literal + literal;
-  revoke_ap();
-  // 'y' is revoked.
-  y
+    let x = bar();
+    let literal = 2;
+    let w1 = non_literal();
+    let y = match x {
+        MyEnum::A(a) => {
+            revoke_ap();
+            a + a
+        },
+        MyEnum::B(b) => {
+            // 'b' is not revoked.
+            b + b + b
+        }
+    };
+    // 'w1' is revoked because of the revoke_ap() inside the match.
+    let _w2 = w1 + w1;
+    // 'literal' is not revoked since it is a const.
+    let _w3 = literal + literal;
+    revoke_ap();
+    // 'y' is revoked.
+    y
 }
 
 //! > module_code
@@ -47,8 +47,8 @@ fn bar() -> MyEnum {
 
 #[derive(Drop)]
 enum MyEnum {
-  A: felt252,
-  B: felt252,
+    A: felt252,
+    B: felt252,
 }
 
 //! > lowering_format
@@ -107,9 +107,7 @@ fn foo(x: MyEnum, z: felt252) -> felt252 {
             revoke_ap();
             return 0;
         },
-        MyEnum::B(b) => {
-            b + b + b
-        }
+        MyEnum::B(b) => { b + b + b }
     };
 
     // w1 is not revoked.
@@ -120,9 +118,7 @@ fn foo(x: MyEnum, z: felt252) -> felt252 {
             // Same as above, without revoke_ap() and without an early return.
             a
         },
-        MyEnum::B(b) => {
-            b + b + b
-        }
+        MyEnum::B(b) => { b + b + b }
     };
 
     // w2 is revoked.
@@ -137,8 +133,8 @@ fn revoke_ap() -> felt252 {
 
 #[derive(Copy, Drop)]
 enum MyEnum {
-  A: felt252,
-  B: felt252,
+    A: felt252,
+    B: felt252,
 }
 
 //! > lowering_format

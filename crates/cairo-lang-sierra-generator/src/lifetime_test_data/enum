@@ -8,18 +8,16 @@ foo
 
 //! > function_code
 fn foo(x: MyEnum, y: felt252, z: felt252, w: felt252) -> felt252 {
-    immovable(match x {
-        MyEnum::A(_a) => {
-            immovable(MyEnum::A(1));
-            MyEnum::A(2)
-        },
-        MyEnum::B(b) => {
-            MyEnum::A(b + y + z)
-        },
-        MyEnum::C((_c0, _c1)) => {
-            MyEnum::C((z, w))
-        },
-    });
+    immovable(
+        match x {
+            MyEnum::A(_a) => {
+                immovable(MyEnum::A(1));
+                MyEnum::A(2)
+            },
+            MyEnum::B(b) => { MyEnum::A(b + y + z) },
+            MyEnum::C((_c0, _c1)) => { MyEnum::C((z, w)) },
+        }
+    );
     w
 }
 
@@ -30,10 +28,12 @@ enum MyEnum {
     C: (felt252, felt252),
 }
 
-impl MyEnumDrop of Drop::<MyEnum>;
+impl MyEnumDrop of Drop<MyEnum>;
 
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > lowering_format
 Parameters: v0: test::MyEnum, v1: core::felt252, v2: core::felt252, v3: core::felt252

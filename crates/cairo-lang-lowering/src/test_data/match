@@ -882,7 +882,7 @@ test_function_lowering
 fn foo(a: MyEnum) -> felt252 {
     match a {
         MyEnum::A(x) | MyEnum::B((x, _)) => x,
-        MyEnum::C((x, _, t)) | MyEnum::D(P{x, z: t, .. }) => x + t,
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: t, .. }) => x + t,
     }
 }
 
