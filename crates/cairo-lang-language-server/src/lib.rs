@@ -31,7 +31,6 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
 use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextSpan, TextWidth};
-use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
@@ -804,38 +803,12 @@ impl LanguageServer for Backend {
         self.with_db(|db| ide::semantic_highlighting::semantic_highlight_full(params, db)).await
     }
 
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn formatting(
         &self,
         params: DocumentFormattingParams,
     ) -> LSPResult<Option<Vec<TextEdit>>> {
-        self.with_db(|db| {
-            let file_uri = params.text_document.uri;
-            let file = file(db, file_uri.clone());
-            let node = db.file_syntax(file).ok().on_none(|| {
-                error!("formatting failed: file '{file_uri}' does not exist");
-            })?;
-            db.file_syntax_diagnostics(file).check_error_free().ok().on_none(|| {
-                error!("formatting failed: cannot properly parse '{file_uri}' exist");
-            })?;
-            let new_text = get_formatted_file(db.upcast(), &node, FormatterConfig::default());
-
-            let file_summary = db.file_summary(file).on_none(|| {
-                error!("formatting failed: cannot get summary for file '{file_uri}'");
-            })?;
-            let old_line_count = file_summary.line_count().try_into().ok().on_none(|| {
-                error!("formatting failed: line count out of bound in file '{file_uri}'");
-            })?;
-
-            Some(vec![TextEdit {
-                range: Range {
-                    start: Position { line: 0, character: 0 },
-                    end: Position { line: old_line_count, character: 0 },
-                },
-                new_text,
-            }])
-        })
-        .await
+        self.with_db(|db| ide::formatter::format(params, db)).await
     }
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document_position_params.text_document.uri))]
