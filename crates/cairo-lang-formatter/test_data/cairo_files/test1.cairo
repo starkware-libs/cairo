@@ -52,3 +52,8 @@ fn if_let_test() {
         if_let_block_content();
     }
 }
+
+
+impl DropMyImplCoupon<T> of Drop<MyImpl::<T>::trait_fn::Coupon>;
+impl DropMyImplCoupon<T> of Drop<MyImpl::<T>::trait_fn>;
+impl DropMyImplCoupon<T> of Drop<MyImpl::<T>>;
