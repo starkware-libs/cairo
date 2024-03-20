@@ -43,28 +43,26 @@ test_expr_diagnostics
 }
 
 //! > module_code
-fn foo() {
-}
+fn foo() {}
 mod submod {
-  fn foo() {
-  }
+    fn foo() {}
 }
 
 //! > function_body
 
 //! > expected_diagnostics
 error: Identifier not found.
- --> lib.cairo:12:3
+ --> lib.cairo:10:3
   bad_module::foo();
   ^********^
 
 error: 'super' cannot be used for the crate's root module.
- --> lib.cairo:13:3
+ --> lib.cairo:11:3
   super::foo();
   ^***^
 
 error: Identifier not found.
- --> lib.cairo:14:3
+ --> lib.cairo:12:3
   test::super::foo();
   ^**^
 
@@ -81,8 +79,8 @@ test_expr_diagnostics
 
 //! > module_code
 fn foo(ref ref v: felt252) {
-  let mut a = 1;
-  foo(ref a);
+    let mut a = 1;
+    foo(ref a);
 }
 
 //! > function_body
@@ -106,16 +104,16 @@ test_expr_diagnostics
 
 //! > module_code
 fn foo(ref v: felt252) {
-  foo(1);
+    foo(1);
 }
 
 //! > function_body
 
 //! > expected_diagnostics
 error: ref argument must be a variable.
- --> lib.cairo:2:7
-  foo(1);
-      ^
+ --> lib.cairo:2:9
+    foo(1);
+        ^
 
 //! > ==========================================================================
 
@@ -130,17 +128,17 @@ test_expr_diagnostics
 
 //! > module_code
 fn foo(ref v: felt252) {
-  let a = 3;
-  foo(ref a);
+    let a = 3;
+    foo(ref a);
 }
 
 //! > function_body
 
 //! > expected_diagnostics
 error: ref argument must be a mutable variable.
- --> lib.cairo:3:11
-  foo(ref a);
-          ^
+ --> lib.cairo:3:13
+    foo(ref a);
+            ^
 
 //! > ==========================================================================
 
@@ -159,24 +157,23 @@ test_expr_diagnostics
 }
 
 //! > module_code
-fn foo() {
-}
+fn foo() {}
 
 //! > function_body
 
 //! > expected_diagnostics
 error: Wrong number of arguments. Expected 1, found: 0
- --> lib.cairo:8:14
+ --> lib.cairo:7:14
     let _b = 123_NonZero;
              ^*********^
 
 error: Unknown type.
- --> lib.cairo:9:14
+ --> lib.cairo:8:14
     let _b = 123_u129;
              ^******^
 
 error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
- --> lib.cairo:7:14
+ --> lib.cairo:6:14
     let _b = 123_bool;
              ^******^
 
@@ -193,7 +190,7 @@ test_expr_diagnostics
 
 //! > module_code
 mod a {
-  use super::B;
+    use super::B;
 }
 
 use a::B;
@@ -207,9 +204,9 @@ use a::B;
        ^
 
 error: Cycle detected while resolving 'use' items.
- --> lib.cairo:2:14
-  use super::B;
-             ^
+ --> lib.cairo:2:16
+    use super::B;
+               ^
 
 //! > ==========================================================================
 
@@ -352,7 +349,7 @@ test_expr_diagnostics
 //! > module_code
 #[must_use]
 fn must_use_function() -> felt252 {
-  0
+    0
 }
 
 //! > function_body
@@ -377,13 +374,13 @@ test_expr_diagnostics
 
 //! > module_code
 trait trt {
-  fn must_use_function() -> felt252;
+    fn must_use_function() -> felt252;
 }
 impl imp of trt {
-  #[must_use]
-  fn must_use_function() -> felt252 {
-    0
-  }
+    #[must_use]
+    fn must_use_function() -> felt252 {
+        0
+    }
 }
 
 //! > function_body
@@ -404,13 +401,13 @@ test_expr_diagnostics
 
 //! > module_code
 trait trt {
-  #[must_use]
-  fn must_use_function() -> felt252;
+    #[must_use]
+    fn must_use_function() -> felt252;
 }
 impl imp of trt {
-  fn must_use_function() -> felt252 {
-    0
-  }
+    fn must_use_function() -> felt252 {
+        0
+    }
 }
 
 //! > function_body
@@ -436,13 +433,13 @@ test_expr_diagnostics
 
 //! > module_code
 trait trt<T> {
-  #[must_use]
-  fn must_use_function(self: T) -> felt252;
+    #[must_use]
+    fn must_use_function(self: T) -> felt252;
 }
 impl imp of trt<felt252> {
-  fn must_use_function(self: felt252) -> felt252 {
-    0
-  }
+    fn must_use_function(self: felt252) -> felt252 {
+        0
+    }
 }
 
 //! > function_body
@@ -468,7 +465,7 @@ test_expr_diagnostics
 //! > module_code
 #[must_use]
 fn must_use_function() -> felt252 {
-  0
+    0
 }
 
 //! > function_body
@@ -492,7 +489,7 @@ test_expr_diagnostics
 //! > module_code
 #[unstable(feature: "testing")]
 fn unstable_function() -> felt252 {
-  0
+    0
 }
 
 //! > function_body

@@ -314,33 +314,33 @@ test_generated_function
 
 //! > function
 fn foo(mut a: A, ref b: A) {
-  let c = 5_usize;
-  loop {
-    let mut h = 0;
-    a.b.c = c;
-    if true {
-        h = 1;
-        let mut x = 4;
-        x = 5;
-        b = A { b: a.b, x };
-        break b;
+    let c = 5_usize;
+    loop {
+        let mut h = 0;
+        a.b.c = c;
+        if true {
+            h = 1;
+            let mut x = 4;
+            x = 5;
+            b = A { b: a.b, x };
+            break b;
+        };
     };
-  };
 }
 
 //! > function_name
 foo
 
 //! > module_code
-#[derive(Copy,Drop)]
+#[derive(Copy, Drop)]
 struct A {
-  b: B,
-  x: felt252,
+    b: B,
+    x: felt252,
 }
-#[derive(Copy,Drop)]
+#[derive(Copy, Drop)]
 struct B {
-  c: usize,
-  y: u128,
+    c: usize,
+    y: u128,
 }
 
 //! > semantic_diagnostics
@@ -394,8 +394,8 @@ End:
 
 
 Generated lowering for source location:
-  loop {
-  ^****^
+    loop {
+    ^****^
 
 Parameters: v0: core::integer::u32, v1: test::B, v2: test::A
 blk0 (root):
@@ -673,9 +673,9 @@ test_generated_function
 
 //! > function
 fn foo() {
-  loop {
-      break;
-  }
+    loop {
+        break;
+    }
 }
 
 //! > function_name
@@ -709,8 +709,8 @@ End:
 
 
 Generated lowering for source location:
-  loop {
-  ^****^
+    loop {
+    ^****^
 
 Parameters:
 blk0 (root):
@@ -736,18 +736,18 @@ test_generated_function
 
 //! > function
 fn foo() {
-  let mut x = A { a: 3, b: 4 };
-  loop {
-      if (true) {
-        x.a = 0;
-      } else {
-        x.a = 0;
-      }
+    let mut x = A { a: 3, b: 4 };
+    loop {
+        if (true) {
+            x.a = 0;
+        } else {
+            x.a = 0;
+        }
 
-      if x.a == 0 {
-          break;
-      };
-  };
+        if x.a == 0 {
+            break;
+        };
+    };
 }
 
 //! > function_name
@@ -756,8 +756,8 @@ foo
 //! > module_code
 #[derive(Copy, Drop, Debug)]
 struct A {
-  a: u8,
-  b: u8,
+    a: u8,
+    b: u8,
 }
 
 //! > semantic_diagnostics
@@ -810,8 +810,8 @@ End:
 
 
 Generated lowering for source location:
-  loop {
-  ^****^
+    loop {
+    ^****^
 
 Parameters: v0: core::integer::u8
 blk0 (root):

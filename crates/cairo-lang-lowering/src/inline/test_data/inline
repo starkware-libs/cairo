@@ -5,7 +5,7 @@ test_function_inlining
 
 //! > function
 fn foo(n: felt252) -> felt252 {
-  -n
+    -n
 }
 
 //! > function_name
@@ -53,7 +53,7 @@ test_function_inlining
 
 //! > function
 fn foo(val: Option::<felt252>) -> felt252 {
-  bar(val, 2)
+    bar(val, 2)
 }
 
 //! > function_name
@@ -62,7 +62,7 @@ foo
 //! > module_code
 /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
 #[inline]
-fn bar<T, impl TDrop: Drop::<T>>(val: Option::<T>, val2: T) -> T {
+fn bar<T, impl TDrop: Drop<T>>(val: Option::<T>, val2: T) -> T {
     match val {
         Option::Some(x) => x,
         Option::None => val2,
@@ -122,7 +122,7 @@ test_function_inlining
 
 //! > function
 fn foo(n: felt252) -> felt252 {
-  bar(n, n)
+    bar(n, n)
 }
 
 //! > function_name
@@ -130,8 +130,8 @@ foo
 
 //! > module_code
 #[inline(always)]
-fn bar(a: felt252, b: felt252) -> felt252  {
-  a + b
+fn bar(a: felt252, b: felt252) -> felt252 {
+    a + b
 }
 
 //! > semantic_diagnostics
@@ -173,7 +173,7 @@ test_function_inlining
 
 //! > function
 fn foo(a: felt252, b: felt252) -> felt252 {
-  bar(a + b, b)
+    bar(a + b, b)
 }
 
 //! > function_name
@@ -181,13 +181,13 @@ foo
 
 //! > module_code
 #[inline(always)]
-fn bar(a: felt252, b: felt252) -> felt252 implicits()  {
-  bar2(a, b) + bar2(b, a)
+fn bar(a: felt252, b: felt252) -> felt252 implicits() {
+    bar2(a, b) + bar2(b, a)
 }
 
 #[inline(always)]
-fn bar2(a: felt252, b: felt252) -> felt252 implicits()  {
-   a * b
+fn bar2(a: felt252, b: felt252) -> felt252 implicits() {
+    a * b
 }
 
 //! > semantic_diagnostics
@@ -243,7 +243,7 @@ test_function_inlining
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-  first(a)
+    first(a)
 }
 
 //! > function_name
@@ -252,17 +252,17 @@ foo
 //! > module_code
 #[inline(always)]
 fn first(a: felt252) -> felt252 {
-  second(a)
+    second(a)
 }
 
 #[inline(always)]
 fn second(a: felt252) -> felt252 {
-  third(a)
+    third(a)
 }
 
 #[inline(always)]
 fn third(a: felt252) -> felt252 {
-   a * a
+    a * a
 }
 
 //! > semantic_diagnostics
@@ -304,8 +304,8 @@ test_function_inlining
 
 //! > function
 fn foo() {
-  let mut arr = array![];
-  arr.append(5)
+    let mut arr = array![];
+    arr.append(5)
 }
 
 //! > function_name
@@ -370,11 +370,11 @@ test_function_inlining
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-  if a == 2 {
-    bar(a)
-  } else {
-    a
-  }
+    if a == 2 {
+        bar(a)
+    } else {
+        a
+    }
 }
 
 //! > function_name
@@ -383,10 +383,10 @@ foo
 //! > module_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
-  if a == 0 {
-    return 1;
-  }
-  0
+    if a == 0 {
+        return 1;
+    }
+    0
 }
 
 //! > before
@@ -515,7 +515,7 @@ test_function_inlining
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-  bar(a) + bar2(a)
+    bar(a) + bar2(a)
 }
 
 //! > function_name
@@ -523,11 +523,11 @@ foo
 
 //! > module_code
 fn bar(a: felt252) -> felt252 {
-  bar2(a)
+    bar2(a)
 }
 
 fn bar2(a: felt252) -> felt252 {
-  1
+    1
 }
 
 //! > before
@@ -593,7 +593,7 @@ test_function_inlining
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-  bar(a) + bar2(a)
+    bar(a) + bar2(a)
 }
 
 //! > function_name
@@ -602,12 +602,12 @@ foo
 //! > module_code
 #[inline(never)]
 fn bar(a: felt252) -> felt252 {
-  bar2(a)
+    bar2(a)
 }
 
 #[inline(never)]
 fn bar2(a: felt252) -> felt252 {
-  1
+    1
 }
 
 //! > before
@@ -653,7 +653,7 @@ test_function_inlining
 
 //! > function
 fn foo() -> felt252 {
-  bar(0)
+    bar(0)
 }
 
 //! > function_name
@@ -662,10 +662,10 @@ foo
 //! > module_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
-  if a == 0 {
-    return a;
-  }
-  1
+    if a == 0 {
+        return a;
+    }
+    1
 }
 
 //! > semantic_diagnostics
@@ -722,7 +722,7 @@ test_function_inlining
 
 //! > function
 fn foo(n: felt252) -> felt252 {
-  identity(n)
+    identity(n)
 }
 
 //! > function_name
@@ -731,7 +731,7 @@ foo
 //! > module_code
 #[inline(always)]
 fn identity(n: felt252) -> felt252 {
-  n
+    n
 }
 
 //! > semantic_diagnostics
@@ -787,10 +787,10 @@ foo
 //! > module_code
 #[inline(always)]
 fn bar1(a: u128, b: u128) -> u128 {
-   if a == 1_u128 {
-      return bar2(b, a);
-   }
-   a
+    if a == 1_u128 {
+        return bar2(b, a);
+    }
+    a
 }
 
 #[inline(always)]
@@ -920,17 +920,17 @@ foo
 
 //! > function
 fn foo(n: felt252) -> felt252 {
-  bar(n)
+    bar(n)
 }
 
 //! > module_code
 #[inline(always)]
 fn bar(n: felt252) -> felt252 {
-  if n == 0 {
-    return 1;
-  } else {
-    return 1;
-  }
+    if n == 0 {
+        return 1;
+    } else {
+        return 1;
+    }
 }
 
 //! > semantic_diagnostics
@@ -994,17 +994,17 @@ foo
 //! > function
 #[inline]
 fn foo(n: felt252) -> felt252 {
-  bar(n)
+    bar(n)
 }
 
 //! > module_code
 #[inline]
 fn bar(n: felt252) -> felt252 {
-  if n == 0 {
-    foo(n-1)
-  } else {
-    return 1;
-  }
+    if n == 0 {
+        foo(n - 1)
+    } else {
+        return 1;
+    }
 }
 
 //! > semantic_diagnostics
@@ -1150,7 +1150,7 @@ foo
 //! > function
 #[inline]
 fn foo(n: felt252) -> felt252 {
-  foo(n)
+    foo(n)
 }
 
 //! > module_code
@@ -1270,17 +1270,17 @@ foo
 //! > function
 #[inline]
 fn foo(n: felt252) -> felt252 {
-  bar(n)
+    bar(n)
 }
 
 //! > module_code
 #[inline]
 fn bar(n: felt252) -> felt252 {
-  if n == 0 {
-    bar(n-1)
-  } else {
-    return 1;
-  }
+    if n == 0 {
+        bar(n - 1)
+    } else {
+        return 1;
+    }
 }
 
 //! > semantic_diagnostics
@@ -1360,22 +1360,22 @@ foo
 //! > function
 #[inline]
 fn foo(n: felt252) -> felt252 {
-  bar(n)
+    bar(n)
 }
 
 //! > module_code
 #[inline]
 fn bar(n: felt252) -> felt252 {
-  baz(n)
+    baz(n)
 }
 
 #[inline]
 fn baz(n: felt252) -> felt252 {
-  if n == 0 {
-    baz(n-1)
-  } else {
-    return 1;
-  }
+    if n == 0 {
+        baz(n - 1)
+    } else {
+        return 1;
+    }
 }
 
 //! > semantic_diagnostics
@@ -1465,22 +1465,22 @@ foo
 //! > function
 #[inline]
 fn foo(n: felt252) -> felt252 {
-  bar(n)
+    bar(n)
 }
 
 //! > module_code
 #[inline]
 fn bar(n: felt252) -> felt252 {
-  baz(n)
+    baz(n)
 }
 
 #[inline]
 fn baz(n: felt252) -> felt252 {
-  if n == 0 {
-    bar(n-1)
-  } else {
-    return 1;
-  }
+    if n == 0 {
+        bar(n - 1)
+    } else {
+        return 1;
+    }
 }
 
 //! > semantic_diagnostics
@@ -1560,22 +1560,22 @@ foo
 //! > function
 #[inline]
 fn foo(n: felt252) -> felt252 {
-  bar(n)
+    bar(n)
 }
 
 //! > module_code
 #[inline]
 fn bar(n: felt252) -> felt252 {
-  baz(n)
+    baz(n)
 }
 
 #[inline]
 fn baz(n: felt252) -> felt252 {
-  if n == 0 {
-    foo(n-1)
-  } else {
-    return 1;
-  }
+    if n == 0 {
+        foo(n - 1)
+    } else {
+        return 1;
+    }
 }
 
 //! > semantic_diagnostics
@@ -1720,13 +1720,13 @@ foo
 
 //! > function
 fn foo(n: felt252) -> felt252 {
-  bar(n) + bar(n)
+    bar(n) + bar(n)
 }
 
 //! > module_code
 #[inline]
 fn bar(n: felt252) -> felt252 {
-  n
+    n
 }
 
 //! > semantic_diagnostics

@@ -11,8 +11,8 @@ fn foo(b: A) -> felt252 {
         (7, 1) => { x },
         (A::b(x), 1, _) => { x },
     }
-    let x = (5,true);
-    let (y,_) = x;
+    let x = (5, true);
+    let (y, _) = x;
     y
 }
 
@@ -160,10 +160,10 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: MyEnum) -> felt252 {
-  match a {
-    MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
-    MyEnum::C((x, _, t)) | MyEnum::D(P{x, z: mut t, .. }) => x + t,
-  }
+    match a {
+        MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: mut t, .. }) => x + t,
+    }
 }
 
 //! > function_name
@@ -171,28 +171,28 @@ foo
 
 //! > module_code
 struct P {
-  x: felt252,
-  y: felt252,
-  z: felt252,
-  w: felt252,
+    x: felt252,
+    y: felt252,
+    z: felt252,
+    w: felt252,
 }
 enum MyEnum {
-  A: felt252,
-  B: (felt252, felt252),
-  C: (felt252, felt252, felt252),
-  D: P,
+    A: felt252,
+    B: (felt252, felt252),
+    C: (felt252, felt252, felt252),
+    D: P,
 }
 
 //! > expected_diagnostics
 error: variable is bound inconsistently across alternatives separated by `|` bound in different ways
- --> lib.cairo:15:35
-    MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
-                                  ^
+ --> lib.cairo:15:39
+        MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
+                                      ^
 
 error: variable is bound inconsistently across alternatives separated by `|` bound in different ways
- --> lib.cairo:16:46
-    MyEnum::C((x, _, t)) | MyEnum::D(P{x, z: mut t, .. }) => x + t,
-                                             ^***^
+ --> lib.cairo:16:52
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: mut t, .. }) => x + t,
+                                                   ^***^
 
 //! > ==========================================================================
 
@@ -203,11 +203,11 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-  let a = MyEnum::A(5);
-  match a {
-    MyEnum::A(x) | MyEnum::B((x, _)) => x,
-  }
-  bar(a);
+    let a = MyEnum::A(5);
+    match a {
+        MyEnum::A(x) | MyEnum::B((x, _)) => x,
+    }
+    bar(a);
 }
 
 //! > function_name
@@ -215,14 +215,13 @@ foo
 
 //! > module_code
 enum MyEnum<T> {
-  A: T,
-  B: (felt252, felt252),
+    A: T,
+    B: (felt252, felt252),
 }
-fn bar(a: MyEnum<u32>) {
-}
+fn bar(a: MyEnum<u32>) {}
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "test::MyEnum::<core::integer::u32>", found: "test::MyEnum::<core::felt252>".
- --> lib.cairo:12:7
-  bar(a);
-      ^
+ --> lib.cairo:11:9
+    bar(a);
+        ^

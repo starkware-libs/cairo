@@ -5,11 +5,11 @@ test_cancel_ops
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-   let b = (a,);
-   let c = (b,);
-   let (d,)  = c;
-   let (e,)  = d;
-   e
+    let b = (a,);
+    let c = (b,);
+    let (d,) = c;
+    let (e,) = d;
+    e
 }
 
 //! > function_name
@@ -47,10 +47,10 @@ End:
 test_cancel_ops
 
 //! > function
-fn foo(a: ((felt252, ), )) -> ((felt252, ), ) {
-   let (b, ) = a;
-   let (c, ) = b;
-   ((c,),)
+fn foo(a: ((felt252,),)) -> ((felt252,),) {
+    let (b,) = a;
+    let (c,) = b;
+    ((c,),)
 }
 
 //! > function_name
@@ -89,11 +89,11 @@ test_cancel_ops
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-   let (b,) = match a {
-      0 => (0,),
-      _ => (a,),
-   };
-   b
+    let (b,) = match a {
+        0 => (0,),
+        _ => (a,),
+    };
+    b
 }
 
 //! > function_name
@@ -172,16 +172,16 @@ test_cancel_ops
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-   let arr = array![10, 11, 12];
+    let arr = array![10, 11, 12];
 
-   let c = (a, arr);
-   if a == 0 {
-     let (a, _arr) = c;
-     return a;
-   } else {
-      cosume(c);
-      return 1;
-   }
+    let c = (a, arr);
+    if a == 0 {
+        let (a, _arr) = c;
+        return a;
+    } else {
+        cosume(c);
+        return 1;
+    }
 }
 
 //! > function_name
@@ -317,10 +317,10 @@ test_cancel_ops
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-   let snap = @a;
-   let desnap = *snap;
-   let snap_desnap = @desnap;
-   *snap + *snap_desnap
+    let snap = @a;
+    let desnap = *snap;
+    let snap_desnap = @desnap;
+    *snap + *snap_desnap
 }
 
 //! > function_name
@@ -362,7 +362,7 @@ test_cancel_ops
 
 //! > function
 fn foo(a: u32) -> u32 {
-  a + a
+    a + a
 }
 
 //! > function_name
@@ -480,9 +480,9 @@ End:
 test_cancel_ops
 
 //! > function
-fn foo(a: (u32,) ) -> MyStruct {
-  let (b, ) = a;
-  MyStruct { b }
+fn foo(a: (u32,)) -> MyStruct {
+    let (b,) = a;
+    MyStruct { b }
 }
 
 //! > function_name
@@ -490,7 +490,7 @@ foo
 
 //! > module_code
 struct MyStruct {
-  b: u32,
+    b: u32,
 }
 
 //! > semantic_diagnostics
@@ -524,15 +524,15 @@ test_cancel_ops
 
 //! > function
 fn foo(a: (u32,), b: felt252) -> u32 {
-  let d = @if b == 0 {
-    let (c, ) = a;
-    c
-  } else {
-    let (c, ) = a;
-    c
-  };
+    let d = @if b == 0 {
+        let (c,) = a;
+        c
+    } else {
+        let (c,) = a;
+        c
+    };
 
-  *d
+    *d
 }
 
 //! > function_name
@@ -661,11 +661,11 @@ test_cancel_ops
 
 //! > function
 fn foo(a: (felt252, felt252)) -> (felt252, felt252) {
-  let (b, c) = a;
-  let a = (b, c);
-  let (d, e) = a;
-  use_tuple((d, e));
-  (e, d)
+    let (b, c) = a;
+    let a = (b, c);
+    let (d, e) = a;
+    use_tuple((d, e));
+    (e, d)
 }
 
 //! > function_name

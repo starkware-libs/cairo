@@ -5,8 +5,8 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  immovable(5.foo(true));
-  immovable(MyTrait::foo(6, false));
+    immovable(5.foo(true));
+    immovable(MyTrait::foo(6, false));
 }
 
 //! > function_name
@@ -14,13 +14,13 @@ foo
 
 //! > module_code
 trait MyTrait<T> {
-  fn foo<S>(self: T, y: S) -> (T, S);
+    fn foo<S>(self: T, y: S) -> (T, S);
 }
 impl MyImpl of MyTrait<felt252> {
-  #[inline(always)]
-  fn foo<S>(self: felt252, y: S) -> (felt252, S) {
-    (self, y)
-  }
+    #[inline(always)]
+    fn foo<S>(self: felt252, y: S) -> (felt252, S) {
+        (self, y)
+    }
 }
 
 extern fn immovable<T>(t: T) -> T nopanic;
@@ -55,9 +55,9 @@ test_function_lowering
 
 //! > function
 fn foo() -> felt252 {
-  let q = Query { data: 1 };
-  let Query { data } = q;
-  Query { data: 2 }.data + data
+    let q = Query { data: 1 };
+    let Query { data } = q;
+    Query { data: 2 }.data + data
 }
 
 //! > function_name
@@ -65,7 +65,7 @@ foo
 
 //! > module_code
 struct Query<V> {
-  data: V,
+    data: V,
 }
 
 //! > semantic_diagnostics
@@ -91,7 +91,7 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  bar::<MyImpl>()
+    bar::<MyImpl>()
 }
 
 //! > function_name
@@ -99,13 +99,13 @@ foo
 
 //! > module_code
 fn bar<impl Imp: MyTrait>() {
-  Imp::foo()
+    Imp::foo()
 }
 trait MyTrait {
-  fn foo();
+    fn foo();
 }
 impl MyImpl of MyTrait {
-  fn foo() {}
+    fn foo() {}
 }
 
 //! > semantic_diagnostics
@@ -128,7 +128,7 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  MyTrait::bar(5);
+    MyTrait::bar(5);
 }
 
 //! > function_name
@@ -136,11 +136,11 @@ foo
 
 //! > module_code
 trait MyTrait<T> {
-  fn bar(x: T);
+    fn bar(x: T);
 }
 impl MyImpl<T, impl TDrop: Drop<T>> of MyTrait<T> {
-  #[inline(never)]
-  fn bar(x: T) {}
+    #[inline(never)]
+    fn bar(x: T) {}
 }
 
 //! > semantic_diagnostics
@@ -165,7 +165,7 @@ test_function_lowering
 
 //! > function
 fn foo() -> felt252 {
-  felt252_const::<one>()
+    felt252_const::<one>()
 }
 
 //! > function_name
@@ -195,9 +195,9 @@ test_function_lowering
 
 //! > function
 fn foo() -> felt252 {
-  bar::<{
-    1 + 2
-  }>() + bar::<2>()
+    bar::<{
+        1 + 2
+    }>() + bar::<2>()
 }
 
 //! > function_name
@@ -205,7 +205,7 @@ foo
 
 //! > module_code
 fn bar<const N: felt252>() -> felt252 {
-  N + 5
+    N + 5
 }
 
 //! > semantic_diagnostics
@@ -235,10 +235,10 @@ test_function_lowering
 
 //! > function
 fn foo() -> MyStruct::<9> {
-  let s1 = foo_helper();
-  s1.bar();
-  s1.bar();
-  s1
+    let s1 = foo_helper();
+    s1.bar();
+    s1.bar();
+    s1
 }
 
 //! > function_name
@@ -248,18 +248,18 @@ foo
 #[derive(Drop, Copy)]
 struct MyStruct<const N: felt252> {}
 trait MyTrait<T> {
-  fn bar(self: @T) -> felt252;
+    fn bar(self: @T) -> felt252;
 }
 impl MyStructMyTrait<const N: felt252> of MyTrait<MyStruct<N>> {
-  #[inline(never)]
-  fn bar(self: @MyStruct::<N>) -> felt252 {
-    N
-  }
+    #[inline(never)]
+    fn bar(self: @MyStruct::<N>) -> felt252 {
+        N
+    }
 }
 
 #[inline(never)]
 fn foo_helper<const N: felt252>() -> MyStruct::<N> {
-  MyStruct::<N> {}
+    MyStruct::<N> {}
 }
 
 //! > semantic_diagnostics

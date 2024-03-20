@@ -1,3 +1,5 @@
+#![cfg(feature = "testing")]
+
 #[cfg(test)]
 #[path = "parse_test_file_test.rs"]
 mod test;
@@ -5,6 +7,7 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 
+use cairo_lang_formatter::CairoFormatter;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ResultHelper;
 use colored::Colorize;
@@ -24,6 +27,39 @@ struct Tag {
 pub struct Test {
     pub attributes: OrderedHashMap<String, String>,
     pub line_num: usize,
+}
+
+impl Test {
+    fn format_inputs(&mut self, test_name: &str, is_fix_mode: bool, errors: &mut Vec<String>) {
+        let attributes_to_format = vec!["function", "function_code", "cairo_code", "module_code"];
+        let formatter = CairoFormatter::new(Default::default());
+        for attribute in attributes_to_format {
+            if let Some(value) = self.attributes.get_mut(attribute) {
+                let formatted_value = if let Ok(formatted_value) = formatter.format_to_string(value)
+                {
+                    formatted_value.into_output_text()
+                } else {
+                    value.clone()
+                };
+                // The testing framework adds a newline at the end of each test, and so does the
+                // formatter.
+                let formatted_value = formatted_value.trim_end().to_string();
+                if !is_fix_mode {
+                    if formatted_value != *value {
+                        errors.push(format!(
+                            "The content of the tag '{}', in test '{}', is not formatted \
+                             correctly.\nRerun with CAIRO_FIX_TESTS=1 to fix.\n{}",
+                            attribute,
+                            test_name,
+                            pretty_assertions::StrComparison::new(&formatted_value, value)
+                        ));
+                    }
+                } else {
+                    *value = formatted_value;
+                }
+            }
+        }
+    }
 }
 
 #[derive(Default)]
@@ -318,15 +354,17 @@ pub fn run_test_file(
 ) -> Result<(), std::io::Error> {
     let filename = path.file_name().unwrap().to_str().unwrap();
     let is_fix_mode = std::env::var("CAIRO_FIX_TESTS") == Ok("1".into());
-    let tests = parse_test_file(path)?;
+    let is_format_mode = std::env::var("CAIRO_SKIP_FORMAT_TESTS") != Ok("1".into());
     let filter = std::env::var("CAIRO_TEST_FILTER").unwrap_or_default();
+
+    let tests = parse_test_file(path)?;
 
     let mut new_tests = OrderedHashMap::<String, Test>::default();
 
     let mut errors = Vec::new();
     let mut passed_tests = 0;
     let mut failed_tests = Vec::new();
-    for (test_name, test) in tests {
+    for (test_name, mut test) in tests {
         if !test_name.contains(&filter) {
             new_tests.insert(test_name.to_string(), test);
             continue;
@@ -336,16 +374,18 @@ pub fn run_test_file(
         let full_filename = std::fs::canonicalize(path)?;
         let full_filename_str = full_filename.to_str().unwrap();
 
-        let get_attr = |key: &str| {
-            test.attributes.get(key).unwrap_or_else(|| {
-                panic!(
-                    "Missing attribute '{key}' in test '{test_path}'.\nIn \
-                     {full_filename_str}:{line_num}"
-                )
-            })
+        let missing_attribute_panic = |key: &str| {
+            panic!(
+                "Missing attribute '{key}' in test '{test_path}'.\nIn \
+                 {full_filename_str}:{line_num}"
+            )
         };
 
-        let runner_tag = get_attr("test_runner_name").as_str();
+        let runner_tag = test
+            .attributes
+            .get("test_runner_name")
+            .unwrap_or_else(|| missing_attribute_panic("test_runner_name"))
+            .as_str();
         let (name, runner_args) = if let Some((name, args_str)) = runner_tag.split_once('(') {
             (
                 name,
@@ -363,6 +403,11 @@ pub fn run_test_file(
             (runner_tag, OrderedHashMap::default())
         };
         pretty_assertions::assert_eq!(name, runner_name);
+
+        let mut cur_test_errors = Vec::new();
+        if is_format_mode {
+            test.format_inputs(&test_name, is_fix_mode, &mut cur_test_errors);
+        }
 
         // Run the test.
         log::debug!("Running test: {test_path}");
@@ -390,9 +435,9 @@ pub fn run_test_file(
 
         // If not in fix mode, also validate expectations.
         if !is_fix_mode {
-            let mut cur_test_errors = Vec::new();
             for (key, value) in result.outputs {
-                let expected_value = get_attr(&key);
+                let expected_value =
+                    test.attributes.get(&key).unwrap_or_else(|| missing_attribute_panic(&key));
                 let actual_value = value.trim();
                 if actual_value != expected_value {
                     cur_test_errors.push(format!(
@@ -411,7 +456,6 @@ pub fn run_test_file(
                 continue;
             }
         }
-
         passed_tests += 1;
     }
     if is_fix_mode {

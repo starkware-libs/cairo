@@ -15,7 +15,7 @@ foo
 extern fn extern_get_bool() -> bool nopanic;
 #[inline(never)]
 fn get_bool() -> bool {
-  extern_get_bool()
+    extern_get_bool()
 }
 
 //! > semantic_diagnostics

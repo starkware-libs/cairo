@@ -16,7 +16,9 @@ fn foo() -> () {
 foo
 
 //! > module_code
-fn bar(x: felt252) { bar(x) }
+fn bar(x: felt252) {
+    bar(x)
+}
 
 //! > semantic_diagnostics
 

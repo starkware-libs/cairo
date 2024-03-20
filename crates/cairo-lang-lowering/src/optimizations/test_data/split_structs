@@ -5,11 +5,11 @@ test_split_structs
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-   let b = (a,);
-   let c = (b,);
-   let (d,)  = c;
-   let (e,)  = d;
-   e
+    let b = (a,);
+    let c = (b,);
+    let (d,) = c;
+    let (e,) = d;
+    e
 }
 
 //! > function_name
@@ -48,11 +48,11 @@ test_split_structs
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-   let (b,) = match a {
-      0 => (0,),
-      _ => (a,),
-   };
-   b
+    let (b,) = match a {
+        0 => (0,),
+        _ => (a,),
+    };
+    b
 }
 
 //! > function_name
@@ -128,16 +128,16 @@ test_split_structs
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-   let arr = array![10, 11, 12];
+    let arr = array![10, 11, 12];
 
-   let c = (a, arr);
-   if a == 0 {
-     let (a, _arr) = c;
-     return a;
-   } else {
-      cosume(c);
-      return 1;
-   }
+    let c = (a, arr);
+    if a == 0 {
+        let (a, _arr) = c;
+        return a;
+    } else {
+        cosume(c);
+        return 1;
+    }
 }
 
 //! > function_name
@@ -276,16 +276,16 @@ test_split_structs
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-   let tuple = match a {
-      0 => (1, (2, 3)),
-      _ => {
-        let tuple = (a, (2, a));
-        use_tuple(tuple);
-        tuple
-      },
-   };
-   let (b, (c, d)) = tuple;
-   b + c + d
+    let tuple = match a {
+        0 => (1, (2, 3)),
+        _ => {
+            let tuple = (a, (2, a));
+            use_tuple(tuple);
+            tuple
+        },
+    };
+    let (b, (c, d)) = tuple;
+    b + c + d
 }
 
 //! > function_name
@@ -379,17 +379,15 @@ test_split_structs
 
 //! > function
 fn foo(a: felt252) -> (felt252, felt252) {
-   let b = (a, a);
-   let tuple = match a {
-      0 => {
-        b
-      },
-      _ =>  {
-        let (c, _) = b;
-        (c, c)
-      },
-   };
-  tuple
+    let b = (a, a);
+    let tuple = match a {
+        0 => { b },
+        _ => {
+            let (c, _) = b;
+            (c, c)
+        },
+    };
+    tuple
 }
 
 //! > function_name
@@ -465,17 +463,17 @@ test_split_structs
 
 //! > function
 fn foo(a: felt252) {
-   let b = (a, a);
-   match a {
-      0 => {
-        let (_, _) = b;
-        use_tuple(b);
-      },
-      _ =>  {
-        let (_, _) = b;
-        use_tuple(b);
-      },
-   };
+    let b = (a, a);
+    match a {
+        0 => {
+            let (_, _) = b;
+            use_tuple(b);
+        },
+        _ => {
+            let (_, _) = b;
+            use_tuple(b);
+        },
+    };
 }
 
 //! > function_name
@@ -552,21 +550,21 @@ End:
 test_split_structs
 
 //! > function
-fn foo(a: felt252) -> felt252{
-   let b = (a, a);
-   let c = if a == 0 {
-      (a, b)
-   } else {
-      get_tuple()
-   };
-   if a == 0{
-      let (d, e) = c;
-      if d == 0 {
-        let (f, g) = e;
-        return f + g;
-      }
-   }
-   return a;
+fn foo(a: felt252) -> felt252 {
+    let b = (a, a);
+    let c = if a == 0 {
+        (a, b)
+    } else {
+        get_tuple()
+    };
+    if a == 0 {
+        let (d, e) = c;
+        if d == 0 {
+            let (f, g) = e;
+            return f + g;
+        }
+    }
+    return a;
 }
 
 //! > function_name
@@ -880,23 +878,23 @@ test_split_structs
 
 //! > function
 fn foo(a: felt252, e: ThreeCases) -> (felt252, NonDupStruct) {
-   let b = (a, NonDupStruct { a });
-   match e {
-      ThreeCases::One => {
-        let (_, non_dup) = b;
-        use_struct(non_dup);
-        (a, NonDupStruct { a: 0 })
-      },
-      ThreeCases::Two => {
-        let (_, non_dup) = b;
-        use_struct(non_dup);
-        (a, NonDupStruct { a: 1 })
-      },
-      ThreeCases::Three =>  {
-        use_tuple(b);
-        (a, NonDupStruct { a: 0 })
-      },
-   }
+    let b = (a, NonDupStruct { a });
+    match e {
+        ThreeCases::One => {
+            let (_, non_dup) = b;
+            use_struct(non_dup);
+            (a, NonDupStruct { a: 0 })
+        },
+        ThreeCases::Two => {
+            let (_, non_dup) = b;
+            use_struct(non_dup);
+            (a, NonDupStruct { a: 1 })
+        },
+        ThreeCases::Three => {
+            use_tuple(b);
+            (a, NonDupStruct { a: 0 })
+        },
+    }
 }
 
 //! > function_name
@@ -907,13 +905,13 @@ extern fn use_tuple<T>(a: (felt252, T)) nopanic;
 extern fn use_struct(a: NonDupStruct) nopanic;
 
 struct NonDupStruct {
-  a: felt252,
+    a: felt252,
 }
 
 enum ThreeCases {
-  One,
-  Two,
-  Three,
+    One,
+    Two,
+    Three,
 }
 
 //! > semantic_diagnostics

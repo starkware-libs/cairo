@@ -62,7 +62,11 @@ test_function_generator
 //! > function
 fn foo(b: bool) -> felt252 {
     let a = revoke_ap();
-    let x = if b { 1 } else { revoke_ap() };
+    let x = if b {
+        1
+    } else {
+        revoke_ap()
+    };
     revoke_ap();
     a + x
 }
@@ -200,7 +204,7 @@ test_function_generator
 
 //! > function
 fn foo(strct: MyStruct) -> felt252 {
-    let MyStruct{a, b} = strct;
+    let MyStruct { a, b } = strct;
     immovable(b);
     internal::revoke_ap_tracking();
     a
@@ -215,10 +219,12 @@ struct MyStruct {
     b: felt252,
 }
 
-impl MyStructDrop of Drop::<MyStruct>;
+impl MyStructDrop of Drop<MyStruct>;
 
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > semantic_diagnostics
 
@@ -246,7 +252,7 @@ test_function_generator
 
 //! > function
 fn foo() -> felt252 {
-    let strct1 = immovable(MyStruct1{strct: MyStruct2{value: immovable(12)}});
+    let strct1 = immovable(MyStruct1 { strct: MyStruct2 { value: immovable(12) } });
     let strct2 = strct1.strct;
     let value = strct1.strct.value;
     let _ = immovable(value);
@@ -268,17 +274,19 @@ struct MyStruct2 {
 }
 
 #[inline(never)]
-fn get_value_1(strct: MyStruct1) -> felt252{
+fn get_value_1(strct: MyStruct1) -> felt252 {
     strct.strct.value
 }
 
 #[inline(never)]
-fn get_value_2(strct: MyStruct2) -> felt252{
+fn get_value_2(strct: MyStruct2) -> felt252 {
     strct.value
 }
 
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > semantic_diagnostics
 
@@ -327,7 +335,7 @@ test_function_generator
 
 //! > function
 fn foo(a: felt252, b: felt252) -> felt252 {
-	let c = a + b;
+    let c = a + b;
 
     match felt252_is_zero(b) {
         IsZeroResult::Zero => {

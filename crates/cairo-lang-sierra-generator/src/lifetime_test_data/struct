@@ -8,9 +8,9 @@ foo
 
 //! > function_code
 fn foo(x: MyStruct) -> MyStruct {
-    let s = immovable(MyStruct{ a: immovable(x.a), b: x.b });
-    let _w = immovable(MyStruct{ a: s.a,  b: immovable(s.b) });
-    MyStruct{ a: 10, b: 20 }
+    let s = immovable(MyStruct { a: immovable(x.a), b: x.b });
+    let _w = immovable(MyStruct { a: s.a, b: immovable(s.b) });
+    MyStruct { a: 10, b: 20 }
 }
 
 //! > module_code
@@ -20,10 +20,12 @@ struct MyStruct {
     b: felt252,
 }
 
-impl MyStructDrop of Drop::<MyStruct>;
+impl MyStructDrop of Drop<MyStruct>;
 
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > lowering_format
 Parameters: v0: test::MyStruct

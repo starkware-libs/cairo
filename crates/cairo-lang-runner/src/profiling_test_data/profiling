@@ -165,7 +165,6 @@ fn main() {
         }
         n -= 1;
     }
-
 }
 
 //! > function_name
@@ -243,14 +242,13 @@ fn main() {
     foo1();
 }
 fn foo1() {
-  foo2();
-  foo2();
+    foo2();
+    foo2();
 }
 fn foo2() {
-  foo3();
+    foo3();
 }
-fn foo3() {
-}
+fn foo3() {}
 
 //! > max_stack_trace_depth
 2
@@ -288,14 +286,13 @@ fn main() {
     foo1();
 }
 fn foo1() {
-  foo2();
-  foo2();
+    foo2();
+    foo2();
 }
 fn foo2() {
-  foo3();
+    foo3();
 }
-fn foo3() {
-}
+fn foo3() {}
 
 //! > function_name
 main
@@ -330,14 +327,13 @@ fn main() {
     foo1();
 }
 fn foo1() {
-  foo2();
+    foo2();
 }
 #[inline(always)]
 fn foo2() {
-  foo3();
+    foo3();
 }
-fn foo3() {
-}
+fn foo3() {}
 
 //! > function_name
 main
