@@ -1,21 +1,47 @@
+use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextOffset;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{self};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::*;
+use tracing::error;
 
 use self::encoder::{EncodedToken, TokenEncoder};
-use self::token_kind::SemanticTokenKind;
+pub use self::token_kind::SemanticTokenKind;
 
 mod encoder;
-pub mod token_kind;
+mod token_kind;
+
+/// Resolve the semantic tokens of a given file.
+#[tracing::instrument(
+    level = "debug",
+    skip_all,
+    fields(uri = %params.text_document.uri)
+)]
+pub fn semantic_highlight_full(
+    params: SemanticTokensParams,
+    db: &RootDatabase,
+) -> Option<SemanticTokensResult> {
+    let file_uri = params.text_document.uri;
+    let file = crate::file(db, file_uri.clone());
+    let Ok(node) = db.file_syntax(file) else {
+        error!("semantic analysis failed: file '{file_uri}' does not exist");
+        return None;
+    };
+
+    let mut data: Vec<SemanticToken> = Vec::new();
+    SemanticTokensTraverser::default().find_semantic_tokens(db.upcast(), file, &mut data, node);
+    Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data }))
+}
 
 #[derive(Default)]
-pub struct SemanticTokensTraverser {
+struct SemanticTokensTraverser {
     encoder: TokenEncoder,
     /// A map from an offset in the file to semantic token kind.
     /// This map is used to override future tokens based on the context.
