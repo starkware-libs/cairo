@@ -56,24 +56,22 @@ use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use salsa::InternKey;
-use semantic_highlighting::token_kind::SemanticTokenKind;
-use semantic_highlighting::SemanticTokensTraverser;
 use serde_json::Value;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
-use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
-use crate::completions::{colon_colon_completions, dot_completions, generic_completions};
+use crate::ide::completions::{colon_colon_completions, dot_completions, generic_completions};
+use crate::ide::semantic_highlighting::token_kind::SemanticTokenKind;
+use crate::ide::semantic_highlighting::SemanticTokensTraverser;
 use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
+use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
+mod ide;
 mod scarb_service;
-mod semantic_highlighting;
-
-pub mod completions;
-pub mod vfs;
+mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 const DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL: u64 = 300;
