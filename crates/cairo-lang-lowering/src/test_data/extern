@@ -5,10 +5,10 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt252, b: felt252) {
-    f(ref a,b);
-    g(ref a,b);
-    h(ref a,b);
-    i(ref a,b);
+    f(ref a, b);
+    g(ref a, b);
+    h(ref a, b);
+    i(ref a, b);
 }
 
 //! > function_name
@@ -17,7 +17,7 @@ foo
 //! > module_code
 extern fn f(ref a: felt252, b: felt252) -> felt252 nopanic;
 extern fn g(ref a: felt252, b: felt252) -> (felt252,) nopanic;
-extern fn h(ref a: felt252, b: felt252) -> (felt252,felt252) nopanic;
+extern fn h(ref a: felt252, b: felt252) -> (felt252, felt252) nopanic;
 extern fn i(ref a: felt252, b: felt252) -> ((felt252,),) nopanic;
 
 //! > semantic_diagnostics
@@ -44,12 +44,12 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt252, b: felt252) {
-  let x = f(ref a, b);
-  match x {
-    MyEnum::A(_y) => (),
-    MyEnum::B(_y) => (),
-    MyEnum::C(_y) => (),
-  }
+    let x = f(ref a, b);
+    match x {
+        MyEnum::A(_y) => (),
+        MyEnum::B(_y) => (),
+        MyEnum::C(_y) => (),
+    }
 }
 
 //! > function_name
@@ -57,9 +57,9 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt252,
-  B: (felt252,),
-  C: (felt252, felt252),
+    A: felt252,
+    B: (felt252,),
+    C: (felt252, felt252),
 }
 extern fn f(ref a: felt252, b: felt252) -> MyEnum nopanic;
 
@@ -131,11 +131,11 @@ test_function_lowering
 
 //! > function
 fn foo(a: felt252, b: felt252) -> felt252 {
-  match f(a, b) {
-    MyEnum::A(y) => y,
-    MyEnum::B((y,)) => y,
-    MyEnum::C((y,_)) => y,
-  }
+    match f(a, b) {
+        MyEnum::A(y) => y,
+        MyEnum::B((y,)) => y,
+        MyEnum::C((y, _)) => y,
+    }
 }
 
 //! > function_name
@@ -143,9 +143,9 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt252,
-  B: (felt252,),
-  C: (felt252, felt252),
+    A: felt252,
+    B: (felt252,),
+    C: (felt252, felt252),
 }
 extern fn f(a: felt252, b: felt252) -> MyEnum nopanic;
 
@@ -188,11 +188,11 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt252, b: felt252) -> felt252 {
-  match f(ref a, b) {
-    MyEnum::A(y) => y,
-    MyEnum::B((y,)) => y,
-    MyEnum::C((y,_)) => y,
-  }
+    match f(ref a, b) {
+        MyEnum::A(y) => y,
+        MyEnum::B((y,)) => y,
+        MyEnum::C((y, _)) => y,
+    }
 }
 
 //! > function_name
@@ -200,9 +200,9 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt252,
-  B: (felt252,),
-  C: (felt252, felt252),
+    A: felt252,
+    B: (felt252,),
+    C: (felt252, felt252),
 }
 extern fn f(ref a: felt252, b: felt252) -> MyEnum nopanic;
 
@@ -245,12 +245,12 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt252, b: felt252) {
-  let x = f(ref a, b);
-  match x {
-    MyEnum::A(_y) => (),
-    MyEnum::B(_y) => (),
-    MyEnum::C(_y) => (),
-  }
+    let x = f(ref a, b);
+    match x {
+        MyEnum::A(_y) => (),
+        MyEnum::B(_y) => (),
+        MyEnum::C(_y) => (),
+    }
 }
 
 //! > function_name
@@ -258,9 +258,9 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt252,
-  B: (felt252,),
-  C: (felt252, felt252),
+    A: felt252,
+    B: (felt252,),
+    C: (felt252, felt252),
 }
 extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
@@ -332,11 +332,11 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt252, b: felt252) -> felt252 {
-  match f(ref a, b) {
-    MyEnum::A(y) => y,
-    MyEnum::B((y,)) => y,
-    MyEnum::C((y,_)) => y,
-  }
+    match f(ref a, b) {
+        MyEnum::A(y) => y,
+        MyEnum::B((y,)) => y,
+        MyEnum::C((y, _)) => y,
+    }
 }
 
 //! > function_name
@@ -344,9 +344,9 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt252,
-  B: (felt252,),
-  C: (felt252, felt252),
+    A: felt252,
+    B: (felt252,),
+    C: (felt252, felt252),
 }
 extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
@@ -400,7 +400,7 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt252,
+    A: felt252,
 }
 extern fn f(ref arr: Array::<felt252>, ref b: (felt252,)) -> MyEnum nopanic;
 
@@ -431,7 +431,7 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  let _unused = gas::withdraw_gas();
+    let _unused = gas::withdraw_gas();
 }
 
 //! > function_name
@@ -472,7 +472,7 @@ test_function_lowering
 
 //! > function
 fn foo() -> Option::<()> {
-  gas::withdraw_gas()
+    gas::withdraw_gas()
 }
 
 //! > function_name
@@ -517,7 +517,7 @@ test_function_lowering
 
 //! > function
 fn foo() -> Option::<()> {
-  return gas::withdraw_gas();
+    return gas::withdraw_gas();
 }
 
 //! > function_name

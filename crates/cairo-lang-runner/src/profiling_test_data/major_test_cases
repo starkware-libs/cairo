@@ -5,15 +5,15 @@ test_profiling
 
 //! > cairo_code
 fn pow2_14000() {
-  pow2_by_add_loop(14000, 1);
+    pow2_by_add_loop(14000, 1);
 }
 
 fn pow2_by_add_loop(n: felt252, x: felt252) -> felt252 {
-  if n == 0 {
-    return x;
-  } else {
-    return pow2_by_add_loop(n - 1, x + x);
-  }
+    if n == 0 {
+        return x;
+    } else {
+        return pow2_by_add_loop(n - 1, x + x);
+    }
 }
 
 //! > max_stack_trace_depth
@@ -110,44 +110,45 @@ test_profiling
 //! > cairo_code
 #[starknet::contract(account)]
 mod test_contract {
-  use starknet::account::Call;
+    use starknet::account::Call;
 
-  #[storage]
-  struct Storage {}
+    #[storage]
+    struct Storage {}
 
-  #[external(v0)]
-  fn __validate__(ref self: ContractState, calls: Array<Call>) {}
-  #[external(v0)]
-  fn __execute__(ref self: ContractState, mut calls: Array<Call>) -> Array<Span<felt252>> {
-      array![]
-  }
+    #[external(v0)]
+    fn __validate__(ref self: ContractState, calls: Array<Call>) {}
+    #[external(v0)]
+    fn __execute__(ref self: ContractState, mut calls: Array<Call>) -> Array<Span<felt252>> {
+        array![]
+    }
 }
 
 fn validate_call() {
-  let serialized_args = array![
-    0x2, // Array with 2 `Call`s.
-    // Call 1.
-    0xb, // to.
-    0x219209e083275171774dab1df80982e9df2096516f06319c5c6d71ae0a8480c, // selector.
-    0x3, // calldata length.
-    0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, // calldata 0.
-    0x4db5d32, // calldata 1.
-    0x0, // calldata 2.
-    // Call 2.
-    0xb, // to.
-    0x2c0f7bf2d6cf5304c29171bf493feb222fef84bdaf17805a6574b0c2e8bcc87, // selector.
-    0x9, // calldata length.
-    0x4db5d32, // calldata 0.
-    0x0, // calldata 1.
-    0x896ba264a31df2, // calldata 2.
-    0x0, // calldata 3.
-    0x2, // calldata 4.
-    0x53c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8, // calldata 5.
-    0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, // calldata 6.
-    0x54767f773cc172172c3afc5265bd0a76089c24cdef409635d27ac1a1fa96ca8, // calldata 7.
-    0x65586264, // calldata 8.
-  ].span();
-  test_contract::__wrapper____validate__(serialized_args);
+    let serialized_args = array![
+        0x2, // Array with 2 `Call`s.
+        // Call 1.
+        0xb, // to.
+        0x219209e083275171774dab1df80982e9df2096516f06319c5c6d71ae0a8480c, // selector.
+        0x3, // calldata length.
+        0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, // calldata 0.
+        0x4db5d32, // calldata 1.
+        0x0, // calldata 2.
+        // Call 2.
+        0xb, // to.
+        0x2c0f7bf2d6cf5304c29171bf493feb222fef84bdaf17805a6574b0c2e8bcc87, // selector.
+        0x9, // calldata length.
+        0x4db5d32, // calldata 0.
+        0x0, // calldata 1.
+        0x896ba264a31df2, // calldata 2.
+        0x0, // calldata 3.
+        0x2, // calldata 4.
+        0x53c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8, // calldata 5.
+        0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, // calldata 6.
+        0x54767f773cc172172c3afc5265bd0a76089c24cdef409635d27ac1a1fa96ca8, // calldata 7.
+        0x65586264, // calldata 8.
+    ]
+        .span();
+    test_contract::__wrapper____validate__(serialized_args);
 }
 
 //! > function_name
@@ -419,31 +420,32 @@ test_profiling
 //! > cairo_code
 #[starknet::contract(account)]
 mod test_contract {
-  use starknet::account::Call;
+    use starknet::account::Call;
 
-  #[storage]
-  struct Storage {}
+    #[storage]
+    struct Storage {}
 
-  #[external(v0)]
-  fn __validate__(ref self: ContractState, calls: Array<Call>) {}
-  #[external(v0)]
-  fn __execute__(ref self: ContractState, mut calls: Array<Call>) -> Array<Span<felt252>> {
-      array![]
-  }
+    #[external(v0)]
+    fn __validate__(ref self: ContractState, calls: Array<Call>) {}
+    #[external(v0)]
+    fn __execute__(ref self: ContractState, mut calls: Array<Call>) -> Array<Span<felt252>> {
+        array![]
+    }
 }
 
 fn validate_call() {
-  let serialized_args = array![
-    0x1, // Array with a single `Call`.
-    // Call 1.
-    0xb, // to.
-    0x219209e083275171774dab1df80982e9df2096516f06319c5c6d71ae0a8480c, // selector.
-    0x3, // calldata length.
-    0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, // calldata 0.
-    0x4db5d32, // calldata 1.
-    0x0, // calldata 2.
-  ].span();
-  test_contract::__wrapper____validate__(serialized_args);
+    let serialized_args = array![
+        0x1, // Array with a single `Call`.
+        // Call 1.
+        0xb, // to.
+        0x219209e083275171774dab1df80982e9df2096516f06319c5c6d71ae0a8480c, // selector.
+        0x3, // calldata length.
+        0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, // calldata 0.
+        0x4db5d32, // calldata 1.
+        0x0, // calldata 2.
+    ]
+        .span();
+    test_contract::__wrapper____validate__(serialized_args);
 }
 
 //! > function_name
@@ -684,11 +686,11 @@ test_profiling
 
 //! > cairo_code
 fn ecdsa_call() {
-  let message_hash = 0x503f4bea29baee10b22a7f10bdc82dda071c977c1f25b8f3973d34e6b03b2c;
-  let public_key = 0x7b7454acbe7845da996377f85eb0892044d75ae95d04d3325a391951f35d2ec;
-  let signature_r = 0xbe96d72eb4f94078192c2e84d5230cde2a70f4b45c8797e2c907acff5060bb;
-  let signature_s = 0x677ae6bba6daf00d2631fab14c8acf24be6579f9d9e98f67aa7f2770e57a1f5;
-  core::ecdsa::check_ecdsa_signature(:message_hash, :public_key, :signature_r, :signature_s);
+    let message_hash = 0x503f4bea29baee10b22a7f10bdc82dda071c977c1f25b8f3973d34e6b03b2c;
+    let public_key = 0x7b7454acbe7845da996377f85eb0892044d75ae95d04d3325a391951f35d2ec;
+    let signature_r = 0xbe96d72eb4f94078192c2e84d5230cde2a70f4b45c8797e2c907acff5060bb;
+    let signature_s = 0x677ae6bba6daf00d2631fab14c8acf24be6579f9d9e98f67aa7f2770e57a1f5;
+    core::ecdsa::check_ecdsa_signature(:message_hash, :public_key, :signature_r, :signature_s);
 }
 
 //! > function_name
@@ -822,73 +824,75 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 trait IERC20<TContractState> {
-  fn transfer(ref self: TContractState, recipient: ContractAddress, amount: u256);
+    fn transfer(ref self: TContractState, recipient: ContractAddress, amount: u256);
 }
 
 #[starknet::contract]
 mod erc_20 {
-  use core::num::traits::Zero;
-  use starknet::get_caller_address;
-  use starknet::contract_address_const;
-  use starknet::ContractAddress;
+    use core::num::traits::Zero;
+    use starknet::get_caller_address;
+    use starknet::contract_address_const;
+    use starknet::ContractAddress;
 
-  #[storage]
-  struct Storage {
-    name: felt252,
-    symbol: felt252,
-    decimals: u8,
-    total_supply: u256,
-    balances: LegacyMap::<ContractAddress, u256>,
-    allowances: LegacyMap::<(ContractAddress, ContractAddress), u256>,
-  }
-
-  #[event]
-  #[derive(Drop, starknet::Event)]
-  enum Event {
-    Transfer: Transfer,
-    Approval: Approval,
-  }
-  #[derive(Drop, starknet::Event)]
-  struct Transfer {
-    from: ContractAddress,
-    to: ContractAddress,
-    value: u256,
-  }
-  #[derive(Drop, starknet::Event)]
-  struct Approval {
-    owner: ContractAddress,
-    spender: ContractAddress,
-    value: u256,
-  }
-
-  #[abi(embed_v0)]
-  impl IERC20Impl of super::IERC20<ContractState> {
-    fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) {
-      let sender = get_caller_address();
-      self.transfer_helper(sender, recipient, amount);
+    #[storage]
+    struct Storage {
+        name: felt252,
+        symbol: felt252,
+        decimals: u8,
+        total_supply: u256,
+        balances: LegacyMap::<ContractAddress, u256>,
+        allowances: LegacyMap::<(ContractAddress, ContractAddress), u256>,
     }
-  }
 
-  #[generate_trait]
-  impl StorageImpl of StorageTrait {
-    fn transfer_helper(
-        ref self: ContractState,
-        sender: ContractAddress,
-        recipient: ContractAddress,
-        amount: u256
-    ) {
-        assert(!Zero::is_zero(@sender), 'ERC20: transfer from 0');
-        assert(!Zero::is_zero(@recipient), 'ERC20: transfer to 0');
-        self.balances.write(sender, self.balances.read(sender) - amount);
-        self.balances.write(recipient, self.balances.read(recipient) + amount);
-        self.emit(Transfer { from: sender, to: recipient, value: amount });
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        Transfer: Transfer,
+        Approval: Approval,
     }
-  }
+    #[derive(Drop, starknet::Event)]
+    struct Transfer {
+        from: ContractAddress,
+        to: ContractAddress,
+        value: u256,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct Approval {
+        owner: ContractAddress,
+        spender: ContractAddress,
+        value: u256,
+    }
+
+    #[abi(embed_v0)]
+    impl IERC20Impl of super::IERC20<ContractState> {
+        fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) {
+            let sender = get_caller_address();
+            self.transfer_helper(sender, recipient, amount);
+        }
+    }
+
+    #[generate_trait]
+    impl StorageImpl of StorageTrait {
+        fn transfer_helper(
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        ) {
+            assert(!Zero::is_zero(@sender), 'ERC20: transfer from 0');
+            assert(!Zero::is_zero(@recipient), 'ERC20: transfer to 0');
+            self.balances.write(sender, self.balances.read(sender) - amount);
+            self.balances.write(recipient, self.balances.read(recipient) + amount);
+            self.emit(Transfer { from: sender, to: recipient, value: amount });
+        }
+    }
 }
 
 fn erc20_transfer() {
-  starknet::testing::set_caller_address(starknet::contract_address::contract_address_const::<2>());
-  erc_20::__external::transfer(array![1, 0, 0].span());
+    starknet::testing::set_caller_address(
+        starknet::contract_address::contract_address_const::<2>()
+    );
+    erc_20::__external::transfer(array![1, 0, 0].span());
 }
 
 //! > function_name

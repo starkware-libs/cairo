@@ -47,21 +47,21 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  loop {
-    // Some statements to prevent the loop function from being inlined.
-    let mut x = 0;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    break;
-  }; 
+    loop {
+        // Some statements to prevent the loop function from being inlined.
+        let mut x = 0;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        break;
+    };
 }
 
 //! > function_name

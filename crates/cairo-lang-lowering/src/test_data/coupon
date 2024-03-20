@@ -8,8 +8,7 @@ fn foo(x: bar::Coupon) {
     bar(__coupon__: x);
 }
 
-fn bar() nopanic {
-}
+fn bar() nopanic {}
 
 //! > function_name
 foo
@@ -40,8 +39,7 @@ fn foo(x: bar::Coupon) -> bar::Coupon {
     x // Variable was previously moved.
 }
 
-fn bar() nopanic {
-}
+fn bar() nopanic {}
 
 //! > function_name
 foo

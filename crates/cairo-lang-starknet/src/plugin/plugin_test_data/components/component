@@ -30,14 +30,16 @@ mod component {
     struct Log {}
 
     #[embeddable_as(MyImpl)]
-    impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
+    impl MyInnerImpl<
+        TContractState, impl X: HasComponent<TContractState>
+    > of MyTrait<ComponentState<TContractState>> {
         fn get(self: @ComponentState<TContractState>, addr: ContractAddress) -> u32 {
             self.data.read() + self.map.read(10)
         }
         fn set(ref self: ComponentState<TContractState>, addr: ContractAddress, value: u32) {
             self.map.write(10, value);
             self.data.write(value);
-            self.emit(Log{});
+            self.emit(Log {});
         }
     }
 }
@@ -77,14 +79,16 @@ mod component {
     struct Log {}
 
     #[embeddable_as(MyImpl)]
-    impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
+    impl MyInnerImpl<
+        TContractState, impl X: HasComponent<TContractState>
+    > of MyTrait<ComponentState<TContractState>> {
         fn get(self: @ComponentState<TContractState>, addr: ContractAddress) -> u32 {
             self.data.read() + self.map.read(10)
         }
         fn set(ref self: ComponentState<TContractState>, addr: ContractAddress, value: u32) {
             self.map.write(10, value);
             self.data.write(value);
-            self.emit(Log{});
+            self.emit(Log {});
         }
     }
 }
@@ -590,7 +594,8 @@ pub trait HasComponent<TContractState> {
 
 #[starknet::embeddable]
 pub impl MyImpl<
-    TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>
 > of MyTrait<TContractState> {
     
     fn get(self: @TContractState, addr: ContractAddress) -> u32 {
@@ -674,7 +679,8 @@ pub trait UnsafeNewContractStateTraitForMyImpl<
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__MyImpl__get<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyImpl__get<TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -696,7 +702,8 @@ fn __wrapper__MyImpl__get<TContractState, impl X: HasComponent<TContractState>, 
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__MyImpl__set<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyImpl__set<TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');

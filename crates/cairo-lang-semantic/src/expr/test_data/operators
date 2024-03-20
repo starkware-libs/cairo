@@ -31,10 +31,9 @@ test_function_diagnostics(expect_diagnostics: true)
 fn foo(a: u128, b: bool) implicits(RangeCheck) {
     // Valid.
     a + a * a - a;
-    (b & b) | (b & ((a == a) | (a > a)))
-    & (a<a) & (a<=a) & (a>=a);
+    (b & b) | (b & ((a == a) | (a > a))) & (a < a) & (a <= a) & (a >= a);
     // Errors.
-    a>a>a;
+    a > a > a;
     a - b
 }
 
@@ -45,12 +44,12 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::bool", found: "core::integer::u128".
- --> lib.cairo:7:9
-    a>a>a;
-        ^
+ --> lib.cairo:6:13
+    a > a > a;
+            ^
 
 error: Unexpected argument type. Expected: "core::integer::u128", found: "core::bool".
- --> lib.cairo:8:9
+ --> lib.cairo:7:9
     a - b
         ^
 
@@ -60,9 +59,9 @@ fn foo(a: u128, b: bool) implicits(RangeCheck) {
                                                ^
 
 error: Trait has no implementation in context: core::traits::PartialOrd::<core::bool>
- --> lib.cairo:7:5
-    a>a>a;
-    ^***^
+ --> lib.cairo:6:5
+    a > a > a;
+    ^*******^
 
 //! > ==========================================================================
 

@@ -6,7 +6,12 @@ test_function_lowering
 //! > function
 fn foo(a: bool) -> felt252 {
     let mut x = 2;
-    if a { x = 3; } else { let mut y = 4; y = 5; }
+    if a {
+        x = 3;
+    } else {
+        let mut y = 4;
+        y = 5;
+    }
     x
 }
 

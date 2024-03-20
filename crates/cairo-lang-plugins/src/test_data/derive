@@ -5,10 +5,10 @@ test_expand_plugin(expect_diagnostics: false)
 
 //! > cairo_code
 #[derive(Copy, Debug, Default, Drop, Hash)]
-struct A{}
+struct A {}
 
 #[derive(Copy, Debug, Default, Drop, Hash)]
-struct B{}
+struct B {}
 
 #[derive(Clone, Debug, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
 struct TwoMemberStruct {
@@ -42,10 +42,10 @@ extern type ExternType;
 
 //! > expanded_cairo_code
 #[derive(Copy, Debug, Default, Drop, Hash)]
-struct A{}
+struct A {}
 
 #[derive(Copy, Debug, Default, Drop, Hash)]
-struct B{}
+struct B {}
 
 #[derive(Clone, Debug, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
 struct TwoMemberStruct {
@@ -412,16 +412,16 @@ test_expand_plugin(expect_diagnostics: true)
 
 //! > cairo_code
 #[derive()]
-struct EmptyArgs{}
+struct EmptyArgs {}
 
 #[derive(1)]
-struct NotPath{}
+struct NotPath {}
 
 #[derive(Unsupported)]
-struct UnsupportedTrait{}
+struct UnsupportedTrait {}
 
 #[derive(long::path)]
-struct NonSimplePath{}
+struct NonSimplePath {}
 
 #[derive(Clone)]
 extern type NotClonable;
@@ -442,16 +442,16 @@ enum TooManyDefaultValues {
 
 //! > expanded_cairo_code
 #[derive()]
-struct EmptyArgs{}
+struct EmptyArgs {}
 
 #[derive(1)]
-struct NotPath{}
+struct NotPath {}
 
 #[derive(Unsupported)]
-struct UnsupportedTrait{}
+struct UnsupportedTrait {}
 
 #[derive(long::path)]
-struct NonSimplePath{}
+struct NonSimplePath {}
 
 #[derive(Clone)]
 extern type NotClonable;

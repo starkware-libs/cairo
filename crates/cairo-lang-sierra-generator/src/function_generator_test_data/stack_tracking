@@ -15,7 +15,7 @@ foo
 //! > module_code
 #[inline(never)]
 fn get_val() -> (u32, (), u32) {
-  (13, (), 17)
+    (13, (), 17)
 }
 
 #[inline(never)]
@@ -59,7 +59,7 @@ foo
 //! > module_code
 #[inline(never)]
 fn get_val() -> (felt252, felt252) {
-  (13, 17)
+    (13, 17)
 }
 
 //! > semantic_diagnostics
@@ -95,8 +95,8 @@ foo
 
 //! > module_code
 #[inline(never)]
-fn get_val() -> Array<felt252>{
-  ArrayTrait::new()
+fn get_val() -> Array<felt252> {
+    ArrayTrait::new()
 }
 
 #[inline(never)]

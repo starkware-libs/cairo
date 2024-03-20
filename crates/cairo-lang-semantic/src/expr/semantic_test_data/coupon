@@ -4,7 +4,9 @@
 test_expr_semantics
 
 //! > module_code
-fn foo(x: u8) {6;}
+fn foo(x: u8) {
+    6;
+}
 extern fn get_coupon() -> foo::Coupon nopanic;
 
 //! > expr_code

@@ -42,7 +42,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo() -> [felt252; 3]{
+fn foo() -> [felt252; 3] {
     [get_10(); 3]
 }
 
@@ -84,7 +84,7 @@ test_function_lowering
 fn foo() -> [MyStruct; 3] {
     foo_ex()
 }
-fn foo_ex<T, +Drop<[T; 3]>, +Copy<T>, +CtorTrait<T>>() -> [T; 3]{
+fn foo_ex<T, +Drop<[T; 3]>, +Copy<T>, +CtorTrait<T>>() -> [T; 3] {
     [CtorTrait::<T>::new(); 3]
 }
 
@@ -164,7 +164,7 @@ test_function_lowering
 fn foo() -> [MyStruct; 3] {
     foo_ex()
 }
-fn foo_ex<T, +Drop<[T; 3]>, +CtorTrait<T>>() -> [T; 3]{
+fn foo_ex<T, +Drop<[T; 3]>, +CtorTrait<T>>() -> [T; 3] {
     [CtorTrait::<T>::new(); 3]
 }
 
