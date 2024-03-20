@@ -20,6 +20,11 @@ error: Trait has no implementation in context: core::traits::Mul::<test::MyType>
     a + a * a;
         ^***^
 
+error: Trait has no implementation in context: core::traits::Add::<test::MyType>
+ --> lib.cairo:3:5
+    a + a * a;
+    ^*******^
+
 //! > ==========================================================================
 
 //! > Test operators.
@@ -88,6 +93,16 @@ error: Trait has no implementation in context: core::traits::Neg::<core::bool>
  --> lib.cairo:2:5
     -(1 == 2);
     ^*******^
+
+error: Trait has no implementation in context: core::traits::Neg::<core::integer::u8>
+ --> lib.cairo:3:5
+    -1_u8;
+    ^***^
+
+error: Trait has no implementation in context: core::traits::Not::<core::felt252>
+ --> lib.cairo:4:5
+    !17;
+    ^*^
 
 //! > ==========================================================================
 

@@ -83,3 +83,8 @@ error: Type annotations needed. Failed to infer ?0
  --> lib.cairo[array_inline_macro]:2:67
             let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
                                                                   ^********^
+
+error: Cannot infer trait core::array::ArrayTrait::<?0>. First generic argument must be known.
+ --> lib.cairo[array_inline_macro]:2:79
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+                                                                              ^*^

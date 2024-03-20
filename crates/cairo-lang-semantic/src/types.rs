@@ -543,8 +543,8 @@ pub fn get_impl_at_context(
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
     let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
-    if let Some((_, err)) = inference.finalize() {
-        return Err(err);
+    if let Some(errs) = inference.finalize() {
+        return Err(errs.first());
     };
     Ok(inference.rewrite(impl_id).no_err())
 }
@@ -605,7 +605,7 @@ pub fn type_info(
     // Dummy stable pointer for type inference variables, since inference is disabled.
     let droppable =
         get_impl_at_context(db, lookup_context.clone(), concrete_drop_trait(db, ty), None);
-    let copyable =
+    let copyable: Result<ImplId, crate::expr::inference::InferenceError> =
         get_impl_at_context(db, lookup_context.clone(), concrete_copy_trait(db, ty), None);
     let destruct_impl =
         get_impl_at_context(db, lookup_context.clone(), concrete_destruct_trait(db, ty), None);
