@@ -15,10 +15,10 @@ use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_projec
 use cairo_lang_defs::db::{get_all_path_leaves, DefsGroup};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
-    FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplAliasLongId, ImplDefLongId,
-    ImplFunctionLongId, ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
-    ModuleItemId, ModuleTypeAliasLongId, StructLongId, SubmoduleLongId, TraitFunctionLongId,
-    TraitItemId, TraitLongId, UseLongId,
+    FreeFunctionLongId, FunctionTitleId, ImplAliasLongId, ImplDefLongId, ImplFunctionLongId,
+    ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
+    ModuleTypeAliasLongId, StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitItemId,
+    TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity, ToOption,
@@ -37,7 +37,6 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
@@ -811,29 +810,9 @@ impl LanguageServer for Backend {
         self.with_db(|db| ide::formatter::format(params, db)).await
     }
 
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document_position_params.text_document.uri))]
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn hover(&self, params: HoverParams) -> LSPResult<Option<Hover>> {
-        self.with_db(|db| {
-            let file_uri = params.text_document_position_params.text_document.uri;
-            let file_id = file(db, file_uri);
-            let position = params.text_document_position_params.position;
-            // Get the item id of the definition.
-            let (found_file, span) = get_definition_location(db, file_id, position)?;
-            // Get the documentation and declaration of the item.
-            let (_, lookup_items) = get_node_and_lookup_items(
-                db,
-                found_file,
-                from_pos(span.start.position_in_file(db.upcast(), found_file)?),
-            )?;
-            // Build texts.
-            let mut hints = Vec::new();
-            if let Some(hint) = get_expr_hint(db.upcast(), lookup_items.into_iter().next()?) {
-                hints.extend(hint);
-            };
-
-            Some(Hover { contents: HoverContents::Array(hints), range: None })
-        })
-        .await
+        self.with_db(|db| ide::hover::hover(params, db)).await
     }
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document_position_params.text_document.uri))]
@@ -1253,126 +1232,6 @@ fn find_node_module(
     Some(module)
 }
 
-/// If the node is an identifier, retrieves a hover hint for it.
-#[tracing::instrument(level = "trace", skip_all)]
-fn get_identifier_hint(
-    db: &(dyn SemanticGroup + 'static),
-    lookup_item_id: LookupItemId,
-    node: SyntaxNode,
-) -> Option<String> {
-    let syntax_db = db.upcast();
-    if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
-        return None;
-    }
-    let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-    let item = db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())?;
-
-    // TODO(spapini): Also include concrete item hints.
-    // TODO(spapini): Format this better.
-    Some(format!("`{}`", item.full_path(db)))
-}
-
-/// If the node is an expression, retrieves a hover hint for it.
-#[tracing::instrument(level = "trace", skip_all)]
-fn get_expr_hint(db: &dyn DefsGroup, lookup_item_id: LookupItemId) -> Option<Vec<MarkedString>> {
-    let mut hints = vec![];
-    let definition = db.get_item_definition(lookup_item_id);
-    hints.push(MarkedString::from_language_code("cairo".to_owned(), definition));
-    let documentation = db.get_item_documentation(lookup_item_id).unwrap_or_default();
-    // Add a separator.
-    if !documentation.is_empty() {
-        hints.push(MarkedString::String("\n---\n".to_string()));
-    }
-    let mut doc = "".to_string();
-    let mut is_cairo_string = false;
-    for line in documentation.lines() {
-        if line.starts_with("```") {
-            // If is_cairo_string is true it means that we end the code block so append the code
-            // in a cairo formatted string.
-            hints.push(if is_cairo_string {
-                MarkedString::from_language_code("cairo".to_owned(), doc)
-            } else {
-                // else append a regular string.
-                MarkedString::from_markdown(doc)
-            });
-            // Switch the variable to properly format the following block.
-            is_cairo_string = !is_cairo_string;
-            // reset the string to start the next block.
-            doc = "".to_string();
-            continue;
-        }
-        // Append the current block string.
-        doc += if let Some(stripped) = line.strip_prefix("///") {
-            stripped
-        } else if let Some(stripped) = line.strip_prefix("//!") {
-            stripped
-        } else {
-            line
-        };
-        // add new line to have a proper formatting.
-        doc += "\n";
-    }
-    hints.push(MarkedString::from_markdown(doc));
-
-    Some(hints)
-}
-
-/// Returns the semantic expression for the current node.
-#[tracing::instrument(level = "trace", skip_all)]
-fn nearest_semantic_expr(
-    db: &dyn SemanticGroup,
-    mut node: SyntaxNode,
-    function_id: FunctionWithBodyId,
-) -> Option<cairo_lang_semantic::Expr> {
-    loop {
-        let syntax_db = db.upcast();
-        if ast::Expr::is_variant(node.kind(syntax_db)) {
-            let expr_node = ast::Expr::from_syntax_node(syntax_db, node.clone());
-            if let Some(expr_id) =
-                db.lookup_expr_by_ptr(function_id, expr_node.stable_ptr()).to_option()
-            {
-                let semantic_expr = db.expr_semantic(function_id, expr_id);
-                return Some(semantic_expr);
-            }
-        }
-        node = node.parent()?;
-    }
-}
-
-/// If the node is a pattern, retrieves a hover hint for it.
-#[tracing::instrument(level = "trace", skip_all)]
-fn get_pattern_hint(
-    db: &(dyn SemanticGroup + 'static),
-    function_id: FunctionWithBodyId,
-    node: SyntaxNode,
-) -> Option<String> {
-    let semantic_pattern = nearest_semantic_pat(db, node, function_id)?;
-    // Format the hover text.
-    Some(format!("Type: `{}`", semantic_pattern.ty().format(db)))
-}
-
-/// Returns the semantic pattern for the current node.
-#[tracing::instrument(level = "trace", skip_all)]
-fn nearest_semantic_pat(
-    db: &dyn SemanticGroup,
-    mut node: SyntaxNode,
-    function_id: FunctionWithBodyId,
-) -> Option<cairo_lang_semantic::Pattern> {
-    loop {
-        let syntax_db = db.upcast();
-        if ast::Pattern::is_variant(node.kind(syntax_db)) {
-            let pattern_node = ast::Pattern::from_syntax_node(syntax_db, node.clone());
-            if let Some(pattern_id) =
-                db.lookup_pattern_by_ptr(function_id, pattern_node.stable_ptr()).to_option()
-            {
-                let semantic_pattern = db.pattern_semantic(function_id, pattern_id);
-                return Some(semantic_pattern);
-            }
-        }
-        node = node.parent()?;
-    }
-}
-
 #[tracing::instrument(level = "trace", skip_all)]
 fn update_crate_roots(
     db: &mut dyn SemanticGroup,
@@ -1523,7 +1382,7 @@ fn get_diagnostics<T: DiagnosticEntry>(
 /// # Returns
 ///
 /// The [FileId] and [TextSpan] of the expression definition if found.
-pub fn get_definition_location(
+fn get_definition_location(
     db: &RootDatabase,
     file: FileId,
     position: Position,
