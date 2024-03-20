@@ -102,8 +102,11 @@ impl CompiledTestRunner {
             compiled.sierra_program,
             compiled.function_set_costs,
             compiled.contracts_info,
-            self.config.run_profiler != RunProfilerConfig::None,
             compiled.statements_functions,
+            RunTestsFlags {
+                run_profiler: self.config.run_profiler != RunProfilerConfig::None,
+                gas_enabled: self.config.gas_enabled,
+            },
         )?;
 
         if failed.is_empty() {
@@ -171,6 +174,8 @@ pub struct TestRunConfig {
     pub ignored: bool,
     /// Whether to run the profiler and how.
     pub run_profiler: RunProfilerConfig,
+    /// Whether to enable gas calculation.
+    pub gas_enabled: bool,
 }
 
 /// The test cases compiler.
@@ -288,6 +293,11 @@ pub struct TestsSummary {
     failed_run_results: Vec<RunResultValue>,
 }
 
+pub struct RunTestsFlags {
+    run_profiler: bool,
+    gas_enabled: bool,
+}
+
 /// Runs the tests and process the results for a summary.
 pub fn run_tests(
     db: Option<&RootDatabase>,
@@ -295,20 +305,24 @@ pub fn run_tests(
     sierra_program: Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     contracts_info: OrderedHashMap<Felt252, ContractInfo>,
-    run_profiler: bool,
     statements_functions: UnorderedHashMap<StatementIdx, String>,
+    args: RunTestsFlags,
 ) -> Result<TestsSummary> {
     let runner = SierraCasmRunner::new(
         sierra_program.clone(),
-        Some(MetadataComputationConfig {
-            function_set_costs,
-            linear_gas_solver: true,
-            linear_ap_change_solver: true,
-            skip_non_linear_solver_comparisons: false,
-            compute_runtime_costs: false,
-        }),
+        if args.gas_enabled {
+            Some(MetadataComputationConfig {
+                function_set_costs,
+                linear_gas_solver: true,
+                linear_ap_change_solver: true,
+                skip_non_linear_solver_comparisons: false,
+                compute_runtime_costs: false,
+            })
+        } else {
+            None
+        },
         contracts_info,
-        if run_profiler { Some(ProfilingInfoCollectionConfig::default()) } else { None },
+        if args.run_profiler { Some(ProfilingInfoCollectionConfig::default()) } else { None },
     )
     .with_context(|| "Failed setting up runner.")?;
     let suffix = if named_tests.len() != 1 { "s" } else { "" };
