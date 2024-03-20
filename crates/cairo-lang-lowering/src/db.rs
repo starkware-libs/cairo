@@ -313,13 +313,15 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::input]
     fn optimization_config(&self) -> Arc<OptimizationConfig>;
 
-    /// Returns the default optimization strategy.
-    #[salsa::invoke(crate::optimizations::strategy::default_optimization_strategy)]
-    fn default_optimization_strategy(&self) -> OptimizationStrategyId;
+    /// Returns the final optimization strategy that is applied on top of
+    /// inlined_function_optimization_strategy.
+    #[salsa::invoke(crate::optimizations::strategy::final_optimization_strategy)]
+    fn final_optimization_strategy(&self) -> OptimizationStrategyId;
 
-    /// Returns the the optimization strategy that is applied to a function before it is inlined.
-    #[salsa::invoke(crate::optimizations::strategy::inlined_function_optimization_strategy)]
-    fn inlined_function_optimization_strategy(&self) -> OptimizationStrategyId;
+    /// Returns the baseline optimization strategy.
+    /// This strategy is used for inlining decistion and as a starting point for the final lowering.
+    #[salsa::invoke(crate::optimizations::strategy::baseline_optimization_strategy)]
+    fn baseline_optimization_strategy(&self) -> OptimizationStrategyId;
 
     /// Returns the expected size of a type.
     fn type_size(&self, ty: TypeId) -> usize;
@@ -412,13 +414,15 @@ fn concrete_function_with_body_postpanic_lowered(
     Ok(Arc::new(lowered))
 }
 
-/// Query implementation of [LoweringGroup::final_concrete_function_with_body_lowered].
+/// Query implementation of [LoweringGroup::optimized_concrete_function_with_body_lowered].
 fn optimized_concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
     optimization_strategy: OptimizationStrategyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    Ok(Arc::new(optimization_strategy.apply_strategy(db, function)?))
+    let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
+    optimization_strategy.apply_strategy(db, function, &mut lowered)?;
+    Ok(Arc::new(lowered))
 }
 
 /// Query implementation of [LoweringGroup::inlined_function_with_body_lowered].
@@ -426,10 +430,7 @@ fn inlined_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    db.optimized_concrete_function_with_body_lowered(
-        function,
-        db.inlined_function_optimization_strategy(),
-    )
+    db.optimized_concrete_function_with_body_lowered(function, db.baseline_optimization_strategy())
 }
 
 /// Query implementation of [LoweringGroup::final_concrete_function_with_body_lowered].
@@ -437,7 +438,11 @@ fn final_concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    db.optimized_concrete_function_with_body_lowered(function, db.default_optimization_strategy())
+    // Start from the `inlined_function_with_body_lowered` as it might already be computed.
+    let mut lowered = (*db.inlined_function_with_body_lowered(function)?).clone();
+
+    db.final_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
+    Ok(Arc::new(lowered))
 }
 
 /// Given the lowering of a function, returns the set of direct dependencies of that function,
