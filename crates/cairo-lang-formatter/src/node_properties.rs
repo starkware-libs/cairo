@@ -629,16 +629,23 @@ impl SyntaxNodeFormat for SyntaxNode {
         if self.kind(db) == SyntaxKind::TerminalColonColon
             && parent_kind(db, self) == Some(SyntaxKind::PathSegmentWithGenericArgs)
         {
-            let path_node = self.parent().unwrap().parent().unwrap();
-            matches!(
-                parent_kind(db, &path_node),
-                Some(
-                    SyntaxKind::ItemImpl
-                        | SyntaxKind::GenericParamImplNamed
-                        | SyntaxKind::GenericParamImplAnonymous
-                        | SyntaxKind::GenericArgValueExpr
+            let path_segment_node = self.parent().unwrap();
+            let position_in_path = path_segment_node.position_in_parent(db).unwrap();
+            let path_node = path_segment_node.parent().unwrap();
+            let path_len = path_node.green_node(db).children().len();
+            if position_in_path != path_len - 1 {
+                false
+            } else {
+                matches!(
+                    parent_kind(db, &path_node),
+                    Some(
+                        SyntaxKind::ItemImpl
+                            | SyntaxKind::GenericParamImplNamed
+                            | SyntaxKind::GenericParamImplAnonymous
+                            | SyntaxKind::GenericArgValueExpr
+                    )
                 )
-            )
+            }
         } else {
             false
         }
