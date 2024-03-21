@@ -31,6 +31,18 @@ impl DisplayInteger<
     }
 }
 
+impl DisplaySignedInteger<
+    Signed, Unsigned, +core::integer::AbsAndSign<Signed, Unsigned>, +Display<Unsigned>, +Copy<Signed>, +Drop<Unsigned>,
+> of Display<Signed> {
+    fn fmt(self: @Signed, ref f: Formatter) -> Result<(), Error> {
+        let (abs, sign) = (*self).abs_and_sign();
+        if sign {
+            write!(f, "-")?;
+        }
+        Display::fmt(@abs, ref f)
+    }
+}
+
 impl DisplayNonZero<T, +Display<T>, +Copy<T>, +Drop<T>> of Display<NonZero<T>> {
     fn fmt(self: @NonZero<T>, ref f: Formatter) -> Result<(), Error> {
         let value: T = (*self).into();
@@ -71,6 +83,14 @@ impl DebugInteger<
     T, +to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
 > of Debug<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
+        Display::fmt(self, ref f)
+    }
+}
+
+impl DebugSignedInteger<
+    Signed, Unsigned, +core::integer::AbsAndSign<Signed, Unsigned>, +Display<Unsigned>, +Copy<Signed>, +Drop<Unsigned>,
+> of Debug<Signed> {
+    fn fmt(self: @Signed, ref f: Formatter) -> Result<(), Error> {
         Display::fmt(self, ref f)
     }
 }
