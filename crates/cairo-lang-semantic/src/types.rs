@@ -172,9 +172,14 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
 
 // TODO(yg): consider cloning in inference in all callsites.
 /// Tries to implize a type, recursively, according to known inference data.
+/// "Implization" is reducing a trait type or a wrapped trait type, to the more concrete type,
+/// according to the assignment of that trait type in its impl, if the impl is known according to
+/// the context.
+///
 /// First `solve()`s the inference once, and then only uses it as a "read-only".
 /// Note that it means `inference` might change. Consider passing a temporary clone if you want to
 /// avoid affecting the original inference.
+///
 /// `trait_or_impl_context` is the context we're at. That is, if we're inside an impl function, the
 /// wrapping impl is the context here.
 pub fn implize_type(
@@ -369,58 +374,26 @@ fn reduce_concrete_impl_type(
     reduce_in_impl_context(db, impl_type_id, impl_def_id)
 }
 
-// TODO(yg): rename, fix doc, tidy up. Assumes the given inference is `solve()`ed.
-// TODO(yg): consider a SolvedInference/ReadOnlyInference type to relax this assumption.
+/// Reduces an impl type if it's an ImplVar. E.g. in the case of MyTrait::MyType when there is only
+/// a single impl for MyTrait in the context.
+///
+/// Assumes the given inference is `solve()`ed.
 fn reduce_trait_impl_type(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
     inference: &mut Inference,
 ) -> ImplTypeId {
     let ImplTypeId { impl_id, ty } = impl_type_id;
-    // TODO(yg): matches.
     if !matches!(impl_id, crate::items::imp::ImplId::ImplVar(_)) {
         println!("yg returning early");
         return impl_type_id;
     };
 
     println!("yg impl_id before: {:?}", impl_id.debug(db.elongate()));
-    // inference.solve().unwrap();
     let impl_id = inference.rewrite(impl_id).unwrap();
 
     println!("yg impl_id after: {:?}", impl_id.debug(db.elongate()));
     ImplTypeId { impl_id, ty }
-
-    // let impl_var = inference.rewrite(impl_var).unwrap();
-
-    // let concrete_trait_id = impl_var.concrete_trait_id(db);
-    // println!("yg concrete_trait_id: {:?}", concrete_trait_id.debug(db.elongate()));
-    // let trait_type_id = impl_type_id.ty;
-    // let concrete_trait_type_long_id =
-    //     ConcreteTraitTypeLongId::new(db, concrete_trait_id, trait_type_id);
-    // let concrete_trait_type_id = db.intern_concrete_trait_type(concrete_trait_type_long_id);
-
-    // let impl_lookup_context = impl_var.lookup_context(db);
-    // let ty = inference.infer_trait_type(
-    //         concrete_trait_type_id,
-    //         &impl_lookup_context,
-    //         None, // TODO(yg): Some(identifier.stable_ptr().untyped()),
-    //     )
-    //     // TODO(yg): do this right. don't skip_diagnostic.
-    //     // .map_err(|err| err.report(diagnostics, identifier.stable_ptr().untyped()))?;
-    //     .map_err(|_| skip_diagnostic())?;
-    // println!("yg ty1: {:?}", ty.debug(db.elongate()));
-    // // let ty = inference.rewrite(ty).unwrap();
-    // // println!("yg ty2: {:?}", ty.debug(db.elongate()));
-    // // inference.solve().unwrap();
-    // // println!("yg ty3: {:?}", ty.debug(db.elongate()));
-    // // let ty = inference.rewrite(ty).unwrap();
-    // // println!("yg ty4: {:?}", ty.debug(db.elongate()));
-
-    // // println!("yg impl_id before: {:?}", impl_id.debug(db.elongate()));
-    // // let impl_id = inference.rewrite(impl_id).unwrap();
-    // // println!("yg impl_id after: {:?}", impl_id.debug(db.elongate()));
-
-    // Ok(Some(ty))
 }
 
 /// Head of a type. A type that is not one of {generic param, type variable, impl type} has a head,
