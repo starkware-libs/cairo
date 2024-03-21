@@ -196,267 +196,267 @@ dup<u8>([9]) -> ([9], [10])
 Originating location:
         u8_overflowing_sub(rhs, lhs).into_is_err()
         ^**************************^
-In function: integer.cairo::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::gt
 dup<u8>([8]) -> ([8], [11])
 Originating location:
         u8_overflowing_sub(rhs, lhs).into_is_err()
         ^**************************^
-In function: integer.cairo::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::gt
 u8_overflowing_sub([0], [10], [11]) { fallthrough([12], [13]) label_test::foo::5([14], [15]) }
 Originating location:
         u8_overflowing_sub(rhs, lhs).into_is_err()
         ^**************************^
-In function: integer.cairo::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::gt
 branch_align() -> ()
 Originating location:
         u8_overflowing_sub(rhs, lhs).into_is_err()
         ^**************************^
-In function: integer.cairo::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::gt
 drop<u8>([13]) -> ()
 Originating location:
         u8_overflowing_sub(rhs, lhs).into_is_err()
         ^**************************^
-In function: integer.cairo::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::gt
 u8_wide_mul([8], [9]) -> ([16])
 Originating location:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
         ^*******************^
-In function: integer.cairo::U8Mul::mul
+In function: core::integer::U8Mul::mul
 store_temp<u16>([16]) -> ([16])
 Originating location:
         downcast(self)
         ^************^
-In function: integer.cairo::DowncastableIntTryInto::try_into
+In function: core::integer::DowncastableIntTryInto::try_into
 downcast<u16, u8>([12], [16]) { fallthrough([17], [18]) label_test::foo::7([19]) }
 Originating location:
         downcast(self)
         ^************^
-In function: integer.cairo::DowncastableIntTryInto::try_into
+In function: core::integer::DowncastableIntTryInto::try_into
 branch_align() -> ()
 Originating location:
         downcast(self)
         ^************^
-In function: integer.cairo::DowncastableIntTryInto::try_into
+In function: core::integer::DowncastableIntTryInto::try_into
 struct_construct<Tuple<u8>>([18]) -> ([20])
 Originating location:
         downcast(self)
         ^************^
-In function: integer.cairo::DowncastableIntTryInto::try_into
+In function: core::integer::DowncastableIntTryInto::try_into
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([20]) -> ([21])
 Originating location:
     fn expect(self: Option<T>, err: felt252) -> T {
                                                   ^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 store_temp<RangeCheck>([17]) -> ([17])
 Originating location:
     fn expect(self: Option<T>, err: felt252) -> T {
                                                   ^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([21]) -> ([21])
 Originating location:
     fn expect(self: Option<T>, err: felt252) -> T {
                                                   ^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 return([17], [21])
 Originating location:
     fn expect(self: Option<T>, err: felt252) -> T {
                                                   ^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 label_test::foo::7:
 Originating location:
     fn expect(self: Option<T>, err: felt252) -> T {
                                                   ^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 branch_align() -> ()
 Originating location:
     fn expect(self: Option<T>, err: felt252) -> T {
                                                   ^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 array_new<felt252>() -> ([22])
 Originating location:
         array_new()
         ^*********^
-In function: array.cairo::ArrayImpl::new
+In function: core::array::ArrayImpl::new
 const_as_immediate<Const<felt252, 608642107937639184217240406363762551>>() -> ([23])
 Originating location:
         array_new()
         ^*********^
-In function: array.cairo::ArrayImpl::new
+In function: core::array::ArrayImpl::new
 store_temp<felt252>([23]) -> ([23])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 array_append<felt252>([22], [23]) -> ([24])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 struct_construct<core::panics::Panic>() -> ([25])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([25], [24]) -> ([26])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([26]) -> ([27])
 Originating location:
             Option::None => core::panic_with_felt252(err),
                             ^***************************^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 store_temp<RangeCheck>([19]) -> ([19])
 Originating location:
             Option::None => core::panic_with_felt252(err),
                             ^***************************^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([27]) -> ([27])
 Originating location:
             Option::None => core::panic_with_felt252(err),
                             ^***************************^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 return([19], [27])
 Originating location:
             Option::None => core::panic_with_felt252(err),
                             ^***************************^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 label_test::foo::8:
 Originating location:
             Option::None => core::panic_with_felt252(err),
                             ^***************************^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 label_test::foo::5:
 Originating location:
             Option::None => core::panic_with_felt252(err),
                             ^***************************^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 branch_align() -> ()
 Originating location:
             Option::None => core::panic_with_felt252(err),
                             ^***************************^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 drop<u8>([15]) -> ()
 Originating location:
             Option::None => core::panic_with_felt252(err),
                             ^***************************^
-In function: option.cairo::OptionTraitImpl::expect
+In function: core::option::OptionTraitImpl::expect
 u8_overflowing_add([14], [8], [9]) { fallthrough([28], [29]) label_test::foo::9([30], [31]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 branch_align() -> ()
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 struct_construct<Tuple<u8>>([29]) -> ([32])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([32]) -> ([33])
 Originating location:
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
                                                                ^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 store_temp<RangeCheck>([28]) -> ([28])
 Originating location:
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
                                                                ^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([33]) -> ([33])
 Originating location:
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
                                                                ^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 return([28], [33])
 Originating location:
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
                                                                ^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 label_test::foo::9:
 Originating location:
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
                                                                ^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 branch_align() -> ()
 Originating location:
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
                                                                ^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 drop<u8>([31]) -> ()
 Originating location:
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
                                                                ^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 array_new<felt252>() -> ([34])
 Originating location:
         array_new()
         ^*********^
-In function: array.cairo::ArrayImpl::new
+In function: core::array::ArrayImpl::new
 const_as_immediate<Const<felt252, 608642104203229548495787928534675319>>() -> ([35])
 Originating location:
         array_new()
         ^*********^
-In function: array.cairo::ArrayImpl::new
+In function: core::array::ArrayImpl::new
 store_temp<felt252>([35]) -> ([35])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 array_append<felt252>([34], [35]) -> ([36])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 struct_construct<core::panics::Panic>() -> ([37])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([37], [36]) -> ([38])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([38]) -> ([39])
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 store_temp<RangeCheck>([30]) -> ([30])
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([39]) -> ([39])
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 return([30], [39])
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 label_test::foo::10:
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 label_test::foo::6:
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 label_test::foo::3:
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
-In function: result.cairo::ResultTraitImpl::expect
+In function: core::result::ResultTraitImpl::expect
 
 //! > ==========================================================================
 
@@ -744,32 +744,32 @@ u8_overflowing_add([0], [27], [28]) { fallthrough([32], [33]) label_test::main::
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 branch_align() -> ()
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 u8_to_felt252([33]) -> ([36])
 Originating location:
         u8_to_felt252(self)
         ^*****************^
-In function: integer.cairo::U8IntoFelt252::into
+In function: core::integer::U8IntoFelt252::into
 drop<felt252>([36]) -> ()
 Originating location:
         u8_to_felt252(self)
         ^*****************^
-In function: integer.cairo::U8IntoFelt252::into
+In function: core::integer::U8IntoFelt252::into
 store_temp<RangeCheck>([32]) -> ([23])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 label_test::main::6:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 enum_match<test::MyEnum>([8]) { fallthrough([37]) label_test::main::10([38]) label_test::main::11([39]) label_test::main::12([40]) }
 Originating location:
     match a {
@@ -894,32 +894,32 @@ u8_overflowing_add([23], [45], [46]) { fallthrough([50], [51]) label_test::main:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 branch_align() -> ()
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 u8_to_felt252([51]) -> ([54])
 Originating location:
         u8_to_felt252(self)
         ^*****************^
-In function: integer.cairo::U8IntoFelt252::into
+In function: core::integer::U8IntoFelt252::into
 drop<felt252>([54]) -> ()
 Originating location:
         u8_to_felt252(self)
         ^*****************^
-In function: integer.cairo::U8IntoFelt252::into
+In function: core::integer::U8IntoFelt252::into
 store_temp<RangeCheck>([50]) -> ([41])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 label_test::main::15:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 enum_match<test::MyEnum>([13]) { fallthrough([55]) label_test::main::19([56]) label_test::main::20([57]) label_test::main::21([58]) }
 Originating location:
     match a {
@@ -1044,32 +1044,32 @@ u8_overflowing_add([41], [63], [64]) { fallthrough([68], [69]) label_test::main:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 branch_align() -> ()
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 u8_to_felt252([69]) -> ([72])
 Originating location:
         u8_to_felt252(self)
         ^*****************^
-In function: integer.cairo::U8IntoFelt252::into
+In function: core::integer::U8IntoFelt252::into
 drop<felt252>([72]) -> ()
 Originating location:
         u8_to_felt252(self)
         ^*****************^
-In function: integer.cairo::U8IntoFelt252::into
+In function: core::integer::U8IntoFelt252::into
 store_temp<RangeCheck>([68]) -> ([59])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 label_test::main::24:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 enum_match<test::MyEnum>([18]) { fallthrough([73]) label_test::main::28([74]) label_test::main::29([75]) label_test::main::30([76]) }
 Originating location:
     match a {
@@ -1194,42 +1194,42 @@ u8_overflowing_add([59], [81], [82]) { fallthrough([86], [87]) label_test::main:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 branch_align() -> ()
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 u8_to_felt252([87]) -> ([90])
 Originating location:
         u8_to_felt252(self)
         ^*****************^
-In function: integer.cairo::U8IntoFelt252::into
+In function: core::integer::U8IntoFelt252::into
 drop<felt252>([90]) -> ()
 Originating location:
         u8_to_felt252(self)
         ^*****************^
-In function: integer.cairo::U8IntoFelt252::into
+In function: core::integer::U8IntoFelt252::into
 store_temp<RangeCheck>([86]) -> ([77])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 label_test::main::33:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 struct_construct<Unit>() -> ([91])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 struct_construct<Tuple<Unit>>([91]) -> ([92])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^**************************^
-In function: integer.cairo::U8Add::add
+In function: core::integer::U8Add::add
 enum_init<core::panics::PanicResult::<((),)>, 0>([92]) -> ([93])
 Originating location:
 fn main() {
@@ -1264,32 +1264,32 @@ array_new<felt252>() -> ([94])
 Originating location:
         array_new()
         ^*********^
-In function: array.cairo::ArrayImpl::new
+In function: core::array::ArrayImpl::new
 const_as_immediate<Const<felt252, 608642104203229548495787928534675319>>() -> ([95])
 Originating location:
         array_new()
         ^*********^
-In function: array.cairo::ArrayImpl::new
+In function: core::array::ArrayImpl::new
 store_temp<felt252>([95]) -> ([95])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 array_append<felt252>([94], [95]) -> ([96])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 struct_construct<core::panics::Panic>() -> ([97])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([97], [96]) -> ([98])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 enum_init<core::panics::PanicResult::<((),)>, 1>([98]) -> ([99])
 Originating location:
     let _ = foo(d);
@@ -1344,32 +1344,32 @@ array_new<felt252>() -> ([100])
 Originating location:
         array_new()
         ^*********^
-In function: array.cairo::ArrayImpl::new
+In function: core::array::ArrayImpl::new
 const_as_immediate<Const<felt252, 608642104203229548495787928534675319>>() -> ([101])
 Originating location:
         array_new()
         ^*********^
-In function: array.cairo::ArrayImpl::new
+In function: core::array::ArrayImpl::new
 store_temp<felt252>([101]) -> ([101])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 array_append<felt252>([100], [101]) -> ([102])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 struct_construct<core::panics::Panic>() -> ([103])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([103], [102]) -> ([104])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 enum_init<core::panics::PanicResult::<((),)>, 1>([104]) -> ([105])
 Originating location:
     let _ = foo(c);
@@ -1429,32 +1429,32 @@ array_new<felt252>() -> ([106])
 Originating location:
         array_new()
         ^*********^
-In function: array.cairo::ArrayImpl::new
+In function: core::array::ArrayImpl::new
 const_as_immediate<Const<felt252, 608642104203229548495787928534675319>>() -> ([107])
 Originating location:
         array_new()
         ^*********^
-In function: array.cairo::ArrayImpl::new
+In function: core::array::ArrayImpl::new
 store_temp<felt252>([107]) -> ([107])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 array_append<felt252>([106], [107]) -> ([108])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 struct_construct<core::panics::Panic>() -> ([109])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([109], [108]) -> ([110])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 enum_init<core::panics::PanicResult::<((),)>, 1>([110]) -> ([111])
 Originating location:
     let _ = foo(b);
@@ -1519,32 +1519,32 @@ array_new<felt252>() -> ([112])
 Originating location:
         array_new()
         ^*********^
-In function: array.cairo::ArrayImpl::new
+In function: core::array::ArrayImpl::new
 const_as_immediate<Const<felt252, 608642104203229548495787928534675319>>() -> ([113])
 Originating location:
         array_new()
         ^*********^
-In function: array.cairo::ArrayImpl::new
+In function: core::array::ArrayImpl::new
 store_temp<felt252>([113]) -> ([113])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 array_append<felt252>([112], [113]) -> ([114])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 struct_construct<core::panics::Panic>() -> ([115])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([115], [114]) -> ([116])
 Originating location:
         array_append(ref self, value)
         ^***************************^
-In function: array.cairo::ArrayImpl::append
+In function: core::array::ArrayImpl::append
 enum_init<core::panics::PanicResult::<((),)>, 1>([116]) -> ([117])
 Originating location:
     let _ = foo(a);

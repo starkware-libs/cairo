@@ -95,7 +95,7 @@ Weight by original user function (exc. generated):
   function test::main: 50
 Weight by Cairo function:
   function lib.cairo::foo: 31
-  function integer.cairo::U8Add::add: 11
+  function core::integer::U8Add::add: 11
   function lib.cairo::main: 8
 Weight by Sierra stack trace:
   test::main: 50
@@ -218,7 +218,7 @@ Weight by original user function (exc. generated):
   function test::main: 72
 Weight by Cairo function:
   function lib.cairo::main: 60
-  function lib.cairo::Felt252PartialEq::eq: 12
+  function core::Felt252PartialEq::eq: 12
 Weight by Sierra stack trace:
   test::main: 72
   test::main -> test::main[expr12]: 61
