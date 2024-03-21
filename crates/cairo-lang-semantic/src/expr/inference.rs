@@ -554,10 +554,7 @@ impl<'db> Inference<'db> {
         for (id, var) in self.type_vars.iter().enumerate() {
             if self.type_assignment(LocalTypeVarId(id)).is_none() {
                 let ty = self.db.intern_type(TypeLongId::Var(*var));
-                return Some((
-                    InferenceVar::Type(LocalTypeVarId(id)),
-                    InferenceError::TypeNotInferred { ty },
-                ));
+                return Some((InferenceVar::Type(var.id), InferenceError::TypeNotInferred { ty }));
             }
         }
         if let Some(var) = self.refuted.first().copied() {
