@@ -22,39 +22,171 @@ foo
 trait MyTrait {
     type InputType;
     type OutputType;
-    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType;
-    fn foo2(x: MyTrait::InputType) -> MyTrait::OutputType;
-    fn foo3(x: MyTrait::InputType) -> MyTrait::OutputType;
-    fn foo4(x: Self::InputType) -> Self::OutputType;
-    fn foo5(x: Self::InputType) -> Self::OutputType;
-    fn foo6(x: Self::InputType) -> Self::OutputType;
-    fn foo7(x: u32) -> u32;
-    fn foo8(x: u32) -> u32;
+    fn foo1(x: Self::InputType) -> Self::OutputType;
+    fn foo2(x: Self::InputType) -> Self::OutputType;
+    fn foo3(x: u32) -> u32;
 }
 impl MyImpl of MyTrait {
     type InputType = u32;
     type OutputType = u32;
-    fn foo1(x: MyImpl::InputType) -> MyImpl::OutputType { x }
-    fn foo2(x: Self::InputType) -> Self::OutputType { x }
-    fn foo3(x: u32) -> u32 { x }
-    fn foo4(x: MyImpl::InputType) -> MyImpl::OutputType { x }
-    fn foo5(x: Self::InputType) -> Self::OutputType { x }
-    fn foo6(x: u32) -> u32 { x }
-    fn foo7(x: MyImpl::InputType) -> MyImpl::OutputType { x }
-    fn foo8(x: Self::InputType) -> Self::OutputType { x }
+    fn foo1(x: Self::InputType) -> Self::OutputType { x }
+    fn foo2(x: u32) -> u32 { x }
+    fn foo3(x: Self::InputType) -> Self::OutputType { x }
 }
 fn main() {
    MyImpl::foo1(3_u32);
    MyImpl::foo2(3_u32);
    MyImpl::foo3(3_u32);
-   MyImpl::foo4(3_u32);
-   MyImpl::foo5(3_u32);
-   MyImpl::foo6(3_u32);
-   MyImpl::foo7(3_u32);
-   MyImpl::foo8(3_u32);
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > A trait can't be used in a path in its own body, with the same generics.
+
+//! > TODO(yg): same with generics - same and different.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo(x: MyTrait::InputType) -> MyTrait::OutputType;
+}
+
+//! > expected_diagnostics
+error: In a trait, paths of the same trait are not allowed. Did you mean to use  `Self::`?
+ --> lib.cairo:4:38
+    fn foo(x: MyTrait::InputType) -> MyTrait::OutputType;
+                                     ^*****^
+
+error: In a trait, paths of the same trait are not allowed. Did you mean to use  `Self::`?
+ --> lib.cairo:4:15
+    fn foo(x: MyTrait::InputType) -> MyTrait::OutputType;
+              ^*****^
+
+//! > ==========================================================================
+
+//! > An impl can't be used in a path in its own body, with the same generics
+
+//! > TODO(yg): same with generics - same and different.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo(x: Self::InputType) -> Self::OutputType;
+    fn foo2();
+}
+impl MyImpl of MyTrait {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType { x }
+    fn foo2() {
+        let _: MyImpl::InputType = 3_u32;
+    }
+}
+
+//! > expected_diagnostics
+error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:10:37
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType { x }
+                                    ^****^
+
+error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:10:15
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType { x }
+              ^****^
+
+error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u32`, actual: `<missing>`.
+ --> lib.cairo:10:15
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType { x }
+              ^***************^
+
+error: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u32`, actual: `<missing>`.
+ --> lib.cairo:10:37
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType { x }
+                                    ^****************^
+
+error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:12:16
+        let _: MyImpl::InputType = 3_u32;
+               ^****^
+
+//! > ==========================================================================
+
+//! > A trait can't be used in a path in the body of its own impl, with the same generics
+
+//! > TODO(yg): same with generics - same and different.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo1(x: Self::InputType) -> Self::OutputType;
+    fn foo2();
+}
+impl MyImpl of MyTrait {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { x }
+    fn foo2() {
+        let _: MyTrait::InputType = 3_u32;
+    }
+}
+
+//! > expected_diagnostics
+error: In an impl, paths of the impl's trait are not allowed. Did you mean to use  `Self::`?
+ --> lib.cairo:10:39
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { x }
+                                      ^*****^
+
+error: In an impl, paths of the impl's trait are not allowed. Did you mean to use  `Self::`?
+ --> lib.cairo:10:16
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { x }
+               ^*****^
+
+error: Parameter type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `<missing>`.
+ --> lib.cairo:10:16
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { x }
+               ^****************^
+
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `<missing>`.
+ --> lib.cairo:10:39
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { x }
+                                      ^*****************^
+
+error: In an impl, paths of the impl's trait are not allowed. Did you mean to use  `Self::`?
+ --> lib.cairo:12:16
+        let _: MyTrait::InputType = 3_u32;
+               ^*****^
 
 //! > ==========================================================================
 
@@ -73,8 +205,8 @@ foo
 trait MyTrait {
     type InputType;
     type OutputType;
-    fn foo1(x: MyTrait::InputType);
-    fn foo2() -> MyTrait::OutputType;
+    fn foo1(x: Self::InputType);
+    fn foo2() -> Self::OutputType;
     fn foo3(x: u16);
     fn foo4() -> u16;
 }
@@ -83,8 +215,8 @@ impl MyImpl of MyTrait {
     type OutputType = u32;
     fn foo1(x: u16) {} // param type doesn't match.
     fn foo2() -> u16 { 1_u16 } // return type doesn't match.
-    fn foo3(x: MyImpl::InputType) {} // param type doesn't match.
-    fn foo4() -> MyImpl::OutputType { 1_u32 } // return type doesn't match.
+    fn foo3(x: Self::InputType) {} // param type doesn't match.
+    fn foo4() -> Self::OutputType { 1_u32 } // return type doesn't match.
 }
 
 //! > expected_diagnostics
@@ -100,13 +232,13 @@ error: Return type of impl function `MyImpl::foo2` is incompatible with `MyTrait
 
 error: Parameter type of impl function `MyImpl::foo3` is incompatible with `MyTrait::foo3`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
  --> lib.cairo:14:16
-    fn foo3(x: MyImpl::InputType) {} // param type doesn't match.
-               ^***************^
+    fn foo3(x: Self::InputType) {} // param type doesn't match.
+               ^*************^
 
 error: Return type of impl function `MyImpl::foo4` is incompatible with `MyTrait::foo4`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
  --> lib.cairo:15:18
-    fn foo4() -> MyImpl::OutputType { 1_u32 } // return type doesn't match.
-                 ^****************^
+    fn foo4() -> Self::OutputType { 1_u32 } // return type doesn't match.
+                 ^**************^
 
 //! > ==========================================================================
 
@@ -128,12 +260,12 @@ struct MyStruct<T> {
 trait MyTrait {
     type InputType;
     type OutputType;
-    fn foo(x: MyTrait::InputType) -> MyTrait::OutputType;
+    fn foo(x: Self::InputType) -> Self::OutputType;
 }
 impl MyImpl of MyTrait {
     type InputType = MyStruct<u32>;
     type OutputType = MyStruct<u32>;
-    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType {
+    fn foo(x: Self::InputType) -> Self::OutputType {
         MyStruct { value: x.value }
     }
 }
@@ -160,11 +292,11 @@ foo
 //! > module_code
 trait MyTrait {
     type InputType;
-    fn foo(x: MyTrait::InputType);
+    fn foo(x: Self::InputType);
 }
 impl MyImpl of MyTrait {
     type InputType = Option<usize>;
-    fn foo(x: MyImpl::InputType) {
+    fn foo(x: Self::InputType) {
         x.unwrap();
     }
 }
@@ -190,11 +322,11 @@ foo
 //! > module_code
 trait MyTrait {
     type InputType;
-    fn foo(x: MyTrait::InputType);
+    fn foo(x: Self::InputType);
 }
 impl MyImpl of MyTrait {
     type InputType = usize;
-    fn foo(x: MyImpl::InputType) {
+    fn foo(x: Self::InputType) {
         x.unwrap();
     }
 }
@@ -223,11 +355,11 @@ foo
 //! > module_code
 trait MyTrait {
     type InputType;
-    fn foo(x: MyTrait::InputType);
+    fn foo(x: Self::InputType);
 }
 impl MyImpl of MyTrait {
     type InputType = i32;
-    fn foo(x: MyImpl::InputType) {
+    fn foo(x: Self::InputType) {
         -x;
     }
 }
@@ -253,11 +385,11 @@ foo
 //! > module_code
 trait MyTrait {
     type InputType;
-    fn foo(x: MyTrait::InputType);
+    fn foo(x: Self::InputType);
 }
 impl MyImpl of MyTrait {
     type InputType = u32;
-    fn foo(x: MyImpl::InputType) {
+    fn foo(x: Self::InputType) {
         -x; // u32 doesn't implement `Neg`.
     }
 }
@@ -286,13 +418,13 @@ trait MyTrait {
     type InputType1;
     type InputType2;
     type OutputType;
-    fn foo(x: MyTrait::InputType1, y: MyTrait::InputType2) -> MyTrait::OutputType;
+    fn foo(x: Self::InputType1, y: Self::InputType2) -> Self::OutputType;
 }
 impl MyImpl of MyTrait {
     type InputType1 = usize;
     type InputType2 = usize;
     type OutputType = usize;
-    fn foo(x: MyImpl::InputType1, y: MyImpl::InputType2) -> MyImpl::OutputType {
+    fn foo(x: Self::InputType1, y: Self::InputType2) -> Self::OutputType {
         x + y
     }
 }
@@ -318,11 +450,11 @@ foo
 //! > module_code
 trait MyTrait {
     type InputType;
-    fn foo(x: MyTrait::InputType);
+    fn foo(x: Self::InputType);
 }
 impl MyImpl of MyTrait {
     type InputType = Option<usize>;
-    fn foo(x: MyImpl::InputType) {
+    fn foo(x: Self::InputType) {
         x + x; // Option<usize> doesn't implement `Add`.
     }
 }
@@ -350,12 +482,12 @@ foo
 trait MyTrait {
     type InputType;
     type OutputType;
-    fn foo(x: MyTrait::InputType)  -> MyTrait::OutputType;
+    fn foo(x: Self::InputType)  -> Self::OutputType;
 }
 impl MyImpl of MyTrait {
     type InputType = Array<usize>;
     type OutputType = usize;
-    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType {
+    fn foo(x: Self::InputType) -> Self::OutputType {
         *x[0_u32]
     }
 }
@@ -381,11 +513,11 @@ foo
 //! > module_code
 trait MyTrait {
     type InputType;
-    fn foo(x: MyTrait::InputType);
+    fn foo(x: Self::InputType);
 }
 impl MyImpl of MyTrait {
     type InputType = usize;
-    fn foo(x: MyImpl::InputType) {
+    fn foo(x: Self::InputType) {
         x[0];
     }
 }
@@ -400,9 +532,9 @@ Candidate `IndexView::index` inference failed with: Trait has no implementation 
 
 //! > ==========================================================================
 
-//! > Using traits' items is prohibited in traits.
+//! > Using traits' items is prohibited in other traits too.
 
-//! > TODO(yg): disallow `MyTrait::` in `MyTrait`.
+//! > TODO(yg): consider if this limitation should remain.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -419,28 +551,24 @@ trait AnotherTrait {
 }
 trait MyTrait {
     type MyType;
-    fn bar1(x: MyTrait::MyType);
-    fn bar2() -> MyTrait::MyType;
-    fn bar3(x: AnotherTrait::AnotherType);
-    fn bar4() -> AnotherTrait::AnotherType;
+    fn bar1(x: AnotherTrait::AnotherType);
+    fn bar2() -> AnotherTrait::AnotherType;
 }
 
 //! > expected_diagnostics
 error: In a trait, only the trait's own trait types can be used. Did you mean to use `Self::`?
- --> lib.cairo:8:16
-    fn bar3(x: AnotherTrait::AnotherType);
+ --> lib.cairo:6:16
+    fn bar1(x: AnotherTrait::AnotherType);
                ^***********************^
 
 error: In a trait, only the trait's own trait types can be used. Did you mean to use `Self::`?
- --> lib.cairo:9:18
-    fn bar4() -> AnotherTrait::AnotherType;
+ --> lib.cairo:7:18
+    fn bar2() -> AnotherTrait::AnotherType;
                  ^***********************^
 
 //! > ==========================================================================
 
-//! > Using traits' items is prohibited in traits + impl diagnostics.
-
-//! > TODO(yg): disallow `MyTrait::` in `MyTrait`.
+//! > Using traits' items is prohibited in other traits too + impl diagnostics.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -457,38 +585,34 @@ trait AnotherTrait {
 }
 trait MyTrait {
     type MyType;
-    fn bar1(x: MyTrait::MyType);
-    fn bar2() -> MyTrait::MyType;
-    fn bar3(x: AnotherTrait::AnotherType);
-    fn bar4() -> AnotherTrait::AnotherType;
+    fn bar1(x: AnotherTrait::AnotherType);
+    fn bar2() -> AnotherTrait::AnotherType;
 }
 impl MyImpl of MyTrait {
     type MyType = u32;
     fn bar1(x: u32) {}
     fn bar2() -> u32 { 3_u32 }
-    fn bar3(x: u32) {}
-    fn bar4() -> u32 { 3_u32 }
 }
 
 //! > expected_diagnostics
 error: In a trait, only the trait's own trait types can be used. Did you mean to use `Self::`?
- --> lib.cairo:8:16
-    fn bar3(x: AnotherTrait::AnotherType);
+ --> lib.cairo:6:16
+    fn bar1(x: AnotherTrait::AnotherType);
                ^***********************^
 
 error: In a trait, only the trait's own trait types can be used. Did you mean to use `Self::`?
- --> lib.cairo:9:18
-    fn bar4() -> AnotherTrait::AnotherType;
+ --> lib.cairo:7:18
+    fn bar2() -> AnotherTrait::AnotherType;
                  ^***********************^
 
-error: Parameter type of impl function `MyImpl::bar3` is incompatible with `MyTrait::bar3`. Expected: `<missing>`, actual: `core::integer::u32`.
- --> lib.cairo:15:16
-    fn bar3(x: u32) {}
+error: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `<missing>`, actual: `core::integer::u32`.
+ --> lib.cairo:11:16
+    fn bar1(x: u32) {}
                ^*^
 
-error: Return type of impl function `MyImpl::bar4` is incompatible with `MyTrait::bar4`. Expected: `<missing>`, actual: `core::integer::u32`.
- --> lib.cairo:16:18
-    fn bar4() -> u32 { 3_u32 }
+error: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `<missing>`, actual: `core::integer::u32`.
+ --> lib.cairo:12:18
+    fn bar2() -> u32 { 3_u32 }
                  ^*^
 
 //! > ==========================================================================
@@ -515,15 +639,11 @@ trait MyTrait {
     type MyType;
     fn foo1() -> u32;
     fn foo2(x: u32);
-    fn foo3() -> u32;
-    fn foo4(x: u32);
 }
 impl MyImpl of MyTrait {
     type MyType = u32;
-    fn foo1() -> MyTrait::MyType { 3_u32 }
-    fn foo2(x: MyTrait::MyType) {}
-    fn foo3() -> AnotherTrait::AnotherType { 3_u32 }
-    fn foo4(x: AnotherTrait::AnotherType) {}
+    fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
+    fn foo2(x: AnotherTrait::AnotherType) {}
 }
 fn bar1() -> MyTrait::MyType { 3_u32 }
 fn bar2(x: MyTrait::MyType) {
@@ -559,15 +679,11 @@ trait MyTrait {
     type MyType;
     fn foo1() -> u32;
     fn foo2(x: u32);
-    fn foo3() -> u32;
-    fn foo4(x: u32);
 }
 impl MyImpl of MyTrait {
     type MyType = u16;
-    fn foo1() -> MyTrait::MyType { 3_u32 }
-    fn foo2(x: MyTrait::MyType) {}
-    fn foo3() -> AnotherTrait::AnotherType { 3_u32 }
-    fn foo4(x: AnotherTrait::AnotherType) {}
+    fn foo1() -> AnotherTrait::AnotherType { 3 }
+    fn foo2(x: AnotherTrait::AnotherType) {}
 }
 fn bar1() -> MyTrait::MyType { 3_u32 }
 fn bar2(x: MyTrait::MyType) {
@@ -579,47 +695,27 @@ fn bar3() {
 
 //! > expected_diagnostics
 error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
- --> lib.cairo:16:18
-    fn foo1() -> MyTrait::MyType { 3_u32 }
-                 ^*************^
-
-error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
- --> lib.cairo:16:34
-    fn foo1() -> MyTrait::MyType { 3_u32 }
-                                 ^*******^
-
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
- --> lib.cairo:17:16
-    fn foo2(x: MyTrait::MyType) {}
-               ^*************^
-
-error: Return type of impl function `MyImpl::foo3` is incompatible with `MyTrait::foo3`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
- --> lib.cairo:18:18
-    fn foo3() -> AnotherTrait::AnotherType { 3_u32 }
+ --> lib.cairo:14:18
+    fn foo1() -> AnotherTrait::AnotherType { 3 }
                  ^***********************^
 
-error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
- --> lib.cairo:18:44
-    fn foo3() -> AnotherTrait::AnotherType { 3_u32 }
-                                           ^*******^
-
-error: Parameter type of impl function `MyImpl::foo4` is incompatible with `MyTrait::foo4`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
- --> lib.cairo:19:16
-    fn foo4(x: AnotherTrait::AnotherType) {}
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
+ --> lib.cairo:15:16
+    fn foo2(x: AnotherTrait::AnotherType) {}
                ^***********************^
 
 error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
- --> lib.cairo:21:30
+ --> lib.cairo:17:30
 fn bar1() -> MyTrait::MyType { 3_u32 }
                              ^*******^
 
 error: Unexpected argument type. Expected: "core::integer::u32", found: "core::integer::u16".
- --> lib.cairo:23:18
+ --> lib.cairo:19:18
     let _: u32 = x;
                  ^
 
 error: Unexpected argument type. Expected: "core::integer::u16", found: "core::integer::u32".
- --> lib.cairo:26:30
+ --> lib.cairo:22:30
     let _: MyTrait::MyType = 3_u32;
                              ^***^
 
@@ -659,7 +755,7 @@ fn bar3() {
 }
 
 //! > expected_diagnostics
-error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(88)::AnotherType`.
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(68)::AnotherType`.
  --> lib.cairo:9:18
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                  ^***********************^
@@ -669,7 +765,7 @@ error: Trait has no implementation in context: test::AnotherTrait
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(88)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(68)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:9:44
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                            ^*******^
@@ -679,7 +775,7 @@ error: Trait has no implementation in context: test::AnotherTrait
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(90)::AnotherType`.
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(70)::AnotherType`.
  --> lib.cairo:10:16
     fn foo2(x: AnotherTrait::AnotherType) {}
                ^***********************^
@@ -699,7 +795,7 @@ error: Trait has no implementation in context: test::AnotherTrait
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                            ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(91)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(71)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:12:40
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                                        ^*******^
@@ -719,7 +815,7 @@ error: Trait has no implementation in context: test::AnotherTrait
 fn bar2(x: AnotherTrait::AnotherType) {}
                          ^*********^
 
-error: Unexpected argument type. Expected: "ImplVarId(95)::AnotherType", found: "core::integer::u32".
+error: Unexpected argument type. Expected: "ImplVarId(75)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:15:40
     let _: AnotherTrait::AnotherType = 3_u32;
                                        ^***^
@@ -771,7 +867,7 @@ fn bar3() {
 }
 
 //! > expected_diagnostics
-error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(96)::AnotherType`.
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(76)::AnotherType`.
  --> lib.cairo:15:18
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                  ^***********************^
@@ -781,7 +877,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(96)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(76)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:15:44
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                            ^*******^
@@ -791,7 +887,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(98)::AnotherType`.
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(78)::AnotherType`.
  --> lib.cairo:16:16
     fn foo2(x: AnotherTrait::AnotherType) {}
                ^***********************^
@@ -811,7 +907,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                            ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(99)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(79)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:18:40
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                                        ^*******^
@@ -831,7 +927,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
 fn bar2(x: AnotherTrait::AnotherType) {}
                          ^*********^
 
-error: Unexpected argument type. Expected: "ImplVarId(103)::AnotherType", found: "core::integer::u32".
+error: Unexpected argument type. Expected: "ImplVarId(83)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:21:40
     let _: AnotherTrait::AnotherType = 3_u32;
                                        ^***^
@@ -843,144 +939,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
 
 //! > ==========================================================================
 
-//! > Using `MyTrait::MyType` from the impl is resolved if the impl is the only one in context.
-
-//! > TODO(yg):
-consider forbidding/warn MyTrait::<generics>:: from an impl of MyTrait<same_generics>.
-consider forbidding/warn MyImpl::<generics>:: in MyImpl<same_generics>.
-error/warning: use "Self" instead.
-
-//! > test_runner_name
-test_function_diagnostics(expect_diagnostics: false)
-
-//! > function
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type InputType;
-    type OutputType;
-    fn foo1(x: Self::InputType) -> Self::OutputType;
-    fn foo2(x: MyTrait::InputType) -> MyTrait::OutputType;
-    fn foo3(x: u16) -> u32;
-}
-impl MyImpl of MyTrait {
-    type InputType = u16;
-    type OutputType = u32;
-    // These work only because MyTrait is resolved to MyImpl as it's the only one in context. This
-    // is confusing and discouraged, but working.
-    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-    fn foo2(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-    fn foo3(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-}
-
-//! > expected_diagnostics
-
-//! > ==========================================================================
-
-//! > Using `MyTrait::MyType` from an impl is ambiguous if there is another impl in context.
-
-//! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
-
-//! > function
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type InputType;
-    type OutputType;
-    fn foo1(x: Self::InputType) -> Self::OutputType;
-    fn foo2(x: MyTrait::InputType) -> MyTrait::OutputType;
-    fn foo3(x: u16) -> u32;
-}
-impl MyImpl of MyTrait {
-    type InputType = u16;
-    type OutputType = u32;
-    // These don't work now - it's ambiguous how to resolve MyTrait with the other existing impl
-    // which is in context.
-    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-    fn foo2(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-    fn foo3(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-}
-impl MyImpl2 of MyTrait {
-    type InputType = u16;
-    type OutputType = u32;
-    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-    fn foo2(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-    fn foo3(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-}
-
-//! > expected_diagnostics
-error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl`, `test::MyImpl2`
- --> lib.cairo:13:48
-    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-                                               ^********^
-
-error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl`, `test::MyImpl2`
- --> lib.cairo:13:48
-    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-                                               ^********^
-
-error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl`, `test::MyImpl2`
- --> lib.cairo:14:48
-    fn foo2(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-                                               ^********^
-
-error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl`, `test::MyImpl2`
- --> lib.cairo:14:48
-    fn foo2(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-                                               ^********^
-
-error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl`, `test::MyImpl2`
- --> lib.cairo:15:48
-    fn foo3(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-                                               ^********^
-
-error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl`, `test::MyImpl2`
- --> lib.cairo:15:48
-    fn foo3(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-                                               ^********^
-
-error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl`, `test::MyImpl2`
- --> lib.cairo:20:48
-    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-                                               ^********^
-
-error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl`, `test::MyImpl2`
- --> lib.cairo:20:48
-    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-                                               ^********^
-
-error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl`, `test::MyImpl2`
- --> lib.cairo:21:48
-    fn foo2(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-                                               ^********^
-
-error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl`, `test::MyImpl2`
- --> lib.cairo:21:48
-    fn foo2(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-                                               ^********^
-
-error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl`, `test::MyImpl2`
- --> lib.cairo:22:48
-    fn foo3(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-                                               ^********^
-
-error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl`, `test::MyImpl2`
- --> lib.cairo:22:48
-    fn foo3(x: MyTrait::InputType) -> MyTrait::OutputType { 3 }
-                                               ^********^
-
-//! > ==========================================================================
-
-//! > impls' items are allowed.
+//! > impl items are allowed, even in a trait body.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
@@ -1013,6 +972,37 @@ fn bar1() -> AnotherImpl1::AnotherType { 3_u32 }
 fn bar2(x: AnotherImpl1::AnotherType) {}
 fn bar3() {
     let _: AnotherImpl1::AnotherType = 3_u32;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > impl items are not allowed in its own trait body.
+
+//! > TODO(yg):
+should it be allowed? should it be a cycle? change description and expect_diagnostics accordingly.
+If allowed, test with type mismtach too.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: *)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType;
+    fn foo1() -> MyImpl::MyType;
+    fn foo2(x: MyImpl::MyType);
+}
+impl MyImpl of MyTrait {
+    type MyType = u32;
+    fn foo1() -> Self::MyType { 3_u32 }
+    fn foo2(x: Self::MyType) {}
 }
 
 //! > expected_diagnostics

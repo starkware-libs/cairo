@@ -924,7 +924,7 @@ error: Unexpected return type. Expected: "core::integer::u32", found: "core::int
 
 //! > ==========================================================================
 
-//! > `Self` can't be non-first segment.
+//! > `Self` must be the first segment.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -943,15 +943,36 @@ mod inner {
    }
    impl MyImpl of MyTrait {
       fn foo1() {
-         super::inner::MyImpl::foo2(); // This is ok.
+         Self::foo2(); // This is ok.
+
          super::inner::Self::foo2(); // This is not.
+
+         super::inner::AnotherImpl::foo2(); // This is ok.
+
+         // These are not ok for another reason.
+         MyImpl::foo2();
+         super::inner::MyImpl::foo2();
       }
+      fn foo2() {}
+   }
+   impl AnotherImpl of MyTrait {
+      fn foo1() {}
       fn foo2() {}
    }
 }
 
 //! > expected_diagnostics
 error: `Self` can only be the first segment of a path.
- --> lib.cairo:9:24
+ --> lib.cairo:10:24
          super::inner::Self::foo2(); // This is not.
                        ^**^
+
+error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:15:10
+         MyImpl::foo2();
+         ^****^
+
+error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:16:24
+         super::inner::MyImpl::foo2();
+                       ^****^

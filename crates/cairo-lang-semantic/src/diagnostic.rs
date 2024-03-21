@@ -210,6 +210,19 @@ impl DiagnosticEntry for SemanticDiagnostic {
                                                                     own trait types can be used. \
                                                                     Did you mean to use `Self::`?"
                 .to_string(),
+            SemanticDiagnosticKind::TraitTypeForbiddenInTheTrait => {
+                "In a trait, paths of the same trait are not allowed. Did you mean to use  \
+                 `Self::`?"
+                    .to_string()
+            }
+            SemanticDiagnosticKind::TraitTypeForbiddenInItsImpl => "In an impl, paths of the \
+                                                                    impl's trait are not allowed. \
+                                                                    Did you mean to use  `Self::`?"
+                .to_string(),
+            SemanticDiagnosticKind::ImplTypeForbiddenInTheImpl => {
+                "In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?"
+                    .to_string()
+            }
             SemanticDiagnosticKind::TraitFunctionWithBody { trait_id, function_id } => {
                 let defs_db = db.upcast();
                 format!(
@@ -844,7 +857,11 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         function_id: TraitFunctionId,
     },
+    // TODO(yg): consider removing.
     TraitTypeUnsupportedInTrait,
+    TraitTypeForbiddenInTheTrait,
+    TraitTypeForbiddenInItsImpl,
+    ImplTypeForbiddenInTheImpl,
     TraitFunctionWithBody {
         trait_id: TraitId,
         function_id: TraitFunctionId,

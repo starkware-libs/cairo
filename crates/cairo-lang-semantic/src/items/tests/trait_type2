@@ -27,3 +27,12 @@ fn main() {
 }
 
 //! > expected_diagnostics
+error: In a trait, paths of the same trait are not allowed. Did you mean to use  `Self::`?
+ --> lib.cairo:5:16
+    fn foo1(x: MyTrait::InputType);
+               ^*****^
+
+error: In an impl, paths of the impl's trait are not allowed. Did you mean to use  `Self::`?
+ --> lib.cairo:11:16
+    fn foo1(x: MyTrait::InputType) { }
+               ^*****^

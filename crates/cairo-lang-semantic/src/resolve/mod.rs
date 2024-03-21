@@ -530,6 +530,47 @@ impl<'db> Resolver<'db> {
                     .db
                     .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
+
+                // TODO(yg): export to a function.
+                match inner_item_info.item_id {
+                    cairo_lang_defs::ids::ModuleItemId::Trait(trt) => {
+                        match self.trait_or_impl_ctx {
+                            TraitOrImplContext::Trait { trait_id: trait_ctx } => {
+                                // TODO(yuval): Also check generic args.
+                                // TODO(yg): consider removing the condition here for not allowing
+                                // any trait types in traits.
+                                if trt == trait_ctx {
+                                    return Err(diagnostics
+                                        .report(identifier, TraitTypeForbiddenInTheTrait));
+                                }
+                            }
+                            TraitOrImplContext::Impl { impl_def_id } => {
+                                let impl_ctx_trait = self.db.impl_def_trait(impl_def_id)?;
+                                // TODO(yuval): Also check generic args.
+                                if trt == impl_ctx_trait {
+                                    return Err(
+                                        diagnostics.report(identifier, TraitTypeForbiddenInItsImpl)
+                                    );
+                                }
+                            }
+                            TraitOrImplContext::None => {}
+                        }
+                    }
+                    cairo_lang_defs::ids::ModuleItemId::Impl(impl_def) => {
+                        if let TraitOrImplContext::Impl { impl_def_id: impl_def_ctx } =
+                            self.trait_or_impl_ctx
+                        {
+                            if impl_def == impl_def_ctx {
+                                // TODO(yuval): check generic args.
+                                return Err(
+                                    diagnostics.report(identifier, ImplTypeForbiddenInTheImpl)
+                                );
+                            }
+                        }
+                    }
+                    _ => {}
+                };
+
                 self.validate_item_visibility(
                     diagnostics,
                     *module_id,
@@ -627,13 +668,6 @@ impl<'db> Resolver<'db> {
                                 err.report(diagnostics, identifier.stable_ptr().untyped())
                             })?;
                         println!("yg resolve ty {:?}", ty);
-                        // TODO(yg): is a reduce_impl_type_if_possible needed here? check if it
-                        // wasn't lost in the rebase.
-                        //
-                        // let ty = self.inference().rewrite(ty).unwrap();
-                        // let ty = reduce_impl_type_if_possible(self.db, ty,
-                        // TraitOrImplContext::None, Some(self))?;
-                        // let ty = self.inference().rewrite(ty).unwrap();
 
                         Ok(ResolvedConcreteItem::Type(ty))
                     }
@@ -666,11 +700,10 @@ impl<'db> Resolver<'db> {
 
                         let tmp_inference_data = &mut self.inference().temporary_clone();
                         let mut tmp_inference = tmp_inference_data.inference(self.db);
-                        // TODO(yg): is this one needed?
                         let ty = implize_type(
                             self.db,
                             self.db.intern_type(type_long_id),
-                            TraitOrImplContext::None,
+                            self.trait_or_impl_ctx,
                             &mut tmp_inference,
                         )?;
                         Ok(ResolvedConcreteItem::Type(ty))

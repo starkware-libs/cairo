@@ -840,23 +840,6 @@ fn change_non_self_impl_types_to_missing(
 ) {
     let syntax_db = db.upcast();
 
-    if let TypeLongId::ImplType(impl_type_id) = sig.return_type.lookup(db) {
-        // TODO(yg): use impl_type_id.trait_id(db) here once it's implemented.
-        // TODO(yg): don't unwrap.
-        let path_trait_id = impl_type_id.impl_id().concrete_trait(db).unwrap().trait_id(db);
-        if path_trait_id != context_trait_id {
-            let diag_added = diagnostics.report(
-                &(extract_matches!(
-                    sig_syntax.ret_ty(syntax_db),
-                    OptionReturnTypeClause::ReturnTypeClause
-                ))
-                .ty(syntax_db),
-                crate::diagnostic::SemanticDiagnosticKind::TraitTypeUnsupportedInTrait,
-            );
-            sig.return_type = db.intern_type(TypeLongId::Missing(diag_added));
-        }
-    }
-
     for (idx, param) in sig.params.iter_mut().enumerate() {
         if let TypeLongId::ImplType(impl_type_id) = param.ty.lookup(db) {
             // TODO(yg): use impl_type_id.trait_id(db) here once it's implemented.
@@ -871,6 +854,24 @@ fn change_non_self_impl_types_to_missing(
                 );
                 param.ty = db.intern_type(TypeLongId::Missing(diag_added));
             }
+        }
+    }
+
+    // TODO(yg): export to a function and use here and above.
+    if let TypeLongId::ImplType(impl_type_id) = sig.return_type.lookup(db) {
+        // TODO(yg): use impl_type_id.trait_id(db) here once it's implemented.
+        // TODO(yg): don't unwrap.
+        let path_trait_id = impl_type_id.impl_id().concrete_trait(db).unwrap().trait_id(db);
+        if path_trait_id != context_trait_id {
+            let diag_added = diagnostics.report(
+                &(extract_matches!(
+                    sig_syntax.ret_ty(syntax_db),
+                    OptionReturnTypeClause::ReturnTypeClause
+                ))
+                .ty(syntax_db),
+                crate::diagnostic::SemanticDiagnosticKind::TraitTypeUnsupportedInTrait,
+            );
+            sig.return_type = db.intern_type(TypeLongId::Missing(diag_added));
         }
     }
 }
