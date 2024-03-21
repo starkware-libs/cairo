@@ -27,14 +27,34 @@ You can install the nightly version by running.
 rustup install nightly-2024-03-09
 ```
 
-If you have a lot of failing tests when running
-`cargo test`
-and those are due to file diff not being correct, there is a way to automatically fix it.
-Run the tests again, with the `CAIRO_FIX_TESTS` environment variable set to `1`:
+## Running Tests
+There are various types of tests within the repository, including both Cairo-based and Rust-based tests.
+
+### Running Cairo Tests
+To run Cairo tests, we utilize the cairo-test CLI tool, designed for executing tests written in Cairo. This tool is not exclusive to the Compiler repository and can be used in any Cairo project. To run the tests, execute the following command:
+
 ```sh
-CAIRO_FIX_TESTS=1 cargo test
+cargo run --bin cairo-test -- <path-to-cairo-project>
 ```
-Some tests should now be fixed.
+
+Two scripts are available to run tests within the Compiler repository:
+
+`scripts/cairo_test.sh`: Executes tests within the `corelib` Cairo project and the `tests/bug_samples` Cairo project.
+`scripts/starknet_test.sh`: Runs tests within the `cairo-lang-starknet/cairo_level_tests` Cairo project.
+### Running Rust Tests
+Rust-based tests can be executed using `cargo test`, similar to any Rust project. However, some tests are written within an internal testing framework, which supports additional options. Test inputs and expected outputs are stored in files without extensions, typically within a dedicated directory.
+
+Additional options can be controlled via environment variables:
+
+- `CAIRO_FIX_TESTS`: When set to 1, the tests will automatically adjust the expected outputs. This is particularly useful when making code changes that affect numerous tests.
+- `CAIRO_TEST_FILTER`: This variable filters tests based on a substring contained within their names.
+- `CAIRO_SKIP_FORMAT_TESTS`: By default, test sections containing Cairo code are formatted before execution. Setting this variable to 1 skips this formatting step.
+
+For example, to run tests containing the substring foo, automatically fix expected outputs, and skip the formatting of the tests, use the following command:
+
+```sh
+CAIRO_FIX_TESTS=1 CAIRO_TEST_FILTER=foo CAIRO_SKIP_FORMAT_TESTS=1 cargo test
+```
 
 ## Issues and feature requests
 
