@@ -1,10 +1,15 @@
+use std::ops::Add;
+
 use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_diagnostics::ToOption;
+use cairo_lang_filesystem::ids::{FileLongId, VirtualFile};
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 
 use crate::db::SierraGenGroup;
+
 #[cfg(test)]
 #[path = "statements_locations_test.rs"]
 mod test;
@@ -14,11 +19,28 @@ mod test;
 pub fn containing_function_identifier(
     db: &dyn SierraGenGroup,
     location: Option<StableLocation>,
-) -> String {
+) -> Option<String> {
     match location {
         Some(location) => {
+            let mut file_id = location.file_id(db.upcast());
+            let file_name = file_id.file_name(db.upcast());
+
+            while let FileLongId::Virtual(VirtualFile { parent: Some(parent), .. }) =
+                db.lookup_intern_file(file_id)
+            {
+                file_id = parent;
+            }
+
+            let maybe_file_modules = db.file_modules(file_id);
+            let absolute_semantic_path_to_file =
+                if let Some(file_modules) = maybe_file_modules.to_option() {
+                    file_modules.first().unwrap().full_path(db.upcast())
+                } else {
+                    file_name
+                };
+
             let syntax_db = db.upcast();
-            let mut result: Vec<String> = vec![];
+            let mut relative_semantic_path_segments: Vec<String> = vec![];
             let mut syntax_node = location.syntax_node(db.upcast());
             loop {
                 // TODO(Gil): Extract this function into a trait of syntax kind to support future
@@ -33,7 +55,7 @@ pub fn containing_function_identifier(
                             .declaration(syntax_db)
                             .name(syntax_db)
                             .text(syntax_db);
-                        result.push(function_name.to_string());
+                        relative_semantic_path_segments.push(function_name.to_string());
                     }
                     cairo_lang_syntax::node::kind::SyntaxKind::ItemImpl => {
                         let impl_name = cairo_lang_syntax::node::ast::ItemImpl::from_syntax_node(
@@ -42,7 +64,7 @@ pub fn containing_function_identifier(
                         )
                         .name(syntax_db)
                         .text(syntax_db);
-                        result.push(impl_name.to_string());
+                        relative_semantic_path_segments.push(impl_name.to_string());
                     }
                     cairo_lang_syntax::node::kind::SyntaxKind::ItemModule => {
                         let module_name =
@@ -52,7 +74,7 @@ pub fn containing_function_identifier(
                             )
                             .name(syntax_db)
                             .text(syntax_db);
-                        result.push(module_name.to_string());
+                        relative_semantic_path_segments.push(module_name.to_string());
                     }
                     _ => {}
                 }
@@ -62,11 +84,11 @@ pub fn containing_function_identifier(
                     break;
                 }
             }
-            let file_name = location.file_id(db.upcast()).file_name(db.upcast());
-            result.push(file_name);
-            result.iter().rev().join("::")
+
+            let relative_semantic_path = relative_semantic_path_segments.iter().rev().join("::");
+            Some(absolute_semantic_path_to_file.add("::").add(&relative_semantic_path))
         }
-        None => "unknown".to_string(),
+        None => None,
     }
 }
 
@@ -96,6 +118,8 @@ impl StatementsLocations {
         &self,
         db: &dyn SierraGenGroup,
     ) -> UnorderedHashMap<StatementIdx, String> {
-        self.locations.map(|s| containing_function_identifier(db, Some(*s)))
+        self.locations.map(|s| {
+            containing_function_identifier(db, Some(*s)).unwrap_or_else(|| "unknown".to_string())
+        })
     }
 }
