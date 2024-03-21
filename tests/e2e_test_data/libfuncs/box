@@ -5,7 +5,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(x: felt252) -> Box::<felt252> {
-    BoxTrait::new(x)
+    BoxImpl::new(x)
 }
 
 //! > casm
@@ -73,7 +73,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(x: u256) -> Box::<u256> {
-    BoxTrait::new(x)
+    BoxImpl::new(x)
 }
 
 //! > casm
@@ -145,7 +145,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(e: ()) -> Box::<()> {
-    BoxTrait::new(e)
+    BoxImpl::new(e)
 }
 
 //! > casm
@@ -207,7 +207,7 @@ SmallE2ETestRunner
 //! > cairo
 struct Empty {}
 fn foo(e: Empty) -> Box::<Empty> {
-    BoxTrait::new(e)
+    BoxImpl::new(e)
 }
 
 //! > casm

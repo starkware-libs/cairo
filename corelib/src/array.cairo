@@ -1,6 +1,6 @@
 use core::traits::IndexView;
 
-use core::box::BoxTrait;
+use core::box::BoxImpl;
 use core::gas::withdraw_gas;
 use core::option::OptionTrait;
 use core::serde::Serde;
@@ -267,4 +267,26 @@ impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
     fn ne(lhs: @Span<T>, rhs: @Span<T>) -> bool {
         !(lhs == rhs)
     }
+}
+
+struct MyStruct {
+    x: felt252,
+    y: felt252,
+}
+
+const arr: [felt252; 3] = [1, 2, 3];
+const strct: MyStruct = MyStruct { x: 1, y: 2 };
+const val: felt252 = 1 + arr[0];
+
+fn foo() {
+    let x = arr[0]; // This should be 1 in compile time?
+    let box_arr = BoxTrait::new(arr);
+    let box_x = box_arr[0]; // Box into the const segment?
+    let z = bar(strct.x); // This is 1 in compile time.
+}
+
+#[inline(never)]
+#[compile_time_evalable]
+fn bar(x: felt252) -> felt252 {
+    x
 }

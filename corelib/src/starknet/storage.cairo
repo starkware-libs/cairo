@@ -21,7 +21,7 @@ pub impl StorageMemberAccessImpl<
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<TValue>::read(address_domain, self.address())
+            starknet::Store::read(address_domain, self.address())
         )
     }
     fn write(ref self: TMemberState, value: TValue) {

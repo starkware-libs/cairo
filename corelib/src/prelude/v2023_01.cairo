@@ -8,7 +8,7 @@ use core::{
 };
 
 use core::{array, array::{Array, ArrayTrait, Span, SpanTrait}};
-use core::{box, box::{Box, BoxTrait}};
+use core::{box, box::{Box, BoxImpl}};
 use core::{
     bytes_31,
     bytes_31::{

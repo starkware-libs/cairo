@@ -227,7 +227,7 @@ extern fn drop<T>(obj: T) nopanic;
 
 /// Boxes.
 pub mod box;
-use box::{Box, BoxTrait};
+use box::{Box, BoxImpl};
 
 /// Nullable
 pub mod nullable;

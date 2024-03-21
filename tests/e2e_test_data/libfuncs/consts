@@ -7,7 +7,7 @@ SmallE2ETestRunner
 const V: felt252 = 100;
 
 fn bar() -> felt252 { V }
-fn foo() -> Box<felt252> { BoxTrait::new(V) }
+fn foo() -> Box<felt252> { BoxImpl::new(V) }
 
 //! > casm
 [ap + 0] = 100, ap++;
@@ -51,7 +51,7 @@ SmallE2ETestRunner
 const V: u8 = 100;
 
 fn bar() -> u8 { V }
-fn foo() -> Box<u8> { BoxTrait::new(V) }
+fn foo() -> Box<u8> { BoxImpl::new(V) }
 
 //! > casm
 [ap + 0] = 100, ap++;
@@ -95,7 +95,7 @@ SmallE2ETestRunner
 const V: i16 = -1000;
 
 fn bar() -> i16 { V }
-fn foo() -> Box<i16> { BoxTrait::new(V) }
+fn foo() -> Box<i16> { BoxImpl::new(V) }
 
 //! > casm
 [ap + 0] = -1000, ap++;
@@ -141,8 +141,8 @@ const V2: u256 = u256 { low: 0x10, high: 0x20 };
 
 fn bar1() -> u256 { V1 }
 fn bar2() -> u256 { V2 }
-fn foo1() -> Box<u256> { BoxTrait::new(V1) }
-fn foo2() -> Box<u256> { BoxTrait::new(V2) }
+fn foo1() -> Box<u256> { BoxImpl::new(V1) }
+fn foo2() -> Box<u256> { BoxImpl::new(V2) }
 
 //! > casm
 [ap + 0] = 16, ap++;
@@ -204,7 +204,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn bar() -> bool { false }
-fn foo() -> Box<bool> { BoxTrait::new(false) }
+fn foo() -> Box<bool> { BoxImpl::new(false) }
 
 //! > casm
 [ap + 0] = 0, ap++;
@@ -258,7 +258,7 @@ enum ThreeOptions {
 const V: ThreeOptions = ThreeOptions::B(u256 { low: 0x10, high: 0x20 });
 
 fn bar() -> ThreeOptions { V }
-fn foo() -> Box<ThreeOptions> { BoxTrait::new(V) }
+fn foo() -> Box<ThreeOptions> { BoxImpl::new(V) }
 
 //! > casm
 [ap + 0] = 3, ap++;
@@ -319,7 +319,7 @@ enum ThreeOptions {
 const V: ThreeOptions = ThreeOptions::A(1337);
 
 fn bar() -> ThreeOptions { V }
-fn foo() -> Box<ThreeOptions> { BoxTrait::new(V) }
+fn foo() -> Box<ThreeOptions> { BoxImpl::new(V) }
 
 //! > casm
 [ap + 0] = 5, ap++;
@@ -387,7 +387,7 @@ const V: ThreeOptionsPair = ThreeOptionsPair {
 
 
 fn bar() -> ThreeOptionsPair { V }
-fn foo() -> Box<ThreeOptionsPair> { BoxTrait::new(V) }
+fn foo() -> Box<ThreeOptionsPair> { BoxImpl::new(V) }
 
 //! > casm
 [ap + 0] = 5, ap++;
@@ -457,7 +457,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> (Box<felt252>, BuiltinCosts) {
-    (BoxTrait::new(100), get_builtin_costs())
+    (BoxImpl::new(100), get_builtin_costs())
 }
 
 //! > casm
@@ -588,7 +588,7 @@ SmallE2ETestRunner
 extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
 
 fn foo() -> @Array<felt252> {
-    span_from_tuple(BoxTrait::new((100, 200, 300, 400)).as_snapshot())
+    span_from_tuple(BoxImpl::new((100, 200, 300, 400)).as_snapshot())
 }
 
 //! > casm
@@ -648,7 +648,7 @@ type quad_felt252 = (felt252, felt252, felt252, felt252);
 extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<quad_felt252> nopanic;
 
 fn foo() -> @Array<quad_felt252> {
-    span_from_tuple(BoxTrait::new((
+    span_from_tuple(BoxImpl::new((
         (100, 200, 300, 400),
         (200, 300, 400, 100),
         (300, 400, 100, 200),
@@ -728,7 +728,7 @@ SmallE2ETestRunner
 const V: NonZero<felt252> = 100;
 
 fn bar() -> NonZero<felt252> { V }
-fn foo() -> Box<NonZero<felt252>> { BoxTrait::new(V) }
+fn foo() -> Box<NonZero<felt252>> { BoxImpl::new(V) }
 
 //! > casm
 [ap + 0] = 100, ap++;
@@ -774,7 +774,7 @@ SmallE2ETestRunner
 const V: NonZero<u8> = 100;
 
 fn bar() -> NonZero<u8> { V }
-fn foo() -> Box<NonZero<u8>> { BoxTrait::new(V) }
+fn foo() -> Box<NonZero<u8>> { BoxImpl::new(V) }
 
 //! > casm
 [ap + 0] = 100, ap++;
@@ -820,7 +820,7 @@ SmallE2ETestRunner
 const V: NonZero<u256> = 0x2000000000000000000000000000000000;
 
 fn bar() -> NonZero<u256> { V }
-fn foo() -> Box<NonZero<u256>> { BoxTrait::new(V) }
+fn foo() -> Box<NonZero<u256>> { BoxImpl::new(V) }
 
 //! > casm
 [ap + 0] = 0, ap++;
@@ -871,7 +871,7 @@ SmallE2ETestRunner
 const V: NonZero<u256> = 16;
 
 fn bar() -> NonZero<u256> { V }
-fn foo() -> Box<NonZero<u256>> { BoxTrait::new(V) }
+fn foo() -> Box<NonZero<u256>> { BoxImpl::new(V) }
 
 //! > casm
 [ap + 0] = 16, ap++;

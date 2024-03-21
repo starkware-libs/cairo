@@ -49,7 +49,7 @@ test_match_optimizer
 
 //! > function
 fn foo() -> Box<felt252> {
-    BoxTrait::new(0)
+    BoxImpl::new(0)
 }
 
 //! > function_name
@@ -92,7 +92,7 @@ struct A {
 }
 
 fn foo() -> Box<A> {
-    BoxTrait::new(A { a: 1 })
+    BoxImpl::new(A { a: 1 })
 }
 
 //! > function_name
@@ -133,7 +133,7 @@ test_match_optimizer
 
 //! > function
 fn foo() -> Box<Option<felt252>> {
-    BoxTrait::new(Option::Some(2))
+    BoxImpl::new(Option::Some(2))
 }
 
 //! > function_name

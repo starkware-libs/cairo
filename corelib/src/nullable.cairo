@@ -1,4 +1,4 @@
-use core::box::BoxTrait;
+use core::box::BoxImpl;
 use core::traits::Default;
 use core::traits::Felt252DictValue;
 
@@ -31,7 +31,7 @@ pub impl NullableImpl<T> of NullableTrait<T> {
     }
     #[must_use]
     fn new(value: T) -> Nullable<T> {
-        nullable_from_box(BoxTrait::new(value))
+        nullable_from_box(BoxImpl::new(value))
     }
     #[must_use]
     fn is_null(self: @Nullable<T>) -> bool {

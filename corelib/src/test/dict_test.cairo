@@ -108,8 +108,8 @@ fn test_dict_big_keys() {
 #[test]
 fn test_dict_of_nullable() {
     let mut dict = Default::default();
-    dict.insert(10, nullable::nullable_from_box(BoxTrait::new(1)));
-    dict.insert(11, nullable::nullable_from_box(BoxTrait::new(2)));
+    dict.insert(10, nullable::nullable_from_box(BoxImpl::new(1)));
+    dict.insert(11, nullable::nullable_from_box(BoxImpl::new(2)));
     let val10 = dict[10].deref();
     let val11 = dict[11].deref();
     let val12 = dict[12];

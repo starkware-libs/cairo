@@ -129,7 +129,7 @@ mod tuple_span_from_tuple {
 
 #[test]
 fn test_felt252_span_from_tuple() {
-    let span = felt252_span_from_tuple::span_from_tuple(BoxTrait::new(@(10, 20, 30)));
+    let span = felt252_span_from_tuple::span_from_tuple(BoxImpl::new(@(10, 20, 30)));
     assert!(*span[0] == 10);
     assert!(*span[1] == 20);
     assert!(*span[2] == 30);
@@ -138,7 +138,7 @@ fn test_felt252_span_from_tuple() {
 #[test]
 fn test_tuple_span_from_tuple() {
     let multi_tuple = ((10, 20, 30), (40, 50, 60), (70, 80, 90));
-    let span = tuple_span_from_tuple::span_from_tuple(BoxTrait::new(@multi_tuple));
+    let span = tuple_span_from_tuple::span_from_tuple(BoxImpl::new(@multi_tuple));
     assert!(*span[0] == (10, 20, 30));
     assert!(*span[1] == (40, 50, 60));
     assert!(*span[2] == (70, 80, 90));
