@@ -815,26 +815,12 @@ impl LanguageServer for Backend {
         self.with_db(|db| ide::hover::hover(params, db)).await
     }
 
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document_position_params.text_document.uri))]
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn goto_definition(
         &self,
         params: GotoDefinitionParams,
     ) -> LSPResult<Option<GotoDefinitionResponse>> {
-        self.with_db(|db| {
-            let file_uri = params.text_document_position_params.text_document.uri;
-            let position = params.text_document_position_params.position;
-            let (found_file, span) =
-                get_definition_location(db, file(db.upcast(), file_uri), position)?;
-            let found_uri = get_uri(db, found_file);
-
-            let start = from_pos(span.start.position_in_file(db.upcast(), found_file).unwrap());
-            let end = from_pos(span.end.position_in_file(db.upcast(), found_file).unwrap());
-            Some(GotoDefinitionResponse::Scalar(Location {
-                uri: found_uri,
-                range: Range { start, end },
-            }))
-        })
-        .await
+        self.with_db(|db| ide::navigation::goto_definition::goto_definition(params, db)).await
     }
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
