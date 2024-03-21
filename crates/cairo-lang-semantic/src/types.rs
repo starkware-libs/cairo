@@ -185,6 +185,8 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
 pub fn implize_type(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
+    // TODO(yg): consider separate contexts for self:: and MyImpl::foo(param to resolve). Also
+    // pass ::None when this is the right thing to do...
     trait_or_impl_context: TraitOrImplContext,
     inference: &mut Inference,
 ) -> Maybe<TypeId> {
@@ -198,16 +200,18 @@ pub fn implize_type(
     implize_type_recursive(db, type_to_reduce, trait_or_impl_context, inference)
 }
 
+// TODO(yg): seems like context is only relevant if it's an impl. If so, change the context param to
+// Option<ImplContext>, where ImplContext is the type of the TraitOrImplContext::Impl variant
+// (probably impl_def_id + generic args). Change the same up the stack (implize_type,
+// implize_signature and get_implized_signature).
 /// Tries to implize a type, recursively, according to known inference data.
 /// Assumes `inference` is `solve()`d and doesn't change it (although it's passed as &mut which is
 /// required per it's API).
 /// `trait_or_impl_context` is the context we're at. That is, if we're inside an impl function, the
 /// wrapping impl is the context here.
-pub fn implize_type_recursive(
+fn implize_type_recursive(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
-    // TODO(yg): consider separate contexts for self:: and MyImpl::foo(param to resolve). Also
-    // pass ::None when this is the right thing to do...
     trait_or_impl_context: TraitOrImplContext,
     inference: &mut Inference,
 ) -> Maybe<TypeId> {
@@ -264,7 +268,7 @@ pub fn implize_type_recursive(
         type_to_reduce.debug(db.elongate())
     );
 
-    // Finally, reduce the impl type itself, if possible.
+    // Finally, reduce/implize the impl type itself, if possible.
 
     let TypeLongId::ImplType(mut impl_type_id) = db.lookup_intern_type(type_to_reduce) else {
         // Nothing to implize.
@@ -276,20 +280,16 @@ pub fn implize_type_recursive(
         impl_type_id.debug(db.elongate())
     );
 
-    // TODO(yg): fix doc.
-    // Try to implize an impl type if it's an ImplVar.
-    // println!("yg reduce_if_possible before resolving: {:?}", impl_type_id);
-    // let mut resolver = yg_get_resolver(impl_type_id)?;
+    // Try to reduce the impl type if its impl is an ImplVar (by reducing its impl).
     impl_type_id = reduce_trait_impl_type(db, impl_type_id, inference);
-    // println!("yg reduce_if_possible after resolving: {:?}", impl_type_id);
 
     println!(
         "yg1 reduce_impl_type_if_possible_inner5 type: {:?}",
         impl_type_id.debug(db.elongate())
     );
 
-    // Try to implize by the concrete impl type if it is concrete.
-    if let Some(ty) = reduce_concrete_impl_type(db, impl_type_id)? {
+    // Try to implize the impl type if its impl is concrete.
+    if let Some(ty) = implize_concrete_impl_type(db, impl_type_id)? {
         println!("yg1 returning 6.5 type: {:?}", ty.format(db));
         return Ok(ty);
     }
@@ -299,7 +299,7 @@ pub fn implize_type_recursive(
         impl_type_id.debug(db.elongate())
     );
 
-    // Try to implize by the impl context, if given.
+    // Try to implize by the impl context, if given. E.g. for `Self::MyType` inside an impl.
     if let TraitOrImplContext::Impl { impl_def_id } = trait_or_impl_context {
         if let Some(ty) = reduce_in_impl_context(db, impl_type_id, impl_def_id)? {
             println!("yg1 returning 6.5 type: {:?}", ty.format(db));
@@ -316,32 +316,7 @@ pub fn implize_type_recursive(
     Ok(type_to_reduce)
 }
 
-// fn yg_get_resolver(db: &dyn SemanticGroup, impl_type_id: ImplTypeId) -> Maybe<Option<Resolver>> {
-//     match impl_type_id.impl_id {
-//         ImplId::Concrete(concrete_impl_id) => {
-//             let Some(impl_type_def) = impl_type_id.impl_type_def(db)? else {
-//                 return Ok(None);
-//             };
-
-//         }
-//         ImplId::GenericParameter(_) => todo!(),
-//         ImplId::ImplVar(_) => Ok(None),
-//     };
-
-//     let impl_def_id = impl_type_def.impl_def_id(db.upcast());
-//     println!("yg1 bla impl_def_id: {:?}", impl_def_id.debug(db.elongate()));
-//     println!("yg1 bla impl_type_id.impl_id: {:?}", impl_type_id.impl_id.debug(db.elongate()));
-//     let inference_id = if let ImplId::ImplVar(impl_var) = impl_type_id.impl_id {
-//         impl_var.get(db).inference_id
-//     } else {
-//         InferenceId::Canonical
-//     };
-
-//     let resolver_data = impl_def_id.resolver_data(db)?.clone_with_inference_id(db, inference_id);
-//     Resolver::with_data(db, resolver_data)
-// }
-
-// TODO(yg): doc.
+/// Implizes the given impl type if its impl is the given context.
 fn reduce_in_impl_context(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
@@ -354,12 +329,12 @@ fn reduce_in_impl_context(
     Ok(Some(db.impl_type_resolved_type(impl_type_def_id)?))
 }
 
-// TODO(yg): doc. Resolves an impl type if the impl is concrete. Returns a TypeId that's not an impl
-// type with a concrete impl.
+/// Implize the given impl type if the impl is concrete. Returns a TypeId that's not an impl type
+/// with a concrete impl.
 // TODO(yg/yuval): make sure impl_type_resolved_type gets a non impl type (that is, resolves in
 // chain). Also make sure cycles are handled correctly.
 // TODO(yg): query, cycle handling.
-fn reduce_concrete_impl_type(
+fn implize_concrete_impl_type(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
 ) -> Maybe<Option<TypeId>> {
@@ -374,8 +349,8 @@ fn reduce_concrete_impl_type(
     reduce_in_impl_context(db, impl_type_id, impl_def_id)
 }
 
-/// Reduces an impl type if it's an ImplVar. E.g. in the case of MyTrait::MyType when there is only
-/// a single impl for MyTrait in the context.
+/// Reduces an impl type if its impl is an ImplVar. E.g. in the case of MyTrait::MyType when there
+/// is only a single impl for MyTrait in the context.
 ///
 /// Assumes the given inference is `solve()`ed.
 fn reduce_trait_impl_type(

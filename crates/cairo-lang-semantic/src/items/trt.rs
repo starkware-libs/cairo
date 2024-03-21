@@ -784,6 +784,8 @@ pub fn priv_trait_function_declaration_data(
     );
 
     // Trait types aren't allowed, change them to missing (and report it as diagnostics).
+    // TODO(yg): consider disallowing MyImpl::something in impls too, using this function. Should it
+    // be disallowed in both signatures and body or signature is enough?
     change_non_self_impl_types_to_missing(
         db,
         &mut diagnostics,

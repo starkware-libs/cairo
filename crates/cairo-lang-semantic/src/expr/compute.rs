@@ -2558,6 +2558,8 @@ fn expr_function_call(
     Ok(Expr::FunctionCall(expr_function_call))
 }
 
+/// Returns the given function's signature, after implization as needed (that is, if this is an impl
+/// function).
 fn get_function_implized_signature(
     db: &dyn SemanticGroup,
     function_id: FunctionId,
@@ -2568,18 +2570,19 @@ fn get_function_implized_signature(
     let generic_function = function_id.lookup(db).function.generic_function;
 
     // TODO(yg): export to a function? Maybe query...
-    // If the generic function is a concrete impl function, add impl_def_id as context.
+    // If the generic function is not an impl function, nothing to implize.
     println!("yg1 generic_function: {:?}", generic_function.debug(db.elongate()));
     let crate::items::functions::GenericFunctionId::Impl(impl_generic_function) = generic_function
     else {
         return Ok(signature);
     };
 
+    // If the generic impl of the impl function is not concrete, nothing to implize.
     let Some(impl_function) = impl_generic_function.impl_function(db)? else {
         return Ok(signature);
     };
 
-    // TODO(yg): add debugWithDb to TraitOrImplContext?
+    // TODO(yg): earlier PR: add debugWithDb to TraitOrImplContext?
     let impl_def_id = impl_function.impl_def_id(db.upcast());
     let impl_ctx = TraitOrImplContext::Impl { impl_def_id };
     println!("yg1 impl_def_id: {:?}", impl_def_id.debug(db.elongate()));
@@ -2595,8 +2598,9 @@ fn get_function_implized_signature(
     Ok(signature)
 }
 
-// TODO(ygd): note tmp_inference may change. Consider passing a temporary clone to avoid affecting
-// the original inference.
+/// Implizes the given signature given its impl context.
+/// Note that `tmp_inference` might change. Consider passing a temporary clone if you want to
+/// avoid affecting the original inference.
 pub fn implize_signature(
     db: &dyn SemanticGroup,
     signature: &mut Signature,

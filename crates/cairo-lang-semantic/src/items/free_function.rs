@@ -16,14 +16,14 @@ use super::functions::{
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::expr::compute::{compute_root_expr, implize_signature, ComputationContext, Environment};
+use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, FunctionLongId, SemanticDiagnostic, TypeId};
+use crate::{semantic, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
 #[path = "free_function_test.rs"]
