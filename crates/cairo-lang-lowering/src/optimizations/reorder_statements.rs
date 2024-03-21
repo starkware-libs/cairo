@@ -7,13 +7,14 @@ use std::cmp::Reverse;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use itertools::Itertools;
+use itertools::{zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
 use crate::ids::FunctionId;
 use crate::{
-    BlockId, FlatLowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,
+    BlockId, FlatLowered, MatchArm, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage,
+    VariableId,
 };
 
 /// Reorder the statements in the lowering in order to move variable definitions closer to their
@@ -155,20 +156,26 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         &'b mut self,
         statement_location: StatementLocation,
         match_info: &MatchInfo,
-        mut infos: Infos,
+        infos: Infos,
     ) -> Self::Info {
-        let mut info =
-            if let Some(first) = infos.next() { first.clone() } else { Self::Info::default() };
-        for arm_info in infos {
-            info.next_use.merge(&arm_info.next_use, |mut e, _| {
-                *e.get_mut() = statement_location;
-            });
-        }
-
-        for arm in match_info.arms() {
+        let mut info_and_arms = zip_eq(infos, match_info.arms());
+        let remove_arm_outputs = |info: &mut ReorderStatementsInfo, arm: &MatchArm| {
             for var_id in &arm.var_ids {
                 info.next_use.remove(var_id);
             }
+        };
+        let mut info = if let Some((first, arm)) = info_and_arms.next() {
+            let mut v = first.clone();
+            remove_arm_outputs(&mut v, arm);
+            v
+        } else {
+            Self::Info::default()
+        };
+        for (arm_info, arm) in info_and_arms {
+            info.next_use.merge(&arm_info.next_use, |mut e, _| {
+                *e.get_mut() = statement_location;
+            });
+            remove_arm_outputs(&mut info, arm);
         }
 
         for var_usage in match_info.inputs() {
