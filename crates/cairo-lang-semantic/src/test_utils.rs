@@ -306,19 +306,23 @@ pub fn setup_test_block(
 
 pub fn test_expr_diagnostics(
     inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
-    TestRunnerResult::success(OrderedHashMap::from([(
-        "expected_diagnostics".into(),
-        setup_test_expr(
-            db,
-            inputs["expr_code"].as_str(),
-            inputs["module_code"].as_str(),
-            inputs["function_body"].as_str(),
-        )
-        .get_diagnostics(),
-    )]))
+
+    let diagnostics = setup_test_expr(
+        db,
+        inputs["expr_code"].as_str(),
+        inputs["module_code"].as_str(),
+        inputs["function_body"].as_str(),
+    )
+    .get_diagnostics();
+    let error = verify_diagnostics_expectation(args, &diagnostics);
+
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([("expected_diagnostics".into(), diagnostics)]),
+        error,
+    }
 }
 
 pub fn test_function_diagnostics(
