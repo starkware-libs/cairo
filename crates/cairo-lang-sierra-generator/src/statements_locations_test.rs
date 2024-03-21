@@ -45,6 +45,7 @@ pub fn test_sierra_locations(
                     "Originating location:\n{}\nIn function: {}",
                     get_location_marks(db, &location.diagnostic_location(db)),
                     containing_function_identifier(db, stmt.location)
+                        .unwrap_or_else(|| "unknown".to_string())
                 )
             } else {
                 "".to_string()
