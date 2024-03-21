@@ -449,10 +449,6 @@ pub fn compile(
                     _ => CompilationError::InvocationError { statement_idx, error },
                 })?;
 
-                let ret_instruction = RetInstruction {};
-                program_offset += ret_instruction.op_size();
-                instructions.push(Instruction::new(InstructionBody::Ret(ret_instruction), false));
-
                 sierra_statement_info.push(SierraStatementDebugInfo {
                     code_offset: program_offset,
                     instruction_idx: instructions.len(),
@@ -460,6 +456,10 @@ pub fn compile(
                         ReturnStatementDebugInfo { ref_values: return_refs },
                     ),
                 });
+
+                let ret_instruction = RetInstruction {};
+                program_offset += ret_instruction.op_size();
+                instructions.push(Instruction::new(InstructionBody::Ret(ret_instruction), false));
             }
             Statement::Invocation(invocation) => {
                 let (annotations, invoke_refs) = program_annotations
@@ -496,6 +496,17 @@ pub fn compile(
                 )
                 .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
+                sierra_statement_info.push(SierraStatementDebugInfo {
+                    code_offset: program_offset,
+                    instruction_idx: instructions.len(),
+                    additional_kind_info: StatementKindDebugInfo::Invoke(
+                        InvokeStatementDebugInfo {
+                            result_branch_changes: compiled_invocation.results.clone(),
+                            ref_values: invoke_refs,
+                        },
+                    ),
+                });
+
                 for instruction in &compiled_invocation.instructions {
                     program_offset += instruction.body.op_size();
                 }
@@ -518,17 +529,6 @@ pub fn compile(
                 while all_updated_annotations.len() < compiled_invocation.results.len() {
                     all_updated_annotations.push(all_updated_annotations[0].clone());
                 }
-
-                sierra_statement_info.push(SierraStatementDebugInfo {
-                    code_offset: program_offset,
-                    instruction_idx: instructions.len(),
-                    additional_kind_info: StatementKindDebugInfo::Invoke(
-                        InvokeStatementDebugInfo {
-                            result_branch_changes: compiled_invocation.results.clone(),
-                            ref_values: invoke_refs,
-                        },
-                    ),
-                });
 
                 for ((branch_info, branch_changes), updated_annotations) in
                     zip_eq(&invocation.branches, compiled_invocation.results)
