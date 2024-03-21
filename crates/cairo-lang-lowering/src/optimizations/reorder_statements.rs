@@ -32,8 +32,7 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         moveable_functions: &db.priv_movable_function_ids(),
         statement_to_move: vec![],
     };
-    let mut analysis =
-        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    let mut analysis = BackAnalysis::new(lowered, ctx);
     analysis.get_root_info();
     let ctx = analysis.analyzer;
 
@@ -152,11 +151,11 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         }
     }
 
-    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
-        &'b mut self,
+    fn merge_match(
+        &mut self,
         statement_location: StatementLocation,
         match_info: &MatchInfo,
-        infos: Infos,
+        infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let mut info_and_arms = zip_eq(infos, match_info.arms());
         let remove_arm_outputs = |info: &mut ReorderStatementsInfo, arm: &MatchArm| {
@@ -164,10 +163,9 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
                 info.next_use.remove(var_id);
             }
         };
-        let mut info = if let Some((first, arm)) = info_and_arms.next() {
-            let mut v = first.clone();
-            remove_arm_outputs(&mut v, arm);
-            v
+        let mut info = if let Some((mut first, arm)) = info_and_arms.next() {
+            remove_arm_outputs(&mut first, arm);
+            first
         } else {
             Self::Info::default()
         };

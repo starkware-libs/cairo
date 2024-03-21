@@ -32,8 +32,7 @@ pub fn cancel_ops(lowered: &mut FlatLowered) {
         aliases: Default::default(),
         stmts_to_remove: vec![],
     };
-    let mut analysis =
-        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    let mut analysis = BackAnalysis::new(lowered, ctx);
     analysis.get_root_info();
 
     let CancelOpsContext { mut var_remapper, stmts_to_remove, .. } = analysis.analyzer;
@@ -305,11 +304,11 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
         }
     }
 
-    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
-        &'b mut self,
+    fn merge_match(
+        &mut self,
         statement_location: StatementLocation,
         match_info: &'a MatchInfo,
-        _infos: Infos,
+        _infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         for var in match_info.inputs() {
             self.add_use_site(var.var_id, statement_location);
