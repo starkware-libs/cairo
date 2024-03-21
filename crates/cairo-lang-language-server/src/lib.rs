@@ -60,8 +60,7 @@ use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
 
-use crate::ide::semantic_highlighting::token_kind::SemanticTokenKind;
-use crate::ide::semantic_highlighting::SemanticTokensTraverser;
+use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
 use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
@@ -797,29 +796,12 @@ impl LanguageServer for Backend {
         self.with_db(|db| ide::completion::complete(params, db)).await
     }
 
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn semantic_tokens_full(
         &self,
         params: SemanticTokensParams,
     ) -> LSPResult<Option<SemanticTokensResult>> {
-        self.with_db(|db| {
-            let file_uri = params.text_document.uri;
-            let file = file(db, file_uri.clone());
-            let Ok(node) = db.file_syntax(file) else {
-                error!("semantic analysis failed: file '{file_uri}' does not exist");
-                return None;
-            };
-
-            let mut data: Vec<SemanticToken> = Vec::new();
-            SemanticTokensTraverser::default().find_semantic_tokens(
-                db.upcast(),
-                file,
-                &mut data,
-                node,
-            );
-            Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data }))
-        })
-        .await
+        self.with_db(|db| ide::semantic_highlighting::semantic_highlight_full(params, db)).await
     }
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
