@@ -222,16 +222,15 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         info.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
     }
 
-    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
-        &'b mut self,
+    fn merge_match(
+        &mut self,
         (block_id, _statement_index): StatementLocation,
         match_info: &MatchInfo,
-        infos: Infos,
+        infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .enumerate()
-            .map(|(arm_idx, (arm, demand))| {
-                let mut demand = demand.clone();
+            .map(|(arm_idx, (arm, mut demand))| {
                 let use_position = (arm.block_id, 0);
                 self.set_post_match_state(
                     &arm.var_ids,
@@ -277,8 +276,7 @@ pub fn add_destructs(
         return;
     }
     let checker = DestructAdder { db, lowered, destructions: vec![], panic_ty: panic_ty(db) };
-    let mut analysis =
-        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
+    let mut analysis = BackAnalysis::new(lowered, checker);
     let mut root_demand = analysis.get_root_info();
     root_demand.variables_introduced(
         &mut analysis.analyzer,

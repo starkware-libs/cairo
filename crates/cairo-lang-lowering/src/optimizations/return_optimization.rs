@@ -26,8 +26,7 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         return;
     }
     let ctx = ReturnOptimizerContext { db, lowered, fixes: vec![] };
-    let mut analysis =
-        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    let mut analysis = BackAnalysis::new(lowered, ctx);
     let info = analysis.get_root_info();
     let mut ctx = analysis.analyzer;
 
@@ -77,10 +76,10 @@ impl ReturnOptimizerContext<'_> {
 
     /// Helper function for `merge_match`.
     /// Returns `Option<ReturnInfo>` rather then `AnalyzerInfo` to simplify early return.
-    fn try_merge_match<'b>(
+    fn try_merge_match(
         &mut self,
         match_info: &MatchInfo,
-        infos: impl IntoIterator<Item = &'b AnalyzerInfo> + Clone,
+        infos: &[AnalyzerInfo],
     ) -> Option<ReturnInfo> {
         let MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) = match_info else {
             return None;
@@ -475,17 +474,14 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         });
     }
 
-    fn merge_match<'b, Infos>(
+    fn merge_match(
         &mut self,
         _statement_location: StatementLocation,
         match_info: &'a MatchInfo,
-        infos: Infos,
-    ) -> Self::Info
-    where
-        'a: 'b,
-        Infos: Iterator<Item = &'b Self::Info> + Clone,
-    {
-        let opt_return_info = self.try_merge_match(match_info, infos.clone());
+        infos: impl Iterator<Item = Self::Info>,
+    ) -> Self::Info {
+        let infos: Vec<_> = infos.collect();
+        let opt_return_info = self.try_merge_match(match_info, &infos);
         if opt_return_info.is_none() {
             // If the optimization is not applicable before the match, check if it is applicable
             // in the arms.
@@ -493,7 +489,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 if info.early_return_possible() {
                     self.fixes.push(FixInfo {
                         location: (arm.block_id, 0),
-                        return_info: info.opt_return_info.clone().unwrap(),
+                        return_info: info.opt_return_info.unwrap(),
                     });
                 }
             }

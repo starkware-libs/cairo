@@ -196,13 +196,14 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         );
     }
 
-    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
+    fn merge_match(
         &mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        infos: Infos,
+        infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
-        let arm_demands = zip_eq(match_info.arms(), infos)
+        let infos: Vec<_> = infos.collect();
+        let arm_demands = zip_eq(match_info.arms(), &infos)
             .map(|(arm, demand)| {
                 let mut demand = demand.clone();
                 demand.variables_introduced(self, &arm.var_ids, None);
@@ -252,8 +253,7 @@ pub fn borrow_check(
 
     if lowered.blocks.has_root().is_ok() {
         let checker = BorrowChecker { db, diagnostics: &mut diagnostics, lowered, success: Ok(()) };
-        let mut analysis =
-            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
+        let mut analysis = BackAnalysis::new(lowered, checker);
         let mut root_demand = analysis.get_root_info();
         root_demand.variables_introduced(&mut analysis.analyzer, &lowered.parameters, None);
         let success = analysis.analyzer.success;

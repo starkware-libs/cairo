@@ -30,15 +30,12 @@ pub trait Analyzer<'a> {
         remapping: &VarRemapping,
     ) {
     }
-    fn merge_match<'b, Infos>(
-        &'b mut self,
+    fn merge_match(
+        &mut self,
         statement_location: StatementLocation,
         match_info: &'a MatchInfo,
-        infos: Infos,
-    ) -> Self::Info
-    where
-        'a: 'b,
-        Infos: Iterator<Item = &'b Self::Info> + Clone;
+        infos: impl Iterator<Item = Self::Info>,
+    ) -> Self::Info;
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
@@ -58,11 +55,15 @@ pub trait Analyzer<'a> {
 
 /// Main analysis type that allows traversing the flow backwards.
 pub struct BackAnalysis<'a, TAnalyzer: Analyzer<'a>> {
-    pub lowered: &'a FlatLowered,
-    pub block_info: HashMap<BlockId, TAnalyzer::Info>,
+    lowered: &'a FlatLowered,
     pub analyzer: TAnalyzer,
+    block_info: HashMap<BlockId, TAnalyzer::Info>,
 }
 impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
+    /// Creates a new BackAnalysis instance.
+    pub fn new(lowered: &'a FlatLowered, analyzer: TAnalyzer) -> Self {
+        Self { lowered, analyzer, block_info: Default::default() }
+    }
     /// Gets the analysis info for the entire function.
     pub fn get_root_info(&mut self) -> TAnalyzer::Info {
         let mut dfs_stack = vec![BlockId::root()];
@@ -72,7 +73,7 @@ impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
                 self.calc_block_info(dfs_stack.pop().unwrap());
             }
         }
-        self.block_info[&BlockId::root()].clone()
+        self.block_info.remove(&BlockId::root()).unwrap()
     }
 
     /// Gets the analysis info from the start of a block.
@@ -141,8 +142,9 @@ impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
             }
             FlatBlockEnd::Panic(data) => self.analyzer.info_from_panic(statement_location, data),
             FlatBlockEnd::Match { info } => {
+                // Can remove the block since match blocks do not merge.
                 let arm_infos =
-                    info.arms().iter().map(|arm| self.block_info.get(&arm.block_id).unwrap());
+                    info.arms().iter().map(|arm| self.block_info.remove(&arm.block_id).unwrap());
                 self.analyzer.merge_match(statement_location, info, arm_infos)
             }
         }
