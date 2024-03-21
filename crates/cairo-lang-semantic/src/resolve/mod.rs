@@ -41,7 +41,7 @@ use crate::items::trt::{
 };
 use crate::items::visibility;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{are_coupons_enabled, reduce_impl_type_if_possible, resolve_type, ImplTypeId};
+use crate::types::{are_coupons_enabled, implize_type, resolve_type, ImplTypeId};
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
     TypeId, TypeLongId,
@@ -667,7 +667,7 @@ impl<'db> Resolver<'db> {
                         let tmp_inference_data = &mut self.inference().temporary_clone();
                         let mut tmp_inference = tmp_inference_data.inference(self.db);
                         // TODO(yg): is this one needed?
-                        let ty = reduce_impl_type_if_possible(
+                        let ty = implize_type(
                             self.db,
                             self.db.intern_type(type_long_id),
                             TraitOrImplContext::None,

@@ -170,8 +170,14 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
     }
 }
 
-// TODO(ygd) + maybe same an in ..._inner.
-pub fn reduce_impl_type_if_possible(
+// TODO(yg): consider cloning in inference in all callsites.
+/// Tries to implize a type, recursively, according to known inference data.
+/// First `solve()`s the inference once, and then only uses it as a "read-only".
+/// Note that it means `inference` might change. Consider passing a temporary clone if you want to
+/// avoid affecting the original inference.
+/// `trait_or_impl_context` is the context we're at. That is, if we're inside an impl function, the
+/// wrapping impl is the context here.
+pub fn implize_type(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
     trait_or_impl_context: TraitOrImplContext,
@@ -184,15 +190,15 @@ pub fn reduce_impl_type_if_possible(
     if let Err(err) = inference.solve() {
         println!("-------- yg err: {:?}", err);
     };
-    reduce_impl_type_if_possible_inner(db, type_to_reduce, trait_or_impl_context, inference)
+    implize_type_recursive(db, type_to_reduce, trait_or_impl_context, inference)
 }
 
-// TODO(yg): doc. note tmp_inference may change. Consider passing a temporary clone to avoid
-// affecting the original inference.
-// TODO(yg): consider cloning in inference in all callsites.
+/// Tries to implize a type, recursively, according to known inference data.
+/// Assumes `inference` is `solve()`d and doesn't change it (although it's passed as &mut which is
+/// required per it's API).
 /// `trait_or_impl_context` is the context we're at. That is, if we're inside an impl function, the
 /// wrapping impl is the context here.
-pub fn reduce_impl_type_if_possible_inner(
+pub fn implize_type_recursive(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
     // TODO(yg): consider separate contexts for self:: and MyImpl::foo(param to resolve). Also
@@ -220,7 +226,7 @@ pub fn reduce_impl_type_if_possible_inner(
                 let GenericArgumentId::Type(generic_arg_type) = generic_arg else {
                     continue;
                 };
-                *generic_arg_type = reduce_impl_type_if_possible_inner(
+                *generic_arg_type = implize_type_recursive(
                     db,
                     *generic_arg_type,
                     trait_or_impl_context,
@@ -232,12 +238,11 @@ pub fn reduce_impl_type_if_possible_inner(
         }
         TypeLongId::Tuple(types) => {
             for ty in types.iter_mut() {
-                *ty =
-                    reduce_impl_type_if_possible_inner(db, *ty, trait_or_impl_context, inference)?;
+                *ty = implize_type_recursive(db, *ty, trait_or_impl_context, inference)?;
             }
         }
         TypeLongId::Snapshot(ty) => {
-            *ty = reduce_impl_type_if_possible_inner(db, *ty, trait_or_impl_context, inference)?
+            *ty = implize_type_recursive(db, *ty, trait_or_impl_context, inference)?
         }
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
@@ -245,8 +250,7 @@ pub fn reduce_impl_type_if_possible_inner(
         | TypeLongId::Coupon(_)
         | TypeLongId::Missing(_) => {}
         TypeLongId::FixedSizeArray { type_id, .. } => {
-            *type_id =
-                reduce_impl_type_if_possible_inner(db, *type_id, trait_or_impl_context, inference)?
+            *type_id = implize_type_recursive(db, *type_id, trait_or_impl_context, inference)?
         }
     }
     let type_to_reduce = db.intern_type(long_ty);

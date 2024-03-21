@@ -70,9 +70,8 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
-    are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots,
-    reduce_impl_type_if_possible, resolve_type, verify_fixed_size_array_size, wrap_in_snapshots,
-    ConcreteTypeId,
+    are_coupons_enabled, extract_fixed_size_array_size, implize_type, peel_snapshots, resolve_type,
+    verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
 };
 use crate::{
     ConcreteEnumId, GenericArgumentId, GenericParam, Member, Mutability, Parameter,
@@ -214,7 +213,7 @@ impl<'ctx> ComputationContext<'ctx> {
 
     // TODO(yg): doc.
     fn reduce_impl_type_if_possible(&mut self, type_to_reduce: TypeId) -> Maybe<TypeId> {
-        reduce_impl_type_if_possible(
+        implize_type(
             self.db,
             type_to_reduce,
             self.resolver.data.trait_or_impl_ctx,
@@ -2606,11 +2605,10 @@ pub fn implize_signature(
 ) -> Maybe<()> {
     for param in signature.params.iter_mut() {
         println!("yg1 param type before: {:?}", param.ty.debug(db.elongate()));
-        param.ty = reduce_impl_type_if_possible(db, param.ty, impl_ctx, tmp_inference)?;
+        param.ty = implize_type(db, param.ty, impl_ctx, tmp_inference)?;
         println!("yg1 param type after: {:?}", param.ty.debug(db.elongate()));
     }
-    signature.return_type =
-        reduce_impl_type_if_possible(db, signature.return_type, impl_ctx, tmp_inference)?;
+    signature.return_type = implize_type(db, signature.return_type, impl_ctx, tmp_inference)?;
 
     Ok(())
 }
