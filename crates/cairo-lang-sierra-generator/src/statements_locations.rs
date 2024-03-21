@@ -73,7 +73,7 @@ pub fn containing_function_identifier(
             }
 
             let relative_semantic_path = relative_semantic_path_segments.iter().rev().join("::");
-            Some(absolute_semantic_path_to_file.add(&relative_semantic_path))
+            Some(absolute_semantic_path_to_file.add("::").add(&relative_semantic_path))
         }
         None => None,
     }

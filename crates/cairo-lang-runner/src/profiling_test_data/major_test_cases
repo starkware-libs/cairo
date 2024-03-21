@@ -73,7 +73,7 @@ Weight by original user function (exc. generated):
   function test::pow2_14000: 12
 Weight by Cairo function:
   function unknown: 126021
-  function coreFelt252PartialEq::eq: 28002
+  function core::Felt252PartialEq::eq: 28002
 Weight by Sierra stack trace:
   test::pow2_14000: 154023
   test::pow2_14000 -> test::pow2_by_add_loop: 154011
@@ -371,22 +371,22 @@ Weight by original user function (exc. generated):
   function test::validate_call: 53
   function test::test_contract::__wrapper____validate__: 48
 Weight by Cairo function:
-  function core::arraydeserialize_array_helper: 48
-  function core::arrayArrayImpl::append: 46
+  function core::array::deserialize_array_helper: 48
+  function core::array::ArrayImpl::append: 46
   function unknown: 39
-  function core::starknet::accountCallSerde::deserialize: 34
-  function coreFelt252Serde::deserialize: 30
-  function core::arraySpanImpl::pop_front: 25
-  function core::arraySpanImpl::slice: 24
-  function core::arraySpanFelt252Serde::deserialize: 16
-  function core::starknet::contract_addressContractAddressSerde::deserialize: 16
-  function core::integerU32Sub::sub: 12
-  function core::integerFelt252TryIntoU32::try_into: 10
-  function core::arrayArraySerde::deserialize: 8
-  function coreFelt252PartialEq::eq: 6
-  function core::arrayArrayImpl::new: 3
-  function core::arraySpanImpl::is_empty: 3
-  function core::optionOptionTraitImpl::expect: 1
+  function core::starknet::account::CallSerde::deserialize: 34
+  function core::Felt252Serde::deserialize: 30
+  function core::array::SpanImpl::pop_front: 25
+  function core::array::SpanImpl::slice: 24
+  function core::array::SpanFelt252Serde::deserialize: 16
+  function core::starknet::contract_address::ContractAddressSerde::deserialize: 16
+  function core::integer::U32Sub::sub: 12
+  function core::integer::Felt252TryIntoU32::try_into: 10
+  function core::array::ArraySerde::deserialize: 8
+  function core::Felt252PartialEq::eq: 6
+  function core::array::ArrayImpl::new: 3
+  function core::array::SpanImpl::is_empty: 3
+  function core::option::OptionTraitImpl::expect: 1
 Weight by Sierra stack trace:
   test::validate_call: 321
   test::validate_call -> test::test_contract::__wrapper____validate__: 268
@@ -644,21 +644,21 @@ Weight by original user function (exc. generated):
   function test::validate_call: 29
 Weight by Cairo function:
   function unknown: 39
-  function core::arraydeserialize_array_helper: 30
-  function core::arrayArrayImpl::append: 18
-  function core::arraySpanImpl::pop_front: 17
-  function core::starknet::accountCallSerde::deserialize: 17
-  function coreFelt252Serde::deserialize: 15
-  function core::arraySpanImpl::slice: 12
-  function core::arrayArraySerde::deserialize: 8
-  function core::arraySpanFelt252Serde::deserialize: 8
-  function core::starknet::contract_addressContractAddressSerde::deserialize: 8
-  function core::integerU32Sub::sub: 6
-  function core::integerFelt252TryIntoU32::try_into: 5
-  function coreFelt252PartialEq::eq: 4
-  function core::arrayArrayImpl::new: 3
-  function core::arraySpanImpl::is_empty: 3
-  function core::optionOptionTraitImpl::expect: 1
+  function core::array::deserialize_array_helper: 30
+  function core::array::ArrayImpl::append: 18
+  function core::array::SpanImpl::pop_front: 17
+  function core::starknet::account::CallSerde::deserialize: 17
+  function core::Felt252Serde::deserialize: 15
+  function core::array::SpanImpl::slice: 12
+  function core::array::ArraySerde::deserialize: 8
+  function core::array::SpanFelt252Serde::deserialize: 8
+  function core::starknet::contract_address::ContractAddressSerde::deserialize: 8
+  function core::integer::U32Sub::sub: 6
+  function core::integer::Felt252TryIntoU32::try_into: 5
+  function core::Felt252PartialEq::eq: 4
+  function core::array::ArrayImpl::new: 3
+  function core::array::SpanImpl::is_empty: 3
+  function core::option::OptionTraitImpl::expect: 1
 Weight by Sierra stack trace:
   test::validate_call: 194
   test::validate_call -> test::test_contract::__wrapper____validate__: 165
@@ -791,17 +791,17 @@ Weight by original user function (exc. generated):
   function core::ecdsa::check_ecdsa_signature: 170
   function test::ecdsa_call: 14
 Weight by Cairo function:
-  function core::ecEcStateImpl::finalize_nz: 67
-  function core::ecEcPointImpl::new_nz_from_x: 30
-  function core::ecEcStateImpl::add_mul: 15
+  function core::ec::EcStateImpl::finalize_nz: 67
+  function core::ec::EcPointImpl::new_nz_from_x: 30
+  function core::ec::EcStateImpl::add_mul: 15
   function unknown: 14
-  function core::ecEcPointImpl::new_nz: 12
-  function core::ecEcStateImpl::add: 10
-  function core::ecEcStateImpl::sub: 10
-  function coreFelt252PartialEq::eq: 9
-  function core::ecEcStateImpl::init: 7
-  function core::ecdsacheck_ecdsa_signature: 7
-  function core::ecEcPointTryIntoNonZero::try_into: 3
+  function core::ec::EcPointImpl::new_nz: 12
+  function core::ec::EcStateImpl::add: 10
+  function core::ec::EcStateImpl::sub: 10
+  function core::Felt252PartialEq::eq: 9
+  function core::ec::EcStateImpl::init: 7
+  function core::ecdsa::check_ecdsa_signature: 7
+  function core::ec::EcPointTryIntoNonZero::try_into: 3
 Weight by Sierra stack trace:
   test::ecdsa_call: 184
   test::ecdsa_call -> core::ecdsa::check_ecdsa_signature: 170
@@ -1186,28 +1186,28 @@ Weight by original user function (exc. generated):
   function test::erc_20::EventIsEvent::append_keys_and_data: 12
 Weight by Cairo function:
   function unknown: 119
-  function core::integeru128_try_from_felt252: 27
-  function core::starknet::storage_accessStoreFelt252::write: 22
-  function core::starknet::storage_accessStoreFelt252::write_at_offset: 22
-  function core::starknet::storage_accessStoreFelt252::read: 21
-  function core::starknet::storage_accessStoreFelt252::read_at_offset: 20
-  function core::arrayArrayImpl::append: 19
-  function core::arraySpanImpl::pop_front: 18
-  function core::integeru256_overflow_sub: 17
-  function core::integeru256_overflowing_add: 17
-  function core::pedersenHashStateImpl::update: 12
-  function core::starknet::contract_addressContractAddressSerde::deserialize: 8
-  function coreFelt252Serde::deserialize: 8
-  function core::integeru256Serde::deserialize: 7
-  function core::starknet::infoget_execution_info: 6
-  function core::arrayArrayImpl::new: 5
-  function core::arraySpanImpl::is_empty: 3
-  function core::starknet::testingset_caller_address: 3
-  function coreFelt252PartialEq::eq: 2
-  function core::boxBoxImpl::unbox: 1
-  function core::integeru256_checked_add: 1
-  function core::integeru256_checked_sub: 1
-  function core::optionOptionTraitImpl::expect: 1
+  function core::integer::u128_try_from_felt252: 27
+  function core::starknet::storage_access::StoreFelt252::write: 22
+  function core::starknet::storage_access::StoreFelt252::write_at_offset: 22
+  function core::starknet::storage_access::StoreFelt252::read: 21
+  function core::starknet::storage_access::StoreFelt252::read_at_offset: 20
+  function core::array::ArrayImpl::append: 19
+  function core::array::SpanImpl::pop_front: 18
+  function core::integer::u256_overflow_sub: 17
+  function core::integer::u256_overflowing_add: 17
+  function core::pedersen::HashStateImpl::update: 12
+  function core::Felt252Serde::deserialize: 8
+  function core::starknet::contract_address::ContractAddressSerde::deserialize: 8
+  function core::integer::u256Serde::deserialize: 7
+  function core::starknet::info::get_execution_info: 6
+  function core::array::ArrayImpl::new: 5
+  function core::array::SpanImpl::is_empty: 3
+  function core::starknet::testing::set_caller_address: 3
+  function core::Felt252PartialEq::eq: 2
+  function core::box::BoxImpl::unbox: 1
+  function core::integer::u256_checked_add: 1
+  function core::integer::u256_checked_sub: 1
+  function core::option::OptionTraitImpl::expect: 1
 Weight by Sierra stack trace:
   test::erc20_transfer: 360
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 331
