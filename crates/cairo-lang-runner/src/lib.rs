@@ -34,7 +34,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
-use cairo_vm::vm::runners::cairo_runner::RunResources;
+use cairo_vm::vm::runners::cairo_runner::{ExecutionResources, RunResources};
 use cairo_vm::vm::trace::trace_entry::TraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
@@ -45,7 +45,7 @@ use num_traits::ToPrimitive;
 use profiling::{user_function_idx_by_sierra_statement_idx, ProfilingInfo};
 use thiserror::Error;
 
-use crate::casm_run::RunFunctionContext;
+use crate::casm_run::{RunFunctionContext, RunFunctionResult};
 
 pub mod casm_run;
 pub mod profiling;
@@ -85,6 +85,7 @@ pub struct RunResultStarknet {
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
     pub starknet_state: StarknetState,
+    pub used_resources: StarknetExecutionResources,
     /// The profiling info of the run, if requested.
     pub profiling_info: Option<ProfilingInfo>,
 }
@@ -95,8 +96,29 @@ pub struct RunResult {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
+    pub used_resources: ExecutionResources,
     /// The profiling info of the run, if requested.
     pub profiling_info: Option<ProfilingInfo>,
+}
+
+/// The execution resources in a run.
+/// Extends [ExecutionResources] by including the used syscalls for starknet.
+#[derive(Debug, Eq, PartialEq, Clone, Default)]
+pub struct StarknetExecutionResources {
+    /// The basic execution resources.
+    pub basic_resources: ExecutionResources,
+    /// The used syscalls.
+    pub syscalls: HashMap<String, usize>,
+}
+
+impl std::ops::AddAssign<StarknetExecutionResources> for StarknetExecutionResources {
+    /// Adds the resources of `other` to `self`.
+    fn add_assign(&mut self, other: Self) {
+        self.basic_resources += &other.basic_resources;
+        for (k, v) in other.syscalls {
+            *self.syscalls.entry(k).or_default() += v;
+        }
+    }
 }
 
 /// The ran function return value.
@@ -226,19 +248,24 @@ impl SierraCasmRunner {
             starknet_state,
             string_to_hint,
             run_resources: RunResources::default(),
+            syscalls_used_resources: Default::default(),
         };
-        let RunResult { gas_counter, memory, value, profiling_info } = self.run_function(
-            func,
-            &mut hint_processor,
-            hints_dict,
-            assembled_program.bytecode.iter(),
-            builtins,
-        )?;
+        let RunResult { gas_counter, memory, value, used_resources, profiling_info } = self
+            .run_function(
+                func,
+                &mut hint_processor,
+                hints_dict,
+                assembled_program.bytecode.iter(),
+                builtins,
+            )?;
+        let mut all_used_resources = hint_processor.syscalls_used_resources;
+        all_used_resources.basic_resources += &used_resources;
         Ok(RunResultStarknet {
             gas_counter,
             memory,
             value,
             starknet_state: hint_processor.starknet_state,
+            used_resources: all_used_resources,
             profiling_info,
         })
     }
@@ -262,7 +289,7 @@ impl SierraCasmRunner {
     {
         let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
 
-        let (cells, ap) = casm_run::run_function(
+        let RunFunctionResult { memory, ap, used_resources } = casm_run::run_function(
             vm,
             bytecode,
             builtins,
@@ -270,7 +297,7 @@ impl SierraCasmRunner {
             hint_processor,
             hints_dict,
         )?;
-        let (results_data, gas_counter) = Self::get_results_data(&return_types, &cells, ap);
+        let (results_data, gas_counter) = Self::get_results_data(&return_types, &memory, ap);
         assert!(results_data.len() <= 1);
 
         let value = if results_data.is_empty() {
@@ -280,14 +307,14 @@ impl SierraCasmRunner {
             let (ty, values) = results_data[0].clone();
             let inner_ty =
                 self.inner_type_from_panic_wrapper(&ty, func).map(|it| self.type_sizes[&it]);
-            Self::handle_main_return_value(inner_ty, values, &cells)
+            Self::handle_main_return_value(inner_ty, values, &memory)
         };
 
         let profiling_info = self.run_profiler.as_ref().map(|config| {
             self.collect_profiling_info(vm.get_relocated_trace().unwrap(), config.clone())
         });
 
-        Ok(RunResult { gas_counter, memory: cells, value, profiling_info })
+        Ok(RunResult { gas_counter, memory, value, used_resources, profiling_info })
     }
 
     /// Collects profiling info of the current run using the trace.

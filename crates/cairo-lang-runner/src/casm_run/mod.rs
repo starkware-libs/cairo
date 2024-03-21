@@ -29,7 +29,9 @@ use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::errors::memory_errors::MemoryError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
-use cairo_vm::vm::runners::cairo_runner::{CairoRunner, ResourceTracker, RunResources};
+use cairo_vm::vm::runners::cairo_runner::{
+    CairoRunner, ExecutionResources, ResourceTracker, RunResources,
+};
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
 use itertools::Itertools;
@@ -41,7 +43,7 @@ use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 use self::contract_address::calculate_contract_address;
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
-use crate::{Arg, RunResultValue, SierraCasmRunner};
+use crate::{Arg, RunResultValue, SierraCasmRunner, StarknetExecutionResources};
 
 #[cfg(test)]
 mod test;
@@ -92,14 +94,16 @@ struct Secp256r1ExecutionScope {
 /// HintProcessor for Cairo compiler hints.
 pub struct CairoHintProcessor<'a> {
     /// The Cairo runner.
-    #[allow(dead_code)]
     pub runner: Option<&'a SierraCasmRunner>,
-    // A mapping from a string that represents a hint to the hint object.
+    /// A mapping from a string that represents a hint to the hint object.
     pub string_to_hint: HashMap<String, Hint>,
-    // The starknet state.
+    /// The starknet state.
     pub starknet_state: StarknetState,
-    // Maintains the resources of the run.
+    /// Maintains the resources of the run.
     pub run_resources: RunResources,
+    /// Resources used during syscalls - does not include resources used during the current VM run.
+    /// At the end of the run - adding both would result in the actual expected resource usage.
+    pub syscalls_used_resources: StarknetExecutionResources,
 }
 
 pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
@@ -131,7 +135,6 @@ pub struct StarknetState {
     /// The values of addresses in the simulated storage per contract.
     storage: HashMap<Felt252, HashMap<Felt252, Felt252>>,
     /// A mapping from contract address to class hash.
-    #[allow(dead_code)]
     deployed_contracts: HashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
     logs: HashMap<Felt252, ContractLogs>,
@@ -651,7 +654,9 @@ impl<'a> CairoHintProcessor<'a> {
                 }
                 Ok(())
             };
-        match std::str::from_utf8(&selector).unwrap() {
+        let selector = std::str::from_utf8(&selector).unwrap();
+        *self.syscalls_used_resources.syscalls.entry(selector.into()).or_default() += 1;
+        match selector {
             "StorageWrite" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.storage_write(
                     gas_counter,
@@ -1117,7 +1122,7 @@ impl<'a> CairoHintProcessor<'a> {
                 self.starknet_state.clone(),
             )
             .expect("Internal runner error.");
-
+        self.syscalls_used_resources += res.used_resources;
         *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
         match res.value {
             RunResultValue::Success(value) => {
@@ -2085,8 +2090,6 @@ pub struct RunFunctionContext<'a> {
     pub data_len: usize,
 }
 
-type RunFunctionRes = (Vec<Option<Felt252>>, usize);
-
 /// Runs CairoRunner on layout with prime.
 /// Allows injecting custom CairoRunner.
 pub fn run_function_with_runner(
@@ -2128,7 +2131,17 @@ pub fn build_cairo_runner(
     CairoRunner::new(&program, "all_cairo", false).map_err(CairoRunError::from).map_err(Box::new)
 }
 
-/// Runs `bytecode` on layout with prime, and returns the memory layout and ap value.
+/// The result of [run_function].
+pub struct RunFunctionResult {
+    /// The memory layout after the run.
+    pub memory: Vec<Option<Felt252>>,
+    /// The ap value after the run.
+    pub ap: usize,
+    /// The used resources after the run.
+    pub used_resources: ExecutionResources,
+}
+
+/// Runs `bytecode` on layout with prime, and returns the matching [RunFunctionResult].
 /// Allows injecting custom HintProcessor.
 pub fn run_function<'a, 'b: 'a>(
     vm: &mut VirtualMachine,
@@ -2139,15 +2152,21 @@ pub fn run_function<'a, 'b: 'a>(
     ) -> Result<(), Box<CairoRunError>>,
     hint_processor: &mut dyn HintProcessor,
     hints_dict: HashMap<usize, Vec<HintParams>>,
-) -> Result<RunFunctionRes, Box<CairoRunError>> {
+) -> Result<RunFunctionResult, Box<CairoRunError>> {
     let data: Vec<MaybeRelocatable> =
         bytecode.map(Felt252::from).map(MaybeRelocatable::from).collect();
     let data_len = data.len();
     let mut runner = build_cairo_runner(data, builtins, hints_dict)?;
 
     run_function_with_runner(vm, data_len, additional_initialization, hint_processor, &mut runner)?;
-
-    Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
+    let used_resources = runner
+        .get_execution_resources(vm)
+        .expect("Failed to get execution resources, but the run was successful.");
+    Ok(RunFunctionResult {
+        memory: runner.relocated_memory,
+        ap: vm.get_relocated_trace().unwrap().last().unwrap().ap,
+        used_resources,
+    })
 }
 
 /// Formats the given felts as a debug string.
