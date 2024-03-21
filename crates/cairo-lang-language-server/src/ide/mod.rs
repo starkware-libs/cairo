@@ -1,3 +1,4 @@
+pub mod code_actions;
 pub mod completion;
 pub mod formatter;
 pub mod hover;

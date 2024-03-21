@@ -823,89 +823,9 @@ impl LanguageServer for Backend {
         self.with_db(|db| ide::navigation::goto_definition::goto_definition(params, db)).await
     }
 
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn code_action(&self, params: CodeActionParams) -> LSPResult<Option<CodeActionResponse>> {
-        self.with_db(|db| {
-            let mut actions = Vec::with_capacity(params.context.diagnostics.len());
-            let file_id = file(db, params.text_document.uri.clone());
-            let (node, _lookup_items) = get_node_and_lookup_items(db, file_id, params.range.start)?;
-            for diagnostic in params.context.diagnostics.iter() {
-                actions.extend(
-                    get_code_actions_for_diagnostic(db, &node, diagnostic, &params)
-                        .into_iter()
-                        .map(CodeActionOrCommand::from),
-                );
-            }
-            Some(actions)
-        })
-        .await
-    }
-}
-
-/// Generate code actions for a given diagnostic.
-///
-/// # Arguments
-///
-/// * `db` - A reference to the Salsa database.
-/// * `node` - The syntax node where the diagnostic is located.
-/// * `diagnostic` - The diagnostic for which to generate code actions.
-/// * `params` - The parameters for the code action request.
-///
-/// # Returns
-///
-/// A vector of [`CodeAction`] objects that can be applied to resolve the diagnostic.
-fn get_code_actions_for_diagnostic(
-    db: &dyn SemanticGroup,
-    node: &SyntaxNode,
-    diagnostic: &Diagnostic,
-    params: &CodeActionParams,
-) -> Vec<CodeAction> {
-    let code = match &diagnostic.code {
-        Some(NumberOrString::String(code)) => code,
-        Some(NumberOrString::Number(code)) => {
-            debug!("diagnostic code is not a string: `{code}`");
-            return vec![];
-        }
-        None => {
-            debug!("diagnostic code is missing");
-            return vec![];
-        }
-    };
-
-    match code.as_str() {
-        "E0001" => {
-            vec![unused_variable(db, node, diagnostic.clone(), params.text_document.uri.clone())]
-        }
-        code => {
-            debug!("no code actions for diagnostic code: {code}");
-            vec![]
-        }
-    }
-}
-
-/// Create a code action that prefixes an unused variable with an `_`.
-#[tracing::instrument(level = "trace", skip_all)]
-fn unused_variable(
-    db: &dyn SemanticGroup,
-    node: &SyntaxNode,
-    diagnostic: Diagnostic,
-    uri: Url,
-) -> CodeAction {
-    CodeAction {
-        title: format!("Rename to `_{}`", node.get_text(db.upcast())),
-        edit: Some(WorkspaceEdit {
-            changes: Some(HashMap::from_iter([(
-                uri,
-                // The diagnostic range is just the first char of the variable name so we can just
-                // pass an underscore as the new text it won't replace the current variable name
-                // and it will prefix it with `_`
-                vec![TextEdit { range: diagnostic.range, new_text: "_".to_owned() }],
-            )])),
-            document_changes: None,
-            change_annotations: None,
-        }),
-        diagnostics: Some(vec![diagnostic]),
-        ..Default::default()
+        self.with_db(|db| ide::code_actions::code_actions(params, db)).await
     }
 }
 
