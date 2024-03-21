@@ -120,9 +120,9 @@ impl<'a> CancelOpsContext<'a> {
         ));
         // Optimize for the case where the alias list of `to` is empty.
         match self.aliases.entry(to) {
-            std::collections::hash_map::Entry::Occupied(mut entry) => {
+            std::collections::hash_map::Entry::Occupied(entry) => {
                 aliases.extend(entry.get().iter());
-                *entry.get_mut() = aliases;
+                *entry.into_mut() = aliases;
             }
             std::collections::hash_map::Entry::Vacant(entry) => {
                 entry.insert(aliases);

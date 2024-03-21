@@ -191,8 +191,8 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
             |mut acc, (key, value)| {
                 let target_key = mapping_function(key);
                 match acc.entry(target_key) {
-                    Entry::Occupied(mut occupied) => {
-                        let old_target_value = occupied.get_mut();
+                    Entry::Occupied(occupied) => {
+                        let old_target_value = occupied.into_mut();
                         let new_target_value = reduce_function(old_target_value, value);
                         *old_target_value = new_target_value;
                     }

@@ -172,8 +172,8 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
             Self::Info::default()
         };
         for (arm_info, arm) in info_and_arms {
-            info.next_use.merge(&arm_info.next_use, |mut e, _| {
-                *e.get_mut() = statement_location;
+            info.next_use.merge(&arm_info.next_use, |e, _| {
+                *e.into_mut() = statement_location;
             });
             remove_arm_outputs(&mut info, arm);
         }
