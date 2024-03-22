@@ -11,6 +11,7 @@ use tower_lsp::lsp_types::{CompletionParams, CompletionResponse, CompletionTrigg
 use tracing::{debug, error};
 
 use self::completions::{colon_colon_completions, dot_completions, generic_completions};
+use crate::lang::lsp::LsProtoGroup;
 use crate::{find_node_module, get_node_and_lookup_items};
 
 mod completions;
@@ -23,8 +24,7 @@ mod completions;
 )]
 pub fn complete(params: CompletionParams, db: &RootDatabase) -> Option<CompletionResponse> {
     let text_document_position = params.text_document_position;
-    let file_uri = text_document_position.text_document.uri;
-    let file_id = crate::file(db, file_uri);
+    let file_id = db.file_for_url(&text_document_position.text_document.uri);
     let mut position = text_document_position.position;
     position.character = position.character.saturating_sub(1);
 

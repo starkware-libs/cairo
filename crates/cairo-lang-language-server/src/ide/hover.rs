@@ -4,6 +4,7 @@ use cairo_lang_defs::ids::LookupItemId;
 use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::{Hover, HoverContents, HoverParams, MarkedString};
 
+use crate::lang::lsp::LsProtoGroup;
 use crate::{from_pos, get_definition_location, get_node_and_lookup_items};
 
 /// Get hover information at a given text document position.
@@ -13,8 +14,7 @@ use crate::{from_pos, get_definition_location, get_node_and_lookup_items};
     fields(uri = %params.text_document_position_params.text_document.uri)
 )]
 pub fn hover(params: HoverParams, db: &RootDatabase) -> Option<Hover> {
-    let file_uri = params.text_document_position_params.text_document.uri;
-    let file_id = crate::file(db, file_uri);
+    let file_id = db.file_for_url(&params.text_document_position_params.text_document.uri);
     let position = params.text_document_position_params.position;
     // Get the item id of the definition.
     let (found_file, span) = get_definition_location(db, file_id, position)?;
