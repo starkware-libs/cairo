@@ -22,7 +22,8 @@ use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 use tracing::debug;
 
-use crate::{find_node_module, from_pos};
+use crate::find_node_module;
+use crate::lang::lsp::ToLsp;
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn generic_completions(
@@ -229,7 +230,7 @@ pub fn dot_completions(
     } else {
         TextOffset::default()
     };
-    let position = from_pos(offset.position_in_file(db.upcast(), file_id).unwrap());
+    let position = offset.position_in_file(db.upcast(), file_id).unwrap().to_lsp();
     let relevant_methods = find_methods_for_type(db, resolver, ty, stable_ptr);
 
     let mut completions = Vec::new();
