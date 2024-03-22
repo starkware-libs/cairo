@@ -72,8 +72,9 @@ Weight by original user function (exc. generated):
   function test::pow2_by_add_loop: 154011
   function test::pow2_14000: 12
 Weight by Cairo function:
-  function unknown: 126021
+  function lib.cairo::pow2_by_add_loop: 126009
   function core::Felt252PartialEq::eq: 28002
+  function lib.cairo::pow2_14000: 12
 Weight by Sierra stack trace:
   test::pow2_14000: 154023
   test::pow2_14000 -> test::pow2_by_add_loop: 154011
@@ -373,13 +374,14 @@ Weight by original user function (exc. generated):
 Weight by Cairo function:
   function core::array::deserialize_array_helper: 48
   function core::array::ArrayImpl::append: 46
-  function unknown: 39
   function core::starknet::account::CallSerde::deserialize: 34
   function core::Felt252Serde::deserialize: 30
   function core::array::SpanImpl::pop_front: 25
+  function lib.cairo::__wrapper____validate__: 25
   function core::array::SpanImpl::slice: 24
   function core::array::SpanFelt252Serde::deserialize: 16
   function core::starknet::contract_address::ContractAddressSerde::deserialize: 16
+  function lib.cairo::validate_call: 14
   function core::integer::U32Sub::sub: 12
   function core::integer::Felt252TryIntoU32::try_into: 10
   function core::array::ArraySerde::deserialize: 8
@@ -643,12 +645,13 @@ Weight by original user function (exc. generated):
   function core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 38
   function test::validate_call: 29
 Weight by Cairo function:
-  function unknown: 39
   function core::array::deserialize_array_helper: 30
+  function lib.cairo::__wrapper____validate__: 25
   function core::array::ArrayImpl::append: 18
   function core::array::SpanImpl::pop_front: 17
   function core::starknet::account::CallSerde::deserialize: 17
   function core::Felt252Serde::deserialize: 15
+  function lib.cairo::validate_call: 14
   function core::array::SpanImpl::slice: 12
   function core::array::ArraySerde::deserialize: 8
   function core::array::SpanFelt252Serde::deserialize: 8
@@ -794,7 +797,7 @@ Weight by Cairo function:
   function core::ec::EcStateImpl::finalize_nz: 67
   function core::ec::EcPointImpl::new_nz_from_x: 30
   function core::ec::EcStateImpl::add_mul: 15
-  function unknown: 14
+  function lib.cairo::ecdsa_call: 14
   function core::ec::EcPointImpl::new_nz: 12
   function core::ec::EcStateImpl::add: 10
   function core::ec::EcStateImpl::sub: 10
@@ -1185,17 +1188,21 @@ Weight by original user function (exc. generated):
   function test::erc20_transfer: 29
   function test::erc_20::EventIsEvent::append_keys_and_data: 12
 Weight by Cairo function:
-  function unknown: 119
+  function lib.cairo::__member_module_balances::InternalContractMemberStateImpl::address: 44
+  function lib.cairo::ContractStateEventEmitter::emit: 28
   function core::integer::u128_try_from_felt252: 27
   function core::starknet::storage_access::StoreFelt252::write: 22
   function core::starknet::storage_access::StoreFelt252::write_at_offset: 22
   function core::starknet::storage_access::StoreFelt252::read: 21
+  function lib.cairo::__wrapper__IERC20Impl__transfer: 21
   function core::starknet::storage_access::StoreFelt252::read_at_offset: 20
   function core::array::ArrayImpl::append: 19
   function core::array::SpanImpl::pop_front: 18
   function core::integer::u256_overflow_sub: 17
   function core::integer::u256_overflowing_add: 17
+  function lib.cairo::erc20_transfer: 16
   function core::pedersen::HashStateImpl::update: 12
+  function lib.cairo::erc_20::IERC20Impl::transfer: 9
   function core::Felt252Serde::deserialize: 8
   function core::starknet::contract_address::ContractAddressSerde::deserialize: 8
   function core::integer::u256Serde::deserialize: 7
@@ -1208,6 +1215,7 @@ Weight by Cairo function:
   function core::integer::u256_checked_add: 1
   function core::integer::u256_checked_sub: 1
   function core::option::OptionTraitImpl::expect: 1
+  function lib.cairo::EventIsEvent::append_keys_and_data: 1
 Weight by Sierra stack trace:
   test::erc20_transfer: 360
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 331

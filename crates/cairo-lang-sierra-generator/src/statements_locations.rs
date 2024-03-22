@@ -1,11 +1,12 @@
 use std::ops::Add;
 
-use itertools::Itertools;
-
 use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_diagnostics::ToOption;
+use cairo_lang_filesystem::ids::{FileLongId, VirtualFile};
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use itertools::Itertools;
 
 use crate::db::SierraGenGroup;
 
@@ -21,10 +22,20 @@ pub fn containing_function_identifier(
 ) -> Option<String> {
     match location {
         Some(location) => {
-            let file_id = location.file_id(db.upcast());
-            let module_path_to_file = db.file_modules(file_id).ok()?;
+            let mut file_id = location.file_id(db.upcast());
+            while let FileLongId::Virtual(VirtualFile { parent: Some(parent), .. }) =
+                db.lookup_intern_file(file_id)
+            {
+                file_id = parent;
+            }
+
+            let maybe_file_modules = db.file_modules(file_id);
             let absolute_semantic_path_to_file =
-                module_path_to_file.first()?.full_path(db.upcast());
+                if let Some(file_modules) = maybe_file_modules.to_option() {
+                    file_modules.first().unwrap().full_path(db.upcast())
+                } else {
+                    file_id.file_name(db.upcast())
+                };
 
             let syntax_db = db.upcast();
             let mut relative_semantic_path_segments: Vec<String> = vec![];

@@ -36,42 +36,42 @@ felt252_add([0], [2]) -> ([3])
 Originating location:
     let b = felt252_add(a, 5);
             ^***************^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<felt252>([3]) -> ([4])
 Originating location:
     bar(b, b, b)
     ^**********^
-In function: unknown
+In function: lib.cairo::foo
 dup<felt252>([4]) -> ([4], [3])
 Originating location:
     bar(b, b, b)
     ^**********^
-In function: unknown
+In function: lib.cairo::foo
 dup<felt252>([3]) -> ([3], [5])
 Originating location:
     bar(b, b, b)
     ^**********^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<felt252>([5]) -> ([5])
 Originating location:
     bar(b, b, b)
     ^**********^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<felt252>([3]) -> ([3])
 Originating location:
     bar(b, b, b)
     ^**********^
-In function: unknown
+In function: lib.cairo::foo
 function_call<user@test::bar>([4], [5], [3]) -> ([6])
 Originating location:
     bar(b, b, b)
     ^**********^
-In function: unknown
+In function: lib.cairo::foo
 return([6])
 Originating location:
     bar(b, b, b)
     ^**********^
-In function: unknown
+In function: lib.cairo::foo
 
 //! > ==========================================================================
 
@@ -116,82 +116,82 @@ enum_match<test::MyEnum>([1]) { fallthrough([2]) label_test::foo::1([3]) label_t
 Originating location:
     match myEnum {
     ^************^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match myEnum {
     ^************^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([2]) -> ([5])
 Originating location:
         MyEnum::A(a) => a,
                         ^
-In function: unknown
+In function: lib.cairo::foo
 jump() { label_test::foo::4() }
 Originating location:
         MyEnum::A(a) => a,
                         ^
-In function: unknown
+In function: lib.cairo::foo
 label_test::foo::1:
 Originating location:
         MyEnum::A(a) => a,
                         ^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
         MyEnum::A(a) => a,
                         ^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([3]) -> ([5])
 Originating location:
         MyEnum::B(b) => b,
                         ^
-In function: unknown
+In function: lib.cairo::foo
 label_test::foo::4:
 Originating location:
         MyEnum::B(b) => b,
                         ^
-In function: unknown
+In function: lib.cairo::foo
 struct_construct<Tuple<u8>>([5]) -> ([6])
 Originating location:
         MyEnum::B(b) => b,
                         ^
-In function: unknown
+In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([6]) -> ([7])
 Originating location:
 fn foo(myEnum: MyEnum) -> u8 {
                              ^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<RangeCheck>([0]) -> ([0])
 Originating location:
 fn foo(myEnum: MyEnum) -> u8 {
                              ^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([7]) -> ([7])
 Originating location:
 fn foo(myEnum: MyEnum) -> u8 {
                              ^
-In function: unknown
+In function: lib.cairo::foo
 return([0], [7])
 Originating location:
 fn foo(myEnum: MyEnum) -> u8 {
                              ^
-In function: unknown
+In function: lib.cairo::foo
 label_test::foo::2:
 Originating location:
 fn foo(myEnum: MyEnum) -> u8 {
                              ^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
 fn foo(myEnum: MyEnum) -> u8 {
                              ^
-In function: unknown
+In function: lib.cairo::foo
 struct_deconstruct<Tuple<u8, u8>>([4]) -> ([8], [9])
 Originating location:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                   ^******^
-In function: unknown
+In function: lib.cairo::foo
 dup<u8>([9]) -> ([9], [10])
 Originating location:
         u8_overflowing_sub(rhs, lhs).into_is_err()
@@ -488,12 +488,12 @@ store_temp<felt252>([0]) -> ([0])
 Originating location:
     300
     ^*^
-In function: unknown
+In function: lib.cairo::main
 return([0])
 Originating location:
     300
     ^*^
-In function: unknown
+In function: lib.cairo::main
 
 //! > ==========================================================================
 
@@ -529,217 +529,217 @@ enum_init<test::MyEnum, 0>([3]) -> ([4])
 Originating location:
     let a = MyEnum::A((1, 2));
                       ^****^
-In function: unknown
+In function: lib.cairo::main
 const_as_immediate<Const<felt252, 1>>() -> ([5])
 Originating location:
     let a = MyEnum::A((1, 2));
                       ^****^
-In function: unknown
+In function: lib.cairo::main
 const_as_immediate<Const<felt252, 2>>() -> ([6])
 Originating location:
     let a = MyEnum::A((1, 2));
                       ^****^
-In function: unknown
+In function: lib.cairo::main
 struct_construct<Tuple<felt252, felt252>>([5], [6]) -> ([7])
 Originating location:
     let a = MyEnum::A((1, 2));
                       ^****^
-In function: unknown
+In function: lib.cairo::main
 enum_init<test::MyEnum, 1>([7]) -> ([8])
 Originating location:
     let b = MyEnum::B((1, 2));
                       ^****^
-In function: unknown
+In function: lib.cairo::main
 const_as_immediate<Const<u8, 1>>() -> ([9])
 Originating location:
     let b = MyEnum::B((1, 2));
                       ^****^
-In function: unknown
+In function: lib.cairo::main
 const_as_immediate<Const<u8, 2>>() -> ([10])
 Originating location:
     let b = MyEnum::B((1, 2));
                       ^****^
-In function: unknown
+In function: lib.cairo::main
 const_as_immediate<Const<u8, 3>>() -> ([11])
 Originating location:
     let b = MyEnum::B((1, 2));
                       ^****^
-In function: unknown
+In function: lib.cairo::main
 struct_construct<Tuple<u8, u8, u8>>([9], [10], [11]) -> ([12])
 Originating location:
     let b = MyEnum::B((1, 2));
                       ^****^
-In function: unknown
+In function: lib.cairo::main
 enum_init<test::MyEnum, 2>([12]) -> ([13])
 Originating location:
     let c = MyEnum::C((1, 2, 3));
                       ^*******^
-In function: unknown
+In function: lib.cairo::main
 const_as_immediate<Const<u8, 1>>() -> ([14])
 Originating location:
     let c = MyEnum::C((1, 2, 3));
                       ^*******^
-In function: unknown
+In function: lib.cairo::main
 const_as_immediate<Const<u8, 2>>() -> ([15])
 Originating location:
     let c = MyEnum::C((1, 2, 3));
                       ^*******^
-In function: unknown
+In function: lib.cairo::main
 const_as_immediate<Const<u8, 9>>() -> ([16])
 Originating location:
     let c = MyEnum::C((1, 2, 3));
                       ^*******^
-In function: unknown
+In function: lib.cairo::main
 struct_construct<test::P>([14], [15], [16]) -> ([17])
 Originating location:
     let c = MyEnum::C((1, 2, 3));
                       ^*******^
-In function: unknown
+In function: lib.cairo::main
 enum_init<test::MyEnum, 3>([17]) -> ([18])
 Originating location:
     let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
                       ^********************^
-In function: unknown
+In function: lib.cairo::main
 store_temp<test::MyEnum>([4]) -> ([4])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<test::MyEnum>([8]) -> ([8])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<test::MyEnum>([13]) -> ([13])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<test::MyEnum>([18]) -> ([18])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 enum_match<test::MyEnum>([4]) { fallthrough([19]) label_test::main::1([20]) label_test::main::2([21]) label_test::main::3([22]) }
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([19]) -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 jump() { label_test::main::5() }
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::1:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([20]) -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::5:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<RangeCheck>([0]) -> ([23])
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 jump() { label_test::main::6() }
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::2:
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 struct_deconstruct<Tuple<u8, u8, u8>>([21]) -> ([24], [25], [26])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                   ^*******^
-In function: unknown
+In function: lib.cairo::foo
 drop<u8>([25]) -> ()
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                   ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([24]) -> ([27])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([26]) -> ([28])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 jump() { label_test::main::7() }
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::3:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 struct_deconstruct<test::P>([22]) -> ([29], [30], [31])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                                          ^*****************^
-In function: unknown
+In function: lib.cairo::foo
 drop<u8>([30]) -> ()
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                                          ^*****************^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([29]) -> ([27])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([31]) -> ([28])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::7:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 u8_overflowing_add([0], [27], [28]) { fallthrough([32], [33]) label_test::main::8([34], [35]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -774,122 +774,122 @@ enum_match<test::MyEnum>([8]) { fallthrough([37]) label_test::main::10([38]) lab
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([37]) -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 jump() { label_test::main::14() }
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::10:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([38]) -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::14:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<RangeCheck>([23]) -> ([41])
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 jump() { label_test::main::15() }
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::11:
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 struct_deconstruct<Tuple<u8, u8, u8>>([39]) -> ([42], [43], [44])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                   ^*******^
-In function: unknown
+In function: lib.cairo::foo
 drop<u8>([43]) -> ()
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                   ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([42]) -> ([45])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([44]) -> ([46])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 jump() { label_test::main::16() }
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::12:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 struct_deconstruct<test::P>([40]) -> ([47], [48], [49])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                                          ^*****************^
-In function: unknown
+In function: lib.cairo::foo
 drop<u8>([48]) -> ()
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                                          ^*****************^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([47]) -> ([45])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([49]) -> ([46])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::16:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 u8_overflowing_add([23], [45], [46]) { fallthrough([50], [51]) label_test::main::17([52], [53]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -924,122 +924,122 @@ enum_match<test::MyEnum>([13]) { fallthrough([55]) label_test::main::19([56]) la
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([55]) -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 jump() { label_test::main::23() }
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::19:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([56]) -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::23:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<RangeCheck>([41]) -> ([59])
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 jump() { label_test::main::24() }
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::20:
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 struct_deconstruct<Tuple<u8, u8, u8>>([57]) -> ([60], [61], [62])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                   ^*******^
-In function: unknown
+In function: lib.cairo::foo
 drop<u8>([61]) -> ()
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                   ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([60]) -> ([63])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([62]) -> ([64])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 jump() { label_test::main::25() }
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::21:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 struct_deconstruct<test::P>([58]) -> ([65], [66], [67])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                                          ^*****************^
-In function: unknown
+In function: lib.cairo::foo
 drop<u8>([66]) -> ()
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                                          ^*****************^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([65]) -> ([63])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([67]) -> ([64])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::25:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 u8_overflowing_add([41], [63], [64]) { fallthrough([68], [69]) label_test::main::26([70], [71]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -1074,122 +1074,122 @@ enum_match<test::MyEnum>([18]) { fallthrough([73]) label_test::main::28([74]) la
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([73]) -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 jump() { label_test::main::32() }
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::28:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 drop<Tuple<felt252, felt252>>([74]) -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::32:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<RangeCheck>([59]) -> ([77])
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 jump() { label_test::main::33() }
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::29:
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
 fn main() {
 ^*********^
-In function: unknown
+In function: lib.cairo::main
 struct_deconstruct<Tuple<u8, u8, u8>>([75]) -> ([78], [79], [80])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                   ^*******^
-In function: unknown
+In function: lib.cairo::foo
 drop<u8>([79]) -> ()
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                   ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([78]) -> ([81])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([80]) -> ([82])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 jump() { label_test::main::34() }
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::30:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 struct_deconstruct<test::P>([76]) -> ([83], [84], [85])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                                          ^*****************^
-In function: unknown
+In function: lib.cairo::foo
 drop<u8>([84]) -> ()
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                                          ^*****************^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([83]) -> ([81])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 store_temp<u8>([85]) -> ([82])
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 label_test::main::34:
 Originating location:
     match a {
     ^*******^
-In function: unknown
+In function: lib.cairo::foo
 u8_overflowing_add([59], [81], [82]) { fallthrough([86], [87]) label_test::main::35([88], [89]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -1234,32 +1234,32 @@ enum_init<core::panics::PanicResult::<((),)>, 0>([92]) -> ([93])
 Originating location:
 fn main() {
           ^
-In function: unknown
+In function: lib.cairo::main
 store_temp<core::panics::PanicResult::<((),)>>([93]) -> ([93])
 Originating location:
 fn main() {
           ^
-In function: unknown
+In function: lib.cairo::main
 return([77], [93])
 Originating location:
 fn main() {
           ^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::35:
 Originating location:
 fn main() {
           ^
-In function: unknown
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
 fn main() {
           ^
-In function: unknown
+In function: lib.cairo::main
 drop<u8>([89]) -> ()
 Originating location:
 fn main() {
           ^
-In function: unknown
+In function: lib.cairo::main
 array_new<felt252>() -> ([94])
 Originating location:
         array_new()
@@ -1294,52 +1294,52 @@ enum_init<core::panics::PanicResult::<((),)>, 1>([98]) -> ([99])
 Originating location:
     let _ = foo(d);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 store_temp<RangeCheck>([88]) -> ([88])
 Originating location:
     let _ = foo(d);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 store_temp<core::panics::PanicResult::<((),)>>([99]) -> ([99])
 Originating location:
     let _ = foo(d);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 return([88], [99])
 Originating location:
     let _ = foo(d);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::36:
 Originating location:
     let _ = foo(d);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::31:
 Originating location:
     let _ = foo(d);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::26:
 Originating location:
     let _ = foo(d);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
     let _ = foo(d);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 drop<u8>([71]) -> ()
 Originating location:
     let _ = foo(d);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 drop<test::MyEnum>([18]) -> ()
 Originating location:
     let _ = foo(d);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 array_new<felt252>() -> ([100])
 Originating location:
         array_new()
@@ -1374,57 +1374,57 @@ enum_init<core::panics::PanicResult::<((),)>, 1>([104]) -> ([105])
 Originating location:
     let _ = foo(c);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 store_temp<RangeCheck>([70]) -> ([70])
 Originating location:
     let _ = foo(c);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 store_temp<core::panics::PanicResult::<((),)>>([105]) -> ([105])
 Originating location:
     let _ = foo(c);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 return([70], [105])
 Originating location:
     let _ = foo(c);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::27:
 Originating location:
     let _ = foo(c);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::22:
 Originating location:
     let _ = foo(c);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::17:
 Originating location:
     let _ = foo(c);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
     let _ = foo(c);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 drop<u8>([53]) -> ()
 Originating location:
     let _ = foo(c);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 drop<test::MyEnum>([18]) -> ()
 Originating location:
     let _ = foo(c);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 drop<test::MyEnum>([13]) -> ()
 Originating location:
     let _ = foo(c);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 array_new<felt252>() -> ([106])
 Originating location:
         array_new()
@@ -1459,62 +1459,62 @@ enum_init<core::panics::PanicResult::<((),)>, 1>([110]) -> ([111])
 Originating location:
     let _ = foo(b);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 store_temp<RangeCheck>([52]) -> ([52])
 Originating location:
     let _ = foo(b);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 store_temp<core::panics::PanicResult::<((),)>>([111]) -> ([111])
 Originating location:
     let _ = foo(b);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 return([52], [111])
 Originating location:
     let _ = foo(b);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::18:
 Originating location:
     let _ = foo(b);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::13:
 Originating location:
     let _ = foo(b);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::8:
 Originating location:
     let _ = foo(b);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
     let _ = foo(b);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 drop<u8>([35]) -> ()
 Originating location:
     let _ = foo(b);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 drop<test::MyEnum>([18]) -> ()
 Originating location:
     let _ = foo(b);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 drop<test::MyEnum>([13]) -> ()
 Originating location:
     let _ = foo(b);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 drop<test::MyEnum>([8]) -> ()
 Originating location:
     let _ = foo(b);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 array_new<felt252>() -> ([112])
 Originating location:
         array_new()
@@ -1549,32 +1549,32 @@ enum_init<core::panics::PanicResult::<((),)>, 1>([116]) -> ([117])
 Originating location:
     let _ = foo(a);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 store_temp<RangeCheck>([34]) -> ([34])
 Originating location:
     let _ = foo(a);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 store_temp<core::panics::PanicResult::<((),)>>([117]) -> ([117])
 Originating location:
     let _ = foo(a);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 return([34], [117])
 Originating location:
     let _ = foo(a);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::9:
 Originating location:
     let _ = foo(a);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 label_test::main::4:
 Originating location:
     let _ = foo(a);
             ^****^
-In function: unknown
+In function: lib.cairo::main
 
 //! > ==========================================================================
 
@@ -1608,69 +1608,69 @@ store_temp<felt252>([1]) -> ([1])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
                       ^************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 store_temp<felt252>([2]) -> ([2])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
                       ^************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 pedersen([0], [1], [2]) -> ([3], [4])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
                       ^************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 const_as_immediate<Const<felt252, 3>>() -> ([5])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
                       ^************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 store_temp<felt252>([4]) -> ([4])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
              ^*************************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 store_temp<felt252>([5]) -> ([5])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
              ^*************************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 pedersen([3], [4], [5]) -> ([6], [7])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
              ^*************************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 const_as_immediate<Const<felt252, 4>>() -> ([8])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
              ^*************************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 store_temp<felt252>([7]) -> ([7])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
     ^**************************************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 store_temp<felt252>([8]) -> ([8])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
     ^**************************************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 pedersen([6], [7], [8]) -> ([9], [10])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
     ^**************************************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 store_temp<Pedersen>([9]) -> ([9])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
     ^**************************************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 store_temp<felt252>([10]) -> ([10])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
     ^**************************************^
-In function: unknown
+In function: lib.cairo::test_pedersen
 return([9], [10])
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
     ^**************************************^
-In function: unknown
+In function: lib.cairo::test_pedersen
