@@ -50,7 +50,6 @@ use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
-use salsa::InternKey;
 use serde_json::Value;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::notification::Notification;
@@ -287,7 +286,7 @@ impl Backend {
             for crate_id in db.crates() {
                 for module_id in db.crate_modules(crate_id).iter() {
                     for file_id in db.module_files(*module_id).unwrap_or_default().iter() {
-                        files_set.insert(get_uri((*db).upcast(), *file_id));
+                        files_set.insert(db.url_for_file(*file_id));
                     }
                 }
             }
@@ -1201,19 +1200,6 @@ fn is_cairo_file_path(file_path: &Url) -> bool {
     file_path.path().ends_with(".cairo")
 }
 
-/// Gets the canonical URI for a file.
-fn get_uri(db: &dyn FilesGroup, file_id: FileId) -> Url {
-    let virtual_file = match db.lookup_intern_file(file_id) {
-        FileLongId::OnDisk(path) => return Url::from_file_path(path).unwrap(),
-        FileLongId::Virtual(virtual_file) => virtual_file,
-    };
-    let uri = Url::parse(
-        format!("vfs://{}/{}.cairo", file_id.as_intern_id().as_usize(), virtual_file.name).as_str(),
-    )
-    .unwrap();
-    uri
-}
-
 /// Converts an internal diagnostic location to an LSP range.
 fn get_range(db: &dyn FilesGroup, location: &DiagnosticLocation) -> Range {
     let location = location.user_location(db);
@@ -1236,7 +1222,7 @@ fn get_diagnostics<T: DiagnosticEntry>(
             if let Some(location) = &note.location {
                 related_information.push(DiagnosticRelatedInformation {
                     location: Location {
-                        uri: get_uri(db.upcast(), location.file_id),
+                        uri: db.url_for_file(location.file_id),
                         range: get_range(db.upcast(), location),
                     },
                     message: note.text.clone(),
