@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
-use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
@@ -10,7 +9,9 @@ use cairo_lang_filesystem::db::{
     Edition, ExperimentalFeaturesConfig, FilesDatabase, FilesGroup,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileLongId};
+use cairo_lang_filesystem::ids::{
+    CrateId, CrateLongId, Directory, FileKind, FileLongId, VirtualFile,
+};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
@@ -119,9 +120,13 @@ pub fn setup_test_crate_ex(
     content: &str,
     crate_settings: Option<&str>,
 ) -> CrateId {
-    let x = PathBuf::from("lib.cairo");
-    std::fs::write(&x, content.as_bytes()).unwrap();
-    let file_id = db.intern_file(FileLongId::OnDisk(x));
+    let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
+        parent: None,
+        name: "lib.cairo".into(),
+        content: Arc::new(content.into()),
+        code_mappings: Default::default(),
+        kind: FileKind::Module,
+    }));
 
     let settings: CrateSettings = if let Some(crate_settings) = crate_settings {
         toml::from_str(crate_settings).expect("Invalid config.")
