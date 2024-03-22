@@ -14,6 +14,7 @@ use tracing::error;
 
 use self::encoder::{EncodedToken, TokenEncoder};
 pub use self::token_kind::SemanticTokenKind;
+use crate::lang::lsp::LsProtoGroup;
 
 mod encoder;
 mod token_kind;
@@ -29,7 +30,7 @@ pub fn semantic_highlight_full(
     db: &RootDatabase,
 ) -> Option<SemanticTokensResult> {
     let file_uri = params.text_document.uri;
-    let file = crate::file(db, file_uri.clone());
+    let file = db.file_for_url(&file_uri);
     let Ok(node) = db.file_syntax(file) else {
         error!("semantic analysis failed: file '{file_uri}' does not exist");
         return None;

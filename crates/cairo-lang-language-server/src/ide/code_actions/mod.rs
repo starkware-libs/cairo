@@ -8,6 +8,7 @@ use tower_lsp::lsp_types::{
 use tracing::debug;
 
 use crate::get_node_and_lookup_items;
+use crate::lang::lsp::LsProtoGroup;
 
 mod rename_unused_variable;
 
@@ -20,7 +21,7 @@ mod rename_unused_variable;
 )]
 pub fn code_actions(params: CodeActionParams, db: &RootDatabase) -> Option<CodeActionResponse> {
     let mut actions = Vec::with_capacity(params.context.diagnostics.len());
-    let file_id = crate::file(db, params.text_document.uri.clone());
+    let file_id = db.file_for_url(&params.text_document.uri);
     let (node, _lookup_items) = get_node_and_lookup_items(db, file_id, params.range.start)?;
     for diagnostic in params.context.diagnostics.iter() {
         actions.extend(

@@ -6,6 +6,8 @@ use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::{DocumentFormattingParams, Position, Range, TextEdit};
 use tracing::error;
 
+use crate::lang::lsp::LsProtoGroup;
+
 /// Format a whole document.
 #[tracing::instrument(
     level = "debug",
@@ -14,7 +16,7 @@ use tracing::error;
 )]
 pub fn format(params: DocumentFormattingParams, db: &RootDatabase) -> Option<Vec<TextEdit>> {
     let file_uri = params.text_document.uri;
-    let file = crate::file(db, file_uri.clone());
+    let file = db.file_for_url(&file_uri);
 
     let Ok(node) = db.file_syntax(file) else {
         error!("formatting failed: file '{file_uri}' does not exist");
