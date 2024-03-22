@@ -8,7 +8,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::replace_sierra_ids;
-use crate::statements_locations::containing_function_identifier;
+use crate::statements_locations::containing_function_identifier_for_tests;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 /// Compiles a single function to Sierra and checks the generated code, together with the
@@ -44,7 +44,7 @@ pub fn test_sierra_locations(
                 format!(
                     "Originating location:\n{}\nIn function: {}",
                     get_location_marks(db, &location.diagnostic_location(db)),
-                    containing_function_identifier(db, stmt.location)
+                    containing_function_identifier_for_tests(db, location)
                 )
             } else {
                 "".to_string()
