@@ -20,9 +20,7 @@ use cairo_lang_defs::ids::{
     ModuleTypeAliasLongId, StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitItemId,
     TraitLongId, UseLongId,
 };
-use cairo_lang_diagnostics::{
-    DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity, ToOption,
-};
+use cairo_lang_diagnostics::{Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     get_originating_location, init_dev_corelib, AsFilesGroupMut, CrateConfiguration, CrateSettings,
@@ -58,7 +56,8 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
 
 use crate::ide::semantic_highlighting::SemanticTokenKind;
-use crate::lang::lsp::{LsProtoGroup, ToLsp};
+use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
+use crate::lang::lsp::LsProtoGroup;
 use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
 use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
@@ -354,9 +353,9 @@ impl Backend {
         drop(state);
 
         let mut diags = Vec::new();
-        get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
-        get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
-        get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.lowering);
+        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
+        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
+        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.lowering);
 
         // Drop database snapshot before we wait for the client responding to our notification.
         drop(db);
@@ -1196,56 +1195,6 @@ fn inject_virtual_wrapper_lib(db: &mut dyn SemanticGroup, components: Vec<(Crate
 
 fn is_cairo_file_path(file_path: &Url) -> bool {
     file_path.path().ends_with(".cairo")
-}
-
-/// Converts an internal diagnostic location to an LSP range.
-fn get_range(db: &dyn FilesGroup, location: &DiagnosticLocation) -> Range {
-    let location = location.user_location(db);
-    let start = location.span.start.position_in_file(db, location.file_id).unwrap().to_lsp();
-    let end = location.span.start.position_in_file(db, location.file_id).unwrap().to_lsp();
-    Range { start, end }
-}
-
-/// Converts internal diagnostics to LSP format.
-#[tracing::instrument(level = "trace", skip_all)]
-fn get_diagnostics<T: DiagnosticEntry>(
-    db: &T::DbType,
-    diags: &mut Vec<Diagnostic>,
-    diagnostics: &Diagnostics<T>,
-) {
-    for diagnostic in diagnostics.get_all() {
-        let mut message = diagnostic.format(db);
-        let mut related_information = vec![];
-        for note in diagnostic.notes(db) {
-            if let Some(location) = &note.location {
-                related_information.push(DiagnosticRelatedInformation {
-                    location: Location {
-                        uri: db.url_for_file(location.file_id),
-                        range: get_range(db.upcast(), location),
-                    },
-                    message: note.text.clone(),
-                });
-            } else {
-                message += &format!("\nnote: {}", note.text);
-            }
-        }
-
-        diags.push(Diagnostic {
-            range: get_range(db.upcast(), &diagnostic.location(db)),
-            message,
-            related_information: if related_information.is_empty() {
-                None
-            } else {
-                Some(related_information)
-            },
-            severity: Some(match diagnostic.severity() {
-                Severity::Error => DiagnosticSeverity::ERROR,
-                Severity::Warning => DiagnosticSeverity::WARNING,
-            }),
-            code: diagnostic.error_code().map(|code| NumberOrString::String(code.to_string())),
-            ..Diagnostic::default()
-        });
-    }
 }
 
 /// Returns the file id and span of the definition of an expression from its position.
