@@ -267,7 +267,7 @@ fn implize_type_recursive(
     // );
 
     // Try to reduce the impl type if its impl is an ImplVar (by reducing its impl).
-    impl_type_id = reduce_trait_impl_type(db, impl_type_id, inference);
+    impl_type_id = reduce_trait_impl_type(impl_type_id, inference);
 
     // println!(
     //     "yg1 reduce_impl_type_if_possible_inner5 type: {:?}",
@@ -339,12 +339,7 @@ fn implize_concrete_impl_type(
 /// is only a single impl for MyTrait in the context.
 ///
 /// Assumes the given inference is `solve()`ed.
-fn reduce_trait_impl_type(
-    // TODO(yg): remove db
-    _db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeId,
-    inference: &mut Inference,
-) -> ImplTypeId {
+fn reduce_trait_impl_type(impl_type_id: ImplTypeId, inference: &mut Inference) -> ImplTypeId {
     let ImplTypeId { impl_id, ty } = impl_type_id;
     if !matches!(impl_id, crate::items::imp::ImplId::ImplVar(_)) {
         // println!("yg returning early");

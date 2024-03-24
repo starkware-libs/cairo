@@ -701,8 +701,6 @@ impl<'db> Resolver<'db> {
                 match self.trait_or_impl_ctx {
                     TraitOrImplContext::Trait(TraitContext { trait_id: trait_ctx }) => {
                         // TODO(yuval): Also check generic args.
-                        // TODO(yg): consider removing the condition here for not allowing
-                        // any trait types in traits.
                         if trt == trait_ctx {
                             return Err(
                                 diagnostics.report(identifier, TraitTypeForbiddenInTheTrait)

@@ -1,14 +1,5 @@
 //! > Test type items in trait/impl.
 
-//! > TODO(yg):
-* Later: generics.
-* Cycles/chains: 1. type Type2 = Self::Type1. 2. cycle: type Type2 = Self::Type1; type Type1 = Self::Type2;
-* more tests: method call on a trait type according to the type it's assigned.
-* make sure it works with type aliases. Add a test for it.
-* Consider and add test: should using impls' types in traits be allowed? If any - make sure cycles are avoided. And if not allowed - consider whether impls' types should be allowed to be used in other impls.
-* Add tests for trait MyTrait { fn foo() -> AnotherImpl::AnotherType; } - should it be supported? Beware cycles.
-* Add tests for impl::MyType, for impl in {generic impls, ImplVars}.
-
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
@@ -45,7 +36,9 @@ fn main() {
 
 //! > A trait can't be used in a path in its own body, with the same generics.
 
-//! > TODO(yg): same with generics - same and different.
+//! > TODO(yuval):
+When supporting generics, test the same with generics - once with the same generics and once with
+different generics.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -78,7 +71,9 @@ error: In a trait, paths of the same trait are not allowed. Did you mean to use 
 
 //! > An impl can't be used in a path in its own body, with the same generics
 
-//! > TODO(yg): same with generics - same and different.
+//! > TODO(yuval):
+When supporting generics, test the same with generics - once with the same generics and once with
+different generics.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -135,7 +130,9 @@ error: In an impl, paths of the same impl are not allowed. Did you mean to use `
 
 //! > A trait can't be used in a path in the body of its own impl, with the same generics
 
-//! > TODO(yg): same with generics - same and different.
+//! > TODO(yuval):
+When supporting generics, test the same with generics - once with the same generics and once with
+different generics.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -532,12 +529,10 @@ Candidate `IndexView::index` inference failed with: Trait has no implementation 
 
 //! > ==========================================================================
 
-//! > Using traits' items is prohibited in other traits too.
-
-//! > TODO(yg): consider if this limitation should remain.
+//! > Using traits' items is allowed in other traits, if well resolved.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {}
@@ -549,6 +544,9 @@ foo
 trait AnotherTrait {
     type AnotherType;
 }
+impl AnotherImpl of AnotherTrait {
+    type AnotherType = u32;
+}
 trait MyTrait {
     type MyType;
     fn bar1(x: AnotherTrait::AnotherType);
@@ -556,15 +554,47 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
-error: In a trait, only the trait's own trait types can be used. Did you mean to use `Self::`?
- --> lib.cairo:6:16
-    fn bar1(x: AnotherTrait::AnotherType);
-               ^***********************^
 
-error: In a trait, only the trait's own trait types can be used. Did you mean to use `Self::`?
- --> lib.cairo:7:18
-    fn bar2() -> AnotherTrait::AnotherType;
-                 ^***********************^
+//! > ==========================================================================
+
+//! > Using traits' items in other traits, but they can't be resolved.
+
+//! > TODO(yuval)
+expect_diagnostics should be true and diagnostics of bad signatures should be reported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: *)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+// A trait with 0 impls in the context.
+trait AnotherTrait0 {
+    type AnotherType;
+}
+// A trait with 2 impls in the context.
+trait AnotherTrait2 {
+    type AnotherType;
+}
+impl AnotherImpl20 of AnotherTrait2 {
+    type AnotherType = u32;
+}
+impl AnotherImpl21 of AnotherTrait2 {
+    type AnotherType = u32;
+}
+trait MyTrait {
+    type MyType;
+    fn bar1(x: AnotherTrait0::AnotherType);
+    fn bar2() -> AnotherTrait0::AnotherType;
+    fn bar3(x: AnotherTrait2::AnotherType);
+    fn bar4() -> AnotherTrait2::AnotherType;
+}
+
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -595,22 +625,12 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: In a trait, only the trait's own trait types can be used. Did you mean to use `Self::`?
- --> lib.cairo:6:16
-    fn bar1(x: AnotherTrait::AnotherType);
-               ^***********************^
-
-error: In a trait, only the trait's own trait types can be used. Did you mean to use `Self::`?
- --> lib.cairo:7:18
-    fn bar2() -> AnotherTrait::AnotherType;
-                 ^***********************^
-
-error: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `<missing>`, actual: `core::integer::u32`.
+error: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `ImplVar(test::AnotherTrait)::AnotherType`, actual: `core::integer::u32`.
  --> lib.cairo:11:16
     fn bar1(x: u32) {}
                ^*^
 
-error: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `<missing>`, actual: `core::integer::u32`.
+error: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `ImplVar(test::AnotherTrait)::AnotherType`, actual: `core::integer::u32`.
  --> lib.cairo:12:18
     fn bar2() -> u32 { 3_u32 }
                  ^*^
@@ -978,14 +998,10 @@ fn bar3() {
 
 //! > ==========================================================================
 
-//! > impl items are not allowed in its own trait body.
-
-//! > TODO(yg):
-should it be allowed? should it be a cycle? change description and expect_diagnostics accordingly.
-If allowed, test with type mismatch too.
+//! > impl items are allowed in its own trait body.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: *)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {}
@@ -1006,6 +1022,37 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > impl items in its own trait body, with type mismatch.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType;
+    fn foo1() -> MyImpl::MyType;
+    fn foo2(x: MyImpl::MyType);
+}
+impl MyImpl of MyTrait {
+    type MyType = u32;
+    fn foo1() -> Self::MyType { 3_u16 }
+    fn foo2(x: Self::MyType) {}
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:8:31
+    fn foo1() -> Self::MyType { 3_u16 }
+                              ^*******^
 
 //! > ==========================================================================
 

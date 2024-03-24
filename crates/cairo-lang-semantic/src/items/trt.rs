@@ -774,23 +774,13 @@ pub fn priv_trait_function_declaration_data(
 
     let signature_syntax = declaration_syntax.signature(syntax_db);
     let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
-    let mut signature = semantic::Signature::from_ast(
+    let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
         &signature_syntax,
         FunctionTitleId::Trait(trait_function_id),
         &mut environment,
-    );
-
-    // TODO(yg): is this needed here with the new logic in resolve?
-    // Trait types aren't allowed, change them to missing (and report it as diagnostics).
-    change_non_self_impl_types_to_missing(
-        db,
-        &mut diagnostics,
-        &mut signature,
-        &signature_syntax,
-        trait_id,
     );
 
     // More validations on the signature (but doesn't mutate signature).
@@ -826,53 +816,6 @@ pub fn priv_trait_function_declaration_data(
         inline_config,
         implicit_precedence,
     })
-}
-
-/// Fixes trait types (`SomeTrait::SomeType`) of a signature to missing, but not `Self::SomeType`.
-/// This is used in traits as such trait types are forbidden in trait function signatures.
-fn change_non_self_impl_types_to_missing(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    sig: &mut semantic::Signature,
-    sig_syntax: &ast::FunctionSignature,
-    context_trait_id: TraitId,
-) {
-    let syntax_db = db.upcast();
-
-    for (idx, param) in sig.params.iter_mut().enumerate() {
-        if let TypeLongId::ImplType(impl_type_id) = param.ty.lookup(db) {
-            // TODO(yg): use impl_type_id.trait_id(db) here once it's implemented.
-            // TODO(yg): don't unwrap.
-            let path_trait_id = impl_type_id.impl_id().concrete_trait(db).unwrap().trait_id(db);
-            if path_trait_id != context_trait_id {
-                let diag_added = diagnostics.report(
-                    &sig_syntax.parameters(syntax_db).elements(syntax_db)[idx]
-                        .type_clause(syntax_db)
-                        .ty(syntax_db),
-                    crate::diagnostic::SemanticDiagnosticKind::TraitTypeUnsupportedInTrait,
-                );
-                param.ty = db.intern_type(TypeLongId::Missing(diag_added));
-            }
-        }
-    }
-
-    // TODO(yg): export to a function and use here and above.
-    if let TypeLongId::ImplType(impl_type_id) = sig.return_type.lookup(db) {
-        // TODO(yg): use impl_type_id.trait_id(db) here once it's implemented.
-        // TODO(yg): don't unwrap.
-        let path_trait_id = impl_type_id.impl_id().concrete_trait(db).unwrap().trait_id(db);
-        if path_trait_id != context_trait_id {
-            let diag_added = diagnostics.report(
-                &(extract_matches!(
-                    sig_syntax.ret_ty(syntax_db),
-                    OptionReturnTypeClause::ReturnTypeClause
-                ))
-                .ty(syntax_db),
-                crate::diagnostic::SemanticDiagnosticKind::TraitTypeUnsupportedInTrait,
-            );
-            sig.return_type = db.intern_type(TypeLongId::Missing(diag_added));
-        }
-    }
 }
 
 fn validate_trait_function_signature(
