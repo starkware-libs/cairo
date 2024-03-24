@@ -157,8 +157,6 @@ pub fn priv_free_function_declaration_data(
         FunctionTitleId::Free(free_function_id),
         &mut environment,
     );
-    // TODO(yg): remove?
-    // implize_signature(db, &mut signature, &mut resolver, None)?;
 
     let attributes = free_function_syntax.attributes(syntax_db).structurize(syntax_db);
 

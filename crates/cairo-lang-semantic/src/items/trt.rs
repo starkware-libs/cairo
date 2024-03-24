@@ -753,7 +753,7 @@ pub fn priv_trait_function_declaration_data(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
-    println!("yg trait_function_id: {}", trait_function_id.name(db.upcast()));
+    // println!("yg trait_function_id: {}", trait_function_id.name(db.upcast()));
     let syntax_db = db.upcast();
     let module_file_id = trait_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
@@ -783,9 +783,8 @@ pub fn priv_trait_function_declaration_data(
         &mut environment,
     );
 
+    // TODO(yg): is this needed here with the new logic in resolve?
     // Trait types aren't allowed, change them to missing (and report it as diagnostics).
-    // TODO(yg): consider disallowing MyImpl::something in impls too, using this function. Should it
-    // be disallowed in both signatures and body or signature is enough?
     change_non_self_impl_types_to_missing(
         db,
         &mut diagnostics,

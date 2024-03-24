@@ -531,45 +531,7 @@ impl<'db> Resolver<'db> {
                     .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
 
-                // TODO(yg): export to a function.
-                match inner_item_info.item_id {
-                    cairo_lang_defs::ids::ModuleItemId::Trait(trt) => {
-                        match self.trait_or_impl_ctx {
-                            TraitOrImplContext::Trait(TraitContext { trait_id: trait_ctx }) => {
-                                // TODO(yuval): Also check generic args.
-                                // TODO(yg): consider removing the condition here for not allowing
-                                // any trait types in traits.
-                                if trt == trait_ctx {
-                                    return Err(diagnostics
-                                        .report(identifier, TraitTypeForbiddenInTheTrait));
-                                }
-                            }
-                            TraitOrImplContext::Impl(ImplContext { impl_def_id }) => {
-                                let impl_ctx_trait = self.db.impl_def_trait(impl_def_id)?;
-                                // TODO(yuval): Also check generic args.
-                                if trt == impl_ctx_trait {
-                                    return Err(
-                                        diagnostics.report(identifier, TraitTypeForbiddenInItsImpl)
-                                    );
-                                }
-                            }
-                            TraitOrImplContext::None => {}
-                        }
-                    }
-                    cairo_lang_defs::ids::ModuleItemId::Impl(impl_def) => {
-                        if let TraitOrImplContext::Impl(ImplContext { impl_def_id: impl_def_ctx }) =
-                            self.trait_or_impl_ctx
-                        {
-                            if impl_def == impl_def_ctx {
-                                // TODO(yuval): check generic args.
-                                return Err(
-                                    diagnostics.report(identifier, ImplTypeForbiddenInTheImpl)
-                                );
-                            }
-                        }
-                    }
-                    _ => {}
-                };
+                self.forbid_same_impl_trait(diagnostics, &inner_item_info, identifier)?;
 
                 self.validate_item_visibility(
                     diagnostics,
@@ -638,7 +600,7 @@ impl<'db> Resolver<'db> {
                             .map_err(|err| {
                                 err.report(diagnostics, identifier.stable_ptr().untyped())
                             })?;
-                        println!("yg resolve generic_function {:?}", generic_function);
+                        // println!("yg resolve generic_function {:?}", generic_function);
 
                         Ok(ResolvedConcreteItem::Function(self.specialize_function(
                             diagnostics,
@@ -667,7 +629,7 @@ impl<'db> Resolver<'db> {
                             .map_err(|err| {
                                 err.report(diagnostics, identifier.stable_ptr().untyped())
                             })?;
-                        println!("yg resolve ty {:?}", ty);
+                        // println!("yg resolve ty {:?}", ty);
 
                         Ok(ResolvedConcreteItem::Type(ty))
                     }
@@ -726,6 +688,52 @@ impl<'db> Resolver<'db> {
             }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }
+    }
+
+    /// Forbids the use of a trait in a path inside the same trait or an impl of it, and the use of
+    /// an impl in a path inside the same impl.
+    fn forbid_same_impl_trait(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        inner_item_info: &ModuleItemInfo,
+        identifier: &ast::TerminalIdentifier,
+    ) -> Result<(), cairo_lang_diagnostics::DiagnosticAdded> {
+        match inner_item_info.item_id {
+            cairo_lang_defs::ids::ModuleItemId::Trait(trt) => {
+                match self.trait_or_impl_ctx {
+                    TraitOrImplContext::Trait(TraitContext { trait_id: trait_ctx }) => {
+                        // TODO(yuval): Also check generic args.
+                        // TODO(yg): consider removing the condition here for not allowing
+                        // any trait types in traits.
+                        if trt == trait_ctx {
+                            return Err(
+                                diagnostics.report(identifier, TraitTypeForbiddenInTheTrait)
+                            );
+                        }
+                    }
+                    TraitOrImplContext::Impl(ImplContext { impl_def_id }) => {
+                        let impl_ctx_trait = self.db.impl_def_trait(impl_def_id)?;
+                        // TODO(yuval): Also check generic args.
+                        if trt == impl_ctx_trait {
+                            return Err(diagnostics.report(identifier, TraitTypeForbiddenInItsImpl));
+                        }
+                    }
+                    TraitOrImplContext::None => {}
+                }
+            }
+            cairo_lang_defs::ids::ModuleItemId::Impl(impl_def) => {
+                if let TraitOrImplContext::Impl(ImplContext { impl_def_id: impl_def_ctx }) =
+                    self.trait_or_impl_ctx
+                {
+                    if impl_def == impl_def_ctx {
+                        // TODO(yuval): check generic args.
+                        return Err(diagnostics.report(identifier, ImplTypeForbiddenInTheImpl));
+                    }
+                }
+            }
+            _ => {}
+        };
+        Ok(())
     }
 
     /// Specializes a ResolvedGenericItem that came from a ModuleItem.

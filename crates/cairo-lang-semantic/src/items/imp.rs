@@ -547,14 +547,14 @@ pub fn impl_type_by_trait_type(
 ) -> Maybe<Option<ImplTypeDefId>> {
     if trait_type_id.trait_id(db.upcast()) != db.impl_def_trait(impl_def_id)? {
         // The trait type belongs to a trait other than the one the impl implements.
-        println!(
-            "yg trait_type_id.trait_id(db.upcast()): {:?}",
-            trait_type_id.trait_id(db.upcast()).debug(db.elongate())
-        );
-        println!(
-            "yg db.impl_def_trait(impl_def_id)?: {:?}",
-            db.impl_def_trait(impl_def_id)?.debug(db.elongate())
-        );
+        // println!(
+        //     "yg trait_type_id.trait_id(db.upcast()): {:?}",
+        //     trait_type_id.trait_id(db.upcast()).debug(db.elongate())
+        // );
+        // println!(
+        //     "yg db.impl_def_trait(impl_def_id)?: {:?}",
+        //     db.impl_def_trait(impl_def_id)?.debug(db.elongate())
+        // );
         return Ok(None);
     }
 
@@ -796,13 +796,14 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
         TypeLongId::GenericParameter(_) => {
             return Err(skip_diagnostic());
         }
-        TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
+        TypeLongId::Var(_) | TypeLongId::ImplType(_) => {
+            panic!("Types should be fully resolved at this point.")
+        }
         TypeLongId::Coupon(_) => vec![],
         TypeLongId::FixedSizeArray { type_id, .. } => vec![type_id],
         TypeLongId::Missing(diag_added) => {
             return Err(diag_added);
         }
-        TypeLongId::ImplType(_) => todo!(), // TODO(yg)
     })
 }
 

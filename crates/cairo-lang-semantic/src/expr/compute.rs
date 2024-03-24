@@ -6,7 +6,6 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use ast::PathSegment;
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, ImplContext, LanguageElementId,
@@ -204,14 +203,14 @@ impl<'ctx> ComputationContext<'ctx> {
             .report_by_ptr(stable_ptr, UnsupportedOutsideOfFunction { feature_name }))
     }
 
-    // TODO(yg): find a more distinguished name (different verb) for those two: implize.
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
         // TODO(spapini): Propagate error to diagnostics.
         self.resolver.inference().rewrite(ty).unwrap()
     }
 
-    // TODO(yg): doc.
-    fn reduce_impl_type_if_possible(&mut self, type_to_reduce: TypeId) -> Maybe<TypeId> {
+    /// Tries to implize a type, according to the computation context. See [implize_type] for more
+    /// details.
+    fn implize_type(&mut self, type_to_reduce: TypeId) -> Maybe<TypeId> {
         implize_type(
             self.db,
             type_to_reduce,
@@ -401,7 +400,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
     };
-    println!("yg inferred_type -2: {:?}", expr.clone()?.ty().debug(db.elongate()));
+    // println!("yg inferred_type -2: {:?}", expr.clone()?.ty().debug(db.elongate()));
     expr
 }
 
@@ -796,7 +795,7 @@ fn compute_expr_function_call_semantic(
         }
         ResolvedConcreteItem::Function(function) => {
             let expr = expr_function_call(ctx, function, named_args, syntax.stable_ptr().into());
-            println!("yg inferred_type -3: {:?}", expr.clone()?.ty().debug(db.elongate()));
+            // println!("yg inferred_type -3: {:?}", expr.clone()?.ty().debug(db.elongate()));
             expr
         }
         _ => Err(ctx.diagnostics.report(
@@ -844,7 +843,6 @@ pub fn compute_named_argument_clause(
     NamedArg(expr, arg_name_identifier, mutability)
 }
 
-// TODO(yggg): should reduce signatures in all callers?
 pub fn compute_root_expr(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBlock,
@@ -854,12 +852,11 @@ pub fn compute_root_expr(
     // TODO(yg): consider removing reduce_ty every time reduce_impl_type_if_possible is called right
     // after. Make sure it works.
     let res_ty = ctx.reduce_ty(res.ty());
-    let res_ty = ctx.reduce_impl_type_if_possible(res_ty)?;
+    let res_ty = ctx.implize_type(res_ty)?;
     let res = ctx.exprs.alloc(res);
     let return_type = ctx.reduce_ty(return_type);
-    let return_type = ctx.reduce_impl_type_if_possible(return_type)?;
+    let return_type = ctx.implize_type(return_type)?;
     if ctx.resolver.inference().conform_ty(res_ty, return_type).is_err() {
-        // TODO(yg): here fails with ?.
         ctx.diagnostics
             .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res_ty });
     }
@@ -1092,7 +1089,7 @@ fn compute_expr_match_semantic(
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
     for (_, expr) in patterns_and_exprs.iter() {
         let expr_ty = ctx.reduce_ty(expr.ty());
-        let expr_ty = ctx.reduce_impl_type_if_possible(expr_ty)?;
+        let expr_ty = ctx.implize_type(expr_ty)?;
         if let Err((match_ty, arm_ty)) =
             helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr_ty)
         {
@@ -1166,8 +1163,8 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
     let if_block_ty = ctx.reduce_ty(if_block.ty());
     let else_block_ty = ctx.reduce_ty(else_block_ty);
-    let if_block_ty = ctx.reduce_impl_type_if_possible(if_block_ty)?;
-    let else_block_ty = ctx.reduce_impl_type_if_possible(else_block_ty)?;
+    let if_block_ty = ctx.implize_type(if_block_ty)?;
+    let else_block_ty = ctx.implize_type(else_block_ty)?;
     helper
         .try_merge_types(&mut ctx.resolver.inference(), ctx.db, if_block_ty)
         .and(helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, else_block_ty))
@@ -1408,7 +1405,7 @@ fn compute_method_function_call_data(
     ) -> SemanticDiagnosticKind,
 ) -> Maybe<(FunctionId, ExprAndId, Mutability)> {
     let self_ty = ctx.reduce_ty(self_expr.ty());
-    let self_ty = ctx.reduce_impl_type_if_possible(self_ty)?;
+    let self_ty = ctx.implize_type(self_ty)?;
     let mut inference_errors = vec![];
     let candidates = filter_candidate_traits(
         ctx,
@@ -2256,7 +2253,7 @@ fn member_access_expr(
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
     let ty = ctx.reduce_ty(lexpr.ty());
-    let ty = ctx.reduce_impl_type_if_possible(ty)?;
+    let ty = ctx.implize_type(ty)?;
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
 
     match long_ty {
@@ -2504,7 +2501,7 @@ fn expr_function_call(
         // TODO(lior): Add a test to missing type once possible.
         let expected_ty = ctx.reduce_ty(param_typ);
         let actual_ty = ctx.reduce_ty(arg_typ);
-        let actual_ty = ctx.reduce_impl_type_if_possible(actual_ty)?;
+        let actual_ty = ctx.implize_type(actual_ty)?;
         if !arg_typ.is_missing(ctx.db)
             && ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err()
         {
@@ -2540,7 +2537,7 @@ fn expr_function_call(
         });
     }
 
-    println!("yg inferred_type -4: {:?}", signature.return_type.debug(ctx.db.elongate()));
+    // println!("yg inferred_type -4: {:?}", signature.return_type.debug(ctx.db.elongate()));
     let expr_function_call = ExprFunctionCall {
         function: function_id,
         args,
@@ -2565,12 +2562,12 @@ fn get_function_implized_signature(
 ) -> Maybe<Signature> {
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let mut signature = db.concrete_function_signature(function_id)?;
-    println!("yg inferred_type -5: {:?}", signature.return_type.debug(db.elongate()));
+    // println!("yg inferred_type -5: {:?}", signature.return_type.debug(db.elongate()));
     let generic_function = function_id.lookup(db).function.generic_function;
 
     // TODO(yg): export to a function? Maybe query...
     // If the generic function is not an impl function, nothing to implize.
-    println!("yg1 generic_function: {:?}", generic_function.debug(db.elongate()));
+    // println!("yg1 generic_function: {:?}", generic_function.debug(db.elongate()));
     let crate::items::functions::GenericFunctionId::Impl(impl_generic_function) = generic_function
     else {
         return Ok(signature);
@@ -2583,11 +2580,11 @@ fn get_function_implized_signature(
 
     let impl_def_id = impl_function.impl_def_id(db.upcast());
     let impl_ctx = Some(ImplContext { impl_def_id });
-    println!("yg1 impl_def_id: {:?}", impl_def_id.debug(db.elongate()));
-    println!(
-        "yg2 impl_generic_function.impl_id: {:?}",
-        impl_generic_function.impl_id.debug(db.elongate())
-    );
+    // println!("yg1 impl_def_id: {:?}", impl_def_id.debug(db.elongate()));
+    // println!(
+    //     "yg2 impl_generic_function.impl_id: {:?}",
+    //     impl_generic_function.impl_id.debug(db.elongate())
+    // );
 
     let mut tmp_inference_data = impl_def_id.resolver_data(db)?.inference_data.temporary_clone();
     let mut tmp_inference = tmp_inference_data.inference(db);
@@ -2606,9 +2603,9 @@ pub fn implize_signature(
     impl_ctx: Option<ImplContext>,
 ) -> Maybe<()> {
     for param in signature.params.iter_mut() {
-        println!("yg1 param type before: {:?}", param.ty.debug(db.elongate()));
+        // println!("yg1 param type before: {:?}", param.ty.debug(db.elongate()));
         param.ty = implize_type(db, param.ty, impl_ctx, tmp_inference)?;
-        println!("yg1 param type after: {:?}", param.ty.debug(db.elongate()));
+        // println!("yg1 param type after: {:?}", param.ty.debug(db.elongate()));
     }
     signature.return_type = implize_type(db, signature.return_type, impl_ctx, tmp_inference)?;
 
@@ -2707,11 +2704,11 @@ pub fn compute_statement_semantic(
                     let explicit_type =
                         resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &var_type_path);
                     let explicit_type = ctx.reduce_ty(explicit_type);
-                    let explicit_type = ctx.reduce_impl_type_if_possible(explicit_type)?;
+                    let explicit_type = ctx.implize_type(explicit_type)?;
                     let inferred_type = ctx.reduce_ty(inferred_type);
                     // println!("yg inferred_type before: {:?}",
                     // inferred_type.debug(db.elongate()));
-                    let inferred_type = ctx.reduce_impl_type_if_possible(inferred_type)?;
+                    let inferred_type = ctx.implize_type(inferred_type)?;
                     // println!("yg inferred_type after: {:?}", inferred_type.debug(db.elongate()));
                     if !inferred_type.is_missing(db)
                         && ctx
@@ -2821,8 +2818,8 @@ pub fn compute_statement_semantic(
                     UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
                 )?
                 .return_type;
-            let expected_ty = ctx.reduce_impl_type_if_possible(expected_ty)?;
-            let expr_ty = ctx.reduce_impl_type_if_possible(expr_ty)?;
+            let expected_ty = ctx.implize_type(expected_ty)?;
+            let expr_ty = ctx.implize_type(expr_ty)?;
             if !expected_ty.is_missing(db)
                 && !expr_ty.is_missing(db)
                 && ctx.resolver.inference().conform_ty(expr_ty, expected_ty).is_err()
@@ -2847,7 +2844,7 @@ pub fn compute_statement_semantic(
                 }
             };
             let ty = ctx.reduce_ty(ty);
-            let ty = ctx.reduce_impl_type_if_possible(ty)?;
+            let ty = ctx.implize_type(ty)?;
             match &mut ctx.loop_ctx {
                 None => {
                     return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
