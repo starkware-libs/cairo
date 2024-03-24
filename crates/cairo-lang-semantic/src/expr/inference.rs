@@ -458,35 +458,12 @@ impl<'db> Inference<'db> {
     /// Solves the inference system. After a successful solve, there are no more pending impl
     /// inferences.
     pub fn solve(&mut self) -> InferenceResult<()> {
-        // let print = !self.pending.is_empty();
-        // if print {
-        //     println!("yg #ambiguous before: {}", self.ambiguous.len());
-        //     println!("yg #pending before: {}", self.pending.len());
-        //     println!("yg pending before: {:?}", self.pending);
-        //     println!("yg solved before: {:?}", self.solved);
-        // }
         let mut ambiguous = std::mem::take(&mut self.ambiguous);
         self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
         while let Some(var) = self.pending.pop_front() {
             // First inference error stops inference.
             self.solve_single_pending(var)?;
         }
-        // if print {
-        //     println!("yg #ambiguous before: {}", self.ambiguous.len());
-        //     println!("yg #pending after: {}", self.pending.len());
-        //     println!("yg pending after: {:?}", self.pending);
-        //     println!("yg solved after: {:?}", self.solved);
-        //     println!("yg type_assign: {:#?}", self.type_assignment);
-        //     // println!("yg impl_assign: {:#?}", self.impl_assignment);
-        //     for (local, impl_id) in self.impl_assignment.iter() {
-        //         println!(
-        //             "yg local: {}, impl_id: {:?} ({:?})",
-        //             local.0,
-        //             impl_id.debug(self.db.elongate()),
-        //             impl_id
-        //         );
-        //     }
-        // }
         Ok(())
     }
 
@@ -616,7 +593,6 @@ impl<'db> Inference<'db> {
             return self.conform_impl(impl_id, other_impl);
         }
         if self.impl_contains_var(&impl_id, InferenceVar::Impl(var)) {
-            // println!("yg impl_contains_var");
             return Err(InferenceError::Cycle { var: InferenceVar::Impl(var) });
         }
         self.impl_assignment.insert(var, impl_id);
@@ -647,7 +623,6 @@ impl<'db> Inference<'db> {
         assert!(!self.type_assignment.contains_key(&var.id), "Cannot reassign variable.");
         let inference_var = InferenceVar::Type(var.id);
         if self.ty_contains_var(ty, inference_var) {
-            // println!("yg ty_contains_var");
             return Err(InferenceError::Cycle { var: inference_var });
         }
         self.type_assignment.insert(var.id, ty);
@@ -831,23 +806,10 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
 }
 impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
-        // println!("yg ImplId internal_rewrite");
         if let ImplId::ImplVar(var) = value {
-            // println!("yg ImplId rewrite - impl var");
-            // println!("yg impl_assign: {:#?}", self.impl_assignment);
-            // for (local, impl_id) in self.impl_assignment.iter() {
-            //     println!(
-            //         "yg local: {}, impl_id: {:?} ({:?})",
-            //         local.0,
-            //         impl_id.debug(self.db.elongate()),
-            //         impl_id
-            //     );
-            // }
             // Relax the candidates.
-            // println!("yg local index: {}", var.get(self.db).id.0);
             if let Some(mut impl_id) = self.impl_assignment(var.get(self.db).id) {
                 self.internal_rewrite(&mut impl_id)?;
-                // println!("yg ImplId rewrite - early ret with {:?}", impl_id);
                 *value = impl_id;
                 return Ok(RewriteResult::Modified);
             }

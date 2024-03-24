@@ -547,14 +547,6 @@ pub fn impl_type_by_trait_type(
 ) -> Maybe<Option<ImplTypeDefId>> {
     if trait_type_id.trait_id(db.upcast()) != db.impl_def_trait(impl_def_id)? {
         // The trait type belongs to a trait other than the one the impl implements.
-        // println!(
-        //     "yg trait_type_id.trait_id(db.upcast()): {:?}",
-        //     trait_type_id.trait_id(db.upcast()).debug(db.elongate())
-        // );
-        // println!(
-        //     "yg db.impl_def_trait(impl_def_id)?: {:?}",
-        //     db.impl_def_trait(impl_def_id)?.debug(db.elongate())
-        // );
         return Ok(None);
     }
 
@@ -1382,14 +1374,11 @@ pub fn impl_type_concrete_implized(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
 ) -> Maybe<Option<TypeId>> {
-    // println!("yg1 impl_type_id {:?}", impl_type_id.debug(db.elongate()));
     let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_type_id.impl_id() else {
         return Ok(None);
     };
-    // println!("yg1 concrete, concrete_impl {:?}", concrete_impl.debug(db.elongate()));
 
     let impl_def_id = concrete_impl.impl_def_id(db);
-    // println!("yg1 impl_def_id {:?}", impl_def_id.debug(db.elongate()));
     db.impl_type_implized_by_context(impl_type_id, impl_def_id)
 }
 

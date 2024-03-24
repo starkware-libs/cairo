@@ -367,7 +367,7 @@ pub fn maybe_compute_expr_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
     // TODO(spapini): When Expr holds the syntax pointer, add it here as well.
-    let expr = match syntax {
+    match syntax {
         ast::Expr::Path(path) => resolve_expr_path(ctx, path),
         ast::Expr::Literal(literal_syntax) => {
             Ok(Expr::Literal(literal_to_semantic(ctx, literal_syntax)?))
@@ -402,9 +402,7 @@ pub fn maybe_compute_expr_semantic(
         }
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
-    };
-    // println!("yg inferred_type -2: {:?}", expr.clone()?.ty().debug(db.elongate()));
-    expr
+    }
 }
 
 fn compute_expr_inline_macro_semantic(
@@ -797,9 +795,7 @@ fn compute_expr_function_call_semantic(
             }))
         }
         ResolvedConcreteItem::Function(function) => {
-            let expr = expr_function_call(ctx, function, named_args, syntax.stable_ptr().into());
-            // println!("yg inferred_type -3: {:?}", expr.clone()?.ty().debug(db.elongate()));
-            expr
+            expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
         }
         _ => Err(ctx.diagnostics.report(
             &path,
@@ -2529,7 +2525,6 @@ fn expr_function_call(
         });
     }
 
-    // println!("yg inferred_type -4: {:?}", signature.return_type.debug(ctx.db.elongate()));
     let expr_function_call = ExprFunctionCall {
         function: function_id,
         args,
@@ -2619,18 +2614,10 @@ pub fn compute_statement_semantic(
     }
     let statement = match &syntax {
         ast::Statement::Let(let_syntax) => {
-            // println!("yg ==================== let statement ====================");
-            // println!("yg === RHS ===");
-            // println!("yg #pending: {}", ctx.resolver.inference().data.pending.len());
-            // println!("yg #impl_vars: {}", ctx.resolver.inference().data.impl_vars.len());
             let expr = compute_expr_semantic(ctx, &let_syntax.rhs(syntax_db));
             let inferred_type = expr.ty();
-            // println!("yg inferred_type -1: {:?}", inferred_type.debug(db.elongate()));
             let rhs_expr_id = expr.id;
-            // println!("yg #pending: {}", ctx.resolver.inference().data.pending.len());
-            // println!("yg #impl_vars: {}", ctx.resolver.inference().data.impl_vars.len());
 
-            // println!("yg === LHS ===");
             let ty = match let_syntax.type_clause(syntax_db) {
                 ast::OptionTypeClause::Empty(_) => inferred_type,
                 ast::OptionTypeClause::TypeClause(type_clause) => {
@@ -2638,10 +2625,7 @@ pub fn compute_statement_semantic(
                     let explicit_type =
                         resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &var_type_path);
                     let explicit_type = ctx.implize_type(explicit_type)?;
-                    // println!("yg inferred_type before: {:?}",
-                    // inferred_type.debug(db.elongate()));
                     let inferred_type = ctx.implize_type(inferred_type)?;
-                    // println!("yg inferred_type after: {:?}", inferred_type.debug(db.elongate()));
                     if !inferred_type.is_missing(db)
                         && ctx
                             .resolver
@@ -2729,7 +2713,6 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Return(return_syntax) => {
-            // println!("yg ==================== return statement ====================");
             if ctx.loop_ctx.is_some() {
                 return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));
             }

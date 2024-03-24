@@ -600,7 +600,6 @@ impl<'db> Resolver<'db> {
                             .map_err(|err| {
                                 err.report(diagnostics, identifier.stable_ptr().untyped())
                             })?;
-                        // println!("yg resolve generic_function {:?}", generic_function);
 
                         Ok(ResolvedConcreteItem::Function(self.specialize_function(
                             diagnostics,
@@ -629,7 +628,6 @@ impl<'db> Resolver<'db> {
                             .map_err(|err| {
                                 err.report(diagnostics, identifier.stable_ptr().untyped())
                             })?;
-                        // println!("yg resolve ty {:?}", ty);
 
                         Ok(ResolvedConcreteItem::Type(ty))
                     }

@@ -207,16 +207,8 @@ fn implize_type_recursive(
     impl_ctx: Option<ImplContext>,
     inference: &mut Inference,
 ) -> Maybe<TypeId> {
-    // println!(
-    //     "yg1 reduce_impl_type_if_possible_inner1 type: {:?}",
-    //     type_to_reduce.debug(db.elongate())
-    // );
     // First, reduce if already inferred.
     let type_to_reduce = inference.rewrite(type_to_reduce).unwrap();
-    // println!(
-    //     "yg1 reduce_impl_type_if_possible_inner2 type: {:?}",
-    //     type_to_reduce.debug(db.elongate())
-    // );
 
     // Then, reduce recursively.
     let mut long_ty = type_to_reduce.lookup(db);
@@ -249,54 +241,28 @@ fn implize_type_recursive(
         }
     }
     let type_to_reduce = db.intern_type(long_ty);
-    // println!(
-    //     "yg1 reduce_impl_type_if_possible_inner3 type: {:?}",
-    //     type_to_reduce.debug(db.elongate())
-    // );
 
     // Finally, reduce/implize the impl type itself, if possible.
 
     let TypeLongId::ImplType(mut impl_type_id) = db.lookup_intern_type(type_to_reduce) else {
         // Nothing to implize.
-        // println!("yg1 returning 3.5 original type: {:?}", type_to_reduce.debug(db.elongate()));
         return Ok(type_to_reduce);
     };
-    // println!(
-    //     "yg1 reduce_impl_type_if_possible_inner4 type: {:?}",
-    //     impl_type_id.debug(db.elongate())
-    // );
 
     // Try to reduce the impl type if its impl is an ImplVar (by reducing its impl).
     impl_type_id = reduce_trait_impl_type(impl_type_id, inference);
 
-    // println!(
-    //     "yg1 reduce_impl_type_if_possible_inner5 type: {:?}",
-    //     impl_type_id.debug(db.elongate())
-    // );
-
     // Try to implize the impl type if its impl is concrete.
     if let Some(ty) = db.impl_type_concrete_implized(impl_type_id)? {
-        // println!("yg1 returning 6.5 type: {:?}", ty.format(db));
         return Ok(ty);
     }
-
-    // println!(
-    //     "yg1 reduce_impl_type_if_possible_inner6 type: {:?}",
-    //     impl_type_id.debug(db.elongate())
-    // );
 
     // Try to implize by the impl context, if given. E.g. for `Self::MyType` inside an impl.
     if let Some(ImplContext { impl_def_id }) = impl_ctx {
         if let Some(ty) = db.impl_type_implized_by_context(impl_type_id, impl_def_id)? {
-            // println!("yg1 returning 6.5 type: {:?}", ty.format(db));
             return Ok(ty);
         }
     }
-
-    // println!(
-    //     "yg1 reduce_impl_type_if_possible_inner7 type: {:?}",
-    //     impl_type_id.debug(db.elongate())
-    // );
 
     // Could not reduce.
     Ok(type_to_reduce)
@@ -309,14 +275,11 @@ fn implize_type_recursive(
 fn reduce_trait_impl_type(impl_type_id: ImplTypeId, inference: &mut Inference) -> ImplTypeId {
     let ImplTypeId { impl_id, ty } = impl_type_id;
     if !matches!(impl_id, crate::items::imp::ImplId::ImplVar(_)) {
-        // println!("yg returning early");
         return impl_type_id;
     };
 
-    // println!("yg impl_id before: {:?}", impl_id.debug(db.elongate()));
     let impl_id = inference.rewrite(impl_id).unwrap();
 
-    // println!("yg impl_id after: {:?}", impl_id.debug(db.elongate()));
     ImplTypeId { impl_id, ty }
 }
 

@@ -770,11 +770,9 @@ pub fn concrete_function_implized_signature(
 ) -> Maybe<Signature> {
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let mut signature = db.concrete_function_signature(function_id)?;
-    // println!("yg inferred_type -5: {:?}", signature.return_type.debug(db.elongate()));
     let generic_function = function_id.lookup(db).function.generic_function;
 
     // If the generic function is not an impl function, nothing to implize.
-    // println!("yg1 generic_function: {:?}", generic_function.debug(db.elongate()));
     let crate::items::functions::GenericFunctionId::Impl(impl_generic_function) = generic_function
     else {
         return Ok(signature);
@@ -787,11 +785,6 @@ pub fn concrete_function_implized_signature(
 
     let impl_def_id = impl_function.impl_def_id(db.upcast());
     let impl_ctx = ImplContext { impl_def_id };
-    // println!("yg1 impl_def_id: {:?}", impl_def_id.debug(db.elongate()));
-    // println!(
-    //     "yg2 impl_generic_function.impl_id: {:?}",
-    //     impl_generic_function.impl_id.debug(db.elongate())
-    // );
 
     let mut tmp_inference_data = impl_def_id.resolver_data(db)?.inference_data.temporary_clone();
     let mut tmp_inference = tmp_inference_data.inference(db);
@@ -810,9 +803,7 @@ fn implize_signature(
     impl_ctx: ImplContext,
 ) -> Maybe<()> {
     for param in signature.params.iter_mut() {
-        // println!("yg1 param type before: {:?}", param.ty.debug(db.elongate()));
         param.ty = implize_type(db, param.ty, Some(impl_ctx), tmp_inference)?;
-        // println!("yg1 param type after: {:?}", param.ty.debug(db.elongate()));
     }
     signature.return_type = implize_type(db, signature.return_type, Some(impl_ctx), tmp_inference)?;
 

@@ -752,7 +752,6 @@ pub fn priv_trait_function_declaration_data(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
-    // println!("yg trait_function_id: {}", trait_function_id.name(db.upcast()));
     let syntax_db = db.upcast();
     let module_file_id = trait_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
