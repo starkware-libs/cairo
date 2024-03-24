@@ -9,9 +9,8 @@ use ast::PathSegment;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, ImplContext, ImplDefId,
-    LanguageElementId, LocalVarLongId, LookupItemId, MemberId, ModuleId, TraitFunctionId, TraitId,
-    TraitOrImplContext,
+    EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, ImplContext, LanguageElementId,
+    LocalVarLongId, LookupItemId, MemberId, ModuleId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -58,10 +57,9 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
     UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::expr::inference::{self, InferenceId};
 use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
-use crate::items::imp::{filter_candidate_traits, infer_impl_by_self, ImplId};
+use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::visibility;
