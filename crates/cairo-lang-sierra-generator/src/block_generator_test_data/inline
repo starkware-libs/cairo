@@ -34,12 +34,12 @@ fn bar(a: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::felt252) <- 2
-  (v13: core::felt252) <- core::felt252_sub(v0, v3)
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- core::felt252_sub(v0, v1)
 End:
-  Match(match core::felt252_is_zero(v13) {
+  Match(match core::felt252_is_zero(v2) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v14) => blk4,
+    IsZeroResult::NonZero(v3) => blk4,
   })
 
 blk1:
@@ -47,20 +47,20 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v19) => blk3,
+    IsZeroResult::NonZero(v4) => blk3,
   })
 
 blk2:
 Statements:
-  (v20: core::felt252) <- 1
+  (v5: core::felt252) <- 1
 End:
-  Return(v20)
+  Return(v5)
 
 blk3:
 Statements:
-  (v21: core::felt252) <- 0
+  (v6: core::felt252) <- 0
 End:
-  Return(v21)
+  Return(v6)
 
 blk4:
 Statements:

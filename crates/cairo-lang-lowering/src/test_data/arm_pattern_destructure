@@ -43,13 +43,13 @@ Statements:
 End:
   Match(match_enum(v0) {
     MyEnum::a(v1) => blk1,
-    MyEnum::b(v6) => blk2,
-    MyEnum::c(v9) => blk3,
-    MyEnum::d(v10) => blk4,
-    MyEnum::e(v13) => blk5,
-    MyEnum::f(v14) => blk6,
-    MyEnum::g(v16) => blk7,
-    MyEnum::h(v17) => blk8,
+    MyEnum::b(v2) => blk2,
+    MyEnum::c(v3) => blk3,
+    MyEnum::d(v4) => blk4,
+    MyEnum::e(v5) => blk5,
+    MyEnum::f(v6) => blk6,
+    MyEnum::g(v7) => blk7,
+    MyEnum::h(v8) => blk8,
   })
 
 blk1:
@@ -140,13 +140,13 @@ Statements:
 End:
   Match(match test::bar(v0) {
     MyEnum::a(v1, v2, v3) => blk1,
-    MyEnum::b(v6, v7, v8) => blk2,
-    MyEnum::c(v9, v10, v11) => blk3,
-    MyEnum::d(v13, v14, v15) => blk4,
-    MyEnum::e(v16, v17, v18) => blk5,
-    MyEnum::f(v20, v21) => blk6,
-    MyEnum::g(v22, v23) => blk7,
-    MyEnum::h(v25, v26) => blk8,
+    MyEnum::b(v4, v5, v6) => blk2,
+    MyEnum::c(v7, v8, v9) => blk3,
+    MyEnum::d(v10, v11, v12) => blk4,
+    MyEnum::e(v13, v14, v15) => blk5,
+    MyEnum::f(v16, v17) => blk6,
+    MyEnum::g(v18, v19) => blk7,
+    MyEnum::h(v20, v21) => blk8,
   })
 
 blk1:
@@ -157,37 +157,37 @@ End:
 blk2:
 Statements:
 End:
-  Return(v6)
+  Return(v4)
 
 blk3:
 Statements:
 End:
-  Return(v9)
+  Return(v7)
 
 blk4:
 Statements:
 End:
-  Return(v13)
+  Return(v10)
 
 blk5:
 Statements:
 End:
-  Return(v16)
+  Return(v13)
 
 blk6:
 Statements:
 End:
-  Return(v20)
+  Return(v16)
 
 blk7:
 Statements:
 End:
-  Return(v22)
+  Return(v18)
 
 blk8:
 Statements:
 End:
-  Return(v25)
+  Return(v20)
 
 //! > ==========================================================================
 
@@ -238,13 +238,13 @@ Statements:
 End:
   Match(match test::bar() {
     MyEnum::a(v0, v1) => blk1,
-    MyEnum::b(v4, v5) => blk2,
-    MyEnum::c(v8, v9) => blk3,
-    MyEnum::d(v12, v13) => blk4,
-    MyEnum::e(v16, v17) => blk5,
-    MyEnum::f(v20) => blk6,
-    MyEnum::g(v23) => blk7,
-    MyEnum::h(v26) => blk8,
+    MyEnum::b(v2, v3) => blk2,
+    MyEnum::c(v4, v5) => blk3,
+    MyEnum::d(v6, v7) => blk4,
+    MyEnum::e(v8, v9) => blk5,
+    MyEnum::f(v10) => blk6,
+    MyEnum::g(v11) => blk7,
+    MyEnum::h(v12) => blk8,
   })
 
 blk1:
@@ -329,60 +329,60 @@ extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v29: core::RangeCheck, v0: core::felt252
+Parameters: v0: core::RangeCheck, v1: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match test::bar(v29, v0) {
-    MyEnum::a(v30, v1, v2, v3) => blk1,
-    MyEnum::b(v31, v6, v7, v8) => blk2,
-    MyEnum::c(v32, v9, v10, v11) => blk3,
-    MyEnum::d(v33, v13, v14, v15) => blk4,
-    MyEnum::e(v34, v16, v17, v18) => blk5,
-    MyEnum::f(v35, v20, v21) => blk6,
-    MyEnum::g(v36, v22, v23) => blk7,
-    MyEnum::h(v37, v25, v26) => blk8,
+  Match(match test::bar(v0, v1) {
+    MyEnum::a(v2, v3, v4, v5) => blk1,
+    MyEnum::b(v6, v7, v8, v9) => blk2,
+    MyEnum::c(v10, v11, v12, v13) => blk3,
+    MyEnum::d(v14, v15, v16, v17) => blk4,
+    MyEnum::e(v18, v19, v20, v21) => blk5,
+    MyEnum::f(v22, v23, v24) => blk6,
+    MyEnum::g(v25, v26, v27) => blk7,
+    MyEnum::h(v28, v29, v30) => blk8,
   })
 
 blk1:
 Statements:
 End:
-  Return(v30)
+  Return(v2)
 
 blk2:
 Statements:
 End:
-  Return(v31)
+  Return(v6)
 
 blk3:
 Statements:
 End:
-  Return(v32)
+  Return(v10)
 
 blk4:
 Statements:
 End:
-  Return(v33)
+  Return(v14)
 
 blk5:
 Statements:
 End:
-  Return(v34)
+  Return(v18)
 
 blk6:
 Statements:
 End:
-  Return(v35)
+  Return(v22)
 
 blk7:
 Statements:
 End:
-  Return(v36)
+  Return(v25)
 
 blk8:
 Statements:
 End:
-  Return(v37)
+  Return(v28)
 
 //! > ==========================================================================
 
@@ -427,57 +427,57 @@ extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v77: core::RangeCheck, v0: core::felt252
+Parameters: v0: core::RangeCheck, v1: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match test::bar(v77, v0) {
-    MyEnum::a(v78, v1, v2, v3) => blk1,
-    MyEnum::b(v79, v6, v7, v8) => blk2,
-    MyEnum::c(v80, v11, v12, v13) => blk3,
-    MyEnum::d(v81, v16, v17, v18) => blk4,
-    MyEnum::e(v82, v21, v22, v23) => blk5,
-    MyEnum::f(v83, v26, v27) => blk6,
-    MyEnum::g(v84, v30, v31) => blk7,
-    MyEnum::h(v85, v34, v35) => blk8,
+  Match(match test::bar(v0, v1) {
+    MyEnum::a(v2, v3, v4, v5) => blk1,
+    MyEnum::b(v6, v7, v8, v9) => blk2,
+    MyEnum::c(v10, v11, v12, v13) => blk3,
+    MyEnum::d(v14, v15, v16, v17) => blk4,
+    MyEnum::e(v18, v19, v20, v21) => blk5,
+    MyEnum::f(v22, v23, v24) => blk6,
+    MyEnum::g(v25, v26, v27) => blk7,
+    MyEnum::h(v28, v29, v30) => blk8,
   })
 
 blk1:
 Statements:
 End:
-  Return(v78)
+  Return(v2)
 
 blk2:
 Statements:
 End:
-  Return(v79)
+  Return(v6)
 
 blk3:
 Statements:
 End:
-  Return(v80)
+  Return(v10)
 
 blk4:
 Statements:
 End:
-  Return(v81)
+  Return(v14)
 
 blk5:
 Statements:
 End:
-  Return(v82)
+  Return(v18)
 
 blk6:
 Statements:
 End:
-  Return(v83)
+  Return(v22)
 
 blk7:
 Statements:
 End:
-  Return(v84)
+  Return(v25)
 
 blk8:
 Statements:
 End:
-  Return(v85)
+  Return(v28)

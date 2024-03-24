@@ -115,11 +115,11 @@ impl CtorMyStruct of CtorTrait<MyStruct> {
 Parameters:
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 10
-  (v2: test::MyStruct) <- struct_construct(v1)
-  (v3: [test::MyStruct; 3]) <- struct_construct(v2, v2, v2)
+  (v0: core::felt252) <- 10
+  (v1: test::MyStruct) <- struct_construct(v0)
+  (v2: [test::MyStruct; 3]) <- struct_construct(v1, v1, v1)
 End:
-  Return(v3)
+  Return(v2)
 
 //! > ==========================================================================
 

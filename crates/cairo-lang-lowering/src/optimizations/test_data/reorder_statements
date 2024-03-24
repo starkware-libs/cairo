@@ -50,14 +50,14 @@ blk1:
 Statements:
   (v1: core::option::Option::<core::integer::u16>) <- Option::Some(v0)
 End:
-  Goto(blk3, {v1 -> v4})
+  Goto(blk3, {v1 -> v2})
 
 blk2:
 Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::option::Option::<core::integer::u16>) <- Option::None(v2)
+  (v3: ()) <- struct_construct()
+  (v4: core::option::Option::<core::integer::u16>) <- Option::None(v3)
 End:
-  Goto(blk3, {v3 -> v4})
+  Goto(blk3, {v4 -> v2})
 
 blk3:
 Statements:
@@ -67,46 +67,46 @@ Statements:
   (v8: core::felt252) <- 2
   (v9: core::felt252) <- 3
 End:
-  Match(match_enum(v4) {
+  Match(match_enum(v2) {
     Option::Some(v10) => blk4,
     Option::None(v11) => blk5,
   })
 
 blk4:
 Statements:
-  (v19: core::felt252) <- core::felt252_add(v7, v8)
+  (v12: core::felt252) <- core::felt252_add(v7, v8)
 End:
-  Goto(blk9, {v19 -> v18})
+  Goto(blk9, {v12 -> v13})
 
 blk5:
 Statements:
-  (v13: core::felt252) <- 4
+  (v14: core::felt252) <- 4
 End:
-  Match(match_enum(v4) {
-    Option::Some(v14) => blk6,
-    Option::None(v15) => blk7,
+  Match(match_enum(v2) {
+    Option::Some(v15) => blk6,
+    Option::None(v16) => blk7,
   })
 
 blk6:
 Statements:
-  (v20: core::felt252) <- core::felt252_add(v9, v13)
+  (v17: core::felt252) <- core::felt252_add(v9, v14)
 End:
-  Goto(blk8, {v20 -> v17})
+  Goto(blk8, {v17 -> v18})
 
 blk7:
 Statements:
 End:
-  Goto(blk8, {v7 -> v17})
+  Goto(blk8, {v7 -> v18})
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v17 -> v18})
+  Goto(blk9, {v18 -> v13})
 
 blk9:
 Statements:
 End:
-  Return(v18)
+  Return(v13)
 
 //! > after
 Parameters:
@@ -122,20 +122,20 @@ blk1:
 Statements:
   (v1: core::option::Option::<core::integer::u16>) <- Option::Some(v0)
 End:
-  Goto(blk3, {v1 -> v4})
+  Goto(blk3, {v1 -> v2})
 
 blk2:
 Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::option::Option::<core::integer::u16>) <- Option::None(v2)
+  (v3: ()) <- struct_construct()
+  (v4: core::option::Option::<core::integer::u16>) <- Option::None(v3)
 End:
-  Goto(blk3, {v3 -> v4})
+  Goto(blk3, {v4 -> v2})
 
 blk3:
 Statements:
   (v7: core::felt252) <- 1
 End:
-  Match(match_enum(v4) {
+  Match(match_enum(v2) {
     Option::Some(v10) => blk4,
     Option::None(v11) => blk5,
   })
@@ -143,40 +143,40 @@ End:
 blk4:
 Statements:
   (v8: core::felt252) <- 2
-  (v19: core::felt252) <- core::felt252_add(v7, v8)
+  (v12: core::felt252) <- core::felt252_add(v7, v8)
 End:
-  Goto(blk9, {v19 -> v18})
+  Goto(blk9, {v12 -> v13})
 
 blk5:
 Statements:
 End:
-  Match(match_enum(v4) {
-    Option::Some(v14) => blk6,
-    Option::None(v15) => blk7,
+  Match(match_enum(v2) {
+    Option::Some(v15) => blk6,
+    Option::None(v16) => blk7,
   })
 
 blk6:
 Statements:
   (v9: core::felt252) <- 3
-  (v13: core::felt252) <- 4
-  (v20: core::felt252) <- core::felt252_add(v9, v13)
+  (v14: core::felt252) <- 4
+  (v17: core::felt252) <- core::felt252_add(v9, v14)
 End:
-  Goto(blk8, {v20 -> v17})
+  Goto(blk8, {v17 -> v18})
 
 blk7:
 Statements:
 End:
-  Goto(blk8, {v7 -> v17})
+  Goto(blk8, {v7 -> v18})
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v17 -> v18})
+  Goto(blk9, {v18 -> v13})
 
 blk9:
 Statements:
 End:
-  Return(v18)
+  Return(v13)
 
 //! > ==========================================================================
 
@@ -214,9 +214,9 @@ blk0 (root):
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::bool) <- bool::True(v0)
-  (v11: core::bool) <- core::bool_not_impl(v1)
-  (v13: core::bool) <- core::bool_not_impl(v1)
-  (v14: core::bool) <- core::bool_not_impl(v13)
+  (v2: core::bool) <- core::bool_not_impl(v1)
+  (v3: core::bool) <- core::bool_not_impl(v1)
+  (v4: core::bool) <- core::bool_not_impl(v3)
 End:
   Match(match test::get_option() {
     Option::Some(v5) => blk1,
@@ -232,15 +232,15 @@ blk2:
 Statements:
   (v6: ()) <- struct_construct()
   (v7: core::bool) <- bool::False(v6)
-  (v12: core::bool) <- core::bool_xor_impl(v7, v11)
+  (v8: core::bool) <- core::bool_xor_impl(v7, v2)
 End:
   Goto(blk3, {})
 
 blk3:
 Statements:
-  (v10: ()) <- struct_construct()
+  (v9: ()) <- struct_construct()
 End:
-  Return(v10)
+  Return(v9)
 
 //! > after
 Parameters:
@@ -261,18 +261,18 @@ blk2:
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::bool) <- bool::True(v0)
-  (v11: core::bool) <- core::bool_not_impl(v1)
+  (v2: core::bool) <- core::bool_not_impl(v1)
   (v6: ()) <- struct_construct()
   (v7: core::bool) <- bool::False(v6)
-  (v12: core::bool) <- core::bool_xor_impl(v7, v11)
+  (v8: core::bool) <- core::bool_xor_impl(v7, v2)
 End:
   Goto(blk3, {})
 
 blk3:
 Statements:
-  (v10: ()) <- struct_construct()
+  (v9: ()) <- struct_construct()
 End:
-  Return(v10)
+  Return(v9)
 
 //! > ==========================================================================
 
