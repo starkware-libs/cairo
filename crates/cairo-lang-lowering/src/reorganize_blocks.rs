@@ -35,8 +35,7 @@ pub fn reorganize_blocks(lowered: &mut FlatLowered) {
         }
     });
 
-    let mut analysis =
-        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    let mut analysis = BackAnalysis::new(lowered, ctx);
     analysis.get_root_info();
     let ctx = analysis.analyzer;
 
@@ -144,11 +143,11 @@ impl Analyzer<'_> for TopSortContext {
         self.incoming_gotos[target_block_id.0] += 1;
     }
 
-    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
-        &'b mut self,
+    fn merge_match(
+        &mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        _infos: Infos,
+        _infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         for var_usage in match_info.inputs() {
             self.remappings_ctx.set_used(var_usage.var_id);

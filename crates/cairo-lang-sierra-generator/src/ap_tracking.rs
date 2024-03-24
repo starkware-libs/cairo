@@ -39,8 +39,7 @@ pub fn get_ap_tracking_configuration(
         return ctx.ap_tracking_configuration;
     }
 
-    let mut analysis =
-        BackAnalysis { lowered: lowered_function, block_info: Default::default(), analyzer: ctx };
+    let mut analysis = BackAnalysis::new(lowered_function, ctx);
     analysis.get_root_info();
 
     analysis.analyzer.ap_tracking_configuration
@@ -123,11 +122,11 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
         );
     }
 
-    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
-        &'b mut self,
+    fn merge_match(
+        &mut self,
         (block_id, _statement_index): StatementLocation,
         match_info: &MatchInfo,
-        infos: Infos,
+        infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         // Find all the variables that are alive after this block convergence.
         // A variable is alive after a converges if it is a alive in some block that is reachable

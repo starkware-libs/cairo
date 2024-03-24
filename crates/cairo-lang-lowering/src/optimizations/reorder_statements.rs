@@ -13,8 +13,7 @@ use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
 use crate::ids::FunctionId;
 use crate::{
-    BlockId, FlatLowered, MatchArm, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage,
-    VariableId,
+    BlockId, FlatLowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,
 };
 
 /// Reorder the statements in the lowering in order to move variable definitions closer to their
@@ -32,8 +31,7 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         moveable_functions: &db.priv_movable_function_ids(),
         statement_to_move: vec![],
     };
-    let mut analysis =
-        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    let mut analysis = BackAnalysis::new(lowered, ctx);
     analysis.get_root_info();
     let ctx = analysis.analyzer;
 
@@ -152,30 +150,23 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         }
     }
 
-    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
-        &'b mut self,
+    fn merge_match(
+        &mut self,
         statement_location: StatementLocation,
         match_info: &MatchInfo,
-        infos: Infos,
+        infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
-        let mut info_and_arms = zip_eq(infos, match_info.arms());
-        let remove_arm_outputs = |info: &mut ReorderStatementsInfo, arm: &MatchArm| {
+        let mut infos = zip_eq(infos, match_info.arms()).map(|(mut info, arm)| {
             for var_id in &arm.var_ids {
                 info.next_use.remove(var_id);
             }
-        };
-        let mut info = if let Some((first, arm)) = info_and_arms.next() {
-            let mut v = first.clone();
-            remove_arm_outputs(&mut v, arm);
-            v
-        } else {
-            Self::Info::default()
-        };
-        for (arm_info, arm) in info_and_arms {
+            info
+        });
+        let mut info = if let Some(first) = infos.next() { first } else { Self::Info::default() };
+        for arm_info in infos {
             info.next_use.merge(&arm_info.next_use, |e, _| {
                 *e.into_mut() = statement_location;
             });
-            remove_arm_outputs(&mut info, arm);
         }
 
         for var_usage in match_info.inputs() {
