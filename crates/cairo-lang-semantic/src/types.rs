@@ -183,7 +183,7 @@ pub fn implize_type(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
     impl_ctx: Option<ImplContext>,
-    inference: &mut Inference,
+    inference: &mut Inference<'_>,
 ) -> Maybe<TypeId> {
     // Make sure the inference is solved. This function doesn't add new inference data, only uses
     // the existing data.
@@ -205,7 +205,7 @@ fn implize_type_recursive(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
     impl_ctx: Option<ImplContext>,
-    inference: &mut Inference,
+    inference: &mut Inference<'_>,
 ) -> Maybe<TypeId> {
     // First, reduce if already inferred.
     let type_to_reduce = inference.rewrite(type_to_reduce).unwrap();
@@ -272,7 +272,7 @@ fn implize_type_recursive(
 /// is only a single impl for MyTrait in the context.
 ///
 /// Assumes the given inference is `solve()`ed.
-fn reduce_trait_impl_type(impl_type_id: ImplTypeId, inference: &mut Inference) -> ImplTypeId {
+fn reduce_trait_impl_type(impl_type_id: ImplTypeId, inference: &mut Inference<'_>) -> ImplTypeId {
     let ImplTypeId { impl_id, ty } = impl_type_id;
     if !matches!(impl_id, crate::items::imp::ImplId::ImplVar(_)) {
         return impl_type_id;

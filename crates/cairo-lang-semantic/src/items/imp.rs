@@ -1608,7 +1608,8 @@ fn validate_impl_function_signature(
     signature: &semantic::Signature,
     impl_function_syntax: &ast::FunctionWithBody,
     impl_func_generics: &[GenericParam],
-    resolver: &mut Resolver,
+    // TODO(yg): only need inference...
+    resolver: &mut Resolver<'_>,
 ) -> Maybe<TraitFunctionId> {
     let syntax_db = db.upcast();
     let defs_db = db.upcast();

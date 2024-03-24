@@ -58,14 +58,14 @@ trait MyTrait {
 
 //! > expected_diagnostics
 error: In a trait, paths of the same trait are not allowed. Did you mean to use  `Self::`?
- --> lib.cairo:4:38
-    fn foo(x: MyTrait::InputType) -> MyTrait::OutputType;
-                                     ^*****^
-
-error: In a trait, paths of the same trait are not allowed. Did you mean to use  `Self::`?
  --> lib.cairo:4:15
     fn foo(x: MyTrait::InputType) -> MyTrait::OutputType;
               ^*****^
+
+error: In a trait, paths of the same trait are not allowed. Did you mean to use  `Self::`?
+ --> lib.cairo:4:38
+    fn foo(x: MyTrait::InputType) -> MyTrait::OutputType;
+                                     ^*****^
 
 //! > ==========================================================================
 
@@ -102,14 +102,14 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
- --> lib.cairo:10:37
-    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType { x }
-                                    ^****^
-
-error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
  --> lib.cairo:10:15
     fn foo(x: MyImpl::InputType) -> MyImpl::OutputType { x }
               ^****^
+
+error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:10:37
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType { x }
+                                    ^****^
 
 error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u32`, actual: `<missing>`.
  --> lib.cairo:10:15
@@ -161,14 +161,14 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: In an impl, paths of the impl's trait are not allowed. Did you mean to use  `Self::`?
- --> lib.cairo:10:39
-    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { x }
-                                      ^*****^
-
-error: In an impl, paths of the impl's trait are not allowed. Did you mean to use  `Self::`?
  --> lib.cairo:10:16
     fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { x }
                ^*****^
+
+error: In an impl, paths of the impl's trait are not allowed. Did you mean to use  `Self::`?
+ --> lib.cairo:10:39
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { x }
+                                      ^*****^
 
 error: Parameter type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `<missing>`.
  --> lib.cairo:10:16
@@ -529,7 +529,7 @@ Candidate `IndexView::index` inference failed with: Trait has no implementation 
 
 //! > ==========================================================================
 
-//! > Using traits' items is allowed in other traits, if well resolved.
+//! > Using traits' items is allowed in other traits, if well resolved. TODO(yg): fix trait type not resolved
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
@@ -548,12 +548,64 @@ impl AnotherImpl of AnotherTrait {
     type AnotherType = u32;
 }
 trait MyTrait {
-    type MyType;
     fn bar1(x: AnotherTrait::AnotherType);
     fn bar2() -> AnotherTrait::AnotherType;
 }
+impl MyImpl of MyTrait {
+    fn bar1(x: u32) {}
+    fn bar2() -> u32 { 3_u32 }
+}
 
 //! > expected_diagnostics
+error: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `ImplVar(test::AnotherTrait)::AnotherType`, actual: `core::integer::u32`.
+ --> lib.cairo:12:16
+    fn bar1(x: u32) {}
+               ^*^
+
+error: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `ImplVar(test::AnotherTrait)::AnotherType`, actual: `core::integer::u32`.
+ --> lib.cairo:13:18
+    fn bar2() -> u32 { 3_u32 }
+                 ^*^
+
+//! > ==========================================================================
+
+//! > Using traits' items in other traits, well resolved, but with type mismatch. TODO(yg): fix trait type not resolved
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    type AnotherType;
+}
+impl AnotherImpl of AnotherTrait {
+    type AnotherType = u16;
+}
+trait MyTrait {
+    fn bar1(x: AnotherTrait::AnotherType);
+    fn bar2() -> AnotherTrait::AnotherType;
+}
+impl MyImpl of MyTrait {
+    fn bar1(x: u32) {}
+    fn bar2() -> u32 { 3_u32 }
+}
+
+//! > expected_diagnostics
+error: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `ImplVar(test::AnotherTrait)::AnotherType`, actual: `core::integer::u32`.
+ --> lib.cairo:12:16
+    fn bar1(x: u32) {}
+               ^*^
+
+error: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `ImplVar(test::AnotherTrait)::AnotherType`, actual: `core::integer::u32`.
+ --> lib.cairo:13:18
+    fn bar2() -> u32 { 3_u32 }
+                 ^*^
 
 //! > ==========================================================================
 
@@ -595,45 +647,25 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
+error: Trait has no implementation in context: test::AnotherTrait0
+ --> lib.cairo:17:31
+    fn bar1(x: AnotherTrait0::AnotherType);
+                              ^*********^
 
-//! > ==========================================================================
+error: Trait has no implementation in context: test::AnotherTrait0
+ --> lib.cairo:18:33
+    fn bar2() -> AnotherTrait0::AnotherType;
+                                ^*********^
 
-//! > Using traits' items is prohibited in other traits too + impl diagnostics.
+error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
+ --> lib.cairo:19:31
+    fn bar3(x: AnotherTrait2::AnotherType);
+                              ^*********^
 
-//! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
-
-//! > function
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait AnotherTrait {
-    type AnotherType;
-}
-trait MyTrait {
-    type MyType;
-    fn bar1(x: AnotherTrait::AnotherType);
-    fn bar2() -> AnotherTrait::AnotherType;
-}
-impl MyImpl of MyTrait {
-    type MyType = u32;
-    fn bar1(x: u32) {}
-    fn bar2() -> u32 { 3_u32 }
-}
-
-//! > expected_diagnostics
-error: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `ImplVar(test::AnotherTrait)::AnotherType`, actual: `core::integer::u32`.
- --> lib.cairo:11:16
-    fn bar1(x: u32) {}
-               ^*^
-
-error: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `ImplVar(test::AnotherTrait)::AnotherType`, actual: `core::integer::u32`.
- --> lib.cairo:12:18
-    fn bar2() -> u32 { 3_u32 }
-                 ^*^
+error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
+ --> lib.cairo:20:33
+    fn bar4() -> AnotherTrait2::AnotherType;
+                                ^*********^
 
 //! > ==========================================================================
 
