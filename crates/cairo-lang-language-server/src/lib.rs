@@ -30,7 +30,7 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
-use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
@@ -58,7 +58,7 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
 
 use crate::ide::semantic_highlighting::SemanticTokenKind;
-use crate::lang::lsp::LsProtoGroup;
+use crate::lang::lsp::{LsProtoGroup, ToLsp};
 use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
 use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
@@ -214,9 +214,7 @@ pub struct Backend {
     last_replace: tokio::sync::Mutex<SystemTime>,
     db_replace_interval: Duration,
 }
-fn from_pos(pos: TextPosition) -> Position {
-    Position { line: pos.line as u32, character: pos.col as u32 }
-}
+
 impl Backend {
     pub fn new(client: Client, db: RootDatabase) -> Self {
         let scarb = ScarbService::new(&client);
@@ -1203,8 +1201,8 @@ fn is_cairo_file_path(file_path: &Url) -> bool {
 /// Converts an internal diagnostic location to an LSP range.
 fn get_range(db: &dyn FilesGroup, location: &DiagnosticLocation) -> Range {
     let location = location.user_location(db);
-    let start = from_pos(location.span.start.position_in_file(db, location.file_id).unwrap());
-    let end = from_pos(location.span.start.position_in_file(db, location.file_id).unwrap());
+    let start = location.span.start.position_in_file(db, location.file_id).unwrap().to_lsp();
+    let end = location.span.start.position_in_file(db, location.file_id).unwrap().to_lsp();
     Range { start, end }
 }
 
