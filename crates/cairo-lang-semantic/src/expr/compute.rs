@@ -2569,7 +2569,7 @@ fn get_function_implized_signature(
     };
 
     let impl_def_id = impl_function.impl_def_id(db.upcast());
-    let impl_ctx = Some(ImplContext { impl_def_id });
+    let impl_ctx = ImplContext { impl_def_id };
     // println!("yg1 impl_def_id: {:?}", impl_def_id.debug(db.elongate()));
     // println!(
     //     "yg2 impl_generic_function.impl_id: {:?}",
@@ -2586,18 +2586,18 @@ fn get_function_implized_signature(
 /// Implizes the given signature given its context.
 /// Note that `tmp_inference` might change. Consider passing a temporary clone if you want to
 /// avoid affecting the original inference.
-pub fn implize_signature(
+fn implize_signature(
     db: &dyn SemanticGroup,
     signature: &mut Signature,
     tmp_inference: &mut Inference,
-    impl_ctx: Option<ImplContext>,
+    impl_ctx: ImplContext,
 ) -> Maybe<()> {
     for param in signature.params.iter_mut() {
         // println!("yg1 param type before: {:?}", param.ty.debug(db.elongate()));
-        param.ty = implize_type(db, param.ty, impl_ctx, tmp_inference)?;
+        param.ty = implize_type(db, param.ty, Some(impl_ctx), tmp_inference)?;
         // println!("yg1 param type after: {:?}", param.ty.debug(db.elongate()));
     }
-    signature.return_type = implize_type(db, signature.return_type, impl_ctx, tmp_inference)?;
+    signature.return_type = implize_type(db, signature.return_type, Some(impl_ctx), tmp_inference)?;
 
     Ok(())
 }

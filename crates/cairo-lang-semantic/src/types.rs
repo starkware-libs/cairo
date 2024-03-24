@@ -183,7 +183,6 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
 pub fn implize_type(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
-    // TODO(yg): pass None when this is the right thing to do...
     impl_ctx: Option<ImplContext>,
     inference: &mut Inference,
 ) -> Maybe<TypeId> {
