@@ -660,13 +660,11 @@ impl<'db> Resolver<'db> {
                         let type_long_id =
                             TypeLongId::ImplType(ImplTypeId::new(*impl_id, trait_type_id, self.db));
 
-                        let tmp_inference_data = &mut self.inference().temporary_clone();
-                        let mut tmp_inference = tmp_inference_data.inference(self.db);
                         let ty = implize_type(
                             self.db,
                             self.db.intern_type(type_long_id),
                             self.trait_or_impl_ctx.impl_context(),
-                            &mut tmp_inference,
+                            &mut self.inference(),
                         )?;
                         Ok(ResolvedConcreteItem::Type(ty))
                     }

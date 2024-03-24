@@ -64,6 +64,10 @@ impl MyImpl<+MyTrait> of MyTrait {
 }
 
 //! > expected_diagnostics
+error: Inference cycle detected
+ --> lib.cairo:9:10
+fn foo() {
+         ^
 
 //! > ==========================================================================
 

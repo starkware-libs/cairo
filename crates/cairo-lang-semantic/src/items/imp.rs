@@ -1558,7 +1558,6 @@ pub fn priv_impl_function_declaration_data(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
     }
-    // TODO(yg): implize instead?
     let signature = resolver.inference().rewrite(signature).no_err();
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
@@ -1650,13 +1649,12 @@ fn validate_impl_function_signature(
         );
     }
     let impl_ctx = Some(ImplContext { impl_def_id });
-    let tmp_inference_data = &mut resolver.inference().temporary_clone();
-    let mut tmp_inference = tmp_inference_data.inference(db);
+    let inference = &mut resolver.inference();
     for (idx, (param, trait_param)) in
         izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {
-        let expected_ty = implize_type(db, trait_param.ty, impl_ctx, &mut tmp_inference)?;
-        let actual_ty = implize_type(db, param.ty, impl_ctx, &mut tmp_inference)?;
+        let expected_ty = implize_type(db, trait_param.ty, impl_ctx, inference)?;
+        let actual_ty = implize_type(db, param.ty, impl_ctx, inference)?;
 
         if expected_ty != actual_ty {
             diagnostics.report(
@@ -1708,9 +1706,8 @@ fn validate_impl_function_signature(
         diagnostics.report(signature_syntax, PassPanicAsNopanic { impl_function_id, trait_id });
     }
 
-    let expected_ty =
-        implize_type(db, concrete_trait_signature.return_type, impl_ctx, &mut tmp_inference)?;
-    let actual_ty = implize_type(db, signature.return_type, impl_ctx, &mut tmp_inference)?;
+    let expected_ty = implize_type(db, concrete_trait_signature.return_type, impl_ctx, inference)?;
+    let actual_ty = implize_type(db, signature.return_type, impl_ctx, inference)?;
     if expected_ty != actual_ty {
         let location_ptr = match signature_syntax.ret_ty(syntax_db) {
             OptionReturnTypeClause::ReturnTypeClause(ret_ty) => {

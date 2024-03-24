@@ -1,4 +1,4 @@
-//! > bla TODO(yg): add as test.
+//! > bla  add as test.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)

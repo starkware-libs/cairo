@@ -211,11 +211,15 @@ impl<'ctx> ComputationContext<'ctx> {
     /// Tries to implize a type, according to the computation context. See [implize_type] for more
     /// details.
     fn implize_type(&mut self, type_to_reduce: TypeId) -> Maybe<TypeId> {
+        // TODO(yuval): this is a temporary measure for inference cycle errors to not disappear
+        // until fixing inference errors wrong consumption. Remove it once fixed.
+        let tmp_inference_data = &mut self.resolver.inference().temporary_clone();
+        let mut tmp_inference = tmp_inference_data.inference(self.db);
         implize_type(
             self.db,
             type_to_reduce,
             self.resolver.data.trait_or_impl_ctx.impl_context(),
-            &mut self.resolver.inference(),
+            &mut tmp_inference,
         )
     }
 }
@@ -2184,10 +2188,9 @@ fn method_call_expr(
     let func_name = segment.identifier(syntax_db);
     let generic_args_syntax = segment.generic_args(syntax_db);
     // Save some work.
-    // ctx.resolver.inference().solve().ok();
-    if let Err(err) = ctx.resolver.inference().solve() {
-        println!("-------- yg err: {:?}", err);
-    };
+    // TODO(yuval): ignoring the result is not ok. Fix this once inference errors wrong consumption
+    // is fixed.
+    ctx.resolver.inference().solve().ok();
 
     let mut candidate_traits = traits_in_context(ctx)?;
 

@@ -167,7 +167,6 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
     }
 }
 
-// TODO(yg): consider cloning in inference in all callsites.
 /// Tries to implize a type, recursively, according to known inference data.
 ///
 /// "Implization" is reducing a trait type or a wrapped trait type, to the more concrete type,
@@ -188,11 +187,10 @@ pub fn implize_type(
 ) -> Maybe<TypeId> {
     // Make sure the inference is solved. This function doesn't add new inference data, only uses
     // the existing data.
-    // TODO(yg): explain why ignoring is ok.
-    // inference.solve().ok();
-    if let Err(err) = inference.solve() {
-        println!("-------- yg err: {:?}", err);
-    };
+    // TODO(yuval): ignoring the result is not ok. For now it is worked around by cloning the given
+    // inference in the callers where this causes changes, but this is wrong. Fix this once
+    // inference errors wrong consumption is fixed.
+    inference.solve().ok();
     implize_type_recursive(db, type_to_reduce, impl_ctx, inference)
 }
 
