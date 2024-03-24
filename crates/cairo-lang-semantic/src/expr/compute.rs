@@ -855,13 +855,13 @@ pub fn compute_root_expr(
 
 fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
     for (_id, expr) in ctx.exprs.iter_mut() {
-        *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
+        ctx.resolver.inference().internal_rewrite(expr).no_err();
     }
     for (_id, pattern) in ctx.patterns.iter_mut() {
-        *pattern = ctx.resolver.inference().rewrite(pattern.clone()).no_err();
+        ctx.resolver.inference().internal_rewrite(pattern).no_err();
     }
     for (_id, stmt) in ctx.statements.iter_mut() {
-        *stmt = ctx.resolver.inference().rewrite(stmt.clone()).no_err();
+        ctx.resolver.inference().internal_rewrite(stmt).no_err();
     }
     Ok(())
 }
