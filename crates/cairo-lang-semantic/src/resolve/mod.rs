@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
-    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
-    ModuleId, TraitId, TraitItemId, TraitOrImplContext,
+    GenericKind, GenericParamId, GenericTypeId, ImplContext, ImplDefId, LanguageElementId,
+    ModuleFileId, ModuleId, TraitContext, TraitId, TraitItemId, TraitOrImplContext,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::Edition;
@@ -535,7 +535,7 @@ impl<'db> Resolver<'db> {
                 match inner_item_info.item_id {
                     cairo_lang_defs::ids::ModuleItemId::Trait(trt) => {
                         match self.trait_or_impl_ctx {
-                            TraitOrImplContext::Trait { trait_id: trait_ctx } => {
+                            TraitOrImplContext::Trait(TraitContext { trait_id: trait_ctx }) => {
                                 // TODO(yuval): Also check generic args.
                                 // TODO(yg): consider removing the condition here for not allowing
                                 // any trait types in traits.
@@ -544,7 +544,7 @@ impl<'db> Resolver<'db> {
                                         .report(identifier, TraitTypeForbiddenInTheTrait));
                                 }
                             }
-                            TraitOrImplContext::Impl { impl_def_id } => {
+                            TraitOrImplContext::Impl(ImplContext { impl_def_id }) => {
                                 let impl_ctx_trait = self.db.impl_def_trait(impl_def_id)?;
                                 // TODO(yuval): Also check generic args.
                                 if trt == impl_ctx_trait {
@@ -557,7 +557,7 @@ impl<'db> Resolver<'db> {
                         }
                     }
                     cairo_lang_defs::ids::ModuleItemId::Impl(impl_def) => {
-                        if let TraitOrImplContext::Impl { impl_def_id: impl_def_ctx } =
+                        if let TraitOrImplContext::Impl(ImplContext { impl_def_id: impl_def_ctx }) =
                             self.trait_or_impl_ctx
                         {
                             if impl_def == impl_def_ctx {
@@ -1229,12 +1229,13 @@ fn resolve_self_segment(
 
     Some(match trait_or_impl_ctx {
         TraitOrImplContext::None => Err(diagnostics.report(identifier, SelfNotSupportedInContext)),
-        TraitOrImplContext::Trait { trait_id } => {
+        TraitOrImplContext::Trait(TraitContext { trait_id }) => {
+            // TODO(yuval): use generics
             let concrete_trait_id =
                 db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args: vec![] });
             Ok(ResolvedConcreteItem::Trait(concrete_trait_id))
         }
-        TraitOrImplContext::Impl { impl_def_id } => {
+        TraitOrImplContext::Impl(ImplContext { impl_def_id }) => {
             let impl_id =
                 ImplId::Concrete(db.intern_concrete_impl(ConcreteImplLongId {
                     impl_def_id,

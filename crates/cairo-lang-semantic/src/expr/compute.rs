@@ -9,8 +9,9 @@ use ast::PathSegment;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, ImplDefId, LanguageElementId,
-    LocalVarLongId, LookupItemId, MemberId, ModuleId, TraitFunctionId, TraitId, TraitOrImplContext,
+    EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, ImplContext, ImplDefId,
+    LanguageElementId, LocalVarLongId, LookupItemId, MemberId, ModuleId, TraitFunctionId, TraitId,
+    TraitOrImplContext,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -2582,9 +2583,8 @@ fn get_function_implized_signature(
         return Ok(signature);
     };
 
-    // TODO(yg): earlier PR: add debugWithDb to TraitOrImplContext?
     let impl_def_id = impl_function.impl_def_id(db.upcast());
-    let impl_ctx = TraitOrImplContext::Impl { impl_def_id };
+    let impl_ctx = TraitOrImplContext::Impl(ImplContext { impl_def_id });
     println!("yg1 impl_def_id: {:?}", impl_def_id.debug(db.elongate()));
     println!(
         "yg2 impl_generic_function.impl_id: {:?}",
@@ -2598,7 +2598,7 @@ fn get_function_implized_signature(
     Ok(signature)
 }
 
-/// Implizes the given signature given its impl context.
+/// Implizes the given signature given its context.
 /// Note that `tmp_inference` might change. Consider passing a temporary clone if you want to
 /// avoid affecting the original inference.
 pub fn implize_signature(

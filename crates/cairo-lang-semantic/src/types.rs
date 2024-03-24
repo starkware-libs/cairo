@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplDefId, ImplTypeDefId, ModuleFileId,
-    NamedLanguageElementId, StructId, TraitOrImplContext, TraitTypeId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplContext, ImplDefId, ImplTypeDefId,
+    ModuleFileId, NamedLanguageElementId, StructId, TraitOrImplContext, TraitTypeId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -300,7 +300,7 @@ fn implize_type_recursive(
     );
 
     // Try to implize by the impl context, if given. E.g. for `Self::MyType` inside an impl.
-    if let TraitOrImplContext::Impl { impl_def_id } = trait_or_impl_context {
+    if let TraitOrImplContext::Impl(ImplContext { impl_def_id }) = trait_or_impl_context {
         if let Some(ty) = reduce_in_impl_context(db, impl_type_id, impl_def_id)? {
             println!("yg1 returning 6.5 type: {:?}", ty.format(db));
             return Ok(ty);

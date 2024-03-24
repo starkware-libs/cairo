@@ -4,8 +4,8 @@ use std::{panic, vec};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, ImplFunctionLongId, ImplItemId, ImplTypeDefId, ImplTypeDefLongId,
+    FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplContext,
+    ImplDefId, ImplFunctionId, ImplFunctionLongId, ImplItemId, ImplTypeDefId, ImplTypeDefLongId,
     LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
     NamedLanguageElementLongId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
     TraitOrImplContext, TraitTypeId,
@@ -415,7 +415,7 @@ pub fn priv_impl_declaration_data_inner(
 
     let attributes = impl_ast.attributes(syntax_db).structurize(syntax_db);
     let mut resolver_data = resolver.data;
-    resolver_data.trait_or_impl_ctx = TraitOrImplContext::Impl { impl_def_id };
+    resolver_data.trait_or_impl_ctx = TraitOrImplContext::Impl(ImplContext { impl_def_id });
     Ok(ImplDeclarationData {
         diagnostics: diagnostics.build(),
         generic_params,
@@ -1646,7 +1646,7 @@ fn validate_impl_function_signature(
             },
         );
     }
-    let impl_ctx = TraitOrImplContext::Impl { impl_def_id };
+    let impl_ctx = TraitOrImplContext::Impl(ImplContext { impl_def_id });
     for (idx, (param, trait_param)) in
         izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {
