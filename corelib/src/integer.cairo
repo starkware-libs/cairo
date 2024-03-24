@@ -2378,10 +2378,7 @@ impl I128Neg of Neg<i128> {
 
 impl I128Mul of Mul<i128> {
     fn mul(lhs: i128, rhs: i128) -> i128 {
-        let (lhs_u127, lhs_neg) = match i128_diff(lhs, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
-        };
+        let (lhs_u127, lhs_neg) = lhs.abs_and_sign();
         let (rhs_u127, res_neg) = match i128_diff(rhs, 0) {
             Result::Ok(v) => (v, lhs_neg),
             Result::Err(v) => (~v + 1, !lhs_neg),
@@ -3044,3 +3041,55 @@ impl U32WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappin
 impl U64WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u64>;
 impl U128WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u128>;
 impl U256WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u256>;
+
+/// Internal trait for easier finding of absolute values.
+pub(crate) trait AbsAndSign<Signed, Unsigned> {
+    /// Returns the absolute value of the `Signed` value as `Unsigned` and the original sign.
+    /// Returns `true` for sign if the number was negative and `false` otherwise.
+    fn abs_and_sign(self: Signed) -> (Unsigned, bool);
+}
+
+impl I8ToU8 of AbsAndSign<i8, u8> {
+    fn abs_and_sign(self: i8) -> (u8, bool) {
+        match i8_diff(self, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        }
+    }
+}
+
+impl I16ToU16 of AbsAndSign<i16, u16> {
+    fn abs_and_sign(self: i16) -> (u16, bool) {
+        match i16_diff(self, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        }
+    }
+}
+
+impl I32ToU32 of AbsAndSign<i32, u32> {
+    fn abs_and_sign(self: i32) -> (u32, bool) {
+        match i32_diff(self, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        }
+    }
+}
+
+impl I64ToU64 of AbsAndSign<i64, u64> {
+    fn abs_and_sign(self: i64) -> (u64, bool) {
+        match i64_diff(self, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        }
+    }
+}
+
+impl I128ToU128 of AbsAndSign<i128, u128> {
+    fn abs_and_sign(self: i128) -> (u128, bool) {
+        match i128_diff(self, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        }
+    }
+}
