@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplContext, ImplDefId, ImplTypeDefId,
-    ModuleFileId, NamedLanguageElementId, StructId, TraitTypeId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplContext, ImplTypeDefId, ModuleFileId,
+    NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -275,7 +275,7 @@ fn implize_type_recursive(
     // );
 
     // Try to implize the impl type if its impl is concrete.
-    if let Some(ty) = implize_concrete_impl_type(db, impl_type_id)? {
+    if let Some(ty) = db.impl_type_concrete_implized(impl_type_id)? {
         // println!("yg1 returning 6.5 type: {:?}", ty.format(db));
         return Ok(ty);
     }
@@ -287,7 +287,7 @@ fn implize_type_recursive(
 
     // Try to implize by the impl context, if given. E.g. for `Self::MyType` inside an impl.
     if let Some(ImplContext { impl_def_id }) = impl_ctx {
-        if let Some(ty) = reduce_in_impl_context(db, impl_type_id, impl_def_id)? {
+        if let Some(ty) = db.impl_type_implized_by_context(impl_type_id, impl_def_id)? {
             // println!("yg1 returning 6.5 type: {:?}", ty.format(db));
             return Ok(ty);
         }
@@ -300,39 +300,6 @@ fn implize_type_recursive(
 
     // Could not reduce.
     Ok(type_to_reduce)
-}
-
-/// Implizes the given impl type if its impl is the given context.
-fn reduce_in_impl_context(
-    db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeId,
-    impl_def_id: ImplDefId,
-) -> Maybe<Option<TypeId>> {
-    let Some(impl_type_def_id) = db.impl_type_by_trait_type(impl_def_id, impl_type_id.ty)? else {
-        return Ok(None);
-    };
-
-    Ok(Some(db.impl_type_resolved_type(impl_type_def_id)?))
-}
-
-/// Implize the given impl type if the impl is concrete. Returns a TypeId that's not an impl type
-/// with a concrete impl.
-// TODO(yg/yuval): make sure impl_type_resolved_type gets a non impl type (that is, resolves in
-// chain). Also make sure cycles are handled correctly.
-// TODO(yg): query, cycle handling.
-fn implize_concrete_impl_type(
-    db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeId,
-) -> Maybe<Option<TypeId>> {
-    // println!("yg1 impl_type_id {:?}", impl_type_id.debug(db.elongate()));
-    let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_type_id.impl_id else {
-        return Ok(None);
-    };
-    // println!("yg1 concrete, concrete_impl {:?}", concrete_impl.debug(db.elongate()));
-
-    let impl_def_id = concrete_impl.impl_def_id(db);
-    // println!("yg1 impl_def_id {:?}", impl_def_id.debug(db.elongate()));
-    reduce_in_impl_context(db, impl_type_id, impl_def_id)
 }
 
 /// Reduces an impl type if its impl is an ImplVar. E.g. in the case of MyTrait::MyType when there

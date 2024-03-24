@@ -30,6 +30,7 @@ use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemTypeData};
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
+use crate::types::ImplTypeId;
 use crate::{
     corelib, items, lsp_helpers, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
 };
@@ -635,7 +636,7 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
     ) -> Maybe<items::imp::ImplDefinitionData>;
 
-    // Impl type.
+    // Impl type def.
     // ================
     /// Returns the semantic diagnostics of an impl item type.
     #[salsa::invoke(items::imp::impl_type_semantic_diagnostics)]
@@ -658,6 +659,20 @@ pub trait SemanticGroup:
     /// Returns the trait type of an impl type.
     #[salsa::invoke(items::imp::impl_type_trait_type)]
     fn impl_type_trait_type(&self, impl_type_id: ImplTypeDefId) -> Maybe<TraitTypeId>;
+
+    // Impl type.
+    // ================
+    /// Returns the given impl type, implized by the given impl context.
+    #[salsa::invoke(items::imp::impl_type_implized_by_context)]
+    fn impl_type_implized_by_context(
+        &self,
+        impl_type_id: ImplTypeId,
+        impl_def_id: ImplDefId,
+    ) -> Maybe<Option<TypeId>>;
+    /// Returns the implized impl type if the impl is concrete. Returns a TypeId that's not an impl
+    /// type with a concrete impl.
+    #[salsa::invoke(items::imp::impl_type_concrete_implized)]
+    fn impl_type_concrete_implized(&self, impl_type_id: ImplTypeId) -> Maybe<Option<TypeId>>;
 
     /// Private query to compute data about an impl item type.
     #[salsa::invoke(items::imp::priv_impl_type_semantic_data)]

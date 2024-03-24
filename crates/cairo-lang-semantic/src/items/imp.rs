@@ -56,7 +56,7 @@ use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::implize_type;
+use crate::types::{implize_type, ImplTypeId};
 use crate::{
     semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
     FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
@@ -1184,7 +1184,7 @@ pub fn filter_candidate_traits(
     candidates
 }
 
-// === Impl Item Type ===
+// === Impl Item Type Definition ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -1358,6 +1358,40 @@ fn validate_impl_item_type(
     }
 
     Ok(trait_type_id)
+}
+
+// === Impl Type ===
+
+/// Query implementation of [crate::db::SemanticGroup::impl_type_implized_by_context].
+pub fn impl_type_implized_by_context(
+    db: &dyn SemanticGroup,
+    impl_type_id: ImplTypeId,
+    impl_def_id: ImplDefId,
+) -> Maybe<Option<TypeId>> {
+    let Some(impl_type_def_id) = db.impl_type_by_trait_type(impl_def_id, impl_type_id.ty())? else {
+        return Ok(None);
+    };
+
+    // TODO(yg/yuval): make sure impl_type_resolved_type gets a non impl type (that is, resolves in
+    // chain). Also make sure cycles are handled correctly.
+    Ok(Some(db.impl_type_resolved_type(impl_type_def_id)?))
+}
+
+// TODO(yg): cycle handling.
+/// Query implementation of [crate::db::SemanticGroup::impl_type_concrete_implized].
+pub fn impl_type_concrete_implized(
+    db: &dyn SemanticGroup,
+    impl_type_id: ImplTypeId,
+) -> Maybe<Option<TypeId>> {
+    // println!("yg1 impl_type_id {:?}", impl_type_id.debug(db.elongate()));
+    let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_type_id.impl_id() else {
+        return Ok(None);
+    };
+    // println!("yg1 concrete, concrete_impl {:?}", concrete_impl.debug(db.elongate()));
+
+    let impl_def_id = concrete_impl.impl_def_id(db);
+    // println!("yg1 impl_def_id {:?}", impl_def_id.debug(db.elongate()));
+    db.impl_type_implized_by_context(impl_type_id, impl_def_id)
 }
 
 // === Impl Function Declaration ===

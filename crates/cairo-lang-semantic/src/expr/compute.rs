@@ -8,8 +8,8 @@ use std::sync::Arc;
 use ast::PathSegment;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, ImplContext, LanguageElementId,
-    LocalVarLongId, LookupItemId, MemberId, ModuleId, TraitFunctionId, TraitId,
+    EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId,
+    LookupItemId, MemberId, ModuleId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -63,7 +63,6 @@ use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::visibility;
 use crate::literals::try_extract_minus_literal;
-use crate::lookup_item::HasResolverData;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
