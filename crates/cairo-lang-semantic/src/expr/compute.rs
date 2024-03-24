@@ -849,12 +849,8 @@ pub fn compute_root_expr(
     return_type: TypeId,
 ) -> Maybe<ExprId> {
     let res = compute_expr_block_semantic(ctx, syntax)?;
-    // TODO(yg): consider removing reduce_ty every time reduce_impl_type_if_possible is called right
-    // after. Make sure it works.
-    let res_ty = ctx.reduce_ty(res.ty());
-    let res_ty = ctx.implize_type(res_ty)?;
+    let res_ty = ctx.implize_type(res.ty())?;
     let res = ctx.exprs.alloc(res);
-    let return_type = ctx.reduce_ty(return_type);
     let return_type = ctx.implize_type(return_type)?;
     if ctx.resolver.inference().conform_ty(res_ty, return_type).is_err() {
         ctx.diagnostics
@@ -1088,8 +1084,7 @@ fn compute_expr_match_semantic(
     // Unify arm types.
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
     for (_, expr) in patterns_and_exprs.iter() {
-        let expr_ty = ctx.reduce_ty(expr.ty());
-        let expr_ty = ctx.implize_type(expr_ty)?;
+        let expr_ty = ctx.implize_type(expr.ty())?;
         if let Err((match_ty, arm_ty)) =
             helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr_ty)
         {
@@ -1161,9 +1156,7 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
     };
 
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
-    let if_block_ty = ctx.reduce_ty(if_block.ty());
-    let else_block_ty = ctx.reduce_ty(else_block_ty);
-    let if_block_ty = ctx.implize_type(if_block_ty)?;
+    let if_block_ty = ctx.implize_type(if_block.ty())?;
     let else_block_ty = ctx.implize_type(else_block_ty)?;
     helper
         .try_merge_types(&mut ctx.resolver.inference(), ctx.db, if_block_ty)
@@ -1404,8 +1397,7 @@ fn compute_method_function_call_data(
         TraitFunctionId,
     ) -> SemanticDiagnosticKind,
 ) -> Maybe<(FunctionId, ExprAndId, Mutability)> {
-    let self_ty = ctx.reduce_ty(self_expr.ty());
-    let self_ty = ctx.implize_type(self_ty)?;
+    let self_ty = ctx.implize_type(self_expr.ty())?;
     let mut inference_errors = vec![];
     let candidates = filter_candidate_traits(
         ctx,
@@ -2252,8 +2244,7 @@ fn member_access_expr(
 
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
-    let ty = ctx.reduce_ty(lexpr.ty());
-    let ty = ctx.implize_type(ty)?;
+    let ty = ctx.implize_type(lexpr.ty())?;
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
 
     match long_ty {
@@ -2500,8 +2491,7 @@ fn expr_function_call(
         // added).
         // TODO(lior): Add a test to missing type once possible.
         let expected_ty = ctx.reduce_ty(param_typ);
-        let actual_ty = ctx.reduce_ty(arg_typ);
-        let actual_ty = ctx.implize_type(actual_ty)?;
+        let actual_ty = ctx.implize_type(arg_typ)?;
         if !arg_typ.is_missing(ctx.db)
             && ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err()
         {
@@ -2703,9 +2693,7 @@ pub fn compute_statement_semantic(
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
                         resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &var_type_path);
-                    let explicit_type = ctx.reduce_ty(explicit_type);
                     let explicit_type = ctx.implize_type(explicit_type)?;
-                    let inferred_type = ctx.reduce_ty(inferred_type);
                     // println!("yg inferred_type before: {:?}",
                     // inferred_type.debug(db.elongate()));
                     let inferred_type = ctx.implize_type(inferred_type)?;
@@ -2843,7 +2831,6 @@ pub fn compute_statement_semantic(
                     (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
                 }
             };
-            let ty = ctx.reduce_ty(ty);
             let ty = ctx.implize_type(ty)?;
             match &mut ctx.loop_ctx {
                 None => {
