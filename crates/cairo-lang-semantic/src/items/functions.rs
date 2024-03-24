@@ -773,7 +773,6 @@ pub fn concrete_function_implized_signature(
     // println!("yg inferred_type -5: {:?}", signature.return_type.debug(db.elongate()));
     let generic_function = function_id.lookup(db).function.generic_function;
 
-    // TODO(yg): export to a function? Maybe query...
     // If the generic function is not an impl function, nothing to implize.
     // println!("yg1 generic_function: {:?}", generic_function.debug(db.elongate()));
     let crate::items::functions::GenericFunctionId::Impl(impl_generic_function) = generic_function

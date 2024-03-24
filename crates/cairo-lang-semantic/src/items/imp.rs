@@ -1261,6 +1261,8 @@ pub fn priv_impl_type_semantic_data(
 
     let trait_type_id = validate_impl_item_type(db, &mut diagnostics, impl_type_id, impl_type_ast);
 
+    // TODO(yuval): resolve type aliases later, like in module type aliases, to avoid cycles in
+    // non-cyclic chains.
     Ok(ImplItemTypeData {
         type_alias_data: type_alias_semantic_data_helper(
             db,
@@ -1372,12 +1374,9 @@ pub fn impl_type_implized_by_context(
         return Ok(None);
     };
 
-    // TODO(yg/yuval): make sure impl_type_resolved_type gets a non impl type (that is, resolves in
-    // chain). Also make sure cycles are handled correctly.
     Ok(Some(db.impl_type_resolved_type(impl_type_def_id)?))
 }
 
-// TODO(yg): cycle handling.
 /// Query implementation of [crate::db::SemanticGroup::impl_type_concrete_implized].
 pub fn impl_type_concrete_implized(
     db: &dyn SemanticGroup,

@@ -1,7 +1,7 @@
 //! > debugging
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {}
@@ -11,28 +11,14 @@ foo
 
 //! > module_code
 trait MyTrait {
-    type OtherType;
-    type InputType;
-    fn other_fn(x: u16);
-    fn foo1(x: MyTrait::InputType);
+    type MyType1;
+    type MyType2;
+    fn bar(x: Self::MyType1) -> u32;
 }
 impl MyImpl of MyTrait {
-    type OtherType = u16;
-    type InputType = u32;
-    fn other_fn(x: u16) {}
-    fn foo1(x: MyTrait::InputType) { }
-}
-fn main() {
-    MyImpl::foo1(3_u32);
+    type MyType1 = Self::MyType2;
+    type MyType2 = u32;
+    fn bar(x: Self::MyType1) -> u32 { x }
 }
 
 //! > expected_diagnostics
-error: In a trait, paths of the same trait are not allowed. Did you mean to use  `Self::`?
- --> lib.cairo:5:16
-    fn foo1(x: MyTrait::InputType);
-               ^*****^
-
-error: In an impl, paths of the impl's trait are not allowed. Did you mean to use  `Self::`?
- --> lib.cairo:11:16
-    fn foo1(x: MyTrait::InputType) { }
-               ^*****^

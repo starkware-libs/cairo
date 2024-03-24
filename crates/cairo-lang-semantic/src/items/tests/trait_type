@@ -1384,3 +1384,61 @@ error: Not a type.
  --> lib.cairo:10:12
     let _: MyImpl::my_function = 3;
            ^*****************^
+
+//! > ==========================================================================
+
+//! > Impl type chain resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+    fn bar(x: Self::MyType1) -> u32;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = Self::MyType2;
+    type MyType2 = u32;
+    fn bar(x: Self::MyType1) -> u32 { x }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Impl type chain resolution, with mismatch types.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+    fn bar(x: Self::MyType1) -> u32;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = Self::MyType2;
+    type MyType2 = u16;
+    fn bar(x: Self::MyType1) -> u32 { x }
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:9:37
+    fn bar(x: Self::MyType1) -> u32 { x }
+                                    ^***^
