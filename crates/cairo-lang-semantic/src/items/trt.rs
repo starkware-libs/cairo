@@ -781,6 +781,12 @@ pub fn priv_trait_function_declaration_data(
         &mut environment,
     );
 
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
+    }
+
     validate_trait_function_signature(
         db,
         &mut diagnostics,
