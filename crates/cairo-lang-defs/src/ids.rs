@@ -946,6 +946,40 @@ define_language_element_id_as_enum! {
     }
 }
 
+/// A context of a trait, if in a trait. This is used in the resolver to resolve
+/// "Self::" paths.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct TraitContext {
+    pub trait_id: TraitId,
+    // TODO(yuval): add generics.
+}
+impl DebugWithDb<dyn DefsGroup> for TraitContext {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn DefsGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{:?}", db.lookup_intern_trait(self.trait_id).debug(db))
+    }
+}
+
+/// A context of an impl, if in an impl. This is used in the resolver to resolve
+/// "Self::" paths and in implizations.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ImplContext {
+    pub impl_def_id: ImplDefId,
+    // TODO(yuval): add generics.
+}
+impl DebugWithDb<dyn DefsGroup> for ImplContext {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn DefsGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{:?}", db.lookup_intern_impl(self.impl_def_id).debug(db))
+    }
+}
+
 /// A context of a trait or an impl, if in any of those. This is used in the resolver to resolve
 /// "Self::" paths.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -953,7 +987,20 @@ pub enum TraitOrImplContext {
     /// No trait/impl context.
     None,
     /// The context is of a trait.
-    Trait { trait_id: TraitId },
+    Trait(TraitContext),
     /// The context is of an impl.
-    Impl { impl_def_id: ImplDefId },
+    Impl(ImplContext),
+}
+impl DebugWithDb<dyn DefsGroup> for TraitOrImplContext {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn DefsGroup + 'static),
+    ) -> std::fmt::Result {
+        match self {
+            TraitOrImplContext::None => write!(f, "None"),
+            TraitOrImplContext::Trait(trait_ctx) => write!(f, "{:?}", trait_ctx.debug(db)),
+            TraitOrImplContext::Impl(impl_ctx) => write!(f, "{:?}", impl_ctx.debug(db)),
+        }
+    }
 }
