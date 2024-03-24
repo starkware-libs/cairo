@@ -946,18 +946,6 @@ define_language_element_id_as_enum! {
     }
 }
 
-/// A context of a trait or an impl, if in any of those. This is used in the resolver to resolve
-/// "Self::" paths.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub enum TraitOrImplContext {
-    /// No trait/impl context.
-    None,
-    /// The context is of a trait.
-    Trait(TraitContext),
-    /// The context is of an impl.
-    Impl(ImplContext),
-}
-
 /// A context of a trait, if in a trait. This is used in the resolver to resolve
 /// "Self::" paths.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -972,4 +960,26 @@ pub struct TraitContext {
 pub struct ImplContext {
     pub impl_def_id: ImplDefId,
     // TODO(yuval): add generics.
+}
+
+/// A context of a trait or an impl, if in any of those. This is used in the resolver to resolve
+/// "Self::" paths.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum TraitOrImplContext {
+    /// No trait/impl context.
+    None,
+    /// The context is of a trait.
+    Trait(TraitContext),
+    /// The context is of an impl.
+    Impl(ImplContext),
+}
+impl TraitOrImplContext {
+    /// Returns the trait context, if the context is a trait context, or None otherwise.
+    pub fn trait_context(&self) -> Option<TraitContext> {
+        if let TraitOrImplContext::Trait(ctx) = self { Some(*ctx) } else { None }
+    }
+    /// Returns the impl context, if the context is an impl context, or None otherwise.
+    pub fn impl_context(&self) -> Option<ImplContext> {
+        if let TraitOrImplContext::Impl(ctx) = self { Some(*ctx) } else { None }
+    }
 }

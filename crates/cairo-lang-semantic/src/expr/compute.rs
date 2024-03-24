@@ -217,7 +217,7 @@ impl<'ctx> ComputationContext<'ctx> {
         implize_type(
             self.db,
             type_to_reduce,
-            self.resolver.data.trait_or_impl_ctx,
+            self.resolver.data.trait_or_impl_ctx.impl_context(),
             &mut self.resolver.inference(),
         )
     }
@@ -2584,7 +2584,7 @@ fn get_function_implized_signature(
     };
 
     let impl_def_id = impl_function.impl_def_id(db.upcast());
-    let impl_ctx = TraitOrImplContext::Impl(ImplContext { impl_def_id });
+    let impl_ctx = Some(ImplContext { impl_def_id });
     println!("yg1 impl_def_id: {:?}", impl_def_id.debug(db.elongate()));
     println!(
         "yg2 impl_generic_function.impl_id: {:?}",
@@ -2605,7 +2605,7 @@ pub fn implize_signature(
     db: &dyn SemanticGroup,
     signature: &mut Signature,
     tmp_inference: &mut Inference,
-    impl_ctx: TraitOrImplContext,
+    impl_ctx: Option<ImplContext>,
 ) -> Maybe<()> {
     for param in signature.params.iter_mut() {
         println!("yg1 param type before: {:?}", param.ty.debug(db.elongate()));

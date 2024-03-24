@@ -703,7 +703,7 @@ impl<'db> Resolver<'db> {
                         let ty = implize_type(
                             self.db,
                             self.db.intern_type(type_long_id),
-                            self.trait_or_impl_ctx,
+                            self.trait_or_impl_ctx.impl_context(),
                             &mut tmp_inference,
                         )?;
                         Ok(ResolvedConcreteItem::Type(ty))

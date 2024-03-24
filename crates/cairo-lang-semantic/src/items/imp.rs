@@ -1646,12 +1646,12 @@ fn validate_impl_function_signature(
             },
         );
     }
-    let impl_ctx = TraitOrImplContext::Impl(ImplContext { impl_def_id });
+    let impl_ctx = Some(ImplContext { impl_def_id });
+    let tmp_inference_data = &mut resolver.inference().temporary_clone();
+    let mut tmp_inference = tmp_inference_data.inference(db);
     for (idx, (param, trait_param)) in
         izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {
-        let tmp_inference_data = &mut resolver.inference().temporary_clone();
-        let mut tmp_inference = tmp_inference_data.inference(db);
         let expected_ty = implize_type(db, trait_param.ty, impl_ctx, &mut tmp_inference)?;
         let actual_ty = implize_type(db, param.ty, impl_ctx, &mut tmp_inference)?;
 
@@ -1705,8 +1705,6 @@ fn validate_impl_function_signature(
         diagnostics.report(signature_syntax, PassPanicAsNopanic { impl_function_id, trait_id });
     }
 
-    let tmp_inference_data = &mut resolver.inference().temporary_clone();
-    let mut tmp_inference = tmp_inference_data.inference(db);
     let expected_ty =
         implize_type(db, concrete_trait_signature.return_type, impl_ctx, &mut tmp_inference)?;
     let actual_ty = implize_type(db, signature.return_type, impl_ctx, &mut tmp_inference)?;

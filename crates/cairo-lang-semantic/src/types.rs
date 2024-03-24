@@ -172,6 +172,7 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
 
 // TODO(yg): consider cloning in inference in all callsites.
 /// Tries to implize a type, recursively, according to known inference data.
+///
 /// "Implization" is reducing a trait type or a wrapped trait type, to the more concrete type,
 /// according to the assignment of that trait type in its impl, if the impl is known according to
 /// the context.
@@ -180,14 +181,13 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
 /// Note that it means `inference` might change. Consider passing a temporary clone if you want to
 /// avoid affecting the original inference.
 ///
-/// `trait_or_impl_context` is the context we're at. That is, if we're inside an impl function, the
+/// `impl_ctx` is the impl context we're at, if any. That is, if we're inside an impl function, the
 /// wrapping impl is the context here.
 pub fn implize_type(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
-    // TODO(yg): consider separate contexts for self:: and MyImpl::foo(param to resolve). Also
-    // pass ::None when this is the right thing to do...
-    trait_or_impl_context: TraitOrImplContext,
+    // TODO(yg): pass None when this is the right thing to do...
+    impl_ctx: Option<ImplContext>,
     inference: &mut Inference,
 ) -> Maybe<TypeId> {
     // Make sure the inference is solved. This function doesn't add new inference data, only uses
@@ -197,22 +197,20 @@ pub fn implize_type(
     if let Err(err) = inference.solve() {
         println!("-------- yg err: {:?}", err);
     };
-    implize_type_recursive(db, type_to_reduce, trait_or_impl_context, inference)
+    implize_type_recursive(db, type_to_reduce, impl_ctx, inference)
 }
 
-// TODO(yg): seems like context is only relevant if it's an impl. If so, change the context param to
-// Option<ImplContext>, where ImplContext is the type of the TraitOrImplContext::Impl variant
-// (probably impl_def_id + generic args). Change the same up the stack (implize_type,
-// implize_signature and get_implized_signature).
 /// Tries to implize a type, recursively, according to known inference data.
+///
 /// Assumes `inference` is `solve()`d and doesn't change it (although it's passed as &mut which is
 /// required per it's API).
-/// `trait_or_impl_context` is the context we're at. That is, if we're inside an impl function, the
+///
+/// `impl_ctx` is the impl context we're at, if any. That is, if we're inside an impl function, the
 /// wrapping impl is the context here.
 fn implize_type_recursive(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
-    trait_or_impl_context: TraitOrImplContext,
+    impl_ctx: Option<ImplContext>,
     inference: &mut Inference,
 ) -> Maybe<TypeId> {
     println!(
@@ -235,31 +233,25 @@ fn implize_type_recursive(
                 let GenericArgumentId::Type(generic_arg_type) = generic_arg else {
                     continue;
                 };
-                *generic_arg_type = implize_type_recursive(
-                    db,
-                    *generic_arg_type,
-                    trait_or_impl_context,
-                    inference,
-                )?;
+                *generic_arg_type =
+                    implize_type_recursive(db, *generic_arg_type, impl_ctx, inference)?;
                 *generic_arg = GenericArgumentId::Type(*generic_arg_type);
             }
             concrete_type.modify_generic_args(db, generic_args);
         }
         TypeLongId::Tuple(types) => {
             for ty in types.iter_mut() {
-                *ty = implize_type_recursive(db, *ty, trait_or_impl_context, inference)?;
+                *ty = implize_type_recursive(db, *ty, impl_ctx, inference)?;
             }
         }
-        TypeLongId::Snapshot(ty) => {
-            *ty = implize_type_recursive(db, *ty, trait_or_impl_context, inference)?
-        }
+        TypeLongId::Snapshot(ty) => *ty = implize_type_recursive(db, *ty, impl_ctx, inference)?,
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
         | TypeLongId::ImplType(_)
         | TypeLongId::Coupon(_)
         | TypeLongId::Missing(_) => {}
         TypeLongId::FixedSizeArray { type_id, .. } => {
-            *type_id = implize_type_recursive(db, *type_id, trait_or_impl_context, inference)?
+            *type_id = implize_type_recursive(db, *type_id, impl_ctx, inference)?
         }
     }
     let type_to_reduce = db.intern_type(long_ty);
@@ -300,7 +292,7 @@ fn implize_type_recursive(
     );
 
     // Try to implize by the impl context, if given. E.g. for `Self::MyType` inside an impl.
-    if let TraitOrImplContext::Impl(ImplContext { impl_def_id }) = trait_or_impl_context {
+    if let Some(ImplContext { impl_def_id }) = impl_ctx {
         if let Some(ty) = reduce_in_impl_context(db, impl_type_id, impl_def_id)? {
             println!("yg1 returning 6.5 type: {:?}", ty.format(db));
             return Ok(ty);
