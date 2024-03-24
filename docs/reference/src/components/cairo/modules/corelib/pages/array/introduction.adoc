@@ -1,0 +1,17 @@
+[id="array"]
+= Array module
+
+The array module provides a dynamic array data structure called Array<T> for elements of type T. This data structure allows you to create and manipulate arrays in a dynamic and efficient way. The module also provides a trait, ArrayTrait<T>, which defines common operations on an Array<T>.
+
+Here is a brief summary of the components in the array module:
+
+[cols="2*",options="header"]
+|===
+| Module Component | Description
+| Array<T> | The primary data structure representing a dynamic array of elements of type T.
+| ArrayTrait<T> | A trait that defines common operations on an Array<T> such as creating a new array, appending elements, popping elements from the front, and retrieving elements by index.
+| Span<T> | A utility structure that provides a view over an Array<T> for efficient iteration and manipulation.
+| SpanTrait<T> | A trait that defines common operations on a Span<T> such as popping elements from the front or back, and retrieving elements by index.
+|===
+
+In the following sections, we will explore each of these components in more detail and provide examples of how to use them effectively.

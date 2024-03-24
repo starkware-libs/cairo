@@ -1,0 +1,65 @@
+[id="arraytrait"]
+
+= ArrayTrait<T>
+
+`ArrayTrait<T>` is a trait that defines the interface for working with `Array<T>`. It provides methods for creating a new array, appending elements, popping elements from the front, and accessing elements by their index, among others.
+
+[source,cairo]
+----
+trait ArrayTrait<T> {
+    fn new() -> Array<T>;
+    fn append(ref self: Array<T>, value: T);
+    fn pop_front(ref self: Array<T>) -> Option<T> nopanic;
+    fn get(self: @Array<T>, index: usize) -> Option<Box<@T>>;
+    fn at(self: @Array<T>, index: usize) -> @T;
+    fn len(self: @Array<T>) -> usize;
+    fn is_empty(self: @Array<T>) -> bool;
+    fn span(self: @Array<T>) -> Span<T>;
+}
+----
+
+== ArrayTrait<T> methods
+
+=== new
+* Signature: `fn new() -> Array<T>`
+* Description: Creates a new empty `Array<T>`.
+
+=== append
+* Signature: `fn append(ref self: Array<T>, value: T)`
+* Description: Appends a value of type `T` to the end of the `Array<T>`.
+
+=== pop_front
+* Signature: `fn pop_front(ref self: Array<T>) -> Option<T> nopanic`
+* Description: Removes and returns the first element of the array as an `Option<T>`, if it exists.
+
+=== get
+* Signature: `fn get(self: @Array<T>, index: usize) -> Option<Box<@T>>`
+* Description: Returns an `Option<Box<@T>>` of the element at the given index in the array, if it exists.
+
+=== at
+* Signature: `fn at(self: @Array<T>, index: usize) -> @T`
+* Description: Returns the element at the given index in the array.
+
+=== len
+* Signature: `fn len(self: @Array<T>) -> usize`
+* Description: Returns the length of the array.
+
+=== is_empty
+* Signature: `fn is_empty(self: @Array<T>) -> bool`
+* Description: Returns `true` if the array is empty; otherwise, returns `false`.
+
+=== span
+* Signature: `fn span(self: @Array<T>) -> Span<T>`
+* Description: Returns a `Span<T>` snapshot of the `Array<T>`, which allows performing operations on the snapshot without modifying the original array.
+
+
+== Example
+
+// TODO: Add example
+
+Here's an example demonstrating how to implement `ArrayTrait<T>`:
+
+[source,cairo]
+----
+TODO
+----

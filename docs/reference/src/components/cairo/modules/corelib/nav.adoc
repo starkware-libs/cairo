@@ -1,0 +1,8 @@
+* Cairo corelib
+** xref:corelib:index.adoc[Introduction to corelib]
+** xref:corelib:array/introduction.adoc[Array Introduction]
+*** xref:corelib:array/array.adoc[Array]
+*** xref:corelib:array/array-trait.adoc[Array trait]
+*** xref:corelib:array/span.adoc[Span]
+** xref:corelib:box/introduction.adoc[Box introduction]
+*** xref:corelib:box/box.adoc[Box & box trait]
