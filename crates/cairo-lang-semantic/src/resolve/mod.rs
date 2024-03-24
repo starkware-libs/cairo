@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
-    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
-    ModuleId, TraitId, TraitOrImplContext,
+    GenericKind, GenericParamId, GenericTypeId, ImplContext, ImplDefId, LanguageElementId,
+    ModuleFileId, ModuleId, TraitContext, TraitId, TraitOrImplContext,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::Edition;
@@ -1136,12 +1136,12 @@ fn resolve_self_segment(
 
     Some(match trait_or_impl_ctx {
         TraitOrImplContext::None => Err(diagnostics.report(identifier, SelfNotSupportedInContext)),
-        TraitOrImplContext::Trait { trait_id } => {
+        TraitOrImplContext::Trait(TraitContext { trait_id }) => {
             let concrete_trait_id =
                 db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args: vec![] });
             Ok(ResolvedConcreteItem::Trait(concrete_trait_id))
         }
-        TraitOrImplContext::Impl { impl_def_id } => {
+        TraitOrImplContext::Impl(ImplContext { impl_def_id }) => {
             let impl_id =
                 ImplId::Concrete(db.intern_concrete_impl(ConcreteImplLongId {
                     impl_def_id,
