@@ -609,12 +609,6 @@ impl<'db> Inference<'db> {
     /// Assigns a value to a [TypeVar]. Return the assigned type, or an error.
     /// Assumes the variable is not already assigned.
     fn assign_ty(&mut self, var: TypeVar, ty: TypeId) -> InferenceResult<TypeId> {
-        if var.inference_id != self.inference_id {
-            return Err(InferenceError::TypeKindMismatch {
-                ty0: self.db.intern_type(TypeLongId::Var(var)),
-                ty1: ty,
-            });
-        }
         assert!(!self.type_assignment.contains_key(&var.id), "Cannot reassign variable.");
         let inference_var = InferenceVar::Type(var.id);
         if self.ty_contains_var(ty, inference_var) {
