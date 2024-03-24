@@ -157,7 +157,9 @@ impl ImplId {
             ImplId::GenericParameter(generic_param_impl) => {
                 generic_param_impl.name(db.upcast()).unwrap_or_else(|| "_".into())
             }
-            ImplId::ImplVar(var) => format!("{var:?}").into(),
+            ImplId::ImplVar(var) => {
+                format!("ImplVar({})", var.concrete_trait_id(db).full_path(db)).into()
+            }
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
