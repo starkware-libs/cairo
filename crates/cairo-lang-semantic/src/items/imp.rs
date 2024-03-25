@@ -467,7 +467,7 @@ pub fn impl_semantic_definition_diagnostics(
         diagnostics.extend(db.impl_function_body_diagnostics(*impl_function_id));
     }
     for impl_item_type_id in data.item_type_asts.keys() {
-        diagnostics.extend(db.impl_type_semantic_diagnostics(*impl_item_type_id));
+        diagnostics.extend(db.impl_type_def_semantic_diagnostics(*impl_item_type_id));
     }
 
     diagnostics.build()
@@ -1189,52 +1189,64 @@ pub struct ImplItemTypeData {
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_semantic_diagnostics].
-pub fn impl_type_semantic_diagnostics(
+/// Query implementation of [crate::db::SemanticGroup::impl_type_def_semantic_diagnostics].
+pub fn impl_type_def_semantic_diagnostics(
     db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeDefId,
+    impl_type_def_id: ImplTypeDefId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_impl_type_semantic_data(impl_type_id).map(|data| data.diagnostics).unwrap_or_default()
+    db.priv_impl_type_semantic_data(impl_type_def_id)
+        .map(|data| data.diagnostics)
+        .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_resolved_type].
-pub fn impl_type_resolved_type(
+/// Query implementation of [crate::db::SemanticGroup::impl_type_def_resolved_type].
+pub fn impl_type_def_resolved_type(
     db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeDefId,
+    impl_type_def_id: ImplTypeDefId,
 ) -> Maybe<TypeId> {
-    db.priv_impl_type_semantic_data(impl_type_id)?.type_alias_data.resolved_type
+    db.priv_impl_type_semantic_data(impl_type_def_id)?.type_alias_data.resolved_type
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_generic_params].
-pub fn impl_type_generic_params(
+/// Cycle handling for [crate::db::SemanticGroup::impl_type_def_resolved_type].
+pub fn impl_type_def_resolved_type_cycle(
     db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeDefId,
+    _cycle: &[String],
+    impl_type_def_id: &ImplTypeDefId,
+) -> Maybe<TypeId> {
+    // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
+    impl_type_def_resolved_type(db, *impl_type_def_id)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_type_def_generic_params].
+pub fn impl_type_def_generic_params(
+    db: &dyn SemanticGroup,
+    impl_type_def_id: ImplTypeDefId,
 ) -> Maybe<Vec<GenericParam>> {
-    Ok(db.priv_impl_type_generic_params_data(impl_type_id)?.generic_params)
+    Ok(db.priv_impl_type_def_generic_params_data(impl_type_def_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_attributes].
-pub fn impl_type_attributes(
+/// Query implementation of [crate::db::SemanticGroup::impl_type_def_attributes].
+pub fn impl_type_def_attributes(
     db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeDefId,
+    impl_type_def_id: ImplTypeDefId,
 ) -> Maybe<Vec<Attribute>> {
-    Ok(db.priv_impl_type_semantic_data(impl_type_id)?.type_alias_data.attributes)
+    Ok(db.priv_impl_type_semantic_data(impl_type_def_id)?.type_alias_data.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_resolver_data].
-pub fn impl_type_resolver_data(
+/// Query implementation of [crate::db::SemanticGroup::impl_type_def_resolver_data].
+pub fn impl_type_def_resolver_data(
     db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeDefId,
+    impl_type_def_id: ImplTypeDefId,
 ) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_impl_type_semantic_data(impl_type_id)?.type_alias_data.resolver_data)
+    Ok(db.priv_impl_type_semantic_data(impl_type_def_id)?.type_alias_data.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_trait_type].
-pub fn impl_type_trait_type(
+/// Query implementation of [crate::db::SemanticGroup::impl_type_def_trait_type].
+pub fn impl_type_def_trait_type(
     db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeDefId,
+    impl_type_def_id: ImplTypeDefId,
 ) -> Maybe<TraitTypeId> {
-    db.priv_impl_type_semantic_data(impl_type_id)?.trait_type_id
+    db.priv_impl_type_semantic_data(impl_type_def_id)?.trait_type_id
 }
 
 // --- Computation ---
@@ -1242,16 +1254,17 @@ pub fn impl_type_trait_type(
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_type_semantic_data].
 pub fn priv_impl_type_semantic_data(
     db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeDefId,
+    impl_type_def_id: ImplTypeDefId,
 ) -> Maybe<ImplItemTypeData> {
-    let module_file_id = impl_type_id.module_file_id(db.upcast());
+    let module_file_id = impl_type_def_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let impl_types = db.impl_types(impl_type_id.impl_def_id(db.upcast()))?;
-    let impl_type_ast = impl_types.get(&impl_type_id).to_maybe()?;
-    let generic_params_data = db.priv_impl_type_generic_params_data(impl_type_id)?;
-    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_id));
+    let impl_type_defs = db.impl_types(impl_type_def_id.impl_def_id(db.upcast()))?;
+    let impl_type_def_ast = impl_type_defs.get(&impl_type_def_id).to_maybe()?;
+    let generic_params_data = db.priv_impl_type_def_generic_params_data(impl_type_def_id)?;
+    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_def_id));
 
-    let trait_type_id = validate_impl_item_type(db, &mut diagnostics, impl_type_id, impl_type_ast);
+    let trait_type_id =
+        validate_impl_item_type(db, &mut diagnostics, impl_type_def_id, impl_type_def_ast);
 
     // TODO(yuval): resolve type aliases later, like in module type aliases, to avoid cycles in
     // non-cyclic chains.
@@ -1259,7 +1272,7 @@ pub fn priv_impl_type_semantic_data(
         type_alias_data: type_alias_semantic_data_helper(
             db,
             &mut diagnostics,
-            impl_type_ast,
+            impl_type_def_ast,
             lookup_item_id,
             generic_params_data,
         )?,
@@ -1272,22 +1285,23 @@ pub fn priv_impl_type_semantic_data(
 pub fn priv_impl_type_semantic_data_cycle(
     db: &dyn SemanticGroup,
     _cycle: &[String],
-    impl_type_id: &ImplTypeDefId,
+    impl_type_def_id: &ImplTypeDefId,
 ) -> Maybe<ImplItemTypeData> {
-    let module_file_id = impl_type_id.module_file_id(db.upcast());
+    let module_file_id = impl_type_def_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let impl_types = db.impl_types(impl_type_id.impl_def_id(db.upcast()))?;
-    let impl_type_ast = impl_types.get(impl_type_id).to_maybe()?;
-    let generic_params_data = db.priv_impl_type_generic_params_data(*impl_type_id)?;
-    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(*impl_type_id));
+    let impl_type_defs = db.impl_types(impl_type_def_id.impl_def_id(db.upcast()))?;
+    let impl_type_def_ast = impl_type_defs.get(impl_type_def_id).to_maybe()?;
+    let generic_params_data = db.priv_impl_type_def_generic_params_data(*impl_type_def_id)?;
+    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(*impl_type_def_id));
 
-    let trait_type_id = validate_impl_item_type(db, &mut diagnostics, *impl_type_id, impl_type_ast);
+    let trait_type_id =
+        validate_impl_item_type(db, &mut diagnostics, *impl_type_def_id, impl_type_def_ast);
 
     Ok(ImplItemTypeData {
         type_alias_data: type_alias_semantic_data_cycle_helper(
             db,
             &mut diagnostics,
-            impl_type_ast,
+            impl_type_def_ast,
             lookup_item_id,
             generic_params_data,
         )?,
@@ -1296,21 +1310,21 @@ pub fn priv_impl_type_semantic_data_cycle(
     })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_type_generic_params_data].
-pub fn priv_impl_type_generic_params_data(
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_type_def_generic_params_data].
+pub fn priv_impl_type_def_generic_params_data(
     db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeDefId,
+    impl_type_def_id: ImplTypeDefId,
 ) -> Maybe<GenericParamsData> {
     let defs_db = db.upcast();
-    let module_file_id = impl_type_id.module_file_id(defs_db);
-    let impl_type_ast = db.impl_type_by_id(impl_type_id)?.to_maybe()?;
-    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_id));
+    let module_file_id = impl_type_def_id.module_file_id(defs_db);
+    let impl_type_def_ast = db.impl_type_by_id(impl_type_def_id)?.to_maybe()?;
+    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_def_id));
 
-    let impl_resolver_data = db.impl_def_resolver_data(impl_type_id.impl_def_id(defs_db))?;
+    let impl_resolver_data = db.impl_def_resolver_data(impl_type_def_id.impl_def_id(defs_db))?;
     type_alias_generic_params_data_helper(
         db,
         module_file_id,
-        &impl_type_ast,
+        &impl_type_def_ast,
         lookup_item_id,
         Some(impl_resolver_data),
     )
@@ -1320,15 +1334,15 @@ pub fn priv_impl_type_generic_params_data(
 fn validate_impl_item_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
-    impl_type_id: ImplTypeDefId,
+    impl_type_def_id: ImplTypeDefId,
     impl_type_ast: &ast::ItemTypeAlias,
 ) -> Maybe<TraitTypeId> {
     let defs_db = db.upcast();
     let syntax_db = db.upcast();
-    let impl_def_id = impl_type_id.impl_def_id(defs_db);
+    let impl_def_id = impl_type_def_id.impl_def_id(defs_db);
     let concrete_trait_id = db.impl_def_concrete_trait(impl_def_id)?;
     let trait_id = concrete_trait_id.trait_id(db);
-    let type_name = impl_type_id.name(defs_db);
+    let type_name = impl_type_def_id.name(defs_db);
     let trait_type_id = db.trait_type_by_name(trait_id, type_name.clone())?.ok_or_else(|| {
         diagnostics.report(
             impl_type_ast,
@@ -1366,7 +1380,18 @@ pub fn impl_type_implized_by_context(
         return Ok(None);
     };
 
-    Ok(Some(db.impl_type_resolved_type(impl_type_def_id)?))
+    Ok(Some(db.impl_type_def_resolved_type(impl_type_def_id)?))
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::impl_type_implized_by_context].
+pub fn impl_type_implized_by_context_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_type_id: &ImplTypeId,
+    impl_def_id: &ImplDefId,
+) -> Maybe<Option<TypeId>> {
+    // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
+    impl_type_implized_by_context(db, *impl_type_id, *impl_def_id)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_type_concrete_implized].
@@ -1380,6 +1405,16 @@ pub fn impl_type_concrete_implized(
 
     let impl_def_id = concrete_impl.impl_def_id(db);
     db.impl_type_implized_by_context(impl_type_id, impl_def_id)
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::impl_type_concrete_implized].
+pub fn impl_type_concrete_implized_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_type_id: &ImplTypeId,
+) -> Maybe<Option<TypeId>> {
+    // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
+    impl_type_concrete_implized(db, *impl_type_id)
 }
 
 // === Impl Function Declaration ===

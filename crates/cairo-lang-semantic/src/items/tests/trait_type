@@ -1530,3 +1530,64 @@ error: Unexpected return type. Expected: "core::integer::u32", found: "core::int
  --> lib.cairo:9:37
     fn bar(x: Self::MyType1) -> u32 {
                                     ^
+
+//! > ==========================================================================
+
+//! > Impl types cycle of length 1.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = Self::MyType1;
+}
+
+//! > expected_diagnostics
+error: Cycle detected while resolving type-alias/impl-type items.
+ --> lib.cairo:5:10
+    type MyType1 = Self::MyType1;
+         ^*****^
+
+//! > ==========================================================================
+
+//! > Impl types cycle of length 2.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = Self::MyType2;
+    type MyType2 = Self::MyType1;
+}
+
+//! > expected_diagnostics
+error: Cycle detected while resolving type-alias/impl-type items.
+ --> lib.cairo:6:10
+    type MyType1 = Self::MyType2;
+         ^*****^
+
+error: Cycle detected while resolving type-alias/impl-type items.
+ --> lib.cairo:7:10
+    type MyType2 = Self::MyType1;
+         ^*****^

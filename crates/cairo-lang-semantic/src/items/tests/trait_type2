@@ -1,7 +1,7 @@
-//! > Using traits' items is allowed in other traits, if well resolved.
+//! > impl types cycle
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {}
@@ -10,21 +10,15 @@ fn foo() {}
 foo
 
 //! > module_code
-trait AnotherTrait {
-    type AnotherType;
-}
-impl AnotherImpl of AnotherTrait {
-    type AnotherType = u32;
-}
 trait MyTrait {
-    fn bar1(x: AnotherTrait::AnotherType);
-    fn bar2() -> AnotherTrait::AnotherType;
+    type MyType1;
 }
 impl MyImpl of MyTrait {
-    fn bar1(x: u32) {}
-    fn bar2() -> u32 {
-        2_u32
-    }
+    type MyType1 = Self::MyType1;
 }
 
 //! > expected_diagnostics
+error: Cycle detected while resolving type-alias/impl-type items.
+ --> lib.cairo:5:10
+    type MyType1 = Self::MyType1;
+         ^*****^
