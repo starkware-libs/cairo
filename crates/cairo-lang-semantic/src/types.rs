@@ -173,7 +173,7 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
 /// according to the assignment of that trait type in its impl, if the impl is known according to
 /// the context.
 ///
-/// First `solve()`s the inference once, and then only uses it as a "read-only".
+/// First calls `inference.solve()` once, and then only uses it as a "read-only".
 /// Note that it means `inference` might change. Consider passing a temporary clone if you want to
 /// avoid affecting the original inference.
 ///
@@ -196,8 +196,8 @@ pub fn implize_type(
 
 /// Tries to implize a type, recursively, according to known inference data.
 ///
-/// Assumes `inference` is `solve()`d and doesn't change it (although it's passed as &mut which is
-/// required per it's API).
+/// Assumes `inference.solve()` was called and doesn't change the inference structure (although
+/// it's passed as &mut which is required per it's API).
 ///
 /// `impl_ctx` is the impl context we're at, if any. That is, if we're inside an impl function, the
 /// wrapping impl is the context here.
@@ -271,7 +271,7 @@ fn implize_type_recursive(
 /// Reduces an impl type if its impl is an ImplVar. E.g. in the case of MyTrait::MyType when there
 /// is only a single impl for MyTrait in the context.
 ///
-/// Assumes the given inference is `solve()`ed.
+/// Assumes the given `inference.solve()` was called.
 fn reduce_trait_impl_type(impl_type_id: ImplTypeId, inference: &mut Inference<'_>) -> ImplTypeId {
     let ImplTypeId { impl_id, ty } = impl_type_id;
     if !matches!(impl_id, crate::items::imp::ImplId::ImplVar(_)) {
