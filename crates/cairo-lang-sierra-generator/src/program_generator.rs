@@ -5,6 +5,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::{get_location_marks, Maybe};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_sierra::debug_info::StatementsFunctions;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
@@ -222,6 +223,7 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SierraProgramDebugInfo {
     pub statements_locations: StatementsLocations,
+    pub statements_functions: Option<StatementsFunctions>,
 }
 
 pub fn get_sierra_program_for_functions(
@@ -274,10 +276,15 @@ pub fn get_sierra_program_for_functions(
             })
             .collect(),
     };
+
+    let statements_locations = StatementsLocations::from_locations_vec(&statements_locations);
+    let statements_functions_map = statements_locations.extract_statements_functions(db.upcast());
+
     Ok(Arc::new(SierraProgramWithDebug {
         program,
         debug_info: SierraProgramDebugInfo {
-            statements_locations: StatementsLocations::from_locations_vec(&statements_locations),
+            statements_locations,
+            statements_functions: Some(statements_functions_map),
         },
     }))
 }

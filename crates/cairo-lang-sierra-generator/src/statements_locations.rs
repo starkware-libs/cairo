@@ -4,6 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
+use cairo_lang_sierra::debug_info::StatementsFunctions;
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -138,14 +139,25 @@ impl StatementsLocations {
         Self { locations }
     }
     /// Builds a map between each Sierra statement index and a string representation of the Cairo
-    /// function that it was generated from. The function representation is composed of the function
-    /// name and the path (modules and impls) to the function in the file. It is used for places
+    /// function that it was generated from. It is used for places
     /// without db access such as the profiler.
     // TODO(Gil): Add a db access to the profiler and remove this function.
-    pub fn get_statements_functions_map(
+    pub fn get_statements_functions_map_for_tests(
         &self,
         db: &dyn DefsGroup,
     ) -> UnorderedHashMap<StatementIdx, String> {
         self.locations.map(|s| containing_function_identifier_for_tests(db, *s))
+    }
+
+    pub fn extract_statements_functions(&self, db: &dyn DefsGroup) -> StatementsFunctions {
+        StatementsFunctions {
+            statements_to_functions_map: self
+                .locations
+                .iter_sorted()
+                .map(|(statement_idx, stable_location)| {
+                    (*statement_idx, containing_function_identifier(db, *stable_location))
+                })
+                .collect(),
+        }
     }
 }

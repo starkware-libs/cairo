@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use crate::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
-use crate::program::{GenericArg, Program, Statement};
+use crate::program::{GenericArg, Program, Statement, StatementIdx};
 
 #[cfg(test)]
 #[path = "debug_info_test.rs"]
@@ -36,6 +36,8 @@ pub struct DebugInfo {
     /// See [`Annotations`] type documentation for more information about this field.
     #[serde(default, skip_serializing_if = "Annotations::is_empty")]
     pub annotations: Annotations,
+
+    pub statements_functions: Option<StatementsFunctions>,
 }
 
 /// Store for non-crucial information about the program, for use by external libraries and tool.
@@ -61,9 +63,17 @@ pub struct DebugInfo {
 /// - `scarb.swmansion.com/build-info/v1`
 pub type Annotations = OrderedHashMap<String, serde_json::Value>;
 
+/// The mapping from sierra statement index to fully qualified Cairo path of the Cairo function
+/// (if obtainable) which caused the statement to be generated.
+///  Should be created using [`StatementsLocation::extract_statements_functions`].
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct StatementsFunctions {
+    pub statements_to_functions_map: HashMap<StatementIdx, Option<String>>,
+}
+
 impl DebugInfo {
     /// Extracts the existing debug info from a program.
-    pub fn extract(program: &Program) -> Self {
+    pub fn extract(program: &Program, statements_functions: Option<StatementsFunctions>) -> Self {
         Self {
             type_names: program
                 .type_declarations
@@ -90,6 +100,7 @@ impl DebugInfo {
                 })
                 .collect(),
             annotations: Default::default(),
+            statements_functions,
         }
     }
 

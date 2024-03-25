@@ -20,6 +20,7 @@ fn test_extract_names() {
                     Func2@6() -> ();
                 "})
                 .unwrap(),
+            None,
         ),
         DebugInfo {
             type_names: HashMap::from([
@@ -36,6 +37,7 @@ fn test_extract_names() {
                 ("Func2".into(), "Func2".into())
             ]),
             annotations: Default::default(),
+            statements_functions: None,
         }
     );
 }
@@ -70,6 +72,7 @@ fn test_populate_names() {
         ]),
         user_func_names: HashMap::from([(0.into(), "Func1".into()), (1.into(), "Func2".into())]),
         annotations: Default::default(),
+        statements_functions: None,
     }
     .populate(&mut program);
 

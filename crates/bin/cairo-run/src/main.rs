@@ -97,7 +97,7 @@ fn main() -> anyhow::Result<()> {
         let profiling_info_processor = ProfilingInfoProcessor::new(
             Some(db),
             sierra_program,
-            debug_info.statements_locations.get_statements_functions_map(db),
+            debug_info.statements_locations.get_statements_functions_map_for_tests(db),
         );
         match result.profiling_info {
             Some(raw_profiling_info) => {
