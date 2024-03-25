@@ -137,7 +137,7 @@ impl SemanticQueryAttrs for TraitFunctionId {
 
 impl SemanticQueryAttrs for ImplTypeDefId {
     fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
-        db.impl_type_attributes(*self)
+        db.impl_type_def_attributes(*self)
     }
 }
 impl SemanticQueryAttrs for ImplFunctionId {
