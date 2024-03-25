@@ -126,9 +126,10 @@ fn compile_contract_with_prepared_and_checked_db(
 ) -> Result<ContractClass> {
     let SemanticEntryPoints { external, l1_handler, constructor } =
         extract_semantic_entrypoints(db, contract)?;
-    let SierraProgramWithDebug { program: mut sierra_program, .. } = Arc::unwrap_or_clone(
+    let SierraProgramWithDebug { program: mut sierra_program, debug_info } = Arc::unwrap_or_clone(
         db.get_sierra_program_for_functions(
             chain!(&external, &l1_handler, &constructor).map(|f| f.value).collect(),
+            compiler_config.add_cairo_profiler_annotations,
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?,
@@ -156,6 +157,7 @@ fn compile_contract_with_prepared_and_checked_db(
                 .finalize()
                 .with_context(|| "Could not create ABI from contract submodule")?,
         ),
+        debug_info.statements_functions,
     )?;
     contract_class.sanity_check();
     Ok(contract_class)

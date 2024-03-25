@@ -65,7 +65,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
-        db.get_sierra_program(main_crate_ids.clone())
+        db.get_sierra_program(main_crate_ids.clone(), false)
             .to_option()
             .with_context(|| "Compilation failed without any diagnostics.")?,
     );
@@ -97,7 +97,7 @@ fn main() -> anyhow::Result<()> {
         let profiling_info_processor = ProfilingInfoProcessor::new(
             Some(db),
             sierra_program,
-            debug_info.statements_locations.get_statements_functions_map(db),
+            debug_info.statements_locations.get_statements_functions_map_for_tests(db),
         );
         match result.profiling_info {
             Some(raw_profiling_info) => {

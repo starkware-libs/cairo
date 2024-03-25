@@ -22,6 +22,7 @@ pub mod diagnostics;
 pub mod project;
 
 /// Configuration for the compiler.
+#[derive(Default)]
 pub struct CompilerConfig<'c> {
     pub diagnostics_reporter: DiagnosticsReporter<'c>,
 
@@ -31,17 +32,10 @@ pub struct CompilerConfig<'c> {
     /// The name of the allowed libfuncs list to use in compilation.
     /// If None the default list of audited libfuncs will be used.
     pub allowed_libfuncs_list_name: Option<String>,
-}
 
-/// The default compiler configuration.
-impl Default for CompilerConfig<'static> {
-    fn default() -> Self {
-        CompilerConfig {
-            diagnostics_reporter: DiagnosticsReporter::default(),
-            replace_ids: false,
-            allowed_libfuncs_list_name: None,
-        }
-    }
+    /// Adds mappings used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler)
+    /// to debug info annotations.
+    pub add_cairo_profiler_annotations: bool,
 }
 
 /// Compiles a Cairo project at the given path.
@@ -123,7 +117,7 @@ pub fn compile_prepared_db(
     compiler_config.diagnostics_reporter.ensure(db)?;
 
     let mut sierra_program_with_debug = Arc::unwrap_or_clone(
-        db.get_sierra_program(main_crate_ids)
+        db.get_sierra_program(main_crate_ids, compiler_config.add_cairo_profiler_annotations)
             .to_option()
             .context("Compilation failed without any diagnostics")?,
     );

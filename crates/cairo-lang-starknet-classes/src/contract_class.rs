@@ -1,4 +1,5 @@
 use cairo_lang_sierra as sierra;
+use cairo_lang_sierra::debug_info::StatementsFunctions;
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
@@ -36,6 +37,7 @@ impl ContractClass {
         program: &sierra::program::Program,
         entry_points_by_type: ContractEntryPoints,
         abi: Option<Contract>,
+        statements_functions: Option<StatementsFunctions>,
     ) -> Result<Self, Felt252SerdeError> {
         Ok(Self {
             sierra_program: sierra_to_felt252s(
@@ -43,7 +45,10 @@ impl ContractClass {
                 current_compiler_version_id(),
                 program,
             )?,
-            sierra_program_debug_info: Some(sierra::debug_info::DebugInfo::extract(program)),
+            sierra_program_debug_info: Some(sierra::debug_info::DebugInfo::extract(
+                program,
+                statements_functions,
+            )),
             contract_class_version: DEFAULT_CONTRACT_CLASS_VERSION.into(),
             entry_points_by_type,
             abi,
