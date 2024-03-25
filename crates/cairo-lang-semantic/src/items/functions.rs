@@ -619,8 +619,6 @@ impl Signature {
         function_title_id: FunctionTitleId,
         environment: &mut Environment,
     ) -> Self {
-        let return_type =
-            function_signature_return_type(diagnostics, db, resolver, signature_syntax);
         let params = function_signature_params(
             diagnostics,
             db,
@@ -629,6 +627,8 @@ impl Signature {
             function_title_id,
             environment,
         );
+        let return_type =
+            function_signature_return_type(diagnostics, db, resolver, signature_syntax);
         let implicits =
             function_signature_implicit_parameters(diagnostics, db, resolver, signature_syntax);
         let panicable = match signature_syntax.optional_no_panic(db.upcast()) {

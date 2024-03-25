@@ -956,3 +956,42 @@ error: `Self` can only be the first segment of a path.
  --> lib.cairo:9:27
             super::inner::Self::foo2(); // This is not.
                           ^**^
+
+//! > ==========================================================================
+
+//! > Type mismatch of trait and impl functions.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn foo(x: u16, y: u16) -> u16;
+}
+impl MyImpl of MyTrait {
+    fn foo(x: u32, y: u32) -> u32 {
+        x
+    }
+}
+
+//! > expected_diagnostics
+error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+ --> lib.cairo:5:15
+    fn foo(x: u32, y: u32) -> u32 {
+              ^*^
+
+error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+ --> lib.cairo:5:23
+    fn foo(x: u32, y: u32) -> u32 {
+                      ^*^
+
+error: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+ --> lib.cairo:5:31
+    fn foo(x: u32, y: u32) -> u32 {
+                              ^*^
