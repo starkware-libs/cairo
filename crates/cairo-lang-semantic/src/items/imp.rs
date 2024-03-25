@@ -50,7 +50,7 @@ use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::solver::SolutionSet;
-use crate::expr::inference::{ImplVarId, InferenceError, InferenceId};
+use crate::expr::inference::{ImplVarId, Inference, InferenceError, InferenceId};
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
@@ -1556,6 +1556,7 @@ pub fn priv_impl_function_declaration_data(
         &mut environment,
     );
 
+    let inference = &mut resolver.inference();
     let trait_function_id = validate_impl_function_signature(
         db,
         &mut diagnostics,
@@ -1564,7 +1565,7 @@ pub fn priv_impl_function_declaration_data(
         &signature,
         function_syntax,
         &generic_params,
-        &mut resolver,
+        inference,
     );
 
     let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
@@ -1576,12 +1577,12 @@ pub fn priv_impl_function_declaration_data(
     let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
+    if let Some((stable_ptr, inference_err)) = inference.finalize() {
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
     }
-    let signature = resolver.inference().rewrite(signature).no_err();
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let signature = inference.rewrite(signature).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(ImplFunctionDeclarationData {
@@ -1608,8 +1609,7 @@ fn validate_impl_function_signature(
     signature: &semantic::Signature,
     impl_function_syntax: &ast::FunctionWithBody,
     impl_func_generics: &[GenericParam],
-    // TODO(yg): only need inference...
-    resolver: &mut Resolver<'_>,
+    inference: &mut Inference<'_>,
 ) -> Maybe<TraitFunctionId> {
     let syntax_db = db.upcast();
     let defs_db = db.upcast();
@@ -1672,7 +1672,6 @@ fn validate_impl_function_signature(
         );
     }
     let impl_ctx = Some(ImplContext { impl_def_id });
-    let inference = &mut resolver.inference();
     for (idx, (param, trait_param)) in
         izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {
