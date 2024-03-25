@@ -782,16 +782,13 @@ pub fn priv_trait_function_declaration_data(
     );
 
     // Check fully resolved.
-    // TODO(yg): signature is not fully resolved even when finalize succeeds. Maybe the impl types
-    // in the signature are not added to the inference?
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
+    let inference = &mut resolver.inference();
+    if let Some((stable_ptr, inference_err)) = inference.finalize() {
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
     }
-    println!("yg sig: {:?}", signature.debug(db.elongate()));
-    let signature = resolver.inference().rewrite(signature).no_err();
-    let function_generic_params = resolver.inference().rewrite(function_generic_params).no_err();
-    println!("yg sig after: {:?}", signature.debug(db.elongate()));
+    let signature = inference.rewrite(signature).no_err();
+    let function_generic_params = inference.rewrite(function_generic_params).no_err();
 
     // Validations on the signature.
     validate_trait_function_signature(

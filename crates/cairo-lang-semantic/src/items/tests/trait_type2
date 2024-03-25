@@ -23,17 +23,8 @@ trait MyTrait {
 impl MyImpl of MyTrait {
     fn bar1(x: u32) {}
     fn bar2() -> u32 {
-        3_u32
+        2_u32
     }
 }
 
 //! > expected_diagnostics
-error: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `ImplVar(test::AnotherTrait)::AnotherType`, actual: `core::integer::u32`.
- --> lib.cairo:12:16
-    fn bar1(x: u32) {}
-               ^*^
-
-error: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `ImplVar(test::AnotherTrait)::AnotherType`, actual: `core::integer::u32`.
- --> lib.cairo:13:18
-    fn bar2() -> u32 {
-                 ^*^

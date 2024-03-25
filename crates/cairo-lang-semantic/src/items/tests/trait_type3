@@ -16,7 +16,7 @@ trait MyTrait {
 }
 impl MyImpl<T> of MyTrait {
     type MyType = T;
-    fn foo() {//let _: MyImpl::<u8>::MyType = 3_u8; // should work.
+    fn foo() { //let _: MyImpl::<u8>::MyType = 3_u8; // should work.
     //let _: Self::MyType = 3_u8; // should fail.
     }
 }

@@ -617,9 +617,7 @@ impl<'db> Resolver<'db> {
                             ));
                         let impl_lookup_context = self.impl_lookup_context();
                         let ty = self
-                            .data
-                            .inference_data
-                            .inference(self.db)
+                            .inference()
                             .infer_trait_type(
                                 concrete_trait_type,
                                 &impl_lookup_context,
@@ -628,6 +626,7 @@ impl<'db> Resolver<'db> {
                             .map_err(|err| {
                                 err.report(diagnostics, identifier.stable_ptr().untyped())
                             })?;
+                        let ty = implize_type(self.db, ty, None, &mut self.inference())?;
 
                         Ok(ResolvedConcreteItem::Type(ty))
                     }
