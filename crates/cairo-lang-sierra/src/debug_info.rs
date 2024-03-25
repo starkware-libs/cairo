@@ -36,8 +36,6 @@ pub struct DebugInfo {
     /// See [`Annotations`] type documentation for more information about this field.
     #[serde(default, skip_serializing_if = "Annotations::is_empty")]
     pub annotations: Annotations,
-
-    pub statements_functions: Option<StatementsFunctions>,
 }
 
 /// Store for non-crucial information about the program, for use by external libraries and tool.
@@ -74,6 +72,16 @@ pub struct StatementsFunctions {
 impl DebugInfo {
     /// Extracts the existing debug info from a program.
     pub fn extract(program: &Program, statements_functions: Option<StatementsFunctions>) -> Self {
+        let annotations = if let Some(sf) = statements_functions {
+            let mapping = serde_json::to_value(sf.statements_to_functions_map).unwrap();
+            OrderedHashMap::from([(
+                "github.com/software-mansion/cairo-profiler".to_string(),
+                serde_json::Value::from_iter([("statements_functions", mapping)]),
+            )])
+        } else {
+            Default::default()
+        };
+
         Self {
             type_names: program
                 .type_declarations
@@ -99,8 +107,7 @@ impl DebugInfo {
                     func.id.debug_name.clone().map(|name| (FunctionId::new(func.id.id), name))
                 })
                 .collect(),
-            annotations: Default::default(),
-            statements_functions,
+            annotations,
         }
     }
 
