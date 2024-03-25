@@ -1595,12 +1595,14 @@ pub fn priv_impl_function_declaration_data(
     let trait_function_id = validate_impl_function_signature(
         db,
         &mut diagnostics,
-        impl_function_id,
-        &signature_syntax,
-        &signature,
-        function_syntax,
-        &generic_params,
         inference,
+        ValidateImplFunctionSignatureParams {
+            impl_function_id,
+            signature_syntax: &signature_syntax,
+            signature: &signature,
+            impl_function_syntax: function_syntax,
+            impl_func_generics: &generic_params,
+        },
     );
 
     let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
@@ -1635,16 +1637,26 @@ pub fn priv_impl_function_declaration_data(
     })
 }
 
+struct ValidateImplFunctionSignatureParams<'a> {
+    impl_function_id: ImplFunctionId,
+    signature_syntax: &'a ast::FunctionSignature,
+    signature: &'a semantic::Signature,
+    impl_function_syntax: &'a ast::FunctionWithBody,
+    impl_func_generics: &'a [GenericParam],
+}
+
 /// Validates the impl function, and returns the matching trait function id.
 fn validate_impl_function_signature(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
-    impl_function_id: ImplFunctionId,
-    signature_syntax: &ast::FunctionSignature,
-    signature: &semantic::Signature,
-    impl_function_syntax: &ast::FunctionWithBody,
-    impl_func_generics: &[GenericParam],
     inference: &mut Inference<'_>,
+    ValidateImplFunctionSignatureParams {
+        impl_function_id,
+        signature_syntax,
+        signature,
+        impl_function_syntax,
+        impl_func_generics,
+    }: ValidateImplFunctionSignatureParams<'_>,
 ) -> Maybe<TraitFunctionId> {
     let syntax_db = db.upcast();
     let defs_db = db.upcast();
