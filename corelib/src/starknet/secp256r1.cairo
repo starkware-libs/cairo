@@ -2,9 +2,7 @@
 //! secp256r1 curve.
 
 use core::option::OptionTrait;
-use starknet::{
-    EthAddress, secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait
-};
+use starknet::{secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait};
 
 #[derive(Copy, Drop)]
 pub extern type Secp256r1Point;

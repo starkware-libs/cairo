@@ -2,12 +2,7 @@
 //! secp256k1 curve.
 
 use core::option::OptionTrait;
-use starknet::{
-    secp256_trait::{
-        Secp256Trait, Secp256PointTrait, recover_public_key, is_signature_entry_valid, Signature
-    },
-    SyscallResult, SyscallResultTrait
-};
+use starknet::{secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait};
 
 #[derive(Copy, Drop)]
 pub extern type Secp256k1Point;
