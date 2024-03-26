@@ -2,7 +2,6 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_diagnostics::{get_location_marks, Maybe};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -227,26 +226,9 @@ pub struct SierraProgramDebugInfo {
     pub statements_functions: Option<StatementsFunctions>,
 }
 
-impl SierraProgramDebugInfo {
-    fn new(
-        statements_locations: StatementsLocations,
-        db: &dyn DefsGroup,
-        add_statements_functions: bool,
-    ) -> Self {
-        let statements_functions = if add_statements_functions {
-            Some(statements_locations.extract_statements_functions(db.upcast()))
-        } else {
-            None
-        };
-
-        Self { statements_locations, statements_functions }
-    }
-}
-
 pub fn get_sierra_program_for_functions(
     db: &dyn SierraGenGroup,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
-    add_statements_functions: bool,
 ) -> Maybe<Arc<SierraProgramWithDebug>> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
@@ -295,11 +277,13 @@ pub fn get_sierra_program_for_functions(
             .collect(),
     };
 
-    let statements_locations = StatementsLocations::from_locations_vec(&statements_locations);
-    let debug_info =
-        SierraProgramDebugInfo::new(statements_locations, db.upcast(), add_statements_functions);
-
-    Ok(Arc::new(SierraProgramWithDebug { program, debug_info }))
+    Ok(Arc::new(SierraProgramWithDebug {
+        program,
+        debug_info: SierraProgramDebugInfo {
+            statements_locations: StatementsLocations::from_locations_vec(&statements_locations),
+            statements_functions: None,
+        },
+    }))
 }
 
 /// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.
@@ -359,5 +343,21 @@ pub fn get_sierra_program(
             }
         }
     }
-    db.get_sierra_program_for_functions(requested_function_ids, add_statements_functions)
+
+    let compilation_result = db.get_sierra_program_for_functions(requested_function_ids);
+
+    if add_statements_functions && compilation_result.is_ok() {
+        let mut sierra_program_with_debug = Arc::unwrap_or_clone(compilation_result.unwrap());
+        let statements_functions = Some(
+            sierra_program_with_debug
+                .debug_info
+                .statements_locations
+                .extract_statements_functions(db.upcast()),
+        );
+        sierra_program_with_debug.debug_info.statements_functions = statements_functions;
+
+        Ok(Arc::new(sierra_program_with_debug))
+    } else {
+        compilation_result
+    }
 }

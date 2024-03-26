@@ -94,7 +94,6 @@ pub fn compile_test_prepared_db(
                 })
             )
             .collect(),
-            false,
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?,
