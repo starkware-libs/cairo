@@ -1952,4 +1952,62 @@ mod special_casts {
         let v181 = downcast::<felt252, BoundedInt<181, 181>>(181).unwrap();
         assert!(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(upcast(v181)).is_none());
     }
+
+    mod u8_actions {
+        pub extern fn bounded_int_add<T1, T2>(a: T1, b: T2) -> super::BoundedInt<0, 510> nopanic;
+        pub extern fn bounded_int_sub<T1, T2>(a: T1, b: T2) -> super::BoundedInt<-255, 255> nopanic;
+        pub extern fn bounded_int_mul<T1, T2>(
+            a: T1, b: T2
+        ) -> super::BoundedInt<0, {
+            255 * 255
+        }> nopanic;
+    }
+
+    mod i8_actions {
+        pub extern fn bounded_int_add<T1, T2>(a: T1, b: T2) -> super::BoundedInt<-256, 254> nopanic;
+        pub extern fn bounded_int_sub<T1, T2>(a: T1, b: T2) -> super::BoundedInt<-255, 255> nopanic;
+        pub extern fn bounded_int_mul<T1, T2>(
+            a: T1, b: T2
+        ) -> super::BoundedInt<{
+            127 * -128
+        }, {
+            128 * 128
+        }> nopanic;
+    }
+
+    #[test]
+    fn test_bounded_int_add() {
+        assert!(upcast(u8_actions::bounded_int_add::<u8, u8>(0, 0)) == 0_felt252);
+        assert!(upcast(u8_actions::bounded_int_add::<u8, u8>(0, 255)) == 255_felt252);
+        assert!(upcast(u8_actions::bounded_int_add::<u8, u8>(255, 0)) == 255_felt252);
+        assert!(upcast(u8_actions::bounded_int_add::<u8, u8>(255, 255)) == 510_felt252);
+        assert!(upcast(i8_actions::bounded_int_add::<i8, i8>(-128, -128)) == -256_felt252);
+        assert!(upcast(i8_actions::bounded_int_add::<i8, i8>(-128, 127)) == -1_felt252);
+        assert!(upcast(i8_actions::bounded_int_add::<i8, i8>(127, -128)) == -1_felt252);
+        assert!(upcast(i8_actions::bounded_int_add::<i8, i8>(127, 127)) == 254_felt252);
+    }
+
+    #[test]
+    fn test_bounded_int_sub() {
+        assert!(upcast(u8_actions::bounded_int_sub::<u8, u8>(0, 0)) == 0_felt252);
+        assert!(upcast(u8_actions::bounded_int_sub::<u8, u8>(0, 255)) == -255_felt252);
+        assert!(upcast(u8_actions::bounded_int_sub::<u8, u8>(255, 0)) == 255_felt252);
+        assert!(upcast(u8_actions::bounded_int_sub::<u8, u8>(255, 255)) == 0_felt252);
+        assert!(upcast(i8_actions::bounded_int_sub::<i8, i8>(-128, -128)) == 0_felt252);
+        assert!(upcast(i8_actions::bounded_int_sub::<i8, i8>(-128, 127)) == -255_felt252);
+        assert!(upcast(i8_actions::bounded_int_sub::<i8, i8>(127, -128)) == 255_felt252);
+        assert!(upcast(i8_actions::bounded_int_sub::<i8, i8>(127, 127)) == 0_felt252);
+    }
+
+    #[test]
+    fn test_bounded_int_mul() {
+        assert!(upcast(u8_actions::bounded_int_mul::<u8, u8>(0, 0)) == 0_felt252);
+        assert!(upcast(u8_actions::bounded_int_mul::<u8, u8>(0, 255)) == 0_felt252);
+        assert!(upcast(u8_actions::bounded_int_mul::<u8, u8>(255, 0)) == 0_felt252);
+        assert!(upcast(u8_actions::bounded_int_mul::<u8, u8>(255, 255)) == 255_felt252 * 255);
+        assert!(upcast(i8_actions::bounded_int_mul::<i8, i8>(-128, -128)) == -128_felt252 * -128);
+        assert!(upcast(i8_actions::bounded_int_mul::<i8, i8>(-128, 127)) == -128_felt252 * 127);
+        assert!(upcast(i8_actions::bounded_int_mul::<i8, i8>(127, -128)) == 127_felt252 * -128);
+        assert!(upcast(i8_actions::bounded_int_mul::<i8, i8>(127, 127)) == 127_felt252 * 127);
+    }
 }
