@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_diagnostics::{get_location_marks, Maybe};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -226,10 +227,26 @@ pub struct SierraProgramDebugInfo {
     pub statements_functions: Option<StatementsFunctions>,
 }
 
+impl SierraProgramDebugInfo {
+    fn new(
+        statements_locations: StatementsLocations,
+        db: &dyn DefsGroup,
+        add_statements_functions: bool,
+    ) -> Self {
+        let statements_functions = if add_statements_functions {
+            Some(statements_locations.extract_statements_functions(db.upcast()))
+        } else {
+            None
+        };
+
+        Self { statements_locations, statements_functions }
+    }
+}
+
 pub fn get_sierra_program_for_functions(
     db: &dyn SierraGenGroup,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
-    add_location_annotations: bool,
+    add_statements_functions: bool,
 ) -> Maybe<Arc<SierraProgramWithDebug>> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
@@ -279,16 +296,10 @@ pub fn get_sierra_program_for_functions(
     };
 
     let statements_locations = StatementsLocations::from_locations_vec(&statements_locations);
-    let statements_functions = if add_location_annotations {
-        Some(statements_locations.extract_statements_functions(db.upcast()))
-    } else {
-        None
-    };
+    let debug_info =
+        SierraProgramDebugInfo::new(statements_locations, db.upcast(), add_statements_functions);
 
-    Ok(Arc::new(SierraProgramWithDebug {
-        program,
-        debug_info: SierraProgramDebugInfo { statements_locations, statements_functions },
-    }))
+    Ok(Arc::new(SierraProgramWithDebug { program, debug_info }))
 }
 
 /// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.
@@ -333,7 +344,7 @@ fn try_get_function_with_body_id(
 pub fn get_sierra_program(
     db: &dyn SierraGenGroup,
     requested_crate_ids: Vec<CrateId>,
-    add_location_annotations: bool,
+    add_statements_functions: bool,
 ) -> Maybe<Arc<SierraProgramWithDebug>> {
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
@@ -348,5 +359,5 @@ pub fn get_sierra_program(
             }
         }
     }
-    db.get_sierra_program_for_functions(requested_function_ids, add_location_annotations)
+    db.get_sierra_program_for_functions(requested_function_ids, add_statements_functions)
 }

@@ -34,8 +34,9 @@ pub struct CompilerConfig<'c> {
     pub allowed_libfuncs_list_name: Option<String>,
 
     /// Adds mappings used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler)
-    /// to debug info annotations.
-    pub add_location_annotations: bool,
+    /// to [cairo_lang_sierra_generator::program_generator::SierraProgramDebugInfo] or
+    /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
+    pub add_statements_functions: bool,
 }
 
 /// Compiles a Cairo project at the given path.
@@ -117,7 +118,7 @@ pub fn compile_prepared_db(
     compiler_config.diagnostics_reporter.ensure(db)?;
 
     let mut sierra_program_with_debug = Arc::unwrap_or_clone(
-        db.get_sierra_program(main_crate_ids, compiler_config.add_location_annotations)
+        db.get_sierra_program(main_crate_ids, compiler_config.add_statements_functions)
             .to_option()
             .context("Compilation failed without any diagnostics")?,
     );

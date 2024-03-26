@@ -122,7 +122,7 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     fn get_sierra_program_for_functions(
         &self,
         requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
-        add_location_annotations: bool,
+        add_statements_functions: bool,
     ) -> Maybe<Arc<SierraProgramWithDebug>>;
 
     /// Returns the [cairo_lang_sierra::program::Program] object of the requested crates.
@@ -130,7 +130,7 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     fn get_sierra_program(
         &self,
         requested_crate_ids: Vec<CrateId>,
-        add_location_annotations: bool,
+        add_statements_functions: bool,
     ) -> Maybe<Arc<SierraProgramWithDebug>>;
 }
 

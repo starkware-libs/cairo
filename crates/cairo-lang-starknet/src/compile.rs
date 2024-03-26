@@ -130,7 +130,7 @@ fn compile_contract_with_prepared_and_checked_db(
     let SierraProgramWithDebug { program: mut sierra_program, debug_info } = Arc::unwrap_or_clone(
         db.get_sierra_program_for_functions(
             chain!(&external, &l1_handler, &constructor).map(|f| f.value).collect(),
-            compiler_config.add_location_annotations,
+            compiler_config.add_statements_functions,
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?,
