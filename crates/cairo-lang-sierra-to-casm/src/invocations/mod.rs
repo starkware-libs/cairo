@@ -688,6 +688,7 @@ pub fn compile_invocation(
                 Ok(builder.build_only_reference_changes([].into_iter()))
             }
         },
+        BoundedInt(libfunc) => int::bounded::build(libfunc, builder),
     }
 }
 
