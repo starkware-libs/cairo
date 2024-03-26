@@ -40,7 +40,8 @@ impl ContractClass {
         statements_functions: Option<StatementsFunctions>,
     ) -> Result<Self, Felt252SerdeError> {
         let mut sierra_program_debug_info = sierra::debug_info::DebugInfo::extract(program);
-        let location_annotations = Annotations::from(statements_functions.unwrap_or_default());
+        let location_annotations =
+            statements_functions.map_or_else(Default::default, Annotations::from);
         sierra_program_debug_info.annotations.extend(location_annotations);
 
         Ok(Self {

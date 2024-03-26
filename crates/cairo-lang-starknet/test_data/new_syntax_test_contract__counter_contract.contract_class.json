@@ -1301,12 +1301,7 @@
         7,
         "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased, cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventCounterDecreasedIntoEvent>"
       ]
-    ],
-    "annotations": {
-      "github.com/software-mansion/cairo-profiler": {
-        "statements_functions": {}
-      }
-    }
+    ]
   },
   "contract_class_version": "0.1.0",
   "entry_points_by_type": {

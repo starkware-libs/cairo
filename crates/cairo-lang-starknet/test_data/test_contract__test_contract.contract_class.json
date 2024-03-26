@@ -1229,12 +1229,7 @@
         8,
         "core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash"
       ]
-    ],
-    "annotations": {
-      "github.com/software-mansion/cairo-profiler": {
-        "statements_functions": {}
-      }
-    }
+    ]
   },
   "contract_class_version": "0.1.0",
   "entry_points_by_type": {

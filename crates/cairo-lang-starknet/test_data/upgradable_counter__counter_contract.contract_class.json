@@ -1633,12 +1633,7 @@
         9,
         "cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_ownable_comp>::validate_ownership"
       ]
-    ],
-    "annotations": {
-      "github.com/software-mansion/cairo-profiler": {
-        "statements_functions": {}
-      }
-    }
+    ]
   },
   "contract_class_version": "0.1.0",
   "entry_points_by_type": {
