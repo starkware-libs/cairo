@@ -58,11 +58,6 @@ error: Unexpected return type. Expected: "()", found: "core::integer::u128".
 fn foo(a: u128, b: bool) implicits(RangeCheck) {
                                                ^
 
-error: Trait has no implementation in context: core::traits::PartialOrd::<core::bool>
- --> lib.cairo:6:5
-    a > a > a;
-    ^*******^
-
 //! > ==========================================================================
 
 //! > Test unary operators.
