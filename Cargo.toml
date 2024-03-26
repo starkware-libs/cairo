@@ -34,6 +34,7 @@ members = [
     "crates/cairo-lang-filesystem",
     "crates/cairo-lang-formatter",
     "crates/cairo-lang-language-server",
+    "crates/cairo-lang-location-mappings",
     "crates/cairo-lang-lowering",
     "crates/cairo-lang-parser",
     "crates/cairo-lang-plugins",
@@ -97,7 +98,7 @@ diffy = "0.3.0"
 env_logger = "0.10.0"
 genco = "0.17.8"
 good_lp = { version = "1.7.0", features = ["minilp"], default-features = false }
-hashbrown = "0.14.3" 
+hashbrown = "0.14.3"
 id-arena = "2.2.1"
 ignore = "0.4.20"
 indent = "0.1.1"

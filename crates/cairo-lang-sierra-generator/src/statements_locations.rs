@@ -4,7 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
-use cairo_lang_sierra::debug_info::StatementsFunctions;
+use cairo_lang_location_mappings::StatementsFunctions;
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;

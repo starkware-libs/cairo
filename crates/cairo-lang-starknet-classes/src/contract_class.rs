@@ -1,5 +1,6 @@
+use cairo_lang_location_mappings::StatementsFunctions;
 use cairo_lang_sierra as sierra;
-use cairo_lang_sierra::debug_info::{Annotations, StatementsFunctions};
+use cairo_lang_sierra::debug_info::Annotations;
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};

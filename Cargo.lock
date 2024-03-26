@@ -588,6 +588,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-lang-location-mappings"
+version = "2.6.3"
+dependencies = [
+ "cairo-lang-sierra",
+ "cairo-lang-utils",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "cairo-lang-lowering"
 version = "2.6.3"
 dependencies = [
@@ -820,6 +830,7 @@ dependencies = [
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
+ "cairo-lang-location-mappings",
  "cairo-lang-lowering",
  "cairo-lang-parser",
  "cairo-lang-plugins",
@@ -913,6 +924,7 @@ version = "2.6.3"
 dependencies = [
  "cairo-felt",
  "cairo-lang-casm",
+ "cairo-lang-location-mappings",
  "cairo-lang-sierra",
  "cairo-lang-sierra-generator",
  "cairo-lang-sierra-to-casm",
