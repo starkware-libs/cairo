@@ -82,7 +82,7 @@ pub fn get_test_contract(example_file_name: &str) -> ContractClass {
             replace_ids: true,
             allowed_libfuncs_list_name: Some(BUILTIN_ALL_LIBFUNCS_LIST.to_string()),
             diagnostics_reporter,
-            add_cairo_profiler_annotations: true,
+            add_location_annotations: false,
         },
     )
     .expect("compile_path failed")

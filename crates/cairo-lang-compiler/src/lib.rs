@@ -35,7 +35,7 @@ pub struct CompilerConfig<'c> {
 
     /// Adds mappings used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler)
     /// to debug info annotations.
-    pub add_cairo_profiler_annotations: bool,
+    pub add_location_annotations: bool,
 }
 
 /// Compiles a Cairo project at the given path.
@@ -117,7 +117,7 @@ pub fn compile_prepared_db(
     compiler_config.diagnostics_reporter.ensure(db)?;
 
     let mut sierra_program_with_debug = Arc::unwrap_or_clone(
-        db.get_sierra_program(main_crate_ids, compiler_config.add_cairo_profiler_annotations)
+        db.get_sierra_program(main_crate_ids, compiler_config.add_location_annotations)
             .to_option()
             .context("Compilation failed without any diagnostics")?,
     );

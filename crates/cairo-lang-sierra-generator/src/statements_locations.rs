@@ -149,6 +149,7 @@ impl StatementsLocations {
         self.locations.map(|s| containing_function_identifier_for_tests(db, *s))
     }
 
+    /// Creates a new [StatementsFunctions] struct using [StatementsLocations] and [DefsGroup].
     pub fn extract_statements_functions(&self, db: &dyn DefsGroup) -> StatementsFunctions {
         StatementsFunctions {
             statements_to_functions_map: self

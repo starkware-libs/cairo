@@ -20,7 +20,6 @@ fn test_extract_names() {
                     Func2@6() -> ();
                 "})
                 .unwrap(),
-            None,
         ),
         DebugInfo {
             type_names: HashMap::from([

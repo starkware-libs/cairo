@@ -69,19 +69,19 @@ pub struct StatementsFunctions {
     pub statements_to_functions_map: HashMap<StatementIdx, Option<String>>,
 }
 
+impl From<StatementsFunctions> for Annotations {
+    fn from(value: StatementsFunctions) -> Self {
+        let mapping = serde_json::to_value(value.statements_to_functions_map).unwrap();
+        OrderedHashMap::from([(
+            "github.com/software-mansion/cairo-profiler".to_string(),
+            serde_json::Value::from_iter([("statements_functions", mapping)]),
+        )])
+    }
+}
+
 impl DebugInfo {
     /// Extracts the existing debug info from a program.
-    pub fn extract(program: &Program, statements_functions: Option<StatementsFunctions>) -> Self {
-        let annotations = if let Some(sf) = statements_functions {
-            let mapping = serde_json::to_value(sf.statements_to_functions_map).unwrap();
-            OrderedHashMap::from([(
-                "github.com/software-mansion/cairo-profiler".to_string(),
-                serde_json::Value::from_iter([("statements_functions", mapping)]),
-            )])
-        } else {
-            Default::default()
-        };
-
+    pub fn extract(program: &Program) -> Self {
         Self {
             type_names: program
                 .type_declarations
@@ -107,7 +107,7 @@ impl DebugInfo {
                     func.id.debug_name.clone().map(|name| (FunctionId::new(func.id.id), name))
                 })
                 .collect(),
-            annotations,
+            annotations: Default::default(),
         }
     }
 
