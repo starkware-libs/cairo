@@ -836,6 +836,8 @@ dependencies = [
  "once_cell",
  "pretty_assertions",
  "salsa",
+ "serde",
+ "serde_json",
  "smol_str",
  "test-case",
  "test-log",

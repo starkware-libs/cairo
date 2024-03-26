@@ -5,7 +5,6 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::{get_location_marks, Maybe};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_sierra::debug_info::StatementsFunctions;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
@@ -21,6 +20,7 @@ use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::resolve_labels::{resolve_labels_and_extract_locations, LabelReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
+use crate::statements_functions::StatementsFunctions;
 use crate::statements_locations::StatementsLocations;
 
 #[cfg(test)]

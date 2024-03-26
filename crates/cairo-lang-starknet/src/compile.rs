@@ -10,6 +10,7 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_sierra::debug_info::Annotations;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
@@ -147,6 +148,9 @@ fn compile_contract_with_prepared_and_checked_db(
         // Later generation of ABI verifies that there is up to one constructor.
         constructor: get_entry_points(db, &constructor, &replacer)?,
     };
+
+    let annotations =
+        debug_info.statements_functions.map_or_else(Default::default, Annotations::from);
     let contract_class = ContractClass::new(
         &sierra_program,
         entry_points_by_type,
@@ -157,7 +161,7 @@ fn compile_contract_with_prepared_and_checked_db(
                 .finalize()
                 .with_context(|| "Could not create ABI from contract submodule")?,
         ),
-        debug_info.statements_functions,
+        annotations,
     )?;
     contract_class.sanity_check();
     Ok(contract_class)

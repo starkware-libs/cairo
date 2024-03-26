@@ -1,8 +1,9 @@
 use cairo_lang_sierra as sierra;
-use cairo_lang_sierra::debug_info::{Annotations, StatementsFunctions};
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use thiserror::Error;
 
 use crate::abi::Contract;
@@ -37,12 +38,10 @@ impl ContractClass {
         program: &sierra::program::Program,
         entry_points_by_type: ContractEntryPoints,
         abi: Option<Contract>,
-        statements_functions: Option<StatementsFunctions>,
+        annotations: OrderedHashMap<String, Value>,
     ) -> Result<Self, Felt252SerdeError> {
         let mut sierra_program_debug_info = sierra::debug_info::DebugInfo::extract(program);
-        let location_annotations =
-            statements_functions.map_or_else(Default::default, Annotations::from);
-        sierra_program_debug_info.annotations.extend(location_annotations);
+        sierra_program_debug_info.annotations.extend(annotations);
 
         Ok(Self {
             sierra_program: sierra_to_felt252s(

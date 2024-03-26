@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use crate::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
-use crate::program::{GenericArg, Program, Statement, StatementIdx};
+use crate::program::{GenericArg, Program, Statement};
 
 #[cfg(test)]
 #[path = "debug_info_test.rs"]
@@ -60,24 +60,6 @@ pub struct DebugInfo {
 /// - `scarb.swmansion.com/v1`
 /// - `scarb.swmansion.com/build-info/v1`
 pub type Annotations = OrderedHashMap<String, serde_json::Value>;
-
-/// The mapping from sierra statement index to fully qualified Cairo path of the Cairo function
-/// (if obtainable) which caused the statement to be generated.
-///  Should be created using [`StatementsLocation::extract_statements_functions`].
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-pub struct StatementsFunctions {
-    pub statements_to_functions_map: HashMap<StatementIdx, Option<String>>,
-}
-
-impl From<StatementsFunctions> for Annotations {
-    fn from(value: StatementsFunctions) -> Self {
-        let mapping = serde_json::to_value(value.statements_to_functions_map).unwrap();
-        OrderedHashMap::from([(
-            "github.com/software-mansion/cairo-profiler".to_string(),
-            serde_json::Value::from_iter([("statements_functions", mapping)]),
-        )])
-    }
-}
 
 impl DebugInfo {
     /// Extracts the existing debug info from a program.
