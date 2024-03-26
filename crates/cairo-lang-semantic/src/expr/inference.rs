@@ -609,17 +609,24 @@ impl<'db> Inference<'db> {
     }
 
     /// Finalizes the inference and report diagnostics if there are any errors.
+    /// All the remaining type vars are mapped to the `missing` type, to prevent additional
+    /// diagnostics.
     pub fn finalize(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         stable_ptr: SyntaxStablePtrId,
     ) {
         if let Err((err_set, err_stable_ptr)) = self.finalize_without_reporting() {
-            self.report_on_pending_error(
+            let diag = self.report_on_pending_error(
                 err_set,
                 diagnostics,
                 err_stable_ptr.unwrap_or(stable_ptr),
             );
+
+            let ty_missing = TypeId::missing(self.db, diag);
+            for id in 0..self.type_vars.len() {
+                self.type_assignment.entry(LocalTypeVarId(id)).or_insert(ty_missing);
+            }
         }
     }
 
