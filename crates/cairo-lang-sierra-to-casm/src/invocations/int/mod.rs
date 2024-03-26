@@ -10,6 +10,7 @@ use crate::invocations::{
 };
 use crate::references::ReferenceExpression;
 
+pub mod bounded;
 pub mod signed;
 pub mod signed128;
 pub mod unsigned;
