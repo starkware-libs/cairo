@@ -174,8 +174,10 @@ impl CairoProgram {
 /// The debug information of a compilation from Sierra to casm.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct SierraStatementDebugInfo {
-    /// The offset of the sierra statement within the bytecode.
-    pub code_offset: usize,
+    /// The start offset of the sierra statement within the bytecode.
+    pub start_offset: usize,
+    /// The end offset of the sierra statement within the bytecode.
+    pub end_offset: usize,
     /// The index of the sierra statement in the instructions vector.
     pub instruction_idx: usize,
     /// Statement-kind-dependent information.
@@ -188,9 +190,6 @@ pub struct SierraStatementDebugInfo {
 pub enum StatementKindDebugInfo {
     Return(ReturnStatementDebugInfo),
     Invoke(InvokeStatementDebugInfo),
-    /// Dummy marker for the end of the program. It is used for a fake statement that contains the
-    /// final offset (the size of the program code segment).
-    EndMarker,
 }
 
 /// Additional debug information for a return Sierra statement.
@@ -449,16 +448,20 @@ pub fn compile(
                     _ => CompilationError::InvocationError { statement_idx, error },
                 })?;
 
+                let start_offset = program_offset;
+
+                let ret_instruction = RetInstruction {};
+                program_offset += ret_instruction.op_size();
+
                 sierra_statement_info.push(SierraStatementDebugInfo {
-                    code_offset: program_offset,
+                    start_offset,
+                    end_offset: program_offset,
                     instruction_idx: instructions.len(),
                     additional_kind_info: StatementKindDebugInfo::Return(
                         ReturnStatementDebugInfo { ref_values: return_refs },
                     ),
                 });
 
-                let ret_instruction = RetInstruction {};
-                program_offset += ret_instruction.op_size();
                 instructions.push(Instruction::new(InstructionBody::Ret(ret_instruction), false));
             }
             Statement::Invocation(invocation) => {
@@ -496,8 +499,15 @@ pub fn compile(
                 )
                 .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
+                let start_offset = program_offset;
+
+                for instruction in &compiled_invocation.instructions {
+                    program_offset += instruction.body.op_size();
+                }
+
                 sierra_statement_info.push(SierraStatementDebugInfo {
-                    code_offset: program_offset,
+                    start_offset,
+                    end_offset: program_offset,
                     instruction_idx: instructions.len(),
                     additional_kind_info: StatementKindDebugInfo::Invoke(
                         InvokeStatementDebugInfo {
@@ -506,10 +516,6 @@ pub fn compile(
                         },
                     ),
                 });
-
-                for instruction in &compiled_invocation.instructions {
-                    program_offset += instruction.body.op_size();
-                }
 
                 for entry in compiled_invocation.relocations {
                     relocations.push(RelocationEntry {
@@ -561,15 +567,10 @@ pub fn compile(
             }
         }
     }
-    // Push the final offset and index at the end of the vectors.
-    sierra_statement_info.push(SierraStatementDebugInfo {
-        code_offset: program_offset,
-        instruction_idx: instructions.len(),
-        additional_kind_info: StatementKindDebugInfo::EndMarker,
-    });
 
-    let statement_offsets: Vec<usize> =
-        sierra_statement_info.iter().map(|s: &SierraStatementDebugInfo| s.code_offset).collect();
+    let statement_offsets: Vec<usize> = std::iter::once(0)
+        .chain(sierra_statement_info.iter().map(|s: &SierraStatementDebugInfo| s.end_offset))
+        .collect();
 
     let const_segments_max_size = config
         .max_bytecode_size
