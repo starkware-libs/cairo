@@ -10,7 +10,7 @@ use cairo_lang_defs::ids::{
     ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, LookupItemId, MemberId,
     ParamId, StructId, TraitFunctionId, TraitId, VarId, VariantId,
 };
-use cairo_lang_diagnostics::DiagnosticAdded;
+use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -545,6 +545,10 @@ impl<'db> Inference<'db> {
             "pending should all be solved by this point. Guaranteed by solve()."
         );
         let (var, err) = self.first_undetermined_variable()?;
+        let ty_missing = TypeId::missing(self.db, skip_diagnostic());
+        for id in 0..self.type_vars.len() {
+            self.type_assignment.entry(LocalTypeVarId(id)).or_insert(ty_missing);
+        }
         Some((self.stable_ptrs.get(&var).copied(), err))
     }
 
