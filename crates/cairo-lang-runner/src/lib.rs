@@ -296,7 +296,7 @@ impl SierraCasmRunner {
         trace: &[TraceEntry],
         profiling_config: ProfilingInfoCollectionConfig,
     ) -> ProfilingInfo {
-        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
+        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len();
         let bytecode_len =
             self.casm_program.debug_info.sierra_statement_info.last().unwrap().end_offset;
         // The CASM program starts with a header of instructions to wrap the real program.
