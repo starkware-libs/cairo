@@ -66,18 +66,18 @@ impl<'db> VariableAllocator<'db> {
         self.variables.alloc(Variable {
             copyable: ty_info
                 .clone()
-                .map_err(InferenceError::Failed)
+                .map_err(InferenceError::Reported)
                 .and_then(|info| info.copyable),
             droppable: ty_info
                 .clone()
-                .map_err(InferenceError::Failed)
+                .map_err(InferenceError::Reported)
                 .and_then(|info| info.droppable),
             destruct_impl: ty_info
                 .clone()
-                .map_err(InferenceError::Failed)
+                .map_err(InferenceError::Reported)
                 .and_then(|info| info.destruct_impl),
             panic_destruct_impl: ty_info
-                .map_err(InferenceError::Failed)
+                .map_err(InferenceError::Reported)
                 .and_then(|info| info.panic_destruct_impl),
             ty: req.ty,
             location: req.location,
