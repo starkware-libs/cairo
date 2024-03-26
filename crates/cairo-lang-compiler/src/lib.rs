@@ -33,7 +33,7 @@ pub struct CompilerConfig<'c> {
     /// If None the default list of audited libfuncs will be used.
     pub allowed_libfuncs_list_name: Option<String>,
 
-    /// Adds mappings used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler)
+    /// Adds mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
     /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
     pub add_statements_functions: bool,
 }

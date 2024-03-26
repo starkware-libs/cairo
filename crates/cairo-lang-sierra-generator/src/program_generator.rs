@@ -274,7 +274,6 @@ pub fn get_sierra_program_for_functions(
             })
             .collect(),
     };
-
     Ok(Arc::new(SierraProgramWithDebug {
         program,
         debug_info: SierraProgramDebugInfo {
@@ -339,6 +338,5 @@ pub fn get_sierra_program(
             }
         }
     }
-
     db.get_sierra_program_for_functions(requested_function_ids)
 }
