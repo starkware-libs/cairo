@@ -129,7 +129,6 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     fn get_sierra_program(
         &self,
         requested_crate_ids: Vec<CrateId>,
-        add_statements_functions: bool,
     ) -> Maybe<Arc<SierraProgramWithDebug>>;
 }
 

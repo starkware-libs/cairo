@@ -20,7 +20,6 @@ use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::resolve_labels::{resolve_labels_and_extract_locations, LabelReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
-use crate::statements_functions::StatementsFunctions;
 use crate::statements_locations::StatementsLocations;
 
 #[cfg(test)]
@@ -223,7 +222,6 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SierraProgramDebugInfo {
     pub statements_locations: StatementsLocations,
-    pub statements_functions: Option<StatementsFunctions>,
 }
 
 pub fn get_sierra_program_for_functions(
@@ -281,7 +279,6 @@ pub fn get_sierra_program_for_functions(
         program,
         debug_info: SierraProgramDebugInfo {
             statements_locations: StatementsLocations::from_locations_vec(&statements_locations),
-            statements_functions: None,
         },
     }))
 }
@@ -328,7 +325,6 @@ fn try_get_function_with_body_id(
 pub fn get_sierra_program(
     db: &dyn SierraGenGroup,
     requested_crate_ids: Vec<CrateId>,
-    add_statements_functions: bool,
 ) -> Maybe<Arc<SierraProgramWithDebug>> {
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
@@ -344,20 +340,5 @@ pub fn get_sierra_program(
         }
     }
 
-    let compilation_result = db.get_sierra_program_for_functions(requested_function_ids);
-
-    if add_statements_functions && compilation_result.is_ok() {
-        let mut sierra_program_with_debug = Arc::unwrap_or_clone(compilation_result.unwrap());
-        let statements_functions = Some(
-            sierra_program_with_debug
-                .debug_info
-                .statements_locations
-                .extract_statements_functions(db.upcast()),
-        );
-        sierra_program_with_debug.debug_info.statements_functions = statements_functions;
-
-        Ok(Arc::new(sierra_program_with_debug))
-    } else {
-        compilation_result
-    }
+    db.get_sierra_program_for_functions(requested_function_ids)
 }

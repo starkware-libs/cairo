@@ -46,7 +46,7 @@ pub fn test_profiling(
 
     // Compile to Sierra.
     let SierraProgramWithDebug { program: sierra_program, debug_info } =
-        Arc::unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id], false).unwrap());
+        Arc::unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id]).unwrap());
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
     let statements_functions =
         debug_info.statements_locations.get_statements_functions_map_for_tests(&db);

@@ -186,7 +186,7 @@ fn run_e2e_test(
 
     // Compile to Sierra.
     let SierraProgramWithDebug { program: sierra_program, .. } =
-        Arc::unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id], false).unwrap());
+        Arc::unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id]).unwrap());
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
     let sierra_program_str = sierra_program.to_string();
 

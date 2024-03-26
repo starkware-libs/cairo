@@ -127,7 +127,7 @@ pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::P
     let (db, crate_id) = setup_db_and_get_crate_id(content);
 
     let SierraProgramWithDebug { program, .. } =
-        Arc::unwrap_or_clone(db.get_sierra_program(vec![crate_id], false).unwrap());
+        Arc::unwrap_or_clone(db.get_sierra_program(vec![crate_id]).unwrap());
     replace_sierra_ids_in_program(&db, &program)
 }
 
