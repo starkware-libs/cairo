@@ -149,7 +149,7 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar<T, impl X: unknown, impl CallableImpl: callable::CallableTrait<T>>(x: T) {
+fn bar<T, +unknown, +callable::CallableTrait<T>>(x: T) {
     x.call();
 }
 mod callable {
@@ -163,14 +163,9 @@ mod callable {
 
 //! > expected_diagnostics
 error: Trait not found.
- --> lib.cairo:1:19
-fn bar<T, impl X: unknown, impl CallableImpl: callable::CallableTrait<T>>(x: T) {
-                  ^*****^
-
-error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:13:5
-    bar(3_u8);
-    ^*^
+ --> lib.cairo:1:12
+fn bar<T, +unknown, +callable::CallableTrait<T>>(x: T) {
+           ^*****^
 
 //! > ==========================================================================
 

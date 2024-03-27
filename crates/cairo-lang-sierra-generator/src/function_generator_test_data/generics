@@ -12,7 +12,6 @@ fn foo() -> @Array<felt252> {
 foo
 
 //! > module_code
-
 // Function needs to be a real libfunc for the test
 extern fn span_from_tuple<T, +Copy<T>>(x: Box<@T>) -> @Array<felt252> nopanic;
 

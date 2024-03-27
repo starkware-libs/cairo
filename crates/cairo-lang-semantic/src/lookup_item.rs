@@ -205,7 +205,7 @@ impl HasResolverData for ImplItemId {
 
 impl HasResolverData for ImplTypeDefId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
-        db.impl_type_resolver_data(*self)
+        db.impl_type_def_resolver_data(*self)
     }
 }
 

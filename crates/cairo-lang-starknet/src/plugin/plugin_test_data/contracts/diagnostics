@@ -5701,8 +5701,7 @@ error: Expected variable or constant, found impl.
             get_dep_component!(Comp1, Comp1).foo1();
                                ^***^
 
-error: Method `foo1` could not be called on type `@test::component2::ComponentState::<TContractState>`.
-Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `test::component1::ComponentState::<?11>`
+error: Method `foo1` not found on type `@test::component2::ComponentState::<TContractState>`. Did you import the correct trait and impl?
  --> lib.cairo:59:46
             get_dep_component!(@self, Comp2).foo1();
                                              ^**^
@@ -5723,11 +5722,6 @@ error: Identifier not found.
  --> lib.cairo:63:39
             get_dep_component!(@self, NonExistingImpl).foo1();
                                       ^*************^
-
-error: Type annotations needed. Failed to infer ?4
- --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
-                                                                ^**********^
 
 //! > generated_cairo_code
 lib.cairo:
