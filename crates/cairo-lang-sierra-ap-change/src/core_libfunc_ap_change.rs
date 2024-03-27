@@ -1,7 +1,9 @@
 use cairo_lang_sierra::extensions::ap_tracking::ApTrackingConcreteLibfunc;
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
-use cairo_lang_sierra::extensions::bounded_int::BoundedIntConcreteLibfunc;
+use cairo_lang_sierra::extensions::bounded_int::{
+    BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm,
+};
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
@@ -359,7 +361,15 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BoundedIntConcreteLibfunc::Add(_)
             | BoundedIntConcreteLibfunc::Sub(_)
             | BoundedIntConcreteLibfunc::Mul(_) => vec![ApChange::Known(0)],
-            BoundedIntConcreteLibfunc::DivRem(_) => vec![ApChange::Known(5)],
+            BoundedIntConcreteLibfunc::DivRem(libfunc) => {
+                vec![ApChange::Known(
+                    match BoundedIntDivRemAlgorithm::new(&libfunc.lhs, &libfunc.rhs).unwrap() {
+                        BoundedIntDivRemAlgorithm::KnownSmallRhs => 5,
+                        BoundedIntDivRemAlgorithm::KnownSmallQuotient(_) => 6,
+                        BoundedIntDivRemAlgorithm::KnownSmallLhs(_) => 7,
+                    },
+                )]
+            }
         },
     }
 }
