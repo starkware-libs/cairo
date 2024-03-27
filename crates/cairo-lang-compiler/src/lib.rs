@@ -8,9 +8,9 @@ use std::sync::Arc;
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
+use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
-use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
 use crate::db::RootDatabase;
@@ -59,7 +59,7 @@ pub fn compile_cairo_project_at_path(
 
 /// Compiles a Cairo project.
 /// The project must be a valid Cairo project.
-/// This function is a wrapper over [`RootDatabase::builder()`] and [`compile_prepared_db`].
+/// This function is a wrapper over [`RootDatabase::builder()`] and [`compile_prepared_db_program`].
 /// # Arguments
 /// * `project_config` - The project configuration.
 /// * `compiler_config` - The compiler configuration.
@@ -97,8 +97,8 @@ pub fn compile_prepared_db_program(
 
 /// Runs Cairo compiler.
 ///
-/// Similar to `compile_prepared_db_program`, but this function returns all the raw debug
-/// information.
+/// Similar to [`compile_prepared_db_program`], but this function returns [`ProgramArtifact`]
+/// with requested debug info.
 ///
 /// # Arguments
 /// * `db` - Preloaded compilation database.
@@ -107,13 +107,13 @@ pub fn compile_prepared_db_program(
 ///   `db.intern_crate(CrateLongId::Real(name))` in order to obtain [`CrateId`] from its name.
 /// * `compiler_config` - The compiler configuration.
 /// # Returns
-/// * `Ok(SierraProgramWithDebug)` - The compiled program with debug info.
+/// * `Ok(ProgramArtifact)` - The compiled program artifact with requested debug info.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db(
     db: &mut RootDatabase,
     main_crate_ids: Vec<CrateId>,
     mut compiler_config: CompilerConfig<'_>,
-) -> Result<SierraProgramWithDebug> {
+) -> Result<ProgramArtifact> {
     compiler_config.diagnostics_reporter.ensure(db)?;
 
     let mut sierra_program_with_debug = Arc::unwrap_or_clone(
@@ -127,5 +127,22 @@ pub fn compile_prepared_db(
             replace_sierra_ids_in_program(db, &sierra_program_with_debug.program);
     }
 
-    Ok(sierra_program_with_debug)
+    let mut program_artifact = ProgramArtifact::stripped(sierra_program_with_debug.program);
+
+    if compiler_config.add_statements_functions {
+        let statements_functions = sierra_program_with_debug
+            .debug_info
+            .statements_locations
+            .extract_statements_functions(db);
+
+        let debug_info = DebugInfo {
+            type_names: Default::default(),
+            libfunc_names: Default::default(),
+            user_func_names: Default::default(),
+            annotations: Annotations::from(statements_functions),
+        };
+        program_artifact = program_artifact.with_debug_info(debug_info);
+    }
+
+    Ok(program_artifact)
 }
