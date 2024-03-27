@@ -1,11 +1,14 @@
 use std::ops::Shl;
 
-use cairo_felt::Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellOperator;
-use cairo_lang_sierra::extensions::bounded_int::BoundedIntConcreteLibfunc;
-use num_bigint::{BigInt, ToBigInt};
+use cairo_lang_sierra::extensions::bounded_int::{
+    BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm,
+};
+use cairo_lang_sierra::extensions::utils::Range;
+use num_bigint::BigInt;
+use num_traits::One;
 
 use crate::invocations::{
     add_input_variables, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
@@ -22,7 +25,7 @@ pub fn build(
         BoundedIntConcreteLibfunc::Sub(_) => build_simple_op(builder, CellOperator::Sub),
         BoundedIntConcreteLibfunc::Mul(_) => build_simple_op(builder, CellOperator::Mul),
         BoundedIntConcreteLibfunc::DivRem(libfunc) => {
-            build_div_rem(builder, &libfunc.dividend_bound)
+            build_div_rem(builder, &libfunc.lhs, &libfunc.rhs)
         }
     }
 }
@@ -51,12 +54,12 @@ fn build_simple_op(
 /// `quotient` is bounded by `2**128`.
 pub fn build_div_rem(
     builder: CompiledInvocationBuilder<'_>,
-    dividend_bound: &BigInt,
+    lhs: &Range,
+    rhs: &Range,
 ) -> Result<CompiledInvocation, InvocationError> {
-    // Asserting we won't overwrap on prime during validation.
-    assert!(dividend_bound.shl(128) < Felt252::prime().to_bigint().unwrap());
-
     let [range_check, a, b] = builder.try_get_single_cells()?;
+
+    let alg = BoundedIntDivRemAlgorithm::new(lhs, rhs).unwrap();
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
@@ -68,11 +71,22 @@ pub fn build_div_rem(
         let orig_range_check = range_check;
         tempvar r_plus_1;
         tempvar b_minus_r_minus_1;
+    };
+    let q_is_small = matches!(alg, BoundedIntDivRemAlgorithm::KnownSmallLhs(_))
+        .then(|| casm_builder.alloc_var(false));
+    let b_or_q_bound_rc_value = (!matches!(alg, BoundedIntDivRemAlgorithm::KnownSmallRhs))
+        .then(|| casm_builder.alloc_var(false));
+    casm_build_extend! {casm_builder,
         tempvar bq;
         tempvar q;
         tempvar r;
         hint DivMod { lhs: a, rhs: b } into { quotient: q, remainder: r };
-
+    };
+    // Adding under condition for divmod for u128 compatibility.
+    if !matches!(alg, BoundedIntDivRemAlgorithm::KnownSmallRhs) {
+        casm_build_extend!(casm_builder, assert q = *(range_check++););
+    }
+    casm_build_extend! {casm_builder,
         // Verify `0 <= r`.
         assert r = *(range_check++);
         // Verify `r < b` by constraining `0 <= b - (r + 1)`.
@@ -81,11 +95,59 @@ pub fn build_div_rem(
         assert b_minus_r_minus_1 = b - r_plus_1;
         assert b_minus_r_minus_1 = *(range_check++);
 
-        // Check that `0 <= q < 2**128`.
-        assert q = *(range_check++);
+    };
+    // Adding under condition for divmod for non-u128 u* compatibility.
+    if matches!(alg, BoundedIntDivRemAlgorithm::KnownSmallRhs) {
+        casm_build_extend!(casm_builder, assert q = *(range_check++););
+    }
 
-        // Check that `a = q * b + r`. Both hands are in the range [0, 2**128 * dividend_bound),
-        // since q < 2**128 and b < dividend_bound.
+    // Validating `q_max * rhs.upper < prime`.
+    match alg {
+        BoundedIntDivRemAlgorithm::KnownSmallRhs => {
+            // For this case `q < q_max <= 2**128` and `b < rhs.upper` therefore
+            // `q * b < 2**128 * rhs.upper < prime`.
+        }
+        BoundedIntDivRemAlgorithm::KnownSmallQuotient(q_bound) => {
+            let b_or_q_bound_rc_value = b_or_q_bound_rc_value.unwrap();
+            // For this case `q < q_bound`, and `b < rhs.upper <= 2**128` therefore
+            // `q * b < q_bound * 2**128 < prime`.
+            casm_build_extend! {casm_builder,
+                const u128_bound_minus_q_upper = (BigInt::one().shl(128) - q_bound) as BigInt;
+                assert b_or_q_bound_rc_value = q + u128_bound_minus_q_upper;
+                assert b_or_q_bound_rc_value = *(range_check++);
+            }
+        }
+        BoundedIntDivRemAlgorithm::KnownSmallLhs(lhs_upper_sqrt) => {
+            let q_is_small = q_is_small.unwrap();
+            let b_or_q_bound_rc_value = b_or_q_bound_rc_value.unwrap();
+            casm_build_extend! {casm_builder,
+                // For this case we know that `lhs_upper_sqrt * 2**128 < prime`.
+                // Since we know that both `b` and `q` are less than 2**128, if we can show that
+                // `b` or `q` is less than `lhs_upper_sqrt`, then we can show that
+                // `b * q < lhs_upper_sqrt * 2**128 < prime`.
+                // We know `min(b, q)` must be less than `sqrt(rhs.upper)`. We guess which is less
+                // and verify.
+                const limiter_bound = lhs_upper_sqrt.clone();
+                hint TestLessThan {lhs: q, rhs: limiter_bound} into {dst: q_is_small};
+                const u128_bound_minus_limiter_bound = (BigInt::one().shl(128) - lhs_upper_sqrt) as BigInt;
+                jump QIsSmall if q_is_small != 0;
+                // `q >= lhs_upper_sqrt`, so to verify `b < lhs_upper_sqrt` we assert
+                // `2^128 - lhs_upper_sqrt + b` is in the range check bound.
+                assert b_or_q_bound_rc_value = b + u128_bound_minus_limiter_bound;
+                jump VerifyBQ;
+            QIsSmall:
+                // `q < lhs_upper_sqrt`, so to verify `q < lhs_upper_sqrt` we assert
+                // `2^128 - lhs_upper_sqrt + q` is in the range check bound.
+                assert b_or_q_bound_rc_value = q + u128_bound_minus_limiter_bound;
+            VerifyBQ:
+                // Now, b_or_q_bound_rc_value contains either `2^128 - lhs_upper_sqrt + q` or
+                // `2^128 - lhs_upper_sqrt + b`. Verify this value is in [0, 2^128).
+                assert b_or_q_bound_rc_value = *(range_check++);
+            }
+        }
+    }
+    casm_build_extend! {casm_builder,
+        // Check that `a = q * b + r`. Both hands are in the range [0, q_max * rhs.upper).
         // Therefore, both hands are in the range [0, PRIME), and thus the equality
         // is an equality as integers (rather than only as field elements).
         assert bq = b * q;

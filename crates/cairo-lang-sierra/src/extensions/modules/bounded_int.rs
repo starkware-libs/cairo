@@ -162,17 +162,12 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
         if lhs_range.lower.is_negative() || !rhs_range.lower.is_positive() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
-        // The divisor upped bound multiplied by the range check bound must not wraparound the
-        // prime.
-        if (&rhs_range.upper).shl(128) >= Felt252::prime().to_bigint().unwrap() {
+        // Making sure the algorithm is runnable.
+        if BoundedIntDivRemAlgorithm::new(&lhs_range, &rhs_range).is_none() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
-        let min_quotient = lhs_range.lower / (&rhs_range.upper - 1);
-        let max_quotient = (&lhs_range.upper - 1) / rhs_range.lower;
-        // The quotient bound must be less than the range check bound.
-        if max_quotient >= BigInt::one().shl(128) {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
+        let quotient_min = lhs_range.lower / (&rhs_range.upper - 1);
+        let quotient_max = (&lhs_range.upper - 1) / rhs_range.lower;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
@@ -183,7 +178,7 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
             vec![
                 OutputVarInfo::new_builtin(range_check_type.clone(), 0),
                 OutputVarInfo {
-                    ty: bounded_int_ty(context, min_quotient, max_quotient)?,
+                    ty: bounded_int_ty(context, quotient_min, quotient_max)?,
                     ref_info: OutputVarReferenceInfo::SimpleDerefs,
                 },
                 OutputVarInfo {
@@ -200,22 +195,62 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let (_lhs, rhs) = as_two_types(args)?;
+        let (lhs, rhs) = as_two_types(args)?;
+        let context = context.upcast();
         Ok(Self::Concrete {
-            dividend_bound: Range::from_type(context.upcast(), rhs.clone())?.upper,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            lhs: Range::from_type(context, lhs.clone())?,
+            rhs: Range::from_type(context, rhs.clone())?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
 
 pub struct BoundedIntDivRemConcreteLibfunc {
-    /// The upper bound of the dividend.
-    pub dividend_bound: BigInt,
+    pub lhs: Range,
+    pub rhs: Range,
     signature: LibfuncSignature,
 }
 impl SignatureBasedConcreteLibfunc for BoundedIntDivRemConcreteLibfunc {
     fn signature(&self) -> &LibfuncSignature {
         &self.signature
+    }
+}
+
+/// The algorithm to use for division and remainder of bounded integers.
+pub enum BoundedIntDivRemAlgorithm {
+    /// The rhs is small enough to be multiplied by `2**128` without wraparound.
+    KnownSmallRhs,
+    /// The quotient is small enough to be multiplied by `2**128` without wraparound.
+    KnownSmallQuotient(BigInt),
+    /// The lhs is small enough so that its square root can be multiplied by `2**128` without
+    /// wraparound.
+    KnownSmallLhs(BigInt),
+}
+impl BoundedIntDivRemAlgorithm {
+    /// Returns the algorithm to use for division and remainder of bounded integers.
+    /// Fails if the div_rem of the ranges is not supported.
+    pub fn new(lhs: &Range, rhs: &Range) -> Option<Self> {
+        let prime = Felt252::prime().to_bigint().unwrap();
+        let q_max = (&lhs.upper - 1) / &rhs.lower;
+        let u128_limit = BigInt::one().shl(128);
+        if q_max > u128_limit || rhs.upper > u128_limit || lhs.upper > u128_limit {
+            return None;
+        }
+        if &rhs.upper * &u128_limit < prime {
+            return Some(Self::KnownSmallRhs);
+        }
+        let q_upper_bound = q_max + 1;
+        if &q_upper_bound * &u128_limit < prime {
+            return Some(Self::KnownSmallQuotient(q_upper_bound));
+        }
+        let mut r = lhs.upper.sqrt();
+        if &r * &r < lhs.upper {
+            r += 1;
+        }
+        if &r * &u128_limit < prime {
+            return Some(Self::KnownSmallLhs(r));
+        }
+        None
     }
 }
 
