@@ -12,8 +12,9 @@ pub fn function_with_body_direct_callees(
     function_id: FunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<FunctionId>> {
-    let lowered = db.function_with_body_lowering(function_id)?;
-    Ok(get_direct_callees(db, &lowered, dependency_type).into_iter().collect())
+    let (lowered, block_extra_calls) =
+        db.function_with_body_lowering_with_borrow_check(function_id)?;
+    Ok(get_direct_callees(db, &lowered, dependency_type, &block_extra_calls).into_iter().collect())
 }
 
 /// Query implementation of
