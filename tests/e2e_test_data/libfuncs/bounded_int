@@ -112,3 +112,61 @@ store_temp<BoundedInt<-16256, 16384>>([2]) -> ([2]); // 1
 return([2]); // 2
 
 test::foo@0([0]: i8, [1]: i8) -> (BoundedInt<-16256, 16384>);
+
+//! > ==========================================================================
+
+//! > bounded_int_div_rem libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+type DivRemType = (
+    BoundedInt<16, 85>,
+    BoundedInt<0, 7>,
+);
+
+extern fn bounded_int_div_rem<T1, T2>(a: T1, b: T2) -> DivRemType implicits(RangeCheck) nopanic;
+
+fn foo(a: BoundedInt<128, 255>, b: BoundedInt<3, 8>) -> DivRemType {
+    bounded_int_div_rem(a, b)
+}
+
+//! > casm
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[fp + -4], memory[fp + -3]) %}
+[ap + 4] = [[fp + -5] + 0], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[fp + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[fp + -5] + 1], ap++;
+[ap + -1] = [[fp + -5] + 2], ap++;
+[ap + -3] = [fp + -3] * [ap + -2];
+[fp + -4] = [ap + -3] + [ap + -1];
+[ap + 0] = [fp + -5] + 3, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1210})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedInt<16, 85> = BoundedInt<16, 85> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedInt<0, 7> = BoundedInt<0, 7> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>> = Struct<ut@Tuple, BoundedInt<16, 85>, BoundedInt<0, 7>> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedInt<3, 8> = BoundedInt<3, 8> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedInt<128, 255> = BoundedInt<128, 255> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_div_rem<BoundedInt<128, 255>, BoundedInt<3, 8>> = bounded_int_div_rem<BoundedInt<128, 255>, BoundedInt<3, 8>>;
+libfunc struct_construct<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>> = struct_construct<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>> = store_temp<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>>;
+
+bounded_int_div_rem<BoundedInt<128, 255>, BoundedInt<3, 8>>([0], [1], [2]) -> ([3], [4], [5]); // 0
+struct_construct<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>>([4], [5]) -> ([6]); // 1
+store_temp<RangeCheck>([3]) -> ([3]); // 2
+store_temp<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>>([6]) -> ([6]); // 3
+return([3], [6]); // 4
+
+test::foo@0([0]: RangeCheck, [1]: BoundedInt<128, 255>, [2]: BoundedInt<3, 8>) -> (RangeCheck, Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>);
