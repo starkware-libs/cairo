@@ -531,10 +531,11 @@ impl CompiledInvocationBuilder<'_> {
             });
         if !itertools::equal(gas_changes.clone(), final_costs_with_extra.clone()) {
             panic!(
-                "Wrong costs for {}. Expected: {:?}, actual: {:?}.",
+                "Wrong costs for {}. Expected: {:?}, actual: {:?}, Costs from casm_builder: {:?}.",
                 self.invocation,
                 gas_changes.collect_vec(),
-                final_costs_with_extra.collect_vec()
+                final_costs_with_extra.collect_vec(),
+                final_costs,
             );
         }
         let branch_relocations = branches.iter().zip_eq(branch_extractions.iter()).flat_map(
