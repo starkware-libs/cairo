@@ -17,6 +17,7 @@
         "bool_to_felt252",
         "bool_xor_impl",
         "bounded_int_add",
+        "bounded_int_div_rem",
         "bounded_int_mul",
         "bounded_int_sub",
         "box_forward_snapshot",
