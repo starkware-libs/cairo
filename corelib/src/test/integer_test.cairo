@@ -1870,11 +1870,9 @@ mod bounded_int {
 
     impl DropBoundedInt<const MIN: felt252, const MAX: felt252> of Drop<BoundedInt<MIN, MAX>>;
     const U128_UPPER: felt252 = 0x100000000000000000000000000000000;
-    type BoundedIntU128Upper =
-        BoundedInt<0x100000000000000000000000000000000, 0x100000000000000000000000000000000>;
-    const U128_MAX: felt252 = 0xffffffffffffffffffffffffffffffff;
-    type BoundedIntU128Max =
-        BoundedInt<0xffffffffffffffffffffffffffffffff, 0xffffffffffffffffffffffffffffffff>;
+    type BoundedIntU128Upper = BoundedInt<U128_UPPER, U128_UPPER>;
+    const U128_MAX: felt252 = U128_UPPER - 1;
+    type BoundedIntU128Max = BoundedInt<U128_MAX, U128_MAX>;
 
     /// Is `value` the equivalent value of `expected` in `T` type.
     fn is_some_of<T>(value: Option<T>, expected: felt252) -> bool {
@@ -2029,5 +2027,75 @@ mod bounded_int {
         assert!(div_rem_helper(255, 3) == (85, 0));
         assert!(div_rem_helper(128, 8) == (16, 0));
         assert!(div_rem_helper(255, 8) == (31, 7));
+    }
+
+    fn div_rem_wide_helper(a: u128, b: u128) -> (felt252, felt252) {
+        let (q, r) = bounded_int_div_rem(a, bi_value::<1, 0xffffffffffffffffffffffffffffffff>(b));
+        (
+            upcast::<BoundedInt<0, 0xffffffffffffffffffffffffffffffff>>(q),
+            upcast::<BoundedInt<0, 0xfffffffffffffffffffffffffffffffe>>(r)
+        )
+    }
+
+    #[test]
+    fn test_div_rem_wide() {
+        assert!(div_rem_wide_helper(128, 3) == (42, 2));
+        assert!(div_rem_wide_helper(255, 3) == (85, 0));
+        assert!(div_rem_wide_helper(128, 8) == (16, 0));
+        assert!(div_rem_wide_helper(255, 8) == (31, 7));
+    }
+
+    fn bi_const<const V: felt252>() -> BoundedInt<V, V> {
+        downcast(V).unwrap()
+    }
+
+    fn div_rem_small_quotient_helper<
+        const A_MAX: felt252,
+        const B: felt252,
+        const MAX_Q: felt252,
+        const MAX_R: felt252,
+        const A: felt252,
+    >(
+        a: BoundedInt<A, A>
+    ) -> (felt252, felt252) {
+        let (q, r) = bounded_int_div_rem::<BoundedInt<0, A_MAX>>(upcast(a), bi_const::<B>());
+        (upcast::<BoundedInt<0, MAX_Q>>(q), upcast::<BoundedInt<0, MAX_R>>(r))
+    }
+
+    const POW_2_124: felt252 = 0x10000000000000000000000000000000;
+    const MASK4: felt252 = 0xf;
+    const MASK124: felt252 = POW_2_124 - 1;
+    const POW_2_251: felt252 = 0x800000000000000000000000000000000000000000000000000000000000000;
+    const POW_2_123: felt252 = 0x8000000000000000000000000000000;
+
+    #[test]
+    fn test_div_rem_small_quotient() {
+        assert!(
+            div_rem_small_quotient_helper::<
+                U128_MAX, POW_2_124, MASK4, MASK124
+            >(bi_const::<0>()) == (0, 0)
+        );
+        assert!(
+            div_rem_small_quotient_helper::<
+                U128_MAX, POW_2_124, MASK4, MASK124
+            >(bi_const::<0x50000000000000000000000000000032>()) == (0x5, 0x32)
+        );
+        assert!(
+            div_rem_small_quotient_helper::<
+                U128_MAX, POW_2_124, MASK4, MASK124
+            >(bi_const::<0xf0000000000000000000000000012345>()) == (0xf, 0x12345)
+        );
+        assert!(
+            div_rem_small_quotient_helper::<
+                U128_MAX, POW_2_124, MASK4, MASK124
+            >(bi_const::<U128_MAX>()) == (MASK4, MASK124)
+        );
+        assert!(
+            div_rem_small_quotient_helper::<
+                POW_2_251, U128_MAX, POW_2_123, {
+                    U128_MAX - 1
+                }
+            >(bi_const::<POW_2_251>()) == (POW_2_123, POW_2_123)
+        );
     }
 }
