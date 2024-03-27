@@ -22,6 +22,7 @@ struct A {}
 impl ADestruct of Destruct<A> {
     #[inline(never)]
     fn destruct(self: A) nopanic {
+        let A { } = self;
         // Use RangeCheck, a previously unused implicit.
         match u128_overflowing_add(1_u128, 2_u128) {
             Result::Ok(v) => v,
@@ -356,12 +357,24 @@ impl ADestruct of Destruct<A> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Call cycle of `nopanic` functions is not allowed.
+ --> lib.cairo:3:5
+    #[inline(always)]
+    ^***************^
+
+error: Cannot inline a function that might call itself.
+ --> lib.cairo:3:5
+    #[inline(always)]
+    ^***************^
 
 //! > lowering_flat
-Parameters:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v0: test::A) <- struct_construct()
-  () <- test::ADestruct::destruct(v0)
+  (v2: test::A) <- struct_construct()
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin) <- test::ADestruct::destruct(v0, v1, v2)
+  (v5: ()) <- struct_construct()
+  (v6: ((),)) <- struct_construct(v5)
+  (v7: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v6)
 End:
-  Return()
+  Return(v3, v4, v7)

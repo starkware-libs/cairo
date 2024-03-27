@@ -43,6 +43,7 @@ pub fn lower_panics(
             blocks: lowered.blocks.clone(),
             parameters: lowered.parameters.clone(),
             signature: lowered.signature.clone(),
+            block_extra_calls: Default::default(),
         });
     }
 
@@ -66,6 +67,7 @@ pub fn lower_panics(
         blocks: ctx.flat_blocks.build().unwrap(),
         parameters: lowered.parameters.clone(),
         signature: lowered.signature.clone(),
+        block_extra_calls: Default::default(),
     })
 }
 

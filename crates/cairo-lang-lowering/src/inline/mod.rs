@@ -282,6 +282,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
             blocks,
             parameters: flat_lower.parameters.clone(),
             signature: flat_lower.signature.clone(),
+            block_extra_calls: Default::default(),
         })
     }
 

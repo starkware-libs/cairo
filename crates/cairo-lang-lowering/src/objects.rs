@@ -123,6 +123,9 @@ pub struct FlatLowered {
     pub blocks: FlatBlocks,
     /// function parameters, including implicits.
     pub parameters: Vec<VariableId>,
+    /// Extra calls for block to functions considered as called from it.
+    /// Corresponds to `Destruct::destruct` and `PanicDestruct::panic_destruct` calls.
+    pub block_extra_calls: OrderedHashMap<BlockId, Vec<FunctionId>>,
 }
 
 /// Remapping of lowered variable ids. Useful for convergence of branches.

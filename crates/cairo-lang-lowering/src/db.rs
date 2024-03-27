@@ -478,6 +478,9 @@ pub(crate) fn get_direct_callees(
                 }
             }
         }
+        if let Some(extra_calls) = lowered_function.block_extra_calls.get(&block_id) {
+            direct_callees.extend(extra_calls.iter().copied());
+        }
         match &block.end {
             FlatBlockEnd::NotSet | FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => {}
             FlatBlockEnd::Goto(next, _) => stack.push(*next),

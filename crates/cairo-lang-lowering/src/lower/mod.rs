@@ -156,6 +156,7 @@ pub fn lower_function(
         blocks,
         signature: ctx.signature.clone(),
         parameters,
+        block_extra_calls: Default::default(),
     })
 }
 
@@ -376,6 +377,7 @@ pub fn lower_loop_function(
         blocks,
         signature: ctx.signature.clone(),
         parameters,
+        block_extra_calls: Default::default(),
     })
 }
 
