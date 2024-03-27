@@ -376,6 +376,7 @@ error: Type mismatch: `core::felt252` and `core::integer::u8`
 //! > lowering_diagnostics
 
 //! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 

@@ -246,7 +246,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         Self(DiagnosticsBuilder::default().into())
     }
 
-    /// Returns Ok(()) if there are no errors, or an error handle if there are.
+    /// Returns Ok if there are no errors, or DiagnosticAdded if there are.
     pub fn check_error_free(&self) -> Maybe<()> {
         if self.0.error_count == 0 { Ok(()) } else { Err(DiagnosticAdded) }
     }
