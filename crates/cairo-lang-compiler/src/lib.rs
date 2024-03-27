@@ -22,6 +22,7 @@ pub mod diagnostics;
 pub mod project;
 
 /// Configuration for the compiler.
+#[derive(Default)]
 pub struct CompilerConfig<'c> {
     pub diagnostics_reporter: DiagnosticsReporter<'c>,
 
@@ -31,17 +32,10 @@ pub struct CompilerConfig<'c> {
     /// The name of the allowed libfuncs list to use in compilation.
     /// If None the default list of audited libfuncs will be used.
     pub allowed_libfuncs_list_name: Option<String>,
-}
 
-/// The default compiler configuration.
-impl Default for CompilerConfig<'static> {
-    fn default() -> Self {
-        CompilerConfig {
-            diagnostics_reporter: DiagnosticsReporter::default(),
-            replace_ids: false,
-            allowed_libfuncs_list_name: None,
-        }
-    }
+    /// Adds mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
+    /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
+    pub add_statements_functions: bool,
 }
 
 /// Compiles a Cairo project at the given path.

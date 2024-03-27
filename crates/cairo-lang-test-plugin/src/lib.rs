@@ -100,7 +100,8 @@ pub fn compile_test_prepared_db(
     );
     let replacer = DebugReplacer { db };
     let sierra_program = replacer.apply(&sierra_program);
-    let statements_functions = debug_info.statements_locations.get_statements_functions_map(db);
+    let statements_functions =
+        debug_info.statements_locations.get_statements_functions_map_for_tests(db);
 
     let named_tests = all_tests
         .into_iter()
