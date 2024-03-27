@@ -323,9 +323,9 @@ impl SierraCasmRunner {
         trace: &[TraceEntry],
         profiling_config: ProfilingInfoCollectionConfig,
     ) -> ProfilingInfo {
-        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
+        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len();
         let bytecode_len =
-            self.casm_program.debug_info.sierra_statement_info.last().unwrap().code_offset;
+            self.casm_program.debug_info.sierra_statement_info.last().unwrap().end_offset;
         // The CASM program starts with a header of instructions to wrap the real program.
         // `real_pc_0` is the PC in the trace that points to the same CASM instruction which is in
         // the real PC=0 in the original CASM program. That is, all trace's PCs need to be
@@ -439,7 +439,7 @@ impl SierraCasmRunner {
             self.casm_program
                 .debug_info
                 .sierra_statement_info
-                .partition_point(|x| x.code_offset <= pc)
+                .partition_point(|x| x.start_offset <= pc)
                 - 1,
         )
     }
@@ -709,7 +709,7 @@ impl SierraCasmRunner {
 
         let entry_point = func.entry_point.0;
         let code_offset =
-            self.casm_program.debug_info.sierra_statement_info[entry_point].code_offset;
+            self.casm_program.debug_info.sierra_statement_info[entry_point].start_offset;
 
         Self::create_entry_code_from_params(&params, args, initial_gas, code_offset)
     }

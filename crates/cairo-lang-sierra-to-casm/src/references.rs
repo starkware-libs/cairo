@@ -27,7 +27,7 @@ pub type StatementRefs = OrderedHashMap<VarId, ReferenceValue>;
 
 /// A Sierra reference to a value.
 /// Corresponds to an argument or return value of a Sierra statement.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
@@ -74,7 +74,7 @@ impl core::fmt::Display for IntroductionPoint {
 
 /// A Sierra reference to a value.
 /// Returned from a libfunc.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OutputReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
@@ -86,7 +86,7 @@ pub struct OutputReferenceValue {
 }
 
 /// The location where a value was introduced for output reference values.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum OutputReferenceValueIntroductionPoint {
     /// A new point introduced by a libfunc. The inner value is the output index.
     New(usize),

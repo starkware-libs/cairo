@@ -93,7 +93,7 @@ fn functions_statement_ids_to_offsets(
             .sierra_statement_info
             .get(statement_id)
             .unwrap_or_else(|| panic!("Missing bytecode offset for statement id {statement_id}."))
-            .code_offset
+            .start_offset
     };
     segment_starts_statements.iter().map(|start| statement_to_offset(*start)).collect()
 }

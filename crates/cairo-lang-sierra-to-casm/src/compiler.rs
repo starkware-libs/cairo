@@ -28,10 +28,10 @@ use thiserror::Error;
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
 use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
-    check_references_on_stack, compile_invocation, InvocationError, ProgramInfo,
+    check_references_on_stack, compile_invocation, BranchChanges, InvocationError, ProgramInfo,
 };
 use crate::metadata::Metadata;
-use crate::references::{check_types_match, ReferencesError};
+use crate::references::{check_types_match, ReferenceValue, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
 
 #[cfg(test)]
@@ -172,12 +172,40 @@ impl CairoProgram {
 }
 
 /// The debug information of a compilation from Sierra to casm.
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct SierraStatementDebugInfo {
-    /// The offset of the sierra statement within the bytecode.
-    pub code_offset: usize,
+    /// The start offset of the sierra statement within the bytecode.
+    pub start_offset: usize,
+    /// The end offset of the sierra statement within the bytecode.
+    pub end_offset: usize,
     /// The index of the sierra statement in the instructions vector.
     pub instruction_idx: usize,
+    /// Statement-kind-dependent information.
+    pub additional_kind_info: StatementKindDebugInfo,
+}
+
+/// Additional debug information for a Sierra statement, depending on its kind
+/// (invoke/return/dummy).
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub enum StatementKindDebugInfo {
+    Return(ReturnStatementDebugInfo),
+    Invoke(InvokeStatementDebugInfo),
+}
+
+/// Additional debug information for a return Sierra statement.
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct ReturnStatementDebugInfo {
+    /// The references of a Sierra return statement.
+    pub ref_values: Vec<ReferenceValue>,
+}
+
+/// Additional debug information for an invoke Sierra statement.
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct InvokeStatementDebugInfo {
+    /// The result branch changes of a Sierra invoke statement.
+    pub result_branch_changes: Vec<BranchChanges>,
+    /// The references of a Sierra invoke statement.
+    pub ref_values: Vec<ReferenceValue>,
 }
 
 /// The debug information of a compilation from Sierra to casm.
@@ -345,10 +373,13 @@ pub fn compile(
 ) -> Result<CairoProgram, Box<CompilationError>> {
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
-    // Maps statement_idx to program_offset. The last value (for statement_idx=number-of-statements)
+
+    // Maps statement_idx to its debug info.
+    // The last value (for statement_idx=number-of-statements)
     // contains the final offset (the size of the program code segment).
-    let mut statement_offsets = Vec::with_capacity(program.statements.len());
-    let mut statement_indices = Vec::with_capacity(program.statements.len());
+    let mut sierra_statement_info: Vec<SierraStatementDebugInfo> =
+        Vec::with_capacity(program.statements.len());
+
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new_with_ap_change(
         program,
         metadata.ap_change_info.function_ap_change.clone(),
@@ -383,8 +414,7 @@ pub fn compile(
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
         let statement_idx = StatementIdx(statement_id);
-        statement_indices.push(instructions.len());
-        statement_offsets.push(program_offset);
+
         if program_offset > config.max_bytecode_size {
             return Err(Box::new(CompilationError::CodeSizeLimitExceeded));
         }
@@ -418,8 +448,20 @@ pub fn compile(
                     _ => CompilationError::InvocationError { statement_idx, error },
                 })?;
 
+                let start_offset = program_offset;
+
                 let ret_instruction = RetInstruction {};
                 program_offset += ret_instruction.op_size();
+
+                sierra_statement_info.push(SierraStatementDebugInfo {
+                    start_offset,
+                    end_offset: program_offset,
+                    instruction_idx: instructions.len(),
+                    additional_kind_info: StatementKindDebugInfo::Return(
+                        ReturnStatementDebugInfo { ref_values: return_refs },
+                    ),
+                });
+
                 instructions.push(Instruction::new(InstructionBody::Ret(ret_instruction), false));
             }
             Statement::Invocation(invocation) => {
@@ -457,9 +499,23 @@ pub fn compile(
                 )
                 .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
+                let start_offset = program_offset;
+
                 for instruction in &compiled_invocation.instructions {
                     program_offset += instruction.body.op_size();
                 }
+
+                sierra_statement_info.push(SierraStatementDebugInfo {
+                    start_offset,
+                    end_offset: program_offset,
+                    instruction_idx: instructions.len(),
+                    additional_kind_info: StatementKindDebugInfo::Invoke(
+                        InvokeStatementDebugInfo {
+                            result_branch_changes: compiled_invocation.results.clone(),
+                            ref_values: invoke_refs,
+                        },
+                    ),
+                });
 
                 for entry in compiled_invocation.relocations {
                     relocations.push(RelocationEntry {
@@ -511,9 +567,11 @@ pub fn compile(
             }
         }
     }
-    // Push the final offset and index at the end of the vectors.
-    statement_indices.push(instructions.len());
-    statement_offsets.push(program_offset);
+
+    let statement_offsets: Vec<usize> = std::iter::once(0)
+        .chain(sierra_statement_info.iter().map(|s: &SierraStatementDebugInfo| s.end_offset))
+        .collect();
+
     let const_segments_max_size = config
         .max_bytecode_size
         .checked_sub(program_offset)
@@ -529,14 +587,7 @@ pub fn compile(
     Ok(CairoProgram {
         instructions,
         consts_info,
-        debug_info: CairoProgramDebugInfo {
-            sierra_statement_info: zip_eq(statement_offsets, statement_indices)
-                .map(|(code_offset, instruction_idx)| SierraStatementDebugInfo {
-                    code_offset,
-                    instruction_idx,
-                })
-                .collect(),
-        },
+        debug_info: CairoProgramDebugInfo { sierra_statement_info },
     })
 }
 
