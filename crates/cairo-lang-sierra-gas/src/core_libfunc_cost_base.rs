@@ -2,7 +2,9 @@ use std::iter;
 
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
-use cairo_lang_sierra::extensions::bounded_int::BoundedIntConcreteLibfunc;
+use cairo_lang_sierra::extensions::bounded_int::{
+    BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm,
+};
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
@@ -433,8 +435,21 @@ pub fn core_libfunc_cost(
             BoundedIntConcreteLibfunc::Add(_)
             | BoundedIntConcreteLibfunc::Sub(_)
             | BoundedIntConcreteLibfunc::Mul(_) => vec![ConstCost::steps(0).into()],
-            BoundedIntConcreteLibfunc::DivRem(_) => {
-                vec![(ConstCost { steps: 7, holes: 0, range_checks: 3 }).into()]
+            BoundedIntConcreteLibfunc::DivRem(libfunc) => {
+                vec![
+                    match BoundedIntDivRemAlgorithm::new(&libfunc.lhs, &libfunc.rhs).unwrap() {
+                        BoundedIntDivRemAlgorithm::KnownSmallRhs => {
+                            ConstCost { steps: 7, holes: 0, range_checks: 3 }
+                        }
+                        BoundedIntDivRemAlgorithm::KnownSmallQuotient(_) => {
+                            ConstCost { steps: 9, holes: 0, range_checks: 4 }
+                        }
+                        BoundedIntDivRemAlgorithm::KnownSmallLhs(_) => {
+                            ConstCost { steps: 11, holes: 0, range_checks: 4 }
+                        }
+                    }
+                    .into(),
+                ]
             }
         },
     }

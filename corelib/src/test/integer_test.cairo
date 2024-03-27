@@ -2010,7 +2010,7 @@ mod bounded_int {
         assert!(upcast(bounded_int_mul::<i8, i8, _, I8MulRes>(127, 127)) == 127_felt252 * 127);
     }
 
-    fn bi_value<const MIN: felt252, const MAX: felt252>(v: felt252) -> BoundedInt<MIN, MAX> {
+    fn bi_value<const MIN: felt252, const MAX: felt252>(v: u128) -> BoundedInt<MIN, MAX> {
         downcast(v).unwrap()
     }
 
@@ -2029,5 +2029,42 @@ mod bounded_int {
         assert!(div_rem_helper(255, 3) == (85, 0));
         assert!(div_rem_helper(128, 8) == (16, 0));
         assert!(div_rem_helper(255, 8) == (31, 7));
+    }
+
+    fn div_rem_wide_helper(a: u128, b: u128) -> (felt252, felt252) {
+        let (q, r) = bounded_int_div_rem(a, bi_value::<1, 0xffffffffffffffffffffffffffffffff>(b));
+        (
+            upcast::<BoundedInt<0, 0xffffffffffffffffffffffffffffffff>>(q),
+            upcast::<BoundedInt<0, 0xfffffffffffffffffffffffffffffffe>>(r)
+        )
+    }
+
+    #[test]
+    fn test_div_rem_wide() {
+        assert!(div_rem_wide_helper(128, 3) == (42, 2));
+        assert!(div_rem_wide_helper(255, 3) == (85, 0));
+        assert!(div_rem_wide_helper(128, 8) == (16, 0));
+        assert!(div_rem_wide_helper(255, 8) == (31, 7));
+    }
+
+    fn div_rem_small_quotient_helper(a: u128) -> (felt252, felt252) {
+        let (q, r) = bounded_int_div_rem(
+            a,
+            bi_value::<
+                0x10000000000000000000000000000000, 0x10000000000000000000000000000000
+            >(0x10000000000000000000000000000000)
+        );
+        (
+            upcast::<BoundedInt<0, 0xf>>(q),
+            upcast::<BoundedInt<0, 0xfffffffffffffffffffffffffffffff>>(r)
+        )
+    }
+
+    #[test]
+    fn test_div_rem_small_quotient() {
+        assert!(div_rem_small_quotient_helper(0x50000000000000000000000000000032) == (0x5, 0x32));
+        assert!(
+            div_rem_small_quotient_helper(0xf0000000000000000000000000012345) == (0xf, 0x12345)
+        );
     }
 }
