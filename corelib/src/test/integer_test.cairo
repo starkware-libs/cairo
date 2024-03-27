@@ -2011,7 +2011,7 @@ mod bounded_int {
         assert!(upcast(i8_actions::bounded_int_mul::<i8, i8>(127, 127)) == 127_felt252 * 127);
     }
 
-    fn bi_value<const MIN: felt252, const MAX: felt252>(v: felt252) -> BoundedInt<MIN, MAX> {
+    fn bi_value<const MIN: felt252, const MAX: felt252>(v: u128) -> BoundedInt<MIN, MAX> {
         downcast(v).unwrap()
     }
 
@@ -2022,7 +2022,7 @@ mod bounded_int {
             a: T1, b: T2
         ) -> DivRemType implicits(RangeCheck) nopanic;
 
-        fn helper(a: felt252, b: felt252) -> (felt252, felt252) {
+        fn helper(a: u128, b: u128) -> (felt252, felt252) {
             let (q, r) = bounded_int_div_rem(bi_value::<128, 255>(a), bi_value::<3, 8>(b));
             (upcast(q), upcast(r))
         }
@@ -2033,6 +2033,56 @@ mod bounded_int {
             assert!(helper(255, 3) == (85, 0));
             assert!(helper(128, 8) == (16, 0));
             assert!(helper(255, 8) == (31, 7));
+        }
+    }
+
+    mod div_rem_wide {
+        use super::{BoundedInt, upcast};
+        type DivRemType = (
+            BoundedInt<0, 0xffffffffffffffffffffffffffffffff>,
+            BoundedInt<0, 0xfffffffffffffffffffffffffffffffe>
+        );
+        extern fn bounded_int_div_rem<T1, T2>(
+            a: T1, b: T2
+        ) -> DivRemType implicits(RangeCheck) nopanic;
+
+        fn helper(a: u128, b: u128) -> (felt252, felt252) {
+            let (q, r) = bounded_int_div_rem(
+                a, super::bi_value::<1, 0xffffffffffffffffffffffffffffffff>(b)
+            );
+            (upcast(q), upcast(r))
+        }
+
+        #[test]
+        fn test() {
+            assert!(helper(128, 3) == (42, 2));
+            assert!(helper(255, 3) == (85, 0));
+            assert!(helper(128, 8) == (16, 0));
+            assert!(helper(255, 8) == (31, 7));
+        }
+    }
+
+    mod div_rem_small_quotient {
+        use super::{bi_value, BoundedInt, upcast};
+        type DivRemType = (BoundedInt<0, 0xf>, BoundedInt<0, 0xfffffffffffffffffffffffffffffff>);
+        extern fn bounded_int_div_rem<T1, T2>(
+            a: T1, b: T2
+        ) -> DivRemType implicits(RangeCheck) nopanic;
+
+        fn helper(a: u128) -> (felt252, felt252) {
+            let (q, r) = bounded_int_div_rem(
+                a,
+                super::bi_value::<
+                    0x10000000000000000000000000000000, 0x10000000000000000000000000000000
+                >(0x10000000000000000000000000000000)
+            );
+            (upcast(q), upcast(r))
+        }
+
+        #[test]
+        fn test() {
+            assert!(helper(0x50000000000000000000000000000032) == (0x5, 0x32));
+            assert!(helper(0xf0000000000000000000000000012345) == (0xf, 0x12345));
         }
     }
 }
