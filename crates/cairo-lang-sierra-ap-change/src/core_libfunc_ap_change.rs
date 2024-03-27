@@ -359,6 +359,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BoundedIntConcreteLibfunc::Add(_)
             | BoundedIntConcreteLibfunc::Sub(_)
             | BoundedIntConcreteLibfunc::Mul(_) => vec![ApChange::Known(0)],
+            BoundedIntConcreteLibfunc::DivRem(_) => vec![ApChange::Known(5)],
         },
     }
 }

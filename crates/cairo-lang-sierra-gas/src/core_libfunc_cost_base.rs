@@ -433,6 +433,9 @@ pub fn core_libfunc_cost(
             BoundedIntConcreteLibfunc::Add(_)
             | BoundedIntConcreteLibfunc::Sub(_)
             | BoundedIntConcreteLibfunc::Mul(_) => vec![ConstCost::steps(0).into()],
+            BoundedIntConcreteLibfunc::DivRem(_) => {
+                vec![(ConstCost { steps: 7, holes: 0, range_checks: 3 }).into()]
+            }
         },
     }
 }
