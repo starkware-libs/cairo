@@ -2,12 +2,13 @@ use std::vec;
 
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::{extract_matches, try_extract_matches};
+use cairo_lang_utils::{extract_matches, try_extract_matches, ResultHelper};
+use defs::ids::TopLevelLanguageElementId;
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
@@ -21,7 +22,7 @@ use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
     ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
-    MatchArmSelector, TypeLongId,
+    MatchArmSelector, SemanticDiagnostic, TypeLongId,
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
@@ -77,9 +78,11 @@ pub fn lower_semantic_function(
     db: &dyn LoweringGroup,
     semantic_function_id: defs::ids::FunctionWithBodyId,
 ) -> Maybe<MultiLowering> {
-    db.function_declaration_diagnostics(semantic_function_id)
-        .check_error_free()
-        .and_then(|()| db.function_body_diagnostics(semantic_function_id).check_error_free())?;
+    let declaration_diagnostics = db.function_declaration_diagnostics(semantic_function_id);
+    check_error_free_or_warn(db, declaration_diagnostics, semantic_function_id, "declaration")?;
+    let body_diagnostics = db.function_body_diagnostics(semantic_function_id);
+    check_error_free_or_warn(db, body_diagnostics, semantic_function_id, "body")?;
+
     let mut encapsulating_ctx = EncapsulatingLoweringContext::new(db, semantic_function_id)?;
     let function_id = db
         .intern_lowering_function_with_body(FunctionWithBodyLongId::Semantic(semantic_function_id));
@@ -1633,4 +1636,22 @@ fn create_subscope_with_bound_refs(
 /// Creates a new subscope of the given builder, with unchanged refs and with an empty block.
 fn create_subscope(ctx: &mut LoweringContext<'_, '_>, builder: &BlockBuilder) -> BlockBuilder {
     builder.child_block_builder(alloc_empty_block(ctx))
+}
+
+/// Calls `.check_error_free()` and warns (in log) if there are errors.
+fn check_error_free_or_warn(
+    db: &dyn LoweringGroup,
+    diagnostics: Diagnostics<SemanticDiagnostic>,
+    semantic_function_id: defs::ids::FunctionWithBodyId,
+    diagnostics_description: &str,
+) -> Maybe<()> {
+    let declaration_error_free = diagnostics.check_error_free();
+    declaration_error_free.on_err(|_| {
+        log::warn!(
+            "Function `{function_path}` has semantic diagnostics in its \
+             {diagnostics_description}:\n{diagnostics_format}",
+            function_path = semantic_function_id.full_path(db.upcast()),
+            diagnostics_format = diagnostics.format(db.upcast())
+        );
+    })
 }

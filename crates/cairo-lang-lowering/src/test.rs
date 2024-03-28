@@ -81,8 +81,10 @@ fn test_function_lowering(
         );
     }
     let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap_or_default();
-    let lowering_format =
-        lowered.map(|lowered| formatted_lowered(db, &lowered)).unwrap_or_default();
+    let lowering_format = lowered.map(|lowered| formatted_lowered(db, &lowered)).unwrap_or(
+        "<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>"
+            .to_string(),
+    );
 
     TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
