@@ -177,12 +177,12 @@ type A = B;
 type B = A;
 
 //! > expected_diagnostics
-error: Cycle detected while resolving 'type alias' items.
+error: Cycle detected while resolving type-alias/impl-type items.
  --> lib.cairo:1:6
 type A = B;
      ^
 
-error: Cycle detected while resolving 'type alias' items.
+error: Cycle detected while resolving type-alias/impl-type items.
  --> lib.cairo:2:6
 type B = A;
      ^
@@ -206,7 +206,7 @@ foo
 type A = A;
 
 //! > expected_diagnostics
-error: Cycle detected while resolving 'type alias' items.
+error: Cycle detected while resolving type-alias/impl-type items.
  --> lib.cairo:1:6
 type A = A;
      ^

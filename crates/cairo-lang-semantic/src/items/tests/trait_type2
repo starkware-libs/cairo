@@ -1,0 +1,24 @@
+//! > impl types cycle
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = Self::MyType1;
+}
+
+//! > expected_diagnostics
+error: Cycle detected while resolving type-alias/impl-type items.
+ --> lib.cairo:5:10
+    type MyType1 = Self::MyType1;
+         ^*****^

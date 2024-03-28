@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplTypeDefId, ModuleFileId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplContext, ImplTypeDefId, ModuleFileId,
     NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
@@ -24,13 +24,13 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
-use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
+use crate::expr::inference::{Inference, InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId};
+use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId, GenericArgumentId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId {
@@ -46,6 +46,7 @@ pub enum TypeLongId {
         type_id: TypeId,
         size: ConstValueId,
     },
+    ImplType(ImplTypeId),
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -57,6 +58,10 @@ impl OptionFrom<TypeLongId> for ConcreteTypeId {
 define_short_id!(TypeId, TypeLongId, SemanticGroup, lookup_intern_type);
 semantic_object_for_id!(TypeId, lookup_intern_type, intern_type, TypeLongId);
 impl TypeId {
+    pub fn lookup(&self, db: &dyn SemanticGroup) -> TypeLongId {
+        db.lookup_intern_type(*self)
+    }
+
     pub fn missing(db: &dyn SemanticGroup, diag_added: DiagnosticAdded) -> Self {
         db.intern_type(TypeLongId::Missing(diag_added))
     }
@@ -95,9 +100,10 @@ impl TypeId {
             TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
             TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
             TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
-            TypeLongId::GenericParameter(_) => false,
-            TypeLongId::Var(_) => false,
-            TypeLongId::Missing(_) => false,
+            TypeLongId::GenericParameter(_)
+            | TypeLongId::Var(_)
+            | TypeLongId::Missing(_)
+            | TypeLongId::ImplType(_) => false,
             TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
             TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
         }
@@ -118,6 +124,13 @@ impl TypeLongId {
             TypeLongId::GenericParameter(generic_param) => {
                 format!("{}", generic_param.name(db.upcast()).unwrap_or_else(|| "_".into()))
             }
+            TypeLongId::ImplType(impl_type_id) => {
+                format!(
+                    "{}::{}",
+                    impl_type_id.impl_id.name(db.upcast()),
+                    impl_type_id.ty.name(db.upcast())
+                )
+            }
             TypeLongId::Var(var) => format!("?{}", var.id.0),
             TypeLongId::Coupon(function_id) => format!("{}::Coupon", function_id.full_name(db)),
             TypeLongId::Missing(_) => "<missing>".to_string(),
@@ -135,7 +148,10 @@ impl TypeLongId {
             TypeLongId::Snapshot(inner) => TypeHead::Snapshot(Box::new(inner.head(db)?)),
             TypeLongId::Coupon(_) => TypeHead::Coupon,
             TypeLongId::FixedSizeArray { .. } => TypeHead::FixedSizeArray,
-            TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
+            TypeLongId::GenericParameter(_)
+            | TypeLongId::Var(_)
+            | TypeLongId::Missing(_)
+            | TypeLongId::ImplType(_) => {
                 return None;
             }
         })
@@ -151,9 +167,125 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
     }
 }
 
-/// Head of a type. A non-param non-variable type has a head, which represents the kind of the root
-/// node in its type tree. This is used for caching queries for fast lookups when the type is not
-/// completely inferred yet.
+/// Tries to implize a type, recursively, according to known inference data.
+///
+/// "Implization" is reducing a trait type or a wrapped trait type, to the more concrete type,
+/// according to the assignment of that trait type in its impl, if the impl is known according to
+/// the context.
+///
+/// First calls `inference.solve()` once, and then only uses it as a "read-only".
+/// Note that it means `inference` might change. Consider passing a temporary clone if you want to
+/// avoid affecting the original inference.
+///
+/// `impl_ctx` is the impl context we're at, if any. That is, if we're inside an impl function, the
+/// wrapping impl is the context here.
+pub fn implize_type(
+    db: &dyn SemanticGroup,
+    type_to_reduce: TypeId,
+    impl_ctx: Option<ImplContext>,
+    inference: &mut Inference<'_>,
+) -> Maybe<TypeId> {
+    // Make sure the inference is solved. This function doesn't add new inference data, only uses
+    // the existing data.
+    // TODO(yuval): ignoring the result is not ok. For now it is worked around by cloning the given
+    // inference in the callers where this causes changes, but this is wrong. Fix this once
+    // inference errors wrong consumption is fixed.
+    inference.solve().ok();
+    implize_type_recursive(db, type_to_reduce, impl_ctx, inference)
+}
+
+/// Tries to implize a type, recursively, according to known inference data.
+///
+/// Assumes `inference.solve()` was called and doesn't change the inference structure (although
+/// it's passed as &mut which is required per it's API).
+///
+/// `impl_ctx` is the impl context we're at, if any. That is, if we're inside an impl function, the
+/// wrapping impl is the context here.
+fn implize_type_recursive(
+    db: &dyn SemanticGroup,
+    type_to_reduce: TypeId,
+    impl_ctx: Option<ImplContext>,
+    inference: &mut Inference<'_>,
+) -> Maybe<TypeId> {
+    // First, reduce if already inferred.
+    let type_to_reduce = inference.rewrite(type_to_reduce).unwrap();
+
+    // Then, reduce recursively.
+    let mut long_ty = type_to_reduce.lookup(db);
+    match &mut long_ty {
+        TypeLongId::Concrete(concrete_type) => {
+            let mut generic_args = concrete_type.generic_args(db);
+            for generic_arg in generic_args.iter_mut() {
+                let GenericArgumentId::Type(generic_arg_type) = generic_arg else {
+                    continue;
+                };
+                *generic_arg_type =
+                    implize_type_recursive(db, *generic_arg_type, impl_ctx, inference)?;
+                *generic_arg = GenericArgumentId::Type(*generic_arg_type);
+            }
+            concrete_type.modify_generic_args(db, generic_args);
+        }
+        TypeLongId::Tuple(types) => {
+            for ty in types.iter_mut() {
+                *ty = implize_type_recursive(db, *ty, impl_ctx, inference)?;
+            }
+        }
+        TypeLongId::Snapshot(ty) => *ty = implize_type_recursive(db, *ty, impl_ctx, inference)?,
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::ImplType(_)
+        | TypeLongId::Coupon(_)
+        | TypeLongId::Missing(_) => {}
+        TypeLongId::FixedSizeArray { type_id, .. } => {
+            *type_id = implize_type_recursive(db, *type_id, impl_ctx, inference)?
+        }
+    }
+    let type_to_reduce = db.intern_type(long_ty);
+
+    // Finally, reduce/implize the impl type itself, if possible.
+
+    let TypeLongId::ImplType(mut impl_type_id) = db.lookup_intern_type(type_to_reduce) else {
+        // Nothing to implize.
+        return Ok(type_to_reduce);
+    };
+
+    // Try to reduce the impl type if its impl is an ImplVar (by reducing its impl).
+    impl_type_id = reduce_trait_impl_type(impl_type_id, inference);
+
+    // Try to implize the impl type if its impl is concrete.
+    if let Some(ty) = db.impl_type_concrete_implized(impl_type_id)? {
+        return Ok(ty);
+    }
+
+    // Try to implize by the impl context, if given. E.g. for `Self::MyType` inside an impl.
+    if let Some(ImplContext { impl_def_id }) = impl_ctx {
+        if let Some(ty) = db.impl_type_implized_by_context(impl_type_id, impl_def_id)? {
+            return Ok(ty);
+        }
+    }
+
+    // Could not reduce.
+    Ok(type_to_reduce)
+}
+
+/// Reduces an impl type if its impl is an ImplVar. E.g. in the case of MyTrait::MyType when there
+/// is only a single impl for MyTrait in the context.
+///
+/// Assumes the given `inference.solve()` was called.
+fn reduce_trait_impl_type(impl_type_id: ImplTypeId, inference: &mut Inference<'_>) -> ImplTypeId {
+    let ImplTypeId { impl_id, ty } = impl_type_id;
+    if !matches!(impl_id, crate::items::imp::ImplId::ImplVar(_)) {
+        return impl_type_id;
+    };
+
+    let impl_id = inference.rewrite(impl_id).unwrap();
+
+    ImplTypeId { impl_id, ty }
+}
+
+/// Head of a type. A type that is not one of {generic param, type variable, impl type} has a head,
+/// which represents the kind of the root node in its type tree. This is used for caching queries
+/// for fast lookups when the type is not completely inferred yet.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum TypeHead {
     Concrete(GenericTypeId),
@@ -245,6 +377,33 @@ impl ConcreteTypeId {
         self.generic_args(db)
             .iter()
             .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
+    }
+
+    /// Modifies the generic arguments of the type to the given `new_generic_args`.
+    fn modify_generic_args(
+        &mut self,
+        db: &dyn SemanticGroup,
+        new_generic_args: Vec<GenericArgumentId>,
+    ) {
+        match self {
+            ConcreteTypeId::Struct(id) => {
+                let long_id = db.lookup_intern_concrete_struct(*id);
+                let new_long_id =
+                    ConcreteStructLongId { generic_args: new_generic_args, ..long_id };
+                *self = ConcreteTypeId::Struct(db.intern_concrete_struct(new_long_id));
+            }
+            ConcreteTypeId::Enum(id) => {
+                let long_id = db.lookup_intern_concrete_enum(*id);
+                let new_long_id = ConcreteEnumLongId { generic_args: new_generic_args, ..long_id };
+                *self = ConcreteTypeId::Enum(db.intern_concrete_enum(new_long_id));
+            }
+            ConcreteTypeId::Extern(id) => {
+                let long_id = db.lookup_intern_concrete_extern_type(*id);
+                let new_long_id =
+                    ConcreteExternTypeLongId { generic_args: new_generic_args, ..long_id };
+                *self = ConcreteTypeId::Extern(db.intern_concrete_extern_type(new_long_id));
+            }
+        }
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteTypeId {
@@ -562,7 +721,7 @@ pub fn get_impl_at_context(
 /// Query implementation of [crate::db::SemanticGroup::single_value_type].
 pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
     Ok(match db.lookup_intern_type(ty) {
-        semantic::TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
+        TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(id) => {
                 for member in db.struct_members(id.struct_id(db))?.values() {
                     if !db.single_value_type(member.ty)? {
@@ -583,7 +742,7 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
             }
             ConcreteTypeId::Extern(_) => false,
         },
-        semantic::TypeLongId::Tuple(types) => {
+        TypeLongId::Tuple(types) => {
             for ty in &types {
                 if !db.single_value_type(*ty)? {
                     return Ok(false);
@@ -591,12 +750,13 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
             }
             true
         }
-        semantic::TypeLongId::Snapshot(ty) => db.single_value_type(ty)?,
-        semantic::TypeLongId::GenericParameter(_) => false,
-        semantic::TypeLongId::Var(_) => false,
-        semantic::TypeLongId::Missing(_) => false,
-        semantic::TypeLongId::Coupon(_) => false,
-        semantic::TypeLongId::FixedSizeArray { type_id, size } => {
+        TypeLongId::Snapshot(ty) => db.single_value_type(ty)?,
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::Missing(_)
+        | TypeLongId::Coupon(_)
+        | TypeLongId::ImplType(_) => false,
+        TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
                 || matches!(db.lookup_intern_const_value(size),
                             ConstValue::Int(value) if value.is_zero())

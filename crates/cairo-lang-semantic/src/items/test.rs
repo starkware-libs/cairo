@@ -11,6 +11,10 @@ cairo_lang_test_utils::test_file_test!(
         panicable: "panicable",
         struct_: "struct",
         trait_: "trait",
+        trait_type: "trait_type",
+        // TODO(yg): remove.
+        trait_type2: "trait_type2",
+        trait_type3: "trait_type3",
         type_alias: "type_alias",
         use_: "use_",
         module: "module",

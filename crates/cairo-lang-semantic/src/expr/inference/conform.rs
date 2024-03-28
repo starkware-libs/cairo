@@ -155,7 +155,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 let (ty, n_snapshots) = self.conform_ty_ex(ty0, ty1, ty0_is_self)?;
                 Ok((self.db.intern_type(TypeLongId::Snapshot(ty)), n_snapshots))
             }
-            TypeLongId::GenericParameter(_) => {
+            TypeLongId::GenericParameter(_) | TypeLongId::ImplType(_) => {
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
             TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, n_snapshots)),
@@ -459,7 +459,9 @@ impl Inference<'_> {
                 }
                 false
             }
-            TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => false,
+            TypeLongId::GenericParameter(_) | TypeLongId::ImplType(_) | TypeLongId::Missing(_) => {
+                false
+            }
             TypeLongId::Coupon(function_id) => self.function_contains_var(function_id, var),
             TypeLongId::FixedSizeArray { type_id, .. } => {
                 self.internal_ty_contains_var(type_id, var)
