@@ -9,7 +9,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
     ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, LookupItemId, MemberId,
-    ParamId, StructId, TraitFunctionId, TraitId, VarId, VariantId,
+    ParamId, StructId, TraitFunctionId, TraitId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};

@@ -124,7 +124,7 @@ pub impl EcPointImpl of EcPointTrait {
     /// Creates a new EC point from its (x, y) coordinates.
     #[inline(always)]
     fn new(x: felt252, y: felt252) -> Option<EcPoint> {
-        Option::Some(EcPointTrait::new_nz(:x, :y)?.into())
+        Option::Some(Self::new_nz(:x, :y)?.into())
     }
     /// Creates a new NonZero EC point from its (x, y) coordinates.
     #[inline(always)]
@@ -134,7 +134,7 @@ pub impl EcPointImpl of EcPointTrait {
     /// Creates a new EC point from its x coordinate.
     #[inline(always)]
     fn new_from_x(x: felt252) -> Option<EcPoint> {
-        Option::Some(EcPointTrait::new_nz_from_x(:x)?.into())
+        Option::Some(Self::new_nz_from_x(:x)?.into())
     }
     /// Creates a new NonZero EC point from its x coordinate.
     #[inline(always)]

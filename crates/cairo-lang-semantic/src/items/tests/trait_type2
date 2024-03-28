@@ -1,0 +1,23 @@
+//! > A trait can't be used in a path in its own body, with the same generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait SomeTrait {}
+trait MyTrait<T, +SomeTrait> {
+    type InputType;
+    fn foo(x: MyTrait::<T>::InputType);
+}
+
+//! > expected_diagnostics
+error: In a trait, paths of the same trait must be fully explicit. Either use `Self` if this is the intention, or explicitly specify all the generic arguments.
+ --> lib.cairo:4:15
+    fn foo(x: MyTrait::<T>::InputType);
+              ^**********^
