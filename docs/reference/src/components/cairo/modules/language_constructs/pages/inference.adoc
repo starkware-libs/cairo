@@ -13,16 +13,18 @@ Places where inference is enabled:
 * Generic argument inference.
 
 Examples:
-```rust
+[source,cairo]
+----
 let x = 1_u8;                          // x is inferred to be u8
 let y = Option<_>::Some(x);            // _ is inferred as u8, and y is inferred as Option<u8>
 let u: u32 = Into::<u8, u32>::into(x); // concrete impl for Into<u8, u32> is inferred
 let u: u32 = x.into();                 // The generic arguments for Into<?,?> and the concrete impl
                                        //   are inferred
-```
+----
 
 == Complex impl example
-```rust
+[source,cairo]
+----
 trait Display<T> {
     fn display(x: T) -> Array<u8>;
 }
@@ -40,7 +42,7 @@ fn main() {
     let x = 1_u32;
     let y = Display::display(x); // Inferred as IntoArrayU8Display<u32, U32IntoArrayU8>::display(x)
 }
-```
+----
 
 == Search locations for impl
 When inferring an impl of a trait, the compiler will search for the impl in the following locations:
