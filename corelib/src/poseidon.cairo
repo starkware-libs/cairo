@@ -56,6 +56,19 @@ impl HashStateImpl of HashStateTrait<HashState> {
     }
 }
 
+#[generate_trait]
+pub impl PoseidonHashValue of HashValueTrait {
+    fn hash_single_value(value: felt252) -> felt252 {
+        let (r, _, _) = hades_permutation(value, 0, 1);
+        r
+    }
+
+    fn hash_two_values(value1: felt252, value2: felt252) -> felt252 {
+        let (r, _, _) = hades_permutation(value1, value2, 2);
+        r
+    }
+}
+
 /// Computes the Poseidon hash on the given input.
 ///
 /// Applies the sponge construction to digest many elements.
