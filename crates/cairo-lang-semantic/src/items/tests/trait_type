@@ -39,6 +39,572 @@ impl MyImpl of MyTrait {
 
 //! > ==========================================================================
 
+//! > Trait type with generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    type InputType;
+    type OutputType;
+    fn foo(x: Self::InputType, t: T) -> Self::OutputType;
+}
+impl MyImpl<T> of MyTrait<T> {
+    type InputType = T;
+    type OutputType = T;
+    fn foo(x: Self::InputType, t: T) -> Self::OutputType {
+        x
+    }
+}
+impl MyImplU32 of MyTrait<u32> {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo(x: Self::InputType, t: u32) -> Self::OutputType {
+        x
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Trait type with no impl in context, no generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo(x: Self::InputType) -> Self::OutputType;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Trait type with no impl in context, with generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    type InputType;
+    type OutputType;
+    fn foo(x: Self::InputType, t: T) -> Self::OutputType;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test type items in trait/impl with generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    MyImpl::<u32>::foo1(3_u32);
+    MyImpl::<u32>::foo2(3_u32);
+    MyImpl::<u32>::foo3(3_u32);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T, S> {
+    type InputType;
+    type OutputType;
+    fn foo1(x: Self::InputType) -> Self::OutputType;
+    fn foo2(x: Self::InputType) -> Self::OutputType;
+    fn foo3(x: u32) -> u32;
+}
+impl MyImpl<T> of MyTrait<T, u32> {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo1(x: Self::InputType) -> Self::OutputType {
+        x
+    }
+    fn foo2(x: u32) -> u32 {
+        x
+    }
+    fn foo3(x: Self::InputType) -> Self::OutputType {
+        x
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > A trait, without generics, can't be used in a path in its own body.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo(x: MyTrait::InputType) -> MyTrait::OutputType;
+}
+
+//! > expected_diagnostics
+error: In a trait, paths of the same trait are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:4:15
+    fn foo(x: MyTrait::InputType) -> MyTrait::OutputType;
+              ^*****^
+
+error: In a trait, paths of the same trait are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:4:38
+    fn foo(x: MyTrait::InputType) -> MyTrait::OutputType;
+                                     ^*****^
+
+//! > ==========================================================================
+
+//! > A trait can't be used in a path in its own body, with the same generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    type InputType;
+    type OutputType;
+    fn foo(x: MyTrait::<T>::InputType) -> MyTrait::<T>::OutputType;
+}
+
+//! > expected_diagnostics
+error: In a trait, paths of the same trait are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:4:15
+    fn foo(x: MyTrait::<T>::InputType) -> MyTrait::<T>::OutputType;
+              ^**********^
+
+error: In a trait, paths of the same trait are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:4:43
+    fn foo(x: MyTrait::<T>::InputType) -> MyTrait::<T>::OutputType;
+                                          ^**********^
+
+//! > ==========================================================================
+
+//! > A trait can be used in a path in its own body, if the generics are different.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    type InputType;
+    type OutputType;
+    fn foo(x: MyTrait::<u32>::InputType) -> MyTrait::<u32>::OutputType;
+}
+impl MyImpl of MyTrait<u32> {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo(x: Self::InputType) -> Self::OutputType {
+        x
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > A trait in a path in its own body must be fully explicit.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait SomeTrait {}
+trait MyTrait<T, +SomeTrait> {
+    type InputType;
+    fn foo(x: MyTrait::<T>::InputType);
+}
+
+//! > expected_diagnostics
+error: In a trait, paths of the same trait must be fully explicit. Either use `Self` if this is the intention, or explicitly specify all the generic arguments.
+ --> lib.cairo:4:15
+    fn foo(x: MyTrait::<T>::InputType);
+              ^**********^
+
+//! > ==========================================================================
+
+//! > An impl, without generics, can't be used in a path in its own body.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo(x: Self::InputType) -> Self::OutputType;
+    fn foo2();
+}
+impl MyImpl of MyTrait {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType {
+        x
+    }
+    fn foo2() {
+        let _: MyImpl::InputType = 3_u32;
+    }
+}
+
+//! > expected_diagnostics
+error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:10:15
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType {
+              ^****^
+
+error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:10:37
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType {
+                                    ^****^
+
+error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u32`, actual: `<missing>`.
+ --> lib.cairo:10:15
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType {
+              ^***************^
+
+error: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u32`, actual: `<missing>`.
+ --> lib.cairo:10:37
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType {
+                                    ^****************^
+
+error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:14:16
+        let _: MyImpl::InputType = 3_u32;
+               ^****^
+
+//! > ==========================================================================
+
+//! > An impl can't be used in a path in its own body, with the same generics.
+
+//! > TODO(yuval):
+Check diag "Candidate impl test::MyImpl::<?0> has an unused generic parameter"
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo(x: Self::InputType) -> Self::OutputType;
+}
+impl MyImpl<T> of MyTrait {
+    type InputType = T;
+    type OutputType = T;
+    fn foo(x: MyImpl::<T>::InputType) -> MyImpl::<T>::OutputType {
+        let y: MyImpl::<T>::InputType = x;
+        y
+    }
+}
+
+//! > expected_diagnostics
+error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:9:15
+    fn foo(x: MyImpl::<T>::InputType) -> MyImpl::<T>::OutputType {
+              ^*********^
+
+error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:9:42
+    fn foo(x: MyImpl::<T>::InputType) -> MyImpl::<T>::OutputType {
+                                         ^*********^
+
+error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `T`, actual: `<missing>`.
+ --> lib.cairo:9:15
+    fn foo(x: MyImpl::<T>::InputType) -> MyImpl::<T>::OutputType {
+              ^********************^
+
+error: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `T`, actual: `<missing>`.
+ --> lib.cairo:9:42
+    fn foo(x: MyImpl::<T>::InputType) -> MyImpl::<T>::OutputType {
+                                         ^*********************^
+
+error: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:10:16
+        let y: MyImpl::<T>::InputType = x;
+               ^*********^
+
+//! > ==========================================================================
+
+//! > An impl can be used in a path in its own body, if the generics are different.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    type InputType;
+    type OutputType;
+    fn foo(x: Self::InputType, y: Self::InputType) -> Self::OutputType;
+}
+impl MyImpl<T> of MyTrait<T> {
+    type InputType = T;
+    type OutputType = T;
+    fn foo(x: MyImpl::<u32>::InputType, y: Self::InputType) -> MyImpl::<u32>::OutputType {
+        let z: MyImpl::<u32>::InputType = x;
+        z
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > An impl in a path in its own body must be fully explicit.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait SomeTrait {}
+trait MyTrait {
+    type InputType;
+    fn foo();
+}
+impl MyImpl<T, +SomeTrait> of MyTrait {
+    type InputType = u32;
+    fn foo() {
+        let _: MyImpl::<T>::InputType = 3;
+    }
+}
+
+//! > expected_diagnostics
+error: In an impl, paths of the same impl must be fully explicit. Either use `Self` if this is the intention, or explicitly specify all the generic arguments.
+ --> lib.cairo:9:16
+        let _: MyImpl::<T>::InputType = 3;
+               ^*********^
+
+//! > ==========================================================================
+
+//! > A trait, without generics, can't be used in a path in the body of its own impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo1(x: Self::InputType) -> Self::OutputType;
+    fn foo2();
+}
+impl MyImpl of MyTrait {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType {
+        x
+    }
+    fn foo2() {
+        let _: MyTrait::InputType = 3_u32;
+    }
+}
+
+//! > expected_diagnostics
+error: In an impl, paths of the impl's trait are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:10:16
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType {
+               ^*****^
+
+error: In an impl, paths of the impl's trait are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:10:39
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType {
+                                      ^*****^
+
+error: Parameter type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `<missing>`.
+ --> lib.cairo:10:16
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType {
+               ^****************^
+
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `<missing>`.
+ --> lib.cairo:10:39
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType {
+                                      ^*****************^
+
+error: In an impl, paths of the impl's trait are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:14:16
+        let _: MyTrait::InputType = 3_u32;
+               ^*****^
+
+//! > ==========================================================================
+
+//! > A trait can't be used in a path in the body of its own impl, with the same generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    type InputType;
+    type OutputType;
+    fn foo1(x: Self::InputType) -> Self::OutputType;
+    fn foo2();
+}
+impl MyImpl of MyTrait<u32> {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo1(x: MyTrait::<u32>::InputType) -> MyTrait::<u32>::OutputType {
+        x
+    }
+    fn foo2() {
+        let _: MyTrait::<u32>::InputType = 3_u32;
+    }
+}
+
+//! > expected_diagnostics
+error: In an impl, paths of the impl's trait are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:10:16
+    fn foo1(x: MyTrait::<u32>::InputType) -> MyTrait::<u32>::OutputType {
+               ^************^
+
+error: In an impl, paths of the impl's trait are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:10:46
+    fn foo1(x: MyTrait::<u32>::InputType) -> MyTrait::<u32>::OutputType {
+                                             ^************^
+
+error: Parameter type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `<missing>`.
+ --> lib.cairo:10:16
+    fn foo1(x: MyTrait::<u32>::InputType) -> MyTrait::<u32>::OutputType {
+               ^***********************^
+
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `<missing>`.
+ --> lib.cairo:10:46
+    fn foo1(x: MyTrait::<u32>::InputType) -> MyTrait::<u32>::OutputType {
+                                             ^************************^
+
+error: In an impl, paths of the impl's trait are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:14:16
+        let _: MyTrait::<u32>::InputType = 3_u32;
+               ^************^
+
+//! > ==========================================================================
+
+//! > A trait can be used in a path in the body of an impl of it, if the generics are different.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    type InputType;
+    type OutputType;
+    fn foo1(x: Self::InputType) -> Self::OutputType;
+}
+impl MyImpl_u16 of MyTrait<u16> {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo1(x: MyTrait::<u32>::InputType) -> MyTrait::<u32>::OutputType {
+        let y: MyTrait::<u32>::InputType = 3_u32;
+        y
+    }
+}
+impl MyImpl_u32 of MyTrait<u32> {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo1(x: Self::InputType) -> Self::OutputType {
+        let y: Self::InputType = 3_u32;
+        y
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
 //! > Incompatible signatures with trait/impl type items.
 
 //! > test_runner_name
@@ -1463,3 +2029,106 @@ error: Cycle detected while resolving type-alias/impl-type items.
  --> lib.cairo:7:10
     type MyType2 = Self::MyType1;
          ^*****^
+
+//! > ==========================================================================
+
+//! > Error propagation of `Self::` type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+    fn bar(x: Self::MyType1) -> Self::MyType2;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = Option<()>;
+    type MyType2 = Option<()>;
+    fn bar(x: Self::MyType1) -> Self::MyType2 {
+        Option::Some(x?)
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > `Self::` segment in unsupported context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+fn free_func(x: Self::MyType1) -> Self::MyType2 {
+    let _: Self::MyType3 = 3;
+}
+
+//! > expected_diagnostics
+error: `Self` is not supported in this context.
+ --> lib.cairo:1:17
+fn free_func(x: Self::MyType1) -> Self::MyType2 {
+                ^**^
+
+error: `Self` is not supported in this context.
+ --> lib.cairo:1:35
+fn free_func(x: Self::MyType1) -> Self::MyType2 {
+                                  ^**^
+
+error: `Self` is not supported in this context.
+ --> lib.cairo:2:12
+    let _: Self::MyType3 = 3;
+           ^**^
+
+//! > ==========================================================================
+
+//! > `Self` segment for a result type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+trait MyTrait {
+    type MyTraitType;
+    fn bar() -> Self::MyTraitType;
+}
+impl MyImpl of MyTrait {
+    type MyTraitType = (MyType, MyType);
+    fn bar() -> Self::MyTraitType {
+        let _: Self::MyTraitType = (3_u16.my_into(), 3_u16.my_into());
+        (3_u16.my_into(), 3_u16.my_into())
+    }
+}
+
+//! > expected_diagnostics

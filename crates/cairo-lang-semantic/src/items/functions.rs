@@ -4,7 +4,7 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplContext,
+    ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplDefId,
     ImplFunctionId, LanguageElementId, ModuleFileId, ModuleItemId, NamedLanguageElementId,
     ParamLongId, TopLevelLanguageElementId, TraitFunctionId,
 };
@@ -778,6 +778,21 @@ pub fn concrete_function_implized_signature(
     let mut signature = db.concrete_function_signature(function_id)?;
     let generic_function = function_id.lookup_intern(db).function.generic_function;
 
+    // // If the generic impl of the impl function is not concrete, nothing to implize.
+    // let Some(concrete_impl_id) =
+    //     try_extract_matches!(impl_generic_function.impl_id, ImplId::Concrete)
+    // else {
+    //     return Ok(signature);
+    // };
+    // let concrete_impl_long = db.lookup_intern_concrete_impl(concrete_impl_id);
+    // let impl_def_id = concrete_impl_long.impl_def_id;
+    // let generic_parameters =
+    //     concrete_impl_long.generic_args.map(|garg| GenericParam::Type(GenericParamType {id: }
+    // )).collect();
+
+    // // let impl_def_id = impl_function.impl_def_id(db.upcast());
+    // let impl_ctx = ImplContext { impl_def_id };
+
     // If the generic function is not an impl function, nothing to implize.
     let crate::items::functions::GenericFunctionId::Impl(impl_generic_function) = generic_function
     else {
@@ -790,12 +805,11 @@ pub fn concrete_function_implized_signature(
     };
 
     let impl_def_id = impl_function.impl_def_id(db.upcast());
-    let impl_ctx = ImplContext { impl_def_id };
 
     let mut tmp_inference_data = impl_def_id.resolver_data(db)?.inference_data.temporary_clone();
     let mut tmp_inference = tmp_inference_data.inference(db);
 
-    implize_signature(db, &mut signature, &mut tmp_inference, impl_ctx)?;
+    implize_signature(db, &mut signature, &mut tmp_inference, impl_def_id)?;
     Ok(signature)
 }
 
@@ -806,7 +820,7 @@ fn implize_signature(
     db: &dyn SemanticGroup,
     signature: &mut Signature,
     tmp_inference: &mut Inference<'_>,
-    impl_ctx: ImplContext,
+    impl_ctx: ImplDefId,
 ) -> Maybe<()> {
     for param in signature.params.iter_mut() {
         param.ty = implize_type(db, param.ty, Some(impl_ctx), tmp_inference)?;

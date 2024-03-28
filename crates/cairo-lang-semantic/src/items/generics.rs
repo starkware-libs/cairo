@@ -14,7 +14,7 @@ use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupInter
 use syntax::node::db::SyntaxGroup;
 use syntax::node::TypedStablePtr;
 
-use super::constant::ConstValueId;
+use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId};
 use super::resolve_trait_path;
 use crate::db::SemanticGroup;
@@ -25,7 +25,7 @@ use crate::lookup_item::LookupItemEx;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::{resolve_type, TypeHead};
-use crate::{ConcreteTraitId, SemanticDiagnostic, TypeId};
+use crate::{ConcreteTraitId, SemanticDiagnostic, TypeId, TypeLongId};
 
 /// Generic argument.
 /// A value assigned to a generic parameter.
@@ -136,6 +136,21 @@ impl GenericParam {
     }
     pub fn stable_ptr(&self, db: &dyn DefsGroup) -> ast::GenericParamPtr {
         self.id().stable_ptr(db)
+    }
+    /// Returns the generic param as a generic argument.
+    pub fn as_arg(&self, db: &dyn SemanticGroup) -> GenericArgumentId {
+        match self {
+            GenericParam::Type(param_type) => {
+                GenericArgumentId::Type(TypeLongId::GenericParameter(param_type.id).intern(db))
+            }
+            GenericParam::Const(param_const) => {
+                GenericArgumentId::Constant(ConstValue::Generic(param_const.id).intern(db))
+            }
+            GenericParam::Impl(param_impl) => {
+                GenericArgumentId::Impl(ImplId::GenericParameter(param_impl.id))
+            }
+            GenericParam::NegImpl(_) => GenericArgumentId::NegImpl,
+        }
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for GenericParam {

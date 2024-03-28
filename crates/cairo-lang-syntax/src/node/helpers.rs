@@ -3,12 +3,12 @@ use smol_str::SmolStr;
 
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
-    ImplItem, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
-    ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias,
-    ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized, Statement, StatementBreak,
-    StatementContinue, StatementExpr, StatementLet, StatementReturn, TerminalIdentifierGreen,
-    TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction, TraitItemFunctionPtr,
-    TraitItemImpl, TraitItemType, Variant, WrappedArgList,
+    GenericArgValue, ImplItem, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr,
+    ItemExternType, ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait,
+    ItemTypeAlias, ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized, Statement,
+    StatementBreak, StatementContinue, StatementExpr, StatementLet, StatementReturn,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction,
+    TraitItemFunctionPtr, TraitItemImpl, TraitItemType, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
@@ -594,5 +594,17 @@ impl BodyItems for ast::ImplBody {
     type Item = ImplItem;
     fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<ImplItem> {
         self.items(db).elements(db)
+    }
+}
+
+pub trait HasGenericArgValue {
+    fn value(&self, db: &dyn SyntaxGroup) -> GenericArgValue;
+}
+impl HasGenericArgValue for ast::GenericArg {
+    fn value(&self, db: &dyn SyntaxGroup) -> GenericArgValue {
+        match self {
+            ast::GenericArg::Unnamed(x) => x.value(db),
+            ast::GenericArg::Named(x) => x.value(db),
+        }
     }
 }

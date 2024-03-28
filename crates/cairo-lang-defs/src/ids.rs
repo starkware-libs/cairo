@@ -293,7 +293,7 @@ pub struct FileIndex(pub usize);
 pub struct ModuleFileId(pub ModuleId, pub FileIndex);
 impl ModuleFileId {
     pub fn file_id(&self, db: &dyn DefsGroup) -> Maybe<FileId> {
-        Ok(db.module_files(self.0)?[self.1.0])
+        Ok(db.module_files(self.0)?[self.1 .0])
     }
 }
 
@@ -564,7 +564,7 @@ define_language_element_id_basic!(
 );
 impl GenericParamLongId {
     pub fn name(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
-        let SyntaxStablePtr::Child { key_fields, kind, .. } = self.1.0.lookup_intern(db) else {
+        let SyntaxStablePtr::Child { key_fields, kind, .. } = self.1 .0.lookup_intern(db) else {
             unreachable!()
         };
         require(!matches!(
@@ -580,7 +580,7 @@ impl GenericParamLongId {
         self.name(db).unwrap_or_else(|| "_".into())
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> GenericKind {
-        let SyntaxStablePtr::Child { kind, .. } = self.1.0.lookup_intern(db) else {
+        let SyntaxStablePtr::Child { kind, .. } = self.1 .0.lookup_intern(db) else {
             unreachable!()
         };
         match kind {
@@ -595,7 +595,7 @@ impl GenericParamLongId {
     }
     /// Retrieves the ID of the generic item holding this generic parameter.
     pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
-        let item_ptr = self.1.0.nth_parent(db.upcast(), 3);
+        let item_ptr = self.1 .0.nth_parent(db.upcast(), 3);
         GenericItemId::from_ptr(db, self.0, item_ptr)
     }
 }
@@ -608,7 +608,8 @@ impl GenericParamId {
     }
     pub fn format(&self, db: &dyn DefsGroup) -> String {
         let long_ids = self.lookup_intern(db);
-        let SyntaxStablePtr::Child { key_fields, kind, .. } = long_ids.1.0.lookup_intern(db) else {
+        let SyntaxStablePtr::Child { key_fields, kind, .. } = long_ids.1 .0.lookup_intern(db)
+        else {
             unreachable!()
         };
 
@@ -989,74 +990,5 @@ define_language_element_id_as_enum! {
         ModuleItem(ModuleItemId),
         TraitItem(TraitItemId),
         ImplItem(ImplItemId),
-    }
-}
-
-/// A context of a trait, if in a trait. This is used in the resolver to resolve
-/// "Self::" paths.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct TraitContext {
-    pub trait_id: TraitId,
-    // TODO(yuval): add generics.
-}
-impl DebugWithDb<dyn DefsGroup> for TraitContext {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn DefsGroup + 'static),
-    ) -> std::fmt::Result {
-        write!(f, "{:?}", self.trait_id.lookup_intern(db).debug(db))
-    }
-}
-
-/// A context of an impl, if in an impl. This is used in the resolver to resolve
-/// "Self::" paths and in implizations.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct ImplContext {
-    pub impl_def_id: ImplDefId,
-    // TODO(yuval): add generics.
-}
-impl DebugWithDb<dyn DefsGroup> for ImplContext {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn DefsGroup + 'static),
-    ) -> std::fmt::Result {
-        write!(f, "{:?}", self.impl_def_id.lookup_intern(db).debug(db))
-    }
-}
-
-/// A context of a trait or an impl, if in any of those. This is used in the resolver to resolve
-/// "Self::" paths.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub enum TraitOrImplContext {
-    /// No trait/impl context.
-    None,
-    /// The context is of a trait.
-    Trait(TraitContext),
-    /// The context is of an impl.
-    Impl(ImplContext),
-}
-impl TraitOrImplContext {
-    /// Returns the trait context, if the context is a trait context, or None otherwise.
-    pub fn trait_context(&self) -> Option<TraitContext> {
-        if let TraitOrImplContext::Trait(ctx) = self { Some(*ctx) } else { None }
-    }
-    /// Returns the impl context, if the context is an impl context, or None otherwise.
-    pub fn impl_context(&self) -> Option<ImplContext> {
-        if let TraitOrImplContext::Impl(ctx) = self { Some(*ctx) } else { None }
-    }
-}
-impl DebugWithDb<dyn DefsGroup> for TraitOrImplContext {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn DefsGroup + 'static),
-    ) -> std::fmt::Result {
-        match self {
-            TraitOrImplContext::None => write!(f, "None"),
-            TraitOrImplContext::Trait(trait_ctx) => write!(f, "{:?}", trait_ctx.debug(db)),
-            TraitOrImplContext::Impl(impl_ctx) => write!(f, "{:?}", impl_ctx.debug(db)),
-        }
     }
 }
