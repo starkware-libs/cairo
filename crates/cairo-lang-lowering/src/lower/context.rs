@@ -16,7 +16,7 @@ use semantic::corelib::{core_module, get_ty_by_name, get_usize_ty};
 use semantic::expr::inference::InferenceError;
 use semantic::items::constant::value_as_const_value;
 use semantic::types::wrap_in_snapshots;
-use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
+use semantic::{ExprVarMemberPath, MatchArmSelector, TypeId};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
@@ -473,10 +473,13 @@ pub fn lowering_flow_error_to_sealed_block(
             .add(ctx, &mut builder.statements);
             let err_instance = generators::StructConstruct {
                 inputs: vec![panic_instance, data_var],
-                ty: ctx.db.intern_type(TypeLongId::Tuple(vec![
-                    ctx.variables[panic_instance.var_id].ty,
-                    ctx.variables[data_var.var_id].ty,
-                ])),
+                ty: TypeId::tuple(
+                    ctx.db.upcast(),
+                    vec![
+                        ctx.variables[panic_instance.var_id].ty,
+                        ctx.variables[data_var.var_id].ty,
+                    ],
+                ),
                 location,
             }
             .add(ctx, &mut builder.statements);

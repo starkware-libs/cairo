@@ -4,7 +4,7 @@ use cairo_lang_semantic::corelib::{
     get_ty_by_name, option_none_variant, option_some_variant, unit_ty,
 };
 use cairo_lang_semantic::items::constant::ConstValue;
-use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeLongId};
+use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeId};
 use num_bigint::{BigInt, Sign};
 
 use crate::db::LoweringGroup;
@@ -107,10 +107,10 @@ fn create_panic_block(
     let panic_data_var =
         variables.new_var(VarRequest { ty: core_array_felt252_ty(db.upcast()), location });
     let err_data_var = variables.new_var(VarRequest {
-        ty: db.intern_type(TypeLongId::Tuple(vec![
-            variables[panic_instance_var].ty,
-            variables[panic_data_var].ty,
-        ])),
+        ty: TypeId::tuple(
+            db.upcast(),
+            vec![variables[panic_instance_var].ty, variables[panic_data_var].ty],
+        ),
         location,
     });
     lowered.variables = variables.variables;
