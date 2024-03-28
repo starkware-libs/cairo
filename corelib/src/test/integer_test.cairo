@@ -886,6 +886,11 @@ fn test_default_values() {
     assert_eq(@Default::default(), @0_u64, '0 == 0');
     assert_eq(@Default::default(), @0_u128, '0 == 0');
     assert_eq(@Default::default(), @0_u256, '0 == 0');
+    assert_eq(@Default::default(), @0_i8, '0 == 0');
+    assert_eq(@Default::default(), @0_i16, '0 == 0');
+    assert_eq(@Default::default(), @0_i32, '0 == 0');
+    assert_eq(@Default::default(), @0_i64, '0 == 0');
+    assert_eq(@Default::default(), @0_i128, '0 == 0');
 }
 
 #[test]

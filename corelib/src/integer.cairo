@@ -1738,6 +1738,40 @@ impl U256Default of Default<u256> {
     }
 }
 
+impl I8Default of Default<i8> {
+    #[inline(always)]
+    fn default() -> i8 nopanic {
+        0_i8
+    }
+}
+
+impl I16Default of Default<i16> {
+    #[inline(always)]
+    fn default() -> i16 nopanic {
+        0_i16
+    }
+}
+
+impl I32Default of Default<i32> {
+    #[inline(always)]
+    fn default() -> i32 nopanic {
+        0_i32
+    }
+}
+
+impl I64Default of Default<i64> {
+    #[inline(always)]
+    fn default() -> i64 nopanic {
+        0_i64
+    }
+}
+
+impl I128Default of Default<i128> {
+    #[inline(always)]
+    fn default() -> i128 nopanic {
+        0_i128
+    }
+}
 
 /// Default values for felt252_dict values.
 impl U8Felt252DictValue of Felt252DictValue<u8> {
