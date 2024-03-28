@@ -41,6 +41,7 @@ pub enum SyntaxKind {
     ExprFixedSizeArray,
     FixedSizeArraySize,
     OptionFixedSizeArraySizeEmpty,
+    ExprTypeCoerce,
     StructArgExpr,
     OptionStructArgExprEmpty,
     StructArgSingle,

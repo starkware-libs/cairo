@@ -12,7 +12,7 @@ pub fn get_unary_operator_precedence(kind: SyntaxKind) -> Option<usize> {
 }
 pub fn get_post_operator_precedence(kind: SyntaxKind) -> Option<usize> {
     match kind {
-        SyntaxKind::TerminalDot => Some(0),
+        SyntaxKind::TerminalDot | SyntaxKind::TerminalAs => Some(0),
         SyntaxKind::TerminalQuestionMark
         // [] Operator.
         | SyntaxKind::TerminalLBrack => Some(1),

@@ -18,6 +18,7 @@ fn bar(first_arg: T, second_arg: T, third_arg: T, fourth_arg: T, fifth_arg: T, s
     match 5 {
         1|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|2|3=>4,
     }
+    323232232323232323232232323232323232232323232323232232323232323232232323232323 as very_very_very_very_very_very_very_very_long_typename; 
 }
 
 impl AnImpl<T, impl i: ATrait<T,S,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,>,> of ATrait {}

@@ -560,6 +560,14 @@ impl SyntaxNodeFormat for SyntaxNode {
                         false,
                     ))
                 }
+                SyntaxKind::TerminalAs => {
+                    BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
+                        17,
+                        BreakLinePointIndentation::Indented,
+                        true,
+                        true,
+                    ))
+                }
                 SyntaxKind::TokenEq
                 | SyntaxKind::TokenPlusEq
                 | SyntaxKind::TokenMinusEq
