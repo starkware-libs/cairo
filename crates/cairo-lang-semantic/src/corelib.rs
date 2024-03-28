@@ -361,7 +361,7 @@ pub fn unwrap_error_propagation_type(
 pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> ExprId {
     ctx.exprs.alloc(Expr::Tuple(ExprTuple {
         items: Vec::new(),
-        ty: ctx.db.intern_type(TypeLongId::Tuple(Vec::new())),
+        ty: TypeId::tuple(ctx.db, Vec::new()),
         stable_ptr,
     }))
 }

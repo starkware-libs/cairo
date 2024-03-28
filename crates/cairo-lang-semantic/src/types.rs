@@ -57,6 +57,10 @@ impl OptionFrom<TypeLongId> for ConcreteTypeId {
 define_short_id!(TypeId, TypeLongId, SemanticGroup, lookup_intern_type);
 semantic_object_for_id!(TypeId, lookup_intern_type, intern_type, TypeLongId);
 impl TypeId {
+    pub fn tuple(db: &dyn SemanticGroup, subtypes: Vec<TypeId>) -> Self {
+        db.intern_type(TypeLongId::Tuple(subtypes))
+    }
+
     pub fn missing(db: &dyn SemanticGroup, diag_added: DiagnosticAdded) -> Self {
         db.intern_type(TypeLongId::Missing(diag_added))
     }
@@ -423,7 +427,7 @@ pub fn maybe_resolve_type(
                 .into_iter()
                 .map(|subexpr_syntax| resolve_type(db, diagnostics, resolver, &subexpr_syntax))
                 .collect();
-            db.intern_type(TypeLongId::Tuple(sub_tys))
+            TypeId::tuple(db, sub_tys)
         }
         ast::Expr::Unary(unary_syntax)
             if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::At(_)) =>

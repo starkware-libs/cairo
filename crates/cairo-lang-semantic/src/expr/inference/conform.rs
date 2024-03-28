@@ -134,7 +134,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 let tys = zip_eq(tys0, tys1)
                     .map(|(subty0, subty1)| self.conform_ty(subty0, subty1))
                     .collect::<Result<Vec<_>, _>>()?;
-                Ok((self.db.intern_type(TypeLongId::Tuple(tys)), n_snapshots))
+                Ok((TypeId::tuple(self.db, tys), n_snapshots))
             }
             TypeLongId::FixedSizeArray { type_id, size } => {
                 let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);

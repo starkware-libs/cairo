@@ -680,7 +680,7 @@ fn compute_expr_tuple_semantic(
     }
     Ok(Expr::Tuple(ExprTuple {
         items,
-        ty: db.intern_type(TypeLongId::Tuple(types)),
+        ty: TypeId::tuple(db, types),
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
