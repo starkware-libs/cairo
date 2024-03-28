@@ -170,9 +170,9 @@ contract:
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl InternalPointerAccessContractMemberStateImpl of 
+        impl InternalPointerAccessContractMemberStateImpl of
             starknet::storage::StorageAsPointer<ContractMemberState, usize> {
-            fn as_ptr(self: @ContractMemberState) -> 
+            fn as_ptr(self: @ContractMemberState) ->
                 starknet::storage::StoragePointer<usize> {
                 starknet::storage::StoragePointer{
                     address: InternalContractMemberStateImpl::address(self)
@@ -191,12 +191,12 @@ contract:
                 starknet::storage_access::storage_base_address_const::<0x321b8b6c46d61f377b5487aafeb261d3f4db1eb5e3e1fa6a8fc43dc2cee1160>()
             }
             fn read(self: @ContractMemberState) -> usize {
-                starknet::storage::StoragePointerAccess::read( 
+                starknet::storage::StoragePointerAccess::read(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(self)
                 )
             }
             fn write(ref self: ContractMemberState, value: usize) {
-                starknet::storage::StoragePointerAccess::write( 
+                starknet::storage::StoragePointerAccess::write(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
                 )
             }
@@ -208,9 +208,9 @@ contract:
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl InternalPointerAccessContractMemberStateImpl of 
+        impl InternalPointerAccessContractMemberStateImpl of
             starknet::storage::StorageAsPointer<ContractMemberState, usize> {
-            fn as_ptr(self: @ContractMemberState) -> 
+            fn as_ptr(self: @ContractMemberState) ->
                 starknet::storage::StoragePointer<usize> {
                 starknet::storage::StoragePointer{
                     address: InternalContractMemberStateImpl::address(self)
@@ -229,12 +229,12 @@ contract:
                 starknet::storage_access::storage_base_address_const::<0x9285aae608615f0823cb202c5e4edd4e399dad89e9459bcdace1a2b91e0997>()
             }
             fn read(self: @ContractMemberState) -> usize {
-                starknet::storage::StoragePointerAccess::read( 
+                starknet::storage::StoragePointerAccess::read(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(self)
                 )
             }
             fn write(ref self: ContractMemberState, value: usize) {
-                starknet::storage::StoragePointerAccess::write( 
+                starknet::storage::StoragePointerAccess::write(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
                 )
             }

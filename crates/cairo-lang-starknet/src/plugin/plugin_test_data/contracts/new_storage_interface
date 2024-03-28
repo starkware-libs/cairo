@@ -695,9 +695,9 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl InternalPointerAccessContractMemberStateImpl of 
+        impl InternalPointerAccessContractMemberStateImpl of
             starknet::storage::StorageAsPointer<ContractMemberState, usize> {
-            fn as_ptr(self: @ContractMemberState) -> 
+            fn as_ptr(self: @ContractMemberState) ->
                 starknet::storage::StoragePointer<usize> {
                 starknet::storage::StoragePointer{
                     address: InternalContractMemberStateImpl::address(self)
@@ -716,12 +716,12 @@ pub enum Event {}
                 starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
             fn read(self: @ContractMemberState) -> usize {
-                starknet::storage::StoragePointerAccess::read( 
+                starknet::storage::StoragePointerAccess::read(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(self)
                 )
             }
             fn write(ref self: ContractMemberState, value: usize) {
-                starknet::storage::StoragePointerAccess::write( 
+                starknet::storage::StoragePointerAccess::write(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
                 )
             }
@@ -741,7 +741,7 @@ pub enum Event {}
                     starknet::storage::StoragePath::<Map<usize, usize>> { hash_state:
                         core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0xc5a566230e3a7722a65829b4868470051f6f82a8a0bc97d1b254e9876ef5b3)
                      }
-    
+
                 }
         }
     }
@@ -759,7 +759,7 @@ pub enum Event {}
                     starknet::storage::StoragePath::<Map<usize, Map<usize, usize>>> { hash_state:
                         core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x1279e804763fd83118748d323345bc6af6f8237e6e55bfb0642e54f439c2262)
                      }
-    
+
                 }
         }
     }

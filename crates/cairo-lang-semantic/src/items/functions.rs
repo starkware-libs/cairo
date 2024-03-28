@@ -4,7 +4,7 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplContext,
+    ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplDefId,
     ImplFunctionId, LanguageElementId, ModuleFileId, ModuleItemId, NamedLanguageElementId,
     ParamLongId, TopLevelLanguageElementId, TraitFunctionId,
 };
@@ -23,7 +23,7 @@ use syntax::attribute::consts::MUST_USE_ATTR;
 use syntax::node::TypedStablePtr;
 
 use super::attribute::SemanticQueryAttrs;
-use super::constant::ConstValue;
+use super::generics::generic_params_to_args;
 use super::imp::ImplId;
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -37,8 +37,8 @@ use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{implize_type, resolve_type};
 use crate::{
-    semantic, semantic_object_for_id, ConcreteImplId, ConcreteImplLongId, GenericArgumentId,
-    GenericParam, SemanticDiagnostic, TypeId,
+    semantic, semantic_object_for_id, ConcreteImplId, ConcreteImplLongId, GenericParam,
+    SemanticDiagnostic, TypeId,
 };
 
 /// A generic function of an impl.
@@ -464,28 +464,6 @@ impl ConcreteFunctionWithBody {
     }
 }
 
-/// Converts each generic param to a generic argument that passes the same generic param.
-pub fn generic_params_to_args(
-    params: &[GenericParam],
-    db: &dyn SemanticGroup,
-) -> Vec<GenericArgumentId> {
-    params
-        .iter()
-        .map(|param| match param {
-            GenericParam::Type(param) => {
-                GenericArgumentId::Type(crate::TypeLongId::GenericParameter(param.id).intern(db))
-            }
-            GenericParam::Const(param) => {
-                GenericArgumentId::Constant(ConstValue::Generic(param.id).intern(db))
-            }
-            GenericParam::Impl(param) => {
-                GenericArgumentId::Impl(ImplId::GenericParameter(param.id))
-            }
-            GenericParam::NegImpl(_) => GenericArgumentId::NegImpl,
-        })
-        .collect()
-}
-
 impl DebugWithDb<dyn SemanticGroup> for ConcreteFunctionWithBody {
     fn fmt(
         &self,
@@ -790,12 +768,11 @@ pub fn concrete_function_implized_signature(
     };
 
     let impl_def_id = impl_function.impl_def_id(db.upcast());
-    let impl_ctx = ImplContext { impl_def_id };
 
     let mut tmp_inference_data = impl_def_id.resolver_data(db)?.inference_data.temporary_clone();
     let mut tmp_inference = tmp_inference_data.inference(db);
 
-    implize_signature(db, &mut signature, &mut tmp_inference, impl_ctx)?;
+    implize_signature(db, &mut signature, &mut tmp_inference, impl_def_id)?;
     Ok(signature)
 }
 
@@ -806,7 +783,7 @@ fn implize_signature(
     db: &dyn SemanticGroup,
     signature: &mut Signature,
     tmp_inference: &mut Inference<'_>,
-    impl_ctx: ImplContext,
+    impl_ctx: ImplDefId,
 ) -> Maybe<()> {
     for param in signature.params.iter_mut() {
         param.ty = implize_type(db, param.ty, Some(impl_ctx), tmp_inference)?;

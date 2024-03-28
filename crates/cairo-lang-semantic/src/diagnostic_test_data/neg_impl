@@ -36,12 +36,12 @@ error: Negative impls supported only in impl definitions.
 pub trait Bad<T, -NegImpl> {
                  ^******^
 
-error: Only `_` is a valid for negative impls.
+error: Only `_` is valid as a negative impl argument.
  --> lib.cairo:13:32
 pub impl ImplBad2<T> of Bad<T, T> {
                                ^
 
-error: Only `_` is a valid for negative impls.
+error: Only `_` is valid as a negative impl argument.
  --> lib.cairo:20:17
     Bad::<u128, core::NegImpl>::bad();
                 ^***********^
