@@ -12,54 +12,60 @@ A struct is defined by the `struct` keyword.
 Here are a few examples of struct definitions:
 
 * A struct with only core type members:
-
-    ```rust
-    struct Tree {
-        height: u16,
-        number_of_leaves: u32,
-    }
-    ```
++
+[source,cairo]
+----
+struct Tree {
+    height: u16,
+    number_of_leaves: u32,
+}
+----
 
 * A struct with members of user-defined types:
-
-    ```rust
-    struct Forest {
-        number_of_trees: u32,
-        highest_tree: Tree,
-        lowest_tree: Tree,
-    }
-    ```
++
+[source,cairo]
+----
+struct Forest {
+    number_of_trees: u32,
+    highest_tree: Tree,
+    lowest_tree: Tree,
+}
+----
 
 * A struct with members of the same type:
 
-    ```rust
-    struct ListNode {
-        value: u8,
-        next: Option<Box<ListNode>>,
-    }
-    ```
++
+[source,cairo]
+----
+struct ListNode {
+    value: u8,
+    next: Option<Box<ListNode>>,
+}
+----
 
 == Usage
 
 A struct is instantiated with the `StructName { member1: value1, member2: value2, ... }` syntax.
 For example:
 
-```rust
+[source,cairo]
+----
 let mut tree = Tree {
     height: 6,
     number_of_leaves: 10000,
 };
-```
+----
 
 All members must be specified in the instantiation, but their order does not matter. If a member should be initialized with a variable with the same name of the member, instead of `name: name` you can simply specify `name`. For example:
 
-```rust
+[source,cairo]
+----
 let height = 6;
 let mut tree = Tree {
     number_of_leaves: 10000,
     height,
 };
-```
+----
 
 It can then be accessed in two ways:
 
@@ -68,10 +74,11 @@ It can then be accessed in two ways:
 A struct can be deconstructed with the `let struct_name { member1, member2, ... } = struct_instance` syntax.
 For example:
 
-```rust
+[source,cairo]
+----
 let Tree { height, number_of_leaves } = tree;
 let higher_tree = Tree { height: height + 1, number_of_leaves }
-```
+----
 
 You can use different patterns (for example change the order and names of the new variables)
 in the deconstruction. See xref:patterns.adoc[patterns] for more information.
@@ -80,10 +87,11 @@ in the deconstruction. See xref:patterns.adoc[patterns] for more information.
 
 Another way to access struct members is with the dot (`.`) operator.
 
-```rust
+[source,cairo]
+----
 let old_tree_height = tree.height;
 tree.height = old_tree_height + 1;
-```
+----
 
 [NOTE]
 ====
@@ -94,23 +102,27 @@ struct is big.
 ====
 
 A more expressive way to mutate a struct similar to the last example is:
-```rust
+
+[source,cairo]
+----
 let old_tree_height = tree.height;
 tree = Tree { height: old_tree_height + 1, number_of_leaves: tree.number_of_leaves };
-```
+----
 
 This way also lets you guarantee avoiding extra copies of the struct's memory if you want to change
 multiple members.
 For example, this code might copy the struct's memory twice
 (but is mostly optimized by the compiler):
 
-```rust
+[source,cairo]
+----
 tree.height = 1;
 tree.number_of_leaves = 100;
-```
+----
 
 While this code has the same logical effect, but guarantees to copy the struct's memory only once:
 
-```rust
+[source,cairo]
+----
 tree = Tree { height: 1, number_of_leaves: 100 };
-```
+----
