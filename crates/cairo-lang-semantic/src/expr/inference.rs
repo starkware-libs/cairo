@@ -810,17 +810,15 @@ impl<'db> Inference<'db> {
                 // T are going to be assigned the same concrete type.
                 // We return `SolutionSet::Ambiguous` here to indicate that more
                 // information is needed.
-                if let TypeLongId::Var(_) = self.db.lookup_intern_type(ty) {
-                    if !ty.is_fully_concrete(self.db) {
-                        // TODO(ilya): Try to detect the ambiguity earlier in the
-                        // inference process.
-                        return Ok(SolutionSet::Ambiguous(
-                            Ambiguity::NegativeImplWithUnresolvedGenericArgs {
-                                impl_id: ImplId::Concrete(concrete_impl),
-                                ty,
-                            },
-                        ));
-                    }
+                if !ty.is_fully_concrete(self.db) {
+                    // TODO(ilya): Try to detect the ambiguity earlier in the
+                    // inference process.
+                    return Ok(SolutionSet::Ambiguous(
+                        Ambiguity::NegativeImplWithUnresolvedGenericArgs {
+                            impl_id: ImplId::Concrete(concrete_impl),
+                            ty,
+                        },
+                    ));
                 }
             }
 
