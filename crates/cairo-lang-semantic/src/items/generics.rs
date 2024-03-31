@@ -66,9 +66,10 @@ impl GenericArgumentId {
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         match self {
             GenericArgumentId::Type(type_id) => type_id.is_fully_concrete(db),
-            GenericArgumentId::Constant(const_value_id) => {
-                !matches!(db.lookup_intern_const_value(*const_value_id), ConstValue::Generic(_))
-            }
+            GenericArgumentId::Constant(const_value_id) => !matches!(
+                db.lookup_intern_const_value(*const_value_id),
+                ConstValue::Generic(_) | ConstValue::Var(_)
+            ),
             GenericArgumentId::Impl(impl_id) => impl_id.is_fully_concrete(db),
             GenericArgumentId::NegImpl => true,
         }

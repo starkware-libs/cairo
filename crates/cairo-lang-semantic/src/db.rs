@@ -638,6 +638,10 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
     ) -> Maybe<items::imp::ImplDefinitionData>;
 
+    /// Private query to check if an impl is fully concrete.
+    #[salsa::invoke(items::imp::priv_impl_is_fully_concrete)]
+    fn priv_impl_is_fully_concrete(&self, impl_id: ImplId) -> bool;
+
     // Impl type.
     // ================
     /// Returns the semantic diagnostics of an impl item type.
@@ -1061,6 +1065,10 @@ pub trait SemanticGroup:
         lookup_context: ImplLookupContext,
         ty: types::TypeId,
     ) -> Maybe<types::TypeInfo>;
+
+    /// Private query to check if a type is fully concrete.
+    #[salsa::invoke(types::priv_type_is_fully_concrete)]
+    fn priv_type_is_fully_concrete(&self, ty: types::TypeId) -> bool;
 
     // Expression.
     // ===========
