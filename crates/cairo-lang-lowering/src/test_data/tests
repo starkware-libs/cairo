@@ -382,3 +382,4 @@ fn foo(mut data: Span::<felt252>) -> u128 {
 //! > lowering_diagnostics
 
 //! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
