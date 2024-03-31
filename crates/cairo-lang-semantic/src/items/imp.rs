@@ -132,6 +132,13 @@ impl ConcreteImplId {
             .iter()
             .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
     }
+    /// Returns true if the `impl` does not depend on impl or type variables.
+    pub fn contains_no_var(&self, db: &dyn SemanticGroup) -> bool {
+        db.lookup_intern_concrete_impl(*self)
+            .generic_args
+            .iter()
+            .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
+    }
 }
 
 /// Represents a "callee" impl that can be referred to in the code.
@@ -174,6 +181,10 @@ impl ImplId {
     /// Returns true if the `impl` does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         db.priv_impl_is_fully_concrete(*self)
+    }
+    /// Returns true if the `impl` does not depend on impl or type variables.
+    pub fn contains_no_var(&self, db: &dyn SemanticGroup) -> bool {
+        db.priv_impl_contains_no_var(*self)
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplId {
@@ -1829,6 +1840,14 @@ pub fn priv_impl_is_fully_concrete(db: &dyn SemanticGroup, impl_id: ImplId) -> b
     match impl_id {
         ImplId::Concrete(concrete_impl_id) => concrete_impl_id.is_fully_concrete(db),
         ImplId::GenericParameter(_) => false,
+        ImplId::ImplVar(_) => false,
+    }
+}
+
+pub fn priv_impl_contains_no_var(db: &dyn SemanticGroup, impl_id: ImplId) -> bool {
+    match impl_id {
+        ImplId::Concrete(concrete_impl_id) => concrete_impl_id.contains_no_var(db),
+        ImplId::GenericParameter(_) => true,
         ImplId::ImplVar(_) => false,
     }
 }

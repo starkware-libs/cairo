@@ -642,6 +642,10 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::imp::priv_impl_is_fully_concrete)]
     fn priv_impl_is_fully_concrete(&self, impl_id: ImplId) -> bool;
 
+    /// Private query to check if an impl contains no variables.
+    #[salsa::invoke(items::imp::priv_impl_contains_no_var)]
+    fn priv_impl_contains_no_var(&self, impl_id: ImplId) -> bool;
+
     // Impl type.
     // ================
     /// Returns the semantic diagnostics of an impl item type.
@@ -1069,6 +1073,10 @@ pub trait SemanticGroup:
     /// Private query to check if a type is fully concrete.
     #[salsa::invoke(types::priv_type_is_fully_concrete)]
     fn priv_type_is_fully_concrete(&self, ty: types::TypeId) -> bool;
+
+    /// Private query to check if a type contains no variables.
+    #[salsa::invoke(types::priv_type_contains_no_var)]
+    fn priv_type_contains_no_var(&self, ty: types::TypeId) -> bool;
 
     // Expression.
     // ===========

@@ -202,6 +202,15 @@ impl GenericFunctionId {
             }
         }
     }
+    /// Returns true if the function does not depend on impl or type variables.
+    pub fn contains_no_var(&self, db: &dyn SemanticGroup) -> bool {
+        match self {
+            GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => true,
+            GenericFunctionId::Impl(impl_generic_function) => {
+                impl_generic_function.impl_id.contains_no_var(db)
+            }
+        }
+    }
 }
 /// Conversion from ModuleItemId to GenericFunctionId.
 impl OptionFrom<ModuleItemId> for GenericFunctionId {
@@ -272,6 +281,15 @@ impl FunctionId {
                 .generic_args
                 .iter()
                 .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
+    }
+    /// Returns true if the function does not depend on impl or type variables.
+    pub fn contains_no_var(&self, db: &dyn SemanticGroup) -> bool {
+        let func = self.get_concrete(db);
+        func.generic_function.contains_no_var(db)
+            && func
+                .generic_args
+                .iter()
+                .all(|generic_argument_id| generic_argument_id.contains_no_var(db))
     }
 }
 

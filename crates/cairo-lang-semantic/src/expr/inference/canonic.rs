@@ -173,7 +173,15 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for Canonicalizer<'a> {
         self.db
     }
 }
-add_basic_rewrites!(<'a>, Canonicalizer<'a>, NoError, @exclude TypeLongId ImplId ConstValue);
+add_basic_rewrites!(<'a>, Canonicalizer<'a>, NoError, @exclude TypeLongId TypeId ImplId ConstValue);
+impl<'a> SemanticRewriter<TypeId, NoError> for Canonicalizer<'a> {
+    fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, NoError> {
+        if value.contains_no_var(self.db) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
 impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, NoError> {
         let TypeLongId::Var(var) = value else {
@@ -209,6 +217,9 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Canonicalizer<'a> {
 impl<'a> SemanticRewriter<ImplId, NoError> for Canonicalizer<'a> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
         let ImplId::ImplVar(var_id) = value else {
+            if value.contains_no_var(self.db) {
+                return Ok(RewriteResult::NoChange);
+            }
             return value.default_rewrite(self);
         };
         let var = var_id.get(self.db);
@@ -249,7 +260,15 @@ impl<'a, 'b> HasDb<&'a dyn SemanticGroup> for Embedder<'a, 'b> {
         self.inference.db
     }
 }
-add_basic_rewrites!(<'a,'b>, Embedder<'a,'b>, NoError, @exclude TypeLongId ImplId);
+add_basic_rewrites!(<'a,'b>, Embedder<'a,'b>, NoError, @exclude TypeLongId TypeId ImplId);
+impl<'a, 'b> SemanticRewriter<TypeId, NoError> for Embedder<'a, 'b> {
+    fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, NoError> {
+        if value.contains_no_var(self.get_db()) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
 impl<'a, 'b> SemanticRewriter<TypeLongId, NoError> for Embedder<'a, 'b> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, NoError> {
         let TypeLongId::Var(var) = value else {
@@ -270,6 +289,9 @@ impl<'a, 'b> SemanticRewriter<TypeLongId, NoError> for Embedder<'a, 'b> {
 impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
         let ImplId::ImplVar(var_id) = value else {
+            if value.contains_no_var(self.get_db()) {
+                return Ok(RewriteResult::NoChange);
+            }
             return value.default_rewrite(self);
         };
         let var = var_id.get(self.get_db());
@@ -311,7 +333,15 @@ impl<'db> HasDb<&'db dyn SemanticGroup> for Mapper<'db> {
         self.db
     }
 }
-add_basic_rewrites!(<'a>, Mapper<'a>, MapperError, @exclude TypeLongId ImplId ConstValue);
+add_basic_rewrites!(<'a>, Mapper<'a>, MapperError, @exclude TypeLongId TypeId ImplId ConstValue);
+impl<'db> SemanticRewriter<TypeId, MapperError> for Mapper<'db> {
+    fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, MapperError> {
+        if value.contains_no_var(self.db) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
 impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, MapperError> {
         let TypeLongId::Var(var) = value else {
@@ -346,6 +376,9 @@ impl<'db> SemanticRewriter<ConstValue, MapperError> for Mapper<'db> {
 impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, MapperError> {
         let ImplId::ImplVar(var_id) = value else {
+            if value.contains_no_var(self.db) {
+                return Ok(RewriteResult::NoChange);
+            }
             return value.default_rewrite(self);
         };
         let var = var_id.get(self.get_db());

@@ -645,7 +645,9 @@ impl<'db> Inference<'db> {
         if let Some(other_impl) = self.impl_assignment(var) {
             return self.conform_impl(impl_id, other_impl);
         }
-        if self.impl_contains_var(&impl_id, InferenceVar::Impl(var)) {
+        if !impl_id.contains_no_var(self.db)
+            && self.impl_contains_var(&impl_id, InferenceVar::Impl(var))
+        {
             return Err(self.set_error(InferenceError::Cycle { var: InferenceVar::Impl(var) }));
         }
         self.impl_assignment.insert(var, impl_id);
@@ -675,7 +677,7 @@ impl<'db> Inference<'db> {
         }
         assert!(!self.type_assignment.contains_key(&var.id), "Cannot reassign variable.");
         let inference_var = InferenceVar::Type(var.id);
-        if self.ty_contains_var(ty, inference_var) {
+        if !ty.contains_no_var(self.db) && self.ty_contains_var(ty, inference_var) {
             return Err(self.set_error(InferenceError::Cycle { var: inference_var }));
         }
         self.type_assignment.insert(var.id, ty);
@@ -933,9 +935,17 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for Inference<'a> {
         self.db
     }
 }
-add_basic_rewrites!(<'a>, Inference<'a>, NoError, @exclude TypeLongId ImplId ConstValue);
+add_basic_rewrites!(<'a>, Inference<'a>, NoError, @exclude TypeLongId TypeId ImplId ConstValue);
 add_expr_rewrites!(<'a>, Inference<'a>, NoError, @exclude);
 add_rewrite!(<'a>, Inference<'a>, NoError, Ambiguity);
+impl<'a> SemanticRewriter<TypeId, NoError> for Inference<'a> {
+    fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, NoError> {
+        if value.contains_no_var(self.db) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
 impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, NoError> {
         if let TypeLongId::Var(var) = value {
@@ -971,6 +981,9 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
                 *value = impl_id;
                 return Ok(RewriteResult::Modified);
             }
+        }
+        if value.contains_no_var(self.db) {
+            return Ok(RewriteResult::NoChange);
         }
         value.default_rewrite(self)
     }

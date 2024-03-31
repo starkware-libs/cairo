@@ -74,6 +74,17 @@ impl GenericArgumentId {
             GenericArgumentId::NegImpl => true,
         }
     }
+    /// Returns true if the generic argument does not depend on impl or type variables.
+    pub fn contains_no_var(&self, db: &dyn SemanticGroup) -> bool {
+        match self {
+            GenericArgumentId::Type(type_id) => type_id.contains_no_var(db),
+            GenericArgumentId::Constant(const_value_id) => {
+                !matches!(db.lookup_intern_const_value(*const_value_id), ConstValue::Var(_))
+            }
+            GenericArgumentId::Impl(impl_id) => impl_id.contains_no_var(db),
+            GenericArgumentId::NegImpl => true,
+        }
+    }
 }
 impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
     fn fmt(
