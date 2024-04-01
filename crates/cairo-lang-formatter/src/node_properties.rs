@@ -296,9 +296,10 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ArgListBracketed
                 | SyntaxKind::ExprUnary => Some(1),
                 SyntaxKind::TerminalEq => Some(10),
-                SyntaxKind::PatternEnum | SyntaxKind::PatternTuple | SyntaxKind::PatternStruct => {
-                    Some(11)
-                }
+                SyntaxKind::PatternEnum
+                | SyntaxKind::PatternTuple
+                | SyntaxKind::PatternStruct
+                | SyntaxKind::PatternFixedSizeArray => Some(11),
                 SyntaxKind::TypeClause => Some(12),
                 _ => None,
             },
