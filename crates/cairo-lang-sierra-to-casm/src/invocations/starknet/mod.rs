@@ -67,6 +67,11 @@ pub fn build(
             build_syscalls(builder, "Deploy", [1, 1, 2, 1], [1, 2])
         }
         StarkNetConcreteLibfunc::Keccak(_) => build_syscalls(builder, "Keccak", [2], [2]),
+        StarkNetConcreteLibfunc::SHA256Chunk(_) => {
+            build_syscalls(builder, "SHA256Chunk", [1, 2], [1])
+        }
+        StarkNetConcreteLibfunc::SHA256StateHandleInit(_) => build_identity(builder),
+        StarkNetConcreteLibfunc::SHA256StateHandleDigest(_) => build_identity(builder),
         StarkNetConcreteLibfunc::LibraryCall(_) => {
             build_syscalls(builder, "LibraryCall", [1, 1, 2], [2])
         }
@@ -118,6 +123,7 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
     };
     for (i, input_size) in input_sizes.iter().enumerate() {
         let cells = &builder.refs[i + 2].expression.cells;
+        assert_eq!(cells.len(), *input_size as usize);
         if *input_size as usize != cells.len() {
             return Err(InvocationError::InvalidReferenceExpressionForArgument);
         }
