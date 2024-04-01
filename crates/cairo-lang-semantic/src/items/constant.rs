@@ -70,6 +70,16 @@ impl ConstValueId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         format!("{:?}", db.lookup_intern_const_value(*self).debug(db.elongate()))
     }
+
+    /// Returns true if the const does not depend on any generics.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        db.lookup_intern_const_value(*self).is_fully_concrete()
+    }
+
+    /// Returns true if the const does not contain any inference variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        db.lookup_intern_const_value(*self).is_var_free()
+    }
 }
 
 /// A constant value.
@@ -84,6 +94,33 @@ pub enum ConstValue {
     Var(ConstVar),
     /// A missing value, used in cases where the value is not known due to diagnostics.
     Missing(#[dont_rewrite] DiagnosticAdded),
+}
+impl ConstValue {
+    /// Returns true if the const does not depend on any generics.
+    pub fn is_fully_concrete(&self) -> bool {
+        match self {
+            ConstValue::Int(_) => true,
+            ConstValue::Struct(members) => {
+                members.iter().all(|(_, member)| member.is_fully_concrete())
+            }
+            ConstValue::Enum(_, value)
+            | ConstValue::NonZero(_, value)
+            | ConstValue::Boxed(_, value) => value.is_fully_concrete(),
+            ConstValue::Generic(_) | ConstValue::Var(_) | ConstValue::Missing(_) => false,
+        }
+    }
+
+    /// Returns true if the const does not contain any inference variables.
+    pub fn is_var_free(&self) -> bool {
+        match self {
+            ConstValue::Int(_) | ConstValue::Generic(_) | ConstValue::Missing(_) => true,
+            ConstValue::Struct(members) => members.iter().all(|(_, member)| member.is_var_free()),
+            ConstValue::Enum(_, value)
+            | ConstValue::NonZero(_, value)
+            | ConstValue::Boxed(_, value) => value.is_var_free(),
+            ConstValue::Var(_) => false,
+        }
+    }
 }
 
 /// Query implementation of [SemanticGroup::priv_constant_semantic_data].
