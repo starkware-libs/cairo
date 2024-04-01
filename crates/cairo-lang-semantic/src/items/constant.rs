@@ -153,7 +153,7 @@ pub fn priv_constant_semantic_data(
     let environment = Environment::empty();
     let mut ctx = ComputationContext::new(db, &mut diagnostics, None, resolver, None, environment);
 
-    let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db));
+    let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db), None);
     let (ty, const_value) = resolve_const_expr_and_evaluate(
         db,
         &mut ctx,

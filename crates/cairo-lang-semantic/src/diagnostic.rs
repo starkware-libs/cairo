@@ -300,6 +300,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::WrongExprType { expected_ty, actual_ty } => {
+                format!(
+                    r#"Unexpected expression type. Expected: "{}", found: "{}"."#,
+                    expected_ty.format(db),
+                    actual_ty.format(db)
+                )
+            }
             SemanticDiagnosticKind::WrongNumberOfGenericParamsForImplFunction {
                 expected,
                 actual,
@@ -400,6 +407,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!(
                     r#"Enum "{}" has no variant "{variant_name}""#,
                     enum_id.full_path(db.upcast())
+                )
+            }
+            SemanticDiagnosticKind::ReturnTypeNotErrorPropagateType { return_ty } => {
+                format!(
+                    r#"`?` can't be used in a function with return type "{}". Only `Option` and `Result` types support error propagation."#,
+                    return_ty.format(db),
                 )
             }
             SemanticDiagnosticKind::IncompatibleErrorPropagateType { return_ty, err_ty } => {
@@ -893,6 +906,10 @@ pub enum SemanticDiagnosticKind {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
+    WrongExprType {
+        expected_ty: semantic::TypeId,
+        actual_ty: semantic::TypeId,
+    },
     WrongNumberOfGenericParamsForImplFunction {
         expected: usize,
         actual: usize,
@@ -953,6 +970,9 @@ pub enum SemanticDiagnosticKind {
     NoSuchVariant {
         enum_id: EnumId,
         variant_name: SmolStr,
+    },
+    ReturnTypeNotErrorPropagateType {
+        return_ty: semantic::TypeId,
     },
     IncompatibleErrorPropagateType {
         return_ty: semantic::TypeId,
