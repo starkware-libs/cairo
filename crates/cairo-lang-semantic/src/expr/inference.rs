@@ -951,7 +951,10 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
         if let TypeLongId::Var(var) = value {
             if let Some(type_id) = self.type_assignment.get(&var.id) {
                 let mut long_type_id = self.db.lookup_intern_type(*type_id);
-                self.internal_rewrite(&mut long_type_id)?;
+                if let RewriteResult::Modified = self.internal_rewrite(&mut long_type_id)? {
+                    *self.type_assignment.get_mut(&var.id).unwrap() =
+                        self.db.intern_type(long_type_id.clone());
+                }
                 *value = long_type_id;
                 return Ok(RewriteResult::Modified);
             }
@@ -964,7 +967,10 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
         if let ConstValue::Var(var) = value {
             if let Some(const_value_id) = self.const_assignment.get(&var.id) {
                 let mut const_value = self.db.lookup_intern_const_value(*const_value_id);
-                self.internal_rewrite(&mut const_value)?;
+                if let RewriteResult::Modified = self.internal_rewrite(&mut const_value)? {
+                    *self.const_assignment.get_mut(&var.id).unwrap() =
+                        self.db.intern_const_value(const_value.clone());
+                }
                 *value = const_value;
                 return Ok(RewriteResult::Modified);
             }
@@ -976,8 +982,11 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
         if let ImplId::ImplVar(var) = value {
             // Relax the candidates.
-            if let Some(mut impl_id) = self.impl_assignment(var.get(self.db).id) {
-                self.internal_rewrite(&mut impl_id)?;
+            let impl_var_id = var.get(self.db).id;
+            if let Some(mut impl_id) = self.impl_assignment(impl_var_id) {
+                if let RewriteResult::Modified = self.internal_rewrite(&mut impl_id)? {
+                    *self.impl_assignment.get_mut(&impl_var_id).unwrap() = impl_id;
+                }
                 *value = impl_id;
                 return Ok(RewriteResult::Modified);
             }
