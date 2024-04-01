@@ -9,6 +9,7 @@ pub use core::dict::{Felt252Dict, Felt252DictTrait, SquashedFelt252Dict};
 pub use core::gas::GasBuiltin;
 pub use core::integer::{Bitwise, i128, i16, i32, i64, i8, u128, u16, u256, u32, u64, u8};
 pub use core::keccak;
+pub use core::sha256;
 pub use core::math;
 pub use core::nullable::{Nullable, NullableTrait};
 pub use core::option::{Option, OptionTrait};

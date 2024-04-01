@@ -44,6 +44,7 @@ use core::{
 };
 use core::internal;
 use core::keccak;
+use core::sha256;
 use core::math;
 use core::{nullable, nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box}};
 use core::{option, option::{Option, OptionTrait}};

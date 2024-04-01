@@ -13,6 +13,7 @@ mod fmt_test;
 mod hash_test;
 mod integer_test;
 mod keccak_test;
+mod sha256_test;
 mod num_test;
 mod math_test;
 mod nullable_test;
