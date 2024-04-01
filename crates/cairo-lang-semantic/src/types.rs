@@ -93,6 +93,11 @@ impl TypeId {
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         db.priv_type_is_fully_concrete(*self)
     }
+
+    /// Returns true if the type does not contain any inference variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        db.priv_type_is_var_free(*self)
+    }
 }
 impl TypeLongId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -236,6 +241,10 @@ impl ConcreteTypeId {
         self.generic_args(db)
             .iter()
             .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
+    }
+    /// Returns true if the type does not contain any inference variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        self.generic_args(db).iter().all(|generic_argument_id| generic_argument_id.is_var_free(db))
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteTypeId {
@@ -625,6 +634,19 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::Missing(_) => false,
         TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
         TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
+    }
+}
+
+pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
+    match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_var_free(db),
+        TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_var_free(db)),
+        TypeLongId::Snapshot(ty) => ty.is_var_free(db),
+        TypeLongId::GenericParameter(_) => true,
+        TypeLongId::Var(_) => false,
+        TypeLongId::Missing(_) => true,
+        TypeLongId::Coupon(function_id) => function_id.is_var_free(db),
+        TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_var_free(db),
     }
 }
 
