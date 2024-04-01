@@ -5,7 +5,7 @@ SmallE2ETestRunner
 
 //! > cairo
 use core::circuit::{CircuitInput, CircuitInputAccumulator, init_circuit_data};
-type MyCircuit = (CircuitInput<0>,);
+type MyCircuit = (CircuitInput<0>, CircuitInput<2>,);
 
 fn foo() -> CircuitInputAccumulator<MyCircuit> {
     init_circuit_data::<MyCircuit>()
@@ -14,7 +14,7 @@ fn foo() -> CircuitInputAccumulator<MyCircuit> {
 //! > casm
 [ap + 0] = [fp + -3] + 2, ap++;
 [ap + 0] = [fp + -3], ap++;
-[ap + 0] = [fp + -3] + 1, ap++;
+[ap + 0] = [fp + -3] + 2, ap++;
 ret;
 
 //! > function_costs
@@ -23,16 +23,17 @@ test::foo: OrderedHashMap({Const: 300})
 //! > sierra_code
 type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: false];
-type Tuple<core::circuit::CircuitInput::<0>> = Struct<ut@Tuple, core::circuit::CircuitInput::<0>> [storable: false, drop: false, dup: false, zero_sized: false];
-type CircuitInputAccumulator<Tuple<core::circuit::CircuitInput::<0>>> = CircuitInputAccumulator<Tuple<core::circuit::CircuitInput::<0>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::circuit::CircuitInput::<2> = CircuitInput<2> [storable: false, drop: false, dup: false, zero_sized: false];
+type Tuple<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<2>> = Struct<ut@Tuple, core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<2>> [storable: false, drop: false, dup: false, zero_sized: false];
+type CircuitInputAccumulator<Tuple<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<2>>> = CircuitInputAccumulator<Tuple<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<2>>> [storable: true, drop: true, dup: false, zero_sized: false];
 
-libfunc init_circuit_data<Tuple<core::circuit::CircuitInput::<0>>> = init_circuit_data<Tuple<core::circuit::CircuitInput::<0>>>;
+libfunc init_circuit_data<Tuple<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<2>>> = init_circuit_data<Tuple<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<2>>>;
 libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
-libfunc store_temp<CircuitInputAccumulator<Tuple<core::circuit::CircuitInput::<0>>>> = store_temp<CircuitInputAccumulator<Tuple<core::circuit::CircuitInput::<0>>>>;
+libfunc store_temp<CircuitInputAccumulator<Tuple<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<2>>>> = store_temp<CircuitInputAccumulator<Tuple<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<2>>>>;
 
-init_circuit_data<Tuple<core::circuit::CircuitInput::<0>>>([0]) -> ([1], [2]); // 0
+init_circuit_data<Tuple<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<2>>>([0]) -> ([1], [2]); // 0
 store_temp<RangeCheck96>([1]) -> ([1]); // 1
-store_temp<CircuitInputAccumulator<Tuple<core::circuit::CircuitInput::<0>>>>([2]) -> ([2]); // 2
+store_temp<CircuitInputAccumulator<Tuple<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<2>>>>([2]) -> ([2]); // 2
 return([1], [2]); // 3
 
-test::foo@0([0]: RangeCheck96) -> (RangeCheck96, CircuitInputAccumulator<Tuple<core::circuit::CircuitInput::<0>>>);
+test::foo@0([0]: RangeCheck96) -> (RangeCheck96, CircuitInputAccumulator<Tuple<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<2>>>);
