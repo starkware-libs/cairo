@@ -38,6 +38,7 @@ mod boolean;
 mod boxing;
 mod bytes31;
 mod casts;
+mod circuit;
 mod const_type;
 mod debug;
 mod ec;
@@ -689,6 +690,7 @@ pub fn compile_invocation(
             }
         },
         BoundedInt(libfunc) => int::bounded::build(libfunc, builder),
+        Circuit(libfunc) => circuit::build(libfunc, builder),
     }
 }
 
