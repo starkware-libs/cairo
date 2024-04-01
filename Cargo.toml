@@ -122,6 +122,7 @@ salsa = "0.16.1"
 schemars = { version = "0.8.15", features = ["preserve_order"] }
 serde = { version = "1.0.192", default-features = false, features = ["derive"] }
 serde_json = "1.0"
+sha2 = "0.10.8"
 sha3 = "0.10.8"
 smol_str = { version = "0.2.0", features = ["serde"] }
 starknet-crypto = "0.6.1"
