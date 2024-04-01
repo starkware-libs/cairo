@@ -97,3 +97,11 @@ pub extern fn replace_class_syscall(
 pub extern fn keccak_syscall(
     input: Span<u64>
 ) -> SyscallResult<u256> implicits(GasBuiltin, System) nopanic;
+
+
+/// Computes the next sha256 state of the input with the given state.
+/// The system call does not add any padding and the input needs to be a multiple of 512 bits
+/// (== 16 u32 word).
+pub extern fn sha256_process_block_syscall(
+    state: core::sha256::SHA256StateHandle, input: Span<u32>
+) -> SyscallResult<core::sha256::SHA256StateHandle> implicits(GasBuiltin, System) nopanic;

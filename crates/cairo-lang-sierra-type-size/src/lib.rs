@@ -40,6 +40,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ClassHash(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::Secp256Point(_))
+            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::SHA256StateHandle(_))
             | CoreTypeConcrete::Pedersen(_)
             | CoreTypeConcrete::Poseidon(_)
             | CoreTypeConcrete::Felt252Dict(_)
