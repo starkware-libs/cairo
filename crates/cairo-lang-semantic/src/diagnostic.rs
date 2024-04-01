@@ -300,6 +300,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::WrongExprType { expected_ty, actual_ty } => {
+                format!(
+                    r#"Unexpected expression type. Expected: "{}", found: "{}"."#,
+                    expected_ty.format(db),
+                    actual_ty.format(db)
+                )
+            }
             SemanticDiagnosticKind::WrongNumberOfGenericParamsForImplFunction {
                 expected,
                 actual,
@@ -401,6 +408,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     r#"Enum "{}" has no variant "{variant_name}""#,
                     enum_id.full_path(db.upcast())
                 )
+            }
+            SemanticDiagnosticKind::ReturnTypeNotErrorPropagateType => {
+                "`?` can only be used in a function with `Option` or `Result` return type.".into()
             }
             SemanticDiagnosticKind::IncompatibleErrorPropagateType { return_ty, err_ty } => {
                 format!(
@@ -893,6 +903,10 @@ pub enum SemanticDiagnosticKind {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
+    WrongExprType {
+        expected_ty: semantic::TypeId,
+        actual_ty: semantic::TypeId,
+    },
     WrongNumberOfGenericParamsForImplFunction {
         expected: usize,
         actual: usize,
@@ -954,6 +968,7 @@ pub enum SemanticDiagnosticKind {
         enum_id: EnumId,
         variant_name: SmolStr,
     },
+    ReturnTypeNotErrorPropagateType,
     IncompatibleErrorPropagateType {
         return_ty: semantic::TypeId,
         err_ty: semantic::TypeId,

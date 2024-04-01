@@ -918,6 +918,11 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:6:22
+    fn foo1() -> u32 {
+                     ^
+
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
  --> lib.cairo:6:22
     fn foo1() -> u32 {

@@ -14,6 +14,8 @@ cairo_lang_test_utils::test_file_test!(
         type_alias: "type_alias",
         use_: "use_",
         module: "module",
+        early_conform: "early_conform",
+        type_mismatch_diagnostics: "type_mismatch_diagnostics",
     },
     test_function_diagnostics
 );
