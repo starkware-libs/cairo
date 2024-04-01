@@ -13,7 +13,7 @@ use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use syntax::node::db::SyntaxGroup;
 
-use super::constant::{ConstValue, ConstValueId};
+use super::constant::ConstValueId;
 use super::imp::{ImplHead, ImplId};
 use super::resolve_trait_path;
 use crate::db::SemanticGroup;
@@ -66,10 +66,7 @@ impl GenericArgumentId {
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         match self {
             GenericArgumentId::Type(type_id) => type_id.is_fully_concrete(db),
-            GenericArgumentId::Constant(const_value_id) => !matches!(
-                db.lookup_intern_const_value(*const_value_id),
-                ConstValue::Generic(_) | ConstValue::Var(_)
-            ),
+            GenericArgumentId::Constant(const_value_id) => const_value_id.is_fully_concrete(db),
             GenericArgumentId::Impl(impl_id) => impl_id.is_fully_concrete(db),
             GenericArgumentId::NegImpl => true,
         }
@@ -78,9 +75,7 @@ impl GenericArgumentId {
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
         match self {
             GenericArgumentId::Type(type_id) => type_id.is_var_free(db),
-            GenericArgumentId::Constant(const_value_id) => {
-                !matches!(db.lookup_intern_const_value(*const_value_id), ConstValue::Var(_))
-            }
+            GenericArgumentId::Constant(const_value_id) => const_value_id.is_var_free(db),
             GenericArgumentId::Impl(impl_id) => impl_id.is_var_free(db),
             GenericArgumentId::NegImpl => true,
         }

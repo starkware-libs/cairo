@@ -633,7 +633,9 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::Var(_) => false,
         TypeLongId::Missing(_) => false,
         TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
-        TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            type_id.is_fully_concrete(db) && size.is_fully_concrete(db)
+        }
     }
 }
 
@@ -646,7 +648,9 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::Var(_) => false,
         TypeLongId::Missing(_) => true,
         TypeLongId::Coupon(function_id) => function_id.is_var_free(db),
-        TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_var_free(db),
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            type_id.is_var_free(db) && size.is_var_free(db)
+        }
     }
 }
 
