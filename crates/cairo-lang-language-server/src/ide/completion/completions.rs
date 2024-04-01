@@ -342,6 +342,7 @@ fn find_methods_for_type(
                 trait_function,
                 ty,
                 &lookup_context,
+                None,
                 Some(stable_ptr),
                 |_| {},
             ) else {
