@@ -1,20 +1,25 @@
 use itertools::chain;
 
 use super::interoperability::ClassHashType;
-use super::u64_span_ty;
+use super::{u32_span_ty, u64_span_ty};
 use crate::extensions::array::ArrayType;
+use crate::extensions::boxing::box_ty;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::gas::GasBuiltinType;
+use crate::extensions::int::unsigned::Uint32Type;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::modules::get_u256_type;
+use crate::extensions::structure::StructType;
+use crate::extensions::utils::reinterpret_cast_signature;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
+use crate::program::GenericArg;
 
 /// Type for Starknet system object.
 /// Used to make system calls.
@@ -153,5 +158,106 @@ impl SyscallGenericLibfunc for KeccakLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         Ok(vec![get_u256_type(context)?])
+    }
+}
+
+/// Type representing the sha256 state handle.
+#[derive(Default)]
+pub struct SHA256StateHandleType {}
+impl NoGenericArgsGenericType for SHA256StateHandleType {
+    const ID: GenericTypeId = GenericTypeId::new_inline("SHA256StateHandle");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = true;
+    const DROPPABLE: bool = true;
+    const ZERO_SIZED: bool = false;
+}
+
+/// Libfunc for the sha256_chunk system call.
+/// The input needs to be 16 bytes.
+#[derive(Default)]
+pub struct SHA256ChunkLibfunc {}
+impl SyscallGenericLibfunc for SHA256ChunkLibfunc {
+    const STR_ID: &'static str = "sha256_chunk_syscall";
+
+    fn input_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![
+            // input
+            context.get_concrete_type(SHA256StateHandleType::id(), &[])?,
+            u32_span_ty(context)?,
+        ])
+    }
+
+    fn success_output_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![context.get_concrete_type(SHA256StateHandleType::id(), &[])?])
+    }
+}
+
+/// Libfunc for converting a ContractAddress into a felt252.
+#[derive(Default)]
+pub struct SHA256StateHandleInitLibfunc {}
+impl NoGenericArgsGenericLibfunc for SHA256StateHandleInitLibfunc {
+    const STR_ID: &'static str = "sha256_state_handle_init";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(reinterpret_cast_signature(
+            box_ty(
+                context,
+                context.get_concrete_type(
+                    StructType::id(),
+                    &[
+                        GenericArg::UserType(UserTypeId::from_string("Tuple")),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                    ],
+                )?,
+            )?,
+            context.get_concrete_type(SHA256StateHandleType::id(), &[])?,
+        ))
+    }
+}
+
+/// Libfunc for converting a ContractAddress into a felt252.
+#[derive(Default)]
+pub struct SHA256StateHandleDigestLibfunc {}
+impl NoGenericArgsGenericLibfunc for SHA256StateHandleDigestLibfunc {
+    const STR_ID: &'static str = "sha256_state_handle_digest";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(reinterpret_cast_signature(
+            context.get_concrete_type(SHA256StateHandleType::id(), &[])?,
+            box_ty(
+                context,
+                context.get_concrete_type(
+                    StructType::id(),
+                    &[
+                        GenericArg::UserType(UserTypeId::from_string("Tuple")),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                        GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                    ],
+                )?,
+            )?,
+        ))
     }
 }
