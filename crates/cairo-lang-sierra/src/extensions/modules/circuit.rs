@@ -1,10 +1,11 @@
-use num_bigint::BigInt;
+use num_traits::ToPrimitive;
 
 use super::range_check::RangeCheck96Type;
 use super::structure::StructType;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
+    SignatureAndTypeGenericLibfunc, SignatureSpecializationContext,
+    WrapSignatureAndTypeGenericLibfunc,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
@@ -25,7 +26,7 @@ define_type_hierarchy! {
 
 define_libfunc_hierarchy! {
     pub enum CircuitLibFunc {
-         InitCircuitData(InitCircuitData),
+         InitCircuitData(InitCircuitDataLibFunc),
     }, CircuitConcreteLibfunc
 }
 
@@ -62,19 +63,21 @@ impl NamedType for CircuitInput {
     }
 }
 
-/// Defines an input for a circuit.
 pub struct ConcreteCircuitInput {
-    /// The type info of the concrete type.
+    // The type info of the concrete type.
     pub info: TypeInfo,
-    /// The index of the circuit input.
-    pub idx: BigInt,
+    // The index of the circuit input.
+    pub idx: usize,
 }
+
 impl ConcreteCircuitInput {
     fn new(
         _context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self, SpecializationError> {
-        let idx = args_as_single_value(args)?;
+        let idx = args_as_single_value(args)?
+            .to_usize()
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
         Ok(Self {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId {
@@ -96,8 +99,6 @@ impl ConcreteType for ConcreteCircuitInput {
         &self.info
     }
 }
-
-/// Type for accumulating inputs into the circuit instance's data.
 #[derive(Default)]
 pub struct CircuitInputAccumulator {}
 impl NamedType for CircuitInputAccumulator {
@@ -172,20 +173,19 @@ fn validate_is_circuit(
     Ok(())
 }
 
-/// Libfunc for initializing the input data for running an instance of the circuit.
 #[derive(Default)]
-pub struct InitCircuitData {}
-impl SignatureOnlyGenericLibfunc for InitCircuitData {
+pub struct InitCircuitDataLibFuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for InitCircuitDataLibFuncWrapped {
     const STR_ID: &'static str = "init_circuit_data";
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-        generic_args: &[GenericArg],
+        ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let range_check96_type = context.get_concrete_type(RangeCheck96Type::id(), &[])?;
         let circuit_input_accumulator_ty =
-            context.get_concrete_type(CircuitInputAccumulator::id(), generic_args)?;
+            context.get_concrete_type(CircuitInputAccumulator::id(), &[GenericArg::Type(ty)])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature::new(range_check96_type.clone()).with_allow_add_const()],
             vec![
@@ -204,3 +204,5 @@ impl SignatureOnlyGenericLibfunc for InitCircuitData {
         ))
     }
 }
+
+pub type InitCircuitDataLibFunc = WrapSignatureAndTypeGenericLibfunc<InitCircuitDataLibFuncWrapped>;

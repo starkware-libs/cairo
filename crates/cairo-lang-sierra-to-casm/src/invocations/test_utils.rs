@@ -17,6 +17,7 @@ use cairo_lang_sierra_type_size::TypeSizeMap;
 use itertools::{zip_eq, Itertools};
 
 use super::{compile_invocation, CompiledInvocation, ProgramInfo};
+use crate::circuit::CircuitInfos;
 use crate::environment::gas_wallet::GasWallet;
 use crate::environment::Environment;
 use crate::metadata::Metadata;
@@ -248,6 +249,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
             type_sizes.insert(var.ty.clone(), 1);
         }
     }
+
     let program_info = ProgramInfo {
         metadata: &Metadata {
             ap_change_info: ApChangeInfo {
@@ -259,7 +261,9 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
                 function_costs: Default::default(),
             },
         },
+
         type_sizes: &type_sizes,
+        circuit_infos: &CircuitInfos::default(),
         const_data_values: &|_| panic!("const_data_values not implemented for tests."),
     };
 

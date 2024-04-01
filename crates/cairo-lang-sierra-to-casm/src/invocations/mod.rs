@@ -23,6 +23,7 @@ use itertools::{chain, zip_eq, Itertools};
 use num_bigint::BigInt;
 use thiserror::Error;
 
+use crate::circuit::CircuitInfos;
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
@@ -612,6 +613,8 @@ impl CompiledInvocationBuilder<'_> {
 pub struct ProgramInfo<'a> {
     pub metadata: &'a Metadata,
     pub type_sizes: &'a TypeSizeMap,
+    /// Maps a circuit type to it's circuit information.
+    pub circuit_infos: &'a CircuitInfos,
     /// Returns the given a const type returns a vector of cells value representing it.
     pub const_data_values: &'a dyn Fn(&ConcreteTypeId) -> Vec<BigInt>,
 }
