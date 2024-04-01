@@ -16,8 +16,8 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    args_as_single_type, ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo,
-    SignatureBasedConcreteLibfunc, SpecializationError,
+    args_as_single_type, extract_type_generic_args, ConcreteType, NamedLibfunc, NamedType,
+    OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -207,19 +207,6 @@ fn extract_const_info(
         Ok((inner_ty, generic_args))
     } else {
         Err(SpecializationError::UnsupportedGenericArg)
-    }
-}
-
-/// Extracts the generic args of `ty`, additionally validates it is of generic type `T`.
-fn extract_type_generic_args<T: NamedType>(
-    context: &dyn TypeSpecializationContext,
-    ty: &ConcreteTypeId,
-) -> Result<Vec<GenericArg>, SpecializationError> {
-    let long_id = context.get_type_info(ty.clone())?.long_id;
-    if long_id.generic_id != T::ID {
-        Err(SpecializationError::UnsupportedGenericArg)
-    } else {
-        Ok(long_id.generic_args)
     }
 }
 
