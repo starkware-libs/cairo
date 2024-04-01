@@ -350,6 +350,7 @@ mod gas_costs {
     pub const GET_EXECUTION_INFO: usize = 10 * STEP;
     pub const KECCAK: usize = 0;
     pub const KECCAK_ROUND_COST: usize = 180000;
+    pub const SHA256_PROCESS_BLOCK: usize = 2000 * STEP;
     pub const LIBRARY_CALL: usize = CALL_CONTRACT;
     pub const REPLACE_CLASS: usize = 50 * STEP;
     pub const SECP256K1_ADD: usize = 254 * STEP + 29 * RANGE_CHECK;
@@ -586,6 +587,15 @@ impl<'a> MemBuffer<'a> {
         vm_get_range(self.vm.vm(), start, end)
     }
 
+    /// Returns the array of integer values pointed to by the next address in the buffer and
+    /// with a fixed size and advances the buffer by one. Will fail if the next value is not
+    /// an address or if the address does not point to an array of integers.
+    pub fn next_fixed_size_arr(&mut self, size: usize) -> Result<Vec<Felt252>, HintError> {
+        let start = self.next_addr()?;
+        let end = (start + size)?;
+        vm_get_range(self.vm.vm(), start, end)
+    }
+
     /// Writes a value to the current position of the buffer and advances it by one.
     pub fn write<T: Into<MaybeRelocatable>>(&mut self, value: T) -> Result<(), MemoryError> {
         let ptr = self.next();
@@ -690,6 +700,15 @@ impl<'a> CairoHintProcessor<'a> {
             }),
             "Keccak" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 keccak(gas_counter, system_buffer.next_arr()?)
+            }),
+            "SHA256ProcessBlock" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                sha_256_process_block(
+                    gas_counter,
+                    system_buffer.next_fixed_size_arr(8)?,
+                    system_buffer.next_arr()?,
+                    exec_scopes,
+                    system_buffer,
+                )
             }),
             "Secp256k1New" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 secp256k1_new(
@@ -1259,6 +1278,38 @@ fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, 
     ]))
 }
 
+/// Executes the `sha256_process_block` syscall.
+fn sha_256_process_block(
+    gas_counter: &mut usize,
+    prev_state: Vec<Felt252>,
+    data: Vec<Felt252>,
+    exec_scopes: &mut ExecutionScopes,
+    vm: &mut dyn VMWrapper,
+) -> Result<SyscallResult, HintError> {
+    deduct_gas!(gas_counter, SHA256_PROCESS_BLOCK);
+    if data.len() != 16 {
+        fail_syscall!(b"Invalid sha256_chunk input size");
+    }
+
+    let scope = get_memory_exec_scope(exec_scopes, vm.vm())?;
+
+    let data_as_bytes = sha2::digest::generic_array::GenericArray::from_exact_iter(
+        data.iter().flat_map(|felt| felt.to_bigint().to_u32().unwrap().to_be_bytes()),
+    )
+    .unwrap();
+    let mut state_as_words: [u32; 8] = prev_state
+        .iter()
+        .map(|felt| felt.to_bigint().to_u32().unwrap())
+        .collect_vec()
+        .try_into()
+        .unwrap();
+    sha2::compress256(&mut state_as_words, &[data_as_bytes]);
+    let mut buff: MemBuffer<'_> = MemBuffer::new(vm, scope.next_address);
+    buff.write_data(state_as_words.into_iter().map(Felt252::from))?;
+    let next_state_ptr = std::mem::replace(&mut scope.next_address, buff.ptr);
+    Ok(SyscallResult::Success(vec![next_state_ptr.into()]))
+}
+
 // --- secp256k1 ---
 
 /// Executes the `secp256k1_new_syscall` syscall.
@@ -1567,6 +1618,22 @@ pub fn execute_deprecated_hint(
         | DeprecatedHint::AssertLtAssertValidInput { .. } => {}
     }
     Ok(())
+}
+
+/// Returns the `MemoryExecScope` managing the pointers.
+/// The first call to this function will create the scope, and subsequent calls will return it.
+fn get_memory_exec_scope<'s>(
+    exec_scopes: &'s mut ExecutionScopes,
+    vm: &mut VirtualMachine,
+) -> Result<&'s mut MemoryExecScope, HintError> {
+    const NAME: &str = "memory_exec_scope";
+    if exec_scopes.get_ref::<MemoryExecScope>(NAME).is_err() {
+        exec_scopes.assign_or_update_variable(
+            NAME,
+            Box::new(MemoryExecScope { next_address: vm.add_memory_segment() }),
+        );
+    }
+    exec_scopes.get_mut_ref::<MemoryExecScope>(NAME)
 }
 
 /// Executes a core hint.
@@ -1953,17 +2020,7 @@ pub fn execute_core_hint(
         }
         CoreHint::AllocConstantSize { size, dst } => {
             let object_size = get_val(vm, size)?.to_usize().expect("Object size too large.");
-            let memory_exec_scope =
-                match exec_scopes.get_mut_ref::<MemoryExecScope>("memory_exec_scope") {
-                    Ok(memory_exec_scope) => memory_exec_scope,
-                    Err(_) => {
-                        exec_scopes.assign_or_update_variable(
-                            "memory_exec_scope",
-                            Box::new(MemoryExecScope { next_address: vm.add_memory_segment() }),
-                        );
-                        exec_scopes.get_mut_ref::<MemoryExecScope>("memory_exec_scope")?
-                    }
-                };
+            let memory_exec_scope = get_memory_exec_scope(exec_scopes, vm)?;
             insert_value_to_cellref!(vm, dst, memory_exec_scope.next_address)?;
             memory_exec_scope.next_address.offset += object_size;
         }
