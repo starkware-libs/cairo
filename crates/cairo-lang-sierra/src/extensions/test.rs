@@ -188,7 +188,7 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("Struct", vec![user_type_arg("name"), value_arg(5)] => Err(UnsupportedGenericArg);
             "Struct<name, 5>")]
 #[test_case("Struct", vec![user_type_arg("name"), type_arg("UninitializedFelt252")]
-            => Err(UnsupportedGenericArg);
+            => Ok(());
             "Struct<name, UninitializedFelt252>")]
 #[test_case("Struct", vec![type_arg("u128"), type_arg("felt252")] => Err(UnsupportedGenericArg);
             "Struct<u128, felt252>")]

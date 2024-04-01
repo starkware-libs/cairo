@@ -358,6 +358,7 @@ pub fn simulate<
         Const(_) => unimplemented!(),
         Coupon(_) => unimplemented!(),
         BoundedInt(_) => unimplemented!(),
+        CoreConcreteLibfunc::Circuit(_) => unimplemented!(),
     }
 }
 
