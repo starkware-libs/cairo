@@ -124,6 +124,7 @@
         "i8_to_felt252",
         "i8_try_from_felt252",
         "i8_wide_mul",
+        "init_circuit_data",
         "into_box",
         "jump",
         "keccak_syscall",

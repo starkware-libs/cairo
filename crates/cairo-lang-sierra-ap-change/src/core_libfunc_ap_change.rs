@@ -9,6 +9,7 @@ use cairo_lang_sierra::extensions::bounded_int::{
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
+use cairo_lang_sierra::extensions::circuit::CircuitConcreteLibfunc;
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
@@ -380,6 +381,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 ]
             }
         },
+        Circuit(CircuitConcreteLibfunc::InitCircuitData(_)) => vec![ApChange::Known(0)],
     }
 }
 
