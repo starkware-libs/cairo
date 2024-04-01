@@ -91,16 +91,7 @@ impl TypeId {
 
     /// Returns true if the type does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
-        match db.lookup_intern_type(*self) {
-            TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
-            TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
-            TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
-            TypeLongId::GenericParameter(_) => false,
-            TypeLongId::Var(_) => false,
-            TypeLongId::Missing(_) => false,
-            TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
-            TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
-        }
+        db.priv_type_is_fully_concrete(*self)
     }
 }
 impl TypeLongId {
@@ -622,6 +613,19 @@ pub fn type_info(
     let panic_destruct_impl =
         get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
     Ok(TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl })
+}
+
+pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
+    match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
+        TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
+        TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
+        TypeLongId::GenericParameter(_) => false,
+        TypeLongId::Var(_) => false,
+        TypeLongId::Missing(_) => false,
+        TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
+        TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
+    }
 }
 
 /// Peels all wrapping Snapshot (`@`) from the type.

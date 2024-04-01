@@ -173,11 +173,7 @@ impl ImplId {
     }
     /// Returns true if the `impl` does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
-        match self {
-            ImplId::Concrete(concrete_impl_id) => concrete_impl_id.is_fully_concrete(db),
-            ImplId::GenericParameter(_) => false,
-            ImplId::ImplVar(_) => false,
-        }
+        db.priv_impl_is_fully_concrete(*self)
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplId {
@@ -1827,4 +1823,12 @@ pub fn priv_impl_function_body_data(
         resolver_data,
         body: Arc::new(FunctionBody { exprs, patterns, statements, body_expr }),
     })
+}
+
+pub fn priv_impl_is_fully_concrete(db: &dyn SemanticGroup, impl_id: ImplId) -> bool {
+    match impl_id {
+        ImplId::Concrete(concrete_impl_id) => concrete_impl_id.is_fully_concrete(db),
+        ImplId::GenericParameter(_) => false,
+        ImplId::ImplVar(_) => false,
+    }
 }
