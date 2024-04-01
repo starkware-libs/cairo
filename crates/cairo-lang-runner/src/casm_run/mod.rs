@@ -75,6 +75,11 @@ pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
     }
 }
 
+/// Helper object to allocate and track SHA256 states stack.
+struct SHA256ExecutionScope {
+    head: Relocatable,
+}
+
 /// Helper object to allocate and track Secp256k1 elliptic curve points.
 #[derive(Default)]
 struct Secp256k1ExecutionScope {
@@ -350,6 +355,7 @@ mod gas_costs {
     pub const GET_EXECUTION_INFO: usize = 10 * STEP;
     pub const KECCAK: usize = 0;
     pub const KECCAK_ROUND_COST: usize = 180000;
+    pub const SHA256_BLOCK: usize = 2000 * STEP;
     pub const LIBRARY_CALL: usize = CALL_CONTRACT;
     pub const REPLACE_CLASS: usize = 50 * STEP;
     pub const SECP256K1_ADD: usize = 254 * STEP + 29 * RANGE_CHECK;
@@ -586,6 +592,15 @@ impl<'a> MemBuffer<'a> {
         vm_get_range(self.vm.vm(), start, end)
     }
 
+    /// Returns the array of integer values pointed to by the next address in the buffer and
+    /// with a fixed size and advances the buffer by one. Will fail if the next value is not
+    /// an address or if the address does not point to an array of integers.
+    pub fn next_fixed_size_arr(&mut self, size: usize) -> Result<Vec<Felt252>, HintError> {
+        let start = self.next_addr()?;
+        let end = (start + size)?;
+        vm_get_range(self.vm.vm(), start, end)
+    }
+
     /// Writes a value to the current position of the buffer and advances it by one.
     pub fn write<T: Into<MaybeRelocatable>>(&mut self, value: T) -> Result<(), MemoryError> {
         let ptr = self.next();
@@ -690,6 +705,15 @@ impl<'a> CairoHintProcessor<'a> {
             }),
             "Keccak" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 keccak(gas_counter, system_buffer.next_arr()?)
+            }),
+            "SHA256Block" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                sha_256_process_block(
+                    gas_counter,
+                    system_buffer.next_fixed_size_arr(8)?,
+                    system_buffer.next_arr()?,
+                    exec_scopes,
+                    system_buffer,
+                )
             }),
             "Secp256k1New" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 secp256k1_new(
@@ -1257,6 +1281,45 @@ fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, 
         ((Felt252::from(state[1]) << 64u32) + Felt252::from(state[0])).into(),
         ((Felt252::from(state[3]) << 64u32) + Felt252::from(state[2])).into(),
     ]))
+}
+
+/// Executes the `sha256_process_block` syscall.
+fn sha_256_process_block(
+    gas_counter: &mut usize,
+    prev_state: Vec<Felt252>,
+    data: Vec<Felt252>,
+    exec_scopes: &mut ExecutionScopes,
+    vm: &mut dyn VMWrapper,
+) -> Result<SyscallResult, HintError> {
+    deduct_gas!(gas_counter, SHA256_BLOCK);
+    if data.len() != 16 {
+        fail_syscall!(b"Invalid sha256_chunk input size");
+    }
+
+    const NAME: &str = "sha256_exec_scope";
+    if exec_scopes.get_ref::<SHA256ExecutionScope>(NAME).is_err() {
+        exec_scopes.assign_or_update_variable(
+            NAME,
+            Box::new(SHA256ExecutionScope { head: vm.vm().add_memory_segment() }),
+        );
+    }
+    let scope = exec_scopes.get_mut_ref::<SHA256ExecutionScope>(NAME)?;
+
+    let data_as_bytes = sha2::digest::generic_array::GenericArray::from_exact_iter(
+        data.iter().flat_map(|felt| felt.to_bigint().to_u32().unwrap().to_be_bytes()),
+    )
+    .unwrap();
+    let mut state_as_words: [u32; 8] = prev_state
+        .iter()
+        .map(|felt| felt.to_bigint().to_u32().unwrap())
+        .collect_vec()
+        .try_into()
+        .unwrap();
+    sha2::compress256(&mut state_as_words, &[data_as_bytes]);
+    let mut buff: MemBuffer<'_> = MemBuffer::new(vm, scope.head);
+    buff.write_data(state_as_words.into_iter().map(Felt252::from))?;
+    let next_state_ptr = std::mem::replace(&mut scope.head, buff.ptr);
+    Ok(SyscallResult::Success(vec![next_state_ptr.into()]))
 }
 
 // --- secp256k1 ---

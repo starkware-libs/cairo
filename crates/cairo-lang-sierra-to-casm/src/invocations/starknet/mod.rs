@@ -67,6 +67,11 @@ pub fn build(
             build_syscalls(builder, "Deploy", [1, 1, 2, 1], [1, 2])
         }
         StarkNetConcreteLibfunc::Keccak(_) => build_syscalls(builder, "Keccak", [2], [2]),
+        StarkNetConcreteLibfunc::SHA256ProcessBlock(_) => {
+            build_syscalls(builder, "SHA256ProcessBlock", [1, 2], [1])
+        }
+        StarkNetConcreteLibfunc::SHA256StateHandleInit(_) => build_identity(builder),
+        StarkNetConcreteLibfunc::SHA256StateHandleDigest(_) => build_identity(builder),
         StarkNetConcreteLibfunc::LibraryCall(_) => {
             build_syscalls(builder, "LibraryCall", [1, 1, 2], [2])
         }
