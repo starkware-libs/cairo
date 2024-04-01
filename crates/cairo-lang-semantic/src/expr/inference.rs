@@ -290,6 +290,11 @@ pub struct InferenceData {
     /// Mapping from variables to stable pointers, if exist.
     pub stable_ptrs: HashMap<InferenceVar, SyntaxStablePtrId>,
 
+    /// Cache for type rewrites.
+    type_rewrite_cache: HashMap<TypeId, TypeId>,
+    /// Cache for impl rewrites.
+    impl_rewrite_cache: HashMap<ImplId, ImplId>,
+
     /// Inference variables that are pending to be solved.
     pending: VecDeque<LocalImplVarId>,
     /// Inference variables that have been refuted - no solutions exist.
@@ -318,6 +323,8 @@ impl InferenceData {
             impl_vars: Vec::new(),
             const_vars: Vec::new(),
             stable_ptrs: HashMap::new(),
+            type_rewrite_cache: HashMap::new(),
+            impl_rewrite_cache: HashMap::new(),
             pending: VecDeque::new(),
             refuted: Vec::new(),
             solved: Vec::new(),
@@ -358,6 +365,26 @@ impl InferenceData {
             const_vars: inference_id_replacer.rewrite(self.const_vars.clone()).no_err(),
             impl_vars: inference_id_replacer.rewrite(self.impl_vars.clone()).no_err(),
             stable_ptrs: self.stable_ptrs.clone(),
+            type_rewrite_cache: self
+                .type_rewrite_cache
+                .iter()
+                .map(|(k, v)| {
+                    (
+                        inference_id_replacer.rewrite(*k).no_err(),
+                        inference_id_replacer.rewrite(*v).no_err(),
+                    )
+                })
+                .collect(),
+            impl_rewrite_cache: self
+                .impl_rewrite_cache
+                .iter()
+                .map(|(k, v)| {
+                    (
+                        inference_id_replacer.rewrite(*k).no_err(),
+                        inference_id_replacer.rewrite(*v).no_err(),
+                    )
+                })
+                .collect(),
             pending: inference_id_replacer.rewrite(self.pending.clone()).no_err(),
             refuted: inference_id_replacer.rewrite(self.refuted.clone()).no_err(),
             solved: inference_id_replacer.rewrite(self.solved.clone()).no_err(),
@@ -376,6 +403,8 @@ impl InferenceData {
             type_vars: self.type_vars.clone(),
             const_vars: self.const_vars.clone(),
             impl_vars: self.impl_vars.clone(),
+            type_rewrite_cache: self.type_rewrite_cache.clone(),
+            impl_rewrite_cache: self.impl_rewrite_cache.clone(),
             stable_ptrs: self.stable_ptrs.clone(),
             pending: self.pending.clone(),
             refuted: self.refuted.clone(),
@@ -940,10 +969,19 @@ add_expr_rewrites!(<'a>, Inference<'a>, NoError, @exclude);
 add_rewrite!(<'a>, Inference<'a>, NoError, Ambiguity);
 impl<'a> SemanticRewriter<TypeId, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, NoError> {
-        if value.is_var_free(self.db) {
-            return Ok(RewriteResult::NoChange);
+        let orig = *value;
+        if let Some(v) = self.type_rewrite_cache.get(&orig) {
+            *value = *v;
+            self.internal_rewrite(value).no_err();
+        } else if !value.is_var_free(self.db) {
+            value.default_rewrite(self).no_err();
         }
-        value.default_rewrite(self)
+        Ok(if orig == *value {
+            RewriteResult::NoChange
+        } else {
+            self.type_rewrite_cache.insert(orig, *value);
+            RewriteResult::Modified
+        })
     }
 }
 impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
@@ -974,18 +1012,25 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
 }
 impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
-        if let ImplId::ImplVar(var) = value {
+        let orig = *value;
+        if let Some(v) = self.impl_rewrite_cache.get(&orig) {
+            *value = *v;
+            self.internal_rewrite(value).no_err();
+        } else if let ImplId::ImplVar(var) = value {
             // Relax the candidates.
             if let Some(mut impl_id) = self.impl_assignment(var.get(self.db).id) {
                 self.internal_rewrite(&mut impl_id)?;
                 *value = impl_id;
-                return Ok(RewriteResult::Modified);
             }
+        } else if !value.is_var_free(self.db) {
+            value.default_rewrite(self)?;
         }
-        if value.is_var_free(self.db) {
-            return Ok(RewriteResult::NoChange);
-        }
-        value.default_rewrite(self)
+        Ok(if orig == *value {
+            RewriteResult::NoChange
+        } else {
+            self.impl_rewrite_cache.insert(orig, *value);
+            RewriteResult::Modified
+        })
     }
 }
 
