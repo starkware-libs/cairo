@@ -314,6 +314,8 @@ pub mod hash;
 
 pub mod keccak;
 
+pub mod sha256;
+
 /// Pedersen
 pub mod pedersen;
 use pedersen::Pedersen;

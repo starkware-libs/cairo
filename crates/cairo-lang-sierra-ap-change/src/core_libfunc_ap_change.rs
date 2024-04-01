@@ -311,6 +311,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarkNetConcreteLibfunc::GetExecutionInfoV2(_)
             | StarkNetConcreteLibfunc::Deploy(_)
             | StarkNetConcreteLibfunc::Keccak(_)
+            | StarkNetConcreteLibfunc::SHA256Chunk(_)
             | StarkNetConcreteLibfunc::LibraryCall(_)
             | StarkNetConcreteLibfunc::ReplaceClass(_)
             | StarkNetConcreteLibfunc::SendMessageToL1(_)
@@ -320,6 +321,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             StarkNetConcreteLibfunc::Testing(libfunc) => match libfunc {
                 TestingConcreteLibfunc::Cheatcode(_) => vec![ApChange::Known(2)],
             },
+            StarkNetConcreteLibfunc::SHA256StateHandleInit(_) => vec![ApChange::Known(0)],
+            StarkNetConcreteLibfunc::SHA256StateHandleDigest(_) => vec![ApChange::Known(0)],
         },
         Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_)
