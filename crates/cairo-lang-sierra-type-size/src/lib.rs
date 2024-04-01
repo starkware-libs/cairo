@@ -1,3 +1,4 @@
+use cairo_lang_sierra::extensions::circuit::CircuitTypeConcrete;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType, CoreTypeConcrete};
 use cairo_lang_sierra::extensions::starknet::StarkNetTypeConcrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -68,14 +69,21 @@ pub fn get_type_size_map(
                 Some(size)
             }
             CoreTypeConcrete::Struct(struct_type) => {
+                if !struct_type.info.storable {
+                    // If the struct is not storable, it should not have a size.
+                    continue;
+                }
                 let mut size = 0;
                 for member in &struct_type.members {
                     size += type_sizes.get(member).cloned()?;
                 }
                 Some(size)
             }
-            // Const types are not moved around and should not have a size.
-            CoreTypeConcrete::Const(_) => continue,
+
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitInputAccumulator(_)) => Some(2),
+
+            // Const and circuit types are not moved around and should not have a size.
+            CoreTypeConcrete::Const(_) | CoreTypeConcrete::Circuit(_) => continue,
         }?;
         type_sizes.insert(declaration.id.clone(), size);
     }
