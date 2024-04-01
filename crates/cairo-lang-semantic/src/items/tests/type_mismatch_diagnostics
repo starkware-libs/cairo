@@ -1,0 +1,228 @@
+//! > Type mismatch diagnostics of a tuple expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _: felt252 = (3, 3);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::felt252", found: "(?0, ?1)".
+ --> lib.cairo:2:22
+    let _: felt252 = (3, 3);
+                     ^****^
+
+error: Unexpected argument type. Expected: "core::felt252", found: "(?2, ?3)".
+ --> lib.cairo:2:22
+    let _: felt252 = (3, 3);
+                     ^****^
+
+//! > ==========================================================================
+
+//! > Type mismatch diagnostics of a snapshot expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _: felt252 = @3_felt252;
+    let _: @u32 = @3_felt252;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::felt252", found: "@?0".
+ --> lib.cairo:2:22
+    let _: felt252 = @3_felt252;
+                     ^********^
+
+error: Unexpected argument type. Expected: "core::felt252", found: "@core::felt252".
+ --> lib.cairo:2:22
+    let _: felt252 = @3_felt252;
+                     ^********^
+
+error: Unexpected argument type. Expected: "@core::integer::u32", found: "@core::felt252".
+ --> lib.cairo:3:19
+    let _: @u32 = @3_felt252;
+                  ^********^
+
+//! > ==========================================================================
+
+//! > Type mismatch diagnostics of a desnap expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _: felt252 = *3_u32;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "@core::felt252", found: "core::integer::u32".
+ --> lib.cairo:2:23
+    let _: felt252 = *3_u32;
+                      ^***^
+
+//! > ==========================================================================
+
+//! > Type mismatch diagnostics of a fixed size array expression of style [expr; num].
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _: [felt252; 2] = [3_u16; 2];
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::felt252", found: "core::integer::u16".
+ --> lib.cairo:2:28
+    let _: [felt252; 2] = [3_u16; 2];
+                           ^***^
+
+error: Unexpected argument type. Expected: "[core::felt252; 2]", found: "[core::integer::u16; 2]".
+ --> lib.cairo:2:27
+    let _: [felt252; 2] = [3_u16; 2];
+                          ^********^
+
+//! > ==========================================================================
+
+//! > Type mismatch diagnostics of a fixed size array expression of style [expr, expr].
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _: [felt252; 2] = [3_u16, 3_u32];
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::felt252", found: "core::integer::u16".
+ --> lib.cairo:2:28
+    let _: [felt252; 2] = [3_u16, 3_u32];
+                           ^***^
+
+error: Unexpected argument type. Expected: "core::integer::u16", found: "core::integer::u32".
+ --> lib.cairo:2:35
+    let _: [felt252; 2] = [3_u16, 3_u32];
+                                  ^***^
+
+//! > ==========================================================================
+
+//! > Type mismatch diagnostics of a constructor expression with a single argument.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _: MyGenericType<felt252> = MyGenericType { x: 3_u32 };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyGenericType<T> {
+    x: T,
+}
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::felt252", found: "core::integer::u32".
+ --> lib.cairo:5:56
+    let _: MyGenericType<felt252> = MyGenericType { x: 3_u32 };
+                                                       ^***^
+
+error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u32".
+ --> lib.cairo:5:53
+    let _: MyGenericType<felt252> = MyGenericType { x: 3_u32 };
+                                                    ^
+
+//! > ==========================================================================
+
+//! > Type mismatch diagnostics of a constructor expression with a tail argument.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(other: MyGenericType<u32>) {
+    let _: MyGenericType<felt252> = MyGenericType { x: 3_felt252, ..other };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyGenericType<T> {
+    x: T,
+}
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "test::MyGenericType::<core::felt252>", found: "test::MyGenericType::<core::integer::u32>".
+ --> lib.cairo:5:37
+    let _: MyGenericType<felt252> = MyGenericType { x: 3_felt252, ..other };
+                                    ^*************************************^
+
+error: Unexpected argument type. Expected: "test::MyGenericType::<core::felt252>", found: "test::MyGenericType::<core::integer::u32>".
+ --> lib.cairo:5:69
+    let _: MyGenericType<felt252> = MyGenericType { x: 3_felt252, ..other };
+                                                                    ^***^
+
+//! > ==========================================================================
+
+//! > Type mismatch diagnostics of an enum variant creation expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _: Option<felt252> = Option::Some(3_u16);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::felt252", found: "core::integer::u16".
+ --> lib.cairo:2:43
+    let _: Option<felt252> = Option::Some(3_u16);
+                                          ^***^
+
+error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u16".
+ --> lib.cairo:2:43
+    let _: Option<felt252> = Option::Some(3_u16);
+                                          ^***^
