@@ -6,7 +6,8 @@ use crate::extensions::lib_func::{
     SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
-    NamedLibfunc, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
+    args_as_single_value, NamedLibfunc, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
+    SpecializationError,
 };
 use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
@@ -49,21 +50,14 @@ impl<T: ConstGenLibfunc> NamedLibfunc for WrapConstGenLibfunc<T> {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        match args {
-            [GenericArg::Value(c)]
-                if !c.is_negative() && *c < (<T as ConstGenLibfunc>::bound()) =>
-            {
-                Ok(SignatureAndConstConcreteLibfunc {
-                    c: c.clone(),
-                    signature: <Self as NamedLibfunc>::specialize_signature(
-                        self,
-                        context.upcast(),
-                        args,
-                    )?,
-                })
-            }
-            _ => Err(SpecializationError::UnsupportedGenericArg),
+        let c = args_as_single_value(args)?;
+        if c.is_negative() || c > (<T as ConstGenLibfunc>::bound()) {
+            return Err(SpecializationError::UnsupportedGenericArg);
         }
+        Ok(SignatureAndConstConcreteLibfunc {
+            c: c.clone(),
+            signature: <Self as NamedLibfunc>::specialize_signature(self, context.upcast(), args)?,
+        })
     }
 }
 
