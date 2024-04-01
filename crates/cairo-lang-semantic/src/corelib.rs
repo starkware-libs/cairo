@@ -90,6 +90,24 @@ pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
     )
 }
 
+pub fn core_result_ty(db: &dyn SemanticGroup, ok_type: TypeId, err_type: TypeId) -> TypeId {
+    get_ty_by_name(
+        db,
+        core_submodule(db, "result"),
+        "Result".into(),
+        vec![GenericArgumentId::Type(ok_type), GenericArgumentId::Type(err_type)],
+    )
+}
+
+pub fn core_option_ty(db: &dyn SemanticGroup, some_type: TypeId) -> TypeId {
+    get_ty_by_name(
+        db,
+        core_submodule(db, "option"),
+        "Option".into(),
+        vec![GenericArgumentId::Type(some_type)],
+    )
+}
+
 pub fn core_array_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
     get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(core_felt252_ty(db))])
 }
@@ -318,27 +336,51 @@ pub fn never_ty(db: &dyn SemanticGroup) -> TypeId {
     )))
 }
 
+pub enum ErrorPropagationType {
+    Option { some_variant: ConcreteVariant, none_variant: ConcreteVariant },
+    Result { ok_variant: ConcreteVariant, err_variant: ConcreteVariant },
+}
+impl ErrorPropagationType {
+    pub fn ok_variant(&self) -> &ConcreteVariant {
+        match self {
+            ErrorPropagationType::Option { some_variant, .. } => some_variant,
+            ErrorPropagationType::Result { ok_variant, .. } => ok_variant,
+        }
+    }
+    pub fn err_variant(&self) -> &ConcreteVariant {
+        match self {
+            ErrorPropagationType::Option { none_variant, .. } => none_variant,
+            ErrorPropagationType::Result { err_variant, .. } => err_variant,
+        }
+    }
+}
+
 /// Attempts to unwrap error propagation types (Option, Result).
 /// Returns None if not one of these types.
 pub fn unwrap_error_propagation_type(
     db: &dyn SemanticGroup,
     ty: TypeId,
-) -> Option<(ConcreteVariant, ConcreteVariant)> {
+) -> Option<ErrorPropagationType> {
     match db.lookup_intern_type(ty) {
         // Only enums may be `Result` and `Option` types.
         TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
-            let name = enm.enum_id(db.upcast()).name(db.upcast());
-            if name == "Option" || name == "Result" {
-                if let [ok_variant, err_variant] =
-                    db.concrete_enum_variants(enm).to_option()?.as_slice()
-                {
-                    Some((ok_variant.clone(), err_variant.clone()))
-                } else {
-                    None
+            if let [ok_variant, err_variant] =
+                db.concrete_enum_variants(enm).to_option()?.as_slice()
+            {
+                let name = enm.enum_id(db.upcast()).name(db.upcast());
+                if name == "Option" {
+                    return Some(ErrorPropagationType::Option {
+                        some_variant: ok_variant.clone(),
+                        none_variant: err_variant.clone(),
+                    });
+                } else if name == "Result" {
+                    return Some(ErrorPropagationType::Result {
+                        ok_variant: ok_variant.clone(),
+                        err_variant: err_variant.clone(),
+                    });
                 }
-            } else {
-                None
             }
+            None
         }
         TypeLongId::GenericParameter(_) => todo!(
             "When generic types are supported, if type is of matching type, allow unwrapping it \

@@ -96,6 +96,11 @@ error: Plugin diagnostic: Macro `array` does not support this bracket type.
     let _x = array!(0);
                    ^
 
+error: Unexpected expression type. Expected: "core::felt252", found: "core::integer::u8".
+ --> lib.cairo:3:32
+    let _x = array![0_felt252, 1_u8];
+                               ^**^
+
 error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
  --> lib.cairo:3:32
     let _x = array![0_felt252, 1_u8];
@@ -292,10 +297,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?2
- --> lib.cairo[write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+error: Type annotations needed. Failed to infer ?3
+ --> lib.cairo:21:17
+    write!(f, "{non_existing}").unwrap();
+                ^**********^
 
 //! > ==========================================================================
 
@@ -488,10 +493,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?2
- --> lib.cairo[writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                     ^*****^
+error: Type annotations needed. Failed to infer ?3
+ --> lib.cairo:21:19
+    writeln!(f, "{non_existing}").unwrap();
+                  ^**********^
 
 //! > ==========================================================================
 
@@ -588,10 +593,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?5
- --> lib.cairo[format_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro__) {
-                     ^*****^
+error: Type annotations needed. Failed to infer ?6
+ --> lib.cairo:14:15
+    format!("{non_existing}");
+              ^**********^
 
 //! > ==========================================================================
 
@@ -688,10 +693,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?5
- --> lib.cairo[print_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+error: Type annotations needed. Failed to infer ?9
+ --> lib.cairo:14:14
+    print!("{non_existing}");
+             ^**********^
 
 //! > ==========================================================================
 
@@ -788,10 +793,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?5
- --> lib.cairo[println_macro][writeln_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
-                     ^*****^
+error: Type annotations needed. Failed to infer ?9
+ --> lib.cairo:14:16
+    println!("{non_existing}");
+               ^**********^
 
 //! > ==========================================================================
 
@@ -883,10 +888,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?4
- --> lib.cairo[panic_macro][write_macro]:2:22
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
-                     ^*****^
+error: Type annotations needed. Failed to infer ?7
+ --> lib.cairo:14:14
+    panic!("{non_existing}");
+             ^**********^
 
 //! > ==========================================================================
 

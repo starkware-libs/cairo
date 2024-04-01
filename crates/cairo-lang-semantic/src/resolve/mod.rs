@@ -1039,7 +1039,7 @@ impl<'db> Resolver<'db> {
                     None,
                     environment,
                 );
-                let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
+                let value = compute_expr_semantic(&mut ctx, generic_arg_syntax, None);
 
                 let (_, const_value) = resolve_const_expr_and_evaluate(
                     self.db,

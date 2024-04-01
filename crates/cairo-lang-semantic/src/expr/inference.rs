@@ -438,6 +438,7 @@ impl<'db> Inference<'db> {
     /// Returns a wrapping TypeId.
     pub fn new_type_var(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> TypeId {
         let var = self.new_type_var_raw(stable_ptr);
+
         self.db.intern_type(TypeLongId::Var(var))
     }
 
@@ -951,6 +952,18 @@ impl<'db> Inference<'db> {
                 self.consumed_error = Some(diag_added);
                 diag_added
             }
+        }
+    }
+
+    /// If the current status is of a pending error, reports an alternative diagnostic, by calling
+    /// `report`, and consumes the error. Otherwise, does nothing.
+    pub fn report_modified_if_pending(
+        &mut self,
+        err_set: ErrorSet,
+        report: impl FnOnce() -> DiagnosticAdded,
+    ) {
+        if self.error_status == Err(InferenceErrorStatus::Pending) {
+            self.consume_reported_error(err_set, report());
         }
     }
 }
