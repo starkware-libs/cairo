@@ -63,97 +63,143 @@ pub fn get_index_enum_type_id(
     Ok(db.intern_concrete_type(x))
 }
 
+/// In order to limit the recursion depth, we build the concrete_long_type_id in two steps:
+/// First we execute the query for all the dependencies of the type starting from the inner
+/// most dependencies and then we execute the query for the type itself.
+enum BuildState {
+    // Add the dependencies of the type to the stack.
+    GetDependencies(semantic::TypeId),
+    // Execute the query for the given type.
+    FillQuery(semantic::TypeId),
+}
+
 /// See [SierraGenGroup::get_concrete_long_type_id] for documentation.
 pub fn get_concrete_long_type_id(
     db: &dyn SierraGenGroup,
     type_id: semantic::TypeId,
 ) -> Maybe<Arc<cairo_lang_sierra::program::ConcreteTypeLongId>> {
-    let user_type_long_id = |generic_id: &str, user_type: UserTypeId| {
-        let deps = db.type_dependencies(type_id)?;
-        Ok(ConcreteTypeLongId {
-            generic_id: generic_id.into(),
-            generic_args: chain!(
-                [Ok(SierraGenericArg::UserType(user_type))],
-                deps.iter().map(|generic_arg_ty| db
-                    .get_concrete_type_id(*generic_arg_ty)
-                    .map(SierraGenericArg::Type))
-            )
-            .collect::<Maybe<_>>()?,
-        })
-    };
-    Ok(match db.lookup_intern_type(type_id) {
-        semantic::TypeLongId::Concrete(ty) => {
-            match ty {
-                semantic::ConcreteTypeId::Struct(_) => {
-                    user_type_long_id("Struct", ty.format(db.upcast()).into())?.into()
-                }
-                semantic::ConcreteTypeId::Enum(_) => {
-                    user_type_long_id("Enum", ty.format(db.upcast()).into())?.into()
-                }
-                semantic::ConcreteTypeId::Extern(extrn) => {
-                    ConcreteTypeLongId {
-                        // TODO(Gil): Implement name for semantic::ConcreteTypeId
-                        generic_id: extrn.extern_type_id(db.upcast()).name(db.upcast()).into(),
-                        generic_args: ty
-                            .generic_args(db.upcast())
-                            .into_iter()
-                            .map(|arg| match arg {
-                                semantic::GenericArgumentId::Type(ty) => {
-                                    SierraGenericArg::Type(db.get_concrete_type_id(ty).unwrap())
+    // We use a stack to avoid limit the recursion depth.
+    // See comment about `BuildState`.
+    let mut stack = vec![BuildState::GetDependencies(type_id)];
+
+    while let Some(state) = stack.pop() {
+        match state {
+            BuildState::GetDependencies(type_id) => {
+                stack.push(BuildState::FillQuery(type_id));
+                stack.extend(
+                    db.type_dependencies(type_id)?
+                        .iter()
+                        .map(|ty| BuildState::GetDependencies(*ty)),
+                );
+            }
+            BuildState::FillQuery(type_id) => {
+                let user_type_long_id = |generic_id: &str, user_type: UserTypeId| {
+                    let deps = db.type_dependencies(type_id)?;
+                    Ok(ConcreteTypeLongId {
+                        generic_id: generic_id.into(),
+                        generic_args: chain!(
+                            [Ok(SierraGenericArg::UserType(user_type))],
+                            deps.iter().map(|generic_arg_ty| db
+                                .get_concrete_type_id(*generic_arg_ty)
+                                .map(SierraGenericArg::Type))
+                        )
+                        .collect::<Maybe<_>>()?,
+                    })
+                };
+                let concrete_type_id = match db.lookup_intern_type(type_id) {
+                    semantic::TypeLongId::Concrete(ty) => {
+                        match ty {
+                            semantic::ConcreteTypeId::Struct(_) => {
+                                user_type_long_id("Struct", ty.format(db.upcast()).into())?.into()
+                            }
+                            semantic::ConcreteTypeId::Enum(_) => {
+                                user_type_long_id("Enum", ty.format(db.upcast()).into())?.into()
+                            }
+                            semantic::ConcreteTypeId::Extern(extrn) => {
+                                ConcreteTypeLongId {
+                                    // TODO(Gil): Implement name for semantic::ConcreteTypeId
+                                    generic_id: extrn
+                                        .extern_type_id(db.upcast())
+                                        .name(db.upcast())
+                                        .into(),
+                                    generic_args: ty
+                                        .generic_args(db.upcast())
+                                        .into_iter()
+                                        .map(|arg| match arg {
+                                            semantic::GenericArgumentId::Type(ty) => {
+                                                SierraGenericArg::Type(
+                                                    db.get_concrete_type_id(ty).unwrap(),
+                                                )
+                                            }
+                                            semantic::GenericArgumentId::Constant(value_id) => {
+                                                SierraGenericArg::Value(extract_matches!(
+                                                    db.lookup_intern_const_value(value_id),
+                                                    ConstValue::Int,
+                                                    "Only integer constants are supported."
+                                                ))
+                                            }
+                                            semantic::GenericArgumentId::Impl(_) => {
+                                                panic!(
+                                                    "Extern function with impl generics are not \
+                                                     supported."
+                                                )
+                                            }
+                                            semantic::GenericArgumentId::NegImpl => panic!(
+                                                "Extern function with neg impl generics are not \
+                                                 supported."
+                                            ),
+                                        })
+                                        .collect(),
                                 }
-                                semantic::GenericArgumentId::Constant(value_id) => {
-                                    SierraGenericArg::Value(extract_matches!(
-                                        db.lookup_intern_const_value(value_id),
-                                        ConstValue::Int,
-                                        "Only integer constants are supported."
-                                    ))
-                                }
-                                semantic::GenericArgumentId::Impl(_) => {
-                                    panic!("Extern function with impl generics are not supported.")
-                                }
-                                semantic::GenericArgumentId::NegImpl => panic!(
-                                    "Extern function with neg impl generics are not supported."
-                                ),
-                            })
-                            .collect(),
+                                .into()
+                            }
+                        }
                     }
-                    .into()
+                    semantic::TypeLongId::Tuple(_)
+                    | semantic::TypeLongId::FixedSizeArray { .. } => {
+                        user_type_long_id("Struct", "Tuple".into())?.into()
+                    }
+                    semantic::TypeLongId::Snapshot(ty) => {
+                        let inner_ty = db.get_concrete_type_id(ty).unwrap();
+                        let ty = snapshot_ty(
+                            &SierraSignatureSpecializationContext(db),
+                            inner_ty.clone(),
+                        )
+                        .unwrap();
+                        if ty == inner_ty {
+                            sierra_concrete_long_id(db, ty.clone())?
+                        } else {
+                            ConcreteTypeLongId {
+                                generic_id: "Snapshot".into(),
+                                generic_args: vec![SierraGenericArg::Type(inner_ty)],
+                            }
+                            .into()
+                        }
+                    }
+                    semantic::TypeLongId::Coupon(function_id) => ConcreteTypeLongId {
+                        generic_id: "Coupon".into(),
+                        generic_args: vec![SierraGenericArg::UserFunc(
+                            db.intern_sierra_function(function_id.lowered(db.upcast())),
+                        )],
+                    }
+                    .into(),
+                    semantic::TypeLongId::GenericParameter(_)
+                    | semantic::TypeLongId::Var(_)
+                    | semantic::TypeLongId::Missing(_) => {
+                        panic!(
+                            "Types should be fully resolved at this point. Got: `{}`.",
+                            type_id.format(db.upcast())
+                        )
+                    }
+                };
+
+                if stack.is_empty() {
+                    return Ok(concrete_type_id);
                 }
             }
         }
-        semantic::TypeLongId::Tuple(_) | semantic::TypeLongId::FixedSizeArray { .. } => {
-            user_type_long_id("Struct", "Tuple".into())?.into()
-        }
-        semantic::TypeLongId::Snapshot(ty) => {
-            let inner_ty = db.get_concrete_type_id(ty).unwrap();
-            let ty =
-                snapshot_ty(&SierraSignatureSpecializationContext(db), inner_ty.clone()).unwrap();
-            if ty == inner_ty {
-                return sierra_concrete_long_id(db, ty.clone());
-            } else {
-                ConcreteTypeLongId {
-                    generic_id: "Snapshot".into(),
-                    generic_args: vec![SierraGenericArg::Type(inner_ty)],
-                }
-                .into()
-            }
-        }
-        semantic::TypeLongId::Coupon(function_id) => ConcreteTypeLongId {
-            generic_id: "Coupon".into(),
-            generic_args: vec![SierraGenericArg::UserFunc(
-                db.intern_sierra_function(function_id.lowered(db.upcast())),
-            )],
-        }
-        .into(),
-        semantic::TypeLongId::GenericParameter(_)
-        | semantic::TypeLongId::Var(_)
-        | semantic::TypeLongId::Missing(_) => {
-            panic!(
-                "Types should be fully resolved at this point. Got: `{}`.",
-                type_id.format(db.upcast())
-            )
-        }
-    })
+    }
+    unreachable!()
 }
 
 /// See [SierraGenGroup::is_self_referential] for documentation.
