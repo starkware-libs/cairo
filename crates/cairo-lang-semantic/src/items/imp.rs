@@ -253,13 +253,8 @@ pub fn impl_def_generic_params_data(
         &impl_ast.generic_params(db.upcast()),
     )?;
     let inference = &mut resolver.inference();
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            &mut diagnostics,
-            err_stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()),
-        );
-    }
+    inference.finalize(&mut diagnostics, impl_ast.stable_ptr().untyped());
+
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
@@ -418,13 +413,8 @@ pub fn priv_impl_declaration_data_inner(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            &mut diagnostics,
-            err_stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()),
-        );
-    }
+    inference.finalize(&mut diagnostics, impl_ast.stable_ptr().untyped());
+
     let concrete_trait = inference.rewrite(concrete_trait).no_err();
     let generic_params = inference.rewrite(generic_params).no_err();
 
@@ -1444,13 +1434,8 @@ pub fn priv_impl_function_generic_params_data(
         &declaration.generic_params(syntax_db),
     )?;
     let inference = &mut resolver.inference();
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            &mut diagnostics,
-            err_stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()),
-        );
-    }
+    inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
+
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
@@ -1577,13 +1562,8 @@ pub fn priv_impl_function_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            &mut diagnostics,
-            err_stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()),
-        );
-    }
+    inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
+
     let signature = inference.rewrite(signature).no_err();
     let generic_params = inference.rewrite(generic_params).no_err();
 

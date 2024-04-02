@@ -219,7 +219,7 @@ fn get_impl_aliases_abi_functions(
                     .to_option()??;
                 let inference = &mut resolver.inference();
                 assert_eq!(
-                    inference.finalize(),
+                    inference.finalize_without_reporting(),
                     Ok(()),
                     "All inferences should be solved at this point."
                 );
