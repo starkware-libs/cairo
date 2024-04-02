@@ -562,8 +562,11 @@ impl<'db> Inference<'db> {
         Ok(SolutionSet::Unique(()))
     }
 
-    /// Finalizes an inference by inferring uninferred numeric literals as felt252.
-    pub fn finalize(&mut self) -> Result<(), (ErrorSet, Option<SyntaxStablePtrId>)> {
+    /// Finalizes the inference by inferring uninferred numeric literals as felt252.
+    /// Returns an error and does not report it.
+    pub fn finalize_without_reporting(
+        &mut self,
+    ) -> Result<(), (ErrorSet, Option<SyntaxStablePtrId>)> {
         let numeric_trait_id = get_core_trait(self.db, "NumericLiteral".into());
         let felt_ty = core_felt252_ty(self.db);
 
@@ -603,6 +606,21 @@ impl<'db> Inference<'db> {
             return Ok(());
         };
         Err((self.set_error(err), self.stable_ptrs.get(&var).copied()))
+    }
+
+    /// Finalizes the inference and report diagnostics if there are any errors.
+    pub fn finalize(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        stable_ptr: SyntaxStablePtrId,
+    ) {
+        if let Err((err_set, err_stable_ptr)) = self.finalize_without_reporting() {
+            self.report_on_pending_error(
+                err_set,
+                diagnostics,
+                err_stable_ptr.unwrap_or(stable_ptr),
+            );
+        }
     }
 
     /// Retrieves the first variable that is still not inferred, or None, if everything is

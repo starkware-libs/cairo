@@ -255,13 +255,8 @@ pub fn trait_generic_params_data(
     )?;
 
     let inference = &mut resolver.inference();
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            &mut diagnostics,
-            err_stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()),
-        );
-    }
+    inference.finalize(&mut diagnostics, trait_ast.stable_ptr().untyped());
+
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
@@ -307,13 +302,8 @@ pub fn priv_trait_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            &mut diagnostics,
-            err_stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()),
-        );
-    }
+    inference.finalize(&mut diagnostics, trait_ast.stable_ptr().untyped());
+
     let generic_params = inference.rewrite(generic_params).no_err();
 
     let mut resolver_data = resolver.data;
@@ -792,13 +782,7 @@ pub fn priv_trait_function_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            &mut diagnostics,
-            err_stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()),
-        );
-    }
+    inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
 
     validate_trait_function_signature(
         db,
