@@ -869,14 +869,7 @@ pub fn compute_root_expr(
     }
 
     // Check fully resolved.
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            ctx.diagnostics,
-            err_stable_ptr.unwrap_or(syntax.stable_ptr().untyped()),
-        );
-        return Ok(res);
-    }
+    inference.finalize(ctx.diagnostics, syntax.stable_ptr().untyped());
 
     // Apply inference.
     infer_all(ctx).ok();

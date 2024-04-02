@@ -69,13 +69,8 @@ pub fn priv_struct_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            &mut diagnostics,
-            err_stable_ptr.unwrap_or(struct_ast.stable_ptr().untyped()),
-        );
-    }
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(StructDeclarationData {
@@ -126,13 +121,8 @@ pub fn struct_generic_params_data(
         &struct_ast.generic_params(db.upcast()),
     )?;
     let inference = &mut resolver.inference();
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            &mut diagnostics,
-            err_stable_ptr.unwrap_or(struct_ast.stable_ptr().untyped()),
-        );
-    }
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
@@ -218,13 +208,8 @@ pub fn priv_struct_definition_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            &mut diagnostics,
-            err_stable_ptr.unwrap_or(struct_ast.stable_ptr().untyped()),
-        );
-    }
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+
     for (_, member) in members.iter_mut() {
         member.ty = inference.rewrite(member.ty).no_err();
     }

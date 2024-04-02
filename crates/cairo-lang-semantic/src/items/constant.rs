@@ -183,13 +183,8 @@ pub fn resolve_const_expr_and_evaluate(
         inference.report_on_pending_error(err_set, ctx.diagnostics, const_stable_ptr);
     }
     // Check fully resolved.
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            ctx.diagnostics,
-            err_stable_ptr.unwrap_or(const_stable_ptr),
-        );
-    }
+    inference.finalize(ctx.diagnostics, const_stable_ptr);
+
     for (_, expr) in ctx.exprs.iter_mut() {
         *expr = inference.rewrite(expr.clone()).no_err();
     }

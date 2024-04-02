@@ -551,7 +551,7 @@ pub fn get_impl_at_context(
                 .expect("Error couldn't be already consumed")
         },
     )?;
-    if let Err((err_set, _)) = inference.finalize() {
+    if let Err((err_set, _)) = inference.finalize_without_reporting() {
         return Err(inference
             .consume_error_without_reporting(err_set)
             .expect("Error couldn't be already consumed"));

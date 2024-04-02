@@ -293,13 +293,8 @@ pub fn priv_generic_param_data(
         parent_item_id,
     );
     let inference = &mut resolver.inference();
-    if let Err((err_set, err_stable_ptr)) = inference.finalize() {
-        inference.report_on_pending_error(
-            err_set,
-            &mut diagnostics,
-            err_stable_ptr.unwrap_or(generic_param_syntax.stable_ptr().untyped()),
-        );
-    }
+    inference.finalize(&mut diagnostics, generic_param_syntax.stable_ptr().untyped());
+
     let param_semantic = inference.rewrite(param_semantic).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamData {
