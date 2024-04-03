@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{LookupItemId, ModuleFileId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::ast;
 
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
@@ -52,7 +52,7 @@ pub fn type_alias_generic_params_data_helper(
     )?;
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, type_alias_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, type_alias_ast);
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -79,7 +79,7 @@ pub fn type_alias_semantic_data_helper(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(diagnostics, type_alias_ast.stable_ptr().untyped());
+    inference.finalize(diagnostics, type_alias_ast);
 
     let generic_params = inference.rewrite(generic_params_data.generic_params).no_err();
     let ty = inference.rewrite(ty).no_err();

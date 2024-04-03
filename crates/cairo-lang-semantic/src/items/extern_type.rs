@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::TypedStablePtr;
 
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
@@ -69,13 +69,13 @@ pub fn extern_type_declaration_generic_params_data(
         &extern_type_syntax.generic_params(db.upcast()),
     )?;
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
-        diagnostics.report_by_ptr(
+        diagnostics.report(
             param.stable_ptr(db.upcast()).untyped(),
             ExternTypeWithImplGenericsNotSupported,
         );
     }
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &extern_type_syntax);
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -105,7 +105,7 @@ pub fn priv_extern_type_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &extern_type_syntax);
 
     let generic_params = inference.rewrite(generic_params).no_err();
 

@@ -7,8 +7,8 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
 use cairo_lang_syntax::attribute::structured::Attribute;
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::Itertools;
 use num_bigint::BigInt;
@@ -487,7 +487,7 @@ pub fn extract_fixed_size_array_size(
                 db,
                 &mut ctx,
                 &size,
-                size_expr_syntax.stable_ptr().untyped(),
+                &size_expr_syntax,
                 get_usize_ty(db),
             );
             match &const_value {

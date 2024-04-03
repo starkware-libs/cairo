@@ -77,3 +77,12 @@ impl SyntaxStablePtrId {
         kind
     }
 }
+
+pub trait IntoUntypedStablePtr: Copy {
+    fn into_untyped_stable_ptr(self) -> SyntaxStablePtrId;
+}
+impl IntoUntypedStablePtr for SyntaxStablePtrId {
+    fn into_untyped_stable_ptr(self) -> SyntaxStablePtrId {
+        self
+    }
+}

@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::extract_matches;
 
 use super::function_with_body::get_inline_config;
@@ -91,7 +91,7 @@ pub fn extern_function_declaration_generic_params_data(
         if param.kind() == GenericKind::Impl {
             got_generic_impl = true;
         } else if got_generic_impl {
-            diagnostics.report_by_ptr(
+            diagnostics.report(
                 param.stable_ptr(db.upcast()).untyped(),
                 ImplGenericsAfterNonImplGenericsInExternFunction,
             );
@@ -99,7 +99,7 @@ pub fn extern_function_declaration_generic_params_data(
     }
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &extern_function_syntax);
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -192,22 +192,19 @@ pub fn priv_extern_function_declaration_data(
         InlineConfiguration::Always(attr)
         | InlineConfiguration::Never(attr)
         | InlineConfiguration::Should(attr) => {
-            diagnostics
-                .report_by_ptr(attr.stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
+            diagnostics.report(attr.stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
         }
     }
 
     let (_, implicit_precedence_attr) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
     if let Some(attr) = implicit_precedence_attr {
-        diagnostics.report_by_ptr(
-            attr.stable_ptr.untyped(),
-            ImplicitPrecedenceAttrForExternFunctionNotAllowed,
-        );
+        diagnostics
+            .report(attr.stable_ptr.untyped(), ImplicitPrecedenceAttrForExternFunctionNotAllowed);
     }
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &extern_function_syntax);
 
     let signature = inference.rewrite(signature).no_err();
     let generic_params = inference.rewrite(generic_params).no_err();

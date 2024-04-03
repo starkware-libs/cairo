@@ -3,7 +3,7 @@ use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResul
 use cairo_lang_syntax::node::ast::{self, MaybeTraitBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
 use itertools::Itertools;
 
@@ -20,7 +20,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                trait_ast.stable_ptr().untyped(),
+                &trait_ast,
                 format!(
                     "The '{DEPRECATED_ABI_ATTR}' attribute for traits was deprecated, please use \
                      `{INTERFACE_ATTR}` instead.",
@@ -38,7 +38,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             return PluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    empty_body.stable_ptr().untyped(),
+                    &empty_body,
                     "Starknet interfaces without body are not supported.".to_string(),
                 )],
                 remove_original_item: false,
@@ -61,7 +61,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                generic_params.stable_ptr().untyped(),
+                &generic_params,
                 "Starknet interfaces must have exactly one generic parameter, which is a type."
                     .to_string(),
             )],
@@ -95,14 +95,14 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 // The first parameter is the `self` parameter.
                 let Some(self_param) = params.next() else {
                     diagnostics.push(PluginDiagnostic::error(
-                        declaration.stable_ptr().untyped(),
+                        &declaration,
                         "`starknet::interface` functions must have a `self` parameter.".to_string(),
                     ));
                     continue;
                 };
                 if self_param.name(db).text(db) != "self" {
                     diagnostics.push(PluginDiagnostic::error(
-                        self_param.stable_ptr().untyped(),
+                        &self_param,
                         "The first parameter must be named `self`.".to_string(),
                     ));
                     skip_generation = true;
@@ -116,7 +116,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 };
                 if !self_param_type_ok {
                     diagnostics.push(PluginDiagnostic::error(
-                        self_param.stable_ptr().untyped(),
+                        &self_param,
                         "`starknet::interface` function first parameter must be a reference to \
                          the trait's generic parameter or a snapshot of it."
                             .to_string(),
@@ -129,7 +129,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         skip_generation = true;
 
                         diagnostics.push(PluginDiagnostic::error(
-                            param.modifiers(db).stable_ptr().untyped(),
+                            &param.modifiers(db),
                             "`starknet::interface` functions don't support `ref` parameters other \
                              than the first one."
                                 .to_string(),
@@ -139,7 +139,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         skip_generation = true;
 
                         diagnostics.push(PluginDiagnostic::error(
-                            param.type_clause(db).ty(db).stable_ptr().untyped(),
+                            &param.type_clause(db).ty(db),
                             "`starknet::interface` functions don't support parameters that depend \
                              on the trait's generic param type."
                                 .to_string(),
@@ -150,7 +150,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         skip_generation = true;
 
                         diagnostics.push(PluginDiagnostic::error(
-                            param.name(db).stable_ptr().untyped(),
+                            &param.name(db),
                             "Parameter name `__calldata__` cannot be used.".to_string(),
                         ))
                     }
@@ -246,21 +246,21 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             ast::TraitItem::Missing(_) => {}
             ast::TraitItem::Type(ty) => {
                 diagnostics.push(PluginDiagnostic::error(
-                    ty.type_kw(db).stable_ptr().untyped(),
+                    &ty.type_kw(db),
                     "`starknet::interface` does not yet support type items.".to_string(),
                 ));
                 continue;
             }
             ast::TraitItem::Constant(constant) => {
                 diagnostics.push(PluginDiagnostic::error(
-                    constant.const_kw(db).stable_ptr().untyped(),
+                    &constant.const_kw(db),
                     "`starknet::interface` does not yet support constant items.".to_string(),
                 ));
                 continue;
             }
             ast::TraitItem::Impl(imp) => {
                 diagnostics.push(PluginDiagnostic::error(
-                    imp.impl_kw(db).stable_ptr().untyped(),
+                    &imp.impl_kw(db),
                     "`starknet::interface` does not yet support impl items.".to_string(),
                 ));
                 continue;

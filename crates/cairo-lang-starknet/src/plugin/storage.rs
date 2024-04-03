@@ -2,7 +2,7 @@ use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 
@@ -112,7 +112,7 @@ fn get_storage_member_code(
             };
         } else {
             diagnostics.push(PluginDiagnostic::error(
-                member.stable_ptr().untyped(),
+                &member,
                 format!(
                     "`{SUBSTORAGE_ATTR}` attribute is only allowed for members of type \
                      [some_path::]{STORAGE_STRUCT_NAME}`"
@@ -187,7 +187,7 @@ fn get_simple_storage_member_code(
         }
         Some((_, _, MappingType::NonLegacy)) => {
             diagnostics.push(PluginDiagnostic::error(
-                type_ast.stable_ptr().untyped(),
+                &type_ast,
                 format!("Non `{LEGACY_STORAGE_MAPPING}` mapping is not yet supported."),
             ));
             None
@@ -228,7 +228,7 @@ fn get_mapping_full_path_type(
             ast::GenericArgValue::Expr(x) => x.expr(db),
             ast::GenericArgValue::Underscore(_) => {
                 diagnostics.push(PluginDiagnostic::error(
-                    type_ast.stable_ptr().untyped(),
+                    type_ast,
                     format!("{LEGACY_STORAGE_MAPPING} generic arguments must be specified"),
                 ));
                 return None;
@@ -236,7 +236,7 @@ fn get_mapping_full_path_type(
         },
         ast::GenericArg::Named(_) => {
             diagnostics.push(PluginDiagnostic::error(
-                type_ast.stable_ptr().untyped(),
+                type_ast,
                 format!("{LEGACY_STORAGE_MAPPING} generic arguments are unnamed"),
             ));
             return None;

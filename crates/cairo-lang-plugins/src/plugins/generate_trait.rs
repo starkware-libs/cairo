@@ -43,7 +43,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                trait_ast.stable_ptr().untyped(),
+                &trait_ast,
                 "Generated trait must have a single element path.".to_string(),
             )],
             remove_original_item: false,
@@ -134,7 +134,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     };
     if !generic_params_match {
         diagnostics.push(PluginDiagnostic::error(
-            trait_ast.stable_ptr().untyped(),
+            &trait_ast,
             "Generated trait must have generic args matching the impl's generic params."
                 .to_string(),
         ));

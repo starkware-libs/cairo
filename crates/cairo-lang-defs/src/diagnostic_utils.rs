@@ -1,7 +1,7 @@
 use cairo_lang_diagnostics::DiagnosticLocation;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{IntoUntypedStablePtr, SyntaxStablePtrId};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
 use crate::db::DefsGroup;
@@ -10,8 +10,8 @@ use crate::db::DefsGroup;
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StableLocation(SyntaxStablePtrId);
 impl StableLocation {
-    pub fn new(stable_ptr: SyntaxStablePtrId) -> Self {
-        Self(stable_ptr)
+    pub fn new(stable_ptr: impl IntoUntypedStablePtr) -> Self {
+        Self(stable_ptr.into_untyped_stable_ptr())
     }
 
     pub fn file_id(&self, db: &dyn DefsGroup) -> FileId {

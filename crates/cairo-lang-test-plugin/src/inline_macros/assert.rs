@@ -38,7 +38,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    lhs.stable_ptr().untyped(),
+                    lhs,
                     format!("Macro `{}` requires the first argument to be unnamed.", Self::NAME),
                 )],
             };
@@ -47,7 +47,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    rhs.stable_ptr().untyped(),
+                    rhs,
                     format!("Macro `{}` requires the second argument to be unnamed.", Self::NAME),
                 )],
             };

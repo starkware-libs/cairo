@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::IntoUntypedStablePtr;
 use cairo_lang_syntax::node::Terminal;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
 use num_bigint::BigInt;
@@ -370,7 +370,7 @@ pub fn core_unary_operator(
     db: &dyn SemanticGroup,
     inference: &mut Inference<'_>,
     unary_op: &UnaryOperator,
-    stable_ptr: SyntaxStablePtrId,
+    stable_ptr: impl IntoUntypedStablePtr,
 ) -> Maybe<Result<ConcreteTraitGenericFunctionId, SemanticDiagnosticKind>> {
     let (trait_name, function_name) = match unary_op {
         UnaryOperator::Minus(_) => ("Neg", "neg"),
@@ -392,7 +392,7 @@ pub fn core_binary_operator(
     db: &dyn SemanticGroup,
     inference: &mut Inference<'_>,
     binary_op: &BinaryOperator,
-    stable_ptr: SyntaxStablePtrId,
+    stable_ptr: impl IntoUntypedStablePtr,
 ) -> Maybe<Result<(ConcreteTraitGenericFunctionId, bool), SemanticDiagnosticKind>> {
     let (trait_name, function_name, snapshot) = match binary_op {
         BinaryOperator::Plus(_) => ("Add", "add", false),
@@ -609,7 +609,7 @@ fn get_core_trait_function_infer(
     inference: &mut Inference<'_>,
     trait_name: SmolStr,
     function_name: SmolStr,
-    stable_ptr: SyntaxStablePtrId,
+    stable_ptr: impl IntoUntypedStablePtr,
 ) -> ConcreteTraitGenericFunctionId {
     let trait_id = get_core_trait(db, trait_name);
     let generic_params = db.trait_generic_params(trait_id).unwrap();

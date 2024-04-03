@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_proc_macros::SemanticObject;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use itertools::Itertools;
 
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
@@ -198,8 +199,12 @@ impl CandidateSolver {
         let mut lookup_context = lookup_context.clone();
         lookup_context.insert_module(candidate.module_id(db.upcast()));
         // Instantiate the candidate in the inference table.
-        let candidate_impl =
-            inference.infer_impl(candidate, concrete_trait_id, &lookup_context, None)?;
+        let candidate_impl = inference.infer_impl(
+            candidate,
+            concrete_trait_id,
+            &lookup_context,
+            Option::<SyntaxStablePtrId>::None,
+        )?;
 
         Ok(CandidateSolver {
             candidate,

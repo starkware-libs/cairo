@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
@@ -69,7 +69,7 @@ pub fn priv_struct_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &struct_ast);
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -121,7 +121,7 @@ pub fn struct_generic_params_data(
         &struct_ast.generic_params(db.upcast()),
     )?;
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &struct_ast);
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -208,7 +208,7 @@ pub fn priv_struct_definition_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &struct_ast);
 
     for (_, member) in members.iter_mut() {
         member.ty = inference.rewrite(member.ty).no_err();

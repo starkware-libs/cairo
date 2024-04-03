@@ -15,8 +15,7 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax as syntax;
 use itertools::Itertools;
 use smol_str::SmolStr;
-use syntax::node::ids::SyntaxStablePtrId;
-use syntax::node::TypedSyntaxNode;
+use syntax::node::ids::IntoUntypedStablePtr;
 
 use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
@@ -40,25 +39,18 @@ impl SemanticDiagnostics {
     pub fn build(self) -> Diagnostics<SemanticDiagnostic> {
         self.diagnostics.build()
     }
-    /// Report a diagnostic in the location of the given node.
-    pub fn report<TNode: TypedSyntaxNode>(
-        &mut self,
-        node: &TNode,
-        kind: SemanticDiagnosticKind,
-    ) -> DiagnosticAdded {
-        self.diagnostics.add(SemanticDiagnostic::new(StableLocation::from_ast(node), kind))
-    }
     /// Report a diagnostic in the location after the given node (with width 0).
-    pub fn report_after<TNode: TypedSyntaxNode>(
+    pub fn report_after(
         &mut self,
-        node: &TNode,
+        stable_ptr: impl IntoUntypedStablePtr,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(SemanticDiagnostic::new_after(StableLocation::from_ast(node), kind))
+        self.diagnostics.add(SemanticDiagnostic::new_after(StableLocation::new(stable_ptr), kind))
     }
-    pub fn report_by_ptr(
+    /// Report a diagnostic in the location of the given node.
+    pub fn report(
         &mut self,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: impl IntoUntypedStablePtr,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
         self.diagnostics.add(SemanticDiagnostic::new(StableLocation::new(stable_ptr), kind))
@@ -1209,7 +1201,7 @@ pub fn report_unsupported_trait_item<Terminal: syntax::node::Terminal>(
     kw_terminal: Terminal,
     item_kind: &str,
 ) {
-    diagnostics.report_by_ptr(
+    diagnostics.report(
         kw_terminal.as_syntax_node().stable_ptr(),
         SemanticDiagnosticKind::UnsupportedTraitItem { kind: item_kind.into() },
     );
@@ -1221,7 +1213,7 @@ pub fn report_unsupported_impl_item<Terminal: syntax::node::Terminal>(
     kw_terminal: Terminal,
     item_kind: &str,
 ) {
-    diagnostics.report_by_ptr(
+    diagnostics.report(
         kw_terminal.as_syntax_node().stable_ptr(),
         SemanticDiagnosticKind::UnsupportedImplItem { kind: item_kind.into() },
     );

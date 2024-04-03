@@ -294,7 +294,7 @@ pub fn priv_generic_param_data(
         parent_item_id,
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, generic_param_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &generic_param_syntax);
 
     let param_semantic = inference.rewrite(param_semantic).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -314,7 +314,7 @@ pub fn priv_generic_param_data_cycle(
     let diagnostics = &mut SemanticDiagnostics::new(
         generic_param_id.module_file_id(db.upcast()).file_id(db.upcast())?,
     );
-    Err(diagnostics.report_by_ptr(
+    Err(diagnostics.report(
         generic_param_id.stable_ptr(db.upcast()).untyped(),
         SemanticDiagnosticKind::ImplRequirementCycle,
     ))

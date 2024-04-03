@@ -9,7 +9,7 @@ use smol_str::SmolStr;
 use self::ast::TriviaGreen;
 use self::db::SyntaxGroup;
 use self::green::GreenNode;
-use self::ids::{GreenId, SyntaxStablePtrId};
+use self::ids::{GreenId, IntoUntypedStablePtr, SyntaxStablePtrId};
 use self::kind::SyntaxKind;
 use self::stable_ptr::SyntaxStablePtr;
 use crate::node::iter::{Preorder, WalkEvent};
@@ -226,6 +226,12 @@ pub trait TypedSyntaxNode {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
     fn as_syntax_node(&self) -> SyntaxNode;
     fn stable_ptr(&self) -> Self::StablePtr;
+}
+
+impl<T: TypedSyntaxNode> IntoUntypedStablePtr for &T {
+    fn into_untyped_stable_ptr(self) -> SyntaxStablePtrId {
+        self.stable_ptr().untyped()
+    }
 }
 
 pub trait Token: TypedSyntaxNode {

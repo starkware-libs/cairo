@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 use itertools::enumerate;
@@ -65,7 +65,7 @@ pub fn priv_enum_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &enum_ast);
 
     let generic_params = inference.rewrite(generic_params).no_err();
 
@@ -115,7 +115,7 @@ pub fn enum_generic_params_data(
         &enum_ast.generic_params(db.upcast()),
     )?;
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &enum_ast);
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -224,7 +224,7 @@ pub fn priv_enum_definition_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &enum_ast);
 
     for (_, variant) in variant_semantic.iter_mut() {
         variant.ty = inference.rewrite(variant.ty).no_err();

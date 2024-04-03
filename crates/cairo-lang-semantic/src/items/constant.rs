@@ -7,8 +7,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::ids::IntoUntypedStablePtr;
+use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
 use id_arena::Arena;
 use itertools::Itertools;
@@ -151,13 +151,8 @@ pub fn priv_constant_semantic_data(
     let mut ctx = ComputationContext::new(db, &mut diagnostics, None, resolver, None, environment);
 
     let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db));
-    let (ty, const_value) = resolve_const_expr_and_evaluate(
-        db,
-        &mut ctx,
-        &value,
-        const_ast.stable_ptr().untyped(),
-        const_type,
-    );
+    let (ty, const_value) =
+        resolve_const_expr_and_evaluate(db, &mut ctx, &value, &const_ast, const_type);
 
     let resolver_data = Arc::new(ctx.resolver.data);
     let constant = Constant { value: value.id, exprs: Arc::new(ctx.exprs) };
@@ -175,7 +170,7 @@ pub fn resolve_const_expr_and_evaluate(
     db: &dyn SemanticGroup,
     ctx: &mut ComputationContext<'_>,
     value: &ExprAndId,
-    const_stable_ptr: SyntaxStablePtrId,
+    const_stable_ptr: impl IntoUntypedStablePtr,
     target_type: TypeId,
 ) -> (TypeId, ConstValue) {
     let inference = &mut ctx.resolver.inference();
@@ -270,7 +265,7 @@ pub fn evaluate_constant_expr(
                 .map(|value| {
                     value_as_const_value(db, expr.ty, &value)
                         .map_err(|err| {
-                            diagnostics.report_by_ptr(
+                            diagnostics.report(
                                 expr.stable_ptr.untyped(),
                                 SemanticDiagnosticKind::LiteralError(err),
                             )
@@ -280,7 +275,7 @@ pub fn evaluate_constant_expr(
                 .unwrap_or_else(ConstValue::Missing),
             Expr::Literal(expr) => value_as_const_value(db, expr.ty, &expr.value)
                 .map_err(|err| {
-                    diagnostics.report_by_ptr(
+                    diagnostics.report(
                         expr.stable_ptr.untyped(),
                         SemanticDiagnosticKind::LiteralError(err),
                     )
@@ -322,7 +317,7 @@ pub fn evaluate_constant_expr(
                             .map(|value| (expr.ty, value))
                             .collect()
                     } else {
-                        diagnostics.report_by_ptr(
+                        diagnostics.report(
                             expr.stable_ptr.untyped(),
                             SemanticDiagnosticKind::UnsupportedConstant,
                         );
@@ -330,12 +325,9 @@ pub fn evaluate_constant_expr(
                     }
                 }
             }),
-            _ if diagnostics.diagnostics.error_count == 0 => {
-                ConstValue::Missing(diagnostics.report_by_ptr(
-                    expr.stable_ptr().untyped(),
-                    SemanticDiagnosticKind::UnsupportedConstant,
-                ))
-            }
+            _ if diagnostics.diagnostics.error_count == 0 => ConstValue::Missing(
+                diagnostics.report(expr, SemanticDiagnosticKind::UnsupportedConstant),
+            ),
             _ => ConstValue::Missing(skip_diagnostic()),
         },
     )
@@ -378,40 +370,34 @@ fn evaluate_const_function_call(
     if let Some(value) = try_extract_minus_literal(db.upcast(), exprs, expr) {
         return Ok(value);
     }
-    let args = expr
-        .args
-        .iter()
-        .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Value))
-        .map(|arg| {
-            match evaluate_constant_expr(db, exprs, *arg, diagnostics).1 {
-                ConstValue::Int(v) => Ok(v),
-                // Handling u256 constants to enable const evaluation of them.
-                ConstValue::Struct(v) => {
-                    if let [(_, ConstValue::Int(low)), (_, ConstValue::Int(high))] = &v[..] {
-                        Ok(low + (high << 128))
-                    } else {
-                        Err(diagnostics.report_by_ptr(
-                            exprs[*arg].stable_ptr().untyped(),
-                            SemanticDiagnosticKind::UnsupportedConstant,
-                        ))
+    let args =
+        expr.args
+            .iter()
+            .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Value))
+            .map(|arg| {
+                match evaluate_constant_expr(db, exprs, *arg, diagnostics).1 {
+                    ConstValue::Int(v) => Ok(v),
+                    // Handling u256 constants to enable const evaluation of them.
+                    ConstValue::Struct(v) => {
+                        if let [(_, ConstValue::Int(low)), (_, ConstValue::Int(high))] = &v[..] {
+                            Ok(low + (high << 128))
+                        } else {
+                            Err(diagnostics
+                                .report(&exprs[*arg], SemanticDiagnosticKind::UnsupportedConstant))
+                        }
                     }
+                    ConstValue::Missing(err) => Err(err),
+                    _ => Err(diagnostics
+                        .report(&exprs[*arg], SemanticDiagnosticKind::UnsupportedConstant)),
                 }
-                ConstValue::Missing(err) => Err(err),
-                _ => Err(diagnostics.report_by_ptr(
-                    exprs[*arg].stable_ptr().untyped(),
-                    SemanticDiagnosticKind::UnsupportedConstant,
-                )),
-            }
-        })
-        .collect_vec()
-        .into_iter()
-        .collect::<Result<Vec<_>, _>>()?;
+            })
+            .collect_vec()
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()?;
 
     if !is_function_const(db, expr.function) {
-        return Err(diagnostics.report_by_ptr(
-            expr.stable_ptr.untyped(),
-            SemanticDiagnosticKind::UnsupportedConstant,
-        ));
+        return Err(diagnostics
+            .report(expr.stable_ptr.untyped(), SemanticDiagnosticKind::UnsupportedConstant));
     }
 
     let imp = extract_matches!(
@@ -426,7 +412,7 @@ fn evaluate_const_function_call(
         "mul" => &args[0] * &args[1],
         "div" | "rem" if args[1].is_zero() => {
             return Err(diagnostics
-                .report_by_ptr(expr.stable_ptr.untyped(), SemanticDiagnosticKind::DivisionByZero));
+                .report(expr.stable_ptr.untyped(), SemanticDiagnosticKind::DivisionByZero));
         }
         "div" if !is_felt252_ty => &args[0] / &args[1],
         "rem" if !is_felt252_ty => &args[0] % &args[1],
@@ -455,17 +441,15 @@ fn extract_const_member_access(
 ) -> Maybe<ConstValue> {
     let full_struct = evaluate_constant_expr(db, exprs, expr.expr, diagnostics).1;
     let ConstValue::Struct(mut values) = full_struct else {
-        return Err(diagnostics.report_by_ptr(
-            exprs[expr.expr].stable_ptr().untyped(),
-            SemanticDiagnosticKind::UnsupportedConstant,
-        ));
+        return Err(
+            diagnostics.report(&exprs[expr.expr], SemanticDiagnosticKind::UnsupportedConstant)
+        );
     };
     let members = db.concrete_struct_members(expr.concrete_struct_id)?;
     let Some(member_idx) = members.iter().position(|(_, member)| member.id == expr.member) else {
-        return Err(diagnostics.report_by_ptr(
-            exprs[expr.expr].stable_ptr().untyped(),
-            SemanticDiagnosticKind::UnsupportedConstant,
-        ));
+        return Err(
+            diagnostics.report(&exprs[expr.expr], SemanticDiagnosticKind::UnsupportedConstant)
+        );
     };
     Ok(values.swap_remove(member_idx).1)
 }

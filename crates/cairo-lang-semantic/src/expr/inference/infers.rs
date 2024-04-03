@@ -1,5 +1,5 @@
 use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, TraitFunctionId};
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::IntoUntypedStablePtr;
 use cairo_lang_utils::extract_matches;
 use itertools::Itertools;
 
@@ -23,21 +23,21 @@ pub trait InferenceEmbeddings {
         uninferred_impl: UninferredImpl,
         concrete_trait_id: ConcreteTraitId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<ImplId>;
     fn infer_impl_def(
         &mut self,
         impl_def_id: ImplDefId,
         concrete_trait_id: ConcreteTraitId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<ImplId>;
     fn infer_impl_alias(
         &mut self,
         impl_alias_id: ImplAliasId,
         concrete_trait_id: ConcreteTraitId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<ImplId>;
     fn infer_generic_assignment(
         &mut self,
@@ -45,45 +45,45 @@ pub trait InferenceEmbeddings {
         generic_args: &[GenericArgumentId],
         expected_generic_args: &[GenericArgumentId],
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<Vec<GenericArgumentId>>;
     fn infer_generic_args(
         &mut self,
         generic_params: &[GenericParam],
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<Vec<GenericArgumentId>>;
     fn infer_concrete_trait_by_self(
         &mut self,
         trait_function: TraitFunctionId,
         self_ty: TypeId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
         inference_error_cb: impl FnOnce(InferenceError),
     ) -> Option<(ConcreteTraitId, usize)>;
     fn infer_generic_arg(
         &mut self,
         param: &GenericParam,
         lookup_context: ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<GenericArgumentId>;
     fn infer_trait_function(
         &mut self,
         concrete_trait_function: ConcreteTraitGenericFunctionId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<FunctionId>;
     fn infer_generic_function(
         &mut self,
         generic_function: GenericFunctionId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<FunctionId>;
     fn infer_trait_generic_function(
         &mut self,
         concrete_trait_function: ConcreteTraitGenericFunctionId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<GenericFunctionId>;
 }
 
@@ -94,7 +94,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         uninferred_impl: UninferredImpl,
         concrete_trait_id: ConcreteTraitId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<ImplId> {
         let impl_id = match uninferred_impl {
             UninferredImpl::Def(impl_def_id) => {
@@ -124,7 +124,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         impl_def_id: ImplDefId,
         concrete_trait_id: ConcreteTraitId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<ImplId> {
         let imp_generic_params = self
             .db
@@ -162,7 +162,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         impl_alias_id: ImplAliasId,
         concrete_trait_id: ConcreteTraitId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<ImplId> {
         let impl_alias_generic_params = self
             .db
@@ -209,7 +209,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         generic_args: &[GenericArgumentId],
         expected_generic_args: &[GenericArgumentId],
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<Vec<GenericArgumentId>> {
         let new_generic_args =
             self.infer_generic_args(generic_params, lookup_context, stable_ptr)?;
@@ -227,7 +227,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         &mut self,
         generic_params: &[GenericParam],
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<Vec<GenericArgumentId>> {
         let mut generic_args = vec![];
         let mut substitution = GenericSubstitution::default();
@@ -255,7 +255,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         trait_function: TraitFunctionId,
         self_ty: TypeId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
         inference_error_cb: impl FnOnce(InferenceError),
     ) -> Option<(ConcreteTraitId, usize)> {
         let trait_id = trait_function.trait_id(self.db.upcast());
@@ -302,7 +302,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         &mut self,
         param: &GenericParam,
         lookup_context: ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<GenericArgumentId> {
         match param {
             GenericParam::Type(_) => Ok(GenericArgumentId::Type(self.new_type_var(stable_ptr))),
@@ -330,7 +330,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         &mut self,
         concrete_trait_function: ConcreteTraitGenericFunctionId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<FunctionId> {
         let generic_function =
             self.infer_trait_generic_function(concrete_trait_function, lookup_context, stable_ptr)?;
@@ -343,7 +343,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         &mut self,
         generic_function: GenericFunctionId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<FunctionId> {
         let generic_params = generic_function
             .generic_params(self.db)
@@ -360,7 +360,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         &mut self,
         concrete_trait_function: ConcreteTraitGenericFunctionId,
         lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> InferenceResult<GenericFunctionId> {
         let impl_id = self.new_impl_var(
             concrete_trait_function.concrete_trait(self.db),

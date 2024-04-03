@@ -11,7 +11,7 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -255,7 +255,7 @@ pub fn trait_generic_params_data(
     )?;
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, trait_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &trait_ast);
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -302,7 +302,7 @@ pub fn priv_trait_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, trait_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &trait_ast);
 
     let generic_params = inference.rewrite(generic_params).no_err();
 
@@ -465,8 +465,8 @@ pub fn priv_trait_definition_data(
                         .insert(name.clone(), TraitItemId::Function(trait_func_id))
                         .is_some()
                     {
-                        diagnostics.report_by_ptr(
-                            name_node.stable_ptr().untyped(),
+                        diagnostics.report(
+                            &name_node,
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
                         );
                     }
@@ -481,8 +481,8 @@ pub fn priv_trait_definition_data(
                         .insert(name.clone(), TraitItemId::Type(trait_type_id))
                         .is_some()
                     {
-                        diagnostics.report_by_ptr(
-                            name_node.stable_ptr().untyped(),
+                        diagnostics.report(
+                            &name_node,
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
                         );
                     }
@@ -782,7 +782,7 @@ pub fn priv_trait_function_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, function_syntax);
 
     validate_trait_function_signature(
         db,

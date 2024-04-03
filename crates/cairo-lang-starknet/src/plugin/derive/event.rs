@@ -3,7 +3,7 @@ use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_starknet_classes::abi::EventFieldKind;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indoc::{formatdoc, indoc};
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
@@ -36,7 +36,7 @@ fn handle_struct(
     let generic_params = struct_ast.generic_params(db);
     let ast::OptionWrappedGenericParamList::Empty(_) = generic_params else {
         diagnostics.push(PluginDiagnostic::error(
-            generic_params.stable_ptr().untyped(),
+            &generic_params,
             format!("{EVENT_TYPE_NAME} structs with generic arguments are unsupported"),
         ));
         return None;
@@ -117,14 +117,14 @@ fn get_field_kind_for_member(
     // Currently, nested fields are unsupported.
     if is_nested {
         diagnostics.push(PluginDiagnostic::error(
-            member.stable_ptr().untyped(),
+            member,
             "Nested event fields are currently unsupported".to_string(),
         ));
     }
     // Currently, serde fields are unsupported.
     if is_serde {
         diagnostics.push(PluginDiagnostic::error(
-            member.stable_ptr().untyped(),
+            member,
             "Serde event fields are currently unsupported".to_string(),
         ));
     }
@@ -152,7 +152,7 @@ fn get_field_kind_for_variant(
     // Currently, nested fields are unsupported.
     if is_nested {
         diagnostics.push(PluginDiagnostic::error(
-            variant.stable_ptr().untyped(),
+            variant,
             "Nested event fields are currently unsupported".to_string(),
         ));
     }
@@ -164,7 +164,7 @@ fn get_field_kind_for_variant(
     // Currently, serde fields are unsupported.
     if is_serde {
         diagnostics.push(PluginDiagnostic::error(
-            variant.stable_ptr().untyped(),
+            variant,
             "Serde event fields are currently unsupported".to_string(),
         ));
     }
@@ -188,7 +188,7 @@ fn handle_enum(
     let generic_params = enum_ast.generic_params(db);
     let ast::OptionWrappedGenericParamList::Empty(_) = generic_params else {
         diagnostics.push(PluginDiagnostic::error(
-            generic_params.stable_ptr().untyped(),
+            &generic_params,
             format!("{EVENT_TYPE_NAME} enums with generic arguments are unsupported"),
         ));
         return None;

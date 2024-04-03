@@ -12,7 +12,6 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::helpers::PathSegmentEx;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::try_extract_matches;
@@ -21,7 +20,7 @@ pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
-use syntax::node::TypedStablePtr;
+use syntax::node::ids::IntoUntypedStablePtr;
 
 use crate::corelib::{core_submodule, get_submodule};
 use crate::db::SemanticGroup;
@@ -582,24 +581,19 @@ impl<'db> Resolver<'db> {
                 );
                 let impl_lookup_context = self.impl_lookup_context();
                 let inference = &mut self.data.inference_data.inference(self.db);
-                let identifier_stable_ptr = identifier.stable_ptr().untyped();
                 let generic_function = inference
                     .infer_trait_generic_function(
                         concrete_trait_function,
                         &impl_lookup_context,
-                        Some(identifier_stable_ptr),
+                        Some(identifier),
                     )
                     .map_err(|err_set| {
-                        inference.report_on_pending_error(
-                            err_set,
-                            diagnostics,
-                            identifier.stable_ptr().untyped(),
-                        )
+                        inference.report_on_pending_error(err_set, diagnostics, identifier)
                     })?;
 
                 Ok(ResolvedConcreteItem::Function(self.specialize_function(
                     diagnostics,
-                    identifier.stable_ptr().untyped(),
+                    identifier,
                     generic_function,
                     generic_args_syntax.unwrap_or_default(),
                 )?))
@@ -618,7 +612,7 @@ impl<'db> Resolver<'db> {
 
                 Ok(ResolvedConcreteItem::Function(self.specialize_function(
                     diagnostics,
-                    identifier.stable_ptr().untyped(),
+                    identifier,
                     generic_function_id,
                     generic_args_syntax.unwrap_or_default(),
                 )?))
@@ -660,7 +654,7 @@ impl<'db> Resolver<'db> {
             ResolvedGenericItem::GenericFunction(generic_function) => {
                 ResolvedConcreteItem::Function(self.specialize_function(
                     diagnostics,
-                    identifier.stable_ptr().untyped(),
+                    identifier,
                     generic_function,
                     generic_args_syntax.unwrap_or_default(),
                 )?)
@@ -668,7 +662,7 @@ impl<'db> Resolver<'db> {
             ResolvedGenericItem::GenericType(generic_type) => {
                 ResolvedConcreteItem::Type(self.specialize_type(
                     diagnostics,
-                    identifier.stable_ptr().untyped(),
+                    identifier,
                     generic_type,
                     generic_args_syntax.unwrap_or_default(),
                 )?)
@@ -681,7 +675,7 @@ impl<'db> Resolver<'db> {
                     diagnostics,
                     &generic_params,
                     generic_args_syntax.unwrap_or_default(),
-                    identifier.stable_ptr().untyped(),
+                    identifier,
                 )?;
                 let substitution = GenericSubstitution::new(&generic_params, &generic_args);
                 let ty = SubstitutionRewriter { db: self.db, substitution: &substitution }
@@ -695,7 +689,7 @@ impl<'db> Resolver<'db> {
                     diagnostics,
                     &generic_params,
                     generic_args_syntax.unwrap_or_default(),
-                    identifier.stable_ptr().untyped(),
+                    identifier,
                 )?;
                 let substitution = GenericSubstitution::new(&generic_params, &generic_args);
                 let impl_id = SubstitutionRewriter { db: self.db, substitution: &substitution }
@@ -705,7 +699,7 @@ impl<'db> Resolver<'db> {
             ResolvedGenericItem::Trait(trait_id) => {
                 ResolvedConcreteItem::Trait(self.specialize_trait(
                     diagnostics,
-                    identifier.stable_ptr().untyped(),
+                    identifier,
                     trait_id,
                     generic_args_syntax.unwrap_or_default(),
                 )?)
@@ -713,7 +707,7 @@ impl<'db> Resolver<'db> {
             ResolvedGenericItem::Impl(impl_def_id) => {
                 ResolvedConcreteItem::Impl(ImplId::Concrete(self.specialize_impl(
                     diagnostics,
-                    identifier.stable_ptr().untyped(),
+                    identifier,
                     impl_def_id,
                     generic_args_syntax.unwrap_or_default(),
                 )?))
@@ -833,7 +827,7 @@ impl<'db> Resolver<'db> {
     fn specialize_trait(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: impl IntoUntypedStablePtr,
         trait_id: TraitId,
         generic_args: Vec<ast::GenericArg>,
     ) -> Maybe<ConcreteTraitId> {
@@ -841,7 +835,7 @@ impl<'db> Resolver<'db> {
         let generic_params = self
             .db
             .trait_generic_params(trait_id)
-            .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownTrait))?;
+            .map_err(|_| diagnostics.report(stable_ptr, UnknownTrait))?;
 
         let generic_args =
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
@@ -853,7 +847,7 @@ impl<'db> Resolver<'db> {
     fn specialize_impl(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: impl IntoUntypedStablePtr,
         impl_def_id: ImplDefId,
         generic_args: Vec<ast::GenericArg>,
     ) -> Maybe<ConcreteImplId> {
@@ -861,7 +855,7 @@ impl<'db> Resolver<'db> {
         let generic_params = self
             .db
             .impl_def_generic_params(impl_def_id)
-            .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownImpl))?;
+            .map_err(|_| diagnostics.report(stable_ptr, UnknownImpl))?;
 
         let generic_args =
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
@@ -873,7 +867,7 @@ impl<'db> Resolver<'db> {
     pub fn specialize_function(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: impl IntoUntypedStablePtr,
         generic_function: GenericFunctionId,
         generic_args: Vec<ast::GenericArg>,
     ) -> Maybe<FunctionId> {
@@ -892,14 +886,14 @@ impl<'db> Resolver<'db> {
     pub fn specialize_type(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: impl IntoUntypedStablePtr,
         generic_type: GenericTypeId,
         generic_args: Vec<ast::GenericArg>,
     ) -> Maybe<TypeId> {
         let generic_params = self
             .db
             .generic_type_generic_params(generic_type)
-            .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownType))?;
+            .map_err(|_| diagnostics.report(stable_ptr, UnknownType))?;
 
         let generic_args =
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
@@ -920,7 +914,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         generic_params: &[GenericParam],
         generic_args_syntax: Vec<ast::GenericArg>,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: impl IntoUntypedStablePtr,
     ) -> Maybe<Vec<GenericArgumentId>> {
         let syntax_db = self.db.upcast();
         let mut substitution = GenericSubstitution::default();
@@ -1008,7 +1002,7 @@ impl<'db> Resolver<'db> {
         &mut self,
         generic_param: GenericParam,
         generic_arg_syntax_opt: Option<&ast::Expr>,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: impl IntoUntypedStablePtr,
         diagnostics: &mut SemanticDiagnostics,
     ) -> Result<GenericArgumentId, cairo_lang_diagnostics::DiagnosticAdded> {
         let Some(generic_arg_syntax) = generic_arg_syntax_opt else {
@@ -1052,7 +1046,7 @@ impl<'db> Resolver<'db> {
                     self.db,
                     &mut ctx,
                     &value,
-                    generic_arg_syntax.stable_ptr().untyped(),
+                    generic_arg_syntax,
                     const_param.ty,
                 );
 

@@ -2,7 +2,7 @@ use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indent::indent_by;
 use indoc::formatdoc;
 
@@ -174,7 +174,7 @@ fn handle_enum(
         let indicator = if variant.attributes(db).has_attr(db, "default") {
             if default_index.is_some() {
                 diagnostics.push(PluginDiagnostic::error(
-                    variant.stable_ptr().untyped(),
+                    variant,
                     "Multiple variants annotated with `#[default]`".to_string(),
                 ));
                 return None;

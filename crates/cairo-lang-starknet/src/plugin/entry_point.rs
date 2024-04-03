@@ -144,7 +144,7 @@ pub fn handle_entry_point(
     let name_node = declaration.name(db);
     if entry_point_kind == EntryPointKind::Constructor && name_node.text(db) != CONSTRUCTOR_NAME {
         diagnostics.push(PluginDiagnostic::error(
-            name_node.stable_ptr().untyped(),
+            &name_node,
             format!("The constructor function must be called `{CONSTRUCTOR_NAME}`."),
         ));
     }
@@ -153,7 +153,7 @@ pub fn handle_entry_point(
         declaration.generic_params(db)
     {
         diagnostics.push(PluginDiagnostic::error(
-            generic_params.stable_ptr().untyped(),
+            &generic_params,
             "Contract entry points cannot have generic arguments".to_string(),
         ))
     }
@@ -230,13 +230,13 @@ fn generate_entry_point_wrapper(
 
     let Some((0, first_param)) = params.next() else {
         return Err(vec![PluginDiagnostic::error(
-            sig.stable_ptr().untyped(),
+            &sig,
             "The first parameter of an entry point must be `self`.".into(),
         )]);
     };
     if first_param.name(db).text(db) != "self" {
         return Err(vec![PluginDiagnostic::error(
-            first_param.stable_ptr().untyped(),
+            &first_param,
             "The first parameter of an entry point must be `self`.".into(),
         )]);
     };
@@ -252,7 +252,7 @@ fn generate_entry_point_wrapper(
         let is_ref = param.is_ref_param(db);
         if raw_output && is_ref {
             diagnostics.push(PluginDiagnostic::error(
-                param.modifiers(db).stable_ptr().untyped(),
+                &param.modifiers(db),
                 format!("`{RAW_OUTPUT_ATTR}` functions cannot have `ref` parameters."),
             ));
         }
@@ -371,7 +371,7 @@ fn validate_l1_handler_first_parameter(
         // Validate type
         if !first_param.type_clause(db).ty(db).is_felt252(db) {
             diagnostics.push(PluginDiagnostic::error(
-                first_param.stable_ptr().untyped(),
+                first_param,
                 "The second parameter of an L1 handler must be of type `felt252`.".to_string(),
             ));
         }
@@ -381,13 +381,13 @@ fn validate_l1_handler_first_parameter(
             != L1_HANDLER_FIRST_PARAM_NAME
         {
             diagnostics.push(PluginDiagnostic::error(
-                first_param.stable_ptr().untyped(),
+                first_param,
                 "The second parameter of an L1 handler must be named 'from_address'.".to_string(),
             ));
         }
     } else {
         diagnostics.push(PluginDiagnostic::error(
-            params.stable_ptr().untyped(),
+            params,
             "An L1 handler must have the 'from_address' as its second parameter.".to_string(),
         ));
     };

@@ -94,7 +94,7 @@ pub fn compute_constant_expr(
             ),
             _ => {
                 diagnostics.push(PluginDiagnostic::error(
-                    bin_expr.stable_ptr().untyped(),
+                    bin_expr,
                     "Unsupported binary operator in consteval_int macro".to_string(),
                 ));
                 None
@@ -106,7 +106,7 @@ pub fn compute_constant_expr(
             }
             _ => {
                 diagnostics.push(PluginDiagnostic::error(
-                    un_expr.stable_ptr().untyped(),
+                    un_expr,
                     "Unsupported unary operator in consteval_int macro".to_string(),
                 ));
                 None
@@ -117,7 +117,7 @@ pub fn compute_constant_expr(
         }
         _ => {
             diagnostics.push(PluginDiagnostic::error(
-                value.stable_ptr().untyped(),
+                value,
                 "Unsupported expression in consteval_int macro".to_string(),
             ));
             None

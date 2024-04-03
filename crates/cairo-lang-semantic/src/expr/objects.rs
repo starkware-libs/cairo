@@ -2,7 +2,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ConstantId, MemberId, NamedLanguageElementId, VarId};
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::ids::{IntoUntypedStablePtr, SyntaxStablePtrId};
+use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use id_arena::Id;
 use num_bigint::BigInt;
 
@@ -199,6 +200,12 @@ impl Expr {
             Expr::MemberAccess(expr) => expr.member_path.clone(),
             _ => None,
         }
+    }
+}
+
+impl IntoUntypedStablePtr for &Expr {
+    fn into_untyped_stable_ptr(self) -> SyntaxStablePtrId {
+        self.stable_ptr().untyped()
     }
 }
 

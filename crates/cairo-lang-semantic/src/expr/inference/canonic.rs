@@ -3,6 +3,7 @@ use cairo_lang_defs::ids::{
     ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, VarId,
     VariantId,
 };
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::{
@@ -277,11 +278,9 @@ impl<'a, 'b> SemanticRewriter<TypeLongId, NoError> for Embedder<'a, 'b> {
         if var.inference_id != InferenceId::Canonical {
             return value.default_rewrite(self);
         }
-        let new_id = self
-            .from_canonic
-            .type_var_mapping
-            .entry(var.id)
-            .or_insert_with(|| self.inference.new_type_var_raw(None).id);
+        let new_id = self.from_canonic.type_var_mapping.entry(var.id).or_insert_with(|| {
+            self.inference.new_type_var_raw(Option::<SyntaxStablePtrId>::None).id
+        });
         *value = TypeLongId::Var(self.inference.type_vars[new_id.0]);
         Ok(RewriteResult::Modified)
     }
@@ -300,7 +299,11 @@ impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
         }
         let concrete_trait_id = self.rewrite(var.concrete_trait_id)?;
         let new_id = self.from_canonic.impl_var_mapping.entry(var.id).or_insert_with(|| {
-            self.inference.new_impl_var_raw(var.lookup_context.clone(), concrete_trait_id, None)
+            self.inference.new_impl_var_raw(
+                var.lookup_context.clone(),
+                concrete_trait_id,
+                Option::<SyntaxStablePtrId>::None,
+            )
         });
         *value = ImplId::ImplVar(self.inference.impl_vars[new_id.0].intern(self.get_db()));
         Ok(RewriteResult::Modified)

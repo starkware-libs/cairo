@@ -273,7 +273,7 @@ pub fn get_inline_config(
                 config = InlineConfiguration::Should(attr.clone());
             }
             _ => {
-                diagnostics.report_by_ptr(
+                diagnostics.report(
                     attr.args_stable_ptr.untyped(),
                     SemanticDiagnosticKind::UnsupportedInlineArguments,
                 );
@@ -281,7 +281,7 @@ pub fn get_inline_config(
         }
 
         if seen_inline_attr {
-            diagnostics.report_by_ptr(
+            diagnostics.report(
                 attr.id_stable_ptr.untyped(),
                 SemanticDiagnosticKind::RedundantInlineAttribute,
             );
@@ -313,7 +313,7 @@ pub fn get_implicit_precedence<'a>(
 
     // Report warnings for overridden attributes if any.
     for attr in attributes {
-        diagnostics.report_by_ptr(
+        diagnostics.report(
             attr.id_stable_ptr.untyped(),
             SemanticDiagnosticKind::RedundantImplicitPrecedenceAttribute,
         );
@@ -336,7 +336,7 @@ pub fn get_implicit_precedence<'a>(
                     .map_err(|kind| diagnostics.report(value, kind))
             }
 
-            _ => Err(diagnostics.report_by_ptr(
+            _ => Err(diagnostics.report(
                 arg.arg_stable_ptr.untyped(),
                 SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments,
             )),

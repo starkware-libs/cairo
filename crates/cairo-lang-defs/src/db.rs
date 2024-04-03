@@ -656,7 +656,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                 ast::ModuleItem::InlineMacro(inline_macro_ast) => plugin_diagnostics.push((
                     module_file_id,
                     PluginDiagnostic::error(
-                        inline_macro_ast.stable_ptr().untyped(),
+                        &inline_macro_ast,
                         format!(
                             "Unknown inline item macro: '{}'.",
                             inline_macro_ast.name(db.upcast()).text(db.upcast())
@@ -701,10 +701,7 @@ pub fn validate_attributes_flat(
         {
             plugin_diagnostics.push((
                 module_file_id,
-                PluginDiagnostic::error(
-                    attr.stable_ptr().untyped(),
-                    "Unsupported attribute.".to_string(),
-                ),
+                PluginDiagnostic::error(&attr, "Unsupported attribute.".to_string()),
             ));
         }
     }

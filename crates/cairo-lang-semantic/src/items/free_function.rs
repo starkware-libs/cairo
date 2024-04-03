@@ -6,7 +6,6 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
@@ -100,7 +99,7 @@ pub fn free_function_generic_params_data(
     )?;
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, free_function_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &free_function_syntax);
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -170,7 +169,7 @@ pub fn priv_free_function_declaration_data(
     // Check fully resolved.
     let inference = &mut resolver.inference();
 
-    inference.finalize(&mut diagnostics, declaration.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &declaration);
     let signature = inference.rewrite(signature).no_err();
     let generic_params = inference.rewrite(generic_params).no_err();
 

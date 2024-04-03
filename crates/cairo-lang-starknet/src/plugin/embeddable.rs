@@ -2,7 +2,7 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx};
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 use itertools::chain;
@@ -21,7 +21,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                item_impl.stable_ptr().untyped(),
+                &item_impl,
                 "Making empty impls embeddable is disallowed.".to_string(),
             )],
             remove_original_item: false,
@@ -47,7 +47,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
                     || param.is_impl_of(db, "PanicDestruct", GENERIC_CONTRACT_STATE_NAME)
                 {
                     diagnostics.push(PluginDiagnostic::error(
-                        param.stable_ptr().untyped(),
+                        param,
                         format!(
                             "`embeddable` impls can't have impl generic parameters of \
                              `Destruct<{GENERIC_CONTRACT_STATE_NAME}>` or \
@@ -102,7 +102,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     };
     if !is_valid_params {
         diagnostics.push(PluginDiagnostic::error(
-            generic_params.stable_ptr().untyped(),
+            &generic_params,
             format!(
                 "First generic parameter of an embeddable impl should be \
                  `{GENERIC_CONTRACT_STATE_NAME}`."

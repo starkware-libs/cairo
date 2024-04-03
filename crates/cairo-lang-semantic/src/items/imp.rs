@@ -26,8 +26,8 @@ use syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use syntax::node::ast::{self, GenericArg, ImplItem, MaybeImplBody, OptionReturnTypeClause};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::OptionWrappedGenericParamListHelper;
-use syntax::node::ids::SyntaxStablePtrId;
-use syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use syntax::node::ids::IntoUntypedStablePtr;
+use syntax::node::{Terminal, TypedSyntaxNode};
 
 use super::enm::SemanticEnumEx;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
@@ -253,7 +253,7 @@ pub fn impl_def_generic_params_data(
         &impl_ast.generic_params(db.upcast()),
     )?;
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, impl_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &impl_ast);
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -413,7 +413,7 @@ pub fn priv_impl_declaration_data_inner(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, impl_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, &impl_ast);
 
     let concrete_trait = inference.rewrite(concrete_trait).no_err();
     let generic_params = inference.rewrite(generic_params).no_err();
@@ -585,7 +585,7 @@ pub fn priv_impl_definition_data(
         &mut diagnostics,
         lookup_context,
         concrete_trait,
-        impl_ast.stable_ptr().untyped(),
+        &impl_ast,
     )
     // Ignore the result.
     .ok();
@@ -642,8 +642,8 @@ pub fn priv_impl_definition_data(
                         .insert(name.clone(), ImplItemId::Function(impl_function_id))
                         .is_some()
                     {
-                        diagnostics.report_by_ptr(
-                            name_node.stable_ptr().untyped(),
+                        diagnostics.report(
+                            &name_node,
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
                         );
                     }
@@ -658,8 +658,8 @@ pub fn priv_impl_definition_data(
                         .insert(name.clone(), ImplItemId::Type(impl_type_id))
                         .is_some()
                     {
-                        diagnostics.report_by_ptr(
-                            name_node.stable_ptr().untyped(),
+                        diagnostics.report(
+                            &name_node,
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
                         );
                     }
@@ -713,7 +713,7 @@ fn report_invalid_impl_item<Terminal: syntax::node::Terminal>(
     diagnostics: &mut SemanticDiagnostics,
     kw_terminal: Terminal,
 ) {
-    diagnostics.report_by_ptr(
+    diagnostics.report(
         kw_terminal.as_syntax_node().stable_ptr(),
         InvalidImplItem { item_kw: kw_terminal.text(syntax_db) },
     );
@@ -725,7 +725,7 @@ fn check_special_impls(
     diagnostics: &mut SemanticDiagnostics,
     lookup_context: ImplLookupContext,
     concrete_trait: ConcreteTraitId,
-    stable_ptr: SyntaxStablePtrId,
+    stable_ptr: impl IntoUntypedStablePtr,
 ) -> Maybe<()> {
     let ConcreteTraitLongId { trait_id, generic_args } =
         db.lookup_intern_concrete_trait(concrete_trait);
@@ -740,9 +740,7 @@ fn check_special_impls(
             .flat_map(|info| info.copyable.err())
             .next()
         {
-            return Err(
-                diagnostics.report_by_ptr(stable_ptr, InvalidCopyTraitImpl { inference_error })
-            );
+            return Err(diagnostics.report(stable_ptr, InvalidCopyTraitImpl { inference_error }));
         }
     }
     if trait_id == drop {
@@ -753,9 +751,7 @@ fn check_special_impls(
             .flat_map(|info| info.droppable.err())
             .next()
         {
-            return Err(
-                diagnostics.report_by_ptr(stable_ptr, InvalidDropTraitImpl { inference_error })
-            );
+            return Err(diagnostics.report(stable_ptr, InvalidDropTraitImpl { inference_error }));
         }
     }
 
@@ -1063,7 +1059,7 @@ pub fn can_infer_impl_by_self(
     inference_errors: &mut Vec<(TraitFunctionId, InferenceError)>,
     trait_function_id: TraitFunctionId,
     self_ty: TypeId,
-    stable_ptr: SyntaxStablePtrId,
+    stable_ptr: impl IntoUntypedStablePtr,
 ) -> bool {
     let mut temp_inference_data = ctx.resolver.data.inference_data.temporary_clone();
     let mut temp_inference = temp_inference_data.inference(ctx.db);
@@ -1107,7 +1103,7 @@ pub fn infer_impl_by_self(
     ctx: &mut ComputationContext<'_>,
     trait_function_id: TraitFunctionId,
     self_ty: TypeId,
-    stable_ptr: SyntaxStablePtrId,
+    stable_ptr: impl IntoUntypedStablePtr,
     generic_args_syntax: Option<Vec<GenericArg>>,
 ) -> Option<(FunctionId, usize)> {
     let lookup_context = ctx.resolver.impl_lookup_context();
@@ -1164,7 +1160,7 @@ pub fn filter_candidate_traits(
     self_ty: TypeId,
     candidate_traits: &[TraitId],
     function_name: SmolStr,
-    stable_ptr: SyntaxStablePtrId,
+    stable_ptr: impl IntoUntypedStablePtr,
 ) -> Vec<TraitFunctionId> {
     let mut candidates = Vec::new();
     for trait_id in candidate_traits.iter().copied() {
@@ -1434,7 +1430,7 @@ pub fn priv_impl_function_generic_params_data(
         &declaration.generic_params(syntax_db),
     )?;
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, function_syntax);
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -1562,7 +1558,7 @@ pub fn priv_impl_function_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, function_syntax);
 
     let signature = inference.rewrite(signature).no_err();
     let generic_params = inference.rewrite(generic_params).no_err();
@@ -1721,7 +1717,7 @@ fn validate_impl_function_signature(
             }
         }
         .stable_ptr();
-        diagnostics.report_by_ptr(
+        diagnostics.report(
             location_ptr,
             WrongReturnTypeForImpl {
                 impl_def_id,

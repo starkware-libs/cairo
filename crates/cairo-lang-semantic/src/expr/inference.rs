@@ -13,7 +13,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{IntoUntypedStablePtr, SyntaxStablePtrId};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{define_short_id, extract_matches};
 
@@ -238,14 +238,12 @@ impl InferenceError {
     pub fn report(
         &self,
         diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: impl IntoUntypedStablePtr,
     ) -> DiagnosticAdded {
         match self {
             InferenceError::Reported(diagnostic_added) => *diagnostic_added,
-            _ => diagnostics.report_by_ptr(
-                stable_ptr,
-                SemanticDiagnosticKind::InternalInferenceError(self.clone()),
-            ),
+            _ => diagnostics
+                .report(stable_ptr, SemanticDiagnosticKind::InternalInferenceError(self.clone())),
         }
     }
 }
@@ -436,18 +434,19 @@ impl<'db> Inference<'db> {
 
     /// Allocates a new [TypeVar] for an unknown type that needs to be inferred.
     /// Returns a wrapping TypeId.
-    pub fn new_type_var(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> TypeId {
+    pub fn new_type_var(&mut self, stable_ptr: Option<impl IntoUntypedStablePtr>) -> TypeId {
         let var = self.new_type_var_raw(stable_ptr);
         self.db.intern_type(TypeLongId::Var(var))
     }
 
     /// Allocates a new [TypeVar] for an unknown type that needs to be inferred.
     /// Returns the variable id.
-    pub fn new_type_var_raw(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> TypeVar {
+    pub fn new_type_var_raw(&mut self, stable_ptr: Option<impl IntoUntypedStablePtr>) -> TypeVar {
         let var =
             TypeVar { inference_id: self.inference_id, id: LocalTypeVarId(self.type_vars.len()) };
         if let Some(stable_ptr) = stable_ptr {
-            self.stable_ptrs.insert(InferenceVar::Type(var.id), stable_ptr);
+            self.stable_ptrs
+                .insert(InferenceVar::Type(var.id), stable_ptr.into_untyped_stable_ptr());
         }
         self.type_vars.push(var);
         var
@@ -455,20 +454,21 @@ impl<'db> Inference<'db> {
 
     /// Allocates a new [ConstVar] for an unknown consts that needs to be inferred.
     /// Returns a wrapping [ConstValueId].
-    pub fn new_const_var(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> ConstValueId {
+    pub fn new_const_var(&mut self, stable_ptr: Option<impl IntoUntypedStablePtr>) -> ConstValueId {
         let var = self.new_const_var_raw(stable_ptr);
         self.db.intern_const_value(ConstValue::Var(var))
     }
 
     /// Allocates a new [ConstVar] for an unknown type that needs to be inferred.
     /// Returns the variable id.
-    pub fn new_const_var_raw(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> ConstVar {
+    pub fn new_const_var_raw(&mut self, stable_ptr: Option<impl IntoUntypedStablePtr>) -> ConstVar {
         let var = ConstVar {
             inference_id: self.inference_id,
             id: LocalConstVarId(self.const_vars.len()),
         };
         if let Some(stable_ptr) = stable_ptr {
-            self.stable_ptrs.insert(InferenceVar::Const(var.id), stable_ptr);
+            self.stable_ptrs
+                .insert(InferenceVar::Const(var.id), stable_ptr.into_untyped_stable_ptr());
         }
         self.const_vars.push(var);
         var
@@ -479,7 +479,7 @@ impl<'db> Inference<'db> {
     pub fn new_impl_var(
         &mut self,
         concrete_trait_id: ConcreteTraitId,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
         mut lookup_context: ImplLookupContext,
     ) -> InferenceResult<ImplId> {
         enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
@@ -493,7 +493,7 @@ impl<'db> Inference<'db> {
         &mut self,
         lookup_context: ImplLookupContext,
         concrete_trait_id: ConcreteTraitId,
-        stable_ptr: Option<SyntaxStablePtrId>,
+        stable_ptr: Option<impl IntoUntypedStablePtr>,
     ) -> LocalImplVarId {
         let mut lookup_context = lookup_context;
         lookup_context
@@ -501,7 +501,7 @@ impl<'db> Inference<'db> {
 
         let id = LocalImplVarId(self.impl_vars.len());
         if let Some(stable_ptr) = stable_ptr {
-            self.stable_ptrs.insert(InferenceVar::Impl(id), stable_ptr);
+            self.stable_ptrs.insert(InferenceVar::Impl(id), stable_ptr.into_untyped_stable_ptr());
         }
         let var =
             ImplVar { inference_id: self.inference_id, id, concrete_trait_id, lookup_context };
@@ -614,13 +614,13 @@ impl<'db> Inference<'db> {
     pub fn finalize(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: impl IntoUntypedStablePtr,
     ) {
         if let Err((err_set, err_stable_ptr)) = self.finalize_without_reporting() {
             let diag = self.report_on_pending_error(
                 err_set,
                 diagnostics,
-                err_stable_ptr.unwrap_or(stable_ptr),
+                err_stable_ptr.unwrap_or_else(|| stable_ptr.into_untyped_stable_ptr()),
             );
 
             let ty_missing = TypeId::missing(self.db, diag);
@@ -934,7 +934,7 @@ impl<'db> Inference<'db> {
         &mut self,
         _err_set: ErrorSet,
         diagnostics: &mut SemanticDiagnostics,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: impl IntoUntypedStablePtr,
     ) -> DiagnosticAdded {
         let Err(state_error) = self.error_status else {
             panic!("report_on_pending_error should be called only on error");

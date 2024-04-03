@@ -5,7 +5,7 @@ use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::plugin::AnalyzerPlugin;
 use cairo_lang_syntax::attribute::consts::STARKNET_INTERFACE_ATTR;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::TypedStablePtr;
 
 use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
 use crate::contract::module_contract;
@@ -40,7 +40,7 @@ fn add_non_starknet_interface_embeddable_diagnostics(
         let Ok(impl_trait) = db.impl_def_trait(*id) else { continue };
         if !impl_trait.has_attr(db.upcast(), STARKNET_INTERFACE_ATTR).unwrap_or(true) {
             diagnostics.push(PluginDiagnostic::warning(
-                item.stable_ptr().untyped(),
+                item,
                 "Impls with the embeddable attribute must implement a starknet interface trait."
                     .to_string(),
             ));

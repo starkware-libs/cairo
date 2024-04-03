@@ -7,7 +7,7 @@ use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{IntoUntypedStablePtr, SyntaxStablePtrId};
 use smol_str::SmolStr;
 
 /// A trait for arbitrary data that a macro generates along with a generated file.
@@ -68,11 +68,19 @@ pub struct PluginDiagnostic {
     pub severity: Severity,
 }
 impl PluginDiagnostic {
-    pub fn error(stable_ptr: SyntaxStablePtrId, message: String) -> PluginDiagnostic {
-        PluginDiagnostic { stable_ptr, message, severity: Severity::Error }
+    pub fn error(stable_ptr: impl IntoUntypedStablePtr, message: String) -> PluginDiagnostic {
+        PluginDiagnostic {
+            stable_ptr: stable_ptr.into_untyped_stable_ptr(),
+            message,
+            severity: Severity::Error,
+        }
     }
-    pub fn warning(stable_ptr: SyntaxStablePtrId, message: String) -> PluginDiagnostic {
-        PluginDiagnostic { stable_ptr, message, severity: Severity::Warning }
+    pub fn warning(stable_ptr: impl IntoUntypedStablePtr, message: String) -> PluginDiagnostic {
+        PluginDiagnostic {
+            stable_ptr: stable_ptr.into_untyped_stable_ptr(),
+            message,
+            severity: Severity::Warning,
+        }
     }
 }
 
