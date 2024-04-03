@@ -466,15 +466,11 @@ pub fn run_test_file(
         // If not in fix mode, also validate expectations.
         if !is_fix_mode {
             for (key, value) in result.outputs {
-<<<<<<< HEAD
-                let expected_value =
-                    test.attributes.get(&key).unwrap_or_else(|| missing_attribute_panic(&key));
-=======
                 if lean_outputs.contains(&&key[..]) {
                     continue;
                 }
-                let expected_value = get_attr(&key);
->>>>>>> bc96b4365... Seperated lean code generation and output.
+                let expected_value =
+                    test.attributes.get(&key).unwrap_or_else(|| missing_attribute_panic(&key));
                 let actual_value = value.trim();
                 if actual_value != expected_value {
                     cur_test_errors.push(format!(

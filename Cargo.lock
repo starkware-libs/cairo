@@ -673,6 +673,7 @@ dependencies = [
  "cairo-lang-utils",
  "itertools 0.12.1",
  "num-bigint",
+ "num-traits 0.2.18",
 ]
 
 [[package]]

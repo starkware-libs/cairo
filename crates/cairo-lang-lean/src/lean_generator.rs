@@ -2908,12 +2908,19 @@ impl LeanGenerator for AutoProof {
                     codes = self.make_codes(pc, op_size));
             let ji_copy: String = jump_imm_str4.clone();
             self.push_main4(indent, &(jump_imm_str4 + ","), &ji_copy);
-        }
 
-        // Add the final return
-        pc = lean_info.get_code_len() - 1;
-        self.push_main4_with_comma(indent, &format!("step_ret {codes}",
+            // Add the final return (we assume, without checking, that this is where the jump
+            // is to).
+            pc = lean_info.get_code_len() - 1;
+            self.push_main4_with_comma(indent, &format!("step_ret {codes}",
                 codes = self.make_codes(pc, 1)));
+        } else if let InstructionBody::Ret(_) = last_instr {
+            let op_size = last_instr.op_size();
+            self.push_main4_with_comma(indent, &format!("step_ret {codes}",
+                codes = self.make_codes(pc, op_size)));
+        } else {
+            panic!("Unexpected instruction at end of return block.");
+        }
 
         self.push_main(indent, "step_done");
         self.push_main4(indent, "use_only [rfl, rfl],", "use_only rfl, rfl");
@@ -3498,17 +3505,24 @@ impl CompletenessProof {
         if let InstructionBody::Jump(instr) = last_instr {
             let op_size = last_instr.op_size();
             self.push_main(indent, &format!("vm_step_jump_imm {codes}", codes = self.make_codes(pc, op_size)));
+            // We assume (without checking) that the jump at the end of the block is to the return at the end of
+            // the function.
+            self.push_main(indent, "apply ret_returns");
+            self.push_main(indent, &format!("apply {codes}", codes = self.make_codes(pc, 1)));
+        } else if let InstructionBody::Ret(_) = last_instr {
+            self.push_main(indent, "apply ret_returns");
+            self.push_main(indent, &format!("apply {codes}", codes = self.make_codes(pc, last_instr.op_size())));
+        } else {
+            panic!("Unexpected instruction at end of reutrn block.");
         }
     }
 
     /// Generates the Lean code which handles the return from the function. This includes
     /// proving the correct rc pointer is returned.
-    fn generate_return_proof(&mut self, indent: usize, lean_info: &LeanFuncInfo, block: &FuncBlock, pc: usize) {
+    fn generate_return_proof(&mut self, indent: usize, lean_info: &LeanFuncInfo, block: &FuncBlock) {
         // Use 0 indentation (indentation is added later).
         let indent = 0;
 
-        self.push_main(indent, "apply ret_returns");
-        self.push_main(indent, &format!("apply {codes}", codes = self.make_codes(pc, 1)));
         self.push_main(indent, "constructor");
         self.push_main(indent,"· vm_arith_simps");
 
@@ -4289,8 +4303,8 @@ impl LeanGenerator for CompletenessProof {
             indent,
         );
 
-        // Append the final part of the proof (which includes the return step).
-        self.generate_return_proof(indent, lean_info, block, lean_info.get_pc_at(lean_info.casm_end - 1));
+        // Append the final part of the proof (after applying the return step).
+        self.generate_return_proof(indent, lean_info, block);
 
         // First, unpack the specs. Whether this is the first or second branch of a jnz
         // determines the indentation.
@@ -4730,7 +4744,7 @@ fn generate_auto_ret_block(
 }*/
 
 /// Find the start offset (in the casm) of the different functions.
-fn find_func_offsets(cairo_program: &CairoProgram) -> Vec<(usize, usize)> {
+/*fn find_func_offsets_old(cairo_program: &CairoProgram) -> Vec<(usize, usize)> {
     let mut offsets: Vec<(usize, usize)> = Vec::new();
 
     let mut start_pos: usize = 0;
@@ -4744,6 +4758,55 @@ fn find_func_offsets(cairo_program: &CairoProgram) -> Vec<(usize, usize)> {
         }
     }
     offsets
+}*/
+
+/// Find the start (and end) offsets (in the casm) of the different functions.
+fn find_func_offsets(cairo_program: &CairoProgram) -> Vec<(usize,usize)> {
+
+    let mut called_pc: Vec<usize> = Vec::new();
+    let mut pc: usize = 0;
+
+    for instr in &cairo_program.instructions {
+        match &instr.body {
+            InstructionBody::Call(call_instr) => {
+                match &call_instr.target {
+                    DerefOrImmediate::Immediate(offset) => {
+                        let mut pc_target = offset.value.to_isize().expect("Call jump size too large.");
+                        if call_instr.relative {
+                            pc_target += pc.to_isize().expect("pc counter too large.");
+                        }
+                        called_pc.push(pc_target.to_usize().expect("Call target out of code bounds."));
+                    },
+                    _ => { panic!("Indirect calls not supported.") }
+                }
+            },
+            _ => {}
+        }
+        pc += instr.body.op_size();
+    }
+
+    // Having found the pc of the different functions, we now find the corresponding casm positions.
+
+    // One function always starts at the beginning of the code. The end may be updated below.
+    let mut offsets: Vec<(usize, usize)> = vec![(0,cairo_program.instructions.len())];
+
+    if called_pc.len() == 0 {
+        return offsets;
+    }
+
+    let mut pc: usize = 0;
+    for (casm_pos, instr) in cairo_program.instructions.iter().enumerate() {
+        if called_pc.contains(&pc) {
+            // The start of the next function is the end of the previous one.
+            offsets.last_mut().unwrap().1 = casm_pos;
+            // as_mut().unwrap().1 = casm_pos;
+            // Add the next function.
+            offsets.push((casm_pos, cairo_program.instructions.len()));
+        }
+        pc += instr.body.op_size();
+    }
+
+    offsets
 }
 
 /// Returns a tuple whose first string is the spec file for the function and the second string the automatic
@@ -4754,13 +4817,20 @@ pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram, is
     let main_func_name: String = func_name_from_test_name(test_name);
 
     if cairo_program.aux_infos.len() == 0 {
-        return ("-- No spec generated for {main_func_name}".into(), "-- No proof generated for {main_func_name}".into());
+        return (
+            format!("-- No spec generated for {main_func_name}: empty function."),
+            format!("-- No proof generated for {main_func_name}: empty function."),
+        );
     }
 
     // Start and end offsets of each of the functions.
     let offsets = find_func_offsets(cairo_program);
-    assert!(offsets.len() == cairo_program.aux_infos.len(), "Mismatch between number of functions and start offsets.");
-
+    if offsets.len() != cairo_program.aux_infos.len() {
+        return (
+            format!("-- No spec generated for {main_func_name}: unsupported function call structure."),
+            format!("-- No proof generated for {main_func_name}: unsupported function call structure."),
+        );
+    }
 
     let mut soundness_spec: Vec<String> = Vec::new();
     let mut soundness: Vec<String> = Vec::new();
@@ -4841,13 +4911,20 @@ pub fn generate_lean_completeness(test_name: &str, cairo_program: &CairoProgram)
     let main_func_name: String = func_name_from_test_name(test_name);
 
     if cairo_program.aux_infos.len() == 0 {
-        return ("-- No spec generated for {main_func_name}".into(), "-- No proof generated for {main_func_name}".into());
+        return (
+            format!("-- No spec generated for {main_func_name}: empty function."),
+            format!("-- No proof generated for {main_func_name}: empty function."),
+        );
     }
 
     // Start and end offsets of each of the functions.
     let offsets = find_func_offsets(cairo_program);
-    assert!(offsets.len() == cairo_program.aux_infos.len(), "Mismatch between number of functions and start offsets.");
-
+    if offsets.len() != cairo_program.aux_infos.len() {
+        return (
+            format!("-- No spec generated for {main_func_name}: unsupported function call structure."),
+            format!("-- No proof generated for {main_func_name}: unsupported function call structure."),
+        );
+    }
 
     let mut completeness_spec: Vec<String> = Vec::new();
     let mut completeness: Vec<String> = Vec::new();

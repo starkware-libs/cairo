@@ -109,12 +109,8 @@ pub struct SierraToCasmConfig {
 pub struct CairoProgram {
     pub instructions: Vec<Instruction>,
     pub debug_info: CairoProgramDebugInfo,
-<<<<<<< HEAD
     pub consts_info: ConstsInfo,
-    pub aux_info: Option<CasmBuilderAuxiliaryInfo>,
-=======
     pub aux_infos: Vec<CasmBuilderAuxiliaryInfo>,
->>>>>>> 38279a0de... WIP: first steps in handling guarantee destructors in libfunc tests.
 }
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
