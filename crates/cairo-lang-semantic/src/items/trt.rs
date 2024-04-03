@@ -11,7 +11,7 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;

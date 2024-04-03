@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;

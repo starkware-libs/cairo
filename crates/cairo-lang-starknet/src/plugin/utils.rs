@@ -2,7 +2,7 @@ use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::node::ast::{self, Attribute, Modifier};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{is_single_arg_attr, QueryAttrs};
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 
 use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR};

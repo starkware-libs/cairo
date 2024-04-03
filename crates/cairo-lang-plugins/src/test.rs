@@ -13,7 +13,7 @@ use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;

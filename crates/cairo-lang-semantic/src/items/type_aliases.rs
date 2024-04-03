@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{LookupItemId, ModuleFileId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;

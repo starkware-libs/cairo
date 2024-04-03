@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;

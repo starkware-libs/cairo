@@ -13,7 +13,7 @@ use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::Upcast;
