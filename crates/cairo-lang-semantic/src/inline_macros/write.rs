@@ -6,7 +6,7 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{try_extract_matches, OptionHelper};
 use num_bigint::{BigInt, Sign};
 

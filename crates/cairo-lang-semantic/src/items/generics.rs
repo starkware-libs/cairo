@@ -12,6 +12,7 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use syntax::node::db::SyntaxGroup;
+use syntax::node::TypedStablePtr;
 
 use super::constant::ConstValueId;
 use super::imp::{ImplHead, ImplId};

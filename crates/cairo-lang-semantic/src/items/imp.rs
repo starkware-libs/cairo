@@ -27,7 +27,7 @@ use syntax::node::ast::{self, GenericArg, ImplItem, MaybeImplBody, OptionReturnT
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::OptionWrappedGenericParamListHelper;
 use syntax::node::ids::SyntaxStablePtrId;
-use syntax::node::{Terminal, TypedSyntaxNode};
+use syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 
 use super::enm::SemanticEnumEx;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};

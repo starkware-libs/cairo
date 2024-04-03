@@ -3,7 +3,7 @@ use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResul
 use cairo_lang_syntax::node::ast::{self, MaybeTraitBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use indoc::formatdoc;
 use itertools::Itertools;
 

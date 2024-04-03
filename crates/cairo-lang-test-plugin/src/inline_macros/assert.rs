@@ -7,7 +7,7 @@ use cairo_lang_semantic::inline_macros::{
 };
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use indoc::formatdoc;
 
 /// A trait for compare assertion plugin.

@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, LanguageElementId, LookupItem
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 
 use super::generics::{semantic_generic_params, GenericParamsData};

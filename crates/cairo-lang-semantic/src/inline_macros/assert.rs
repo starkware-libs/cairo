@@ -4,7 +4,7 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use indoc::formatdoc;
 
 use super::{escape_node, try_extract_unnamed_arg, unsupported_bracket_diagnostic};

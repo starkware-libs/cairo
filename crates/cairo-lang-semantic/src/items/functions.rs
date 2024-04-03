@@ -18,6 +18,7 @@ use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
 use syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
+use syntax::node::TypedStablePtr;
 
 use super::attribute::SemanticQueryAttrs;
 use super::constant::ConstValue;

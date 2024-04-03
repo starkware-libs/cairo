@@ -2,6 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
+use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use semantic::types::peel_snapshots;
 use semantic::{Condition, MatchArmSelector, TypeLongId};

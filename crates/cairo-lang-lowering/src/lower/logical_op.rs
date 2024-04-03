@@ -1,5 +1,6 @@
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
+use cairo_lang_syntax::node::TypedStablePtr;
 use semantic::MatchArmSelector;
 
 use super::block_builder::BlockBuilder;
