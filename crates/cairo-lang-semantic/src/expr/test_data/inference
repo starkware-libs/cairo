@@ -761,8 +761,3 @@ error: Type annotations needed. Failed to infer ?0
  --> lib.cairo:1:13
 fn foo() -> Option {
             ^****^
-
-error: Unexpected return type. Expected: "core::option::Option::<?0>", found: "core::option::Option::<core::integer::u32>".
- --> lib.cairo:1:20
-fn foo() -> Option {
-                   ^
