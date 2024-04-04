@@ -1,7 +1,5 @@
 use std::ops::Add;
 
-use itertools::Itertools;
-
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::ToOption;
@@ -9,6 +7,7 @@ use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use itertools::Itertools;
 
 use crate::statements_functions::StatementsFunctions;
 
