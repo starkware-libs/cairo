@@ -995,6 +995,10 @@ pub trait SemanticGroup:
         extern_type_id: ExternTypeId,
     ) -> Maybe<GenericParamsData>;
 
+    /// Returns the attributes of an extern type.
+    #[salsa::invoke(items::extern_type::extern_type_attributes)]
+    fn extern_type_attributes(&self, extern_type_id: ExternTypeId) -> Maybe<Vec<Attribute>>;
+
     // Function Signature.
     // =================
     /// Returns the signature of the given FunctionTitleId. This include free functions, extern

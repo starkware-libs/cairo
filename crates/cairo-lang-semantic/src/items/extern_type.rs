@@ -5,6 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 
 use super::generics::{semantic_generic_params, GenericParamsData};
@@ -27,6 +28,7 @@ mod test;
 pub struct ExternTypeDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<GenericParam>,
+    attributes: Vec<Attribute>,
 }
 
 // Selectors.
@@ -88,6 +90,7 @@ pub fn priv_extern_type_declaration_data(
     extern_type_id: ExternTypeId,
 ) -> Maybe<ExternTypeDeclarationData> {
     let module_file_id = extern_type_id.module_file_id(db.upcast());
+
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?.to_maybe()?;
 
@@ -102,6 +105,8 @@ pub fn priv_extern_type_declaration_data(
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    let syntax_db = db.upcast();
+    let attributes = extern_type_syntax.attributes(syntax_db).structurize(syntax_db);
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
@@ -109,5 +114,13 @@ pub fn priv_extern_type_declaration_data(
 
     let generic_params = inference.rewrite(generic_params).no_err();
 
-    Ok(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params })
+    Ok(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params, attributes })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::extern_type_attributes].
+pub fn extern_type_attributes(
+    db: &dyn SemanticGroup,
+    extern_type_id: ExternTypeId,
+) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_extern_type_declaration_data(extern_type_id)?.attributes)
 }
