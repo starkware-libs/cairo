@@ -26,6 +26,7 @@ cairo_lang_test_utils::test_file_test!(
     expand_plugin,
     "src/test_data",
     {
+        compile_error: "compile_error",
         config: "config",
         derive: "derive",
         generate_trait: "generate_trait",
