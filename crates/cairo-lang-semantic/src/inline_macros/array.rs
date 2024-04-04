@@ -2,10 +2,9 @@ use cairo_lang_defs::patcher::PatchBuilder;
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginGeneratedFile,
 };
+use cairo_lang_defs::plugin_utils::unsupported_bracket_diagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-
-use super::unsupported_bracket_diagnostic;
 
 #[derive(Debug, Default)]
 pub struct ArrayMacro;
