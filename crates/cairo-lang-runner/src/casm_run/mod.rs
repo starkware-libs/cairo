@@ -642,7 +642,7 @@ impl<'a> CairoHintProcessor<'a> {
         let mut system_buffer = MemBuffer::new(vm, system_ptr);
 
         let selector = system_buffer.next_felt252()?.to_bytes_be();
-        let first_selector_non_zero_byte =
+        let first_selector_non_zero_byte_pos =
             selector.iter().position(|b| *b != 0).expect("'selector' should not be an empty value");
 
         let mut gas_counter = system_buffer.next_usize()?;
@@ -667,7 +667,7 @@ impl<'a> CairoHintProcessor<'a> {
                 }
                 Ok(())
             };
-        let selector = std::str::from_utf8(&selector[first_selector_non_zero_byte..]).unwrap();
+        let selector = std::str::from_utf8(&selector[first_selector_non_zero_byte_pos..]).unwrap();
         *self.syscalls_used_resources.syscalls.entry(selector.into()).or_default() += 1;
         match selector {
             "StorageWrite" => execute_handle_helper(&mut |system_buffer, gas_counter| {
@@ -2267,11 +2267,7 @@ impl FormattedItem {
     }
     /// Wraps the formatted item with quote, if it's a string. Otherwise returns it as is.
     pub fn quote_if_string(self) -> String {
-        if self.is_string {
-            format!("\"{}\"", self.item)
-        } else {
-            self.item
-        }
+        if self.is_string { format!("\"{}\"", self.item) } else { self.item }
     }
 }
 
