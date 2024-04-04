@@ -1,20 +1,25 @@
 use itertools::chain;
 
 use super::interoperability::ClassHashType;
-use super::u64_span_ty;
+use super::{u32_span_ty, u64_span_ty};
 use crate::extensions::array::ArrayType;
+use crate::extensions::boxing::box_ty;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::gas::GasBuiltinType;
+use crate::extensions::int::unsigned::Uint32Type;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::modules::get_u256_type;
+use crate::extensions::structure::StructType;
+use crate::extensions::utils::reinterpret_cast_signature;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
+use crate::program::GenericArg;
 
 /// Type for Starknet system object.
 /// Used to make system calls.
@@ -154,4 +159,99 @@ impl SyscallGenericLibfunc for KeccakLibfunc {
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         Ok(vec![get_u256_type(context)?])
     }
+}
+
+/// Type representing the sha256 state handle.
+#[derive(Default)]
+pub struct SHA256StateHandleType {}
+
+impl NoGenericArgsGenericType for SHA256StateHandleType {
+    const ID: GenericTypeId = GenericTypeId::new_inline("SHA256StateHandle");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = true;
+    const DROPPABLE: bool = true;
+    const ZERO_SIZED: bool = false;
+}
+
+/// Libfunc for the sha256_process_block system call.
+/// The input needs a SHA256StateHandleType for the previous state and a span of 16 words
+/// (each word is 32 bits).
+#[derive(Default)]
+pub struct SHA256ProcessBlockLibfunc {}
+impl SyscallGenericLibfunc for SHA256ProcessBlockLibfunc {
+    const STR_ID: &'static str = "sha256_process_block_syscall";
+
+    fn input_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![
+            // Previous state of the hash.
+            context.get_concrete_type(SHA256StateHandleType::id(), &[])?,
+            // The current block to process.
+            u32_span_ty(context)?,
+        ])
+    }
+
+    fn success_output_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![context.get_concrete_type(SHA256StateHandleType::id(), &[])?])
+    }
+}
+
+/// Libfunc for converting a ContractAddress into a felt252.
+#[derive(Default)]
+pub struct SHA256StateHandleInitLibfunc {}
+impl NoGenericArgsGenericLibfunc for SHA256StateHandleInitLibfunc {
+    const STR_ID: &'static str = "sha256_state_handle_init";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(reinterpret_cast_signature(
+            sha256_state_handle_unwrapped_type(context)?,
+            context.get_concrete_type(SHA256StateHandleType::id(), &[])?,
+        ))
+    }
+}
+
+/// Libfunc for converting a ContractAddress into a felt252.
+#[derive(Default)]
+pub struct SHA256StateHandleDigestLibfunc {}
+impl NoGenericArgsGenericLibfunc for SHA256StateHandleDigestLibfunc {
+    const STR_ID: &'static str = "sha256_state_handle_digest";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(reinterpret_cast_signature(
+            context.get_concrete_type(SHA256StateHandleType::id(), &[])?,
+            sha256_state_handle_unwrapped_type(context)?,
+        ))
+    }
+}
+
+/// The inner type of the SHA256StateHandle.
+pub fn sha256_state_handle_unwrapped_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    box_ty(
+        context,
+        context.get_concrete_type(
+            StructType::id(),
+            &[
+                GenericArg::UserType(UserTypeId::from_string("Tuple")),
+                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
+            ],
+        )?,
+    )
 }
