@@ -70,6 +70,12 @@ pub fn set_signature(signature: Span<felt252>) {
     cheatcode::<'set_signature'>(signature);
 }
 
+/// Set the hash for a block.
+/// Unset blocks values call would fail.
+pub fn set_block_hash(block_id: u64, value: felt252) {
+    cheatcode::<'set_block_hash'>(array![block_id.into(), value].span());
+}
+
 /// Pop the earliest unpopped logged event for the contract.
 pub fn pop_log_raw(address: ContractAddress) -> Option<(Span<felt252>, Span<felt252>)> {
     let mut log = cheatcode::<'pop_log'>(array![address.into()].span());
