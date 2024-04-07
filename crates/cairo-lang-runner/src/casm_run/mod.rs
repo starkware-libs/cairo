@@ -140,6 +140,8 @@ pub struct StarknetState {
     logs: HashMap<Felt252, ContractLogs>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
+    /// A mock history, mapping block number to the class hash.
+    block_hash: HashMap<u64, Felt252>,
 }
 impl StarknetState {
     /// Replaces the addresses in the context.
@@ -853,13 +855,14 @@ impl<'a> CairoHintProcessor<'a> {
     fn get_block_hash(
         &mut self,
         gas_counter: &mut usize,
-        _block_number: u64,
+        block_number: u64,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, GET_BLOCK_HASH);
-        // TODO(Arni, 28/5/2023): Replace the temporary return value with the required value.
-        //      One design suggestion - to perform a storage read. Have an arbitrary, hardcoded
-        //      (For example, addr=1) contain the mapping from block number to block hash.
-        fail_syscall!(b"GET_BLOCK_HASH_UNIMPLEMENTED");
+        if let Some(block_hash) = self.starknet_state.block_hash.get(&block_number) {
+            Ok(SyscallResult::Success(vec![block_hash.clone().into()]))
+        } else {
+            fail_syscall!(b"GET_BLOCK_HASH_NOT_SET");
+        }
     }
 
     /// Executes the `get_execution_info_syscall` syscall.
@@ -1173,15 +1176,14 @@ impl<'a> CairoHintProcessor<'a> {
         let inputs = vm_get_range(vm, input_start, input_end)?;
 
         // Helper for all the instances requiring only a single input.
-        let as_single_input = |inputs: Vec<Felt252>| {
-            if inputs.len() != 1 {
-                Err(HintError::CustomHint(Box::from(format!(
+        let as_single_input = |inputs| {
+            vec_as_array(inputs, || {
+                format!(
                     "`{selector}` cheatcode invalid args: pass span of an array with exactly one \
                      element",
-                ))))
-            } else {
-                Ok(inputs[0].clone())
-            }
+                )
+            })
+            .map(|[value]| value)
         };
 
         let mut res_segment = MemBuffer::new_segment(vm);
@@ -1225,6 +1227,17 @@ impl<'a> CairoHintProcessor<'a> {
             "set_signature" => {
                 self.starknet_state.exec_info.tx_info.signature = inputs;
             }
+            "set_block_hash" => {
+                let [block_number, block_hash] = vec_as_array(inputs, || {
+                    format!(
+                        "`{selector}` cheatcode invalid args: pass span of an array with exactly \
+                         two elements",
+                    )
+                })?;
+                self.starknet_state
+                    .block_hash
+                    .insert(block_number.to_u64().unwrap(), block_hash.clone());
+            }
             "pop_log" => {
                 let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
                 if let Some((keys, data)) =
@@ -1255,6 +1268,14 @@ impl<'a> CairoHintProcessor<'a> {
         insert_value_to_cellref!(vm, output_end, res_segment_end)?;
         Ok(())
     }
+}
+
+/// Extracts an array of felt252s from a vector of such.
+fn vec_as_array<const COUNT: usize>(
+    inputs: Vec<Felt252>,
+    err_msg: impl FnOnce() -> String,
+) -> Result<[Felt252; COUNT], HintError> {
+    inputs.try_into().map_err(|_| HintError::CustomHint(Box::from(err_msg())))
 }
 
 /// Executes the `keccak_syscall` syscall.
