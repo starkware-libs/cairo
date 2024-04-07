@@ -143,16 +143,16 @@ pub fn file_module_absolute_identifier(db: &dyn DefsGroup, mut file_id: FileId) 
 /// The location of the Cairo source code which caused a statement to be generated.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct StatementsLocations {
-    pub locations: UnorderedHashMap<StatementIdx, StableLocation>,
+    pub locations: UnorderedHashMap<StatementIdx, Vec<StableLocation>>,
 }
 
 impl StatementsLocations {
     /// Creates a new [StatementsLocations] object from a list of [`Option<StableLocation>`].
-    pub fn from_locations_vec(locations_vec: &[Option<StableLocation>]) -> Self {
+    pub fn from_locations_vec(locations_vec: &[Vec<StableLocation>]) -> Self {
         let mut locations = UnorderedHashMap::default();
-        for (idx, location) in locations_vec.iter().enumerate() {
-            if let Some(location) = location {
-                locations.insert(StatementIdx(idx), *location);
+        for (idx, stmt_locations) in locations_vec.iter().enumerate() {
+            if !stmt_locations.is_empty() {
+                locations.insert(StatementIdx(idx), stmt_locations.clone());
             }
         }
         Self { locations }
@@ -165,7 +165,7 @@ impl StatementsLocations {
         &self,
         db: &dyn DefsGroup,
     ) -> UnorderedHashMap<StatementIdx, String> {
-        self.locations.map(|s| containing_function_identifier_for_tests(db, *s))
+        self.locations.map(|s| containing_function_identifier_for_tests(db, *s.first().unwrap()))
     }
 
     /// Creates a new [StatementsFunctions] struct using [StatementsLocations] and [DefsGroup].
@@ -175,7 +175,10 @@ impl StatementsLocations {
                 .locations
                 .iter_sorted()
                 .map(|(statement_idx, stable_location)| {
-                    (*statement_idx, containing_function_identifier(db, *stable_location))
+                    (
+                        *statement_idx,
+                        containing_function_identifier(db, *stable_location.first().unwrap()),
+                    )
                 })
                 .collect(),
         }
