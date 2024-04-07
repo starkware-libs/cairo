@@ -42,3 +42,17 @@ fn test_deploy_in_construct() {
         .expect('deployment failed');
     assert!(IValueDispatcher { contract_address }.get_value() == 1);
 }
+
+
+#[test]
+fn test_redeploy_in_construct() {
+    assert!(
+        deploy_syscall(self_caller::TEST_CLASS_HASH.try_into().unwrap(), 0, array![].span(), false)
+            .is_ok()
+    );
+    assert!(
+        deploy_syscall(
+            self_caller::TEST_CLASS_HASH.try_into().unwrap(), 0, array![].span(), false
+        ) == Result::Err(array!['CONTRACT_ALREADY_DEPLOYED'])
+    );
+}

@@ -990,9 +990,14 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Set the class hash of the deployed contract before executing the constructor,
         // as the constructor could make an external call to this address.
-        self.starknet_state
+        if self
+            .starknet_state
             .deployed_contracts
-            .insert(deployed_contract_address.clone(), class_hash);
+            .insert(deployed_contract_address.clone(), class_hash)
+            .is_some()
+        {
+            fail_syscall!(b"CONTRACT_ALREADY_DEPLOYED");
+        }
 
         // Call constructor if it exists.
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
