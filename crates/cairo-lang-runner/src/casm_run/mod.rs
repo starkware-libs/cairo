@@ -140,14 +140,8 @@ pub struct StarknetState {
     logs: HashMap<Felt252, ContractLogs>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
-    next_id: Felt252,
 }
 impl StarknetState {
-    pub fn get_next_id(&mut self) -> Felt252 {
-        self.next_id += Felt252::from(1);
-        self.next_id.clone()
-    }
-
     /// Replaces the addresses in the context.
     pub fn open_caller_context(
         &mut self,
