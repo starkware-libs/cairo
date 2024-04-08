@@ -54,9 +54,9 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: myEnum) -> felt252 {
+fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
-    while let myEnum::A(x) = a {
+    while let MyEnum::A(x) = a {
         y = y + x;
     };
     y
@@ -67,7 +67,7 @@ foo
 
 //! > module_code
 #[derive(Copy, Drop)]
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
@@ -78,7 +78,7 @@ enum myEnum {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::myEnum
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::MyEnum
 blk0 (root):
 Statements:
   (v3: core::felt252) <- 0
@@ -113,7 +113,7 @@ test_function_lowering
 //! > function
 fn foo() -> felt252 {
     let mut y = 0;
-    while let myEnum::A(x) = a() {
+    while let MyEnum::A(x) = a() {
         y = y + x
     };
     y = y + 1;
@@ -124,12 +124,12 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
 }
-extern fn a() -> myEnum nopanic;
+extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -173,7 +173,7 @@ test_function_lowering
 //! > function
 fn foo() -> felt252 {
     let mut y = 0;
-    while let (myEnum::A(x), true) = (a(), 5 == 6) {
+    while let (MyEnum::A(x), true) = (a(), 5 == 6) {
         y = y + x
     };
     y = y + 1;
@@ -184,12 +184,12 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
 }
-extern fn a() -> myEnum nopanic;
+extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -233,7 +233,7 @@ test_function_lowering
 //! > function
 fn foo() -> felt252 {
     let mut y = 0;
-    while let (myEnum::A(x), 3) = (a(), 3) {
+    while let (MyEnum::A(x), 3) = (a(), 3) {
         y = y + x
     };
     y = y + 1;
@@ -244,19 +244,19 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
 }
-extern fn a() -> myEnum nopanic;
+extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error: Unsupported value in while-let. Currently, while-let on tuples only supports enums as tuple members.
  --> lib.cairo:9:35
-    while let (myEnum::A(x), 3) = (a(), 3) {
+    while let (MyEnum::A(x), 3) = (a(), 3) {
                                   ^******^
 
 //! > lowering_flat
@@ -319,7 +319,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: myEnum) -> felt252 {
+fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     while let _ = a {
         y = y + 5;
@@ -333,7 +333,7 @@ foo
 
 //! > module_code
 #[derive(Copy, Drop)]
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
@@ -344,7 +344,7 @@ enum myEnum {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::myEnum
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::MyEnum
 blk0 (root):
 Statements:
   (v3: core::felt252) <- 0
