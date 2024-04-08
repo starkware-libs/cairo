@@ -350,7 +350,7 @@ mod gas_costs {
     pub const GET_EXECUTION_INFO: usize = 10 * STEP;
     pub const KECCAK: usize = 0;
     pub const KECCAK_ROUND_COST: usize = 180000;
-    pub const SHA256_PROCESS_BLOCK: usize = 2000 * STEP;
+    pub const SHA256_PROCESS_BLOCK: usize = 2000 * STEP + 6 * RANGE_CHECK;
     pub const LIBRARY_CALL: usize = CALL_CONTRACT;
     pub const REPLACE_CLASS: usize = 50 * STEP;
     pub const SECP256K1_ADD: usize = 254 * STEP + 29 * RANGE_CHECK;
