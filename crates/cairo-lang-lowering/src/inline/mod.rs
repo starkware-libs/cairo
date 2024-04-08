@@ -5,6 +5,7 @@ mod statements_weights;
 
 use std::collections::{HashMap, VecDeque};
 
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::items::functions::InlineConfiguration;
@@ -21,7 +22,8 @@ use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, VarRemapping, VarUsage, VariableId,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall, VarRemapping,
+    VariableId,
 };
 
 pub fn get_inline_diagnostics(
@@ -164,6 +166,7 @@ pub struct Mapper<'a, 'b> {
     renamed_vars: HashMap<VariableId, VariableId>,
     return_block_id: BlockId,
     outputs: &'a [id_arena::Id<crate::Variable>],
+    inlining_location: StableLocation,
 
     /// An offset that is added to all the block IDs in order to translate them into the new
     /// lowering representation.
@@ -178,7 +181,9 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
         *self.renamed_vars.entry(orig_var_id).or_insert_with(|| {
             self.variables.new_var(VarRequest {
                 ty: self.lowered.variables[orig_var_id].ty,
-                location: self.lowered.variables[orig_var_id].location,
+                location: self.lowered.variables[orig_var_id]
+                    .location
+                    .inlined(self.variables.db, self.inlining_location),
             })
         })
     }
@@ -200,8 +205,18 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
                 };
                 *end = FlatBlockEnd::Goto(self.return_block_id, remapping);
             }
-            FlatBlockEnd::Panic(_) | FlatBlockEnd::Goto(_, _) | FlatBlockEnd::Match { .. } => {}
+            FlatBlockEnd::Panic(_) | FlatBlockEnd::Goto(_, _) => {}
+            FlatBlockEnd::Match { info } => {
+                let location = info.location_mut();
+                *location = location.inlined(self.variables.db, self.inlining_location);
+            }
             FlatBlockEnd::NotSet => unreachable!(),
+        }
+    }
+
+    fn transform_statement(&mut self, statement: &mut Statement) {
+        if let Some(location) = statement.location_mut() {
+            *location = location.inlined(self.variables.db, self.inlining_location);
         }
     }
 }
@@ -264,7 +279,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 if called_func != self.calling_function_id
                     && self.variables.db.priv_should_inline(called_func)?
                 {
-                    return self.inline_function(called_func, &stmt.inputs, &stmt.outputs);
+                    return self.inline_function(called_func, stmt);
                 }
             }
         }
@@ -273,16 +288,11 @@ impl<'db> FunctionInlinerRewriter<'db> {
         Ok(())
     }
 
-    /// Inlines the given function, with the given input and output variables.
-    /// The statements that need to replace the call statement in the original block
-    /// are pushed into the `statement_rewrite_stack`.
-    /// May also push additional blocks to the block queue.
-    /// The function takes an optional return block id to handle early returns.
+    /// Inlines the given function call.
     pub fn inline_function(
         &mut self,
         function_id: ConcreteFunctionWithBodyId,
-        inputs: &[VarUsage],
-        outputs: &[VariableId],
+        call_stmt: &StatementCall,
     ) -> Maybe<()> {
         let lowered = self.variables.db.inlined_function_with_body_lowered(function_id)?;
         lowered.blocks.has_root()?;
@@ -303,8 +313,11 @@ impl<'db> FunctionInlinerRewriter<'db> {
         // The input variables need to be renamed to match the inputs to the function call.
         let renamed_vars = HashMap::<VariableId, VariableId>::from_iter(izip!(
             lowered.parameters.iter().cloned(),
-            inputs.iter().map(|var_usage| var_usage.var_id)
+            call_stmt.inputs.iter().map(|var_usage| var_usage.var_id)
         ));
+
+        let db = self.variables.db;
+        let inlining_location = db.lookup_intern_location(call_stmt.location).stable_location;
 
         let mut mapper = Mapper {
             variables: &mut self.variables,
@@ -312,7 +325,8 @@ impl<'db> FunctionInlinerRewriter<'db> {
             renamed_vars,
             block_id_offset: BlockId(return_block_id.0 + 1),
             return_block_id,
-            outputs,
+            outputs: &call_stmt.outputs,
+            inlining_location,
         };
 
         // The current block should Goto to the root block of the inlined function.

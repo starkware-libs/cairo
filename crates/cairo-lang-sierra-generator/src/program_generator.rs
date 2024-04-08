@@ -205,8 +205,10 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
                 if let Some(loc) =
                     &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
                 {
-                    let loc =
-                        get_location_marks(db.upcast(), &loc.diagnostic_location(db.upcast()));
+                    let loc = get_location_marks(
+                        db.upcast(),
+                        &loc.first().unwrap().diagnostic_location(db.upcast()),
+                    );
                     println!("{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"));
                 }
             }

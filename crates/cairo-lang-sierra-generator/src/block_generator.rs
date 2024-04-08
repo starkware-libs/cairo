@@ -48,9 +48,10 @@ pub fn generate_block_body_code(
     // Process the statements.
     for (i, statement) in block.statements.iter().enumerate() {
         let statement_lowering_location = (block_id, i);
-        let statement_cairo_location = statement.location().map(|location_id| {
-            context.get_db().lookup_intern_location(location_id).stable_location
-        });
+        let statement_cairo_location = statement
+            .location()
+            .map(|location_id| location_id.all_locations(context.get_db().upcast()))
+            .unwrap_or_default();
         context.maybe_set_cairo_location(statement_cairo_location);
         generate_statement_code(context, statement, &statement_lowering_location)?;
         let drop_location = &DropLocation::PostStatement(statement_lowering_location);
@@ -137,8 +138,7 @@ pub fn generate_block_code(
         // Process the block end if it's a match.
         lowering::FlatBlockEnd::Match { info } => {
             let statement_location = (block_id, block.statements.len());
-            let statement_cairo_location =
-                Some(context.get_db().lookup_intern_location(*info.location()).stable_location);
+            let statement_cairo_location = info.location().all_locations(context.get_db().upcast());
             if context.should_enable_ap_tracking(&block_id) {
                 context.set_ap_tracking(true);
                 context.push_statement(simple_basic_statement(
@@ -194,9 +194,11 @@ fn generate_push_values_statement_for_remapping(
             dup,
         })
     }
-    let location = remapping.iter().last().map(|(_, inner_output)| {
-        context.get_db().lookup_intern_location(inner_output.location).stable_location
-    });
+    let location = remapping
+        .iter()
+        .last()
+        .map(|(_, inner_output)| inner_output.location.all_locations(context.get_db().upcast()))
+        .unwrap_or_default();
     Ok(StatementWithLocation {
         statement: pre_sierra::Statement::PushValues(push_values),
         location,
@@ -232,7 +234,8 @@ pub fn generate_return_code(
     }
     let location = returned_variables
         .last()
-        .map(|var| context.get_db().lookup_intern_location(var.location).stable_location);
+        .map(|var| var.location.all_locations(context.get_db().upcast()))
+        .unwrap_or_default();
     context.maybe_set_cairo_location(location);
     context.push_statement(pre_sierra::Statement::PushValues(push_values));
     context.push_statement(return_statement(return_variables_on_stack));

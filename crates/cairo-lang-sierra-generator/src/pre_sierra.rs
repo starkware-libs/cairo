@@ -71,7 +71,7 @@ pub enum Statement {
 }
 impl Statement {
     pub fn into_statement_without_location(self) -> StatementWithLocation {
-        StatementWithLocation { statement: self, location: None }
+        StatementWithLocation { statement: self, location: vec![] }
     }
     pub fn to_string(&self, db: &dyn SierraGenGroup) -> String {
         StatementWithDb { db, statement: self.clone() }.to_string()
@@ -82,11 +82,11 @@ impl Statement {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StatementWithLocation {
     pub statement: Statement,
-    pub location: Option<StableLocation>,
+    pub location: Vec<StableLocation>,
 }
 
 impl StatementWithLocation {
-    pub fn set_location(&mut self, location: Option<StableLocation>) {
+    pub fn set_location(&mut self, location: Vec<StableLocation>) {
         self.location = location;
     }
 }
