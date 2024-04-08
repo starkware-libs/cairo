@@ -1,6 +1,7 @@
 use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
+use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{chain, zip_eq, Itertools};

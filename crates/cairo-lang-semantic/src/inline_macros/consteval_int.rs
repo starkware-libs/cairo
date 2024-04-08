@@ -1,13 +1,12 @@
+use cairo_lang_defs::extract_macro_single_unnamed_arg;
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use num_bigint::BigInt;
-
-use crate::extract_macro_single_unnamed_arg;
 
 #[derive(Debug, Default)]
 pub struct ConstevalIntMacro;

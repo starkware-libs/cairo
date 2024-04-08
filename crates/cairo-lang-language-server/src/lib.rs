@@ -20,9 +20,7 @@ use cairo_lang_defs::ids::{
     ModuleTypeAliasLongId, StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitItemId,
     TraitLongId, UseLongId,
 };
-use cairo_lang_diagnostics::{
-    DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity, ToOption,
-};
+use cairo_lang_diagnostics::{Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     get_originating_location, init_dev_corelib, AsFilesGroupMut, CrateConfiguration, CrateSettings,
@@ -30,7 +28,7 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
-use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
@@ -46,11 +44,10 @@ use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
-use salsa::InternKey;
 use serde_json::Value;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::notification::Notification;
@@ -59,6 +56,7 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
 
 use crate::ide::semantic_highlighting::SemanticTokenKind;
+use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
 use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
@@ -215,9 +213,7 @@ pub struct Backend {
     last_replace: tokio::sync::Mutex<SystemTime>,
     db_replace_interval: Duration,
 }
-fn from_pos(pos: TextPosition) -> Position {
-    Position { line: pos.line as u32, character: pos.col as u32 }
-}
+
 impl Backend {
     pub fn new(client: Client, db: RootDatabase) -> Self {
         let scarb = ScarbService::new(&client);
@@ -287,7 +283,7 @@ impl Backend {
             for crate_id in db.crates() {
                 for module_id in db.crate_modules(crate_id).iter() {
                     for file_id in db.module_files(*module_id).unwrap_or_default().iter() {
-                        files_set.insert(get_uri((*db).upcast(), *file_id));
+                        files_set.insert(db.url_for_file(*file_id));
                     }
                 }
             }
@@ -357,9 +353,9 @@ impl Backend {
         drop(state);
 
         let mut diags = Vec::new();
-        get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
-        get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
-        get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.lowering);
+        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
+        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
+        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.lowering);
 
         // Drop database snapshot before we wait for the client responding to our notification.
         drop(db);
@@ -1199,69 +1195,6 @@ fn inject_virtual_wrapper_lib(db: &mut dyn SemanticGroup, components: Vec<(Crate
 
 fn is_cairo_file_path(file_path: &Url) -> bool {
     file_path.path().ends_with(".cairo")
-}
-
-/// Gets the canonical URI for a file.
-fn get_uri(db: &dyn FilesGroup, file_id: FileId) -> Url {
-    let virtual_file = match db.lookup_intern_file(file_id) {
-        FileLongId::OnDisk(path) => return Url::from_file_path(path).unwrap(),
-        FileLongId::Virtual(virtual_file) => virtual_file,
-    };
-    let uri = Url::parse(
-        format!("vfs://{}/{}.cairo", file_id.as_intern_id().as_usize(), virtual_file.name).as_str(),
-    )
-    .unwrap();
-    uri
-}
-
-/// Converts an internal diagnostic location to an LSP range.
-fn get_range(db: &dyn FilesGroup, location: &DiagnosticLocation) -> Range {
-    let location = location.user_location(db);
-    let start = from_pos(location.span.start.position_in_file(db, location.file_id).unwrap());
-    let end = from_pos(location.span.start.position_in_file(db, location.file_id).unwrap());
-    Range { start, end }
-}
-
-/// Converts internal diagnostics to LSP format.
-#[tracing::instrument(level = "trace", skip_all)]
-fn get_diagnostics<T: DiagnosticEntry>(
-    db: &T::DbType,
-    diags: &mut Vec<Diagnostic>,
-    diagnostics: &Diagnostics<T>,
-) {
-    for diagnostic in diagnostics.get_all() {
-        let mut message = diagnostic.format(db);
-        let mut related_information = vec![];
-        for note in diagnostic.notes(db) {
-            if let Some(location) = &note.location {
-                related_information.push(DiagnosticRelatedInformation {
-                    location: Location {
-                        uri: get_uri(db.upcast(), location.file_id),
-                        range: get_range(db.upcast(), location),
-                    },
-                    message: note.text.clone(),
-                });
-            } else {
-                message += &format!("\nnote: {}", note.text);
-            }
-        }
-
-        diags.push(Diagnostic {
-            range: get_range(db.upcast(), &diagnostic.location(db)),
-            message,
-            related_information: if related_information.is_empty() {
-                None
-            } else {
-                Some(related_information)
-            },
-            severity: Some(match diagnostic.severity() {
-                Severity::Error => DiagnosticSeverity::ERROR,
-                Severity::Warning => DiagnosticSeverity::WARNING,
-            }),
-            code: diagnostic.error_code().map(|code| NumberOrString::String(code.to_string())),
-            ..Diagnostic::default()
-        });
-    }
 }
 
 /// Returns the file id and span of the definition of an expression from its position.

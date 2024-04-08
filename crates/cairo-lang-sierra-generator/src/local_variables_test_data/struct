@@ -39,8 +39,8 @@ fn immovable<T>(t: T) -> T {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v17: core::felt252) <- core::felt252_add(v0, v0)
-  (v2: core::felt252) <- test::immovable::<core::felt252>(v17)
+  (v1: core::felt252) <- core::felt252_add(v0, v0)
+  (v2: core::felt252) <- test::immovable::<core::felt252>(v1)
   (v3: core::felt252) <- test::revoke_ap()
   (v4: test::MyStruct) <- struct_construct(v0, v2)
   (v5: test::MyStruct) <- test::immovable::<test::MyStruct>(v4)
@@ -93,10 +93,10 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 12
-  (v3: core::felt252) <- test::immovable::<core::felt252>(v0)
+  (v1: core::felt252) <- test::immovable::<core::felt252>(v0)
   () <- core::internal::revoke_ap_tracking()
 End:
-  Return(v3)
+  Return(v1)
 
 //! > local_variables
-v3
+v1

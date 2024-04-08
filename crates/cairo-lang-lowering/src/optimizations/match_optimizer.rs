@@ -23,8 +23,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         return;
     }
     let ctx = MatchOptimizerContext { fixes: vec![] };
-    let mut analysis =
-        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    let mut analysis = BackAnalysis::new(lowered, ctx);
     analysis.get_root_info();
     let ctx = analysis.analyzer;
 
@@ -238,17 +237,14 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         }
     }
 
-    fn merge_match<'b, Infos>(
-        &'b mut self,
+    fn merge_match(
+        &mut self,
         (block_id, _statement_idx): StatementLocation,
         match_info: &'a MatchInfo,
-        infos: Infos,
-    ) -> Self::Info
-    where
-        'a: 'b,
-        Infos: Iterator<Item = &'b Self::Info> + Clone,
-    {
-        let arm_demands = zip_eq(match_info.arms(), infos.clone())
+        infos: impl Iterator<Item = Self::Info>,
+    ) -> Self::Info {
+        let infos: Vec<_> = infos.collect();
+        let arm_demands = zip_eq(match_info.arms(), &infos)
             .map(|(arm, info)| {
                 let mut demand = info.demand.clone();
                 demand.variables_introduced(self, &arm.var_ids, ());
@@ -268,7 +264,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                     match_variable: input.var_id,
                     match_arms: arms,
                     match_block: block_id,
-                    arm_demands: infos.map(|info| info.demand.clone()).collect(),
+                    arm_demands: infos.into_iter().map(|info| info.demand).collect(),
                 })
             }
 

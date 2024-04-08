@@ -2,12 +2,11 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginGeneratedFile,
 };
+use cairo_lang_defs::plugin_utils::unsupported_bracket_diagnostic;
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
-
-use super::unsupported_bracket_diagnostic;
 
 /// Macro for panicking with a format string.
 #[derive(Default, Debug)]

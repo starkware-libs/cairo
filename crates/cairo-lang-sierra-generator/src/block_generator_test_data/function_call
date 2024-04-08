@@ -33,9 +33,9 @@ blk0 (root):
 Statements:
   (v1: core::felt252) <- 1
   (v2: core::felt252) <- 2
-  (v4: test::MyStruct, v3: core::felt252) <- test::bar(v1, v2, v0)
-  (v5: core::felt252) <- core::felt252_add(v3, v3)
-  (v7: test::MyStruct, v6: core::felt252) <- test::bar(v3, v5, v4)
+  (v3: test::MyStruct, v4: core::felt252) <- test::bar(v1, v2, v0)
+  (v5: core::felt252) <- core::felt252_add(v4, v4)
+  (v6: test::MyStruct, v7: core::felt252) <- test::bar(v4, v5, v3)
 End:
   Return()
 

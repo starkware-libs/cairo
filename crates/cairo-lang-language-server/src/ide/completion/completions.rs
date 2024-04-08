@@ -18,11 +18,12 @@ use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Re
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
 use cairo_lang_syntax::node::ast::PathSegment;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 use tracing::debug;
 
-use crate::{find_node_module, from_pos};
+use crate::find_node_module;
+use crate::lang::lsp::ToLsp;
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn generic_completions(
@@ -229,7 +230,7 @@ pub fn dot_completions(
     } else {
         TextOffset::default()
     };
-    let position = from_pos(offset.position_in_file(db.upcast(), file_id).unwrap());
+    let position = offset.position_in_file(db.upcast(), file_id).unwrap().to_lsp();
     let relevant_methods = find_methods_for_type(db, resolver, ty, stable_ptr);
 
     let mut completions = Vec::new();
@@ -349,6 +350,8 @@ fn find_methods_for_type(
             };
 
             // Find impls for it.
+
+            // ignore the result as nothing can be done with the error, if any.
             inference.solve().ok();
             if !matches!(
                 inference.trait_solution_set(concrete_trait_id, lookup_context),

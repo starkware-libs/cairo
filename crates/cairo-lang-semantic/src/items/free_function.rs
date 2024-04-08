@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
@@ -98,10 +98,11 @@ pub fn free_function_generic_params_data(
         module_file_id,
         &declaration.generic_params(syntax_db),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, free_function_syntax.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, free_function_syntax.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
@@ -167,12 +168,11 @@ pub fn priv_free_function_declaration_data(
     let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(declaration.stable_ptr().untyped()));
-    }
-    let signature = resolver.inference().rewrite(signature).no_err();
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+
+    inference.finalize(&mut diagnostics, declaration.stable_ptr().untyped());
+    let signature = inference.rewrite(signature).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),

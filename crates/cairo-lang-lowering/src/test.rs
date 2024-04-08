@@ -8,7 +8,7 @@ use cairo_lang_diagnostics::{DiagnosticNote, DiagnosticsBuilder};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
-use cairo_lang_syntax::node::Terminal;
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, Upcast};
@@ -81,8 +81,10 @@ fn test_function_lowering(
         );
     }
     let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap_or_default();
-    let lowering_format =
-        lowered.map(|lowered| formatted_lowered(db, &lowered)).unwrap_or_default();
+    let lowering_format = lowered.map(|lowered| formatted_lowered(db, &lowered)).unwrap_or(
+        "<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>"
+            .to_string(),
+    );
 
     TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),

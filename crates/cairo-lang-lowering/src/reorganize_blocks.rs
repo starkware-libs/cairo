@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use id_arena::Arena;
 use itertools::Itertools;
 
 use crate::blocks::FlatBlocksBuilder;
@@ -8,7 +10,7 @@ use crate::optimizations::remappings;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage,
-    VariableId,
+    Variable, VariableId,
 };
 
 /// Reorganizes the blocks in lowered function and removes unnecessary remappings.
@@ -33,8 +35,7 @@ pub fn reorganize_blocks(lowered: &mut FlatLowered) {
         }
     });
 
-    let mut analysis =
-        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    let mut analysis = BackAnalysis::new(lowered, ctx);
     analysis.get_root_info();
     let ctx = analysis.analyzer;
 
@@ -65,13 +66,20 @@ pub fn reorganize_blocks(lowered: &mut FlatLowered) {
         ),
         remappings_ctx: ctx.remappings_ctx,
     };
+
+    let mut var_reassigner = VarReassigner::new(&lowered.variables);
+    for param in lowered.parameters.iter_mut() {
+        *param = var_reassigner.map_var_id(*param);
+    }
+
     for block_id in old_block_rev_order.into_iter().rev() {
         let mut statements = vec![];
 
         let mut block = &lowered.blocks[block_id];
         loop {
             for stmt in &block.statements {
-                statements.push(rebuilder.rebuild_statement(stmt));
+                statements
+                    .push(var_reassigner.rebuild_statement(&rebuilder.rebuild_statement(stmt)));
             }
             if let FlatBlockEnd::Goto(target_block_id, remappings) = &block.end {
                 if !rebuilder.block_remapping.contains_key(target_block_id) {
@@ -86,10 +94,11 @@ pub fn reorganize_blocks(lowered: &mut FlatLowered) {
             break;
         }
 
-        let end = rebuilder.rebuild_end(&block.end);
+        let end = var_reassigner.rebuild_end(&rebuilder.rebuild_end(&block.end));
         new_blocks.alloc(FlatBlock { statements, end });
     }
 
+    lowered.variables = var_reassigner.new_vars;
     lowered.blocks = new_blocks.build().unwrap();
 }
 
@@ -134,11 +143,11 @@ impl Analyzer<'_> for TopSortContext {
         self.incoming_gotos[target_block_id.0] += 1;
     }
 
-    fn merge_match<'b, Infos: Iterator<Item = &'b Self::Info> + Clone>(
-        &'b mut self,
+    fn merge_match(
+        &mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        _infos: Infos,
+        _infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         for var_usage in match_info.inputs() {
             self.remappings_ctx.set_used(var_usage.var_id);
@@ -183,5 +192,33 @@ impl Rebuilder for RebuildContext {
 
     fn transform_remapping(&mut self, remapping: &mut VarRemapping) {
         self.remappings_ctx.transform_remapping(remapping)
+    }
+}
+
+/// Helper class to reassign variable ids according to the rebuild order.
+///
+/// Note that it can't be integrated into the RebuildContext above because rebuild_remapping might
+/// call `map_var_id` on variables that are going to be removed.
+pub struct VarReassigner<'a> {
+    pub old_vars: &'a Arena<Variable>,
+    pub new_vars: Arena<Variable>,
+
+    // Maps old var_id to new_var_id
+    pub vars: UnorderedHashMap<VariableId, VariableId>,
+}
+
+impl<'a> VarReassigner<'a> {
+    pub fn new(old_vars: &'a Arena<Variable>) -> Self {
+        Self { old_vars, new_vars: Default::default(), vars: UnorderedHashMap::default() }
+    }
+}
+
+impl Rebuilder for VarReassigner<'_> {
+    fn map_var_id(&mut self, var: VariableId) -> VariableId {
+        *self.vars.entry(var).or_insert_with(|| self.new_vars.alloc(self.old_vars[var].clone()))
+    }
+
+    fn map_block_id(&mut self, block: BlockId) -> BlockId {
+        block
     }
 }

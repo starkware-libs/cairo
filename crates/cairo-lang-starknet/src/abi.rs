@@ -23,7 +23,7 @@ use cairo_lang_starknet_classes::abi::{
 };
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
 use itertools::zip_eq;

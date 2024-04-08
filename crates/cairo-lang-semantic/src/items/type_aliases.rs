@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{LookupItemId, ModuleFileId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
@@ -51,10 +51,10 @@ pub fn type_alias_generic_params_data_helper(
         &type_alias_ast.generic_params(db.upcast()),
     )?;
 
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, type_alias_ast.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, type_alias_ast.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
@@ -78,12 +78,11 @@ pub fn type_alias_semantic_data_helper(
     let ty = resolve_type(db, diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(diagnostics, stable_ptr.unwrap_or(type_alias_ast.stable_ptr().untyped()));
-    }
-    let generic_params = resolver.inference().rewrite(generic_params_data.generic_params).no_err();
-    let ty = resolver.inference().rewrite(ty).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(diagnostics, type_alias_ast.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params_data.generic_params).no_err();
+    let ty = inference.rewrite(ty).no_err();
     let attributes = type_alias_ast.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
     Ok(TypeAliasData { resolved_type: Ok(ty), generic_params, attributes, resolver_data })

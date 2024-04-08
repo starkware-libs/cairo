@@ -12,7 +12,7 @@ use super::ast::{
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
 use super::kind::SyntaxKind;
-use super::{SyntaxNode, Terminal, TypedSyntaxNode};
+use super::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
 use crate::node::ast::{Attribute, AttributeList};
 use crate::node::green::GreenNodeDetails;
 

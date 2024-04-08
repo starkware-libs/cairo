@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
@@ -71,13 +71,13 @@ pub fn extern_type_declaration_generic_params_data(
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
         diagnostics.report_by_ptr(
             param.stable_ptr(db.upcast()).untyped(),
-            ExternItemWithImplGenericsNotSupported,
+            ExternTypeWithImplGenericsNotSupported,
         );
     }
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, extern_type_syntax.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
@@ -104,13 +104,10 @@ pub fn priv_extern_type_declaration_data(
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(
-            &mut diagnostics,
-            stable_ptr.unwrap_or(extern_type_syntax.stable_ptr().untyped()),
-        );
-    }
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     Ok(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params })
 }

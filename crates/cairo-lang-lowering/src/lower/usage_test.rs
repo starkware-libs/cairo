@@ -7,6 +7,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 

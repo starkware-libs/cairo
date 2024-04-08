@@ -4,7 +4,7 @@ use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use indoc::{formatdoc, indoc};
 use itertools::chain;

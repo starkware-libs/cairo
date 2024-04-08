@@ -36,13 +36,13 @@ Statements:
   (v0: core::felt252) <- 5
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v13: (core::felt252, core::bool)) <- struct_construct(v0, v2)
-  (v4: core::felt252, v5: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v13)
+  (v3: (core::felt252, core::bool)) <- struct_construct(v0, v2)
+  (v4: core::felt252, v5: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v3)
   (v6: core::felt252) <- 6
   (v7: ()) <- struct_construct()
   (v8: core::bool) <- bool::False(v7)
-  (v14: (core::felt252, core::bool)) <- struct_construct(v6, v8)
-  (v10: core::felt252, v11: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v14)
+  (v9: (core::felt252, core::bool)) <- struct_construct(v6, v8)
+  (v10: core::felt252, v11: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v9)
 End:
   Return()
 
@@ -77,10 +77,10 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 1
-  (v3: core::felt252) <- 2
-  (v7: core::felt252) <- core::felt252_add(v3, v0)
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- core::felt252_add(v1, v0)
 End:
-  Return(v7)
+  Return(v2)
 
 //! > ==========================================================================
 
@@ -216,15 +216,15 @@ fn bar<const N: felt252>() -> felt252 {
 Parameters:
 blk0 (root):
 Statements:
-  (v3: core::felt252) <- 3
+  (v0: core::felt252) <- 3
+  (v1: core::felt252) <- 5
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
+  (v3: core::felt252) <- 2
   (v4: core::felt252) <- 5
   (v5: core::felt252) <- core::felt252_add(v3, v4)
-  (v6: core::felt252) <- 2
-  (v7: core::felt252) <- 5
-  (v8: core::felt252) <- core::felt252_add(v6, v7)
-  (v9: core::felt252) <- core::felt252_add(v5, v8)
+  (v6: core::felt252) <- core::felt252_add(v2, v5)
 End:
-  Return(v9)
+  Return(v6)
 
 //! > ==========================================================================
 

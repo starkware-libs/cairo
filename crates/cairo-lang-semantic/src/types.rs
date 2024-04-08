@@ -8,7 +8,7 @@ use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::Itertools;
 use num_bigint::BigInt;
@@ -24,7 +24,7 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
-use crate::expr::inference::{InferenceData, InferenceId, InferenceResult, TypeVar};
+use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
@@ -91,16 +91,12 @@ impl TypeId {
 
     /// Returns true if the type does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
-        match db.lookup_intern_type(*self) {
-            TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
-            TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
-            TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
-            TypeLongId::GenericParameter(_) => false,
-            TypeLongId::Var(_) => false,
-            TypeLongId::Missing(_) => false,
-            TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
-            TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
-        }
+        db.priv_type_is_fully_concrete(*self)
+    }
+
+    /// Returns true if the type does not contain any inference variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        db.priv_type_is_var_free(*self)
     }
 }
 impl TypeLongId {
@@ -245,6 +241,10 @@ impl ConcreteTypeId {
         self.generic_args(db)
             .iter()
             .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
+    }
+    /// Returns true if the type does not contain any inference variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        self.generic_args(db).iter().all(|generic_argument_id| generic_argument_id.is_var_free(db))
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteTypeId {
@@ -527,10 +527,10 @@ pub fn generic_type_generic_params(
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypeInfo {
-    pub droppable: InferenceResult<ImplId>,
-    pub copyable: InferenceResult<ImplId>,
-    pub destruct_impl: InferenceResult<ImplId>,
-    pub panic_destruct_impl: InferenceResult<ImplId>,
+    pub droppable: Result<ImplId, InferenceError>,
+    pub copyable: Result<ImplId, InferenceError>,
+    pub destruct_impl: Result<ImplId, InferenceError>,
+    pub panic_destruct_impl: Result<ImplId, InferenceError>,
 }
 
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
@@ -539,12 +539,22 @@ pub fn get_impl_at_context(
     lookup_context: ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: Option<SyntaxStablePtrId>,
-) -> InferenceResult<ImplId> {
+) -> Result<ImplId, InferenceError> {
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
-    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
-    if let Some((_, err)) = inference.finalize() {
-        return Err(err);
+    // It's ok to consume the errors without reporting as this is a helper function meant to find an
+    // impl and return it, but it's ok if the impl can't be found.
+    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context).map_err(
+        |err_set| {
+            inference
+                .consume_error_without_reporting(err_set)
+                .expect("Error couldn't be already consumed")
+        },
+    )?;
+    if let Err((err_set, _)) = inference.finalize_without_reporting() {
+        return Err(inference
+            .consume_error_without_reporting(err_set)
+            .expect("Error couldn't be already consumed"));
     };
     Ok(inference.rewrite(impl_id).no_err())
 }
@@ -612,6 +622,36 @@ pub fn type_info(
     let panic_destruct_impl =
         get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
     Ok(TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl })
+}
+
+pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
+    match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
+        TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
+        TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
+        TypeLongId::GenericParameter(_) => false,
+        TypeLongId::Var(_) => false,
+        TypeLongId::Missing(_) => false,
+        TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            type_id.is_fully_concrete(db) && size.is_fully_concrete(db)
+        }
+    }
+}
+
+pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
+    match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_var_free(db),
+        TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_var_free(db)),
+        TypeLongId::Snapshot(ty) => ty.is_var_free(db),
+        TypeLongId::GenericParameter(_) => true,
+        TypeLongId::Var(_) => false,
+        TypeLongId::Missing(_) => true,
+        TypeLongId::Coupon(function_id) => function_id.is_var_free(db),
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            type_id.is_var_free(db) && size.is_var_free(db)
+        }
+    }
 }
 
 /// Peels all wrapping Snapshot (`@`) from the type.

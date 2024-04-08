@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 
 use super::function_with_body::get_inline_config;
@@ -86,16 +86,22 @@ pub fn extern_function_declaration_generic_params_data(
         module_file_id,
         &declaration.generic_params(syntax_db),
     )?;
-    if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
-        diagnostics.report_by_ptr(
-            param.stable_ptr(db.upcast()).untyped(),
-            ExternItemWithImplGenericsNotSupported,
-        );
+    let mut got_generic_impl = false;
+    for param in &generic_params {
+        if param.kind() == GenericKind::Impl {
+            got_generic_impl = true;
+        } else if got_generic_impl {
+            diagnostics.report_by_ptr(
+                param.stable_ptr(db.upcast()).untyped(),
+                ImplGenericsAfterNonImplGenericsInExternFunction,
+            );
+        }
     }
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, extern_function_syntax.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
@@ -200,14 +206,11 @@ pub fn priv_extern_function_declaration_data(
     }
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(
-            &mut diagnostics,
-            stable_ptr.unwrap_or(extern_function_syntax.stable_ptr().untyped()),
-        );
-    }
-    let signature = resolver.inference().rewrite(signature).no_err();
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr().untyped());
+
+    let signature = inference.rewrite(signature).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),

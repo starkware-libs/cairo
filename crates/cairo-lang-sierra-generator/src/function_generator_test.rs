@@ -11,6 +11,7 @@ cairo_lang_test_utils::test_file_test!(
         snapshot: "snapshot",
         stack_tracking: "stack_tracking",
         literals: "literals",
+        generics: "generics",
 
     },
     test_function_generator

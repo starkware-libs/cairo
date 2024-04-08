@@ -12,8 +12,9 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use syntax::node::db::SyntaxGroup;
+use syntax::node::TypedStablePtr;
 
-use super::constant::{ConstValue, ConstValueId};
+use super::constant::ConstValueId;
 use super::imp::{ImplHead, ImplId};
 use super::resolve_trait_path;
 use crate::db::SemanticGroup;
@@ -66,10 +67,17 @@ impl GenericArgumentId {
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         match self {
             GenericArgumentId::Type(type_id) => type_id.is_fully_concrete(db),
-            GenericArgumentId::Constant(const_value_id) => {
-                !matches!(db.lookup_intern_const_value(*const_value_id), ConstValue::Generic(_))
-            }
+            GenericArgumentId::Constant(const_value_id) => const_value_id.is_fully_concrete(db),
             GenericArgumentId::Impl(impl_id) => impl_id.is_fully_concrete(db),
+            GenericArgumentId::NegImpl => true,
+        }
+    }
+    /// Returns true if the generic argument does not depend on impl or type variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        match self {
+            GenericArgumentId::Type(type_id) => type_id.is_var_free(db),
+            GenericArgumentId::Constant(const_value_id) => const_value_id.is_var_free(db),
+            GenericArgumentId::Impl(impl_id) => impl_id.is_var_free(db),
             GenericArgumentId::NegImpl => true,
         }
     }
@@ -285,13 +293,10 @@ pub fn priv_generic_param_data(
         &generic_param_syntax,
         parent_item_id,
     );
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(
-            &mut diagnostics,
-            stable_ptr.unwrap_or(generic_param_syntax.stable_ptr().untyped()),
-        );
-    }
-    let param_semantic = resolver.inference().rewrite(param_semantic).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, generic_param_syntax.stable_ptr().untyped());
+
+    let param_semantic = inference.rewrite(param_semantic).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamData {
         generic_param: param_semantic,

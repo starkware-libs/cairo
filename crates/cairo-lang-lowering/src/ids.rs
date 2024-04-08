@@ -2,7 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::UnstableSalsaId;
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_utils::{define_short_id, try_extract_matches};
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{ExternFunctionId, FreeFunctionId};

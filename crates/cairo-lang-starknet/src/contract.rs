@@ -22,7 +22,7 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::{
     deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
@@ -217,12 +217,13 @@ fn get_impl_aliases_abi_functions(
                     .get_concrete(db)
                     .body(db)
                     .to_option()??;
+                let inference = &mut resolver.inference();
                 assert_eq!(
-                    resolver.inference().finalize(),
-                    None,
+                    inference.finalize_without_reporting(),
+                    Ok(()),
                     "All inferences should be solved at this point."
                 );
-                Some(resolver.inference().rewrite(concrete_wrapper).no_err())
+                Some(inference.rewrite(concrete_wrapper).no_err())
             }));
         }
     }

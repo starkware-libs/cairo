@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
-    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
-    ModuleId, TraitId, TraitOrImplContext,
+    GenericKind, GenericParamId, GenericTypeId, ImplContext, ImplDefId, LanguageElementId,
+    ModuleFileId, ModuleId, TraitContext, TraitId, TraitOrImplContext,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::Edition;
@@ -21,6 +21,7 @@ pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
+use syntax::node::TypedStablePtr;
 
 use crate::corelib::{core_submodule, get_submodule};
 use crate::db::SemanticGroup;
@@ -580,16 +581,21 @@ impl<'db> Resolver<'db> {
                     ),
                 );
                 let impl_lookup_context = self.impl_lookup_context();
-                let generic_function = self
-                    .data
-                    .inference_data
-                    .inference(self.db)
+                let inference = &mut self.data.inference_data.inference(self.db);
+                let identifier_stable_ptr = identifier.stable_ptr().untyped();
+                let generic_function = inference
                     .infer_trait_generic_function(
                         concrete_trait_function,
                         &impl_lookup_context,
-                        Some(identifier.stable_ptr().untyped()),
+                        Some(identifier_stable_ptr),
                     )
-                    .map_err(|err| err.report(diagnostics, identifier.stable_ptr().untyped()))?;
+                    .map_err(|err_set| {
+                        inference.report_on_pending_error(
+                            err_set,
+                            diagnostics,
+                            identifier.stable_ptr().untyped(),
+                        )
+                    })?;
 
                 Ok(ResolvedConcreteItem::Function(self.specialize_function(
                     diagnostics,
@@ -1007,12 +1013,12 @@ impl<'db> Resolver<'db> {
     ) -> Result<GenericArgumentId, cairo_lang_diagnostics::DiagnosticAdded> {
         let Some(generic_arg_syntax) = generic_arg_syntax_opt else {
             let lookup_context = self.impl_lookup_context();
-            return self
-                .data
-                .inference_data
-                .inference(self.db)
+            let inference = &mut self.data.inference_data.inference(self.db);
+            return inference
                 .infer_generic_arg(&generic_param, lookup_context, Some(stable_ptr))
-                .map_err(|err| err.report(diagnostics, stable_ptr));
+                .map_err(|err_set| {
+                    inference.report_on_pending_error(err_set, diagnostics, stable_ptr)
+                });
         };
 
         Ok(match generic_param {
@@ -1072,20 +1078,18 @@ impl<'db> Resolver<'db> {
                 .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
                 let impl_def_concrete_trait = self.db.impl_concrete_trait(resolved_impl)?;
                 let expected_concrete_trait = param.concrete_trait?;
-                if self
-                    .data
-                    .inference_data
-                    .inference(self.db)
+                if let Err(err_set) = self
+                    .inference()
                     .conform_traits(impl_def_concrete_trait, expected_concrete_trait)
-                    .is_err()
                 {
-                    diagnostics.report(
+                    let diag_added = diagnostics.report(
                         generic_arg_syntax,
                         TraitMismatch {
                             expected_trt: expected_concrete_trait,
                             actual_trt: impl_def_concrete_trait,
                         },
                     );
+                    self.inference().consume_reported_error(err_set, diag_added);
                 }
                 GenericArgumentId::Impl(resolved_impl)
             }
@@ -1136,12 +1140,12 @@ fn resolve_self_segment(
 
     Some(match trait_or_impl_ctx {
         TraitOrImplContext::None => Err(diagnostics.report(identifier, SelfNotSupportedInContext)),
-        TraitOrImplContext::Trait { trait_id } => {
+        TraitOrImplContext::Trait(TraitContext { trait_id }) => {
             let concrete_trait_id =
                 db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args: vec![] });
             Ok(ResolvedConcreteItem::Trait(concrete_trait_id))
         }
-        TraitOrImplContext::Impl { impl_def_id } => {
+        TraitOrImplContext::Impl(ImplContext { impl_def_id }) => {
             let impl_id =
                 ImplId::Concrete(db.intern_concrete_impl(ConcreteImplLongId {
                     impl_def_id,

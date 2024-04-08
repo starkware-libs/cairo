@@ -3,15 +3,15 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
-    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitFunctionId, TraitFunctionLongId,
-    TraitId, TraitItemId, TraitOrImplContext, TraitTypeId, TraitTypeLongId,
+    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitContext, TraitFunctionId,
+    TraitFunctionLongId, TraitId, TraitItemId, TraitOrImplContext, TraitTypeId, TraitTypeLongId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -254,10 +254,10 @@ pub fn trait_generic_params_data(
         &trait_ast.generic_params(syntax_db),
     )?;
 
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, trait_ast.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, trait_ast.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
@@ -301,14 +301,13 @@ pub fn priv_trait_declaration_data(
     let attributes = trait_ast.attributes(syntax_db).structurize(syntax_db);
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()));
-    }
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, trait_ast.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     let mut resolver_data = resolver.data;
-    resolver_data.trait_or_impl_ctx = TraitOrImplContext::Trait { trait_id };
+    resolver_data.trait_or_impl_ctx = TraitOrImplContext::Trait(TraitContext { trait_id });
     Ok(TraitDeclarationData {
         diagnostics: diagnostics.build(),
         generic_params,
@@ -780,6 +779,10 @@ pub fn priv_trait_function_declaration_data(
         FunctionTitleId::Trait(trait_function_id),
         &mut environment,
     );
+
+    // Check fully resolved.
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
 
     validate_trait_function_signature(
         db,
