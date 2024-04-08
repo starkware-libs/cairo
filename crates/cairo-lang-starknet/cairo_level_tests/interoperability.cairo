@@ -170,7 +170,7 @@ fn test_entrypoint_failed() {
 }
 
 #[test]
-#[should_panic(expected: ('GET_BLOCK_HASH_UNIMPLEMENTED',))]
+#[should_panic(expected: ('GET_BLOCK_HASH_NOT_SET',))]
 fn test_get_block_hash() {
     get_block_hash_syscall(0).unwrap_syscall();
 }
