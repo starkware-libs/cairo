@@ -34,7 +34,7 @@ pub struct ExprGeneratorContext<'a> {
     ap_tracking_configuration: ApTrackingConfiguration,
 
     /// The current location for adding statements.
-    curr_cairo_location: Option<StableLocation>,
+    curr_cairo_location: Vec<StableLocation>,
     /// The accumulated statements for the expression.
     statements: Vec<pre_sierra::StatementWithLocation>,
 }
@@ -59,7 +59,7 @@ impl<'a> ExprGeneratorContext<'a> {
             ap_tracking_enabled: true,
             ap_tracking_configuration,
             statements: vec![],
-            curr_cairo_location: None,
+            curr_cairo_location: vec![],
         }
     }
 
@@ -189,14 +189,14 @@ impl<'a> ExprGeneratorContext<'a> {
     pub fn push_statement(&mut self, statement: pre_sierra::Statement) {
         self.statements.push(pre_sierra::StatementWithLocation {
             statement,
-            location: self.curr_cairo_location,
+            location: self.curr_cairo_location.clone(),
         });
     }
 
     /// Sets up a location for the next pushed statements.
-    pub fn maybe_set_cairo_location(&mut self, location: Option<StableLocation>) {
-        if let Some(location) = location {
-            self.curr_cairo_location = Some(location);
+    pub fn maybe_set_cairo_location(&mut self, location: Vec<StableLocation>) {
+        if !location.is_empty() {
+            self.curr_cairo_location = location;
         }
     }
 

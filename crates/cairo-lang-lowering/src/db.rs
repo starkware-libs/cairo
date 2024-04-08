@@ -642,12 +642,8 @@ fn function_with_body_lowering_diagnostics(
             && !lowered.signature.panicable
             && db.in_cycle(function_id, DependencyType::Cost)?
         {
-            let location = Location {
-                stable_location: function_id
-                    .base_semantic_function(db)
-                    .stable_location(db.upcast()),
-                notes: vec![],
-            };
+            let location =
+                Location::new(function_id.base_semantic_function(db).stable_location(db.upcast()));
             diagnostics.add(LoweringDiagnostic {
                 location,
                 kind: LoweringDiagnosticKind::NoPanicFunctionCycle,
