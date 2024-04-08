@@ -18,7 +18,7 @@ use crate::unordered_hash_set::UnorderedHashSet;
 mod feedback_set_test;
 
 /// Context for the feedback-set algorithm.
-struct FeedbackSetAlgoContext<Node: GraphNode> {
+struct FeedbackSetAlgoContext<Node: ComputeScc> {
     /// The accumulated feedback set so far in the process of the algorithm. In the end of the
     /// algorithm, this is also the result.
     pub feedback_set: OrderedHashSet<Node::NodeId>,
@@ -26,7 +26,7 @@ struct FeedbackSetAlgoContext<Node: GraphNode> {
     /// reached, it indicates it's in some cycle that was not "resolved" yet.
     pub in_flight: UnorderedHashSet<Node::NodeId>,
 }
-impl<Node: GraphNode> FeedbackSetAlgoContext<Node> {
+impl<Node: ComputeScc> FeedbackSetAlgoContext<Node> {
     fn new() -> Self {
         FeedbackSetAlgoContext {
             feedback_set: OrderedHashSet::default(),
@@ -36,7 +36,7 @@ impl<Node: GraphNode> FeedbackSetAlgoContext<Node> {
 }
 
 /// Calculates the feedback set of an SCC.
-pub fn calc_feedback_set<Node: GraphNode + ComputeScc>(
+pub fn calc_feedback_set<Node: ComputeScc>(
     node: &SccGraphNode<Node>,
 ) -> OrderedHashSet<Node::NodeId> {
     let mut ctx = FeedbackSetAlgoContext::<Node>::new();
@@ -44,7 +44,7 @@ pub fn calc_feedback_set<Node: GraphNode + ComputeScc>(
     ctx.feedback_set
 }
 
-fn calc_feedback_set_recursive<Node: GraphNode + ComputeScc>(
+fn calc_feedback_set_recursive<Node: ComputeScc>(
     node: &SccGraphNode<Node>,
     ctx: &mut FeedbackSetAlgoContext<Node>,
 ) {
