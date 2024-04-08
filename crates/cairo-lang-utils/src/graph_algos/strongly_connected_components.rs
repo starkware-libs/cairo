@@ -10,10 +10,7 @@ use crate::unordered_hash_map::UnorderedHashMap;
 mod strongly_connected_components_test;
 
 /// A trait for a type that can compute its strongly-connected-component.
-pub trait ComputeScc
-where
-    Self: GraphNode,
-{
+pub trait ComputeScc: GraphNode {
     fn compute_scc(&self) -> Vec<Self::NodeId>;
 }
 
