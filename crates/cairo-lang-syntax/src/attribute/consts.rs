@@ -11,10 +11,13 @@ pub const INLINE_ATTR: &str = "inline";
 /// return value must be used.
 pub const MUST_USE_ATTR: &str = "must_use";
 
-/// An attribute to define a type as an unstable type that shouldn't be used, or a function as an
-/// unstable function that shouldn't be used. Usage of these items will result in a warning, unless
-/// the using crate is marked with their feature active.
+/// An attribute to define an item as unstable. Usage of these items will result in a warning,
+/// unless the using crate is marked with their feature active.
 pub const UNSTABLE_ATTR: &str = "unstable";
+
+/// An attribute to define an item as deprecated. Usage of these items will result in a warning,
+/// unless the using crate is marked with their feature active.
+pub const DEPRECATED_ATTR: &str = "deprecated";
 
 /// An attribute to allow usage of a feature under a statement.
 pub const FEATURE_ATTR: &str = "feature";

@@ -2,13 +2,13 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::DiagnosticsBuilder;
-use cairo_lang_syntax::attribute::consts::{FEATURE_ATTR, UNSTABLE_ATTR};
+use cairo_lang_syntax::attribute::consts::{DEPRECATED_ATTR, FEATURE_ATTR, UNSTABLE_ATTR};
 use cairo_lang_syntax::attribute::structured::{
-    AttributeArg, AttributeArgVariant, AttributeStructurize,
+    self, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr};
+use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use smol_str::SmolStr;
 
@@ -20,49 +20,99 @@ use crate::SemanticDiagnostic;
 pub enum FeatureKind {
     /// The feature of the item is stable.
     Stable,
-    /// The feature of the item is unstable, with the given name.
-    Unstable(String),
+    /// The feature of the item is unstable, with the given name to allow.
+    Unstable(SmolStr),
+    /// The feature of the item is deprecated, with the given name to allow, and an optional note
+    /// to appear in diagnostics.
+    Deprecated { feature: SmolStr, note: Option<SmolStr> },
 }
 impl FeatureKind {
     pub fn from_ast(
         db: &dyn SyntaxGroup,
         diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
-        attributes: &ast::AttributeList,
+        attrs: &ast::AttributeList,
     ) -> Self {
-        let unstable_attrs = attributes.query_attr(db, UNSTABLE_ATTR);
-        if unstable_attrs.is_empty() {
+        let unstable_attrs = attrs.query_attr(db, UNSTABLE_ATTR);
+        let deprecated_attrs = attrs.query_attr(db, DEPRECATED_ATTR);
+        if unstable_attrs.is_empty() && deprecated_attrs.is_empty() {
             return Self::Stable;
         };
-        let Ok([unstable_attr]): Result<[_; 1], _> = unstable_attrs.try_into() else {
-            diagnostics.add(SemanticDiagnostic::new(
-                StableLocation::from_ast(attributes),
-                SemanticDiagnosticKind::MultipleFeatureAttributes,
-            ));
+        if unstable_attrs.len() + deprecated_attrs.len() > 1 {
+            add_diag(diagnostics, &attrs.stable_ptr(), FeatureMarkerDiagnostic::MultipleMarkers);
             return Self::Stable;
+        }
+        if deprecated_attrs.is_empty() {
+            let attr = unstable_attrs.into_iter().next().unwrap().structurize(db);
+            let [feature] = parse_feature_attr(db, diagnostics, &attr, ["feature"]);
+            feature.map(Self::Unstable).ok_or(attr)
+        } else {
+            let attr = deprecated_attrs.into_iter().next().unwrap().structurize(db);
+            let [feature, note, _] =
+                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
+            feature.map(|feature| Self::Deprecated { feature, note }).ok_or(attr)
+        }
+        .unwrap_or_else(|attr| {
+            add_diag(diagnostics, &attr.stable_ptr, FeatureMarkerDiagnostic::MissingAllowFeature);
+            Self::Stable
+        })
+    }
+}
+
+/// Diagnostics for feature markers.
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum FeatureMarkerDiagnostic {
+    /// Multiple markers on the same item.
+    MultipleMarkers,
+    /// Every marker must have a feature argument, to allow ignoring the warning.
+    MissingAllowFeature,
+    /// Unsupported argument in the feature marker attribute.
+    UnsupportedArgument,
+    /// Duplicated argument in the feature marker attribute.
+    DuplicatedArgument,
+}
+
+/// Parses the feature attribute.
+fn parse_feature_attr<const EXTRA_ALLOWED: usize>(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
+    attr: &structured::Attribute,
+    allowed_args: [&str; EXTRA_ALLOWED],
+) -> [Option<SmolStr>; EXTRA_ALLOWED] {
+    let mut arg_values = std::array::from_fn(|_| None);
+    for AttributeArg { variant, arg_stable_ptr, .. } in &attr.args {
+        let AttributeArgVariant::Named {
+            value: ast::Expr::String(value),
+            name,
+            name_stable_ptr,
+            ..
+        } = variant
+        else {
+            add_diag(diagnostics, arg_stable_ptr, FeatureMarkerDiagnostic::UnsupportedArgument);
+            continue;
         };
-        let unstable_attr = unstable_attr.structurize(db);
-        let Ok([arg]): Result<[_; 1], _> = unstable_attr.args.try_into() else {
-            diagnostics.add(SemanticDiagnostic::new(
-                StableLocation::new(unstable_attr.args_stable_ptr.untyped()),
-                SemanticDiagnosticKind::UnsupportedUnstableAttrArguments,
-            ));
-            return Self::Stable;
+        let Some(i) = allowed_args.iter().position(|x| x == &name.as_str()) else {
+            add_diag(diagnostics, name_stable_ptr, FeatureMarkerDiagnostic::UnsupportedArgument);
+            continue;
         };
-        match arg.variant {
-            AttributeArgVariant::Named { value: ast::Expr::String(value), name, .. }
-                if name == "feature" =>
-            {
-                Self::Unstable(value.text(db).into())
-            }
-            _ => {
-                diagnostics.add(SemanticDiagnostic::new(
-                    StableLocation::new(arg.arg_stable_ptr.untyped()),
-                    SemanticDiagnosticKind::UnsupportedUnstableAttrArguments,
-                ));
-                Self::Stable
-            }
+        if arg_values[i].is_some() {
+            add_diag(diagnostics, name_stable_ptr, FeatureMarkerDiagnostic::DuplicatedArgument);
+        } else {
+            arg_values[i] = Some(value.text(db));
         }
     }
+    arg_values
+}
+
+/// Helper for adding a marker diagnostic.
+fn add_diag(
+    diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
+    stable_ptr: &impl TypedStablePtr,
+    diagnostic: FeatureMarkerDiagnostic,
+) {
+    diagnostics.add(SemanticDiagnostic::new(
+        StableLocation::new(stable_ptr.untyped()),
+        SemanticDiagnosticKind::FeatureMarkerDiagnostic(diagnostic),
+    ));
 }
 
 /// Returns the allowed features of an object which supports attributes.

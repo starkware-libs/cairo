@@ -21,6 +21,7 @@ use syntax::node::TypedSyntaxNode;
 use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
+use crate::items::feature_kind::FeatureMarkerDiagnostic;
 use crate::resolve::ResolvedConcreteItem;
 use crate::semantic;
 use crate::types::peel_snapshots;
@@ -426,15 +427,31 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UnstableFeature { feature_name } => {
                 format!(
-                    r#"Usage of unstable feature `{feature_name}` with no `#[feature({feature_name})]` attribute."#
+                    r#"Usage of unstable feature `{feature_name}` with no
+                     `#[feature({feature_name})]` attribute."#
                 )
             }
-            SemanticDiagnosticKind::MultipleFeatureAttributes => {
-                "Multiple feature attributes.".into()
+            SemanticDiagnosticKind::DeprecatedFeature { feature_name, note } => {
+                format!(
+                    r#"Usage of deprecated feature `{feature_name}` with no
+                     `#[feature({feature_name})]` attribute.{}"#,
+                    note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
+                )
             }
-            SemanticDiagnosticKind::UnsupportedUnstableAttrArguments => {
-                "Unsupported unstable attribute arguments.".into()
-            }
+            SemanticDiagnosticKind::FeatureMarkerDiagnostic(diagnostic) => match diagnostic {
+                FeatureMarkerDiagnostic::MultipleMarkers => {
+                    "Multiple feature marker attributes.".into()
+                }
+                FeatureMarkerDiagnostic::MissingAllowFeature => {
+                    "Missing `feature` arg for feature marker attribute.".into()
+                }
+                FeatureMarkerDiagnostic::UnsupportedArgument => {
+                    "Unsupported argument for feature marker attribute.".into()
+                }
+                FeatureMarkerDiagnostic::DuplicatedArgument => {
+                    "Duplicated argument for feature marker attribute.".into()
+                }
+            },
             SemanticDiagnosticKind::UnusedVariable => {
                 "Unused variable. Consider ignoring by prefixing with `_`.".into()
             }
@@ -969,8 +986,11 @@ pub enum SemanticDiagnosticKind {
     UnstableFeature {
         feature_name: SmolStr,
     },
-    MultipleFeatureAttributes,
-    UnsupportedUnstableAttrArguments,
+    DeprecatedFeature {
+        feature_name: SmolStr,
+        note: Option<SmolStr>,
+    },
+    FeatureMarkerDiagnostic(FeatureMarkerDiagnostic),
     UnhandledMustUseFunction,
     UnusedVariable,
     ConstGenericParamNotSupported,
