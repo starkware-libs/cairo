@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
-use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
+use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, PHANTOM_ATTR};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
@@ -219,6 +219,16 @@ impl ConcreteTypeId {
             )
         }
     }
+
+    /// Returns whether the type has the `#[phantom]` attribute.
+    pub fn is_phantom(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
+        match self {
+            ConcreteTypeId::Struct(id) => id.has_attr(db, PHANTOM_ATTR),
+            ConcreteTypeId::Enum(id) => id.has_attr(db, PHANTOM_ATTR),
+            ConcreteTypeId::Extern(id) => id.has_attr(db, PHANTOM_ATTR),
+        }
+    }
+
     /// Returns whether the type has the `#[must_use]` attribute.
     pub fn is_must_use(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
         match self {
