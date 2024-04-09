@@ -3,11 +3,11 @@
 //! Implements the LSP protocol over stdin/out.
 
 use std::collections::{HashMap, HashSet};
+use std::io;
 use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
-use std::{env, io};
 
 use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
@@ -61,19 +61,20 @@ use crate::lang::lsp::LsProtoGroup;
 use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
 use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
+mod env_config;
 mod ide;
 mod lang;
 mod scarb_service;
 mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
-const DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL: u64 = 300;
 
 #[tokio::main]
 pub async fn start() {
     let _log_guard = init_logging();
 
     info!("language server starting");
+    env_config::report_to_logs();
 
     let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
 
@@ -91,7 +92,6 @@ pub async fn start() {
 ///
 /// Returns a guard that should be dropped when the LS ends, to flush log files.
 fn init_logging() -> Option<impl Drop> {
-    use std::ffi::OsString;
     use std::fs;
     use std::io::IsTerminal;
 
@@ -112,15 +112,11 @@ fn init_logging() -> Option<impl Drop> {
         .with_filter(
             EnvFilter::builder()
                 .with_default_directive(LevelFilter::WARN.into())
-                .with_env_var("CAIRO_LS_LOG")
+                .with_env_var(env_config::CAIRO_LS_LOG)
                 .from_env_lossy(),
         );
 
-    fn env_to_bool(os: Option<OsString>) -> bool {
-        matches!(os.as_ref().and_then(|os| os.to_str()), Some("1") | Some("true"))
-    }
-
-    let profile_layer = if env_to_bool(env::var_os("CAIRO_LS_PROFILE")) {
+    let profile_layer = if env_config::tracing_profile() {
         let mut path = PathBuf::from(format!(
             "./cairols-profile-{}.json",
             SystemTime::UNIX_EPOCH.elapsed().unwrap().as_micros()
@@ -223,12 +219,7 @@ impl Backend {
             state_mutex: State::default().into(),
             scarb,
             last_replace: tokio::sync::Mutex::new(SystemTime::now()),
-            db_replace_interval: Duration::from_secs(
-                env::var("CAIRO_LSP_DB_REPLACE_INTERVAL")
-                    .ok()
-                    .and_then(|value| value.parse::<u64>().ok())
-                    .unwrap_or(DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL),
-            ),
+            db_replace_interval: env_config::db_replace_interval(),
         }
     }
 
