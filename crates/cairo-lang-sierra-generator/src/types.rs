@@ -36,6 +36,13 @@ pub fn get_concrete_type_id(
         ) if db.is_self_referential(type_id)? => {
             Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::CycleBreaker(type_id)))
         }
+
+        semantic::TypeLongId::Concrete(concrete_type_id)
+            if concrete_type_id.is_phantom(db.upcast())? =>
+        {
+            Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Phantom(type_id)))
+        }
+
         _ => Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
             db.get_concrete_long_type_id(type_id)?,
         ))),
