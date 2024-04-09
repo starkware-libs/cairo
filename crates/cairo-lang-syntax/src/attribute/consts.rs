@@ -27,3 +27,7 @@ pub const IMPLICIT_PRECEDENCE_ATTR: &str = "implicit_precedence";
 /// corelib.
 /// TODO(Gil): Remove this once `starknet` is removed from corelib.
 pub const STARKNET_INTERFACE_ATTR: &str = "starknet::interface";
+
+/// An attribute to define a type as a phantom type, phantom types cannot be created at run time and
+/// are typically used for meta-programming.
+pub const PHANTOM_ATTR: &str = "phantom";
