@@ -12,6 +12,7 @@ struct OuterType {
 // TODO(ilya): update format.
 #[starknet::contract]
 mod test_contract {
+    use core::poseidon;
     #[storage]
     struct Storage {
         var_felt252: felt252,
@@ -49,6 +50,7 @@ struct OuterType {
 // TODO(ilya): update format.
 #[starknet::contract]
 mod test_contract {
+    use core::poseidon;
     #[storage]
     struct Storage {
         var_felt252: felt252,
@@ -177,6 +179,7 @@ pub enum Event {}
     
     pub use __member_module_var_felt252::InternalContractMemberStateTrait as var_felt252ContractMemberStateTrait;
     pub mod __member_module_var_felt252 {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -224,6 +227,7 @@ pub enum Event {}
     }
     pub use __member_module_var_u8::InternalContractMemberStateTrait as var_u8ContractMemberStateTrait;
     pub mod __member_module_var_u8 {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -271,6 +275,7 @@ pub enum Event {}
     }
     pub use __member_module_var_u16::InternalContractMemberStateTrait as var_u16ContractMemberStateTrait;
     pub mod __member_module_var_u16 {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -318,6 +323,7 @@ pub enum Event {}
     }
     pub use __member_module_var_u32::InternalContractMemberStateTrait as var_u32ContractMemberStateTrait;
     pub mod __member_module_var_u32 {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -365,6 +371,7 @@ pub enum Event {}
     }
     pub use __member_module_var_u64::InternalContractMemberStateTrait as var_u64ContractMemberStateTrait;
     pub mod __member_module_var_u64 {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -412,6 +419,7 @@ pub enum Event {}
     }
     pub use __member_module_var_u128::InternalContractMemberStateTrait as var_u128ContractMemberStateTrait;
     pub mod __member_module_var_u128 {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -459,6 +467,7 @@ pub enum Event {}
     }
     pub use __member_module_var_bool::InternalContractMemberStateTrait as var_boolContractMemberStateTrait;
     pub mod __member_module_var_bool {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -506,6 +515,7 @@ pub enum Event {}
     }
     pub use __member_module_felt252_to_u128::InternalContractMemberStateTrait as felt252_to_u128ContractMemberStateTrait;
     pub mod __member_module_felt252_to_u128 {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -554,6 +564,7 @@ pub enum Event {}
     }
     pub use __member_module_u128_to_bool::InternalContractMemberStateTrait as u128_to_boolContractMemberStateTrait;
     pub mod __member_module_u128_to_bool {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -602,6 +613,7 @@ pub enum Event {}
     }
     pub use __member_module_bool_to_felt252::InternalContractMemberStateTrait as bool_to_felt252ContractMemberStateTrait;
     pub mod __member_module_bool_to_felt252 {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -650,6 +662,7 @@ pub enum Event {}
     }
     pub use __member_module_outer_type_var::InternalContractMemberStateTrait as outer_type_varContractMemberStateTrait;
     pub mod __member_module_outer_type_var {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -697,6 +710,7 @@ pub enum Event {}
     }
     pub use __member_module_outer_type_to_outer_type::InternalContractMemberStateTrait as outer_type_to_outer_typeContractMemberStateTrait;
     pub mod __member_module_outer_type_to_outer_type {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -745,6 +759,7 @@ pub enum Event {}
     }
     pub use __member_module_inner_type_var::InternalContractMemberStateTrait as inner_type_varContractMemberStateTrait;
     pub mod __member_module_inner_type_var {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -792,6 +807,7 @@ pub enum Event {}
     }
     pub use __member_module_inner_type_to_inner_type::InternalContractMemberStateTrait as inner_type_to_inner_typeContractMemberStateTrait;
     pub mod __member_module_inner_type_to_inner_type {
+        use super::poseidon;
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -843,7 +859,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21bc80a6e513ea8e536;
+pub const TEST_CLASS_HASH: felt252 = 0xaeed12eecc3e135ea4da556a9465e7ab4d93e333947d2025743f0658f23555;
 
 
 pub mod __external {

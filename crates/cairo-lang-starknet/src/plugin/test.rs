@@ -74,6 +74,8 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         embedded_impl: "embedded_impl",
         raw_output: "raw_output",
         storage: "storage",
+        storage_v2: "storage_v2",
+        hello_starknet_storage_v2: "hello_starknet_storage_v2",
         dispatcher: "dispatcher",
         user_defined_types: "user_defined_types",
         l1_handler: "l1_handler",

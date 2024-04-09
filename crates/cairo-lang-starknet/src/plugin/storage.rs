@@ -13,6 +13,7 @@ use super::consts::{
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
 use super::utils::has_v0_attribute;
+use super::STORAGE_MEMBER_TRAIT;
 
 /// Generate getters and setters for the members of the storage struct.
 pub fn handle_storage_struct(
@@ -371,6 +372,18 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
     pub mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
+
+        impl InternalPointerAccess{member_state_name}Impl of \
+                 {STORAGE_MEMBER_TRAIT}<{member_state_name}, $type_path$> {{
+            fn as_path(self: @{member_state_name}) -> \
+                 starknet::storage_access::StoragePath<$type_path$> {{
+                starknet::storage_access::StoragePath {{ hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), \
+                 {address})
+                 }}
+            }}
+        }}
+
         pub trait Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @{member_state_name}) -> $type_path$;
@@ -441,6 +454,16 @@ fn handle_legacy_mapping_storage_member(
     pub mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
+
+        impl InternalPointerAccess{member_state_name}Impl of {STORAGE_MEMBER_TRAIT}<{member_state_name}, starknet::storage_access::StorageMap<$key_type$, $value_type$>> {{
+            fn as_path(self: @{member_state_name}) -> \
+                 starknet::storage_access::StoragePath<starknet::storage_access::StorageMap<$key_type$, $value_type$>> {{
+                starknet::storage_access::StoragePath {{ hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), {address})
+                 }}
+            }}
+        }}
+
         pub trait Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}, key: $key_type$) -> \
                  starknet::storage_access::StorageBaseAddress;

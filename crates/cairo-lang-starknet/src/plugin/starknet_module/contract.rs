@@ -23,6 +23,7 @@ use crate::plugin::entry_point::{
 };
 use crate::plugin::storage::handle_storage_struct;
 use crate::plugin::utils::{forbid_attributes_in_impl, has_v0_attribute_ex};
+use crate::plugin::STORAGE_MEMBER_TRAIT;
 
 /// Accumulated data specific for contract generation.
 #[derive(Default)]

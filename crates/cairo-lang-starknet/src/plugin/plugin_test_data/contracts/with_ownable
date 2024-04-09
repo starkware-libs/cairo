@@ -67,6 +67,15 @@ mod ownable_balance {
         use super::OwnableBalanceImpl;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, u128> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<u128> {
+                starknet::storage_access::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
@@ -325,6 +334,15 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         use super::OwnableBalanceImpl;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, u128> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<u128> {
+                starknet::storage_access::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;

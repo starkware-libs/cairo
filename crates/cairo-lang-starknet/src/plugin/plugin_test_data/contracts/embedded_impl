@@ -539,6 +539,15 @@ pub enum Event {}
     pub mod __member_module_value {
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, felt252> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<felt252> {
+                starknet::storage_access::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x1afeeaff0ed5cee7d05a21078399c2f56226b0cd5657062500cef4c4e736f85)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> felt252;

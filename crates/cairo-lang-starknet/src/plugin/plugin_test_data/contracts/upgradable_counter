@@ -92,6 +92,15 @@ mod counter_contract {
         use super::CounterContract;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, u128> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<u128> {
+                starknet::storage_access::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x7ebcc807b5c7e19f245995a55aed6f46f5f582f476a886b91b834b0ddf5854)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
@@ -859,6 +868,15 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
         use super::CounterContract;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, u128> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<u128> {
+                starknet::storage_access::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x7ebcc807b5c7e19f245995a55aed6f46f5f582f476a886b91b834b0ddf5854)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
