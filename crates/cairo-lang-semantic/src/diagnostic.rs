@@ -751,6 +751,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::SelfMustBeFirst => {
                 "`Self` can only be the first segment of a path.".into()
             }
+            SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => {
+                "Can not create instances of phantom types.".into()
+            }
         }
     }
 
@@ -811,6 +814,7 @@ pub enum SemanticDiagnosticKind {
     },
     UnexpectedGenericArgs,
     UnknownMember,
+    CannotCreateInstancesOfPhantomTypes,
     MemberSpecifiedMoreThanOnce,
     StructBaseStructExpressionNotLast,
     StructBaseStructExpressionNoEffect,
