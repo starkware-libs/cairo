@@ -1,7 +1,7 @@
 /// Performs addition that wraps around on overflow.
 pub trait WrappingAdd<T> {
-    /// Wrapping (modular) addition. Computes `self + other`, wrapping around at the boundary of the
-    /// type.
+    /// Wrapping (modular) addition. Computes `self + other`, wrapping around at the boundary of
+    /// the type.
     fn wrapping_add(self: T, v: T) -> T;
 }
 

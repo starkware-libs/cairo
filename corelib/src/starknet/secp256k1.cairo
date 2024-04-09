@@ -64,7 +64,8 @@ extern fn secp256k1_mul_syscall(
     p: Secp256k1Point, scalar: u256
 ) -> SyscallResult<Secp256k1Point> implicits(GasBuiltin, System) nopanic;
 
-/// Computes the point on the secp256k1 curve that matches the given `x` coordinate, if such exists.
+/// Computes the point on the secp256k1 curve that matches the given `x` coordinate, if such
+/// exists.
 /// Out of the two possible y's, chooses according to `y_parity`.
 /// `y_parity` == true means that the y coordinate is odd.
 extern fn secp256k1_get_point_from_x_syscall(

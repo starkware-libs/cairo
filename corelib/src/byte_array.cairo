@@ -304,7 +304,8 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         self.append_split(high.into(), low.into());
     }
 
-    /// Appends a single word to the end of `self`, given that the index of splitting `word` is > 16.
+    /// Appends a single word to the end of `self`, given that the index of splitting `word` is >
+    /// 16.
     ///
     /// `split_index` is the number of bytes left in `self.pending_word` after this function.
     /// This is the index of the split (LSB's index is 0).

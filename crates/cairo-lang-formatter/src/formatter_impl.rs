@@ -400,7 +400,8 @@ impl LineBuilder {
                 }
                 _ => 0,
             };
-            trees.push(LineBuilder::new(base_indent + added_indent));
+            let cur_indent = base_indent + added_indent;
+            trees.push(LineBuilder::new(cur_indent));
             for j in current_line_start..*current_line_end {
                 match &self.children[j] {
                     LineComponent::Indent(_) => {}
@@ -409,6 +410,11 @@ impl LineBuilder {
                         if !trees.last().unwrap().is_only_indents() {
                             trees.last_mut().unwrap().push_space();
                         }
+                    }
+                    LineComponent::Comment { content, is_trailing } if !is_trailing => {
+                        let formatted_comment =
+                            format_leading_comment(content, cur_indent, max_line_width);
+                        trees.last_mut().unwrap().push_comment(&formatted_comment, false);
                     }
                     _ => trees.last_mut().unwrap().push_child(self.children[j].clone()),
                 }
@@ -442,7 +448,6 @@ impl LineBuilder {
     /// Creates a string of the code represented in the builder. The string may represent
     /// several lines (separated by '\n'), where each line length is
     /// less than max_line_width (if possible).
-    /// Each line is prepended by the leading
     pub fn build(&self, max_line_width: usize, tab_size: usize) -> String {
         self.break_line_tree(max_line_width, tab_size).iter().join("\n") + "\n"
     }
@@ -523,6 +528,48 @@ impl LineBuilder {
             pending_break_line_points: vec![],
         }
     }
+}
+
+/// Formats a comment to fit in the line width. There are no merges of lines, as this is not clear
+/// when to merge two lines the user choose to write on separate lines, so all original line breaks
+/// are preserved.
+fn format_leading_comment(content: &str, cur_indent: usize, max_line_width: usize) -> String {
+    let mut formatted_comment = String::new();
+    for line in content.lines() {
+        let mut trimmed_line = line.trim();
+        let n_slashes = trimmed_line.chars().take_while(|c| *c == '/').count();
+        trimmed_line = trimmed_line.trim_start_matches('/');
+        let n_exclamations = trimmed_line.chars().take_while(|c| *c == '!').count();
+        trimmed_line = trimmed_line.trim_start_matches('!');
+        let n_leading_spaces = trimmed_line.chars().take_while(|c| *c == ' ').count();
+        let line_content = trimmed_line.trim_start_matches(' ');
+
+        let max_comment_width =
+            max_line_width - cur_indent - n_slashes - n_exclamations - n_leading_spaces;
+        let append_line = |formatted_comment: &mut String, current_line: &str| {
+            formatted_comment.push_str(&" ".repeat(cur_indent));
+            formatted_comment.push_str(&"/".repeat(n_slashes));
+            formatted_comment.push_str(&"!".repeat(n_exclamations));
+            formatted_comment.push_str(&" ".repeat(n_leading_spaces));
+            formatted_comment.push_str(current_line.trim_end());
+            formatted_comment.push('\n');
+        };
+        let mut words = line_content.split(" ");
+        let mut current_line = String::new();
+        while let Some(word) = words.next() {
+            if current_line.len() + word.len() + 1 <= max_comment_width {
+                current_line.push_str(word);
+                current_line.push(' ');
+            } else {
+                append_line(&mut formatted_comment, &current_line);
+                current_line = word.to_string();
+                current_line.push(' ');
+            }
+        }
+        append_line(&mut formatted_comment, &current_line);
+    }
+    // Remove the leading spaces, as they are added by the LineBuilder for the first line.
+    formatted_comment.trim().to_string()
 }
 
 /// A struct holding all the data of the pending line to be emitted.

@@ -63,7 +63,8 @@ mod account {
             // Validate caller.
             assert(starknet::get_caller_address().is_zero(), 'INVALID_CALLER');
 
-            // Check the tx version here, since version 0 transaction skip the __validate__ function.
+            // Check the tx version here, since version 0 transaction skip the __validate__
+            // function.
             let tx_info = starknet::get_tx_info().unbox();
             assert(tx_info.version != 0, 'INVALID_TX_VERSION');
 

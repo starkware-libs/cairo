@@ -56,7 +56,8 @@ pub fn u128_wrapping_sub(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic
 
 /// A type that contains 4 u128s (a, b, c, d) and guarantees that `a * b = 2**128 * c + d`.
 ///
-/// The guarantee is verified by `u128_mul_guarantee_verify`, which is the only way to destruct this
+/// The guarantee is verified by `u128_mul_guarantee_verify`, which is the only way to destruct
+/// this
 /// type. This way, one can trust that the guarantee holds although it has not yet been verified.
 pub extern type U128MulGuarantee;
 
@@ -1363,7 +1364,8 @@ pub fn u512_safe_div_rem_by_u256(
 }
 
 /// Calculates division with remainder of a u512 by a non-zero u256.
-/// Additionally returns several `U128MulGuarantee`s that are required for validating the calculation.
+/// Additionally returns several `U128MulGuarantee`s that are required for validating the
+/// calculation.
 extern fn u512_safe_divmod_by_u256(
     lhs: u512, rhs: NonZero<u256>
 ) -> (
