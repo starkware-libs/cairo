@@ -6,8 +6,8 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
-    FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR, MUST_USE_ATTR,
-    PHANTOM_ATTR, STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
+    DEPRECATED_ATTR, FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR,
+    MUST_USE_ATTR, PHANTOM_ATTR, STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
 };
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -226,6 +226,7 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
         INLINE_ATTR.into(),
         MUST_USE_ATTR.into(),
         UNSTABLE_ATTR.into(),
+        DEPRECATED_ATTR.into(),
         FEATURE_ATTR.into(),
         PHANTOM_ATTR.into(),
         IMPLICIT_PRECEDENCE_ATTR.into(),
