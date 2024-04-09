@@ -23,6 +23,7 @@ use crate::plugin::entry_point::{
 };
 use crate::plugin::storage::handle_storage_struct;
 use crate::plugin::utils::{forbid_attributes_in_impl, has_v0_attribute_ex};
+use crate::plugin::{storage_v2, STORAGE_V2_STRUCT_NAME};
 
 /// Accumulated data specific for contract generation.
 #[derive(Default)]
@@ -250,6 +251,24 @@ fn handle_contract_item(
                 metadata,
                 &mut data.specific.entry_points_code,
             );
+        }
+        ast::ModuleItem::Struct(item_struct)
+            if item_struct.name(db).text(db) == STORAGE_V2_STRUCT_NAME =>
+        {
+            storage_v2::handle_storage_struct(
+                db,
+                diagnostics,
+                item_struct.clone(),
+                StarknetModuleKind::Contract,
+                &mut data.common,
+            );
+            for member in item_struct.members(db).elements(db) {
+                // v0 is not validated here to not create multiple diagnostics. It's already
+                // verified in handle_storage_struct above.
+                if member.has_attr(db, SUBSTORAGE_ATTR) {
+                    unimplemented!("Substorage is not yet supported in storage v2.")
+                }
+            }
         }
         ast::ModuleItem::Struct(item_struct)
             if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>

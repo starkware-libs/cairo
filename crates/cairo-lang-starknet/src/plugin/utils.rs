@@ -6,6 +6,7 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 
 use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR};
+use super::{STORAGE_STRUCT_NAME, STORAGE_V2_STRUCT_NAME};
 
 /// Helper trait for syntax queries on `ast::Param`.
 pub trait ParamEx {
@@ -264,4 +265,9 @@ pub fn forbid_attribute_in_impl(
             ),
         ));
     }
+}
+
+/// Checks if the given string is a valid storage struct name.
+pub fn is_valid_storage_struct_name(name: &str) -> bool {
+    name == STORAGE_V2_STRUCT_NAME || name == STORAGE_STRUCT_NAME
 }

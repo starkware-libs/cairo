@@ -17,6 +17,7 @@ mod entry_point;
 pub mod events;
 mod starknet_module;
 mod storage;
+mod storage_v2;
 mod utils;
 
 use dispatcher::handle_trait;
