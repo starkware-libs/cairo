@@ -9,6 +9,7 @@ use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
+use super::feature_kind::extract_allowed_features;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
@@ -146,8 +147,14 @@ pub fn priv_free_function_declaration_data(
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    resolver.data.allowed_features = extract_allowed_features(
+        db.upcast(),
+        &free_function_id,
+        &free_function_syntax,
+        &mut diagnostics,
+    );
 
-    let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
+    let mut environment = Environment::empty();
 
     let signature_syntax = declaration.signature(syntax_db);
     let signature = semantic::Signature::from_ast(

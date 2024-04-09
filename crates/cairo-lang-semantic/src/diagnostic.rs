@@ -429,6 +429,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     r#"Usage of unstable feature `{feature_name}` with no `#[feature({feature_name})]` attribute."#
                 )
             }
+            SemanticDiagnosticKind::MultipleFeatureAttributes => {
+                "Multiple feature attributes.".into()
+            }
+            SemanticDiagnosticKind::UnsupportedUnstableAttrArguments => {
+                "Unsupported unstable attribute arguments.".into()
+            }
             SemanticDiagnosticKind::UnusedVariable => {
                 "Unused variable. Consider ignoring by prefixing with `_`.".into()
             }
@@ -959,6 +965,8 @@ pub enum SemanticDiagnosticKind {
     UnstableFeature {
         feature_name: SmolStr,
     },
+    MultipleFeatureAttributes,
+    UnsupportedUnstableAttrArguments,
     UnhandledMustUseFunction,
     UnusedVariable,
     ConstGenericParamNotSupported,

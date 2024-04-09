@@ -30,6 +30,7 @@ use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 
 use super::enm::SemanticEnumEx;
+use super::feature_kind::extract_allowed_features;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
@@ -1529,10 +1530,12 @@ pub fn priv_impl_function_declaration_data(
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    resolver.data.allowed_features =
+        extract_allowed_features(db.upcast(), &impl_function_id, function_syntax, &mut diagnostics);
 
     let signature_syntax = declaration.signature(syntax_db);
 
-    let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
+    let mut environment = Environment::empty();
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
