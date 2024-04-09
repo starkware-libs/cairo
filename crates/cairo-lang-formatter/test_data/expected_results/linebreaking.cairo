@@ -172,3 +172,12 @@ impl AnImpl<
     >,
 > of ATrait {}
 
+/// A comment that should be broken because it is too long to fit in a single line. Some more words
+/// to make it longer. And even longer as we want it to be broken into three lines. Lorem ipsum
+/// dolor sit amet.
+fn function_for_a_comment() {
+    // A comment that should be broken because it is too long to fit in a single line. Some more
+    // words to make it longer. And even longer as we want it to be broken into three lines. Lorem
+    // ipsum dolor sit amet.
+    let x = 1;
+}
