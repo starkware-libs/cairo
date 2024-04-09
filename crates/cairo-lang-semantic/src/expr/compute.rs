@@ -13,6 +13,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_syntax::attribute::consts::PHANTOM_ATTR;
 use cairo_lang_syntax::node::ast::{
     BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
 };
@@ -52,6 +53,7 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
     UnsupportedOutsideOfFunctionFeatureName,
 };
+use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_allowed_features;
@@ -721,6 +723,9 @@ fn compute_expr_function_call_semantic(
                 return Err(diag_added);
             }
             let concrete_enum_id = concrete_variant.concrete_enum_id;
+            if concrete_enum_id.has_attr(db, PHANTOM_ATTR)? {
+                ctx.diagnostics.report(syntax, CannotCreateInstancesOfPhantomTypes);
+            }
             Ok(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
                 variant: concrete_variant,
                 value_expr: arg.id,
@@ -1838,6 +1843,10 @@ fn struct_ctor_expr(
         try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
             .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
             .ok_or_else(|| ctx.diagnostics.report(&path, NotAStruct))?;
+
+    if concrete_struct_id.has_attr(db, PHANTOM_ATTR)? {
+        ctx.diagnostics.report(ctor_syntax, CannotCreateInstancesOfPhantomTypes);
+    }
 
     let members = db.concrete_struct_members(concrete_struct_id)?;
     let mut member_exprs: OrderedHashMap<MemberId, Option<ExprId>> = OrderedHashMap::default();
