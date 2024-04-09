@@ -1123,13 +1123,18 @@ impl<'db> Resolver<'db> {
             }
         }
         match &item_info.feature_kind {
-            FeatureKind::Stable => {}
-            FeatureKind::Unstable(feature) => {
-                if !self.data.allowed_features.contains(feature.as_str()) {
-                    diagnostics
-                        .report(identifier, UnstableFeature { feature_name: feature.into() });
-                }
+            FeatureKind::Unstable(feature) if !self.data.allowed_features.contains(feature) => {
+                diagnostics.report(identifier, UnstableFeature { feature_name: feature.clone() });
             }
+            FeatureKind::Deprecated { feature, note }
+                if !self.data.allowed_features.contains(feature) =>
+            {
+                diagnostics.report(
+                    identifier,
+                    DeprecatedFeature { feature_name: feature.clone(), note: note.clone() },
+                );
+            }
+            _ => {}
         }
     }
 }
