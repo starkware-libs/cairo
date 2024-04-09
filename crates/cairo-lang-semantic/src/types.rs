@@ -225,7 +225,7 @@ impl ConcreteTypeId {
         match self {
             ConcreteTypeId::Struct(id) => id.has_attr(db, MUST_USE_ATTR),
             ConcreteTypeId::Enum(id) => id.has_attr(db, MUST_USE_ATTR),
-            ConcreteTypeId::Extern(_) => Ok(false),
+            ConcreteTypeId::Extern(id) => id.has_attr(db, MUST_USE_ATTR),
         }
     }
     /// Returns the attribute if a type has the `#[unstable(feature: "some-string")]` attribute.

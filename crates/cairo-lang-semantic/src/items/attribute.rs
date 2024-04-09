@@ -1,12 +1,13 @@
 use cairo_lang_defs::ids::{
-    EnumId, FreeFunctionId, FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId,
-    ImplTypeDefId, ModuleId, StructId, SubmoduleId, TraitFunctionId, TraitId, TraitTypeId,
+    EnumId, ExternTypeId, FreeFunctionId, FunctionWithBodyId, ImplAliasId, ImplDefId,
+    ImplFunctionId, ImplTypeDefId, ModuleId, StructId, SubmoduleId, TraitFunctionId, TraitId,
+    TraitTypeId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::attribute::structured::Attribute;
 
 use crate::db::SemanticGroup;
-use crate::{ConcreteEnumId, ConcreteStructId};
+use crate::{ConcreteEnumId, ConcreteExternTypeId, ConcreteStructId};
 
 pub trait AttributeTrait {
     fn name(&self, db: &dyn SemanticGroup) -> String;
@@ -111,6 +112,16 @@ impl SemanticQueryAttrs for EnumId {
 impl SemanticQueryAttrs for ConcreteEnumId {
     fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
         self.enum_id(db).attributes_elements(db)
+    }
+}
+impl SemanticQueryAttrs for ExternTypeId {
+    fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
+        db.extern_type_attributes(*self)
+    }
+}
+impl SemanticQueryAttrs for ConcreteExternTypeId {
+    fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
+        self.extern_type_id(db).attributes_elements(db)
     }
 }
 impl SemanticQueryAttrs for SubmoduleId {
