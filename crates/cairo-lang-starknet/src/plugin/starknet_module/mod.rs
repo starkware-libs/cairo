@@ -24,6 +24,7 @@ use crate::plugin::consts::{
     STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
 use crate::plugin::starknet_module::generation_data::StarknetModuleCommonGenerationData;
+use crate::plugin::utils::is_valid_storage_struct_name;
 
 pub mod component;
 pub mod contract;
@@ -130,7 +131,7 @@ fn validate_module(
         };
     };
     let Some(storage_struct_ast) = body.items_vec(db).into_iter().find(|item| {
-        matches!(item, ast::ModuleItem::Struct(struct_ast) if struct_ast.name(db).text(db) == STORAGE_STRUCT_NAME)
+        matches!(item, ast::ModuleItem::Struct(struct_ast) if is_valid_storage_struct_name(&struct_ast.name(db).text(db)))
     }) else {
         return PluginResult {
             code: None,
@@ -256,7 +257,9 @@ fn maybe_add_extra_use(
         ast::ModuleItem::Module(item) => Some(item.name(db)),
         ast::ModuleItem::Impl(item) => Some(item.name(db)),
         // Skip the storage struct, that only generates other code, but its code itself is ignored.
-        ast::ModuleItem::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME => None,
+        ast::ModuleItem::Struct(item) if is_valid_storage_struct_name(&item.name(db).text(db)) => {
+            None
+        }
         ast::ModuleItem::Struct(item) => Some(item.name(db)),
         ast::ModuleItem::Enum(item) => Some(item.name(db)),
         ast::ModuleItem::TypeAlias(item) => Some(item.name(db)),

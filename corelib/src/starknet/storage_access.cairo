@@ -811,3 +811,84 @@ fn inner_write_byte_array(
     }
     Result::Ok(())
 }
+
+/// A pointer to an address in storage, can be used to read and write values, if the generic type supports it (e.g. basic types like `felt252`). Or to generate a new address by hashing the current address and some value (e.g. a pointer to a LegacyMap, can be further hashed with the key to get the final address).
+#[derive(Copy, Drop)]
+pub struct StoragePointer<T> {
+    pub address: StorageBaseAddress,
+}
+
+/// An intermidiate struct to store an hash state, in order to be able to hash multiple values and get the final address.
+/// Storage path should have two interfaces, if T is storable then it should implement `StorageMember` in order to be able to get the address of the storage path, and if T is not storable then it should implement `StoragePathUpdate` in order to be able to update the hash state with another value.
+#[derive(Copy, Drop)]
+pub struct StoragePath<T> {
+    pub hash_state: poseidon::HashState,
+}
+
+
+/// Trait for accessing the values in storage using a `StoragePointer`.
+trait StorageAccess<T> {
+    fn read(self: StoragePointer<T>) -> SyscallResult<T>;
+    fn write(self: StoragePointer<T>, value: T) -> SyscallResult<()>;
+}
+
+/// Simple implementation of `StorageAccess` for any type that implements `Store`.
+impl StorableStorageAccess<T, +Store<T>> of StorageAccess<T> {
+    #[inline(always)]
+    fn read(self: StoragePointer<T>) -> SyscallResult<T> {
+        Store::<T>::read(0, storage_address_from_base(self.address))
+    }
+    #[inline(always)]
+    fn write(self: StoragePointer<T>, value: T) -> SyscallResult<()> {
+        Store::<T>::write(0, storage_address_from_base(self.address), value)
+    }
+}
+
+/// Trait for creating a new `StoragePath` from a storage member.
+trait StorageMember<TMemberState, T> {
+    // TODO(Gil): This is not used right now, consider removing.
+    fn base_address(self: @TMemberState) -> StorageBaseAddress;
+    fn as_path(self: @TMemberState) -> StoragePath<T>;
+}
+
+/// Trait for finalizing the hash state and getting the final address.
+trait StoragePathFinalize<T> {
+    fn finalize(self: StoragePath<T>) -> StoragePointer<T>;
+}
+
+/// An implementation of `StoragePathFinalize` for any type that implements `Store`.
+impl StorableStoragePathFinalize<T, +Store<T>> of StoragePathFinalize<T> {
+    #[inline(always)]
+    fn finalize(self: StoragePath<T>) -> StoragePointer<T> {
+        StoragePointer::<T> { address: storage_base_address_from_felt252(self.finalize()) }
+    }
+}
+
+
+/// Trait for updating the hash state with a value. The implementation should be done for `Map`
+/// storage types in the contract plugin.
+// TODO(Gil): We need to bind the container `C` to the key `K` and value `V` types, so we can use
+// the `StoragePathUpdate` trait only for the correct types. We can do this by either:
+// - Removing this trait and generating a new one for each container type.
+// - Generating a new trait for each container type that will only expose the `K` and `V` types.
+trait StoragePathUpdate<C, K, V> {
+    fn entry(self: StoragePath<C>, key: K) -> StoragePath<V>;
+}
+
+/// A phantom type for storage maps, should only be used as a generic arg of StoragePath.
+// TODO(Gil): Introduce this type in the contract plugin to support ad-hoc shortcut functions.
+pub struct StorageMap<K, V> {}
+
+impl StoragePathUpdateMap<K, V> of StoragePathUpdate<StorageMap<K, V>, K, V> {
+    #[inline(always)]
+    fn entry(self: StoragePath<StorageMap<K, V>>, key: K) -> StoragePath<V> {
+        let mut hash_state = self.hash_state;
+        StoragePath::<
+            V
+        > {
+            hash_state: core::hash::Hash::<
+                K, poseidon::HashState
+            >::update_state(self.hash_state, key)
+        }
+    }
+}

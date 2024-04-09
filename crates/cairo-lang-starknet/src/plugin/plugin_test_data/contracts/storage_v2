@@ -1,0 +1,503 @@
+//! > Test expansion of StarkNet storage logic.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[derive(Drop, starknet::Store, Hash)]
+struct OuterType {
+    x: u32,
+}
+
+// TODO(ilya): update format.
+#[starknet::contract]
+mod test_contract {
+    use core::poseidon;
+    #[storage]
+    struct StorageV2 {
+        var_felt252: felt252,
+        var_u8: u8,
+        var_u16: u16,
+        var_u32: u32,
+        var_u64: u64,
+        var_u128: u128,
+        var_bool: bool,
+        felt252_to_u128: LegacyMap::<felt252, u128>,
+        u128_to_bool: LegacyMap::<u128, bool>,
+        bool_to_felt252: LegacyMap::<bool, felt252>,
+        outer_type_var: super::OuterType,
+        outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
+        inner_type_var: inner::InnerType,
+        inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
+    }
+
+    mod inner {
+        #[derive(Drop, starknet::Store, Hash)]
+        struct InnerType {
+            x: u32,
+        }
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[derive(Drop, starknet::Store, Hash)]
+struct OuterType {
+    x: u32,
+}
+
+// TODO(ilya): update format.
+#[starknet::contract]
+mod test_contract {
+    use core::poseidon;
+    #[storage]
+    struct StorageV2 {
+        var_felt252: felt252,
+        var_u8: u8,
+        var_u16: u16,
+        var_u32: u32,
+        var_u64: u64,
+        var_u128: u128,
+        var_bool: bool,
+        felt252_to_u128: LegacyMap::<felt252, u128>,
+        u128_to_bool: LegacyMap::<u128, bool>,
+        bool_to_felt252: LegacyMap::<bool, felt252>,
+        outer_type_var: super::OuterType,
+        outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
+        inner_type_var: inner::InnerType,
+        inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
+    }
+
+    mod inner {
+        #[derive(Drop, starknet::Store, Hash)]
+        struct InnerType {
+            x: u32,
+        }
+    }
+}
+
+impls:
+
+impl OuterTypeDrop of core::traits::Drop::<OuterType>;
+impl OuterTypeHash<
+    __State,
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>
+> of core::hash::Hash<OuterType, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: OuterType) -> __State {
+        let state = core::hash::Hash::update_state(state, value.x);
+        state
+    }
+}
+
+
+starknet_derive:
+
+impl StoreOuterType of starknet::Store::<OuterType> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OuterType> {
+        let x = starknet::Store::<u32>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            OuterType {
+                x,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OuterType) -> starknet::SyscallResult<()> {
+        starknet::Store::<u32>::write(address_domain, base, value.x)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OuterType> {
+        let x = starknet::Store::<u32>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            OuterType {
+                x,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OuterType) -> starknet::SyscallResult<()> {
+        starknet::Store::<u32>::write_at_offset(address_domain, base, offset, value.x)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<u32>::size()
+    }
+}
+
+
+contract:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
+
+
+    pub struct ContractState {
+        pub var_felt252: __member_module_var_felt252::ContractMemberState,
+        pub var_u8: __member_module_var_u8::ContractMemberState,
+        pub var_u16: __member_module_var_u16::ContractMemberState,
+        pub var_u32: __member_module_var_u32::ContractMemberState,
+        pub var_u64: __member_module_var_u64::ContractMemberState,
+        pub var_u128: __member_module_var_u128::ContractMemberState,
+        pub var_bool: __member_module_var_bool::ContractMemberState,
+        pub felt252_to_u128: __member_module_felt252_to_u128::ContractMemberState,
+        pub u128_to_bool: __member_module_u128_to_bool::ContractMemberState,
+        pub bool_to_felt252: __member_module_bool_to_felt252::ContractMemberState,
+        pub outer_type_var: __member_module_outer_type_var::ContractMemberState,
+        pub outer_type_to_outer_type: __member_module_outer_type_to_outer_type::ContractMemberState,
+        pub inner_type_var: __member_module_inner_type_var::ContractMemberState,
+        pub inner_type_to_inner_type: __member_module_inner_type_to_inner_type::ContractMemberState,
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    pub fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            var_felt252: __member_module_var_felt252::ContractMemberState {},
+            var_u8: __member_module_var_u8::ContractMemberState {},
+            var_u16: __member_module_var_u16::ContractMemberState {},
+            var_u32: __member_module_var_u32::ContractMemberState {},
+            var_u64: __member_module_var_u64::ContractMemberState {},
+            var_u128: __member_module_var_u128::ContractMemberState {},
+            var_bool: __member_module_var_bool::ContractMemberState {},
+            felt252_to_u128: __member_module_felt252_to_u128::ContractMemberState {},
+            u128_to_bool: __member_module_u128_to_bool::ContractMemberState {},
+            bool_to_felt252: __member_module_bool_to_felt252::ContractMemberState {},
+            outer_type_var: __member_module_outer_type_var::ContractMemberState {},
+            outer_type_to_outer_type: __member_module_outer_type_to_outer_type::ContractMemberState {},
+            inner_type_var: __member_module_inner_type_var::ContractMemberState {},
+            inner_type_to_inner_type: __member_module_inner_type_to_inner_type::ContractMemberState {},
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    pub fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
+    pub use __member_module_var_felt252::InternalPointerAccessContractMemberStateImpl as var_felt252ContractMemberStateTrait;
+    pub mod __member_module_var_felt252 {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, felt252> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0xaa97ff6377ea4c71d88150f635730828734fd5bfd6f834e2ae92d29676846c>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<felt252> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0xaa97ff6377ea4c71d88150f635730828734fd5bfd6f834e2ae92d29676846c)
+                 }
+            }
+        }
+    }
+    pub use __member_module_var_u8::InternalPointerAccessContractMemberStateImpl as var_u8ContractMemberStateTrait;
+    pub mod __member_module_var_u8 {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, u8> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x2c1cc4c68869a16c4afd31a765927ce369b8ef4b1208114ea00e820ea36fc23>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<u8> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0x2c1cc4c68869a16c4afd31a765927ce369b8ef4b1208114ea00e820ea36fc23)
+                 }
+            }
+        }
+    }
+    pub use __member_module_var_u16::InternalPointerAccessContractMemberStateImpl as var_u16ContractMemberStateTrait;
+    pub mod __member_module_var_u16 {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, u16> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0xf3b2ea0485e7fdfaec3d3e519eeedf3d5dc3434b4f9c8858c217ca6a8b1d45>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<u16> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0xf3b2ea0485e7fdfaec3d3e519eeedf3d5dc3434b4f9c8858c217ca6a8b1d45)
+                 }
+            }
+        }
+    }
+    pub use __member_module_var_u32::InternalPointerAccessContractMemberStateImpl as var_u32ContractMemberStateTrait;
+    pub mod __member_module_var_u32 {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, u32> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x19490a04fdf74ff92d2d73deff1f53be2aa23274d5a6896a509931d308ffa2d>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<u32> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0x19490a04fdf74ff92d2d73deff1f53be2aa23274d5a6896a509931d308ffa2d)
+                 }
+            }
+        }
+    }
+    pub use __member_module_var_u64::InternalPointerAccessContractMemberStateImpl as var_u64ContractMemberStateTrait;
+    pub mod __member_module_var_u64 {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, u64> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x2b58a04fca59322572a3335b3f8e9a63dd34db1b715eaaae3ab367afa90a194>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<u64> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0x2b58a04fca59322572a3335b3f8e9a63dd34db1b715eaaae3ab367afa90a194)
+                 }
+            }
+        }
+    }
+    pub use __member_module_var_u128::InternalPointerAccessContractMemberStateImpl as var_u128ContractMemberStateTrait;
+    pub mod __member_module_var_u128 {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, u128> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x1ba472df0f88c033d4e0c12eb95fd291de570db0f2df241297c6ebf905889a>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<u128> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0x1ba472df0f88c033d4e0c12eb95fd291de570db0f2df241297c6ebf905889a)
+                 }
+            }
+        }
+    }
+    pub use __member_module_var_bool::InternalPointerAccessContractMemberStateImpl as var_boolContractMemberStateTrait;
+    pub mod __member_module_var_bool {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, bool> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x379caae8ce359ad2da9b1cd83d4df406d959c199192b9c9e787595a50e0db27>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<bool> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0x379caae8ce359ad2da9b1cd83d4df406d959c199192b9c9e787595a50e0db27)
+                 }
+            }
+        }
+    }
+    pub use __member_module_felt252_to_u128::InternalPointerAccessContractMemberStateImpl as felt252_to_u128ContractMemberStateTrait;
+    pub mod __member_module_felt252_to_u128 {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, starknet::storage_access::StorageMap<felt252, u128>> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x22ccfa174c52d0acc1e51ed6102f40f9e270cefc9a906ff2ee9a366c52db7bc>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<starknet::storage_access::StorageMap<felt252, u128>> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0x22ccfa174c52d0acc1e51ed6102f40f9e270cefc9a906ff2ee9a366c52db7bc)
+                 }
+            }
+        }
+    }
+    pub use __member_module_u128_to_bool::InternalPointerAccessContractMemberStateImpl as u128_to_boolContractMemberStateTrait;
+    pub mod __member_module_u128_to_bool {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, starknet::storage_access::StorageMap<u128, bool>> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<starknet::storage_access::StorageMap<u128, bool>> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a)
+                 }
+            }
+        }
+    }
+    pub use __member_module_bool_to_felt252::InternalPointerAccessContractMemberStateImpl as bool_to_felt252ContractMemberStateTrait;
+    pub mod __member_module_bool_to_felt252 {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, starknet::storage_access::StorageMap<bool, felt252>> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x11ddb648d7a85d8ff1f89f86feb50fd8bd26a25e6837cff5c3c38d8c3a0bb93>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<starknet::storage_access::StorageMap<bool, felt252>> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0x11ddb648d7a85d8ff1f89f86feb50fd8bd26a25e6837cff5c3c38d8c3a0bb93)
+                 }
+            }
+        }
+    }
+    pub use __member_module_outer_type_var::InternalPointerAccessContractMemberStateImpl as outer_type_varContractMemberStateTrait;
+    pub mod __member_module_outer_type_var {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, super::super::OuterType> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x3106af1c2d86e8b1cb851a79386ce0a8769e17e9d35faaac2d358e2ab15b47e>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<super::super::OuterType> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0x3106af1c2d86e8b1cb851a79386ce0a8769e17e9d35faaac2d358e2ab15b47e)
+                 }
+            }
+        }
+    }
+    pub use __member_module_outer_type_to_outer_type::InternalPointerAccessContractMemberStateImpl as outer_type_to_outer_typeContractMemberStateTrait;
+    pub mod __member_module_outer_type_to_outer_type {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, starknet::storage_access::StorageMap<super::super::OuterType, super::super::OuterType>> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x35c41176ed396a1aefee30c295c954b0e7fd2f58e270016196d6751c199ad54>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<starknet::storage_access::StorageMap<super::super::OuterType, super::super::OuterType>> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0x35c41176ed396a1aefee30c295c954b0e7fd2f58e270016196d6751c199ad54)
+                 }
+            }
+        }
+    }
+    pub use __member_module_inner_type_var::InternalPointerAccessContractMemberStateImpl as inner_type_varContractMemberStateTrait;
+    pub mod __member_module_inner_type_var {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, inner::InnerType> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x13116abdf53a8bc21fa319084c612c78d3d632bf1a48cf7f221c343f1a7b51e>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<inner::InnerType> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0x13116abdf53a8bc21fa319084c612c78d3d632bf1a48cf7f221c343f1a7b51e)
+                 }
+            }
+        }
+    }
+    pub use __member_module_inner_type_to_inner_type::InternalPointerAccessContractMemberStateImpl as inner_type_to_inner_typeContractMemberStateTrait;
+    pub mod __member_module_inner_type_to_inner_type {
+        use super::poseidon;
+        use super::inner;
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage_access::StorageMember<ContractMemberState, starknet::storage_access::StorageMap<inner::InnerType, inner::InnerType>> {
+            fn base_address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x3ab3286e5324e5e72225cf3acbcb086eb63bceab39847ca070c7aa92140de4b>()
+            }
+            
+            fn as_path(self: @ContractMemberState) -> starknet::storage_access::StoragePath<starknet::storage_access::StorageMap<inner::InnerType, inner::InnerType>> {
+                starknet::storage_access::StoragePath { hash_state:
+                    poseidon::HashStateTrait::update(poseidon::PoseidonTrait::new(), 0x3ab3286e5324e5e72225cf3acbcb086eb63bceab39847ca070c7aa92140de4b)
+                 }
+            }
+        }
+    }
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: felt252 = 0x11b6b230e8dace6aa6cd5cac9b6c5d032f10217df8a298b2ba7c9dde4b2c034;
+
+
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+
+
+impls:
+
+impl EventDrop of core::traits::Drop::<Event>;
+
+
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
