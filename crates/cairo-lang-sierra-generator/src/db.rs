@@ -25,6 +25,9 @@ pub enum SierraGeneratorTypeLongId {
     Regular(Arc<cairo_lang_sierra::program::ConcreteTypeLongId>),
     /// The long id for cycle breakers, such as `Box` and `Nullable`.
     CycleBreaker(semantic::TypeId),
+    /// This is a long id of a phantom type.
+    /// Phontom types have a one to one mapping from the semantic type to the sierra type.
+    Phantom(semantic::TypeId),
 }
 
 #[salsa::query_group(SierraGenDatabase)]
@@ -198,6 +201,16 @@ fn get_type_info(
                 zero_sized: false,
             }));
         }
+        SierraGeneratorTypeLongId::Phantom(ty) => {
+            let long_id = db.get_concrete_long_type_id(ty)?.as_ref().clone();
+            return Ok(Arc::new(cairo_lang_sierra::extensions::types::TypeInfo {
+                long_id,
+                storable: false,
+                droppable: false,
+                duplicatable: false,
+                zero_sized: false,
+            }));
+        }
     };
     let concrete_ty = cairo_lang_sierra::extensions::core::CoreType::specialize_by_id(
         &SierraSignatureSpecializationContext(db),
@@ -219,6 +232,7 @@ pub fn sierra_concrete_long_id(
 ) -> Maybe<Arc<cairo_lang_sierra::program::ConcreteTypeLongId>> {
     match db.lookup_intern_concrete_type(concrete_type_id) {
         SierraGeneratorTypeLongId::Regular(long_id) => Ok(long_id),
-        SierraGeneratorTypeLongId::CycleBreaker(type_id) => db.get_concrete_long_type_id(type_id),
+        SierraGeneratorTypeLongId::Phantom(type_id)
+        | SierraGeneratorTypeLongId::CycleBreaker(type_id) => db.get_concrete_long_type_id(type_id),
     }
 }
