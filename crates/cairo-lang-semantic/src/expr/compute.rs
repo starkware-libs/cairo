@@ -9,19 +9,15 @@ use ast::PathSegment;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId,
-    LookupItemId, MemberId, ModuleId, TraitFunctionId, TraitId,
+    MemberId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
-use cairo_lang_syntax::attribute::consts::FEATURE_ATTR;
-use cairo_lang_syntax::attribute::structured::{
-    Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
-};
 use cairo_lang_syntax::node::ast::{
     BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils as utils;
@@ -58,6 +54,7 @@ use crate::diagnostic::{
 };
 use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
+use crate::items::feature_kind::extract_item_allowed_features;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
@@ -219,7 +216,6 @@ pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
     used_variables: UnorderedHashSet<semantic::VarId>,
-    allowed_features: UnorderedHashSet<SmolStr>,
 }
 impl Environment {
     /// Adds a parameter to the environment.
@@ -244,73 +240,7 @@ impl Environment {
     }
 
     pub fn empty() -> Self {
-        Self {
-            parent: None,
-            variables: Default::default(),
-            used_variables: Default::default(),
-            allowed_features: Default::default(),
-        }
-    }
-
-    pub fn from_lookup_item_id(
-        db: &dyn SemanticGroup,
-        lookup_item_id: LookupItemId,
-        diagnostics: &mut SemanticDiagnostics,
-    ) -> Self {
-        let defs_db = db.upcast();
-        let semantic_db = db.upcast();
-        let allowed_features = match lookup_item_id {
-            LookupItemId::ModuleItem(id) => extract_allowed_features(
-                semantic_db,
-                &id.stable_location(defs_db).syntax_node(defs_db),
-                diagnostics,
-            ),
-            LookupItemId::TraitItem(id) => extract_allowed_features(
-                semantic_db,
-                &id.stable_location(defs_db).syntax_node(defs_db),
-                diagnostics,
-            ),
-            LookupItemId::ImplItem(id) => extract_allowed_features(
-                semantic_db,
-                &id.stable_location(defs_db).syntax_node(defs_db),
-                diagnostics,
-            ),
-        };
-
-        Self::from_element_id(db, lookup_item_id, allowed_features.into_iter().collect())
-    }
-
-    fn from_element_id(
-        db: &dyn SemanticGroup,
-        element_id: impl LanguageElementId,
-        mut allowed_features: UnorderedHashSet<SmolStr>,
-    ) -> Environment {
-        let defs_db = db.upcast();
-        let syntax_db = db.upcast();
-        let ignored_diagnostics = &mut SemanticDiagnostics::new(
-            element_id.module_file_id(defs_db).file_id(defs_db).unwrap(),
-        );
-        let mut curr_module_id = element_id.parent_module(defs_db);
-        loop {
-            let submodule_id = match curr_module_id {
-                ModuleId::CrateRoot(_) => break,
-                ModuleId::Submodule(id) => id,
-            };
-            let parent = submodule_id.parent_module(defs_db);
-            let module = &defs_db.module_submodules(parent).unwrap()[&submodule_id];
-            // TODO(orizi): Add parent module diagnostics.
-            for allowed_feature in extract_allowed_features(syntax_db, module, ignored_diagnostics)
-            {
-                allowed_features.insert(allowed_feature);
-            }
-            curr_module_id = parent;
-        }
-        Self {
-            parent: None,
-            variables: Default::default(),
-            used_variables: Default::default(),
-            allowed_features,
-        }
+        Self { parent: None, variables: Default::default(), used_variables: Default::default() }
     }
 }
 
@@ -321,11 +251,6 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Exp
     let expr = maybe_compute_expr_semantic(ctx, syntax);
     let expr = wrap_maybe_with_missing(ctx, expr, syntax.stable_ptr());
     let id = ctx.exprs.alloc(expr.clone());
-    if let TypeLongId::Concrete(concrete) = ctx.db.lookup_intern_type(expr.ty()) {
-        if let Ok(Some(attr)) = concrete.unstable_attr(ctx.db.upcast()) {
-            validate_unstable_feature_usage(ctx, attr, syntax.stable_ptr());
-        }
-    }
     ExprAndId { expr, id }
 }
 
@@ -2455,15 +2380,6 @@ fn expr_function_call(
     mut named_args: Vec<NamedArg>,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
-    if let Ok(Some(attr)) = ctx
-        .db
-        .lookup_intern_function(function_id)
-        .function
-        .generic_function
-        .unstable_feature(ctx.db.upcast())
-    {
-        validate_unstable_feature_usage(ctx, attr, stable_ptr);
-    }
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let signature = ctx.db.concrete_function_signature(function_id)?;
@@ -2642,8 +2558,8 @@ pub fn compute_statement_semantic(
     // are allowed.
     validate_statement_attributes(ctx, &syntax);
     let mut features_to_remove = vec![];
-    for feature_name in extract_allowed_features(syntax_db, &syntax, ctx.diagnostics) {
-        if ctx.environment.allowed_features.insert(feature_name.clone()) {
+    for feature_name in extract_item_allowed_features(syntax_db, &syntax, ctx.diagnostics) {
+        if ctx.resolver.data.allowed_features.insert(feature_name.clone()) {
             features_to_remove.push(feature_name);
         }
     }
@@ -2824,36 +2740,9 @@ pub fn compute_statement_semantic(
         ast::Statement::Missing(_) => todo!(),
     };
     for feature_name in features_to_remove {
-        ctx.environment.allowed_features.remove(&feature_name);
+        ctx.resolver.data.allowed_features.swap_remove(&feature_name);
     }
     Ok(ctx.statements.alloc(statement))
-}
-
-/// Returns the allowed features of an object which supports attributes.
-fn extract_allowed_features(
-    db: &dyn SyntaxGroup,
-    syntax: &impl QueryAttrs,
-    diagnostics: &mut SemanticDiagnostics,
-) -> Vec<SmolStr> {
-    let mut features = vec![];
-    for attr_syntax in syntax.query_attr(db, FEATURE_ATTR) {
-        let attr = attr_syntax.structurize(db);
-        let feature_name = match &attr.args[..] {
-            [
-                AttributeArg {
-                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::String(value), .. },
-                    ..
-                },
-            ] => value.text(db),
-            _ => {
-                diagnostics
-                    .report_by_ptr(attr.args_stable_ptr.untyped(), UnsupportedFeatureAttrArguments);
-                continue;
-            }
-        };
-        features.push(feature_name);
-    }
-    features
 }
 
 /// Computes the semantic model of an expression and reports diagnostics if the expression does not
@@ -2912,39 +2801,5 @@ fn validate_statement_attributes(ctx: &mut ComputationContext<'_>, syntax: &ast:
             diagnostic.stable_ptr,
             SemanticDiagnosticKind::UnknownStatementAttribute,
         );
-    }
-}
-
-/// Adds diagnostics if an expression using an unstable feature is not explicitly allowed to use the
-/// feature.
-fn validate_unstable_feature_usage(
-    ctx: &mut ComputationContext<'_>,
-    attr: Attribute,
-    stable_ptr: ExprPtr,
-) {
-    let Some(feature_name) = attr.args.iter().find_map(|arg| match &arg.variant {
-        AttributeArgVariant::Named { value: ast::Expr::String(value), name, .. }
-            if name == "feature" =>
-        {
-            Some(value.text(ctx.db.upcast()))
-        }
-        // TODO(orizi): Creates diagnostics for this case.
-        _ => None,
-    }) else {
-        return;
-    };
-    let mut env = &ctx.environment;
-    loop {
-        if env.allowed_features.contains(feature_name.as_str()) {
-            // The feature is allowed.
-            return;
-        }
-        if let Some(parent) = env.parent.as_ref() {
-            // Continue checking if the feature was allowed up the tree.
-            env = parent;
-        } else {
-            ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnstableFeature { feature_name });
-            return;
-        }
     }
 }

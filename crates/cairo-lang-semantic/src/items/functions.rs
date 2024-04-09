@@ -17,7 +17,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
-use syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
+use syntax::attribute::consts::MUST_USE_ATTR;
 use syntax::node::TypedStablePtr;
 
 use super::attribute::SemanticQueryAttrs;
@@ -185,15 +185,6 @@ impl GenericFunctionId {
             GenericFunctionId::Extern(_) => Ok(false),
         }
     }
-    /// Returns the attribute if a function has the `#[unstable(feature: "some-string")]` attribute.
-    pub fn unstable_feature(&self, db: &dyn SemanticGroup) -> Maybe<Option<Attribute>> {
-        match self {
-            GenericFunctionId::Free(id) => id.find_attr(db, UNSTABLE_ATTR),
-            GenericFunctionId::Impl(id) => id.function.find_attr(db, UNSTABLE_ATTR),
-            GenericFunctionId::Extern(_) => Ok(None),
-        }
-    }
-
     /// Returns true if the function does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         match self {

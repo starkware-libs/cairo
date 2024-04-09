@@ -5,8 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
-use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
-use cairo_lang_syntax::attribute::structured::Attribute;
+use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
@@ -226,14 +225,6 @@ impl ConcreteTypeId {
             ConcreteTypeId::Struct(id) => id.has_attr(db, MUST_USE_ATTR),
             ConcreteTypeId::Enum(id) => id.has_attr(db, MUST_USE_ATTR),
             ConcreteTypeId::Extern(id) => id.has_attr(db, MUST_USE_ATTR),
-        }
-    }
-    /// Returns the attribute if a type has the `#[unstable(feature: "some-string")]` attribute.
-    pub fn unstable_attr(&self, db: &dyn SemanticGroup) -> Maybe<Option<Attribute>> {
-        match self {
-            ConcreteTypeId::Struct(id) => id.find_attr(db, UNSTABLE_ATTR),
-            ConcreteTypeId::Enum(id) => id.find_attr(db, UNSTABLE_ATTR),
-            ConcreteTypeId::Extern(_) => Ok(None),
         }
     }
     /// Returns true if the type does not depend on any generics.

@@ -15,6 +15,7 @@ use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::{Num, ToPrimitive, Zero};
 
+use super::feature_kind::extract_allowed_features;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::structure::SemanticStructEx;
 use crate::corelib::{
@@ -139,6 +140,8 @@ pub fn priv_constant_semantic_data(
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(const_id));
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    resolver.data.allowed_features =
+        extract_allowed_features(db.upcast(), &const_id, &const_ast, &mut diagnostics);
 
     let const_type = resolve_type(
         db,
@@ -147,7 +150,7 @@ pub fn priv_constant_semantic_data(
         &const_ast.type_clause(syntax_db).ty(syntax_db),
     );
 
-    let environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
+    let environment = Environment::empty();
     let mut ctx = ComputationContext::new(db, &mut diagnostics, None, resolver, None, environment);
 
     let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db));
