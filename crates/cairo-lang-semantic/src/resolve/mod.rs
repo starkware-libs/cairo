@@ -15,6 +15,7 @@ use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
@@ -33,6 +34,7 @@ use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue};
 use crate::items::enm::SemanticEnumEx;
+use crate::items::feature_kind::FeatureKind;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
 use crate::items::module::ModuleItemInfo;
@@ -104,6 +106,7 @@ pub struct ResolverData {
     pub inference_data: InferenceData,
     /// The trait/impl context the resolver is currently in. Used to resolve "Self::" paths.
     pub trait_or_impl_ctx: TraitOrImplContext,
+    pub allowed_features: OrderedHashSet<SmolStr>,
 }
 impl ResolverData {
     pub fn new(module_file_id: ModuleFileId, inference_id: InferenceId) -> Self {
@@ -114,6 +117,7 @@ impl ResolverData {
             resolved_items: Default::default(),
             inference_data: InferenceData::new(inference_id),
             trait_or_impl_ctx: TraitOrImplContext::None,
+            allowed_features: Default::default(),
         }
     }
     pub fn clone_with_inference_id(
@@ -128,6 +132,7 @@ impl ResolverData {
             resolved_items: self.resolved_items.clone(),
             inference_data: self.inference_data.clone_with_inference_id(db, inference_id),
             trait_or_impl_ctx: self.trait_or_impl_ctx,
+            allowed_features: self.allowed_features.clone(),
         }
     }
 }
@@ -528,12 +533,7 @@ impl<'db> Resolver<'db> {
                     .db
                     .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                self.validate_item_visibility(
-                    diagnostics,
-                    *module_id,
-                    identifier,
-                    &inner_item_info,
-                );
+                self.validate_item_usability(diagnostics, *module_id, identifier, &inner_item_info);
                 let inner_generic_item =
                     ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
                 Ok(self.specialize_generic_module_item(
@@ -740,12 +740,7 @@ impl<'db> Resolver<'db> {
                     .db
                     .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                self.validate_item_visibility(
-                    diagnostics,
-                    *module_id,
-                    identifier,
-                    &inner_item_info,
-                );
+                self.validate_item_usability(diagnostics, *module_id, identifier, &inner_item_info);
                 ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
@@ -1106,22 +1101,35 @@ impl<'db> Resolver<'db> {
             || self.edition.ignore_visibility() && owning_crate == self.db.core_crate()
     }
 
-    /// Validates that an item is visible from the current module or adds a diagnostic.
-    fn validate_item_visibility(
+    /// Validates that an item is usable from the current module or adds a diagnostic.
+    /// This includes visibility checks and feature checks.
+    fn validate_item_usability(
         &self,
         diagnostics: &mut SemanticDiagnostics,
         containing_module_id: ModuleId,
         identifier: &ast::TerminalIdentifier,
         item_info: &ModuleItemInfo,
     ) {
-        if self.ignore_visibility_checks(containing_module_id) {
-            return;
-        }
         let db = self.db.upcast();
-        let user_module = self.module_file_id.0;
-        if !visibility::peek_visible_in(db, item_info.visibility, containing_module_id, user_module)
-        {
-            diagnostics.report(identifier, ItemNotVisible { item_id: item_info.item_id });
+        if !self.ignore_visibility_checks(containing_module_id) {
+            let user_module = self.module_file_id.0;
+            if !visibility::peek_visible_in(
+                db,
+                item_info.visibility,
+                containing_module_id,
+                user_module,
+            ) {
+                diagnostics.report(identifier, ItemNotVisible { item_id: item_info.item_id });
+            }
+        }
+        match &item_info.feature_kind {
+            FeatureKind::Stable => {}
+            FeatureKind::Unstable(feature) => {
+                if !self.data.allowed_features.contains(feature.as_str()) {
+                    diagnostics
+                        .report(identifier, UnstableFeature { feature_name: feature.into() });
+                }
+            }
         }
     }
 }

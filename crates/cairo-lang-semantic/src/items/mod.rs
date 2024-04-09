@@ -12,6 +12,7 @@ pub mod constant;
 pub mod enm;
 pub mod extern_function;
 pub mod extern_type;
+pub mod feature_kind;
 pub mod fmt;
 pub mod free_function;
 pub mod function_with_body;
