@@ -233,7 +233,7 @@ impl ConcreteTypeId {
         match self {
             ConcreteTypeId::Struct(id) => id.find_attr(db, UNSTABLE_ATTR),
             ConcreteTypeId::Enum(id) => id.find_attr(db, UNSTABLE_ATTR),
-            ConcreteTypeId::Extern(_) => Ok(None),
+            ConcreteTypeId::Extern(id) => id.find_attr(db, UNSTABLE_ATTR),
         }
     }
     /// Returns true if the type does not depend on any generics.
