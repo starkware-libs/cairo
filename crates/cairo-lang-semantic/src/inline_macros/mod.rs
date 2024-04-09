@@ -4,6 +4,7 @@ mod consteval_int;
 mod format;
 mod panic;
 mod print;
+mod serialized_array;
 mod write;
 
 use cairo_lang_plugins::get_base_plugins;
@@ -15,6 +16,7 @@ use self::print::{PrintMacro, PrintlnMacro};
 use self::write::{WriteMacro, WritelnMacro};
 use super::inline_macros::array::ArrayMacro;
 use super::inline_macros::consteval_int::ConstevalIntMacro;
+use super::inline_macros::serialized_array::SerializedArrayMacro;
 use crate::plugin::PluginSuite;
 
 /// Gets the default plugin suite to load into the Cairo compiler.
@@ -32,6 +34,7 @@ pub fn get_default_plugin_suite() -> PluginSuite {
         .add_inline_macro_plugin::<PanicMacro>()
         .add_inline_macro_plugin::<PrintMacro>()
         .add_inline_macro_plugin::<PrintlnMacro>()
+        .add_inline_macro_plugin::<SerializedArrayMacro>()
         .add_inline_macro_plugin::<WriteMacro>()
         .add_inline_macro_plugin::<WritelnMacro>();
     suite

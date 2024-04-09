@@ -103,6 +103,30 @@ error: Unexpected argument type. Expected: "core::felt252", found: "core::intege
 
 //! > ==========================================================================
 
+//! > Test bad serialized_array! macros
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _x = serialized_array!(0);
+    let _x = serialized_array![0_felt252, 1_u8];
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Macro `serialized_array` does not support this bracket type.
+ --> lib.cairo:2:31
+    let _x = serialized_array!(0);
+                              ^
+
+//! > ==========================================================================
+
 //! > Test bad write! macros
 
 //! > test_runner_name

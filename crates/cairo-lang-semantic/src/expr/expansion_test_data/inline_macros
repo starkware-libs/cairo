@@ -83,3 +83,46 @@ error: Type annotations needed. Failed to infer ?0
  --> lib.cairo[array_inline_macro]:2:67
             let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
                                                                   ^********^
+
+//! > ==========================================================================
+
+//! > Test expansion of serialized array macro
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > expr_code
+serialized_array![1, 2, 3_u256]
+
+//! > expanded_code
+{
+    let mut __serialized_array_builder_macro_result__ = core::array::ArrayTrait::new();
+    core::Serde::serialize(@1, ref __serialized_array_builder_macro_result__);
+    core::Serde::serialize(@2, ref __serialized_array_builder_macro_result__);
+    core::Serde::serialize(@3_u256, ref __serialized_array_builder_macro_result__);
+    __serialized_array_builder_macro_result__
+}
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of serialized array macro empty
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > expr_code
+serialized_array![]
+
+//! > expanded_code
+{
+    let mut __serialized_array_builder_macro_result__ = core::array::ArrayTrait::new();
+    __serialized_array_builder_macro_result__
+}
+
+//! > diagnostics
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo[serialized_array_inline_macro]:2:78
+            let mut __serialized_array_builder_macro_result__ = core::array::ArrayTrait::new();
+                                                                             ^********^
