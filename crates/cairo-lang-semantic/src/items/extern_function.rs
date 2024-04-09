@@ -8,6 +8,7 @@ use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 
+use super::feature_kind::extract_allowed_features;
 use super::function_with_body::get_inline_config;
 use super::functions::{FunctionDeclarationData, GenericFunctionId, InlineConfiguration};
 use super::generics::{semantic_generic_params, GenericParamsData};
@@ -162,8 +163,14 @@ pub fn priv_extern_function_declaration_data(
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    resolver.data.allowed_features = extract_allowed_features(
+        db.upcast(),
+        &extern_function_id,
+        &extern_function_syntax,
+        &mut diagnostics,
+    );
 
-    let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
+    let mut environment = Environment::empty();
     let signature_syntax = declaration.signature(syntax_db);
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,

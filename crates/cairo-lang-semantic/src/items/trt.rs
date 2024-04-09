@@ -19,6 +19,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::chain;
 use smol_str::SmolStr;
 
+use super::feature_kind::extract_allowed_features;
 use super::function_with_body::{get_implicit_precedence, get_inline_config, FunctionBodyData};
 use super::functions::{FunctionDeclarationData, ImplicitPrecedence, InlineConfiguration};
 use super::generics::{semantic_generic_params, GenericParamsData};
@@ -768,9 +769,14 @@ pub fn priv_trait_function_declaration_data(
         (*function_generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.diagnostics.extend(function_generic_params_data.diagnostics);
-
+    resolver.data.allowed_features = extract_allowed_features(
+        db.upcast(),
+        &trait_function_id,
+        function_syntax,
+        &mut diagnostics,
+    );
     let signature_syntax = declaration.signature(syntax_db);
-    let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
+    let mut environment = Environment::empty();
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
