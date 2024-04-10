@@ -20,7 +20,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
-use itertools::{chain, izip, Itertools};
+use itertools::{chain, izip};
 use smol_str::SmolStr;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use syntax::node::ast::{self, GenericArg, ImplItem, MaybeImplBody, OptionReturnTypeClause};
@@ -33,7 +33,8 @@ use super::enm::SemanticEnumEx;
 use super::feature_kind::extract_allowed_features;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
-    forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
+    forbid_inline_always_with_impl_generic_param, generic_params_to_args, FunctionDeclarationData,
+    InlineConfiguration,
 };
 use super::generics::{semantic_generic_params, GenericArgumentHead, GenericParamsData};
 use super::resolve_trait_path;
@@ -1634,12 +1635,7 @@ fn validate_impl_function_signature(
     }
     let substitution = GenericSubstitution::new(
         &func_generics,
-        &impl_func_generics
-            .iter()
-            .map(|param| {
-                GenericArgumentId::Type(db.intern_type(TypeLongId::GenericParameter(param.id())))
-            })
-            .collect_vec(),
+        &generic_params_to_args(impl_func_generics.to_vec(), db),
     );
     let concrete_trait_signature = SubstitutionRewriter { db, substitution: &substitution }
         .rewrite(concrete_trait_signature)?;
