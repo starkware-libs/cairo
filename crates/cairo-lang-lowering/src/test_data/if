@@ -261,8 +261,8 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: myEnum) -> felt252 {
-    if let myEnum::A(x) = a {
+fn foo(a: MyEnum) -> felt252 {
+    if let MyEnum::A(x) = a {
         x
     } else {
         0
@@ -273,7 +273,7 @@ fn foo(a: myEnum) -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
@@ -284,14 +284,14 @@ enum myEnum {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: test::myEnum
+Parameters: v0: test::MyEnum
 blk0 (root):
 Statements:
 End:
   Match(match_enum(v0) {
-    myEnum::A(v1) => blk1,
-    myEnum::B(v2) => blk2,
-    myEnum::C(v3) => blk3,
+    MyEnum::A(v1) => blk1,
+    MyEnum::B(v2) => blk2,
+    MyEnum::C(v3) => blk3,
   })
 
 blk1:
@@ -325,7 +325,7 @@ test_function_lowering
 //! > function
 fn foo() -> felt252 {
     let mut y = 0;
-    if let myEnum::A(x) = a() {
+    if let MyEnum::A(x) = a() {
         y = y + x
     }
     y = y + 1;
@@ -336,12 +336,12 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
 }
-extern fn a() -> myEnum nopanic;
+extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -354,9 +354,9 @@ Statements:
   (v0: core::felt252) <- 0
 End:
   Match(match test::a() {
-    myEnum::A(v1) => blk1,
-    myEnum::B => blk2,
-    myEnum::C => blk3,
+    MyEnum::A(v1) => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
   })
 
 blk1:
@@ -397,7 +397,7 @@ test_function_lowering
 //! > function
 fn foo() -> felt252 {
     let mut y = 0;
-    if let (myEnum::A(x), true) = (a(), 5 == 6) {
+    if let (MyEnum::A(x), true) = (a(), 5 == 6) {
         y = y + x
     }
     y = y + 1;
@@ -408,12 +408,12 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
 }
-extern fn a() -> myEnum nopanic;
+extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -451,9 +451,9 @@ blk3:
 Statements:
 End:
   Match(match test::a() {
-    myEnum::A(v10) => blk4,
-    myEnum::B => blk7,
-    myEnum::C => blk10,
+    MyEnum::A(v10) => blk4,
+    MyEnum::B => blk7,
+    MyEnum::C => blk10,
   })
 
 blk4:
@@ -533,7 +533,7 @@ test_function_lowering
 //! > function
 fn foo() -> felt252 {
     let mut y = 0;
-    if let (myEnum::A(x), 3) = (a(), 3) {
+    if let (MyEnum::A(x), 3) = (a(), 3) {
         y = y + x
     }
     y = y + 1;
@@ -544,19 +544,19 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
 }
-extern fn a() -> myEnum nopanic;
+extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error: Unsupported value in if-let. Currently, if-let on tuples only supports enums as tuple members.
  --> lib.cairo:9:32
-    if let (myEnum::A(x), 3) = (a(), 3) {
+    if let (MyEnum::A(x), 3) = (a(), 3) {
                                ^******^
 
 //! > lowering_flat
@@ -603,7 +603,7 @@ Parameters:
 test_function_lowering
 
 //! > function
-fn foo(a: myEnum) -> felt252 {
+fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     if let _ = a {
         y = y + 5;
@@ -616,7 +616,7 @@ fn foo(a: myEnum) -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
@@ -627,15 +627,15 @@ enum myEnum {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: test::myEnum
+Parameters: v0: test::MyEnum
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 0
 End:
   Match(match_enum(v0) {
-    myEnum::A(v2) => blk1,
-    myEnum::B(v3) => blk2,
-    myEnum::C(v4) => blk3,
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v3) => blk2,
+    MyEnum::C(v4) => blk3,
   })
 
 blk1:
@@ -670,7 +670,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: myEnum) -> felt252 {
+fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     if let _ = a {
         y = y + 5;
@@ -685,7 +685,7 @@ fn foo(a: myEnum) -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
@@ -700,15 +700,15 @@ error: Unreachable else clause.
            ^
 
 //! > lowering_flat
-Parameters: v0: test::myEnum
+Parameters: v0: test::MyEnum
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 0
 End:
   Match(match_enum(v0) {
-    myEnum::A(v2) => blk1,
-    myEnum::B(v3) => blk2,
-    myEnum::C(v4) => blk3,
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v3) => blk2,
+    MyEnum::C(v4) => blk3,
   })
 
 blk1:
@@ -782,7 +782,7 @@ Parameters: v0: test::MyStruct
 test_function_lowering
 
 //! > function
-fn foo(a: myEnum) -> felt252 {
+fn foo(a: MyEnum) -> felt252 {
     loop {
         // Some statements to prevent the loop function from being inlined.
         let mut x = 0;
@@ -805,7 +805,7 @@ foo
 
 //! > module_code
 #[derive(Drop, Copy)]
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B: felt252,
 }
@@ -815,13 +815,13 @@ enum myEnum {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: test::myEnum
+Parameters: v0: test::MyEnum
 blk0 (root):
 Statements:
 End:
   Match(match_enum(v0) {
-    myEnum::A(v1) => blk1,
-    myEnum::B(v2) => blk2,
+    MyEnum::A(v1) => blk1,
+    MyEnum::B(v2) => blk2,
   })
 
 blk1:

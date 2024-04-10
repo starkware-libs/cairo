@@ -274,7 +274,7 @@ test_generated_function
 //! > function
 fn foo() -> felt252 {
     let mut y = 0;
-    while let myEnum::A(x) = a() {
+    while let MyEnum::A(x) = a() {
         y = y + x
     };
     y = y + 1;
@@ -285,12 +285,12 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
 }
-extern fn a() -> myEnum nopanic;
+extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -341,7 +341,7 @@ End:
 
 
 Generated lowering for source location:
-    while let myEnum::A(x) = a() {
+    while let MyEnum::A(x) = a() {
     ^****************************^
 
 Parameters: v0: core::felt252
@@ -349,9 +349,9 @@ blk0 (root):
 Statements:
 End:
   Match(match test::a() {
-    myEnum::A(v1) => blk1,
-    myEnum::B => blk2,
-    myEnum::C => blk3,
+    MyEnum::A(v1) => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
   })
 
 blk1:
@@ -403,9 +403,9 @@ blk1:
 Statements:
 End:
   Match(match test::a() {
-    myEnum::A(v7) => blk2,
-    myEnum::B => blk3,
-    myEnum::C => blk4,
+    MyEnum::A(v7) => blk2,
+    MyEnum::B => blk3,
+    MyEnum::C => blk4,
   })
 
 blk2:
