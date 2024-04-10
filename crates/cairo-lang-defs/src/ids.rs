@@ -32,7 +32,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, OptionFrom};
+use cairo_lang_utils::{define_short_id, require, OptionFrom};
 use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
@@ -518,12 +518,10 @@ impl GenericParamLongId {
         else {
             unreachable!()
         };
-        if matches!(
+        require(!matches!(
             kind,
             SyntaxKind::GenericParamImplAnonymous | SyntaxKind::GenericParamNegativeImpl
-        ) {
-            return None;
-        }
+        ))?;
 
         let name_green = TerminalIdentifierGreen(key_fields[0]);
         Some(name_green.identifier(db))
