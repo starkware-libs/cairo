@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    ExternFunctionId, FunctionTitleId, GenericKind, LanguageElementId, LookupItemId, ModuleItemId,
+    ExternFunctionId, FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
@@ -87,17 +87,6 @@ pub fn extern_function_declaration_generic_params_data(
         module_file_id,
         &declaration.generic_params(syntax_db),
     )?;
-    let mut got_generic_impl = false;
-    for param in &generic_params {
-        if param.kind() == GenericKind::Impl {
-            got_generic_impl = true;
-        } else if got_generic_impl {
-            diagnostics.report_by_ptr(
-                param.stable_ptr(db.upcast()).untyped(),
-                ImplGenericsAfterNonImplGenericsInExternFunction,
-            );
-        }
-    }
 
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr().untyped());

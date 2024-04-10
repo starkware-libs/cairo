@@ -161,11 +161,6 @@ error: Extern types with impl generics are not supported.
 extern type A<impl C: MyTrait<felt252>>;
               ^**********************^
 
-error: Non-impl generics following an impl generic in an extern function are not supported.
- --> lib.cairo:7:44
-extern fn ioo<T, impl C: MyTrait<felt252>, S>() nopanic;
-                                           ^
-
 error: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::AnotherTrait::<core::felt252>`.
  --> lib.cairo:14:11
     bar::<AnotherImpl>();
