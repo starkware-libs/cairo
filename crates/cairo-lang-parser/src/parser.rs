@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, require};
 use syntax::node::green::{GreenNode, GreenNodeDetails};
 use syntax::node::ids::GreenId;
 
@@ -667,9 +667,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of node with pub visibility or None if not starting with "pub".
     fn try_parse_visibility_pub(&mut self) -> Option<VisibilityPubGreen> {
-        if self.peek().kind != SyntaxKind::TerminalPub {
-            return None;
-        }
+        require(self.peek().kind == SyntaxKind::TerminalPub)?;
         let pub_kw = self.take::<TerminalPub>();
         let argument_clause = if self.peek().kind != SyntaxKind::TerminalLParen {
             OptionVisibilityPubArgumentClauseEmpty::new_green(self.db).into()
