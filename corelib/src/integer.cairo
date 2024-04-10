@@ -1363,7 +1363,8 @@ pub fn u512_safe_div_rem_by_u256(
 }
 
 /// Calculates division with remainder of a u512 by a non-zero u256.
-/// Additionally returns several `U128MulGuarantee`s that are required for validating the calculation.
+/// Additionally returns several `U128MulGuarantee`s that are required for validating the
+/// calculation.
 extern fn u512_safe_divmod_by_u256(
     lhs: u512, rhs: NonZero<u256>
 ) -> (

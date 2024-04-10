@@ -1,7 +1,7 @@
 // The ERC20 and Ownable components are duplicates of the ones in `with_erc20` and `with_ownable`
-// files. The duplication is done since the expand test which also use this file is not aware to 
+// files. The duplication is done since the expand test which also use this file is not aware to
 // the rest of the crate. The contract using these components is at the end of the file.
-// TODO(Gil): Add the capability to read multiple files in the test framework and remove this 
+// TODO(Gil): Add the capability to read multiple files in the test framework and remove this
 // duplication.
 
 use starknet::ContractAddress;
