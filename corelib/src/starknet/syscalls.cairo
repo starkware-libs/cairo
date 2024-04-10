@@ -103,5 +103,5 @@ pub extern fn keccak_syscall(
 /// The system call does not add any padding and the input needs to be a multiple of 512 bits
 /// (== 16 u32 word).
 pub extern fn sha256_process_block_syscall(
-    state: core::sha256::SHA256StateHandle, input: Span<u32>
-) -> SyscallResult<core::sha256::SHA256StateHandle> implicits(GasBuiltin, System) nopanic;
+    state: core::sha256::Sha256StateHandle, input: Span<u32>
+) -> SyscallResult<core::sha256::Sha256StateHandle> implicits(GasBuiltin, System) nopanic;

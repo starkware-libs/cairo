@@ -697,7 +697,7 @@ impl<'a> CairoHintProcessor<'a> {
             "Keccak" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 keccak(gas_counter, system_buffer.next_arr()?)
             }),
-            "SHA256ProcessBlock" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+            "Sha256ProcessBlock" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 sha_256_process_block(
                     gas_counter,
                     system_buffer.next_fixed_size_arr_pointer(8)?,
