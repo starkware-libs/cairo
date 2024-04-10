@@ -1868,7 +1868,7 @@ mod bounded_int {
     extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
     extern fn upcast<T, S>(index: T) -> S nopanic;
 
-    impl DropBoundedInt120_180 of Drop<BoundedInt<120, 180>>;
+    impl DropBoundedInt<const MIN: felt252, const MAX: felt252> of Drop<BoundedInt<MIN, MAX>>;
     const U128_UPPER: felt252 = 0x100000000000000000000000000000000;
     type BoundedIntU128Upper =
         BoundedInt<0x100000000000000000000000000000000, 0x100000000000000000000000000000000>;
@@ -2009,5 +2009,30 @@ mod bounded_int {
         assert!(upcast(i8_actions::bounded_int_mul::<i8, i8>(-128, 127)) == -128_felt252 * 127);
         assert!(upcast(i8_actions::bounded_int_mul::<i8, i8>(127, -128)) == 127_felt252 * -128);
         assert!(upcast(i8_actions::bounded_int_mul::<i8, i8>(127, 127)) == 127_felt252 * 127);
+    }
+
+    fn bi_value<const MIN: felt252, const MAX: felt252>(v: felt252) -> BoundedInt<MIN, MAX> {
+        downcast(v).unwrap()
+    }
+
+    mod div_rem {
+        use super::{bi_value, BoundedInt, upcast};
+        type DivRemType = (BoundedInt<16, 85>, BoundedInt<0, 7>);
+        extern fn bounded_int_div_rem<T1, T2>(
+            a: T1, b: T2
+        ) -> DivRemType implicits(RangeCheck) nopanic;
+
+        fn helper(a: felt252, b: felt252) -> (felt252, felt252) {
+            let (q, r) = bounded_int_div_rem(bi_value::<128, 255>(a), bi_value::<3, 8>(b));
+            (upcast(q), upcast(r))
+        }
+
+        #[test]
+        fn test() {
+            assert!(helper(128, 3) == (42, 2));
+            assert!(helper(255, 3) == (85, 0));
+            assert!(helper(128, 8) == (16, 0));
+            assert!(helper(255, 8) == (31, 7));
+        }
     }
 }
