@@ -1,4 +1,3 @@
-use std::env;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
@@ -8,7 +7,7 @@ use scarb_metadata::Metadata;
 use tower_lsp::lsp_types::Url;
 use tower_lsp::Client;
 
-use crate::{ScarbResolvingFinish, ScarbResolvingStart};
+use crate::{env_config, ScarbResolvingFinish, ScarbResolvingStart};
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 const SCARB_PROJECT_FILE_NAME: &str = "Scarb.toml";
@@ -20,7 +19,7 @@ pub struct ScarbService {
 
 impl ScarbService {
     pub fn new(client: &Client) -> Self {
-        let scarb_path = env::var_os("SCARB").map(PathBuf::from);
+        let scarb_path = env_config::scarb_path();
         ScarbService { scarb_path, client: client.clone() }
     }
 
