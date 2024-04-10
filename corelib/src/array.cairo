@@ -222,6 +222,16 @@ pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     }
 }
 
+extern fn span_from_tuple<T, +Copy<T>, S>(struct_like: Box<T>) -> @Array<S> nopanic;
+
+#[generate_trait]
+pub impl FixedSizeArrayImpl<T, const SIZE: usize> of FixedSizeArrayTrait<T, SIZE> {
+    #[inline(always)]
+    fn span(self: @[T; SIZE]) -> Span<T> {
+        Span { snapshot: span_from_tuple(BoxTrait::new(self)) }
+    }
+}
+
 // TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
 impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
     fn clone(self: @Array<T>) -> Array<T> {
