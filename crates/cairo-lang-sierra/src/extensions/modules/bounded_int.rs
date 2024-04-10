@@ -1,6 +1,7 @@
 use std::ops::Shl;
 
 use cairo_felt::Felt252;
+use cairo_lang_utils::require;
 use itertools::Itertools;
 use num_bigint::{BigInt, ToBigInt};
 use num_traits::{One, Signed};
@@ -234,13 +235,9 @@ impl BoundedIntDivRemAlgorithm {
         let q_max = (&lhs.upper - 1) / &rhs.lower;
         let u128_limit = BigInt::one().shl(128);
         // `q` is range checked in all algorithm variants, so `q_max` must be smaller than `2**128`.
-        if q_max >= u128_limit {
-            return None;
-        }
+        require(q_max < u128_limit)?;
         // `r` is range checked in all algorithm variants, so `lhs.upper` must be at most `2**128`.
-        if rhs.upper > u128_limit {
-            return None;
-        };
+        require(rhs.upper <= u128_limit)?;
         if &rhs.upper * &u128_limit < prime {
             return Some(Self::KnownSmallRhs);
         }
