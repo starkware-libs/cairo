@@ -96,7 +96,7 @@ derivative = "2.2.0"
 diffy = "0.3.0"
 env_logger = "0.10.0"
 genco = "0.17.8"
-good_lp = { version = "1.7.0", features = ["minilp"], default-features = false }
+good_lp = { version = "1.8.1", features = ["clarabel"], default-features = false }
 hashbrown = "0.14.3" 
 id-arena = "2.2.1"
 ignore = "0.4.20"
