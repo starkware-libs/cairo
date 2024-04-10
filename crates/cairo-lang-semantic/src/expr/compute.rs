@@ -873,13 +873,19 @@ struct FlowMergeTypeHelper {
     multi_arm_expr_kind: MultiArmExprKind,
     never_type: TypeId,
     final_type: Option<TypeId>,
+    expected_type: Option<TypeId>,
 }
 impl FlowMergeTypeHelper {
-    fn new(db: &dyn SemanticGroup, multi_arm_expr_kind: MultiArmExprKind) -> Self {
-        Self { multi_arm_expr_kind, never_type: never_ty(db), final_type: None }
+    fn new(
+        db: &dyn SemanticGroup,
+        multi_arm_expr_kind: MultiArmExprKind,
+        expected_type: Option<TypeId>,
+    ) -> Self {
+        Self { multi_arm_expr_kind, never_type: never_ty(db), final_type: None, expected_type }
     }
 
     /// Attempt merge a branch into the helper, on error will return the conflicting types.
+    // TODO(yg): doc about expected_Type and it being already conformed with current type.
     fn try_merge_types(
         &mut self,
         db: &dyn SemanticGroup,
@@ -904,6 +910,11 @@ impl FlowMergeTypeHelper {
                 }
             } else {
                 self.final_type = Some(ty);
+                if let Some(expected_type) = self.expected_type {
+                    if inference.conform_ty(ty, expected_type).is_err() {
+                        return false;
+                    }
+                }
             }
         }
         true
@@ -1033,7 +1044,7 @@ fn compute_expr_match_semantic(
         })
         .collect();
     // Unify arm types.
-    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::Match);
+    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::Match, None);
     for (_, expr) in patterns_and_exprs.iter() {
         let expr_ty = ctx.reduce_ty(expr.ty());
         helper.try_merge_types(
@@ -1105,7 +1116,7 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
         }
     };
 
-    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::If);
+    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::If, None);
     let if_block_ty = ctx.reduce_ty(if_block.ty());
     let else_block_ty = ctx.reduce_ty(else_block_ty);
     let inference = &mut ctx.resolver.inference();
@@ -1142,7 +1153,7 @@ fn compute_expr_loop_semantic(
     let (body, loop_ctx) = compute_loop_body_semantic(
         ctx,
         syntax.body(syntax_db),
-        LoopContext::Loop(FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop)),
+        LoopContext::Loop(FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop, None)),
     );
     Ok(Expr::Loop(ExprLoop {
         body,
