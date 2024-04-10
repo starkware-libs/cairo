@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, TraitFunctionId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, require};
 use itertools::Itertools;
 
 use super::canonic::ResultNoErrEx;
@@ -261,9 +261,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         let trait_id = trait_function.trait_id(self.db.upcast());
         let signature = self.db.trait_function_signature(trait_function).ok()?;
         let first_param = signature.params.into_iter().next()?;
-        if first_param.name != "self" {
-            return None;
-        }
+        require(first_param.name == "self")?;
         let generic_params = self.db.trait_generic_params(trait_id).ok()?;
         let generic_args =
             match self.infer_generic_args(&generic_params, lookup_context, stable_ptr) {

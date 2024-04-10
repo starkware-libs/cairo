@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_utils::require;
 use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
@@ -102,9 +103,7 @@ impl SyntaxNode {
     /// returns None.
     pub fn get_terminal_token(&self, db: &dyn SyntaxGroup) -> Option<SyntaxNode> {
         let green_node = self.green_node(db);
-        if !green_node.kind.is_terminal() {
-            return None;
-        }
+        require(green_node.kind.is_terminal())?;
         // At this point we know we should have a second child which is the token.
         let token_node = db.get_children(self.clone())[1].clone();
         Some(token_node)

@@ -25,7 +25,7 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::{require, try_extract_matches};
 use itertools::zip_eq;
 use smol_str::SmolStr;
 use thiserror::Error;
@@ -442,9 +442,7 @@ impl<'a> AbiBuilder<'a> {
         let (inputs, state_mutability) =
             self.get_function_signature_inputs_and_mutability(&signature, storage_type)?;
         self.ctor = Some(EntryPointInfo { source, inputs: inputs.clone() });
-        if state_mutability != StateMutability::External {
-            return Err(ABIError::UnexpectedType);
-        }
+        require(state_mutability == StateMutability::External).ok_or(ABIError::UnexpectedType)?;
 
         let constructor_item = Item::Constructor(Constructor { name, inputs });
         self.add_abi_item(constructor_item, true, source)?;
@@ -483,17 +481,12 @@ impl<'a> AbiBuilder<'a> {
         let Some(first_param) = params.next() else {
             return Err(ABIError::EntrypointMustHaveSelf);
         };
-        if first_param.name != "self" {
-            return Err(ABIError::EntrypointMustHaveSelf);
-        }
+        require(first_param.name == "self").ok_or(ABIError::EntrypointMustHaveSelf)?;
         let is_ref = first_param.mutability == Mutability::Reference;
-        if is_ref {
-            if first_param.ty != storage_type {
-                return Err(ABIError::UnexpectedType);
-            }
-        } else if first_param.ty != self.db.intern_type(TypeLongId::Snapshot(storage_type)) {
-            return Err(ABIError::UnexpectedType);
-        }
+        let expected_storage_ty = is_ref
+            .then_some(storage_type)
+            .unwrap_or_else(|| self.db.intern_type(TypeLongId::Snapshot(storage_type)));
+        require(first_param.ty == expected_storage_ty).ok_or(ABIError::UnexpectedType)?;
         let state_mutability =
             if is_ref { StateMutability::External } else { StateMutability::View };
         let mut inputs = vec![];
