@@ -368,7 +368,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::IncompatibleArms {
                 multi_arm_expr_kind: incompatibility_kind,
-                first_ty,
+                pending_ty: first_ty,
                 different_ty,
             } => {
                 let prefix = match incompatibility_kind {
@@ -934,7 +934,7 @@ pub enum SemanticDiagnosticKind {
     },
     IncompatibleArms {
         multi_arm_expr_kind: MultiArmExprKind,
-        first_ty: semantic::TypeId,
+        pending_ty: semantic::TypeId,
         different_ty: semantic::TypeId,
     },
     LogicalOperatorNotAllowedInIfLet,
@@ -1129,7 +1129,7 @@ pub enum SemanticDiagnosticKind {
 }
 
 /// The kind of an expression with multiple possible return types.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum MultiArmExprKind {
     If,
     Match,
