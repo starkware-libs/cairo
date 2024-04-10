@@ -16,8 +16,8 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::{require, try_extract_matches};
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -803,9 +803,7 @@ impl<'db> Resolver<'db> {
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
         let crate_id = self.db.intern_crate(CrateLongId::Real(ident));
-        if self.db.crate_config(crate_id).is_some() {
-            return None;
-        }
+        require(self.db.crate_config(crate_id).is_none())?;
         // Last resort, use the `prelude` module as the base module.
         Some(self.prelude_submodule())
     }
@@ -1147,9 +1145,7 @@ fn resolve_self_segment(
     identifier: &ast::TerminalIdentifier,
     trait_or_impl_ctx: TraitOrImplContext,
 ) -> Option<Maybe<ResolvedConcreteItem>> {
-    if identifier.text(db.upcast()) != "Self" {
-        return None;
-    }
+    require(identifier.text(db.upcast()) == "Self")?;
 
     Some(match trait_or_impl_ctx {
         TraitOrImplContext::None => Err(diagnostics.report(identifier, SelfNotSupportedInContext)),
