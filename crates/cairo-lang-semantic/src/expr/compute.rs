@@ -873,13 +873,27 @@ struct FlowMergeTypeHelper {
     multi_arm_expr_kind: MultiArmExprKind,
     never_type: TypeId,
     final_type: Option<TypeId>,
+    expected_type: Option<TypeId>,
+    /// Whether or not the Helper had a previous type merge error.
+    had_merge_error: bool,
 }
 impl FlowMergeTypeHelper {
-    fn new(db: &dyn SemanticGroup, multi_arm_expr_kind: MultiArmExprKind) -> Self {
-        Self { multi_arm_expr_kind, never_type: never_ty(db), final_type: None }
+    fn new(
+        db: &dyn SemanticGroup,
+        multi_arm_expr_kind: MultiArmExprKind,
+        expected_type: Option<TypeId>,
+    ) -> Self {
+        Self {
+            multi_arm_expr_kind,
+            never_type: never_ty(db),
+            final_type: None,
+            expected_type,
+            had_merge_error: false,
+        }
     }
 
     /// Attempt merge a branch into the helper, on error will return the conflicting types.
+    // TODO(yg): doc about expected_Type and it being already conformed with current type.
     fn try_merge_types(
         &mut self,
         db: &dyn SemanticGroup,
@@ -888,6 +902,10 @@ impl FlowMergeTypeHelper {
         ty: TypeId,
         stable_ptr: SyntaxStablePtrId,
     ) -> bool {
+        if self.had_merge_error {
+            return false;
+        }
+
         if ty != self.never_type && !ty.is_missing(db) {
             if let Some(pending) = &self.final_type {
                 if let Err(err_set) = inference.conform_ty(ty, *pending) {
@@ -900,10 +918,17 @@ impl FlowMergeTypeHelper {
                         },
                     );
                     inference.consume_reported_error(err_set, diag_added);
+                    self.had_merge_error = true;
                     return false;
                 }
             } else {
                 self.final_type = Some(ty);
+                if let Some(expected_type) = self.expected_type {
+                    if inference.conform_ty(ty, expected_type).is_err() {
+                        self.had_merge_error = true;
+                        return false;
+                    }
+                }
             }
         }
         true
@@ -912,6 +937,10 @@ impl FlowMergeTypeHelper {
     /// Returns the merged type.
     fn get_final_type(self) -> TypeId {
         self.final_type.unwrap_or(self.never_type)
+    }
+
+    fn had_merge_error(&self) -> bool {
+        self.had_merge_error
     }
 }
 
@@ -1033,16 +1062,18 @@ fn compute_expr_match_semantic(
         })
         .collect();
     // Unify arm types.
-    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::Match);
+    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::Match, None);
     for (_, expr) in patterns_and_exprs.iter() {
         let expr_ty = ctx.reduce_ty(expr.ty());
-        helper.try_merge_types(
+        if !helper.try_merge_types(
             ctx.db,
             ctx.diagnostics,
             &mut ctx.resolver.inference(),
             expr_ty,
             expr.stable_ptr().untyped(),
-        );
+        ) {
+            break;
+        };
     }
     // Compute semantic representation of the match arms.
     let semantic_arms = patterns_and_exprs
@@ -1105,7 +1136,7 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
         }
     };
 
-    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::If);
+    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::If, None);
     let if_block_ty = ctx.reduce_ty(if_block.ty());
     let else_block_ty = ctx.reduce_ty(else_block_ty);
     let inference = &mut ctx.resolver.inference();
@@ -1142,7 +1173,7 @@ fn compute_expr_loop_semantic(
     let (body, loop_ctx) = compute_loop_body_semantic(
         ctx,
         syntax.body(syntax_db),
-        LoopContext::Loop(FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop)),
+        LoopContext::Loop(FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop, None)),
     );
     Ok(Expr::Loop(ExprLoop {
         body,
