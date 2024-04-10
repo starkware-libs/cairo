@@ -504,7 +504,48 @@ error: Usage of unstable feature `"testing"` with no `#[feature("testing")]` att
 
 //! > ==========================================================================
 
-//! > Test bad unstable declaration.
+//! > Test usage of deprecated.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let _fail = deprecated_function_with_note();
+  #[feature("deprecated")]
+  let _work = deprecated_function_with_note();
+  let _fail = deprecated_function_no_note();
+  #[feature("deprecated")]
+  let _work = deprecated_function_no_note();
+}
+
+//! > module_code
+#[deprecated(feature: "deprecated", note: "Some reason", since: "1.0.0")]
+fn deprecated_function_with_note() -> felt252 {
+    0
+}
+
+#[deprecated(feature: "deprecated")]
+fn deprecated_function_no_note() -> felt252 {
+    0
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
+ --> lib.cairo:12:15
+  let _fail = deprecated_function_with_note();
+              ^***************************^
+
+error: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
+ --> lib.cairo:15:15
+  let _fail = deprecated_function_no_note();
+              ^*************************^
+
+//! > ==========================================================================
+
+//! > Test bad feature marker declarations.
 
 //! > test_runner_name
 test_expr_diagnostics(expect_diagnostics: true)
@@ -513,15 +554,100 @@ test_expr_diagnostics(expect_diagnostics: true)
 {}
 
 //! > module_code
+#[unstable]
+fn unstable_missing_feature() {}
+
 #[unstable(feature: "testing", extra)]
-fn unstable_function() -> felt252 {
-    0
-}
+fn unstable_extra_unnamed() {}
+
+#[unstable(feature: "testing", note: "extra")]
+fn unstable_extra_named() {}
+
+#[unstable(feature: "testing", feature: "other")]
+fn unstable_repeated_feature() {}
+
+#[deprecated]
+fn deprecated_missing_feature() {}
+
+#[deprecated(feature: "testing", extra)]
+fn deprecated_extra_unnamed() {}
+
+#[deprecated(feature: "testing", extra: "extra")]
+fn deprecated_extra_named() {}
+
+#[deprecated(feature: "testing", feature: "other")]
+fn deprecated_repeated_feature() {}
+
+#[deprecated(feature: "testing", , note: "extra1", note: "extra2")]
+fn deprecated_repeated_notes() {}
+
+#[unstable(feature: "testing1")]
+#[unstable(feature: "testing2")]
+fn multiple_unstable_feature_markers() {}
+
+#[deprecated(feature: "testing1")]
+#[unstable(feature: "testing2")]
+fn multiple_mixed_feature_markers() {}
 
 //! > function_body
 
 //! > expected_diagnostics
-error: Unsupported unstable attribute arguments.
- --> lib.cairo:1:11
+error: Skipped tokens. Expected: argument.
+ --> lib.cairo:25:34
+#[deprecated(feature: "testing", , note: "extra1", note: "extra2")]
+                                 ^
+
+error: Missing `feature` arg for feature marker attribute.
+ --> lib.cairo:1:1
+#[unstable]
+^*********^
+
+error: Unsupported argument for feature marker attribute.
+ --> lib.cairo:4:32
 #[unstable(feature: "testing", extra)]
-          ^*************************^
+                               ^***^
+
+error: Unsupported argument for feature marker attribute.
+ --> lib.cairo:7:32
+#[unstable(feature: "testing", note: "extra")]
+                               ^**^
+
+error: Duplicated argument for feature marker attribute.
+ --> lib.cairo:10:32
+#[unstable(feature: "testing", feature: "other")]
+                               ^*****^
+
+error: Missing `feature` arg for feature marker attribute.
+ --> lib.cairo:13:1
+#[deprecated]
+^***********^
+
+error: Unsupported argument for feature marker attribute.
+ --> lib.cairo:16:34
+#[deprecated(feature: "testing", extra)]
+                                 ^***^
+
+error: Unsupported argument for feature marker attribute.
+ --> lib.cairo:19:34
+#[deprecated(feature: "testing", extra: "extra")]
+                                 ^***^
+
+error: Duplicated argument for feature marker attribute.
+ --> lib.cairo:22:34
+#[deprecated(feature: "testing", feature: "other")]
+                                 ^*****^
+
+error: Duplicated argument for feature marker attribute.
+ --> lib.cairo:25:52
+#[deprecated(feature: "testing", , note: "extra1", note: "extra2")]
+                                                   ^**^
+
+error: Multiple feature marker attributes.
+ --> lib.cairo:28:1
+#[unstable(feature: "testing1")]
+^******************************^
+
+error: Multiple feature marker attributes.
+ --> lib.cairo:32:1
+#[deprecated(feature: "testing1")]
+^********************************^
