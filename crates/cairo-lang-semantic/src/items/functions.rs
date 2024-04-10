@@ -14,7 +14,7 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
+use cairo_lang_utils::{define_short_id, require, try_extract_matches, OptionFrom};
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
 use syntax::attribute::consts::MUST_USE_ATTR;
@@ -391,9 +391,7 @@ impl ConcreteFunctionWithBody {
         db: &dyn SemanticGroup,
         free_function_id: FreeFunctionId,
     ) -> Option<Self> {
-        if !db.free_function_generic_params(free_function_id).ok()?.is_empty() {
-            return None;
-        }
+        require(db.free_function_generic_params(free_function_id).ok()?.is_empty())?;
         Some(ConcreteFunctionWithBody {
             generic_function: GenericFunctionWithBodyId::Free(free_function_id),
             generic_args: vec![],

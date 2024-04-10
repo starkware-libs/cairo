@@ -5,7 +5,7 @@ use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::{require, try_extract_matches};
 use indoc::{formatdoc, indoc};
 use itertools::chain;
 
@@ -420,9 +420,7 @@ fn handle_first_param_for_embeddable_as(
     db: &dyn SyntaxGroup,
     param: &ast::Param,
 ) -> Option<(String, String, String)> {
-    if param.name(db).text(db) != "self" {
-        return None;
-    }
+    require(param.name(db).text(db) == "self")?;
     if param.is_ref_param(db) {
         return if param.type_clause(db).ty(db).is_name_with_arg(
             db,

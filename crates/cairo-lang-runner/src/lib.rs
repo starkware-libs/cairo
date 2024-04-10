@@ -28,9 +28,9 @@ use cairo_lang_sierra_to_casm::metadata::{
 use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::{extract_matches, require};
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
@@ -736,9 +736,7 @@ impl SierraCasmRunner {
     }
 
     pub fn initial_required_gas(&self, func: &Function) -> Option<usize> {
-        if self.metadata.gas_info.function_costs.is_empty() {
-            return None;
-        }
+        require(!self.metadata.gas_info.function_costs.is_empty())?;
         Some(
             self.metadata.gas_info.function_costs[&func.id]
                 .iter()
