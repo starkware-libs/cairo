@@ -157,3 +157,13 @@ impl<T: ?Sized> UpcastMut<T> for T {
         self
     }
 }
+
+/// Returns `Some(())` if the condition is true, otherwise `None`.
+/// Useful in functions returning `None` on some condition:
+/// `require(condition)?;`
+/// And for functions returning `Err` on some condition:
+/// `require(condition).ok_or_else(|| create_err())?;`
+#[must_use = "This function is only relevant to create a possible return."]
+pub fn require(condition: bool) -> Option<()> {
+    condition.then_some(())
+}

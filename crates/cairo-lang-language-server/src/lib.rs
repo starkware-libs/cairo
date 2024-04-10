@@ -47,7 +47,7 @@ use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
+use cairo_lang_utils::{require, try_extract_matches, OptionHelper, Upcast};
 use serde_json::Value;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::notification::Notification;
@@ -1215,9 +1215,7 @@ fn get_definition_location(
 ) -> Option<(FileId, TextSpan)> {
     let syntax_db = db.upcast();
     let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
-    if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
-        return None;
-    }
+    require(node.kind(syntax_db) == SyntaxKind::TokenIdentifier)?;
     let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
     let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
     let node = stable_ptr.lookup(syntax_db);

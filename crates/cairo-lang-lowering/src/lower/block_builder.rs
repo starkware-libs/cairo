@@ -4,6 +4,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::require;
 use itertools::{chain, zip_eq, Itertools};
 use semantic::items::structure::SemanticStructEx;
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
@@ -276,9 +277,7 @@ impl BlockBuilder {
             }
         }
 
-        if n_reachable_blocks == 0 {
-            return None;
-        }
+        require(n_reachable_blocks != 0)?;
 
         // If there are reachable blocks, create a new empty block for the code after this match.
         let following_block = ctx.blocks.alloc_empty();
