@@ -39,8 +39,8 @@ use self::storage::{
     StorageAddressTryFromFelt252Trait, StorageAddressType, StorageBaseAddressFromFelt252Libfunc,
 };
 use self::syscalls::{
-    KeccakLibfunc, SHA256ProcessBlockLibfunc, SHA256StateHandleDigestLibfunc,
-    SHA256StateHandleInitLibfunc, SHA256StateHandleType,
+    KeccakLibfunc, Sha256ProcessBlockLibfunc, Sha256StateHandleDigestLibfunc,
+    Sha256StateHandleInitLibfunc, Sha256StateHandleType,
 };
 use self::testing::TestingLibfunc;
 use super::array::ArrayType;
@@ -58,7 +58,7 @@ define_type_hierarchy! {
         StorageAddress(StorageAddressType),
         System(SystemType),
         Secp256Point(Secp256PointType),
-        SHA256StateHandle(SHA256StateHandleType),
+        Sha256StateHandle(Sha256StateHandleType),
     }, StarkNetTypeConcrete
 }
 
@@ -85,9 +85,9 @@ define_libfunc_hierarchy! {
          GetExecutionInfoV2(GetterLibfunc<GetExecutionInfoV2Trait>),
          Deploy(DeployLibfunc),
          Keccak(KeccakLibfunc),
-         SHA256ProcessBlock(SHA256ProcessBlockLibfunc),
-         SHA256StateHandleInit(SHA256StateHandleInitLibfunc),
-         SHA256StateHandleDigest(SHA256StateHandleDigestLibfunc),
+         Sha256ProcessBlock(Sha256ProcessBlockLibfunc),
+         Sha256StateHandleInit(Sha256StateHandleInitLibfunc),
+         Sha256StateHandleDigest(Sha256StateHandleDigestLibfunc),
          LibraryCall(LibraryCallLibfunc),
          ReplaceClass(ReplaceClassLibfunc),
          SendMessageToL1(SendMessageToL1Libfunc),

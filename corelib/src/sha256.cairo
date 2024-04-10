@@ -2,13 +2,13 @@ use core::starknet::SyscallResultTrait;
 
 /// A handle to the state of a SHA-256 hash.
 #[derive(Copy, Drop)]
-pub(crate) extern type SHA256StateHandle;
+pub(crate) extern type Sha256StateHandle;
 
 /// Initializes a new SHA-256 state handle.
-extern fn sha256_state_handle_init(state: Box<[u32; 8]>) -> SHA256StateHandle nopanic;
+extern fn sha256_state_handle_init(state: Box<[u32; 8]>) -> Sha256StateHandle nopanic;
 
 /// returns the state of a SHA-256 hash.
-extern fn sha256_state_handle_digest(state: SHA256StateHandle) -> Box<[u32; 8]> nopanic;
+extern fn sha256_state_handle_digest(state: Sha256StateHandle) -> Box<[u32; 8]> nopanic;
 
 const SHA256_INITIAL_STATE: [
     u32

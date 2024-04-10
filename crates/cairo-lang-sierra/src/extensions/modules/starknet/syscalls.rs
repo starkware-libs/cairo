@@ -163,10 +163,10 @@ impl SyscallGenericLibfunc for KeccakLibfunc {
 
 /// Type representing the sha256 state handle.
 #[derive(Default)]
-pub struct SHA256StateHandleType {}
+pub struct Sha256StateHandleType {}
 
-impl NoGenericArgsGenericType for SHA256StateHandleType {
-    const ID: GenericTypeId = GenericTypeId::new_inline("SHA256StateHandle");
+impl NoGenericArgsGenericType for Sha256StateHandleType {
+    const ID: GenericTypeId = GenericTypeId::new_inline("Sha256StateHandle");
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
@@ -174,11 +174,11 @@ impl NoGenericArgsGenericType for SHA256StateHandleType {
 }
 
 /// Libfunc for the sha256_process_block system call.
-/// The input needs a SHA256StateHandleType for the previous state and a span of 16 words
+/// The input needs a Sha256StateHandleType for the previous state and a span of 16 words
 /// (each word is 32 bits).
 #[derive(Default)]
-pub struct SHA256ProcessBlockLibfunc {}
-impl SyscallGenericLibfunc for SHA256ProcessBlockLibfunc {
+pub struct Sha256ProcessBlockLibfunc {}
+impl SyscallGenericLibfunc for Sha256ProcessBlockLibfunc {
     const STR_ID: &'static str = "sha256_process_block_syscall";
 
     fn input_tys(
@@ -186,7 +186,7 @@ impl SyscallGenericLibfunc for SHA256ProcessBlockLibfunc {
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         Ok(vec![
             // Previous state of the hash.
-            context.get_concrete_type(SHA256StateHandleType::id(), &[])?,
+            context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
             // The current block to process.
             u32_span_ty(context)?,
         ])
@@ -195,14 +195,14 @@ impl SyscallGenericLibfunc for SHA256ProcessBlockLibfunc {
     fn success_output_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        Ok(vec![context.get_concrete_type(SHA256StateHandleType::id(), &[])?])
+        Ok(vec![context.get_concrete_type(Sha256StateHandleType::id(), &[])?])
     }
 }
 
 /// Libfunc for converting a ContractAddress into a felt252.
 #[derive(Default)]
-pub struct SHA256StateHandleInitLibfunc {}
-impl NoGenericArgsGenericLibfunc for SHA256StateHandleInitLibfunc {
+pub struct Sha256StateHandleInitLibfunc {}
+impl NoGenericArgsGenericLibfunc for Sha256StateHandleInitLibfunc {
     const STR_ID: &'static str = "sha256_state_handle_init";
 
     fn specialize_signature(
@@ -211,15 +211,15 @@ impl NoGenericArgsGenericLibfunc for SHA256StateHandleInitLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         Ok(reinterpret_cast_signature(
             sha256_state_handle_unwrapped_type(context)?,
-            context.get_concrete_type(SHA256StateHandleType::id(), &[])?,
+            context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
         ))
     }
 }
 
 /// Libfunc for converting a ContractAddress into a felt252.
 #[derive(Default)]
-pub struct SHA256StateHandleDigestLibfunc {}
-impl NoGenericArgsGenericLibfunc for SHA256StateHandleDigestLibfunc {
+pub struct Sha256StateHandleDigestLibfunc {}
+impl NoGenericArgsGenericLibfunc for Sha256StateHandleDigestLibfunc {
     const STR_ID: &'static str = "sha256_state_handle_digest";
 
     fn specialize_signature(
@@ -227,13 +227,13 @@ impl NoGenericArgsGenericLibfunc for SHA256StateHandleDigestLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         Ok(reinterpret_cast_signature(
-            context.get_concrete_type(SHA256StateHandleType::id(), &[])?,
+            context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
             sha256_state_handle_unwrapped_type(context)?,
         ))
     }
 }
 
-/// The inner type of the SHA256StateHandle.
+/// The inner type of the Sha256StateHandle.
 pub fn sha256_state_handle_unwrapped_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
