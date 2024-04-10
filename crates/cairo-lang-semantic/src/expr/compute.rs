@@ -50,7 +50,7 @@ use crate::corelib::{
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{
-    ElementKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
+    ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
     UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::attribute::SemanticQueryAttrs;
@@ -1037,7 +1037,11 @@ fn compute_expr_match_semantic(
             |match_ty, arm_ty| {
                 ctx.diagnostics.report_by_ptr(
                     expr.stable_ptr().untyped(),
-                    IncompatibleMatchArms { match_ty, arm_ty },
+                    IncompatibleArms {
+                        multi_arm_expr_kind: MultiArmExprKind::Match,
+                        first_ty: match_ty,
+                        different_ty: arm_ty,
+                    },
                 )
             },
         );
@@ -1107,7 +1111,14 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
     let if_block_ty = ctx.reduce_ty(if_block.ty());
     let else_block_ty = ctx.reduce_ty(else_block_ty);
     let mut report_type_mismatch = |block_if_ty, block_else_ty| {
-        ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty })
+        ctx.diagnostics.report(
+            syntax,
+            IncompatibleArms {
+                multi_arm_expr_kind: MultiArmExprKind::If,
+                first_ty: block_if_ty,
+                different_ty: block_else_ty,
+            },
+        )
     };
     let inference = &mut ctx.resolver.inference();
     let _ = helper.try_merge_types(inference, ctx.db, if_block_ty, &mut report_type_mismatch)
@@ -2730,7 +2741,11 @@ pub fn compute_statement_semantic(
                         |current_ty, break_ty| {
                             ctx.diagnostics.report_by_ptr(
                                 stable_ptr,
-                                IncompatibleLoopBreakTypes { current_ty, break_ty },
+                                IncompatibleArms {
+                                    multi_arm_expr_kind: MultiArmExprKind::Loop,
+                                    first_ty: current_ty,
+                                    different_ty: break_ty,
+                                },
                             )
                         },
                     );
