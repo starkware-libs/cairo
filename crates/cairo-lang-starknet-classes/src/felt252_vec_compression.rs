@@ -1,6 +1,7 @@
 use cairo_felt::Felt252;
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::require;
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::ToPrimitive;
@@ -37,9 +38,7 @@ pub fn decompress<Result: Extend<BigUintAsHex>>(
     result: &mut Result,
 ) -> Option<()> {
     let (packed_values, code_size) = pop_usize(packed_values)?;
-    if code_size >= packed_values.len() {
-        return None;
-    }
+    require(code_size < packed_values.len())?;
     let (packed_values, padding_size) = pop_usize(packed_values)?;
     let (code, packed_values) = packed_values.split_at(code_size);
     let (packed_values, mut remaining_unpacked_size) = pop_usize(packed_values)?;
