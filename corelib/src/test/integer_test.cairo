@@ -1953,86 +1953,81 @@ mod bounded_int {
         assert!(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(upcast(v181)).is_none());
     }
 
-    mod u8_actions {
-        pub extern fn bounded_int_add<T1, T2>(a: T1, b: T2) -> super::BoundedInt<0, 510> nopanic;
-        pub extern fn bounded_int_sub<T1, T2>(a: T1, b: T2) -> super::BoundedInt<-255, 255> nopanic;
-        pub extern fn bounded_int_mul<T1, T2>(
-            a: T1, b: T2
-        ) -> super::BoundedInt<0, {
-            255 * 255
-        }> nopanic;
-    }
+    trait IgnoreNext;
+    impl ImplIgnoreNext of IgnoreNext;
 
-    mod i8_actions {
-        pub extern fn bounded_int_add<T1, T2>(a: T1, b: T2) -> super::BoundedInt<-256, 254> nopanic;
-        pub extern fn bounded_int_sub<T1, T2>(a: T1, b: T2) -> super::BoundedInt<-255, 255> nopanic;
-        pub extern fn bounded_int_mul<T1, T2>(
-            a: T1, b: T2
-        ) -> super::BoundedInt<{
-            127 * -128
-        }, {
-            128 * 128
-        }> nopanic;
-    }
+    extern fn bounded_int_add<T1, T2, +IgnoreNext, R>(a: T1, b: T2) -> R nopanic;
+    type U8AddRes = BoundedInt<0, 510>;
+    type I8AddRes = BoundedInt<-256, 254>;
 
     #[test]
     fn test_add() {
-        assert!(upcast(u8_actions::bounded_int_add::<u8, u8>(0, 0)) == 0_felt252);
-        assert!(upcast(u8_actions::bounded_int_add::<u8, u8>(0, 255)) == 255_felt252);
-        assert!(upcast(u8_actions::bounded_int_add::<u8, u8>(255, 0)) == 255_felt252);
-        assert!(upcast(u8_actions::bounded_int_add::<u8, u8>(255, 255)) == 510_felt252);
-        assert!(upcast(i8_actions::bounded_int_add::<i8, i8>(-128, -128)) == -256_felt252);
-        assert!(upcast(i8_actions::bounded_int_add::<i8, i8>(-128, 127)) == -1_felt252);
-        assert!(upcast(i8_actions::bounded_int_add::<i8, i8>(127, -128)) == -1_felt252);
-        assert!(upcast(i8_actions::bounded_int_add::<i8, i8>(127, 127)) == 254_felt252);
+        assert!(upcast(bounded_int_add::<u8, u8, _, U8AddRes>(0, 0)) == 0_felt252);
+        assert!(upcast(bounded_int_add::<u8, u8, _, U8AddRes>(0, 255)) == 255_felt252);
+        assert!(upcast(bounded_int_add::<u8, u8, _, U8AddRes>(255, 0)) == 255_felt252);
+        assert!(upcast(bounded_int_add::<u8, u8, _, U8AddRes>(255, 255)) == 510_felt252);
+        assert!(upcast(bounded_int_add::<i8, i8, _, I8AddRes>(-128, -128)) == -256_felt252);
+        assert!(upcast(bounded_int_add::<i8, i8, _, I8AddRes>(-128, 127)) == -1_felt252);
+        assert!(upcast(bounded_int_add::<i8, i8, _, I8AddRes>(127, -128)) == -1_felt252);
+        assert!(upcast(bounded_int_add::<i8, i8, _, I8AddRes>(127, 127)) == 254_felt252);
     }
+
+    extern fn bounded_int_sub<T1, T2, +IgnoreNext, R>(a: T1, b: T2) -> R nopanic;
+    type U8SubRes = BoundedInt<-255, 255>;
+    type I8SubRes = BoundedInt<-255, 255>;
 
     #[test]
     fn test_sub() {
-        assert!(upcast(u8_actions::bounded_int_sub::<u8, u8>(0, 0)) == 0_felt252);
-        assert!(upcast(u8_actions::bounded_int_sub::<u8, u8>(0, 255)) == -255_felt252);
-        assert!(upcast(u8_actions::bounded_int_sub::<u8, u8>(255, 0)) == 255_felt252);
-        assert!(upcast(u8_actions::bounded_int_sub::<u8, u8>(255, 255)) == 0_felt252);
-        assert!(upcast(i8_actions::bounded_int_sub::<i8, i8>(-128, -128)) == 0_felt252);
-        assert!(upcast(i8_actions::bounded_int_sub::<i8, i8>(-128, 127)) == -255_felt252);
-        assert!(upcast(i8_actions::bounded_int_sub::<i8, i8>(127, -128)) == 255_felt252);
-        assert!(upcast(i8_actions::bounded_int_sub::<i8, i8>(127, 127)) == 0_felt252);
+        assert!(upcast(bounded_int_sub::<u8, u8, _, U8SubRes>(0, 0)) == 0_felt252);
+        assert!(upcast(bounded_int_sub::<u8, u8, _, U8SubRes>(0, 255)) == -255_felt252);
+        assert!(upcast(bounded_int_sub::<u8, u8, _, U8SubRes>(255, 0)) == 255_felt252);
+        assert!(upcast(bounded_int_sub::<u8, u8, _, U8SubRes>(255, 255)) == 0_felt252);
+        assert!(upcast(bounded_int_sub::<i8, i8, _, I8SubRes>(-128, -128)) == 0_felt252);
+        assert!(upcast(bounded_int_sub::<i8, i8, _, I8SubRes>(-128, 127)) == -255_felt252);
+        assert!(upcast(bounded_int_sub::<i8, i8, _, I8SubRes>(127, -128)) == 255_felt252);
+        assert!(upcast(bounded_int_sub::<i8, i8, _, I8SubRes>(127, 127)) == 0_felt252);
     }
+
+    extern fn bounded_int_mul<T1, T2, +IgnoreNext, R>(a: T1, b: T2) -> R nopanic;
+    type U8MulRes = BoundedInt<0, {
+        255 * 255
+    }>;
+    type I8MulRes = BoundedInt<{
+        127 * -128
+    }, {
+        128 * 128
+    }>;
 
     #[test]
     fn test_mul() {
-        assert!(upcast(u8_actions::bounded_int_mul::<u8, u8>(0, 0)) == 0_felt252);
-        assert!(upcast(u8_actions::bounded_int_mul::<u8, u8>(0, 255)) == 0_felt252);
-        assert!(upcast(u8_actions::bounded_int_mul::<u8, u8>(255, 0)) == 0_felt252);
-        assert!(upcast(u8_actions::bounded_int_mul::<u8, u8>(255, 255)) == 255_felt252 * 255);
-        assert!(upcast(i8_actions::bounded_int_mul::<i8, i8>(-128, -128)) == -128_felt252 * -128);
-        assert!(upcast(i8_actions::bounded_int_mul::<i8, i8>(-128, 127)) == -128_felt252 * 127);
-        assert!(upcast(i8_actions::bounded_int_mul::<i8, i8>(127, -128)) == 127_felt252 * -128);
-        assert!(upcast(i8_actions::bounded_int_mul::<i8, i8>(127, 127)) == 127_felt252 * 127);
+        assert!(upcast(bounded_int_mul::<u8, u8, _, U8MulRes>(0, 0)) == 0_felt252);
+        assert!(upcast(bounded_int_mul::<u8, u8, _, U8MulRes>(0, 255)) == 0_felt252);
+        assert!(upcast(bounded_int_mul::<u8, u8, _, U8MulRes>(255, 0)) == 0_felt252);
+        assert!(upcast(bounded_int_mul::<u8, u8, _, U8MulRes>(255, 255)) == 255_felt252 * 255);
+        assert!(upcast(bounded_int_mul::<i8, i8, _, I8MulRes>(-128, -128)) == -128_felt252 * -128);
+        assert!(upcast(bounded_int_mul::<i8, i8, _, I8MulRes>(-128, 127)) == -128_felt252 * 127);
+        assert!(upcast(bounded_int_mul::<i8, i8, _, I8MulRes>(127, -128)) == 127_felt252 * -128);
+        assert!(upcast(bounded_int_mul::<i8, i8, _, I8MulRes>(127, 127)) == 127_felt252 * 127);
     }
 
-    fn bi_value<const MIN: felt252, const MAX: felt252>(v: felt252) -> BoundedInt<MIN, MAX> {
+    fn bi_value<const MIN: felt252, const MAX: felt252>(v: u128) -> BoundedInt<MIN, MAX> {
         downcast(v).unwrap()
     }
 
-    mod div_rem {
-        use super::{bi_value, BoundedInt, upcast};
-        type DivRemType = (BoundedInt<16, 85>, BoundedInt<0, 7>);
-        extern fn bounded_int_div_rem<T1, T2>(
-            a: T1, b: T2
-        ) -> DivRemType implicits(RangeCheck) nopanic;
+    extern fn bounded_int_div_rem<T1, T2, +IgnoreNext, Q, R>(
+        a: T1, b: T2
+    ) -> (Q, R) implicits(RangeCheck) nopanic;
 
-        fn helper(a: felt252, b: felt252) -> (felt252, felt252) {
-            let (q, r) = bounded_int_div_rem(bi_value::<128, 255>(a), bi_value::<3, 8>(b));
-            (upcast(q), upcast(r))
-        }
+    fn div_rem_helper(a: u128, b: u128) -> (felt252, felt252) {
+        let (q, r) = bounded_int_div_rem(bi_value::<128, 255>(a), bi_value::<3, 8>(b));
+        (upcast::<BoundedInt<16, 85>>(q), upcast::<BoundedInt<0, 7>>(r))
+    }
 
-        #[test]
-        fn test() {
-            assert!(helper(128, 3) == (42, 2));
-            assert!(helper(255, 3) == (85, 0));
-            assert!(helper(128, 8) == (16, 0));
-            assert!(helper(255, 8) == (31, 7));
-        }
+    #[test]
+    fn test_div_rem() {
+        assert!(div_rem_helper(128, 3) == (42, 2));
+        assert!(div_rem_helper(255, 3) == (85, 0));
+        assert!(div_rem_helper(128, 8) == (16, 0));
+        assert!(div_rem_helper(255, 8) == (31, 7));
     }
 }
