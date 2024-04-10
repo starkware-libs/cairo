@@ -2,6 +2,7 @@ use std::iter;
 
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
+use cairo_lang_sierra::extensions::bounded_int::BoundedIntConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
@@ -427,6 +428,11 @@ pub fn core_libfunc_cost(
                     sign: BranchCostSign::Add,
                 }]
             }
+        },
+        BoundedInt(libfunc) => match libfunc {
+            BoundedIntConcreteLibfunc::Add(_)
+            | BoundedIntConcreteLibfunc::Sub(_)
+            | BoundedIntConcreteLibfunc::Mul(_) => vec![ConstCost::steps(0).into()],
         },
     }
 }

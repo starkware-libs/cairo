@@ -54,6 +54,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         array: "array",
         bitwise: "bitwise",
         bool: "bool",
+        bounded_int: "bounded_int",
         box_: "box",
         builtin_costs: "builtin_costs",
         casts: "casts",
