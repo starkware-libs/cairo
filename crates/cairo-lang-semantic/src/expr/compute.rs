@@ -11,7 +11,7 @@ use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId,
     MemberId, TraitFunctionId, TraitId,
 };
-use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, ToOption};
+use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::attribute::consts::PHANTOM_ATTR;
 use cairo_lang_syntax::node::ast::{
@@ -870,29 +870,35 @@ pub fn compute_expr_block_semantic(
 /// Helper for merging the return types of branch blocks (match or if else).
 #[derive(Debug, Clone)]
 struct FlowMergeTypeHelper {
+    multi_arm_expr_kind: MultiArmExprKind,
     never_type: TypeId,
     final_type: Option<TypeId>,
 }
 impl FlowMergeTypeHelper {
-    fn new(db: &dyn SemanticGroup) -> Self {
-        Self { never_type: never_ty(db), final_type: None }
+    fn new(db: &dyn SemanticGroup, multi_arm_expr_kind: MultiArmExprKind) -> Self {
+        Self { multi_arm_expr_kind, never_type: never_ty(db), final_type: None }
     }
 
     /// Attempt merge a branch into the helper, on error will return the conflicting types.
-    fn try_merge_types<F>(
+    fn try_merge_types(
         &mut self,
-        inference: &mut Inference<'_>,
         db: &dyn SemanticGroup,
+        diagnostics: &mut SemanticDiagnostics,
+        inference: &mut Inference<'_>,
         ty: TypeId,
-        mut report_type_mismatch: F,
-    ) -> bool
-    where
-        F: FnMut(TypeId, TypeId) -> DiagnosticAdded,
-    {
+        stable_ptr: SyntaxStablePtrId,
+    ) -> bool {
         if ty != self.never_type && !ty.is_missing(db) {
-            if let Some(existing) = &self.final_type {
-                if let Err(err_set) = inference.conform_ty(ty, *existing) {
-                    let diag_added = report_type_mismatch(*existing, ty);
+            if let Some(pending) = &self.final_type {
+                if let Err(err_set) = inference.conform_ty(ty, *pending) {
+                    let diag_added = diagnostics.report_by_ptr(
+                        stable_ptr,
+                        IncompatibleArms {
+                            multi_arm_expr_kind: self.multi_arm_expr_kind,
+                            pending_ty: *pending,
+                            different_ty: ty,
+                        },
+                    );
                     inference.consume_reported_error(err_set, diag_added);
                     return false;
                 }
@@ -1027,23 +1033,15 @@ fn compute_expr_match_semantic(
         })
         .collect();
     // Unify arm types.
-    let mut helper = FlowMergeTypeHelper::new(ctx.db);
+    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::Match);
     for (_, expr) in patterns_and_exprs.iter() {
         let expr_ty = ctx.reduce_ty(expr.ty());
         helper.try_merge_types(
-            &mut ctx.resolver.inference(),
             ctx.db,
+            ctx.diagnostics,
+            &mut ctx.resolver.inference(),
             expr_ty,
-            |match_ty, arm_ty| {
-                ctx.diagnostics.report_by_ptr(
-                    expr.stable_ptr().untyped(),
-                    IncompatibleArms {
-                        multi_arm_expr_kind: MultiArmExprKind::Match,
-                        first_ty: match_ty,
-                        different_ty: arm_ty,
-                    },
-                )
-            },
+            expr.stable_ptr().untyped(),
         );
     }
     // Compute semantic representation of the match arms.
@@ -1107,22 +1105,23 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
         }
     };
 
-    let mut helper = FlowMergeTypeHelper::new(ctx.db);
+    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::If);
     let if_block_ty = ctx.reduce_ty(if_block.ty());
     let else_block_ty = ctx.reduce_ty(else_block_ty);
-    let mut report_type_mismatch = |block_if_ty, block_else_ty| {
-        ctx.diagnostics.report(
-            syntax,
-            IncompatibleArms {
-                multi_arm_expr_kind: MultiArmExprKind::If,
-                first_ty: block_if_ty,
-                different_ty: block_else_ty,
-            },
-        )
-    };
     let inference = &mut ctx.resolver.inference();
-    let _ = helper.try_merge_types(inference, ctx.db, if_block_ty, &mut report_type_mismatch)
-        && helper.try_merge_types(inference, ctx.db, else_block_ty, &mut report_type_mismatch);
+    let _ = helper.try_merge_types(
+        ctx.db,
+        ctx.diagnostics,
+        inference,
+        if_block_ty,
+        syntax.stable_ptr().untyped(),
+    ) && helper.try_merge_types(
+        ctx.db,
+        ctx.diagnostics,
+        inference,
+        else_block_ty,
+        syntax.stable_ptr().untyped(),
+    );
     Ok(Expr::If(ExprIf {
         condition,
         if_block: if_block.id,
@@ -1143,7 +1142,7 @@ fn compute_expr_loop_semantic(
     let (body, loop_ctx) = compute_loop_body_semantic(
         ctx,
         syntax.body(syntax_db),
-        LoopContext::Loop(FlowMergeTypeHelper::new(db)),
+        LoopContext::Loop(FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop)),
     );
     Ok(Expr::Loop(ExprLoop {
         body,
@@ -2735,19 +2734,11 @@ pub fn compute_statement_semantic(
                 }
                 Some(LoopContext::Loop(flow_merge)) => {
                     flow_merge.try_merge_types(
-                        &mut ctx.resolver.inference(),
                         ctx.db,
+                        ctx.diagnostics,
+                        &mut ctx.resolver.inference(),
                         ty,
-                        |current_ty, break_ty| {
-                            ctx.diagnostics.report_by_ptr(
-                                stable_ptr,
-                                IncompatibleArms {
-                                    multi_arm_expr_kind: MultiArmExprKind::Loop,
-                                    first_ty: current_ty,
-                                    different_ty: break_ty,
-                                },
-                            )
-                        },
+                        stable_ptr,
                     );
                 }
                 Some(LoopContext::While) => {
