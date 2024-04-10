@@ -100,7 +100,7 @@ pub fn lower_expr_if_let(
     matched_expr: semantic::ExprId,
     patterns: &[semantic::PatternId],
 ) -> LoweringResult<LoweredExpr> {
-    log::trace!("Lowering a match expression: {:?}", expr.debug(&ctx.expr_formatter));
+    log::trace!("Lowering an if let expression: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, builder, matched_expr)?;
 
