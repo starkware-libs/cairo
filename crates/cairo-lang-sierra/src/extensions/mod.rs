@@ -15,9 +15,7 @@ pub use self::lib_func::{
     OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
 };
 pub use self::modules::*;
-pub use self::types::{
-    ConcreteType, GenericType, GenericTypeEx, NamedType, NoGenericArgsGenericType,
-};
+pub use self::types::{ConcreteType, GenericType, NamedType, NoGenericArgsGenericType};
 use crate::ids::{ConcreteTypeId, FunctionId};
 use crate::program::GenericArg;
 

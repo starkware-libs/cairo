@@ -16,22 +16,12 @@ pub trait GenericType: Sized {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError>;
-}
 
-/// Trait for introducing helper methods on GenericType.
-pub trait GenericTypeEx: GenericType {
     fn specialize_by_id(
         context: &dyn TypeSpecializationContext,
         type_id: &GenericTypeId,
         args: &[GenericArg],
-    ) -> Result<Self::Concrete, ExtensionError>;
-}
-impl<TGenericType: GenericType> GenericTypeEx for TGenericType {
-    fn specialize_by_id(
-        context: &dyn TypeSpecializationContext,
-        type_id: &GenericTypeId,
-        args: &[GenericArg],
-    ) -> Result<TGenericType::Concrete, ExtensionError> {
+    ) -> Result<Self::Concrete, ExtensionError> {
         Self::by_id(type_id)
             .ok_or_else(move || ExtensionError::TypeSpecialization {
                 type_id: type_id.clone(),

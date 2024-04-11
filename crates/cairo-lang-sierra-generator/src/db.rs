@@ -5,7 +5,7 @@ use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::panic::PanicSignatureInfo;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
-use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
+use cairo_lang_sierra::extensions::{ConcreteType, GenericType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::Upcast;
 use lowering::ids::ConcreteFunctionWithBodyId;
