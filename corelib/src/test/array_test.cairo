@@ -46,31 +46,26 @@ fn test_span() {
 
 #[test]
 fn test_slice() {
-    let span = array![10, 11, 12].span();
-    assert_eq(@span.slice(0, 3).len(), @3, 'Unexpected span length.');
-    assert_eq(span.slice(0, 3)[0], @10, 'Unexpected Element.');
-    assert_eq(@span.slice(0, 2).len(), @2, 'Unexpected span length.');
-    assert_eq(span.slice(0, 2)[0], @10, 'Unexpected Element.');
-    assert_eq(@span.slice(0, 1).len(), @1, 'Unexpected span length.');
-    assert_eq(span.slice(0, 1)[0], @10, 'Unexpected Element.');
-    assert_eq(@span.slice(0, 0).len(), @0, 'Unexpected span length.');
-    assert_eq(@span.slice(1, 2).len(), @2, 'Unexpected span length.');
-    assert_eq(span.slice(1, 2)[0], @11, 'Unexpected Element.');
-    assert_eq(@span.slice(1, 1).len(), @1, 'Unexpected span length.');
-    assert_eq(span.slice(1, 1)[0], @11, 'Unexpected Element.');
-    assert_eq(@span.slice(1, 0).len(), @0, 'Unexpected span length.');
+    let span = [10, 11, 12].span();
+    assert_eq!(span.slice(0, 3), span);
+    assert_eq!(span.slice(0, 2), [10, 11].span());
+    assert_eq!(span.slice(0, 1), [10].span());
+    assert!(span.slice(0, 0).is_empty());
+    assert_eq!(span.slice(1, 2), [11, 12].span());
+    assert_eq!(span.slice(1, 1), [11].span());
+    assert!(span.slice(1, 0).is_empty());
 }
 
 #[test]
 #[should_panic]
 fn test_slice_out_of_bound_1() {
-    array![10, 11, 12].span().slice(3, 1);
+    [10, 11, 12].span().slice(3, 1);
 }
 
 #[test]
 #[should_panic]
 fn test_slice_out_of_bound_2() {
-    array![10, 11, 12].span().slice(0, 4);
+    [10, 11, 12].span().slice(0, 4);
 }
 
 #[test]
