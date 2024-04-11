@@ -366,30 +366,23 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ConditionNotBool { condition_ty } => {
                 format!(r#"Condition has type "{}", expected bool."#, condition_ty.format(db))
             }
-            SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
-                r#"Match arms have incompatible types: "{}" and "{}""#,
-                match_ty.format(db),
-                arm_ty.format(db)
-            ),
-            SemanticDiagnosticKind::IncompatibleIfBlockTypes { block_if_ty, block_else_ty } => {
-                format!(
-                    r#"If blocks have incompatible types: "{}" and "{}""#,
-                    block_if_ty.format(db),
-                    block_else_ty.format(db),
-                )
+            SemanticDiagnosticKind::IncompatibleArms {
+                multi_arm_expr_kind: incompatibility_kind,
+                first_ty,
+                different_ty,
+            } => {
+                let prefix = match incompatibility_kind {
+                    MultiArmExprKind::Match => "Match arms have incompatible types",
+                    MultiArmExprKind::If => "If blocks have incompatible types",
+                    MultiArmExprKind::Loop => "Loop has incompatible return types",
+                };
+                format!(r#"{prefix}: "{}" and "{}""#, first_ty.format(db), different_ty.format(db))
             }
             SemanticDiagnosticKind::LogicalOperatorNotAllowedInIfLet => {
                 "Logical operator not allowed in if-let.".into()
             }
             SemanticDiagnosticKind::LogicalOperatorNotAllowedInWhileLet => {
                 "Logical operator not allowed in while-let.".into()
-            }
-            SemanticDiagnosticKind::IncompatibleLoopBreakTypes { current_ty, break_ty } => {
-                format!(
-                    r#"Loop has incompatible return types: "{}" and "{}""#,
-                    current_ty.format(db),
-                    break_ty.format(db),
-                )
             }
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!(r#"Type "{}" has no members."#, ty.format(db))
@@ -939,20 +932,13 @@ pub enum SemanticDiagnosticKind {
     ConditionNotBool {
         condition_ty: semantic::TypeId,
     },
-    IncompatibleMatchArms {
-        match_ty: semantic::TypeId,
-        arm_ty: semantic::TypeId,
-    },
-    IncompatibleIfBlockTypes {
-        block_if_ty: semantic::TypeId,
-        block_else_ty: semantic::TypeId,
+    IncompatibleArms {
+        multi_arm_expr_kind: MultiArmExprKind,
+        first_ty: semantic::TypeId,
+        different_ty: semantic::TypeId,
     },
     LogicalOperatorNotAllowedInIfLet,
     LogicalOperatorNotAllowedInWhileLet,
-    IncompatibleLoopBreakTypes {
-        current_ty: semantic::TypeId,
-        break_ty: semantic::TypeId,
-    },
     TypeHasNoMembers {
         ty: semantic::TypeId,
         member_name: SmolStr,
@@ -1140,6 +1126,14 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArraySizeTooBig,
     SelfNotSupportedInContext,
     SelfMustBeFirst,
+}
+
+/// The kind of an expression with multiple possible return types.
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum MultiArmExprKind {
+    If,
+    Match,
+    Loop,
 }
 
 impl SemanticDiagnosticKind {
