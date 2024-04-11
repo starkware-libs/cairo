@@ -79,20 +79,10 @@ fn test_l2_to_l1_messages() {
     assert!(testing::pop_l2_to_l1_message(other_contract_address).is_none());
 
     // Pop messages.
-    assert_eq(
-        @testing::pop_l2_to_l1_message(contract_address).unwrap(),
-        @(0, array![0].span()),
-        'message == (0, [0])'
-    );
-    assert_eq(
-        @testing::pop_l2_to_l1_message(contract_address).unwrap(),
-        @(1, array![0, 1].span()),
-        'message == (1, [0, 1])'
-    );
-    assert_eq(
-        @testing::pop_l2_to_l1_message(contract_address).unwrap(),
-        @(2, array![0, 1, 2].span()),
-        'message == (2, [0, 1, 2])'
+    assert_eq!(testing::pop_l2_to_l1_message(contract_address), Option::Some((0, [0].span())));
+    assert_eq!(testing::pop_l2_to_l1_message(contract_address), Option::Some((1, [0, 1].span())));
+    assert_eq!(
+        testing::pop_l2_to_l1_message(contract_address), Option::Some((2, [0, 1, 2].span()))
     );
 
     // Assert all messages have been popped.
@@ -105,18 +95,15 @@ fn test_pop_l2_to_l1_message() {
     testing::set_contract_address(contract_address);
 
     let mut to_address = 1234;
-    let mut payload = array![2345];
+    let mut payload = [2345].span();
 
-    starknet::send_message_to_l1_syscall(to_address, payload.span()).unwrap_syscall();
-    starknet::send_message_to_l1_syscall(to_address, payload.span()).unwrap_syscall();
+    starknet::send_message_to_l1_syscall(to_address, payload).unwrap_syscall();
+    starknet::send_message_to_l1_syscall(to_address, payload).unwrap_syscall();
 
-    let (to_address, payload) = starknet::testing::pop_l2_to_l1_message(contract_address).unwrap();
-    assert_eq!(payload.len(), 1);
-    assert_eq!(to_address, 1234);
-    assert_eq(payload.at(0), @2345, 'unexpected payload');
-
-    let (to_address, payload) = starknet::testing::pop_l2_to_l1_message(contract_address).unwrap();
-    assert_eq!(payload.len(), 1);
-    assert_eq!(to_address, 1234);
-    assert_eq(payload.at(0), @2345, 'unexpected payload');
+    assert_eq!(
+        testing::pop_l2_to_l1_message(contract_address), Option::Some((to_address, payload))
+    );
+    assert_eq!(
+        testing::pop_l2_to_l1_message(contract_address), Option::Some((to_address, payload))
+    );
 }
