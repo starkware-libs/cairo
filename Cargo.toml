@@ -94,16 +94,16 @@ const_format = "0.2.32"
 convert_case = "0.6.0"
 derivative = "2.2.0"
 diffy = "0.3.0"
-env_logger = "0.10.0"
+env_logger = "0.11.3"
 genco = "0.17.8"
-good_lp = { version = "1.7.0", features = ["minilp"], default-features = false }
+good_lp = { version = "1.8.1", features = ["minilp"], default-features = false }
 hashbrown = "0.14.3" 
 id-arena = "2.2.1"
 ignore = "0.4.20"
 indent = "0.1.1"
 indexmap = { version = "2.1.0", default-features = false }
 indoc = "2.0.4"
-itertools = { version = "0.11.0", default-features = false }
+itertools = { version = "0.12.1", default-features = false }
 keccak = "0.1.4"
 lalrpop-util = { version = "0.20.0", features = ["lexer"] }
 log = "0.4"
@@ -117,7 +117,7 @@ pretty_assertions = "1.4.0"
 proc-macro2 = "1.0"
 quote = "1.0.33"
 rayon = "1.8.0"
-rstest = "0.18.2"
+rstest = "0.19.0"
 salsa = "0.16.1"
 schemars = { version = "0.8.15", features = ["preserve_order"] }
 serde = { version = "1.0.192", default-features = false, features = ["derive"] }
