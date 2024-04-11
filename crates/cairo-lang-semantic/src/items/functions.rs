@@ -403,7 +403,7 @@ impl ConcreteFunctionWithBody {
         Ok(match function_id {
             FunctionWithBodyId::Free(free) => {
                 let params = db.free_function_generic_params(free)?;
-                let generic_args = generic_params_to_args(params, db)?;
+                let generic_args = generic_params_to_args(&params, db);
                 ConcreteFunctionWithBody {
                     generic_function: GenericFunctionWithBodyId::Free(free),
                     generic_args,
@@ -411,10 +411,10 @@ impl ConcreteFunctionWithBody {
             }
             FunctionWithBodyId::Impl(impl_function_id) => {
                 let params = db.impl_function_generic_params(impl_function_id)?;
-                let generic_args = generic_params_to_args(params, db)?;
+                let generic_args = generic_params_to_args(&params, db);
                 let impl_def_id = impl_function_id.impl_def_id(db.upcast());
                 let impl_def_params = db.impl_def_generic_params(impl_def_id)?;
-                let impl_generic_args = generic_params_to_args(impl_def_params, db)?;
+                let impl_generic_args = generic_params_to_args(&impl_def_params, db);
                 let impl_generic_function = ImplGenericFunctionWithBodyId {
                     concrete_impl_id: db.intern_concrete_impl(ConcreteImplLongId {
                         impl_def_id,
@@ -447,25 +447,25 @@ impl ConcreteFunctionWithBody {
 }
 
 /// Converts each generic param to a generic argument that passes the same generic param.
-fn generic_params_to_args(
-    params: Vec<GenericParam>,
+pub fn generic_params_to_args(
+    params: &[GenericParam],
     db: &dyn SemanticGroup,
-) -> Maybe<Vec<GenericArgumentId>> {
+) -> Vec<GenericArgumentId> {
     params
-        .into_iter()
+        .iter()
         .map(|param| match param {
-            GenericParam::Type(param) => Ok(GenericArgumentId::Type(
+            GenericParam::Type(param) => GenericArgumentId::Type(
                 db.intern_type(crate::TypeLongId::GenericParameter(param.id)),
-            )),
-            GenericParam::Const(param) => Ok(GenericArgumentId::Constant(
-                db.intern_const_value(ConstValue::Generic(param.id)),
-            )),
-            GenericParam::Impl(param) => {
-                Ok(GenericArgumentId::Impl(ImplId::GenericParameter(param.id)))
+            ),
+            GenericParam::Const(param) => {
+                GenericArgumentId::Constant(db.intern_const_value(ConstValue::Generic(param.id)))
             }
-            GenericParam::NegImpl(_) => Ok(GenericArgumentId::NegImpl),
+            GenericParam::Impl(param) => {
+                GenericArgumentId::Impl(ImplId::GenericParameter(param.id))
+            }
+            GenericParam::NegImpl(_) => GenericArgumentId::NegImpl,
         })
-        .collect::<Maybe<Vec<_>>>()
+        .collect()
 }
 
 impl DebugWithDb<dyn SemanticGroup> for ConcreteFunctionWithBody {
