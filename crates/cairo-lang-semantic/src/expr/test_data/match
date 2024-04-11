@@ -153,6 +153,32 @@ error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
 
 //! > ==========================================================================
 
+//! > Match arm types incompatible, also with expected type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(x: Option<()>) {
+    match x {
+        Option::Some(_) => true,
+        Option::None => 0,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "()", found: "core::bool".
+ --> lib.cairo:1:23
+fn foo(x: Option<()>) {
+                      ^
+
+//! > ==========================================================================
+
 //! > Test match with or pattern inconsistent mutability
 
 //! > test_runner_name
