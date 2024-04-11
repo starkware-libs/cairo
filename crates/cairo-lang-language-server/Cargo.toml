@@ -22,7 +22,7 @@ cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.6.3" }
 cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.6.3" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.6.3" }
 salsa.workspace = true
-scarb-metadata = "1"
+scarb-metadata = "1.12"
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 tokio.workspace = true
