@@ -45,12 +45,12 @@ fn test_internal_func() {
 fn test_flow() {
     // Set up.
     let (address0, _) = deploy_syscall(
-        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, array![100].span(), false
+        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, [100].span(), false
     )
         .unwrap();
     let mut contract0 = IContractDispatcher { contract_address: address0 };
     let (address1, _) = deploy_syscall(
-        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, array![200].span(), false
+        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, [200].span(), false
     )
         .unwrap();
     let mut contract1 = IContractDispatcher { contract_address: address1 };
@@ -73,7 +73,7 @@ fn test_flow() {
 fn test_flow_safe_dispatcher() {
     // Set up.
     let (contract_address, _) = deploy_syscall(
-        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, array![100].span(), false
+        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, [100].span(), false
     )
         .unwrap();
     let mut contract = IContractSafeDispatcher { contract_address };
@@ -100,8 +100,10 @@ fn test_flow_out_of_gas() {
 
 #[test]
 fn test_class_hash_not_found() {
-    let mut err = deploy_syscall(5.try_into().unwrap(), 0, array![100].span(), false).unwrap_err();
-    assert_eq!(err.pop_front().unwrap(), 'CLASS_HASH_NOT_FOUND');
+    assert_eq!(
+        deploy_syscall(5.try_into().unwrap(), 0, [100].span(), false),
+        Result::Err(array!['CLASS_HASH_NOT_FOUND'])
+    );
 }
 
 #[test]
