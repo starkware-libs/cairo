@@ -583,11 +583,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ExternTypeWithImplGenericsNotSupported => {
                 "Extern types with impl generics are not supported.".into()
             }
-            SemanticDiagnosticKind::ImplGenericsAfterNonImplGenericsInExternFunction => {
-                "Non-impl generics following an impl generic in an extern function are not \
-                 supported."
-                    .into()
-            }
             SemanticDiagnosticKind::MissingSemicolon => "Missing semicolon".into(),
             SemanticDiagnosticKind::TraitMismatch { expected_trt, actual_trt } => {
                 format!(
@@ -1059,7 +1054,6 @@ pub enum SemanticDiagnosticKind {
     UnsupportedConstant,
     DivisionByZero,
     ExternTypeWithImplGenericsNotSupported,
-    ImplGenericsAfterNonImplGenericsInExternFunction,
     MissingSemicolon,
     TraitMismatch {
         expected_trt: semantic::ConcreteTraitId,
