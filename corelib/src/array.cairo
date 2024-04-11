@@ -222,6 +222,20 @@ pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     }
 }
 
+/// Returns a span from a box of struct of members of the same type.
+/// The additional `+Copy<@T>` arg is to prevent later stages from propagating the `S` type Sierra
+/// level, where it is deduced by the `T` type.
+extern fn span_from_tuple<T, +Copy<@T>, S>(struct_like: Box<@T>) -> @Array<S> nopanic;
+
+#[generate_trait]
+pub impl FixedSizeArrayImpl<T, const SIZE: usize> of FixedSizeArrayTrait<T, SIZE> {
+    /// Returns a span pointing to the data in the input.
+    #[inline(always)]
+    fn span(self: @[T; SIZE]) -> Span<T> {
+        Span { snapshot: span_from_tuple(BoxTrait::new(self)) }
+    }
+}
+
 // TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
 impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
     fn clone(self: @Array<T>) -> Array<T> {
