@@ -1,6 +1,7 @@
 use core::num::traits::BitSize;
 use core::num::traits::{
-    OverflowingAdd, OverflowingSub, OverflowingMul, WrappingAdd, WrappingSub, WrappingMul
+    OverflowingAdd, OverflowingSub, OverflowingMul, WrappingAdd, WrappingSub, WrappingMul,
+    CheckedAdd, CheckedSub, CheckedMul
 };
 use core::integer::BoundedInt;
 
@@ -234,4 +235,109 @@ fn test_wrapping_mul_unsigned_integers() {
     assert_eq!(BoundedInt::<u128>::max().wrapping_mul(2), BoundedInt::<u128>::max() - 1);
     assert_eq!(2_u256.wrapping_mul(3), 6);
     assert_eq!(BoundedInt::<u256>::max().wrapping_mul(2), BoundedInt::<u256>::max() - 1);
+}
+
+// Checked tests
+#[test]
+fn test_checked_add_unsigned_integers() {
+    assert_eq!(1_u8.checked_add(2), Option::Some(3));
+    assert!(BoundedInt::<u8>::max().checked_add(1).is_none());
+    assert_eq!(1_u16.checked_add(2), Option::Some(3));
+    assert!(BoundedInt::<u16>::max().checked_add(1).is_none());
+    assert_eq!(1_u32.checked_add(2), Option::Some(3));
+    assert!(BoundedInt::<u32>::max().checked_add(1).is_none());
+    assert_eq!(1_u64.checked_add(2), Option::Some(3));
+    assert!(BoundedInt::<u64>::max().checked_add(1).is_none());
+    assert_eq!(1_u128.checked_add(2), Option::Some(3));
+    assert!(BoundedInt::<u128>::max().checked_add(1).is_none());
+    assert_eq!(1_u256.checked_add(2), Option::Some(3));
+    assert!(BoundedInt::<u256>::max().checked_add(1).is_none());
+}
+
+#[test]
+fn test_checked_add_positive_signed_integers() {
+    assert_eq!(1_i8.checked_add(2), Option::Some(3));
+    assert!(BoundedInt::<i8>::max().checked_add(1).is_none());
+    assert_eq!(1_i16.checked_add(2), Option::Some(3));
+    assert!(BoundedInt::<i16>::max().checked_add(1).is_none());
+    assert_eq!(1_i32.checked_add(2), Option::Some(3));
+    assert!(BoundedInt::<i32>::max().checked_add(1).is_none());
+    assert_eq!(1_i64.checked_add(2), Option::Some(3));
+    assert!(BoundedInt::<i64>::max().checked_add(1).is_none());
+    assert_eq!(1_i128.checked_add(2), Option::Some(3));
+    assert!(BoundedInt::<i128>::max().checked_add(1).is_none());
+}
+
+#[test]
+fn test_checked_add_negative_signed_integers() {
+    assert_eq!((-1_i8).checked_add(-2), Option::Some(-3));
+    assert!(BoundedInt::<i8>::min().checked_add(-1).is_none());
+    assert_eq!((-1_i16).checked_add(-2), Option::Some(-3));
+    assert!(BoundedInt::<i16>::min().checked_add(-1).is_none());
+    assert_eq!((-1_i32).checked_add(-2), Option::Some(-3));
+    assert!(BoundedInt::<i32>::min().checked_add(-1).is_none());
+    assert_eq!((-1_i64).checked_add(-2), Option::Some(-3));
+    assert!(BoundedInt::<i64>::min().checked_add(-1).is_none());
+    assert_eq!((-1_i128).checked_add(-2), Option::Some(-3));
+    assert!(BoundedInt::<i128>::min().checked_add(-1).is_none());
+}
+
+#[test]
+fn test_checked_sub_unsigned_integers() {
+    assert_eq!(3_u8.checked_sub(2), Option::Some(1));
+    assert!(0_u8.checked_sub(1).is_none());
+    assert_eq!(3_u16.checked_sub(2), Option::Some(1));
+    assert!(0_u16.checked_sub(1).is_none());
+    assert_eq!(3_u32.checked_sub(2), Option::Some(1));
+    assert!(0_u32.checked_sub(1).is_none());
+    assert_eq!(3_u64.checked_sub(2), Option::Some(1));
+    assert!(0_u64.checked_sub(1).is_none());
+    assert_eq!(3_u128.checked_sub(2), Option::Some(1));
+    assert!(0_u128.checked_sub(1).is_none());
+    assert_eq!(3_u256.checked_sub(2), Option::Some(1));
+    assert!(0_u256.checked_sub(1).is_none());
+}
+
+#[test]
+fn test_checked_sub_positive_signed_integers() {
+    assert_eq!(3_i8.checked_sub(2), Option::Some(1));
+    assert!(BoundedInt::<i8>::min().checked_sub(1).is_none());
+    assert_eq!(3_i16.checked_sub(2), Option::Some(1));
+    assert!(BoundedInt::<i16>::min().checked_sub(1).is_none());
+    assert_eq!(3_i32.checked_sub(2), Option::Some(1));
+    assert!(BoundedInt::<i32>::min().checked_sub(1).is_none());
+    assert_eq!(3_i64.checked_sub(2), Option::Some(1));
+    assert!(BoundedInt::<i64>::min().checked_sub(1).is_none());
+    assert_eq!(3_i128.checked_sub(2), Option::Some(1));
+    assert!(BoundedInt::<i128>::min().checked_sub(1).is_none());
+}
+
+#[test]
+fn test_checked_sub_negative_signed_integers() {
+    assert_eq!((-3_i8).checked_sub(-2), Option::Some(-1));
+    assert!(BoundedInt::<i8>::max().checked_sub(-1).is_none());
+    assert_eq!((-3_i16).checked_sub(-2), Option::Some(-1));
+    assert!(BoundedInt::<i16>::max().checked_sub(-1).is_none());
+    assert_eq!((-3_i32).checked_sub(-2), Option::Some(-1));
+    assert!(BoundedInt::<i32>::max().checked_sub(-1).is_none());
+    assert_eq!((-3_i64).checked_sub(-2), Option::Some(-1));
+    assert!(BoundedInt::<i64>::max().checked_sub(-1).is_none());
+    assert_eq!((-3_i128).checked_sub(-2), Option::Some(-1));
+    assert!(BoundedInt::<i128>::max().checked_sub(-1).is_none());
+}
+
+#[test]
+fn test_checked_mul_unsigned_integers() {
+    assert_eq!(2_u8.checked_mul(3), Option::Some(6));
+    assert!(BoundedInt::<u8>::max().checked_mul(2).is_none());
+    assert_eq!(2_u16.checked_mul(3), Option::Some(6));
+    assert!(BoundedInt::<u16>::max().checked_mul(2).is_none());
+    assert_eq!(2_u32.checked_mul(3), Option::Some(6));
+    assert!(BoundedInt::<u32>::max().checked_mul(2).is_none());
+    assert_eq!(2_u64.checked_mul(3), Option::Some(6));
+    assert!(BoundedInt::<u64>::max().checked_mul(2).is_none());
+    assert_eq!(2_u128.checked_mul(3), Option::Some(6));
+    assert!(BoundedInt::<u128>::max().checked_mul(2).is_none());
+    assert_eq!(2_u256.checked_mul(3), Option::Some(6));
+    assert!(BoundedInt::<u256>::max().checked_mul(2).is_none());
 }
