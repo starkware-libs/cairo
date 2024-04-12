@@ -7,7 +7,6 @@ use tower_lsp::lsp_types::Url;
 
 use crate::toolchain::scarb::ScarbToolchain;
 
-const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 const SCARB_PROJECT_FILE_NAME: &str = "Scarb.toml";
 
 #[derive(Clone)]
@@ -18,19 +17,6 @@ pub struct ScarbService {
 impl ScarbService {
     pub fn new(scarb: &ScarbToolchain) -> Self {
         ScarbService { scarb: scarb.clone() }
-    }
-
-    #[tracing::instrument(level = "trace", skip_all)]
-    pub fn scarb_manifest_path(&self, root_path: PathBuf) -> Option<PathBuf> {
-        let mut path = root_path;
-        for _ in 0..MAX_CRATE_DETECTION_DEPTH {
-            path.pop();
-            let manifest_path = path.join(SCARB_PROJECT_FILE_NAME);
-            if manifest_path.exists() {
-                return Some(manifest_path);
-            };
-        }
-        None
     }
 
     #[tracing::instrument(level = "debug", skip(self))]
