@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use anyhow::{bail, Error};
+use anyhow::{bail, Context, Error};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::{get_all_path_leaves, DefsGroup};
@@ -49,8 +49,8 @@ use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use serde_json::Value;
+use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
-use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
@@ -59,12 +59,16 @@ use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
+use crate::server::notifier::Notifier;
+use crate::toolchain::scarb::ScarbToolchain;
 use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
 mod env_config;
 mod ide;
 mod lang;
 mod scarb_service;
+mod server;
+mod toolchain;
 mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
@@ -212,12 +216,14 @@ pub struct Backend {
 
 impl Backend {
     pub fn new(client: Client, db: RootDatabase) -> Self {
-        let scarb = ScarbService::new(&client);
+        let notifier = Notifier::new(&client);
+        let scarb = ScarbToolchain::new(&notifier);
+        let scarb_service = ScarbService::new(&scarb);
         Self {
             client,
             db_mutex: db.into(),
             state_mutex: State::default().into(),
-            scarb,
+            scarb: scarb_service,
             last_replace: tokio::sync::Mutex::new(SystemTime::now()),
             db_replace_interval: env_config::db_replace_interval(),
         }
@@ -489,39 +495,45 @@ impl Backend {
     #[tracing::instrument(level = "trace", skip_all)]
     async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: PathBuf) {
         let corelib_fallback = self.get_corelib_fallback_path().await;
-        if self.scarb.is_scarb_project(file_path.clone()) {
-            if self.scarb.is_scarb_found() {
-                // Carrying out Scarb based setup.
-                let corelib = match self.scarb.corelib_path(file_path.clone()).await {
-                    Ok(corelib) => corelib,
-                    Err(err) => {
-                        let err =
-                            err.context("Failed to obtain scarb corelib path from manifest file.");
-                        warn!("{err:?}");
-                        None
-                    }
-                };
-                if let Some(corelib) = corelib.or_else(detect_corelib).or(corelib_fallback) {
-                    init_dev_corelib(db, corelib);
-                } else {
+        if let Some(manifest_path) = self.scarb.scarb_manifest_path(file_path.clone()) {
+            // Carrying out Scarb based setup.
+            let scarb = self.scarb.clone();
+            let Ok((corelib, source_paths)) = spawn_blocking(move || {
+                let corelib = scarb
+                    .corelib_path(manifest_path.clone())
+                    .context("Failed to obtain scarb corelib path from manifest file.")
+                    .inspect_err(|err| warn!("{err:?}"))
+                    .ok()
+                    .flatten()
+                    .or_else(detect_corelib)
+                    .or(corelib_fallback);
+                if corelib.is_none() {
                     warn!("Failed to find corelib path.");
                 }
 
-                match self.scarb.crate_source_paths(file_path).await {
-                    Ok(source_paths) => {
-                        update_crate_roots(db, source_paths.clone());
-                    }
-                    Err(err) => {
-                        let err =
-                            err.context("Failed to obtain scarb metadata from manifest file.");
-                        warn!("{err:?}");
-                    }
-                };
+                let source_paths = scarb
+                    .crate_source_paths(manifest_path)
+                    .context("Failed to obtain scarb metadata from manifest file.")
+                    .inspect_err(|err| warn!("{err:?}"))
+                    .ok();
+
+                (corelib, source_paths)
+            })
+            .await
+            else {
+                error!("scarb invoking thread panicked");
                 return;
-            } else {
-                warn!("Not resolving Scarb metadata from manifest file due to missing Scarb path.");
-                self.client.send_notification::<ScarbPathMissing>(()).await;
+            };
+
+            if let Some(corelib) = corelib {
+                init_dev_corelib(db, corelib);
             }
+
+            if let Some(source_paths) = source_paths {
+                update_crate_roots(db, source_paths);
+            }
+
+            return;
         }
 
         // Scarb based setup not possible.
@@ -562,30 +574,6 @@ impl Backend {
         drop(db);
         self.refresh_diagnostics().await
     }
-}
-
-#[derive(Debug)]
-pub struct ScarbPathMissing {}
-
-impl Notification for ScarbPathMissing {
-    type Params = ();
-    const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
-}
-
-#[derive(Debug)]
-pub struct ScarbResolvingStart {}
-
-impl Notification for ScarbResolvingStart {
-    type Params = ();
-    const METHOD: &'static str = "scarb/resolving-start";
-}
-
-#[derive(Debug)]
-pub struct ScarbResolvingFinish {}
-
-impl Notification for ScarbResolvingFinish {
-    type Params = ();
-    const METHOD: &'static str = "scarb/resolving-finish";
 }
 
 pub enum ServerCommands {
