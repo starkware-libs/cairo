@@ -208,6 +208,10 @@ fn generate_ast_code() -> rust::Tokens {
 
         #[path = "ast_ext.rs"]
         mod ast_ext;
+
+        #[cfg(test)]
+        #[path = "ast_test.rs"]
+        mod test;
     };
     for Node { name, kind } in spec.into_iter() {
         tokens.extend(match kind {

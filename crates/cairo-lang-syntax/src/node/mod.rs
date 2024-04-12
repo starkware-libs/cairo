@@ -27,8 +27,6 @@ pub mod stable_ptr;
 pub mod utils;
 
 #[cfg(test)]
-mod ast_test;
-#[cfg(test)]
 mod test_utils;
 
 /// SyntaxNode. Untyped view of the syntax tree. Adds parent() and offset() capabilities.

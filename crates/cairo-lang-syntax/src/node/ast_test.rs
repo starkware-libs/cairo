@@ -6,14 +6,14 @@ use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use pretty_assertions::assert_eq;
 use test_log::test;
 
-use super::ast::{
+use crate::node::ast::{
     ExprBinary, ExprPath, PathSegmentGreen, PathSegmentSimple, SyntaxFileGreen, TerminalIdentifier,
-    TerminalPlus, TokenIdentifier, TokenPlus, TokenWhitespace, Trivia,
+    TerminalLiteralNumber, TerminalPlus, TokenIdentifier, TokenLiteralNumber, TokenPlus,
+    TokenWhitespace, Trivia,
 };
-use super::kind::SyntaxKind;
-use super::{SyntaxNode, Terminal, Token};
-use crate::node::ast::{TerminalLiteralNumber, TokenLiteralNumber};
+use crate::node::kind::SyntaxKind;
 use crate::node::test_utils::DatabaseForTesting;
+use crate::node::{SyntaxNode, Terminal, Token};
 
 #[test]
 fn test_ast() {
