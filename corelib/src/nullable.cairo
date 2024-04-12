@@ -11,7 +11,7 @@ pub enum FromNullableResult<T> {
 }
 
 pub extern fn null<T>() -> Nullable<T> nopanic;
-pub(crate) extern fn nullable_from_box<T>(value: Box<T>) -> Nullable<T> nopanic;
+pub extern fn nullable_from_box<T>(value: Box<T>) -> Nullable<T> nopanic;
 pub extern fn match_nullable<T>(value: Nullable<T>) -> FromNullableResult<T> nopanic;
 extern fn nullable_forward_snapshot<T>(value: @Nullable<T>) -> Nullable<@T> nopanic;
 
