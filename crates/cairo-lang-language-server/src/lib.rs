@@ -58,6 +58,7 @@ use tracing::{debug, error, info, trace_span, warn, Instrument};
 use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
+use crate::project::ProjectManifestPath;
 use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
 use crate::server::notifier::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
@@ -66,12 +67,11 @@ use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 mod env_config;
 mod ide;
 mod lang;
+mod project;
 mod scarb_service;
 mod server;
 mod toolchain;
 mod vfs;
-
-const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 
 #[tokio::main]
 pub async fn start() {
@@ -495,69 +495,69 @@ impl Backend {
     #[tracing::instrument(level = "trace", skip_all)]
     async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: PathBuf) {
         let corelib_fallback = self.get_corelib_fallback_path().await;
-        if let Some(manifest_path) = self.scarb.scarb_manifest_path(file_path.clone()) {
-            // Carrying out Scarb based setup.
-            let scarb = self.scarb.clone();
-            let Ok((corelib, source_paths)) = spawn_blocking(move || {
-                let corelib = scarb
-                    .corelib_path(manifest_path.clone())
-                    .context("Failed to obtain scarb corelib path from manifest file.")
-                    .inspect_err(|err| warn!("{err:?}"))
-                    .ok()
-                    .flatten()
-                    .or_else(detect_corelib)
-                    .or(corelib_fallback);
-                if corelib.is_none() {
+        match ProjectManifestPath::discover(&file_path) {
+            Some(ProjectManifestPath::Scarb(manifest_path)) => {
+                let scarb = self.scarb.clone();
+                let Ok((corelib, source_paths)) = spawn_blocking(move || {
+                    let corelib = scarb
+                        .corelib_path(manifest_path.clone())
+                        .context("Failed to obtain scarb corelib path from manifest file.")
+                        .inspect_err(|err| warn!("{err:?}"))
+                        .ok()
+                        .flatten()
+                        .or_else(detect_corelib)
+                        .or(corelib_fallback);
+                    if corelib.is_none() {
+                        warn!("Failed to find corelib path.");
+                    }
+
+                    let source_paths = scarb
+                        .crate_source_paths(manifest_path)
+                        .context("Failed to obtain scarb metadata from manifest file.")
+                        .inspect_err(|err| warn!("{err:?}"))
+                        .ok();
+
+                    (corelib, source_paths)
+                })
+                .await
+                else {
+                    error!("scarb invoking thread panicked");
+                    return;
+                };
+
+                if let Some(corelib) = corelib {
+                    init_dev_corelib(db, corelib);
+                }
+
+                if let Some(source_paths) = source_paths {
+                    update_crate_roots(db, source_paths);
+                }
+            }
+
+            Some(ProjectManifestPath::CairoProject(config_path)) => {
+                if let Some(corelib) = detect_corelib().or(corelib_fallback) {
+                    init_dev_corelib(db, corelib);
+                } else {
                     warn!("Failed to find corelib path.");
                 }
 
-                let source_paths = scarb
-                    .crate_source_paths(manifest_path)
-                    .context("Failed to obtain scarb metadata from manifest file.")
-                    .inspect_err(|err| warn!("{err:?}"))
-                    .ok();
-
-                (corelib, source_paths)
-            })
-            .await
-            else {
-                error!("scarb invoking thread panicked");
-                return;
-            };
-
-            if let Some(corelib) = corelib {
-                init_dev_corelib(db, corelib);
+                if let Ok(config) = ProjectConfig::from_file(&config_path) {
+                    update_crate_roots_from_project_config(db, &config);
+                };
             }
 
-            if let Some(source_paths) = source_paths {
-                update_crate_roots(db, source_paths);
+            None => {
+                if let Some(corelib) = detect_corelib().or(corelib_fallback) {
+                    init_dev_corelib(db, corelib);
+                } else {
+                    warn!("Failed to find corelib path.");
+                }
+
+                if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
+                    let file_path_s = file_path.to_string_lossy();
+                    error!("error loading file {file_path_s} as a single crate: {err}");
+                }
             }
-
-            return;
-        }
-
-        // Scarb based setup not possible.
-        if let Some(corelib) = detect_corelib().or(corelib_fallback) {
-            init_dev_corelib(db, corelib);
-        } else {
-            warn!("Failed to find corelib path.");
-        }
-
-        // Fallback to cairo_project manifest format.
-        let mut path = file_path.clone();
-        for _ in 0..MAX_CRATE_DETECTION_DEPTH {
-            path.pop();
-            // Check for a cairo project file.
-            if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
-                update_crate_roots_from_project_config(db, &config);
-                return;
-            };
-        }
-
-        // Fallback to a single file.
-        if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
-            let file_path_s = file_path.to_string_lossy();
-            error!("error loading file {file_path_s} as a single crate: {err}");
         }
     }
 
