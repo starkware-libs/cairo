@@ -987,6 +987,9 @@ fn lower_expr_fixed_size_array(
     log::trace!("Lowering a fixed size array: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let exprs = match &expr.items {
+        semantic::FixedSizeArrayItems::Items(items) if items.is_empty() => {
+            return Ok(LoweredExpr::Tuple { exprs: vec![], location });
+        }
         semantic::FixedSizeArrayItems::Items(items) => items
             .iter()
             .map(|arg_expr_id| lower_expr(ctx, builder, *arg_expr_id))
