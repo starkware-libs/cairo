@@ -22,7 +22,7 @@ fn test_append_word() {
 
     ba.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e, 30);
     compare_byte_array(
-        @ba, array![].span(), 30, 0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        @ba, [].span(), 30, 0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
     );
 
     ba.append_word(0x1f2021, 3);
