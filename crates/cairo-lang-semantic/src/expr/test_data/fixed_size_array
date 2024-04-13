@@ -115,12 +115,17 @@ error: Fixed size array with defined size must have exactly one value.
     let _x: [u32; 2] = [1, 2; 2];
                        ^*******^
 
-error: Fixed size array must have at least one element.
+error: Unexpected expression type. Expected: "[core::integer::u32; 2]", found: "[?6; 0]".
  --> lib.cairo:5:24
     let _x: [u32; 2] = [];
                        ^^
 
-error: Fixed size array must have at least one element.
+error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?6; 0]".
+ --> lib.cairo:5:24
+    let _x: [u32; 2] = [];
+                       ^^
+
+error: Fixed size array with defined size must have exactly one value.
  --> lib.cairo:6:24
     let _x: [u32; 2] = [; 2];
                        ^***^
