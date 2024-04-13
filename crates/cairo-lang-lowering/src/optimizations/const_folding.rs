@@ -116,7 +116,8 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                                     lowered.variables[inputs[0].var_id].ty,
                                     val.clone().into(),
                                 );
-                                var_info.insert(outputs[0], VarInfo::Const(value.clone()));
+                                // Not inserting the value into the `var_info` map because the
+                                // resulting box isn't an actual const at the Sierra level.
                                 *stmt =
                                     Statement::Const(StatementConst { value, output: outputs[0] });
                             }
