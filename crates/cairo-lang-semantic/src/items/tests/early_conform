@@ -1,0 +1,1010 @@
+//! > Early conform of tail expression with return type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() -> MyType {
+    3_u16.my_into()
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of return statement with return type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() -> MyType {
+    return 3_u16.my_into();
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform with explicit type let statement.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _: MyType = 3_u16.my_into();
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of a tuple.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _: (MyType, MyType) = (3_u16.my_into(), 3_u16.my_into());
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of an unary non-type-changing operator.
+
+//! > TODO(yuval):
+In the future, unary operators may change the types like any other function. This would make this
+test irrelevant.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyBoolType {}
+    impl MyBoolTypeNot of Not<MyBoolType> {
+        fn not(a: MyBoolType) -> MyBoolType {
+            a
+        }
+    }
+    impl MyU16IntoMyType of super::MyInto<u16, MyBoolType> {
+        fn my_into(self: u16) -> MyBoolType {
+            MyBoolType {}
+        }
+    }
+}
+use inner::MyBoolType;
+fn main() {
+    let _: MyBoolType = !3_u16.my_into();
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of a snapshot.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _: @MyType = @3_u16.my_into();
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of a desnap of a snapshot.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _: MyType = *(@3_u16.my_into());
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of a desnap of a type var.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+struct MyType {}
+impl MyU16IntoMyTypeSnapshot of MyInto<u16, @MyType> {
+    fn my_into(self: u16) -> @MyType {
+        @MyType {}
+    }
+}
+impl MyU16IntoU32Snapshot of MyInto<u16, @u32> {
+    fn my_into(self: u16) -> @u32 {
+        @3_u32
+    }
+}
+struct MyComplexStruct {
+    a: Span<felt252>,
+}
+pub fn get_my_complex_struct() -> Box<MyComplexStruct> {
+    BoxTrait::new(MyComplexStruct { a: array![0_felt252, 1_felt252].span() })
+}
+fn main() {
+    let arr = get_my_complex_struct().unbox().a;
+    let _: felt252 = *(arr[0]);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of a fixed size array.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _: [MyType; 2] = [3_u16.my_into(); 2];
+    let _: [MyType; 2] = [3_u16.my_into(), 3_u16.my_into()];
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of a match expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+enum MyEnum {
+    A,
+    B,
+}
+use inner::MyType;
+fn main(my_enum: MyEnum) {
+    let _: MyType = match my_enum {
+        MyEnum::A => 3_u16.my_into(),
+        MyEnum::B => 3_u16.my_into()
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of an if expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _: MyType = if true {
+        3_u16.my_into()
+    } else if false {
+        3_u16.my_into()
+    } else {
+        3_u16.my_into()
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of a loop expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _: MyType = loop {
+        break 3_u16.my_into();
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of a loop expression with break in an indirect block.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _: MyType = loop {
+        {
+            break 3_u16.my_into();
+        };
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of a loop expression with break in an indirect block's tail.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _: MyType = loop {
+        {
+            break 3_u16.my_into();
+        }
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of a nested loop expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _: MyType = loop {
+        break loop {
+            break 3_u16.my_into();
+        };
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Nested loop doesn't overwrite result type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+    struct MyType2 {}
+    impl MyU16IntoMyType2 of super::MyInto<u16, MyType2> {
+        fn my_into(self: u16) -> MyType2 {
+            MyType2 {}
+        }
+    }
+}
+use inner::{MyType, MyType2};
+fn main() {
+    let _: MyType = loop {
+        let _: MyType2 = loop {
+            break 3_u16.my_into();
+        };
+        break 3_u16.my_into();
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Breaks and returns don't interfere.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType16 {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType16> {
+        fn my_into(self: u16) -> MyType16 {
+            MyType16 {}
+        }
+    }
+    struct MyType32 {}
+    impl MyU32IntoMyType32 of super::MyInto<u32, MyType32> {
+        fn my_into(self: u32) -> MyType32 {
+            MyType32 {}
+        }
+    }
+    struct MyType64 {}
+    impl MyU64IntoMyType64 of super::MyInto<u64, MyType64> {
+        fn my_into(self: u64) -> MyType64 {
+            MyType64 {}
+        }
+    }
+}
+use inner::{MyType16, MyType32, MyType64};
+fn main() -> MyType16 {
+    return 3_u16.my_into();
+    let _: MyType32 = loop {
+        break 3_u32.my_into();
+        let _: MyType64 = loop {
+            break 3_u64.my_into();
+        };
+        break 3_u32.my_into();
+    };
+    return 3_u16.my_into();
+    3_u16.my_into()
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of a constructor expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+    struct MyGenericType<T> {
+        x: T,
+        y: T,
+        z: T,
+    }
+    impl MyU32IntoMyGenericType of super::MyInto<u32, MyGenericType<MyType>> {
+        fn my_into(self: u32) -> MyGenericType<MyType> {
+            MyGenericType::<MyType> { x: MyType {}, y: MyType {}, z: MyType {} }
+        }
+    }
+}
+use inner::{MyType, MyGenericType};
+fn main(other: MyGenericType<MyType>) {
+    let _: MyGenericType<MyType> = MyGenericType { x: 3_u16.my_into(), ..2_u32.my_into() };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of an enum variant creation expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _: Option<MyType> = Option::Some(3_u16.my_into());
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of function call parameters.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    bar(3_u16.my_into());
+}
+fn bar(_x: MyType) {}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of method call parameters.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    3_u32.bar(3_u16.my_into());
+}
+trait MyTrait {
+    fn bar(self: u32, _x: MyType);
+}
+impl MyImpl of MyTrait {
+    fn bar(self: u32, _x: MyType) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of index parameter in index expr.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let mut x = 3_u32;
+    x[3_u16.my_into()];
+    3_u64[3_u16.my_into()];
+}
+impl MyIndex of Index<u32, MyType, ()> {
+    fn index(ref self: u32, index: MyType) {}
+}
+impl MyIndexView of IndexView<u64, MyType, ()> {
+    fn index(self: @u64, index: MyType) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of binary operator RHS.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _ = MyType {} + 3_u16.my_into();
+}
+impl MyAdd of Add<MyType> {
+    fn add(lhs: MyType, rhs: MyType) -> MyType {
+        MyType {}
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of RHS of an assignment.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    #[derive(PartialEq)]
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let mut x = MyType {};
+    x = 3_u16.my_into();
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of RHS of equality expressions.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    #[derive(PartialEq)]
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() {
+    let _: bool = MyType {} == 3_u16.my_into();
+    let _: bool = @(MyType {}) == @(3_u16.my_into());
+    let _: bool = MyType {} != 3_u16.my_into();
+    let _: bool = @(MyType {}) != @(3_u16.my_into());
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of an error propagation expression of an option.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() -> Option<()> {
+    let _: MyType = Option::Some(3_u16.my_into())?;
+    Option::None
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of an error propagation expression of an ok result.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() -> Result<(), ()> {
+    let _: MyType = Result::Ok(3_u16.my_into())?;
+    Result::Ok(())
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Early conform of an error propagation expression of an error result.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyInto<T, S> {
+    fn my_into(self: T) -> S;
+}
+mod inner {
+    struct MyType {}
+    impl MyU16IntoMyType of super::MyInto<u16, MyType> {
+        fn my_into(self: u16) -> MyType {
+            MyType {}
+        }
+    }
+}
+use inner::MyType;
+fn main() -> Result<(), MyType> {
+    let _: () = Result::Err(3_u16.my_into())?;
+    Result::Ok(())
+}
+
+//! > expected_diagnostics
