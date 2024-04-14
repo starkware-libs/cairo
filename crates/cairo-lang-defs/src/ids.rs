@@ -259,8 +259,10 @@ macro_rules! toplevel_enum {
     }
 }
 
+// use cairo_lang_proc_macros::DebugWithDb;
 /// Id for a module. Either the root module of a crate, or a submodule.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq /* , DebugWithDb */)]
+// #[debug_db(dyn DefsGroup + 'static)]
 pub enum ModuleId {
     CrateRoot(CrateId),
     Submodule(SubmoduleId),
@@ -283,6 +285,7 @@ impl ModuleId {
 }
 impl DebugWithDb<dyn DefsGroup> for ModuleId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
+        // println!("yg DebugWithDb for ModuleId");
         write!(f, "ModuleId({})", self.full_path(db))
     }
 }

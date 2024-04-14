@@ -6,6 +6,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use ast::PathSegment;
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId,
@@ -222,13 +223,13 @@ impl<'ctx> ComputationContext<'ctx> {
     fn implize_type(&mut self, type_to_reduce: TypeId) -> Maybe<TypeId> {
         // TODO(yuval): this is a temporary measure for inference cycle errors to not disappear
         // until fixing inference errors wrong consumption. Remove it once fixed.
-        let tmp_inference_data = &mut self.resolver.inference().temporary_clone();
-        let mut tmp_inference = tmp_inference_data.inference(self.db);
+        // let tmp_inference_data = &mut self.resolver.inference().temporary_clone();
+        // let mut tmp_inference = tmp_inference_data.inference(self.db);
         implize_type(
             self.db,
             type_to_reduce,
             self.resolver.data.trait_or_impl_ctx.impl_context(),
-            &mut tmp_inference,
+            &mut self.resolver.inference(),
         )
     }
 }
@@ -1072,13 +1073,12 @@ pub fn compute_root_expr(
     syntax: &ast::ExprBlock,
     return_type: TypeId,
 ) -> Maybe<ExprId> {
-    // TODO(yg): is implization required?
-    let return_type = ctx.implize_type(return_type)?;
+    let return_type = ctx.reduce_ty(return_type);
     let result_type =
         Some(ResultType { ty: return_type, stable_ptr: syntax.stable_ptr().untyped() });
     ctx.return_result_type = result_type;
     let res = compute_expr_block_semantic(ctx, syntax, result_type)?;
-    let res_ty = ctx.implize_type(res.ty());
+    let res_ty = ctx.reduce_ty(res.ty());
     let res = ctx.exprs.alloc(res);
     let inference = &mut ctx.resolver.inference();
     if let Err(err_set) = inference.conform_ty(res_ty, return_type) {
@@ -1093,6 +1093,7 @@ pub fn compute_root_expr(
 
     // Apply inference.
     infer_all(ctx).ok();
+    // println!("yg compute_root_expr, after applying");
 
     Ok(res)
 }
@@ -1763,6 +1764,7 @@ fn compute_method_function_call_data(
         result_type,
         self_expr.stable_ptr().untyped(),
     );
+    // println!("yg candidates {:?}", candidates.debug(ctx.db));
     let trait_function_id = match candidates[..] {
         [] => {
             return Err(ctx.diagnostics.report_by_ptr(
@@ -1804,6 +1806,10 @@ fn compute_method_function_call_data(
         });
         fixed_expr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
     }
+    // println!(
+    //     "yg returning from compute_method_function_call_data {:?}",
+    //     function_id.debug(ctx.db.elongate())
+    // );
     Ok((function_id, fixed_expr, first_param.mutability))
 }
 
@@ -2841,6 +2847,8 @@ fn expr_function_call(
     let coupon_arg = maybe_pop_coupon_argument(ctx, &mut named_args, function_id);
 
     let signature = ctx.db.concrete_function_implized_signature(function_id)?;
+    let signature = ctx.resolver.inference().rewrite(signature).unwrap();
+    // println!("yg signature.return_type: {:?}", signature.return_type.debug(ctx.db.elongate()));
 
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     if named_args.len() != signature.params.len() {
@@ -2862,8 +2870,15 @@ fn expr_function_call(
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
         // added).
         // TODO(lior): Add a test to missing type once possible.
+        // println!("yg 1");
         let expected_ty = ctx.reduce_ty(param_typ);
+        // println!("yg 2");
         let actual_ty = ctx.implize_type(arg_typ)?;
+        // println!(
+        //     "yg 3, expected_ty: {:?}, actual_ty: {:?}",
+        //     expected_ty.debug(ctx.db.elongate()),
+        //     actual_ty.debug(ctx.db.elongate())
+        // );
         if !arg_typ.is_missing(ctx.db) {
             let inference = &mut ctx.resolver.inference();
             if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
@@ -2901,6 +2916,12 @@ fn expr_function_call(
         });
     }
 
+    // println!(
+    //     "yg function_id: {:?}, #args: {}, ret_ty: {:?}",
+    //     function_id.debug(ctx.db.elongate()),
+    //     args.len(),
+    //     signature.return_type.debug(ctx.db.elongate())
+    // );
     let expr_function_call = ExprFunctionCall {
         function: function_id,
         args,
@@ -3052,9 +3073,7 @@ pub fn compute_statement_semantic(
                             stable_ptr: rhs_syntax.stable_ptr().untyped(),
                         }),
                     );
-                    // TODO(yg): inline.
-                    let inferred_type = rhs_expr.ty();
-                    let inferred_type = ctx.implize_type(inferred_type)?;
+                    let inferred_type = ctx.implize_type(rhs_expr.ty())?;
                     if !inferred_type.is_missing(db) {
                         let inference = &mut ctx.resolver.inference();
                         if let Err(err_set) = inference.conform_ty(inferred_type, explicit_type) {

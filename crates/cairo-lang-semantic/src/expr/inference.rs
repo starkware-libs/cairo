@@ -2,14 +2,15 @@
 
 use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
-use std::mem;
 use std::ops::{Deref, DerefMut};
+use std::{backtrace, mem};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
     ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, LookupItemId, MemberId,
-    ParamId, StructId, TraitFunctionId, TraitId, VarId, VariantId,
+    ModuleItemId, ParamId, StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId, VarId,
+    VariantId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -134,7 +135,8 @@ pub enum InferenceVar {
 }
 
 // TODO(spapini): Add to diagnostics.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub enum InferenceError {
     /// An inference error wrapping a previously reported error.
     Reported(DiagnosticAdded),
@@ -303,7 +305,7 @@ pub struct InferenceData {
 
     // Error handling members.
     /// The current error status.
-    error_status: Result<(), InferenceErrorStatus>,
+    pub error_status: Result<(), InferenceErrorStatus>,
     /// `Some` only when error_state is Err(Pending).
     error: Option<InferenceError>,
     /// `Some` only when error_state is Err(Consumed).
@@ -370,6 +372,7 @@ impl InferenceData {
         }
     }
     pub fn temporary_clone(&self) -> InferenceData {
+        // println!("yg temporary_clone");
         Self {
             inference_id: self.inference_id,
             type_assignment: self.type_assignment.clone(),
@@ -485,7 +488,26 @@ impl<'db> Inference<'db> {
         stable_ptr: Option<SyntaxStablePtrId>,
         mut lookup_context: ImplLookupContext,
     ) -> InferenceResult<ImplId> {
+        // let mut print = false;
+        // if let InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(
+        //     ModuleItemId::FreeFunction(x),
+        // )) = self.inference_id
+        // {
+        //     print = true;
+        // }
+        // if print {
+        //     println!(
+        //         "yg new_impl_var for public_key_point_to_eth_address before enrich: {:?}",
+        //         lookup_context
+        //     );
+        // }
         enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
+        // if print {
+        //     println!(
+        //         "yg new_impl_var for public_key_point_to_eth_address after enrich: {:?}",
+        //         lookup_context
+        //     );
+        // }
         let var = self.new_impl_var_raw(lookup_context, concrete_trait_id, stable_ptr);
         Ok(ImplId::ImplVar(self.impl_var(var).intern(self.db)))
     }
@@ -518,12 +540,42 @@ impl<'db> Inference<'db> {
     /// Returns whether the inference was successful. If not, the error may be found by
     /// `.error_state()`.
     pub fn solve(&mut self) -> InferenceResult<()> {
+        // let mut print = false;
+        // if let InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(
+        //     ModuleItemId::FreeFunction(x),
+        // )) = self.inference_id
+        // {
+        //     if x.full_path(self.db.upcast()) == "test::main" {
+        //         print = true;
+        //     }
+        // }
+        // if print {
+        //     println!("yg solve start, inference_id: {:?}", self.inference_id);
+        //     println!("yg solve start, #pending: {}", self.pending.len());
+        //     println!("yg solve start, #ambiguous: {}", self.ambiguous.len());
+        //     println!("yg solve start, #refuted: {}", self.refuted.len());
+        //     println!("yg solve start, #solved: {}", self.solved.len());
+        // }
         let mut ambiguous = std::mem::take(&mut self.ambiguous);
         self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
         while let Some(var) = self.pending.pop_front() {
             // First inference error stops inference.
             self.solve_single_pending(var)?;
         }
+        // if print {
+        //     println!("yg solve end, inference_id: {:?}", self.inference_id);
+        //     println!("yg solve end, #pending: {}", self.pending.len());
+        //     println!("yg solve end, #ambiguous: {}", self.ambiguous.len());
+        //     println!("yg solve end, #refuted: {}", self.refuted.len());
+        //     println!("yg solve end, #solved: {}", self.solved.len());
+        //     for (local, imp) in &self.impl_assignment {
+        //         println!(
+        //             "yg solve end, impl_assign: {:?}: {:?}",
+        //             local,
+        //             imp.debug(self.db.elongate())
+        //         );
+        //     }
+        // }
         Ok(())
     }
 
@@ -570,13 +622,25 @@ impl<'db> Inference<'db> {
     pub fn finalize_without_reporting(
         &mut self,
     ) -> Result<(), (ErrorSet, Option<SyntaxStablePtrId>)> {
+        if self.error_status.is_err() {
+            // TODO(yuval): consider adding error location to the set error.
+            return Err((ErrorSet, None));
+        }
+
         let numeric_trait_id = get_core_trait(self.db, "NumericLiteral".into());
         let felt_ty = core_felt252_ty(self.db);
 
         // Conform all uninferred numeric literals to felt252.
         loop {
             let mut changed = false;
+            // if print {
+            // println!(
+            //     "yg solve from finalize, error_status: {:?}, inference_id: {:?}",
+            //     self.error_status, self.inference_id
+            // );
+            // }
             self.solve().map_err(|err_set| (err_set, None))?;
+            // println!("yg after solve from finalize inference_id: {:?}", self.inference_id);
             for (var, _) in self.ambiguous.clone() {
                 let impl_var = self.impl_var(var).clone();
                 if impl_var.concrete_trait_id.trait_id(self.db) != numeric_trait_id {
@@ -753,8 +817,35 @@ impl<'db> Inference<'db> {
         mut lookup_context: ImplLookupContext,
     ) -> InferenceResult<SolutionSet<(CanonicalImpl, CanonicalMapping)>> {
         // TODO(spapini): This is done twice. Consider doing it only here.
+        // println!(
+        //     "yg trait_solution_set before rewrite, concrete_trait_id: {:?}",
+        //     concrete_trait_id.debug(self.db.elongate())
+        // );
         let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
+        // println!(
+        //     "yg trait_solution_set after rewrite, concrete_trait_id: {:?}",
+        //     concrete_trait_id.debug(self.db.elongate())
+        // );
+        // let mut print = false;
+        // if let InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(
+        //     ModuleItemId::FreeFunction(x),
+        // )) = self.inference_id
+        // {
+        //     print = true;
+        // }
+        // if print {
+        //     println!(
+        //         "yg new_impl_var for trait_solution_set before enrich: {:?}",
+        //         lookup_context
+        //     );
+        // }
         enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
+        // if print {
+        //     println!(
+        //         "yg new_impl_var for trait_solution_set after enrich: {:?}",
+        //         lookup_context
+        //     );
+        // }
 
         // Don't try to resolve impls if the first generic param is a variable.
         let generic_args = concrete_trait_id.generic_args(self.db);
@@ -874,6 +965,11 @@ impl<'db> Inference<'db> {
         if self.error_status.is_err() {
             return ErrorSet;
         }
+        // println!(
+        //     "yg set_error: {:?}, inference_id: {:?}",
+        //     err.debug(self.db.elongate()),
+        //     self.inference_id
+        // );
         self.error_status = if let InferenceError::Reported(diag_added) = err {
             self.consumed_error = Some(diag_added);
             Err(InferenceErrorStatus::Consumed)

@@ -184,7 +184,9 @@ pub fn implize_type(
     // TODO(yuval): ignoring the result is not ok. For now it is worked around by cloning the given
     // inference in the callers where this causes changes, but this is wrong. Fix this once
     // inference errors wrong consumption is fixed.
-    inference.solve().ok();
+    // if let Err(err_set) = inference.solve() {
+    //     println!("yg implize_type: inference.solve() failed");
+    // }
     implize_type_recursive(db, type_to_reduce, impl_ctx, inference)
 }
 

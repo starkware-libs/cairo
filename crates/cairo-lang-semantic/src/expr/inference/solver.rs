@@ -88,6 +88,7 @@ pub fn canonic_trait_solutions_cycle(
     _canonical_trait: &CanonicalTrait,
     _lookup_context: &ImplLookupContext,
 ) -> Result<SolutionSet<CanonicalImpl>, InferenceError> {
+    // println!("yg cycle from canonic_trait_solutions_cycle");
     Err(InferenceError::Cycle { var: InferenceVar::Impl(LocalImplVarId(0)) })
 }
 
@@ -97,24 +98,38 @@ pub fn enrich_lookup_context(
     concrete_trait_id: ConcreteTraitId,
     lookup_context: &mut ImplLookupContext,
 ) {
+    // println!(
+    //     "yg enrich_lookup_context, concrete_trait_id: {:?}",
+    //     concrete_trait_id.debug(db.elongate())
+    // );
     lookup_context.insert_module(concrete_trait_id.trait_id(db).module_file_id(db.upcast()).0);
     let generic_args = concrete_trait_id.generic_args(db);
-    // Add the defining module of the generic params to the lookup.
+    // println!("yg enrich_lookup_context, generic_args: {:?}", generic_args.debug(db.elongate()));
+    // Add the defining module of the generic args to the lookup.
     for generic_arg in &generic_args {
         if let GenericArgumentId::Type(ty) = generic_arg {
             match db.lookup_intern_type(*ty) {
                 TypeLongId::Concrete(concrete) => {
+                    // println!("yg generic_arg concrete");
                     lookup_context
                         .insert_module(concrete.generic_type(db).module_file_id(db.upcast()).0);
                 }
                 TypeLongId::Coupon(function_id) => {
+                    // println!("yg generic_arg coupon");
                     if let Some(module_file_id) =
                         function_id.get_concrete(db).generic_function.module_file_id(db)
                     {
                         lookup_context.insert_module(module_file_id.0);
                     }
                 }
-                _ => (),
+                TypeLongId::Var(_) => {
+                    // println!("yg generic_arg var");
+                    ()
+                }
+                _ => {
+                    // println!("yg generic_arg: {:?}", generic_arg.debug(db.elongate()));
+                    ()
+                }
             }
         }
     }

@@ -633,6 +633,9 @@ impl<'db> Resolver<'db> {
                                     identifier_stable_ptr,
                                 )
                             })?;
+                        if let Err(err_set) = self.inference().solve() {
+                            println!("Error set is resolve solve()");
+                        }
                         let ty = implize_type(self.db, ty, None, &mut self.inference())?;
 
                         Ok(ResolvedConcreteItem::Type(ty))

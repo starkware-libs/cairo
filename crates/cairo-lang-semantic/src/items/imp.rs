@@ -51,7 +51,7 @@ use crate::diagnostic::{report_unsupported_impl_item, NotFoundItemType, Semantic
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment, ResultType};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
-use crate::expr::inference::solver::SolutionSet;
+use crate::expr::inference::solver::{enrich_lookup_context, SolutionSet};
 use crate::expr::inference::{ImplVarId, Inference, InferenceError, InferenceId};
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
@@ -242,6 +242,7 @@ pub fn impl_def_generic_params_data(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
 ) -> Maybe<GenericParamsData> {
+    // println!("yg impl_def_generic_params_data");
     let module_file_id = impl_def_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
 
@@ -257,6 +258,7 @@ pub fn impl_def_generic_params_data(
         module_file_id,
         &impl_ast.generic_params(db.upcast()),
     )?;
+    // println!("yg impl_def_generic_params_data creating inference");
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, impl_ast.stable_ptr().untyped());
 
@@ -380,6 +382,7 @@ pub fn priv_impl_declaration_data_inner(
     impl_def_id: ImplDefId,
     resolve_trait: bool,
 ) -> Maybe<ImplDeclarationData> {
+    // println!("yg priv_impl_declaration_data_inner");
     let module_file_id = impl_def_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
 
@@ -911,8 +914,8 @@ fn concrete_trait_fits_trait_filter(
     })
 }
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq /* , DebugWithDb */)]
+// #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ModuleIdById(pub ModuleId);
 impl Ord for ModuleIdById {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
@@ -937,6 +940,13 @@ impl Ord for ModuleIdById {
 impl PartialOrd for ModuleIdById {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
+    }
+}
+// TODO(yg): make this work with the DebugWithDb derive.
+impl DebugWithDb<dyn SemanticGroup> for ModuleIdById {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn SemanticGroup) -> std::fmt::Result {
+        // println!("yg DebugWithDb for ModuleIdById");
+        write!(f, "ModuleIdById({:?})", self.0.debug(db.upcast()))
     }
 }
 
@@ -1076,6 +1086,14 @@ pub fn can_infer_impl_by_self(
     let mut temp_inference_data = ctx.resolver.data.inference_data.temporary_clone();
     let mut temp_inference = temp_inference_data.inference(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
+
+    // println!(
+    //     "yg before infer_concrete_trait_by_self: trait_function_id: {:?}, self_ty: {:?}, \
+    //      lookup_context: {:?}",
+    //     trait_function_id.debug(ctx.db.elongate()),
+    //     self_ty.debug(ctx.db.elongate()),
+    //     lookup_context.clone().debug(ctx.db.elongate())
+    // );
     let Some((concrete_trait_id, _)) = temp_inference.infer_concrete_trait_by_self(
         trait_function_id,
         self_ty,
@@ -1086,6 +1104,7 @@ pub fn can_infer_impl_by_self(
     ) else {
         return false;
     };
+    // enrich_lookup_context(ctx.db, concrete_trait_id, &mut lookup_context);
     // Find impls for it.
     if let Err(err_set) = temp_inference.solve() {
         // Error is propagated and will be reported later.
@@ -1096,6 +1115,9 @@ pub fn can_infer_impl_by_self(
     match temp_inference.trait_solution_set(concrete_trait_id, lookup_context.clone()) {
         Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_)) => true,
         Ok(SolutionSet::None) => {
+            // println!("yg Custom backtrace: {}", std::backtrace::Backtrace::force_capture());
+            // println!("yg concrete_trait_id: {:?}", concrete_trait_id.debug(ctx.db.elongate()));
+            // println!("yg lookup context: {:?}", lookup_context.clone().debug(ctx.db.elongate()));
             inference_errors
                 .push((trait_function_id, InferenceError::NoImplsFound { concrete_trait_id }));
             false
