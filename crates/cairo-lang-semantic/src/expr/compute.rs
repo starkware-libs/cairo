@@ -205,6 +205,19 @@ impl<'ctx> ComputationContext<'ctx> {
         // TODO(spapini): Propagate error to diagnostics.
         self.resolver.inference().rewrite(ty).unwrap()
     }
+
+    /// Rewrites all rewritable things in the computation context.
+    fn rewrite_all_inferred(&mut self) {
+        for (_id, expr) in self.exprs.iter_mut() {
+            self.resolver.inference().internal_rewrite(expr).no_err();
+        }
+        for (_id, pattern) in self.patterns.iter_mut() {
+            self.resolver.inference().internal_rewrite(pattern).no_err();
+        }
+        for (_id, stmt) in self.statements.iter_mut() {
+            self.resolver.inference().internal_rewrite(stmt).no_err();
+        }
+    }
 }
 
 // TODO(ilya): Change value to VarId.
@@ -801,23 +814,9 @@ pub fn compute_root_expr(
     // Check fully resolved.
     inference.finalize(ctx.diagnostics, syntax.stable_ptr().untyped());
 
-    // Apply inference.
-    infer_all(ctx).ok();
+    ctx.rewrite_all_inferred();
 
     Ok(res)
-}
-
-fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
-    for (_id, expr) in ctx.exprs.iter_mut() {
-        ctx.resolver.inference().internal_rewrite(expr).no_err();
-    }
-    for (_id, pattern) in ctx.patterns.iter_mut() {
-        ctx.resolver.inference().internal_rewrite(pattern).no_err();
-    }
-    for (_id, stmt) in ctx.statements.iter_mut() {
-        ctx.resolver.inference().internal_rewrite(stmt).no_err();
-    }
-    Ok(())
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprBlock].
