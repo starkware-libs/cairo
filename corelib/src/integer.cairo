@@ -3077,6 +3077,100 @@ impl U64WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappin
 impl U128WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u128>;
 impl U256WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u256>;
 
+// CheckedAdd implementations
+impl U8CheckedAdd of core::num::traits::CheckedAdd<u8> {
+    fn checked_add(self: u8, v: u8) -> Option<u8> {
+        u8_checked_add(self, v)
+    }
+}
+
+impl U16CheckedAdd of core::num::traits::CheckedAdd<u16> {
+    fn checked_add(self: u16, v: u16) -> Option<u16> {
+        u16_checked_add(self, v)
+    }
+}
+
+impl U32CheckedAdd of core::num::traits::CheckedAdd<u32> {
+    fn checked_add(self: u32, v: u32) -> Option<u32> {
+        u32_checked_add(self, v)
+    }
+}
+
+impl U64CheckedAdd of core::num::traits::CheckedAdd<u64> {
+    fn checked_add(self: u64, v: u64) -> Option<u64> {
+        u64_checked_add(self, v)
+    }
+}
+
+impl U128CheckedAdd of core::num::traits::CheckedAdd<u128> {
+    fn checked_add(self: u128, v: u128) -> Option<u128> {
+        u128_checked_add(self, v)
+    }
+}
+
+impl U256CheckedAdd of core::num::traits::CheckedAdd<u256> {
+    fn checked_add(self: u256, v: u256) -> Option<u256> {
+        u256_checked_add(self, v)
+    }
+}
+
+impl I8CheckedAdd = core::num::traits::ops::checked::overflow_based::TCheckedAdd<i8>;
+impl I16CheckedAdd = core::num::traits::ops::checked::overflow_based::TCheckedAdd<i16>;
+impl I32CheckedAdd = core::num::traits::ops::checked::overflow_based::TCheckedAdd<i32>;
+impl I64CheckedAdd = core::num::traits::ops::checked::overflow_based::TCheckedAdd<i64>;
+impl I128CheckedAdd = core::num::traits::ops::checked::overflow_based::TCheckedAdd<i128>;
+
+// CheckedSub implementations
+impl U8CheckedSub of core::num::traits::CheckedSub<u8> {
+    fn checked_sub(self: u8, v: u8) -> Option<u8> {
+        u8_checked_sub(self, v)
+    }
+}
+
+impl U16CheckedSub of core::num::traits::CheckedSub<u16> {
+    fn checked_sub(self: u16, v: u16) -> Option<u16> {
+        u16_checked_sub(self, v)
+    }
+}
+
+impl U32CheckedSub of core::num::traits::CheckedSub<u32> {
+    fn checked_sub(self: u32, v: u32) -> Option<u32> {
+        u32_checked_sub(self, v)
+    }
+}
+
+impl U64CheckedSub of core::num::traits::CheckedSub<u64> {
+    fn checked_sub(self: u64, v: u64) -> Option<u64> {
+        u64_checked_sub(self, v)
+    }
+}
+
+impl U128CheckedSub of core::num::traits::CheckedSub<u128> {
+    fn checked_sub(self: u128, v: u128) -> Option<u128> {
+        u128_checked_sub(self, v)
+    }
+}
+
+impl U256CheckedSub of core::num::traits::CheckedSub<u256> {
+    fn checked_sub(self: u256, v: u256) -> Option<u256> {
+        u256_checked_sub(self, v)
+    }
+}
+
+impl I8CheckedSub = core::num::traits::ops::checked::overflow_based::TCheckedSub<i8>;
+impl I16CheckedSub = core::num::traits::ops::checked::overflow_based::TCheckedSub<i16>;
+impl I32CheckedSub = core::num::traits::ops::checked::overflow_based::TCheckedSub<i32>;
+impl I64CheckedSub = core::num::traits::ops::checked::overflow_based::TCheckedSub<i64>;
+impl I128CheckedSub = core::num::traits::ops::checked::overflow_based::TCheckedSub<i128>;
+
+// CheckedMul implementations
+impl U8CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u8>;
+impl U16CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u16>;
+impl U32CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u32>;
+impl U64CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u64>;
+impl U128CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u128>;
+impl U256CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u256>;
+
 /// Internal trait for easier finding of absolute values.
 pub(crate) trait AbsAndSign<Signed, Unsigned> {
     /// Returns the absolute value of the `Signed` value as `Unsigned` and the original sign.
