@@ -139,7 +139,11 @@ pub fn build_uint<TUintTraits: UintTraits + IntMulTraits + IsZeroTraits, const L
             build_felt252_range_reduction(builder, &Range::half_open(0, LIMIT), true)
         }
         UintConcrete::IsZero(_) => misc::build_is_zero(builder),
-        UintConcrete::Divmod(_) => bounded::build_div_rem(builder, &LIMIT.into()),
+        UintConcrete::Divmod(_) => bounded::build_div_rem(
+            builder,
+            &Range::half_open(0, LIMIT),
+            &Range::half_open(1, LIMIT),
+        ),
         UintConcrete::Bitwise(_) => bitwise::build(builder),
         UintConcrete::WideMul(_) => build_small_wide_mul(builder),
     }
