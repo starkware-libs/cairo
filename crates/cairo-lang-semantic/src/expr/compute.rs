@@ -802,12 +802,13 @@ pub fn compute_root_expr(
     inference.finalize(ctx.diagnostics, syntax.stable_ptr().untyped());
 
     // Apply inference.
-    infer_all(ctx).ok();
+    rewrite_all(ctx).ok();
 
     Ok(res)
 }
 
-fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
+//// Rewrites all rewritable things in `ctx`.
+fn rewrite_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
     for (_id, expr) in ctx.exprs.iter_mut() {
         ctx.resolver.inference().internal_rewrite(expr).no_err();
     }
