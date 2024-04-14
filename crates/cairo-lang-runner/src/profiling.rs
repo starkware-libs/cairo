@@ -5,6 +5,7 @@ use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use smol_str::SmolStr;
 
@@ -290,9 +291,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         sierra_statement_weights_iter: std::vec::IntoIter<(&StatementIdx, &usize)>,
         params: &ProfilingInfoProcessorParams,
     ) -> Option<OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)>> {
-        if !params.process_by_statement {
-            return None;
-        }
+        require(params.process_by_statement)?;
 
         Some(
             sierra_statement_weights_iter
@@ -472,9 +471,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         sierra_statement_weights: std::vec::IntoIter<(&StatementIdx, &usize)>,
         params: &ProfilingInfoProcessorParams,
     ) -> Option<OrderedHashMap<String, usize>> {
-        if !params.process_by_cairo_function {
-            return None;
-        }
+        require(params.process_by_cairo_function)?;
 
         let mut cairo_functions = UnorderedHashMap::<_, _>::default();
         for (statement_idx, weight) in sierra_statement_weights {
