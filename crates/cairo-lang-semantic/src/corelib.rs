@@ -622,6 +622,10 @@ pub fn destruct_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, "Destruct".into())
 }
 
+pub fn numeric_literal_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, "NumericLiteral".into())
+}
+
 /// Given a core library trait name and its generic arguments, returns [ConcreteTraitId].
 fn get_core_concrete_trait(
     db: &dyn SemanticGroup,
