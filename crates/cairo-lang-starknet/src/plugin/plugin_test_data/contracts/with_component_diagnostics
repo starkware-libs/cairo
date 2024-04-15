@@ -146,7 +146,7 @@ contract:
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x2943e6b272892c78655f823e0abb3da425a1ac0c3f9bdd70869a3f37bc54797;
@@ -395,7 +395,7 @@ contract:
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0xe61d99740f46b06b2ccd91d014bc9f9acc438fec59d79dd30fd0d852e5210;
@@ -632,7 +632,7 @@ contract:
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x14aaf6de6aff44d64b4c3609768860615e979fdd851d125bbdfc10597a50a1d;
@@ -882,7 +882,7 @@ contract:
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x215c44bbf0e7c3b987e93bf1597778322461e87fd0059894735b0464ce94aff;
@@ -1137,7 +1137,7 @@ contract:
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x13a81b6876baa1445c90fd69add3e928a4f6c6807e5227544ac6f6698c463b2;
@@ -1399,7 +1399,7 @@ contract:
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x1092f63083af07b77ee426fd76d9695c3747a2e42571a914cee1dd17960254f;
@@ -1523,6 +1523,16 @@ error: Type not found.
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
+error: Type annotations needed. Failed to infer ?0.
+ --> lib.cairo[contract]:29:36
+                starknet::storage::StoragePointer{
+                                   ^************^
+
+error: Type not found.
+ --> lib.cairo:14:56
+        test_component_storage: super::test_component::Storage,
+                                                       ^*****^
+
 error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
@@ -1534,24 +1544,19 @@ error: Type not found.
                                                        ^*****^
 
 error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo[contract]:37:27
-                starknet::SyscallResultTrait::unwrap_syscall(
-                          ^****************^
+ --> lib.cairo[contract]:46:36
+                starknet::storage::StoragePointerAccess::read( 
+                                   ^******************^
 
 error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Type not found.
- --> lib.cairo:14:56
-        test_component_storage: super::test_component::Storage,
-                                                       ^*****^
-
-error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> lib.cairo[contract]:48:79
-                    starknet::Store::<super::super::test_component::Storage>::write(
-                                                                              ^***^
+error: Type annotations needed. Failed to infer ?0.
+ --> lib.cairo[contract]:51:36
+                starknet::storage::StoragePointerAccess::write( 
+                                   ^******************^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -1675,6 +1680,17 @@ contract:
         use super::Event;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of 
+            starknet::storage::StorageAsPointer<ContractMemberState, super::super::test_component::Storage> {
+            fn as_ptr(self: @ContractMemberState) -> 
+                starknet::storage::StoragePointer<super::super::test_component::Storage> {
+                starknet::storage::StoragePointer{
+                    address: InternalContractMemberStateImpl::address(self)
+                }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> super::super::test_component::Storage;
@@ -1686,31 +1702,20 @@ contract:
                 starknet::storage_access::storage_base_address_const::<0x19021f3e2d5378318bca36a3cf603805c3cb1938bd7e1be1ce4ab2c7158890>()
             }
             fn read(self: @ContractMemberState) -> super::super::test_component::Storage {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<super::super::test_component::Storage>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
+                starknet::storage::StoragePointerAccess::read( 
+                    InternalPointerAccessContractMemberStateImpl::as_ptr(self)
                 )
             }
             fn write(ref self: ContractMemberState, value: super::super::test_component::Storage) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<super::super::test_component::Storage>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
+                starknet::storage::StoragePointerAccess::write( 
+                    InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
                 )
             }
         }
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x8618264598f52601eed9355f5b7c0fc7c8912d966e620eb0a2914ed8cb5c10;
@@ -1946,7 +1951,7 @@ pub enum Event {}
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x8f9d2a9bd3a3fe28e42c16030ed25a2756a86a13d4297597e43683c3df9a02;
@@ -2239,7 +2244,7 @@ contract:
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x150d2e1961908098174a1d0101315691e91ab91682760b04003683fab54f03e;
@@ -2562,7 +2567,7 @@ contract:
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x3aa40c01c626d72d07c8dbda3c92460e7f71827931a5429b93fc69603190369;

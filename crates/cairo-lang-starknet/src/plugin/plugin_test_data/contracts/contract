@@ -127,7 +127,7 @@ contract:
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x2cd967636a47442d438bb2596f3c9848f0a831f916f4bb50d807e6eb90df576;

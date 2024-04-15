@@ -1,12 +1,9 @@
-//! > Test expansion of a simple starknet contract with ownable component.
+//! > Test expansion of StarkNet storage logic.
 
 //! > test_runner_name
-ExpandContractFromCrateTestRunner(expect_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
-//! > contract_file_name
-cairo_level_tests/contracts/hello_starknet.cairo
-
-//! > generated_cairo_code
+//! > cairo_code
 #[starknet::interface]
 trait HelloStarknetTrait<TContractState> {
     // Increases the balance by the given amount.
@@ -17,160 +14,61 @@ trait HelloStarknetTrait<TContractState> {
 
 #[starknet::contract]
 mod hello_starknet {
+    use starknet::storage::{StorageAsPointer, StoragePointerAccess};
+    #[storage]
+    struct Storage {
+        // TODO(Gil): Add map type members.
+        balance: usize,
+    }
 
     #[abi(embed_v0)]
     impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
         fn increase_balance(ref self: ContractState, amount: usize) {
-            self.balance.write(self.balance.read() + amount);
+            // Save some computation by getting the pointer once.
+            let balance_ptr = self.balance.as_ptr();
+            balance_ptr.write(balance_ptr.read() + amount);
         }
         fn get_balance(self: @ContractState) -> usize {
-            self.balance.read()
+            self.balance.as_ptr().read()
         }
     }
-#[event]
-#[derive(Drop, starknet::Event)]
-pub enum Event {}
+}
 
+//! > generated_cairo_code
+lib.cairo:
 
-    pub struct ContractState {
-        pub balance: __member_module_balance::ContractMemberState,
+#[starknet::interface]
+trait HelloStarknetTrait<TContractState> {
+    // Increases the balance by the given amount.
+    fn increase_balance(ref self: TContractState, amount: usize);
+    // Returns the current balance.
+    fn get_balance(self: @TContractState) -> usize;
+}
+
+#[starknet::contract]
+mod hello_starknet {
+    use starknet::storage::{StorageAsPointer, StoragePointerAccess};
+    #[storage]
+    struct Storage {
+        // TODO(Gil): Add map type members.
+        balance: usize,
     }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            balance: __member_module_balance::ContractMemberState {},
+
+    #[abi(embed_v0)]
+    impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
+        fn increase_balance(ref self: ContractState, amount: usize) {
+            // Save some computation by getting the pointer once.
+            let balance_ptr = self.balance.as_ptr();
+            balance_ptr.write(balance_ptr.read() + amount);
+        }
+        fn get_balance(self: @ContractState) -> usize {
+            self.balance.as_ptr().read()
         }
     }
-    
-    pub use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
-    pub mod __member_module_balance {
-        use super::HelloStarknetImpl;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-
-        impl InternalPointerAccessContractMemberStateImpl of 
-            starknet::storage::StorageAsPointer<ContractMemberState, usize> {
-            fn as_ptr(self: @ContractMemberState) -> 
-                starknet::storage::StoragePointer<usize> {
-                starknet::storage::StoragePointer{
-                    address: InternalContractMemberStateImpl::address(self)
-                }
-            }
-        }
-
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> usize;
-            fn write(ref self: ContractMemberState, value: usize);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
-            }
-            fn read(self: @ContractMemberState) -> usize {
-                starknet::storage::StoragePointerAccess::read( 
-                    InternalPointerAccessContractMemberStateImpl::as_ptr(self)
-                )
-            }
-            fn write(ref self: ContractMemberState, value: usize) {
-                starknet::storage::StoragePointerAccess::write( 
-                    InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
-                )
-            }
-        }
-impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-    }
-use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
-};
-
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
-    core::internal::require_implicit::<System>();
-    core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
-    let __arg_amount = core::option::OptionTraitImpl::expect(
-        core::serde::Serde::<usize>::deserialize(ref data),
-        'Failed to deserialize param #1'
-    );
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
-    let mut contract_state = unsafe_new_contract_state();
-    HelloStarknetImpl::increase_balance(ref contract_state, __arg_amount);
-    let mut arr = ArrayTrait::new();
-    // References.
-    // Result.
-    core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
-    core::internal::require_implicit::<System>();
-    core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
-    
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
-    let mut contract_state = unsafe_new_contract_state();
-    let res = HelloStarknetImpl::get_balance(@contract_state, );
-    let mut arr = ArrayTrait::new();
-    // References.
-    // Result.
-    core::serde::Serde::<usize>::serialize(@res, ref arr);
-    core::array::ArrayTrait::span(@arr)
-}
+HelloStarknetTraitDispatcherTrait:
 
-
-pub mod __external {
-    pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
-    pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
-}
-pub mod __l1_handler {
-}
-pub mod __constructor {
-}
-    impl ContractStateEventEmitter of starknet::event::EventEmitter<
-        ContractState, Event
-    > {
-        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
-            ref self: ContractState, event: S
-        ) {
-            let event: Event = core::traits::Into::into(event);
-            let mut keys = Default::<core::array::Array>::default();
-            let mut data = Default::<core::array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTrait::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    core::array::ArrayTrait::span(@keys),
-                    core::array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
-impl EventDrop of core::traits::Drop::<Event>;
-impl EventIsEvent of starknet::Event<Event> {
-    fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
-    ) {
-        match self {
-        }
-    }
-    fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
-        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
-    }
-}
-}
 trait HelloStarknetTraitDispatcherTrait<T> {
     // Increases the balance by the given amount.
     fn increase_balance(self: T, amount: usize);
@@ -339,6 +237,10 @@ impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTra
     }
 
 }
+
+
+impls:
+
 impl HelloStarknetTraitDispatcherCopy of core::traits::Copy::<HelloStarknetTraitDispatcher>;
 impl HelloStarknetTraitDispatcherDrop of core::traits::Drop::<HelloStarknetTraitDispatcher>;
 impl HelloStarknetTraitDispatcherSerde of core::serde::Serde::<HelloStarknetTraitDispatcher> {
@@ -351,6 +253,10 @@ impl HelloStarknetTraitDispatcherSerde of core::serde::Serde::<HelloStarknetTrai
         })
     }
 }
+
+
+starknet_derive:
+
 impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
@@ -382,6 +288,10 @@ impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDi
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+
+
+impls:
+
 impl HelloStarknetTraitLibraryDispatcherCopy of core::traits::Copy::<HelloStarknetTraitLibraryDispatcher>;
 impl HelloStarknetTraitLibraryDispatcherDrop of core::traits::Drop::<HelloStarknetTraitLibraryDispatcher>;
 impl HelloStarknetTraitLibraryDispatcherSerde of core::serde::Serde::<HelloStarknetTraitLibraryDispatcher> {
@@ -394,6 +304,10 @@ impl HelloStarknetTraitLibraryDispatcherSerde of core::serde::Serde::<HelloStark
         })
     }
 }
+
+
+starknet_derive:
+
 impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknetTraitLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
@@ -425,6 +339,10 @@ impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknet
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+
+
+impls:
+
 impl HelloStarknetTraitSafeLibraryDispatcherCopy of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcher>;
 impl HelloStarknetTraitSafeLibraryDispatcherDrop of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcher>;
 impl HelloStarknetTraitSafeLibraryDispatcherSerde of core::serde::Serde::<HelloStarknetTraitSafeLibraryDispatcher> {
@@ -437,6 +355,10 @@ impl HelloStarknetTraitSafeLibraryDispatcherSerde of core::serde::Serde::<HelloS
         })
     }
 }
+
+
+starknet_derive:
+
 impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStarknetTraitSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitSafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
@@ -468,6 +390,10 @@ impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStar
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+
+
+impls:
+
 impl HelloStarknetTraitSafeDispatcherCopy of core::traits::Copy::<HelloStarknetTraitSafeDispatcher>;
 impl HelloStarknetTraitSafeDispatcherDrop of core::traits::Drop::<HelloStarknetTraitSafeDispatcher>;
 impl HelloStarknetTraitSafeDispatcherSerde of core::serde::Serde::<HelloStarknetTraitSafeDispatcher> {
@@ -480,6 +406,10 @@ impl HelloStarknetTraitSafeDispatcherSerde of core::serde::Serde::<HelloStarknet
         })
     }
 }
+
+
+starknet_derive:
+
 impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTraitSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitSafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
@@ -513,15 +443,8 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
 }
 
 
-    #[abi(embed_v0)]
-    impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
-        fn increase_balance(ref self: ContractState, amount: usize) {
-            self.balance.write(self.balance.read() + amount);
-        }
-        fn get_balance(self: @ContractState) -> usize {
-            self.balance.read()
-        }
-    }
+contract:
+
 #[event]
 #[derive(Drop, starknet::Event)]
 pub enum Event {}
@@ -537,9 +460,16 @@ pub enum Event {}
             balance: __member_module_balance::ContractMemberState {},
         }
     }
+    #[cfg(test)]
+    #[inline(always)]
+    pub fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
     
     pub use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
     pub mod __member_module_balance {
+        use super::StorageAsPointer;
+        use super::StoragePointerAccess;
         use super::HelloStarknetImpl;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -575,13 +505,13 @@ pub enum Event {}
                 )
             }
         }
-impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: felt252 = 0x1ced066a668e32671cf1432e69b999e285f74747acb3984082b17a7b935835b;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -650,7 +580,16 @@ pub mod __constructor {
             )
         }
     }
+
+
+
+impls:
+
 impl EventDrop of core::traits::Drop::<Event>;
+
+
+starknet_derive:
+
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
