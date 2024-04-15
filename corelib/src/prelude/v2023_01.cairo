@@ -7,7 +7,7 @@ use core::{
     felt252_div, felt252_is_zero, felt252_mul, felt252_sub, never, panic_with_felt252, usize
 };
 
-use core::{array, array::{Array, ArrayTrait, FixedSizeArrayTrait, Span, SpanTrait}};
+use core::{array, array::{Array, ArrayTrait, Span, SpanTrait, ToSpanTrait}};
 use core::{box, box::{Box, BoxTrait}};
 use core::{
     bytes_31,
