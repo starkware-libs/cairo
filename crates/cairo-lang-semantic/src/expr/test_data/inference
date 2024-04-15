@@ -86,7 +86,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?0
+error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:27
     let mut _arr = array::array_new();
                           ^*******^
@@ -232,7 +232,7 @@ impl MyImpl4 of MyTrait<Option<bool>> {
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: test::MyTrait::<core::bool>
+error: Trait has no implementation in context: test::MyTrait::<core::bool>.
  --> lib.cairo:17:14
     MyTrait::foo(true);
              ^*^
@@ -309,7 +309,7 @@ impl MyImpl4 of MyTrait<Option<bool>> {
 }
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?1
+error: Type annotations needed. Failed to infer ?1.
  --> lib.cairo:17:18
     MyTrait::foo(Option::None);
                  ^****^
@@ -434,7 +434,7 @@ impl MyImpl4 of MyTrait<Option<bool>> {
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: test::MyTrait::<core::bool>
+error: Trait has no implementation in context: test::MyTrait::<core::bool>.
  --> lib.cairo:19:5
     bar(true);
     ^*^
@@ -627,7 +627,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?0
+error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:14
     let _x = "hello";
              ^*****^
@@ -772,7 +772,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?0
+error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:1:13
 fn foo() -> Option {
             ^****^

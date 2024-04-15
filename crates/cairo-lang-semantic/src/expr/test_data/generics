@@ -121,7 +121,7 @@ error: Expected variable or constant, found type.
     bar::<felt252, felt252>();
                    ^*****^
 
-error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>
+error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>.
  --> lib.cairo:7:18
     bar::<usize, -1, A>();
                  ^^

@@ -181,22 +181,22 @@ pub enum InferenceError {
 impl InferenceError {
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
         match self {
-            InferenceError::Reported(_) => "Inference error occurred".into(),
+            InferenceError::Reported(_) => "Inference error occurred.".into(),
             InferenceError::Cycle { var: _ } => "Inference cycle detected".into(),
             InferenceError::TypeKindMismatch { ty0, ty1 } => {
-                format!("Type mismatch: `{:?}` and `{:?}`", ty0.debug(db), ty1.debug(db))
+                format!("Type mismatch: `{:?}` and `{:?}`.", ty0.debug(db), ty1.debug(db))
             }
             InferenceError::ConstKindMismatch { const0, const1 } => {
-                format!("Const mismatch: `{:?}` and `{:?}`", const0.debug(db), const1.debug(db))
+                format!("Const mismatch: `{:?}` and `{:?}`.", const0.debug(db), const1.debug(db))
             }
             InferenceError::ImplKindMismatch { impl0, impl1 } => {
-                format!("Impl mismatch: `{:?}` and `{:?}`", impl0.debug(db), impl1.debug(db))
+                format!("Impl mismatch: `{:?}` and `{:?}`.", impl0.debug(db), impl1.debug(db))
             }
             InferenceError::GenericArgMismatch { garg0, garg1 } => {
-                format!("Generic arg mismatch: `{:?}` and `{:?}`", garg0.debug(db), garg1.debug(db))
+                format!("Generic arg mismatch: `{:?}` and `{:?}`.", garg0.debug(db), garg1.debug(db))
             }
             InferenceError::TraitMismatch { trt0, trt1 } => {
-                format!("Trait mismatch: `{:?}` and `{:?}`", trt0.debug(db), trt1.debug(db))
+                format!("Trait mismatch: `{:?}` and `{:?}`.", trt0.debug(db), trt1.debug(db))
             }
             InferenceError::ConstInferenceNotSupported => {
                 "Const generic inference not yet supported.".into()
@@ -224,14 +224,14 @@ impl InferenceError {
                         generic_type.debug(db)
                     );
                 }
-                format!("Trait has no implementation in context: {:?}", concrete_trait_id.debug(db))
+                format!("Trait has no implementation in context: {:?}.", concrete_trait_id.debug(db))
             }
             InferenceError::Ambiguity(ambiguity) => ambiguity.format(db),
             InferenceError::TypeNotInferred { ty } => {
-                format!("Type annotations needed. Failed to infer {:?}", ty.debug(db))
+                format!("Type annotations needed. Failed to infer {:?}.", ty.debug(db))
             }
             InferenceError::GenericFunctionMismatch { func0, func1 } => {
-                format!("Function mismatch: `{}` and `{}`", func0.format(db), func1.format(db))
+                format!("Function mismatch: `{}` and `{}`.", func0.format(db), func1.format(db))
             }
         }
     }
