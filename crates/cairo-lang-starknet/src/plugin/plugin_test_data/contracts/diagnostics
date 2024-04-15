@@ -380,7 +380,7 @@ error: Identifier not found.
         mapping: Map::<felt252, felt252>,
         ^*****^
 
-error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
+error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter.
  --> lib.cairo[contract]:9:5
     impl ContractStateDrop of Drop<ContractState> {}
     ^**********************************************^
@@ -717,7 +717,7 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::serde::Serde::<test::MyType>
+error: Trait has no implementation in context: core::serde::Serde::<test::MyType>.
  --> lib.cairo[contract]:33:46
         core::serde::Serde::<super::MyType>::deserialize(ref data),
                                              ^*********^
@@ -996,7 +996,7 @@ error: Type not found.
         core::serde::Serde::<T>::deserialize(ref data),
                              ^
 
-error: Type annotations needed. Failed to infer ?2
+error: Type annotations needed. Failed to infer ?2.
  --> lib.cairo[contract]:32:33
     let __arg_x = core::option::OptionTraitImpl::expect(
                                 ^*************^
@@ -1005,8 +1005,8 @@ error: Variable not dropped.
  --> lib.cairo:6:40
     fn foo<T>(ref self: ContractState, x: T) {}
                                        ^
-note: Trait has no implementation in context: core::traits::Drop::<T>
-note: Trait has no implementation in context: core::traits::Destruct::<T>
+note: Trait has no implementation in context: core::traits::Drop::<T>.
+note: Trait has no implementation in context: core::traits::Destruct::<T>.
 
 //! > ==========================================================================
 
@@ -6460,7 +6460,7 @@ error: ref argument must be a variable.
                                        ^***^
 
 error: Method `foo1` could not be called on type `test::component2::ComponentState::<TContractState>`.
-Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `@test::component1::ComponentState::<?8>`
+Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `@test::component1::ComponentState::<?8>`.
  --> lib.cairo:54:53
             get_dep_component_mut!(ref self, Comp2).foo1();
                                                     ^**^
@@ -6485,7 +6485,7 @@ error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro mu
             get_dep_component_mut!(ref mut self, Comp1).foo1();
                                            ^**^
 
-error: Type annotations needed. Failed to infer ?2
+error: Type annotations needed. Failed to infer ?2.
  --> lib.cairo:51:49
             get_dep_component_mut!(Comp1, self).foo1();
                                                 ^**^

@@ -72,7 +72,7 @@ error: The '?' operator is not supported outside of functions.
     Option::<felt252>::Some(0)?
     ^*************************^
 
-error: Trait has no implementation in context: core::traits::Add::<core::bool>
+error: Trait has no implementation in context: core::traits::Add::<core::bool>.
  --> lib.cairo:6:42
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                          ^***^
@@ -136,7 +136,7 @@ foo
 const B: u8 = -1;
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::Neg::<core::integer::u8>
+error: Trait has no implementation in context: core::traits::Neg::<core::integer::u8>.
  --> lib.cairo:1:15
 const B: u8 = -1;
               ^^

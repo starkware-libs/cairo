@@ -158,12 +158,12 @@ error: Method `bar` not found on type `test::MyStruct`. Did you import the corre
       ^*^
 
 error: Method `baz` could not be called on type `test::MyStruct`.
-Candidate `MyTrait::baz` inference failed with: Trait has no implementation in context: test::MyTrait::<test::MyStruct>
+Candidate `MyTrait::baz` inference failed with: Trait has no implementation in context: test::MyTrait::<test::MyStruct>.
  --> lib.cairo:16:7
     d.baz();
       ^*^
 
-error: Trait has no implementation in context: core::traits::Add::<test::MyStruct>
+error: Trait has no implementation in context: core::traits::Add::<test::MyStruct>.
  --> lib.cairo:13:5
     d + 0;
     ^***^

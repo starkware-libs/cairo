@@ -123,7 +123,7 @@ note: variable was previously used here:
   --> lib.cairo:3:21
     bar(__coupon__: x);
                     ^
-note: Trait has no implementation in context: core::traits::Copy::<test::bar::Coupon>
+note: Trait has no implementation in context: core::traits::Copy::<test::bar::Coupon>.
 
 //! > lowering_flat
 Parameters: v0: test::bar::Coupon
