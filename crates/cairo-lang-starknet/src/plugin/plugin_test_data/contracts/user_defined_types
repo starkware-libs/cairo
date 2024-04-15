@@ -130,6 +130,14 @@ pub enum Event {}
         use super::BadEnumWithDefault;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageAsPtr<ContractMemberState, WrappedFelt252> {
+            fn as_ptr(self: @ContractMemberState) -> starknet::storage::StoragePointer<WrappedFelt252> {
+                starknet::storage::StoragePointer{address: InternalContractMemberStateImpl::address(self)
+                }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> WrappedFelt252;
@@ -173,6 +181,14 @@ pub enum Event {}
         use super::BadEnumWithDefault;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageAsPtr<ContractMemberState, ZeroSize> {
+            fn as_ptr(self: @ContractMemberState) -> starknet::storage::StoragePointer<ZeroSize> {
+                starknet::storage::StoragePointer{address: InternalContractMemberStateImpl::address(self)
+                }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> ZeroSize;
@@ -296,7 +312,8 @@ pub enum Event {}
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
+    StoragePathFinalize, StorageAsPtr, StorageAsPath, StoragePointerAccess
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x22a6a9ef9e77b4a6859543ea1095bf317324bd00f9420953f068bcafc59b605;
