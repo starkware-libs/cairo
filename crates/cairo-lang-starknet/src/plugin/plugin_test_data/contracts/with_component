@@ -169,6 +169,15 @@ contract:
         use super::Event;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, usize> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<usize> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x321b8b6c46d61f377b5487aafeb261d3f4db1eb5e3e1fa6a8fc43dc2cee1160)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> usize;
@@ -207,6 +216,15 @@ contract:
         use super::Event;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, usize> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<usize> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x9285aae608615f0823cb202c5e4edd4e399dad89e9459bcdace1a2b91e0997)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> usize;
@@ -242,7 +260,8 @@ contract:
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
+    StoragePathFinalize, StorageMember, StorageAccess
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x13b620794e5b3dc7cc2033d0b9381b35d5d10d1f0a43fe1f5e1d495f793ebab;
@@ -614,7 +633,8 @@ contract:
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
+    StoragePathFinalize, StorageMember, StorageAccess
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x20768e618c747c9e742de0446492553ae65eafb837da660ed6516e1ed6b52fc;
@@ -1024,7 +1044,8 @@ contract:
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
+    StoragePathFinalize, StorageMember, StorageAccess
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x20768e618c747c9e742de0446492553ae65eafb837da660ed6516e1ed6b52fc;

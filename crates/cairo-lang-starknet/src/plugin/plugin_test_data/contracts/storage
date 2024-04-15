@@ -180,6 +180,15 @@ pub enum Event {}
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, felt252> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<felt252> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0xaa97ff6377ea4c71d88150f635730828734fd5bfd6f834e2ae92d29676846c)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> felt252;
@@ -218,6 +227,15 @@ pub enum Event {}
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, u8> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<u8> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x2c1cc4c68869a16c4afd31a765927ce369b8ef4b1208114ea00e820ea36fc23)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u8;
@@ -256,6 +274,15 @@ pub enum Event {}
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, u16> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<u16> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0xf3b2ea0485e7fdfaec3d3e519eeedf3d5dc3434b4f9c8858c217ca6a8b1d45)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u16;
@@ -294,6 +321,15 @@ pub enum Event {}
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, u32> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<u32> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x19490a04fdf74ff92d2d73deff1f53be2aa23274d5a6896a509931d308ffa2d)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u32;
@@ -332,6 +368,15 @@ pub enum Event {}
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, u64> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<u64> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x2b58a04fca59322572a3335b3f8e9a63dd34db1b715eaaae3ab367afa90a194)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u64;
@@ -370,6 +415,15 @@ pub enum Event {}
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, u128> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<u128> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x1ba472df0f88c033d4e0c12eb95fd291de570db0f2df241297c6ebf905889a)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
@@ -408,6 +462,15 @@ pub enum Event {}
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, bool> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<bool> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x379caae8ce359ad2da9b1cd83d4df406d959c199192b9c9e787595a50e0db27)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> bool;
@@ -563,6 +626,15 @@ pub enum Event {}
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, super::super::OuterType> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<super::super::OuterType> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x3106af1c2d86e8b1cb851a79386ce0a8769e17e9d35faaac2d358e2ab15b47e)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> super::super::OuterType;
@@ -640,6 +712,15 @@ pub enum Event {}
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, inner::InnerType> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<inner::InnerType> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x13116abdf53a8bc21fa319084c612c78d3d632bf1a48cf7f221c343f1a7b51e)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> inner::InnerType;
@@ -714,7 +795,8 @@ pub enum Event {}
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
+    StoragePathFinalize, StorageMember, StorageAccess
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21bc80a6e513ea8e536;

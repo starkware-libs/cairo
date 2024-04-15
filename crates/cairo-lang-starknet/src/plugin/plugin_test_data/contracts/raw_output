@@ -66,7 +66,8 @@ pub enum Event {}
     
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
+    StoragePathFinalize, StorageMember, StorageAccess
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x2a1a1bba6d0c773fab786191dfb5454782701d3308f2d60e686ba861815e841;
