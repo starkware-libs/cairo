@@ -1016,7 +1016,7 @@ fn lower_expr_fixed_size_array(
             vec![expr; size]
         }
     };
-    Ok(LoweredExpr::FixedSizeArray { exprs, location })
+    Ok(LoweredExpr::FixedSizeArray { exprs, location, ty: expr.ty })
 }
 
 /// Lowers an expression of type [semantic::ExprSnapshot].

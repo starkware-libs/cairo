@@ -228,6 +228,7 @@ pub enum LoweredExpr {
     },
     /// The expression value is a fixed size array.
     FixedSizeArray {
+        ty: semantic::TypeId,
         exprs: Vec<LoweredExpr>,
         location: LocationId,
     },
@@ -273,18 +274,7 @@ impl LoweredExpr {
 
                 Ok(VarUsage { var_id: snapshot, location })
             }
-            LoweredExpr::FixedSizeArray { exprs, location } => {
-                let ty = ctx.db.intern_type(semantic::TypeLongId::FixedSizeArray {
-                    type_id: exprs[0].ty(ctx),
-                    size: ctx.db.intern_const_value(
-                        value_as_const_value(
-                            ctx.db.upcast(),
-                            get_usize_ty(ctx.db.upcast()),
-                            &exprs.len().into(),
-                        )
-                        .unwrap(),
-                    ),
-                });
+            LoweredExpr::FixedSizeArray { exprs, location, ty } => {
                 let inputs = exprs
                     .into_iter()
                     .map(|expr| expr.as_var_usage(ctx, builder))
