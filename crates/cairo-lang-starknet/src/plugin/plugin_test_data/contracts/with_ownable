@@ -67,6 +67,15 @@ mod ownable_balance {
         use super::OwnableBalanceImpl;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, u128> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<u128> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
@@ -104,7 +113,8 @@ impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
+    StoragePathFinalize, StorageMember, StorageAccess
 };
 
 impl ContractStateTransfer of
@@ -325,6 +335,15 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         use super::OwnableBalanceImpl;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, u128> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<u128> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
@@ -362,7 +381,8 @@ impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
+    StoragePathFinalize, StorageMember, StorageAccess
 };
 
 impl ContractStateTransfer of

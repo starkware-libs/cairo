@@ -130,6 +130,15 @@ pub enum Event {}
         use super::BadEnumWithDefault;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, WrappedFelt252> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<WrappedFelt252> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> WrappedFelt252;
@@ -173,6 +182,15 @@ pub enum Event {}
         use super::BadEnumWithDefault;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of starknet::storage::StorageMember<ContractMemberState, ZeroSize> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<ZeroSize> {
+                starknet::storage::StoragePath { hash_state:
+                    core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x219cc4423c8eab3d10a1f42659ee7172b916579fccdaadceb6efdf1782911b6)
+                 }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> ZeroSize;
@@ -296,7 +314,8 @@ pub enum Event {}
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
+    StoragePathFinalize, StorageMember, StorageAccess
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x22a6a9ef9e77b4a6859543ea1095bf317324bd00f9420953f068bcafc59b605;
