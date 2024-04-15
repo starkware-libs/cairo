@@ -297,7 +297,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?3
+error: Type annotations needed. Failed to infer ?3.
  --> lib.cairo:21:17
     write!(f, "{non_existing}").unwrap();
                 ^**********^
@@ -493,7 +493,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?3
+error: Type annotations needed. Failed to infer ?3.
  --> lib.cairo:21:19
     writeln!(f, "{non_existing}").unwrap();
                   ^**********^
@@ -593,7 +593,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?6
+error: Type annotations needed. Failed to infer ?6.
  --> lib.cairo:14:15
     format!("{non_existing}");
               ^**********^
@@ -693,7 +693,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?9
+error: Type annotations needed. Failed to infer ?9.
  --> lib.cairo:14:14
     print!("{non_existing}");
              ^**********^
@@ -793,7 +793,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?9
+error: Type annotations needed. Failed to infer ?9.
  --> lib.cairo:14:16
     println!("{non_existing}");
                ^**********^
@@ -888,7 +888,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?7
+error: Type annotations needed. Failed to infer ?7.
  --> lib.cairo:14:14
     panic!("{non_existing}");
              ^**********^

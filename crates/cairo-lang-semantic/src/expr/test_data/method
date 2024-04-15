@@ -317,7 +317,7 @@ trait MyTrait<T> {
 
 //! > expected_diagnostics
 error: Method `bar` could not be called on type `core::integer::u16`.
-Candidate `MyTrait::bar` inference failed with: Trait has no implementation in context: test::MyTrait::<core::integer::u16>
+Candidate `MyTrait::bar` inference failed with: Trait has no implementation in context: test::MyTrait::<core::integer::u16>.
  --> lib.cairo:5:11
     3_u16.bar();
           ^*^
@@ -344,7 +344,7 @@ trait MyTrait<T> {
 
 //! > expected_diagnostics
 error: Method `bar` could not be called on type `core::integer::u16`.
-Candidate `MyTrait::bar` inference failed with: Trait has no implementation in context: test::MyTrait::<core::integer::u16>
+Candidate `MyTrait::bar` inference failed with: Trait has no implementation in context: test::MyTrait::<core::integer::u16>.
  --> lib.cairo:5:21
     (3_u16 + 3_u16).bar();
                     ^*^

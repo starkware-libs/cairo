@@ -184,8 +184,8 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: Method `unwrap` could not be called on type `core::integer::u32`.
-Candidate `OptionTrait::unwrap` inference failed with: Type mismatch: `core::integer::u32` and `core::option::Option::<?0>`
-Candidate `ResultTrait::unwrap` inference failed with: Type mismatch: `core::integer::u32` and `core::result::Result::<?0, ?1>`
+Candidate `OptionTrait::unwrap` inference failed with: Type mismatch: `core::integer::u32` and `core::option::Option::<?0>`.
+Candidate `ResultTrait::unwrap` inference failed with: Type mismatch: `core::integer::u32` and `core::result::Result::<?0, ?1>`.
  --> lib.cairo:8:11
         x.unwrap();
           ^****^
@@ -245,7 +245,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>
+error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>.
  --> lib.cairo:8:9
         -x; // u32 doesn't implement `Neg`.
         ^^
@@ -309,7 +309,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::Add::<core::option::Option::<core::integer::u32>>
+error: Trait has no implementation in context: core::traits::Add::<core::option::Option::<core::integer::u32>>.
  --> lib.cairo:8:17
         let _ = x + x; // Option<usize> doesn't implement `Add`.
                 ^***^
@@ -372,8 +372,8 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: Type `core::integer::u32` could not be indexed.
-Candidate `Index::index` inference failed with: Trait has no implementation in context: core::traits::Index::<core::integer::u32, ?1, ?2>
-Candidate `IndexView::index` inference failed with: Trait has no implementation in context: core::traits::IndexView::<core::integer::u32, ?1, ?2>
+Candidate `Index::index` inference failed with: Trait has no implementation in context: core::traits::Index::<core::integer::u32, ?1, ?2>.
+Candidate `IndexView::index` inference failed with: Trait has no implementation in context: core::traits::IndexView::<core::integer::u32, ?1, ?2>.
  --> lib.cairo:8:9
         x[0];
         ^**^
@@ -490,12 +490,12 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: test::AnotherTrait0
+error: Trait has no implementation in context: test::AnotherTrait0.
  --> lib.cairo:17:31
     fn bar1(x: AnotherTrait0::AnotherType);
                               ^*********^
 
-error: Trait has no implementation in context: test::AnotherTrait0
+error: Trait has no implementation in context: test::AnotherTrait0.
  --> lib.cairo:18:33
     fn bar2() -> AnotherTrait0::AnotherType;
                                 ^*********^
@@ -680,7 +680,7 @@ error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait
     fn foo1() -> AnotherTrait::AnotherType {
                  ^***********************^
 
-error: Trait has no implementation in context: test::AnotherTrait
+error: Trait has no implementation in context: test::AnotherTrait.
  --> lib.cairo:9:32
     fn foo1() -> AnotherTrait::AnotherType {
                                ^*********^
@@ -695,12 +695,12 @@ error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTr
     fn foo2(x: AnotherTrait::AnotherType) {}
                ^***********************^
 
-error: Trait has no implementation in context: test::AnotherTrait
+error: Trait has no implementation in context: test::AnotherTrait.
  --> lib.cairo:12:30
     fn foo2(x: AnotherTrait::AnotherType) {}
                              ^*********^
 
-error: Trait has no implementation in context: test::AnotherTrait
+error: Trait has no implementation in context: test::AnotherTrait.
  --> lib.cairo:14:28
 fn bar1() -> AnotherTrait::AnotherType {
                            ^*********^
@@ -710,7 +710,7 @@ error: Unexpected return type. Expected: "ImplVar(test::AnotherTrait)::AnotherTy
 fn bar1() -> AnotherTrait::AnotherType {
                                        ^
 
-error: Trait has no implementation in context: test::AnotherTrait
+error: Trait has no implementation in context: test::AnotherTrait.
  --> lib.cairo:17:26
 fn bar2(x: AnotherTrait::AnotherType) {}
                          ^*********^

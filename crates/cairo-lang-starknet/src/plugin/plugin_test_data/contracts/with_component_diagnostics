@@ -1533,7 +1533,7 @@ error: Type not found.
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Type annotations needed. Failed to infer ?0
+error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo[contract]:37:27
                 starknet::SyscallResultTrait::unwrap_syscall(
                           ^****************^
