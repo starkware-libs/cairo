@@ -1,0 +1,1465 @@
+//! > Test type items in trait/impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    MyImpl::foo1(3_u32);
+    MyImpl::foo2(3_u32);
+    MyImpl::foo3(3_u32);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo1(x: Self::InputType) -> Self::OutputType;
+    fn foo2(x: Self::InputType) -> Self::OutputType;
+    fn foo3(x: u32) -> u32;
+}
+impl MyImpl of MyTrait {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo1(x: Self::InputType) -> Self::OutputType {
+        x
+    }
+    fn foo2(x: u32) -> u32 {
+        x
+    }
+    fn foo3(x: Self::InputType) -> Self::OutputType {
+        x
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Incompatible signatures with trait/impl type items.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo1(x: Self::InputType);
+    fn foo2() -> Self::OutputType;
+    fn foo3(x: u16);
+    fn foo4() -> u16;
+}
+impl MyImpl of MyTrait {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo1(x: u16) {} // param type doesn't match.
+    fn foo2() -> u16 {
+        1_u16
+    } // return type doesn't match.
+    fn foo3(x: Self::InputType) {} // param type doesn't match.
+    fn foo4() -> Self::OutputType {
+        1_u32
+    } // return type doesn't match.
+}
+
+//! > expected_diagnostics
+error: Parameter type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
+ --> lib.cairo:12:16
+    fn foo1(x: u16) {} // param type doesn't match.
+               ^*^
+
+error: Return type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
+ --> lib.cairo:13:18
+    fn foo2() -> u16 {
+                 ^*^
+
+error: Parameter type of impl function `MyImpl::foo3` is incompatible with `MyTrait::foo3`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+ --> lib.cairo:16:16
+    fn foo3(x: Self::InputType) {} // param type doesn't match.
+               ^*************^
+
+error: Return type of impl function `MyImpl::foo4` is incompatible with `MyTrait::foo4`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+ --> lib.cairo:17:18
+    fn foo4() -> Self::OutputType {
+                 ^**************^
+
+//! > ==========================================================================
+
+//! > Member access of impl type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let x = MyStruct { value: 3_u32 };
+    let _: MyStruct<u32> = MyImpl::foo(x);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct<T> {
+    value: T,
+}
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo(x: Self::InputType) -> Self::OutputType;
+}
+impl MyImpl of MyTrait {
+    type InputType = MyStruct<u32>;
+    type OutputType = MyStruct<u32>;
+    fn foo(x: Self::InputType) -> Self::OutputType {
+        MyStruct { value: x.value }
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Method call on impl type that has this method.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    MyImpl::foo(Option::Some(3));
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    fn foo(x: Self::InputType);
+}
+impl MyImpl of MyTrait {
+    type InputType = Option<usize>;
+    fn foo(x: Self::InputType) {
+        x.unwrap();
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Method call on impl type that doesn't have this method.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    fn foo(x: Self::InputType);
+}
+impl MyImpl of MyTrait {
+    type InputType = usize;
+    fn foo(x: Self::InputType) {
+        x.unwrap();
+    }
+}
+
+//! > expected_diagnostics
+error: Method `unwrap` could not be called on type `core::integer::u32`.
+Candidate `OptionTrait::unwrap` inference failed with: Type mismatch: `core::integer::u32` and `core::option::Option::<?0>`
+Candidate `ResultTrait::unwrap` inference failed with: Type mismatch: `core::integer::u32` and `core::result::Result::<?0, ?1>`
+ --> lib.cairo:8:11
+        x.unwrap();
+          ^****^
+
+//! > ==========================================================================
+
+//! > Unary operator on impl type that implements it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    MyImpl::foo(3);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    fn foo(x: Self::InputType);
+}
+impl MyImpl of MyTrait {
+    type InputType = i32;
+    fn foo(x: Self::InputType) {
+        -x;
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Unary operator on impl type that doesn't implement it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    fn foo(x: Self::InputType);
+}
+impl MyImpl of MyTrait {
+    type InputType = u32;
+    fn foo(x: Self::InputType) {
+        -x; // u32 doesn't implement `Neg`.
+    }
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>
+ --> lib.cairo:8:9
+        -x; // u32 doesn't implement `Neg`.
+        ^^
+
+//! > ==========================================================================
+
+//! > Binary operator on impl types that implement it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let _: usize = MyImpl::foo(3, 4);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType1;
+    type InputType2;
+    type OutputType;
+    fn foo(x: Self::InputType1, y: Self::InputType2) -> Self::OutputType;
+}
+impl MyImpl of MyTrait {
+    type InputType1 = usize;
+    type InputType2 = usize;
+    type OutputType = usize;
+    fn foo(x: Self::InputType1, y: Self::InputType2) -> Self::OutputType {
+        x + y
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Binary operator on impl type that doesn't implement it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    fn foo(x: Self::InputType);
+}
+impl MyImpl of MyTrait {
+    type InputType = Option<usize>;
+    fn foo(x: Self::InputType) {
+        let _ = x + x; // Option<usize> doesn't implement `Add`.
+    }
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::traits::Add::<core::option::Option::<core::integer::u32>>
+ --> lib.cairo:8:17
+        let _ = x + x; // Option<usize> doesn't implement `Add`.
+                ^***^
+
+//! > ==========================================================================
+
+//! > Indexing an impl type that implements `Index`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    MyImpl::foo(array![0]);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo(x: Self::InputType) -> Self::OutputType;
+}
+impl MyImpl of MyTrait {
+    type InputType = Array<usize>;
+    type OutputType = usize;
+    fn foo(x: Self::InputType) -> Self::OutputType {
+        *x[0_u32]
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Indexing an impl type that doesn't implement `Index`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    fn foo(x: Self::InputType);
+}
+impl MyImpl of MyTrait {
+    type InputType = usize;
+    fn foo(x: Self::InputType) {
+        x[0];
+    }
+}
+
+//! > expected_diagnostics
+error: Type `core::integer::u32` could not be indexed.
+Candidate `Index::index` inference failed with: Trait has no implementation in context: core::traits::Index::<core::integer::u32, ?1, ?2>
+Candidate `IndexView::index` inference failed with: Trait has no implementation in context: core::traits::IndexView::<core::integer::u32, ?1, ?2>
+ --> lib.cairo:8:9
+        x[0];
+        ^**^
+
+//! > ==========================================================================
+
+//! > Using traits' items is allowed in other traits, if well resolved.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    type AnotherType;
+}
+impl AnotherImpl of AnotherTrait {
+    type AnotherType = u32;
+}
+trait MyTrait {
+    fn bar1(x: AnotherTrait::AnotherType);
+    fn bar2() -> AnotherTrait::AnotherType;
+}
+impl MyImpl of MyTrait {
+    fn bar1(x: u32) {}
+    fn bar2() -> u32 {
+        3_u32
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Using traits' items in other traits, well resolved, but with type mismatch.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    type AnotherType;
+}
+impl AnotherImpl of AnotherTrait {
+    type AnotherType = u16;
+}
+trait MyTrait {
+    fn bar1(x: AnotherTrait::AnotherType);
+    fn bar2() -> AnotherTrait::AnotherType;
+}
+impl MyImpl of MyTrait {
+    fn bar1(x: u32) {}
+    fn bar2() -> u32 {
+        3_u32
+    }
+}
+
+//! > expected_diagnostics
+error: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+ --> lib.cairo:12:16
+    fn bar1(x: u32) {}
+               ^*^
+
+error: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+ --> lib.cairo:13:18
+    fn bar2() -> u32 {
+                 ^*^
+
+//! > ==========================================================================
+
+//! > Using traits' items in other traits, but they can't be resolved.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+// A trait with 0 impls in the context.
+trait AnotherTrait0 {
+    type AnotherType;
+}
+// A trait with 2 impls in the context.
+trait AnotherTrait2 {
+    type AnotherType;
+}
+impl AnotherImpl20 of AnotherTrait2 {
+    type AnotherType = u32;
+}
+impl AnotherImpl21 of AnotherTrait2 {
+    type AnotherType = u32;
+}
+trait MyTrait {
+    type MyType;
+    fn bar1(x: AnotherTrait0::AnotherType);
+    fn bar2() -> AnotherTrait0::AnotherType;
+    fn bar3(x: AnotherTrait2::AnotherType);
+    fn bar4() -> AnotherTrait2::AnotherType;
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: test::AnotherTrait0
+ --> lib.cairo:17:31
+    fn bar1(x: AnotherTrait0::AnotherType);
+                              ^*********^
+
+error: Trait has no implementation in context: test::AnotherTrait0
+ --> lib.cairo:18:33
+    fn bar2() -> AnotherTrait0::AnotherType;
+                                ^*********^
+
+error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
+ --> lib.cairo:19:31
+    fn bar3(x: AnotherTrait2::AnotherType);
+                              ^*********^
+
+error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
+ --> lib.cairo:20:33
+    fn bar4() -> AnotherTrait2::AnotherType;
+                                ^*********^
+
+//! > ==========================================================================
+
+//! > traits' items are resolved when there is a single impl in context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    type AnotherType;
+}
+impl AnotherImpl of AnotherTrait {
+    type AnotherType = u32;
+}
+trait MyTrait {
+    type MyType;
+    fn foo1() -> u32;
+    fn foo2(x: u32);
+}
+impl MyImpl of MyTrait {
+    type MyType = u32;
+    fn foo1() -> AnotherTrait::AnotherType {
+        3_u32
+    }
+    fn foo2(x: AnotherTrait::AnotherType) {}
+}
+fn bar1() -> MyTrait::MyType {
+    3_u32
+}
+fn bar2(x: MyTrait::MyType) {
+    let _: u32 = x;
+}
+fn bar3() {
+    let _: MyTrait::MyType = 3_u32;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Mismatch of resolved traits' items when there is a single impl in context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    type AnotherType;
+}
+impl AnotherImpl of AnotherTrait {
+    type AnotherType = u16;
+}
+trait MyTrait {
+    type MyType;
+    fn foo1() -> u32;
+    fn foo2(x: u32);
+}
+impl MyImpl of MyTrait {
+    type MyType = u16;
+    fn foo1() -> AnotherTrait::AnotherType {
+        3
+    }
+    fn foo2(x: AnotherTrait::AnotherType) {}
+}
+fn bar1() -> MyTrait::MyType {
+    3_u32
+}
+fn bar2(x: MyTrait::MyType) {
+    let _: u32 = x;
+}
+fn bar3() {
+    let _: MyTrait::MyType = 3_u32;
+}
+
+//! > expected_diagnostics
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
+ --> lib.cairo:14:18
+    fn foo1() -> AnotherTrait::AnotherType {
+                 ^***********************^
+
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
+ --> lib.cairo:17:16
+    fn foo2(x: AnotherTrait::AnotherType) {}
+               ^***********************^
+
+error: Unexpected expression type. Expected: "core::integer::u16", found: "core::integer::u32".
+ --> lib.cairo:19:30
+fn bar1() -> MyTrait::MyType {
+                             ^
+
+error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
+ --> lib.cairo:19:30
+fn bar1() -> MyTrait::MyType {
+                             ^
+
+error: Unexpected expression type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:23:18
+    let _: u32 = x;
+                 ^
+
+error: Unexpected argument type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:23:18
+    let _: u32 = x;
+                 ^
+
+error: Unexpected expression type. Expected: "core::integer::u16", found: "core::integer::u32".
+ --> lib.cairo:26:30
+    let _: MyTrait::MyType = 3_u32;
+                             ^***^
+
+error: Unexpected argument type. Expected: "core::integer::u16", found: "core::integer::u32".
+ --> lib.cairo:26:30
+    let _: MyTrait::MyType = 3_u32;
+                             ^***^
+
+//! > ==========================================================================
+
+//! > traits' items can't be resolved if there is no impl in context.
+
+//! > TODO(yuval): try to eliminate redundant/duplicate diagnostics. Here and in other tests.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    type AnotherType;
+}
+trait MyTrait {
+    fn foo1() -> u32;
+    fn foo2(x: u32);
+}
+impl MyImpl of MyTrait {
+    fn foo1() -> AnotherTrait::AnotherType {
+        3_u32
+    }
+    fn foo2(x: AnotherTrait::AnotherType) {}
+}
+fn bar1() -> AnotherTrait::AnotherType {
+    3_u32
+}
+fn bar2(x: AnotherTrait::AnotherType) {}
+fn bar3() {
+    let _: AnotherTrait::AnotherType = 3_u32;
+}
+
+//! > expected_diagnostics
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVar(test::AnotherTrait)::AnotherType`.
+ --> lib.cairo:9:18
+    fn foo1() -> AnotherTrait::AnotherType {
+                 ^***********************^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:9:32
+    fn foo1() -> AnotherTrait::AnotherType {
+                               ^*********^
+
+error: Unexpected return type. Expected: "ImplVar(test::AnotherTrait)::AnotherType", found: "core::integer::u32".
+ --> lib.cairo:9:44
+    fn foo1() -> AnotherTrait::AnotherType {
+                                           ^
+
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVar(test::AnotherTrait)::AnotherType`.
+ --> lib.cairo:12:16
+    fn foo2(x: AnotherTrait::AnotherType) {}
+               ^***********************^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:12:30
+    fn foo2(x: AnotherTrait::AnotherType) {}
+                             ^*********^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:14:28
+fn bar1() -> AnotherTrait::AnotherType {
+                           ^*********^
+
+error: Unexpected return type. Expected: "ImplVar(test::AnotherTrait)::AnotherType", found: "core::integer::u32".
+ --> lib.cairo:14:40
+fn bar1() -> AnotherTrait::AnotherType {
+                                       ^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:17:26
+fn bar2(x: AnotherTrait::AnotherType) {}
+                         ^*********^
+
+error: Unexpected expression type. Expected: "ImplVar(test::AnotherTrait)::AnotherType", found: "core::integer::u32".
+ --> lib.cairo:19:40
+    let _: AnotherTrait::AnotherType = 3_u32;
+                                       ^***^
+
+error: Unexpected argument type. Expected: "ImplVar(test::AnotherTrait)::AnotherType", found: "core::integer::u32".
+ --> lib.cairo:19:40
+    let _: AnotherTrait::AnotherType = 3_u32;
+                                       ^***^
+
+//! > ==========================================================================
+
+//! > traits' items can't be resolved if there are multiple impls in context.
+
+//! > TODO(yuval): try to eliminate redundant diagnostics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    type AnotherType;
+}
+impl AnotherImpl1 of AnotherTrait {
+    type AnotherType = u32;
+}
+impl AnotherImpl2 of AnotherTrait {
+    type AnotherType = u32;
+}
+trait MyTrait {
+    fn foo1() -> u32;
+    fn foo2(x: u32);
+}
+impl MyImpl of MyTrait {
+    fn foo1() -> AnotherTrait::AnotherType {
+        3_u32
+    }
+    fn foo2(x: AnotherTrait::AnotherType) {}
+}
+fn bar1() -> AnotherTrait::AnotherType {
+    3_u32
+}
+fn bar2(x: AnotherTrait::AnotherType) {}
+fn bar3() {
+    let _: AnotherTrait::AnotherType = 3_u32;
+}
+
+//! > expected_diagnostics
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVar(test::AnotherTrait)::AnotherType`.
+ --> lib.cairo:15:18
+    fn foo1() -> AnotherTrait::AnotherType {
+                 ^***********************^
+
+error: Trait `test::AnotherTrait` has multiple implementations, in: `test::AnotherImpl1`, `test::AnotherImpl2`
+ --> lib.cairo:15:32
+    fn foo1() -> AnotherTrait::AnotherType {
+                               ^*********^
+
+error: Unexpected return type. Expected: "ImplVar(test::AnotherTrait)::AnotherType", found: "core::integer::u32".
+ --> lib.cairo:15:44
+    fn foo1() -> AnotherTrait::AnotherType {
+                                           ^
+
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVar(test::AnotherTrait)::AnotherType`.
+ --> lib.cairo:18:16
+    fn foo2(x: AnotherTrait::AnotherType) {}
+               ^***********************^
+
+error: Trait `test::AnotherTrait` has multiple implementations, in: `test::AnotherImpl1`, `test::AnotherImpl2`
+ --> lib.cairo:18:30
+    fn foo2(x: AnotherTrait::AnotherType) {}
+                             ^*********^
+
+error: Trait `test::AnotherTrait` has multiple implementations, in: `test::AnotherImpl1`, `test::AnotherImpl2`
+ --> lib.cairo:20:28
+fn bar1() -> AnotherTrait::AnotherType {
+                           ^*********^
+
+error: Unexpected return type. Expected: "ImplVar(test::AnotherTrait)::AnotherType", found: "core::integer::u32".
+ --> lib.cairo:20:40
+fn bar1() -> AnotherTrait::AnotherType {
+                                       ^
+
+error: Trait `test::AnotherTrait` has multiple implementations, in: `test::AnotherImpl1`, `test::AnotherImpl2`
+ --> lib.cairo:23:26
+fn bar2(x: AnotherTrait::AnotherType) {}
+                         ^*********^
+
+error: Unexpected expression type. Expected: "ImplVar(test::AnotherTrait)::AnotherType", found: "core::integer::u32".
+ --> lib.cairo:25:40
+    let _: AnotherTrait::AnotherType = 3_u32;
+                                       ^***^
+
+error: Unexpected argument type. Expected: "ImplVar(test::AnotherTrait)::AnotherType", found: "core::integer::u32".
+ --> lib.cairo:25:40
+    let _: AnotherTrait::AnotherType = 3_u32;
+                                       ^***^
+
+//! > ==========================================================================
+
+//! > impl items are allowed, even in a trait body.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    type AnotherType;
+}
+impl AnotherImpl1 of AnotherTrait {
+    type AnotherType = u32;
+}
+impl AnotherImpl2 of AnotherTrait {
+    type AnotherType = u16;
+}
+trait MyTrait {
+    fn foo1() -> AnotherImpl1::AnotherType;
+    fn foo2(x: AnotherImpl1::AnotherType);
+}
+impl MyImpl of MyTrait {
+    fn foo1() -> AnotherImpl1::AnotherType {
+        3_u32
+    }
+    fn foo2(x: AnotherImpl1::AnotherType) {}
+}
+fn bar1() -> AnotherImpl1::AnotherType {
+    3_u32
+}
+fn bar2(x: AnotherImpl1::AnotherType) {}
+fn bar3() {
+    let _: AnotherImpl1::AnotherType = 3_u32;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > impl items are allowed in its own trait body.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType;
+    fn foo1() -> MyImpl::MyType;
+    fn foo2(x: MyImpl::MyType);
+}
+impl MyImpl of MyTrait {
+    type MyType = u32;
+    fn foo1() -> Self::MyType {
+        3_u32
+    }
+    fn foo2(x: Self::MyType) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > impl items in its own trait body, with type mismatch.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType;
+    fn foo1() -> MyImpl::MyType;
+    fn foo2(x: MyImpl::MyType);
+}
+impl MyImpl of MyTrait {
+    type MyType = u32;
+    fn foo1() -> Self::MyType {
+        3_u16
+    }
+    fn foo2(x: Self::MyType) {}
+}
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:8:31
+    fn foo1() -> Self::MyType {
+                              ^
+
+error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:8:31
+    fn foo1() -> Self::MyType {
+                              ^
+
+//! > ==========================================================================
+
+//! > traits' items resolved in all kind of statements.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = u32;
+    type MyType2 = u32;
+}
+fn ret_statement(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+    return x;
+}
+fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+    x
+}
+fn let_statement(x: MyTrait::MyType2) {
+    let _: MyTrait::MyType1 = x;
+}
+fn break_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
+    loop {
+        if cond {
+            break x;
+        } else {
+            break y;
+        }
+    };
+}
+enum MyEnum {
+    VariantA,
+    VariantB,
+}
+fn match_statement(e: MyEnum, x: MyTrait::MyType1, y: MyTrait::MyType2) {
+    let _ = match e {
+        MyEnum::VariantA => { x },
+        MyEnum::VariantB => { y },
+    };
+}
+fn if_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
+    if cond {
+        x
+    } else {
+        y
+    };
+}
+fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
+    Option::Some(x?)
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Diagnostics on mismatches with traits' items that are resolved in all kind of statements.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = u16;
+    type MyType2 = u32;
+}
+fn ret_statement(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+    return x;
+}
+fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+    x
+}
+fn let_statement(x: MyTrait::MyType2) {
+    let _: MyTrait::MyType1 = x;
+}
+fn break_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
+    loop {
+        if cond {
+            break x;
+        } else {
+            break y;
+        }
+    };
+}
+enum MyEnum {
+    VariantA,
+    VariantB,
+}
+fn match_statement(e: MyEnum, x: MyTrait::MyType1, y: MyTrait::MyType2) {
+    let _ = match e {
+        MyEnum::VariantA => { x },
+        MyEnum::VariantB => { y },
+    };
+}
+fn if_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
+    if cond {
+        x
+    } else {
+        y
+    };
+}
+fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
+    Option::Some(x?)
+}
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:9:59
+fn ret_statement(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+                                                          ^
+
+error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:10:12
+    return x;
+           ^
+
+error: Unexpected expression type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:12:54
+fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+                                                     ^
+
+error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:12:54
+fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+                                                     ^
+
+error: Unexpected expression type. Expected: "core::integer::u16", found: "core::integer::u32".
+ --> lib.cairo:16:31
+    let _: MyTrait::MyType1 = x;
+                              ^
+
+error: Unexpected argument type. Expected: "core::integer::u16", found: "core::integer::u32".
+ --> lib.cairo:16:31
+    let _: MyTrait::MyType1 = x;
+                              ^
+
+error: Loop has incompatible return types: "core::integer::u16" and "core::integer::u32"
+ --> lib.cairo:23:19
+            break y;
+                  ^
+
+error: Match arms have incompatible types: "core::integer::u16" and "core::integer::u32"
+ --> lib.cairo:34:29
+        MyEnum::VariantB => { y },
+                            ^***^
+
+error: If blocks have incompatible types: "core::integer::u16" and "core::integer::u32"
+ --> lib.cairo:38:5
+    if cond {
+    ^*******^
+
+error: Unexpected expression type. Expected: "core::option::Option::<core::integer::u32>", found: "core::option::Option::<core::integer::u16>".
+ --> lib.cairo:45:18
+    Option::Some(x?)
+                 ^
+
+error: Unexpected argument type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:45:18
+    Option::Some(x?)
+                 ^^
+
+//! > ==========================================================================
+
+//! > Recursive resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+    type MyType3;
+    type MyType4;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = u32;
+    type MyType2 = u32;
+    type MyType3 = u32;
+    type MyType4 = u32;
+}
+fn generic_args(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
+    Option::Some(x?)
+}
+fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
+    (x, y)
+}
+fn fix_sized_array(x: [MyTrait::MyType1; 3]) -> [MyTrait::MyType2; 3] {
+    x
+}
+fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
+    x
+}
+fn snapshot2(x: @MyTrait::MyType1) -> @@MyTrait::MyType2 {
+    @x
+}
+fn complex1(
+    x: @(
+        MyTrait::MyType1,
+        Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>
+    )
+) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
+    x
+}
+fn complex2(
+    x: @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>)
+) -> @(
+    MyTrait::MyType1,
+    Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>
+) {
+    x
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Diagnostics on mismatches with recursive resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+    type MyType3;
+    type MyType4;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = u16;
+    type MyType2 = u32;
+    type MyType3 = u32;
+    type MyType4 = u32;
+}
+fn generic_args(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
+    Option::Some(x?)
+}
+fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
+    (x, y)
+}
+fn fix_sized_array(x: [MyTrait::MyType1; 3]) -> [MyTrait::MyType2; 3] {
+    x
+}
+fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
+    x
+}
+fn snapshot2(x: @MyTrait::MyType1) -> @@MyTrait::MyType2 {
+    @x
+}
+fn complex1(
+    x: @(
+        MyTrait::MyType1,
+        Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>
+    )
+) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
+    x
+}
+fn complex2(
+    x: @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>)
+) -> @(
+    MyTrait::MyType1,
+    Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>
+) {
+    x
+}
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::option::Option::<core::integer::u32>", found: "core::option::Option::<core::integer::u16>".
+ --> lib.cairo:14:18
+    Option::Some(x?)
+                 ^
+
+error: Unexpected argument type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:14:18
+    Option::Some(x?)
+                 ^^
+
+error: Unexpected expression type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:17:6
+    (x, y)
+     ^
+
+error: Unexpected return type. Expected: "(core::integer::u32, core::integer::u16)", found: "(core::integer::u16, core::integer::u32)".
+ --> lib.cairo:16:92
+fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
+                                                                                           ^
+
+error: Unexpected expression type. Expected: "[core::integer::u32; 3]", found: "[core::integer::u16; 3]".
+ --> lib.cairo:19:71
+fn fix_sized_array(x: [MyTrait::MyType1; 3]) -> [MyTrait::MyType2; 3] {
+                                                                      ^
+
+error: Unexpected return type. Expected: "[core::integer::u32; 3]", found: "[core::integer::u16; 3]".
+ --> lib.cairo:19:71
+fn fix_sized_array(x: [MyTrait::MyType1; 3]) -> [MyTrait::MyType2; 3] {
+                                                                      ^
+
+error: Unexpected expression type. Expected: "@@core::integer::u32", found: "@@core::integer::u16".
+ --> lib.cairo:22:58
+fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
+                                                         ^
+
+error: Unexpected return type. Expected: "@@core::integer::u32", found: "@@core::integer::u16".
+ --> lib.cairo:22:58
+fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
+                                                         ^
+
+error: Unexpected expression type. Expected: "@core::integer::u32", found: "@core::integer::u16".
+ --> lib.cairo:26:6
+    @x
+     ^
+
+error: Unexpected return type. Expected: "@@core::integer::u32", found: "@@core::integer::u16".
+ --> lib.cairo:25:58
+fn snapshot2(x: @MyTrait::MyType1) -> @@MyTrait::MyType2 {
+                                                         ^
+
+error: Unexpected expression type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)".
+ --> lib.cairo:33:61
+) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
+                                                            ^
+
+error: Unexpected return type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)".
+ --> lib.cairo:33:61
+) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
+                                                            ^
+
+error: Unexpected expression type. Expected: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)".
+ --> lib.cairo:41:3
+) {
+  ^
+
+error: Unexpected return type. Expected: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)".
+ --> lib.cairo:41:3
+) {
+  ^
+
+//! > ==========================================================================
+
+//! > Diagnostics on using trait function as a type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(x: MyImpl::my_function) {
+    let _: MyImpl::my_function = 3;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType;
+    fn my_function() -> u16;
+}
+impl MyImpl of MyTrait {
+    type MyType = u32;
+    fn my_function() -> u16 {
+        2_u16
+    }
+}
+
+//! > expected_diagnostics
+error: Not a type.
+ --> lib.cairo:11:11
+fn foo(x: MyImpl::my_function) {
+          ^*****************^
+
+error: Not a type.
+ --> lib.cairo:12:12
+    let _: MyImpl::my_function = 3;
+           ^*****************^
+
+//! > ==========================================================================
+
+//! > Impl type chain resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+    fn bar(x: Self::MyType1) -> u32;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = Self::MyType2;
+    type MyType2 = u32;
+    fn bar(x: Self::MyType1) -> u32 {
+        x
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Impl type chain resolution, with mismatch types.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+    fn bar(x: Self::MyType1) -> u32;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = Self::MyType2;
+    type MyType2 = u16;
+    fn bar(x: Self::MyType1) -> u32 {
+        x
+    }
+}
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:9:37
+    fn bar(x: Self::MyType1) -> u32 {
+                                    ^
+
+error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:9:37
+    fn bar(x: Self::MyType1) -> u32 {
+                                    ^
+
+//! > ==========================================================================
+
+//! > Impl types cycle of length 1.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = Self::MyType1;
+}
+
+//! > expected_diagnostics
+error: Cycle detected while resolving type-alias/impl-type items.
+ --> lib.cairo:5:10
+    type MyType1 = Self::MyType1;
+         ^*****^
+
+//! > ==========================================================================
+
+//! > Impl types cycle of length 2.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = Self::MyType2;
+    type MyType2 = Self::MyType1;
+}
+
+//! > expected_diagnostics
+error: Cycle detected while resolving type-alias/impl-type items.
+ --> lib.cairo:6:10
+    type MyType1 = Self::MyType2;
+         ^*****^
+
+error: Cycle detected while resolving type-alias/impl-type items.
+ --> lib.cairo:7:10
+    type MyType2 = Self::MyType1;
+         ^*****^

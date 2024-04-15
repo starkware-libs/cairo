@@ -671,6 +671,7 @@ impl<'a> AbiBuilder<'a> {
             TypeLongId::Coupon(_)
             | TypeLongId::GenericParameter(_)
             | TypeLongId::Var(_)
+            | TypeLongId::ImplType(_)
             | TypeLongId::Missing(_) => Err(ABIError::UnexpectedType),
         }
     }
