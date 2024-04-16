@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::Intern;
 use smol_str::SmolStr;
 
 use crate::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
@@ -30,11 +30,12 @@ pub fn create_virtual_file(
     file_name: impl Into<SmolStr>,
     content: &str,
 ) -> FileId {
-    db.intern_file(FileLongId::Virtual(VirtualFile {
+    FileLongId::Virtual(VirtualFile {
         parent: None,
         name: file_name.into(),
         content: Arc::new(content.into()),
         code_mappings: Default::default(),
         kind: FileKind::Module,
-    }))
+    })
+    .intern(db)
 }

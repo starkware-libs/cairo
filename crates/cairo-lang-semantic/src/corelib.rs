@@ -6,7 +6,7 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::Terminal;
-use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern, OptionFrom};
+use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern, OptionFrom};
 use num_bigint::BigInt;
 use num_traits::{Num, Signed, ToPrimitive, Zero};
 use smol_str::SmolStr;
@@ -60,7 +60,7 @@ pub fn core_submodule(db: &dyn SemanticGroup, submodule_name: &str) -> ModuleId 
 }
 
 pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
-    db.intern_crate(CrateLongId::Real("core".into()))
+    CrateLongId::Real("core".into()).intern(db)
 }
 
 pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -70,8 +70,8 @@ pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
 /// Returns the concrete type of a bounded int type with a given min and max.
 pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeId {
     let internal = core_submodule(db, "internal");
-    let lower_id = db.intern_const_value(ConstValue::Int(min));
-    let upper_id = db.intern_const_value(ConstValue::Int(max));
+    let lower_id = ConstValue::Int(min).intern(db);
+    let upper_id = ConstValue::Int(max).intern(db);
     try_get_ty_by_name(
         db,
         internal,
@@ -151,11 +151,12 @@ pub fn try_get_ty_by_name(
     }
     .unwrap_or_else(|| panic!("{name} is not a type."));
 
-    Ok(db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
+    Ok(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
         db,
         generic_type,
         generic_args,
-    ))))
+    ))
+    .intern(db))
 }
 
 pub fn get_core_ty_by_name(
@@ -183,11 +184,8 @@ pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
         .expect("Failed to load core lib.")
         .and_then(GenericTypeId::option_from)
         .expect("Type bool was not found in core lib.");
-    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
-        db,
-        generic_type,
-        vec![],
-    )))
+    semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(db, generic_type, vec![]))
+        .intern(db)
 }
 
 // TODO(spapini): Consider making all these queries for better caching.
@@ -200,7 +198,7 @@ pub fn core_bool_enum(db: &dyn SemanticGroup) -> ConcreteEnumId {
         .expect("Failed to load core lib.")
         .and_then(EnumId::option_from)
         .expect("Type bool was not found in core lib.");
-    db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] })
+    ConcreteEnumLongId { enum_id, generic_args: vec![] }.intern(db)
 }
 
 /// Generates a ConcreteVariant instance for `false`.
@@ -317,7 +315,7 @@ pub fn get_core_enum_concrete_variant(
 
 /// Gets the unit type ().
 pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
-    db.intern_type(semantic::TypeLongId::Tuple(vec![]))
+    semantic::TypeLongId::Tuple(vec![]).intern(db)
 }
 
 /// Gets the never type ().
@@ -329,11 +327,8 @@ pub fn never_ty(db: &dyn SemanticGroup) -> TypeId {
         .expect("Failed to load core lib.")
         .and_then(GenericTypeId::option_from)
         .expect("Type bool was not found in core lib.");
-    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
-        db,
-        generic_type,
-        vec![],
-    )))
+    semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(db, generic_type, vec![]))
+        .intern(db)
 }
 
 pub enum ErrorPropagationType {
@@ -404,7 +399,7 @@ pub fn unwrap_error_propagation_type(
 pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> ExprId {
     ctx.exprs.alloc(Expr::Tuple(ExprTuple {
         items: Vec::new(),
-        ty: ctx.db.intern_type(TypeLongId::Tuple(Vec::new())),
+        ty: TypeLongId::Tuple(Vec::new()).intern(ctx.db),
         stable_ptr,
     }))
 }
@@ -499,9 +494,8 @@ fn get_core_function_impl_method(
         _ => ImplDefId::option_from(module_item_id),
     }
     .unwrap_or_else(|| panic!("{impl_name} is not an impl."));
-    let impl_id = ImplId::Concrete(
-        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] }),
-    );
+    let impl_id =
+        ImplId::Concrete(ConcreteImplLongId { impl_def_id, generic_args: vec![] }.intern(db));
     let concrete_trait_id = db.impl_concrete_trait(impl_id).unwrap();
     let function = db
         .trait_functions(concrete_trait_id.trait_id(db))
@@ -510,12 +504,13 @@ fn get_core_function_impl_method(
         .unwrap_or_else(|| {
             panic!("no {method_name} in {}.", concrete_trait_id.trait_id(db).name(db.upcast()))
         });
-    db.intern_function(FunctionLongId {
+    FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }),
             generic_args: vec![],
         },
-    })
+    }
+    .intern(db)
 }
 
 pub fn core_felt252_is_zero(db: &dyn SemanticGroup) -> FunctionId {
@@ -563,9 +558,7 @@ pub fn get_function_id(
 ) -> FunctionId {
     let generic_function = get_generic_function_id(db, module, name);
 
-    db.intern_function(FunctionLongId {
-        function: ConcreteFunction { generic_function, generic_args },
-    })
+    FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }.intern(db)
 }
 
 /// Given a core library function name, returns [GenericFunctionId].
@@ -633,7 +626,7 @@ fn get_core_concrete_trait(
     generic_args: Vec<GenericArgumentId>,
 ) -> ConcreteTraitId {
     let trait_id = get_core_trait(db, name);
-    db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args })
+    semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(db)
 }
 
 /// Given a core library trait name, returns [TraitId].
@@ -664,14 +657,9 @@ fn get_core_trait_function_infer(
         .iter()
         .map(|_| GenericArgumentId::Type(inference.new_type_var(Some(stable_ptr))))
         .collect();
-    let concrete_trait_id =
-        db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
+    let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(db);
     let trait_function = db.trait_function_by_name(trait_id, function_name).unwrap().unwrap();
-    db.intern_concrete_trait_function(ConcreteTraitGenericFunctionLongId::new(
-        db,
-        concrete_trait_id,
-        trait_function,
-    ))
+    ConcreteTraitGenericFunctionLongId::new(db, concrete_trait_id, trait_function).intern(db)
 }
 
 pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {

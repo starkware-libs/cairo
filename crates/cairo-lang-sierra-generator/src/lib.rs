@@ -70,3 +70,38 @@ impl<'a> cairo_lang_utils::LookupIntern<'a, dyn SierraGenGroup + 'a, SierraGener
         SierraGenGroup::lookup_intern_concrete_type(db.upcast(), self.clone())
     }
 }
+
+impl<'a>
+    cairo_lang_utils::Intern<'a, dyn SierraGenGroup + 'a, cairo_lang_sierra::ids::ConcreteLibfuncId>
+    for cairo_lang_sierra::program::ConcreteLibfuncLongId
+{
+    fn intern(
+        self,
+        db: &(impl cairo_lang_utils::Upcast<dyn SierraGenGroup + 'a> + ?Sized),
+    ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
+        SierraGenGroup::intern_concrete_lib_func(db.upcast(), self)
+    }
+}
+
+impl<'a> cairo_lang_utils::Intern<'a, dyn SierraGenGroup + 'a, cairo_lang_sierra::ids::FunctionId>
+    for cairo_lang_lowering::ids::FunctionId
+{
+    fn intern(
+        self,
+        db: &(impl cairo_lang_utils::Upcast<dyn SierraGenGroup + 'a> + ?Sized),
+    ) -> cairo_lang_sierra::ids::FunctionId {
+        SierraGenGroup::intern_sierra_function(db.upcast(), self)
+    }
+}
+
+impl<'a>
+    cairo_lang_utils::Intern<'a, dyn SierraGenGroup + 'a, cairo_lang_sierra::ids::ConcreteTypeId>
+    for SierraGeneratorTypeLongId
+{
+    fn intern(
+        self,
+        db: &(impl cairo_lang_utils::Upcast<dyn SierraGenGroup + 'a> + ?Sized),
+    ) -> cairo_lang_sierra::ids::ConcreteTypeId {
+        SierraGenGroup::intern_concrete_type(db.upcast(), self)
+    }
+}
