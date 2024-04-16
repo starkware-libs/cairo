@@ -23,10 +23,10 @@ use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::{
     deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
 };
+use cairo_lang_utils::{extract_matches, Intern};
 use itertools::chain;
 use serde::{Deserialize, Serialize};
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
@@ -350,7 +350,7 @@ pub fn get_selector_and_sierra_function<T: SierraIdReplacer>(
     replacer: &T,
 ) -> (Felt252, FunctionId) {
     let function_id = function_with_body.value.function_id(db.upcast()).expect("Function error.");
-    let sierra_id = replacer.replace_function_id(&db.intern_sierra_function(function_id));
+    let sierra_id = replacer.replace_function_id(&function_id.intern(db));
     let selector: Felt252 = starknet_keccak(function_with_body.alias.as_bytes()).into();
     (selector, sierra_id)
 }

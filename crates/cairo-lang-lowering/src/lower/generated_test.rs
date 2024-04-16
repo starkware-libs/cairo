@@ -5,6 +5,7 @@ use cairo_lang_diagnostics::get_location_marks;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::Intern;
 
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
@@ -60,12 +61,10 @@ fn test_generated_function(
         .unwrap();
 
         for (expr_id, lowering) in multi_lowering.generated_lowerings.iter() {
-            let generated_id = db.intern_lowering_concrete_function_with_body(
-                ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
+            let generated_id = ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                     parent: test_function.concrete_function_id,
                     element: *expr_id,
-                }),
-            );
+                }).intern(db);
 
             writeln!(
                 &mut writer,

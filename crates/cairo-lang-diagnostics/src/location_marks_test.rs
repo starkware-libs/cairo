@@ -4,6 +4,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
+use cairo_lang_utils::Intern;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
@@ -20,13 +21,14 @@ fn test_location_marks() {
     // Note that content does not end with '\n'.
 
     let db = FilesDatabaseForTesting::default();
-    let file = db.intern_file(FileLongId::Virtual(VirtualFile {
+    let file = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "name".into(),
         content: Arc::new(content.into()),
         code_mappings: Default::default(),
         kind: FileKind::Module,
-    }));
+    })
+    .intern(&db);
     let summary = db.file_summary(file).unwrap();
     let second_line = summary.line_offsets[1];
     let third_line = summary.line_offsets[2];

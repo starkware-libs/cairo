@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern, ResultHelper};
+use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern, ResultHelper};
 use defs::ids::TopLevelLanguageElementId;
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
@@ -85,8 +85,7 @@ pub fn lower_semantic_function(
     check_error_free_or_warn(db, body_diagnostics, semantic_function_id, "body")?;
 
     let mut encapsulating_ctx = EncapsulatingLoweringContext::new(db, semantic_function_id)?;
-    let function_id = db
-        .intern_lowering_function_with_body(FunctionWithBodyLongId::Semantic(semantic_function_id));
+    let function_id = FunctionWithBodyLongId::Semantic(semantic_function_id).intern(db);
     let signature = db.function_with_body_signature(semantic_function_id)?;
 
     // TODO(spapini): Build semantic_defs in semantic model.
@@ -798,20 +797,20 @@ fn lower_expr_string_literal(
     let byte_array_ty = get_core_ty_by_name(semantic_db, "ByteArray".into(), vec![]);
 
     let array_submodule = core_submodule(semantic_db, "array");
-    let data_array_new_function =
-        ctx.db.intern_lowering_function(FunctionLongId::Semantic(get_function_id(
-            semantic_db,
-            array_submodule,
-            "array_new".into(),
-            vec![GenericArgumentId::Type(bytes31_ty)],
-        )));
-    let data_array_append_function =
-        ctx.db.intern_lowering_function(FunctionLongId::Semantic(get_function_id(
-            semantic_db,
-            array_submodule,
-            "array_append".into(),
-            vec![GenericArgumentId::Type(bytes31_ty)],
-        )));
+    let data_array_new_function = FunctionLongId::Semantic(get_function_id(
+        semantic_db,
+        array_submodule,
+        "array_new".into(),
+        vec![GenericArgumentId::Type(bytes31_ty)],
+    ))
+    .intern(ctx.db);
+    let data_array_append_function = FunctionLongId::Semantic(get_function_id(
+        semantic_db,
+        array_submodule,
+        "array_append".into(),
+        vec![GenericArgumentId::Type(bytes31_ty)],
+    ))
+    .intern(ctx.db);
 
     // Emit lowering statements to build the ByteArray struct components.
     let mut data_array_usage =
@@ -1238,10 +1237,11 @@ fn lower_expr_loop(
     };
 
     // Get the function id.
-    let function = ctx.db.intern_lowering_function_with_body(FunctionWithBodyLongId::Generated {
+    let function = FunctionWithBodyLongId::Generated {
         parent: ctx.semantic_function_id,
         element: loop_expr_id,
-    });
+    }
+    .intern(ctx.db);
 
     // Generate the function.
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
@@ -1268,10 +1268,11 @@ fn call_loop_func(
     let location = ctx.get_location(stable_ptr);
 
     // Call it.
-    let function = ctx.db.intern_lowering_function(FunctionLongId::Generated(GeneratedFunction {
+    let function = FunctionLongId::Generated(GeneratedFunction {
         parent: ctx.concrete_function_id.base_semantic_function(ctx.db),
         element: loop_expr_id,
-    }));
+    })
+    .intern(ctx.db);
     let inputs = loop_signature
         .params
         .into_iter()

@@ -10,7 +10,7 @@ use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
-use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern};
+use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern};
 use itertools::chain;
 use num_traits::ToPrimitive;
 use semantic::items::constant::ConstValue;
@@ -34,18 +34,18 @@ pub fn get_concrete_type_id(
         semantic::TypeLongId::Concrete(
             semantic::ConcreteTypeId::Enum(_) | semantic::ConcreteTypeId::Struct(_),
         ) if db.is_self_referential(type_id)? => {
-            Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::CycleBreaker(type_id)))
+            Ok(SierraGeneratorTypeLongId::CycleBreaker(type_id).intern(db))
         }
 
         semantic::TypeLongId::Concrete(concrete_type_id)
             if concrete_type_id.is_phantom(db.upcast())? =>
         {
-            Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Phantom(type_id)))
+            Ok(SierraGeneratorTypeLongId::Phantom(type_id).intern(db))
         }
 
-        _ => Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
+        _ => Ok(SierraGeneratorTypeLongId::Regular(
             db.get_concrete_long_type_id(type_id)?,
-        ))),
+        ).intern(db)),
     }
 }
 
@@ -54,7 +54,7 @@ pub fn get_index_enum_type_id(
     db: &dyn SierraGenGroup,
     index_count: usize,
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
-    let unit = db.intern_type(semantic::TypeLongId::Tuple(vec![]));
+    let unit = semantic::TypeLongId::Tuple(vec![]).intern(db);
     let deps: Arc<Vec<TypeId>> = vec![unit; index_count].into();
     let generic_args = chain!(
         [Ok(SierraGenericArg::UserType(format!("index_enum_type<{}>", index_count).into()))],
@@ -67,7 +67,7 @@ pub fn get_index_enum_type_id(
         ConcreteTypeLongId { generic_id: "Enum".into(), generic_args }.into(),
     );
 
-    Ok(db.intern_concrete_type(x))
+    Ok(x.intern(db))
 }
 
 /// See [SierraGenGroup::get_concrete_long_type_id] for documentation.
@@ -148,7 +148,7 @@ pub fn get_concrete_long_type_id(
         semantic::TypeLongId::Coupon(function_id) => ConcreteTypeLongId {
             generic_id: "Coupon".into(),
             generic_args: vec![SierraGenericArg::UserFunc(
-                db.intern_sierra_function(function_id.lowered(db.upcast())),
+                function_id.lowered(db.upcast()).intern(db),
             )],
         }
         .into(),

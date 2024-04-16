@@ -65,7 +65,13 @@ pub struct ConstantData {
     pub resolver_data: Arc<ResolverData>,
 }
 
-define_short_id!(ConstValueId, ConstValue, SemanticGroup, lookup_intern_const_value);
+define_short_id!(
+    ConstValueId,
+    ConstValue,
+    SemanticGroup,
+    lookup_intern_const_value,
+    intern_const_value
+);
 semantic_object_for_id!(ConstValueId, lookup_intern_const_value, intern_const_value, ConstValue);
 impl ConstValueId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {

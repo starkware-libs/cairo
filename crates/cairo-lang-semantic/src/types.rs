@@ -8,7 +8,7 @@ use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, PHANTOM_ATTR};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, try_extract_matches, LookupIntern, OptionFrom};
+use cairo_lang_utils::{define_short_id, try_extract_matches, Intern, LookupIntern, OptionFrom};
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::Zero;
@@ -54,7 +54,7 @@ impl OptionFrom<TypeLongId> for ConcreteTypeId {
     }
 }
 
-define_short_id!(TypeId, TypeLongId, SemanticGroup, lookup_intern_type);
+define_short_id!(TypeId, TypeLongId, SemanticGroup, lookup_intern_type, intern_type);
 semantic_object_for_id!(TypeId, lookup_intern_type, intern_type, TypeLongId);
 impl TypeId {
     pub fn lookup(&self, db: &dyn SemanticGroup) -> TypeLongId {
@@ -62,7 +62,7 @@ impl TypeId {
     }
 
     pub fn missing(db: &dyn SemanticGroup, diag_added: DiagnosticAdded) -> Self {
-        db.intern_type(TypeLongId::Missing(diag_added))
+        TypeLongId::Missing(diag_added).intern(db)
     }
 
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -227,7 +227,7 @@ fn implize_type_recursive(
             *type_id = implize_type_recursive(db, *type_id, impl_ctx, inference)?
         }
     }
-    let type_to_reduce = db.intern_type(long_ty);
+    let type_to_reduce = long_ty.intern(db);
 
     // Finally, reduce/implize the impl type itself, if possible.
 
@@ -296,16 +296,16 @@ impl ConcreteTypeId {
     ) -> Self {
         match generic_ty {
             GenericTypeId::Struct(id) => ConcreteTypeId::Struct(
-                db.intern_concrete_struct(ConcreteStructLongId { struct_id: id, generic_args }),
+                ConcreteStructLongId { struct_id: id, generic_args }.intern(db),
             ),
             GenericTypeId::Enum(id) => ConcreteTypeId::Enum(
-                db.intern_concrete_enum(ConcreteEnumLongId { enum_id: id, generic_args }),
+                ConcreteEnumLongId { enum_id: id, generic_args }.intern(db),
             ),
             GenericTypeId::Extern(id) => {
-                ConcreteTypeId::Extern(db.intern_concrete_extern_type(ConcreteExternTypeLongId {
+                ConcreteTypeId::Extern(ConcreteExternTypeLongId {
                     extern_type_id: id,
                     generic_args,
-                }))
+                }.intern(db))
             }
         }
     }
@@ -379,18 +379,18 @@ impl ConcreteTypeId {
                 let long_id = id.lookup_intern(db);
                 let new_long_id =
                     ConcreteStructLongId { generic_args: new_generic_args, ..long_id };
-                *self = ConcreteTypeId::Struct(db.intern_concrete_struct(new_long_id));
+                *self = ConcreteTypeId::Struct(new_long_id.intern(db));
             }
             ConcreteTypeId::Enum(id) => {
                 let long_id = id.lookup_intern(db);
                 let new_long_id = ConcreteEnumLongId { generic_args: new_generic_args, ..long_id };
-                *self = ConcreteTypeId::Enum(db.intern_concrete_enum(new_long_id));
+                *self = ConcreteTypeId::Enum(new_long_id.intern(db));
             }
             ConcreteTypeId::Extern(id) => {
                 let long_id = id.lookup_intern(db);
                 let new_long_id =
                     ConcreteExternTypeLongId { generic_args: new_generic_args, ..long_id };
-                *self = ConcreteTypeId::Extern(db.intern_concrete_extern_type(new_long_id));
+                *self = ConcreteTypeId::Extern(new_long_id.intern(db));
             }
         }
     }
@@ -414,7 +414,8 @@ define_short_id!(
     ConcreteStructId,
     ConcreteStructLongId,
     SemanticGroup,
-    lookup_intern_concrete_struct
+    lookup_intern_concrete_struct,
+    intern_concrete_struct
 );
 semantic_object_for_id!(
     ConcreteStructId,
@@ -433,7 +434,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteStructLongId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{:?}", ConcreteTypeId::Struct(db.intern_concrete_struct(self.clone())).debug(db))
+        write!(f, "{:?}", ConcreteTypeId::Struct(self.clone().intern(db)).debug(db))
     }
 }
 
@@ -448,11 +449,17 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteEnumLongId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{:?}", ConcreteTypeId::Enum(db.intern_concrete_enum(self.clone())).debug(db))
+        write!(f, "{:?}", ConcreteTypeId::Enum(self.clone().intern(db)).debug(db))
     }
 }
 
-define_short_id!(ConcreteEnumId, ConcreteEnumLongId, SemanticGroup, lookup_intern_concrete_enum);
+define_short_id!(
+    ConcreteEnumId,
+    ConcreteEnumLongId,
+    SemanticGroup,
+    lookup_intern_concrete_enum,
+    intern_concrete_enum
+);
 semantic_object_for_id!(
     ConcreteEnumId,
     lookup_intern_concrete_enum,
@@ -474,7 +481,8 @@ define_short_id!(
     ConcreteExternTypeId,
     ConcreteExternTypeLongId,
     SemanticGroup,
-    lookup_intern_concrete_extern_type
+    lookup_intern_concrete_extern_type,
+    intern_concrete_extern_type
 );
 semantic_object_for_id!(
     ConcreteExternTypeId,
@@ -571,13 +579,13 @@ pub fn maybe_resolve_type(
                 .into_iter()
                 .map(|subexpr_syntax| resolve_type(db, diagnostics, resolver, &subexpr_syntax))
                 .collect();
-            db.intern_type(TypeLongId::Tuple(sub_tys))
+            TypeLongId::Tuple(sub_tys).intern(db)
         }
         ast::Expr::Unary(unary_syntax)
             if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::At(_)) =>
         {
             let ty = resolve_type(db, diagnostics, resolver, &unary_syntax.expr(syntax_db));
-            db.intern_type(TypeLongId::Snapshot(ty))
+            TypeLongId::Snapshot(ty).intern(db)
         }
         ast::Expr::Unary(unary_syntax)
             if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::Desnap(_)) =>
@@ -603,7 +611,7 @@ pub fn maybe_resolve_type(
                     return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeEmptySize));
                 }
             };
-            db.intern_type(TypeLongId::FixedSizeArray { type_id: ty, size })
+            TypeLongId::FixedSizeArray { type_id: ty, size }.intern(db)
         }
         _ => {
             return Err(diagnostics.report(ty_syntax, UnknownType));
@@ -639,8 +647,8 @@ pub fn extract_fixed_size_array_size(
                 get_usize_ty(db),
             );
             match &const_value {
-                ConstValue::Int(_) => Ok(Some(db.intern_const_value(const_value))),
-                ConstValue::Generic(_) => Ok(Some(db.intern_const_value(const_value))),
+                ConstValue::Int(_) => Ok(Some(const_value.intern(db))),
+                ConstValue::Generic(_) => Ok(Some(const_value.intern(db))),
 
                 _ => Err(diagnostics.report(syntax, FixedSizeArrayNonNumericSize)),
             }
@@ -818,7 +826,7 @@ pub fn peel_snapshots(db: &dyn SemanticGroup, ty: TypeId) -> (usize, TypeLongId)
 /// Wraps a type with Snapshot (`@`) `n_snapshots` times.
 pub fn wrap_in_snapshots(db: &dyn SemanticGroup, mut ty: TypeId, n_snapshots: usize) -> TypeId {
     for _ in 0..n_snapshots {
-        ty = db.intern_type(TypeLongId::Snapshot(ty));
+        ty = TypeLongId::Snapshot(ty).intern(db);
     }
     ty
 }

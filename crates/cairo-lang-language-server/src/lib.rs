@@ -47,7 +47,7 @@ use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{try_extract_matches, LookupIntern, OptionHelper, Upcast};
+use cairo_lang_utils::{try_extract_matches, Intern, LookupIntern, OptionHelper, Upcast};
 use serde_json::Value;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
@@ -181,7 +181,7 @@ fn ensure_exists_in_db(
     let mut new_overrides: OrderedHashMap<FileId, Arc<String>> = Default::default();
     for uri in open_files {
         let file_id = old_db.file_for_url(&uri);
-        let new_file_id = new_db.intern_file(file_id.lookup_intern(old_db));
+        let new_file_id = file_id.lookup_intern(old_db).intern(new_db);
         if let Some(content) = overrides.get(&file_id) {
             new_overrides.insert(new_file_id, content.clone());
         }
@@ -820,10 +820,10 @@ fn find_definition(
                     error!("`find_definition` failed: could not find module");
                 })?;
 
-            let submodule_id = db.intern_submodule(SubmoduleLongId(
+            let submodule_id = SubmoduleLongId(
                 ModuleFileId(containing_module_id, FileIndex(0)),
                 ast::ItemModule::from_syntax_node(db, parent).stable_ptr(),
-            ));
+            ).intern(db);
             return Some(resolved_generic_item_def(
                 db.upcast(),
                 ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id)),
@@ -918,71 +918,65 @@ fn lookup_item_from_ast(
     // TODO(spapini): Handle trait items.
     match node.kind(syntax_db) {
         SyntaxKind::ItemConstant => vec![LookupItemId::ModuleItem(ModuleItemId::Constant(
-            db.intern_constant(ConstantLongId(
+            ConstantLongId(
                 module_file_id,
                 ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(),
-            )),
+            ).intern(db),
         ))],
         SyntaxKind::FunctionWithBody => {
             if is_grandparent_of_kind(syntax_db, &node, SyntaxKind::ImplBody) {
-                vec![LookupItemId::ImplItem(ImplItemId::Function(db.intern_impl_function(
-                    ImplFunctionLongId(
+                vec![LookupItemId::ImplItem(ImplItemId::Function(ImplFunctionLongId(
                         module_file_id,
                         ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
-                    ),
-                )))]
+                    ).intern(db)))]
             } else {
-                vec![LookupItemId::ModuleItem(ModuleItemId::FreeFunction(db.intern_free_function(
-                    FreeFunctionLongId(
+                vec![LookupItemId::ModuleItem(ModuleItemId::FreeFunction(FreeFunctionLongId(
                         module_file_id,
                         ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
-                    ),
-                )))]
+                    ).intern(db)))]
             }
         }
         SyntaxKind::ItemExternFunction => vec![LookupItemId::ModuleItem(
-            ModuleItemId::ExternFunction(db.intern_extern_function(ExternFunctionLongId(
+            ModuleItemId::ExternFunction(ExternFunctionLongId(
                 module_file_id,
                 ast::ItemExternFunction::from_syntax_node(syntax_db, node).stable_ptr(),
-            ))),
+            ).intern(db)),
         )],
         SyntaxKind::ItemExternType => vec![LookupItemId::ModuleItem(ModuleItemId::ExternType(
-            db.intern_extern_type(ExternTypeLongId(
+            ExternTypeLongId(
                 module_file_id,
                 ast::ItemExternType::from_syntax_node(syntax_db, node).stable_ptr(),
-            )),
+            ).intern(db),
         ))],
         SyntaxKind::ItemTrait => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Trait(db.intern_trait(TraitLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Trait(TraitLongId(
                 module_file_id,
                 ast::ItemTrait::from_syntax_node(syntax_db, node).stable_ptr(),
-            ))))]
+            ).intern(db)))]
         }
         SyntaxKind::TraitItemFunction => {
-            vec![LookupItemId::TraitItem(TraitItemId::Function(db.intern_trait_function(
-                TraitFunctionLongId(
+            vec![LookupItemId::TraitItem(TraitItemId::Function(TraitFunctionLongId(
                     module_file_id,
                     ast::TraitItemFunction::from_syntax_node(syntax_db, node).stable_ptr(),
-                ),
-            )))]
+                ).intern(db)))]
         }
         SyntaxKind::ItemImpl => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(ImplDefLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Impl(ImplDefLongId(
                 module_file_id,
                 ast::ItemImpl::from_syntax_node(syntax_db, node).stable_ptr(),
-            ))))]
+            ).intern(db)))]
         }
         SyntaxKind::ItemStruct => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Struct(db.intern_struct(StructLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Struct(StructLongId(
                 module_file_id,
                 ast::ItemStruct::from_syntax_node(syntax_db, node).stable_ptr(),
-            ))))]
+            ).intern(db)))]
         }
         SyntaxKind::ItemEnum => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Enum(db.intern_enum(EnumLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Enum(EnumLongId(
                 module_file_id,
                 ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr(),
-            ))))]
+            ).intern(db)))]
         }
         SyntaxKind::ItemUse => {
             // Item use is not a lookup item, so we need to collect all UseLeaf, which are lookup
@@ -993,22 +987,22 @@ fn lookup_item_from_ast(
             for path_leaf in path_leaves {
                 let use_long_id = UseLongId(module_file_id, path_leaf.stable_ptr());
                 let lookup_item_id =
-                    LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(use_long_id)));
+                    LookupItemId::ModuleItem(ModuleItemId::Use(use_long_id.intern(db)));
                 res.push(lookup_item_id);
             }
             res
         }
         SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
-            db.intern_module_type_alias(ModuleTypeAliasLongId(
+            ModuleTypeAliasLongId(
                 module_file_id,
                 ast::ItemTypeAlias::from_syntax_node(syntax_db, node).stable_ptr(),
-            )),
+            ).intern(db),
         ))],
         SyntaxKind::ItemImplAlias => vec![LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
-            db.intern_impl_alias(ImplAliasLongId(
+            ImplAliasLongId(
                 module_file_id,
                 ast::ItemImplAlias::from_syntax_node(syntax_db, node).stable_ptr(),
-            )),
+            ).intern(db),
         ))],
         _ => vec![],
     }
@@ -1134,7 +1128,7 @@ fn update_crate_roots(
 
             match (crate_root, file_stem) {
                 (Some(crate_root), Some(file_stem)) => {
-                    let crate_id = db.intern_crate(crate_long_id);
+                    let crate_id = crate_long_id.intern(db);
                     Some((crate_id, crate_root, crate_settings, file_stem))
                 }
                 _ => None,

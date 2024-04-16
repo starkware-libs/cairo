@@ -11,7 +11,7 @@ use cairo_lang_semantic::{self as semantic, corelib, ConcreteTypeId, TypeId, Typ
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{extract_matches, LookupIntern, Upcast};
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern, Upcast};
 use defs::ids::NamedLanguageElementId;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -474,7 +474,7 @@ pub(crate) fn get_direct_callees(
         return direct_callees;
     }
     let withdraw_gas_fns = corelib::core_withdraw_gas_fns(db.upcast())
-        .map(|id| db.intern_lowering_function(FunctionLongId::Semantic(id)));
+        .map(|id| FunctionLongId::Semantic(id).intern(db));
     let mut visited = vec![false; lowered_function.blocks.len()];
     let mut stack = vec![BlockId(0)];
     while let Some(block_id) = stack.pop() {
@@ -665,17 +665,15 @@ fn semantic_function_with_body_lowering_diagnostics(
     let mut diagnostics = DiagnosticsBuilder::default();
 
     if let Ok(multi_lowering) = db.priv_function_with_body_multi_lowering(semantic_function_id) {
-        let function_id = db.intern_lowering_function_with_body(
-            ids::FunctionWithBodyLongId::Semantic(semantic_function_id),
-        );
+        let function_id = ids::FunctionWithBodyLongId::Semantic(semantic_function_id).intern(db);
         diagnostics
             .extend(db.function_with_body_lowering_diagnostics(function_id).unwrap_or_default());
         for (element, _) in multi_lowering.generated_lowerings.iter() {
             let function_id =
-                db.intern_lowering_function_with_body(ids::FunctionWithBodyLongId::Generated {
+                ids::FunctionWithBodyLongId::Generated {
                     parent: semantic_function_id,
                     element: *element,
-                });
+                }.intern(db);
             diagnostics.extend(
                 db.function_with_body_lowering_diagnostics(function_id).unwrap_or_default(),
             );

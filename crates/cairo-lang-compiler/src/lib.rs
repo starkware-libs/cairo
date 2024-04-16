@@ -83,7 +83,7 @@ pub fn compile(
 /// * `db` - Preloaded compilation database.
 /// * `main_crate_ids` - [`CrateId`]s to compile. Do not include dependencies here, only pass
 ///   top-level crates in order to eliminate unused code. Use
-///   `db.intern_crate(CrateLongId::Real(name))` in order to obtain [`CrateId`] from its name.
+///   `CrateLongId::Real(name).intern(db)` in order to obtain [`CrateId`] from its name.
 /// * `compiler_config` - The compiler configuration.
 /// # Returns
 /// * `Ok(Program)` - The compiled program.
@@ -105,7 +105,7 @@ pub fn compile_prepared_db_program(
 /// * `db` - Preloaded compilation database.
 /// * `main_crate_ids` - [`CrateId`]s to compile. Do not include dependencies here, only pass
 ///   top-level crates in order to eliminate unused code. Use
-///   `db.intern_crate(CrateLongId::Real(name))` in order to obtain [`CrateId`] from its name.
+///   `CrateLongId::Real(name).intern(db)` in order to obtain [`CrateId`] from its name.
 /// * `compiler_config` - The compiler configuration.
 /// # Returns
 /// * `Ok(SierraProgramWithDebug)` - The compiled program with debug info.
@@ -140,7 +140,7 @@ pub fn compile_prepared_db(
 /// * `db` - Preloaded compilation database.
 /// * `main_crate_ids` - [`CrateId`]s to compile. Do not include dependencies here, only pass
 ///   top-level crates in order to eliminate unused code. Use
-///   `db.intern_crate(CrateLongId::Real(name))` in order to obtain [`CrateId`] from its name.
+///   `CrateLongId::Real(name).intern(db)` in order to obtain [`CrateId`] from its name.
 /// * `compiler_config` - The compiler configuration.
 /// # Returns
 /// * `Ok(ProgramArtifact)` - The compiled program artifact with requested debug info.

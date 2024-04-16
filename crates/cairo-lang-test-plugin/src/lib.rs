@@ -47,7 +47,7 @@ const STATIC_GAS_ARG: &str = "static";
 /// # Arguments
 /// * `db` - Preloaded compilation database.
 /// * `starknet` - Add the starknet contracts to the compiled tests.
-/// * `main_crate_ids` - [`CrateId`]s to compile. Use `db.intern_crate(CrateLongId::Real(name))` in
+/// * `main_crate_ids` - [`CrateId`]s to compile. Use `CrateLongId::Real(name).intern(db)` in
 ///   order to obtain [`CrateId`] from its name.
 /// * `test_crate_ids` - [`CrateId`]s to find tests cases in. Must be a subset of `main_crate_ids`.
 /// # Returns

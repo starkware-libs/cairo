@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use cairo_lang_utils::Intern;
 use test_log::test;
 
 use super::TextOffset;
-use crate::db::FilesGroup;
 use crate::ids::{FileKind, FileLongId, VirtualFile};
 use crate::span::{TextPosition, TextWidth};
 use crate::test_utils::FilesDatabaseForTesting;
@@ -13,13 +13,14 @@ const TEST_STRING: &str = "01\n23\u{1230}\r\n456\n\n\r\n789";
 #[test]
 fn test_span() {
     let db = FilesDatabaseForTesting::default();
-    let file = db.intern_file(FileLongId::Virtual(VirtualFile {
+    let file = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "name".into(),
         content: Arc::new(TEST_STRING.into()),
         code_mappings: Default::default(),
         kind: FileKind::Module,
-    }));
+    })
+    .intern(&db);
     assert_eq!(
         TextOffset(TextWidth(0)).position_in_file(&db, file),
         Some(TextPosition { line: 0, col: 0 })
@@ -79,12 +80,13 @@ fn test_span() {
 #[should_panic(expected = "TextOffset out of range. TextWidth(21) > TextWidth(20).")]
 fn should_panic_test_span_out_of_range() {
     let db = FilesDatabaseForTesting::default();
-    let file = db.intern_file(FileLongId::Virtual(VirtualFile {
+    let file = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "name".into(),
         content: Arc::new(TEST_STRING.into()),
         code_mappings: Default::default(),
         kind: FileKind::Module,
-    }));
+    })
+    .intern(&db);
     TextOffset(TextWidth(TEST_STRING.len() as u32 + 1)).position_in_file(&db, file);
 }

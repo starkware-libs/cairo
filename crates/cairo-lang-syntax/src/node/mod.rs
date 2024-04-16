@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
-use cairo_lang_utils::{require, LookupIntern};
+use cairo_lang_utils::{require, Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
@@ -50,7 +50,7 @@ impl SyntaxNode {
             green,
             offset: TextOffset::default(),
             parent: None,
-            stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::Root(file_id, green)),
+            stable_ptr: SyntaxStablePtr::Root(file_id, green).intern(db),
         };
         Self(Arc::new(inner))
     }

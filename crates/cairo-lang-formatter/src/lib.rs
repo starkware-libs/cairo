@@ -12,6 +12,7 @@ use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_lang_utils::Intern;
 use serde::{Deserialize, Serialize};
 
 pub use crate::cairo_formatter::{CairoFormatter, FormatOutcome, StdinFmt};
@@ -45,13 +46,15 @@ pub fn get_formatted_file(
 /// # Returns
 /// * `String` - The formatted code.
 pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
-    let virtual_file = db.upcast().intern_file(FileLongId::Virtual(VirtualFile {
+    let virtual_file = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "string_to_format".into(),
         content: Arc::new(content.clone()),
         code_mappings: Default::default(),
         kind: FileKind::Module,
-    }));
+    })
+    // TODO(yg): remove upcast?
+    .intern(db.upcast());
     let mut diagnostics = DiagnosticsBuilder::default();
     let syntax_root =
         Parser::parse_file(db, &mut diagnostics, virtual_file, content.as_str()).as_syntax_node();
