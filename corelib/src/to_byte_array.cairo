@@ -84,6 +84,11 @@ fn append_formatted_to_byte_array<
     let base: u8 = base.try_into().unwrap();
     assert(base > 1, 'base must be > 1');
 
+    if (*value).is_zero() {
+        byte_array.append_byte('0');
+        return;
+    };
+
     if base <= 10 {
         append_small_digits_util(value, ref byte_array, base_nz);
     } else {
