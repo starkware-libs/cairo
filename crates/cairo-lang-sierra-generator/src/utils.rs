@@ -12,7 +12,7 @@ use cairo_lang_sierra::extensions::{
 };
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program::{self, GenericArg};
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, LookupIntern};
 use semantic::items::constant::ConstValue;
 use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
@@ -304,7 +304,7 @@ pub fn get_libfunc_signature(
     db: &dyn SierraGenGroup,
     concrete_lib_func_id: ConcreteLibfuncId,
 ) -> LibfuncSignature {
-    let libfunc_long_id = db.lookup_intern_concrete_lib_func(concrete_lib_func_id.clone());
+    let libfunc_long_id = concrete_lib_func_id.lookup_intern(db);
     CoreLibfunc::specialize_signature_by_id(
         &SierraSignatureSpecializationContext(db),
         &libfunc_long_id.generic_id,
@@ -316,7 +316,7 @@ pub fn get_libfunc_signature(
             ..
         } = err
         {
-            let function = db.lookup_intern_sierra_function(function);
+            let function = function.lookup_intern(db);
             panic!("Missing function {:?}", function.debug(db));
         }
         // If panic happens here, make sure the specified libfunc name is in one of the STR_IDs of
@@ -382,7 +382,7 @@ pub fn get_concrete_libfunc_id(
 
     let semantic =
         extract_matches!(function.lookup(db.upcast()), lowering::ids::FunctionLongId::Semantic);
-    let concrete_function = db.lookup_intern_function(semantic).function;
+    let concrete_function = semantic.lookup_intern(db).function;
     let extern_id = extract_matches!(concrete_function.generic_function, GenericFunctionId::Extern);
 
     let mut generic_args = vec![];
@@ -394,7 +394,7 @@ pub fn get_concrete_libfunc_id(
             }
             semantic::GenericArgumentId::Constant(value_id) => {
                 generic_args.push(GenericArg::Value(extract_matches!(
-                    db.lookup_intern_const_value(*value_id),
+                    value_id.lookup_intern(db),
                     ConstValue::Int,
                     "Only integer constants are supported."
                 )))
