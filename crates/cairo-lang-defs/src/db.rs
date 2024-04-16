@@ -18,7 +18,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Intern, Upcast};
 use itertools::Itertools;
 
 use crate::ids::*;
@@ -543,13 +543,14 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                 }
 
                 if let Some(generated) = result.code {
-                    let new_file = db.intern_file(FileLongId::Virtual(VirtualFile {
+                    let new_file = FileLongId::Virtual(VirtualFile {
                         parent: Some(module_file),
                         name: generated.name,
                         content: Arc::new(generated.content),
                         code_mappings: Arc::new(generated.code_mappings),
                         kind: FileKind::Module,
-                    }));
+                    })
+                    .intern(db);
                     generated_file_infos.push(Some(GeneratedFileInfo {
                         aux_data: generated.aux_data,
                         origin: module_file_id,
@@ -574,14 +575,12 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
             );
             match item_ast {
                 ast::ModuleItem::Constant(constant) => {
-                    let item_id =
-                        db.intern_constant(ConstantLongId(module_file_id, constant.stable_ptr()));
+                    let item_id = ConstantLongId(module_file_id, constant.stable_ptr()).intern(db);
                     constants.insert(item_id, constant);
                     items.push(ModuleItemId::Constant(item_id));
                 }
                 ast::ModuleItem::Module(module) => {
-                    let item_id =
-                        db.intern_submodule(SubmoduleLongId(module_file_id, module.stable_ptr()));
+                    let item_id = SubmoduleLongId(module_file_id, module.stable_ptr()).intern(db);
                     submodules.insert(item_id, module);
                     items.push(ModuleItemId::Submodule(item_id));
                 }
@@ -589,69 +588,59 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     let path_leaves = get_all_path_leaves(db.upcast(), us.use_path(syntax_db));
                     for path_leaf in path_leaves {
                         let path_leaf_id =
-                            db.intern_use(UseLongId(module_file_id, path_leaf.stable_ptr()));
+                            UseLongId(module_file_id, path_leaf.stable_ptr()).intern(db);
                         uses.insert(path_leaf_id, path_leaf);
                         items.push(ModuleItemId::Use(path_leaf_id));
                     }
                 }
                 ast::ModuleItem::FreeFunction(function) => {
-                    let item_id = db.intern_free_function(FreeFunctionLongId(
-                        module_file_id,
-                        function.stable_ptr(),
-                    ));
+                    let item_id =
+                        FreeFunctionLongId(module_file_id, function.stable_ptr()).intern(db);
                     free_functions.insert(item_id, function);
                     items.push(ModuleItemId::FreeFunction(item_id));
                 }
                 ast::ModuleItem::ExternFunction(extern_function) => {
-                    let item_id = db.intern_extern_function(ExternFunctionLongId(
-                        module_file_id,
-                        extern_function.stable_ptr(),
-                    ));
+                    let item_id =
+                        ExternFunctionLongId(module_file_id, extern_function.stable_ptr())
+                            .intern(db);
                     extern_functions.insert(item_id, extern_function);
                     items.push(ModuleItemId::ExternFunction(item_id));
                 }
                 ast::ModuleItem::ExternType(extern_type) => {
-                    let item_id = db.intern_extern_type(ExternTypeLongId(
-                        module_file_id,
-                        extern_type.stable_ptr(),
-                    ));
+                    let item_id =
+                        ExternTypeLongId(module_file_id, extern_type.stable_ptr()).intern(db);
                     extern_types.insert(item_id, extern_type);
                     items.push(ModuleItemId::ExternType(item_id));
                 }
                 ast::ModuleItem::Trait(trt) => {
-                    let item_id = db.intern_trait(TraitLongId(module_file_id, trt.stable_ptr()));
+                    let item_id = TraitLongId(module_file_id, trt.stable_ptr()).intern(db);
                     traits.insert(item_id, trt);
                     items.push(ModuleItemId::Trait(item_id));
                 }
                 ast::ModuleItem::Impl(imp) => {
-                    let item_id = db.intern_impl(ImplDefLongId(module_file_id, imp.stable_ptr()));
+                    let item_id = ImplDefLongId(module_file_id, imp.stable_ptr()).intern(db);
                     impls.insert(item_id, imp);
                     items.push(ModuleItemId::Impl(item_id));
                 }
                 ast::ModuleItem::Struct(structure) => {
-                    let item_id =
-                        db.intern_struct(StructLongId(module_file_id, structure.stable_ptr()));
+                    let item_id = StructLongId(module_file_id, structure.stable_ptr()).intern(db);
                     structs.insert(item_id, structure);
                     items.push(ModuleItemId::Struct(item_id));
                 }
                 ast::ModuleItem::Enum(enm) => {
-                    let item_id = db.intern_enum(EnumLongId(module_file_id, enm.stable_ptr()));
+                    let item_id = EnumLongId(module_file_id, enm.stable_ptr()).intern(db);
                     enums.insert(item_id, enm);
                     items.push(ModuleItemId::Enum(item_id));
                 }
                 ast::ModuleItem::TypeAlias(type_alias) => {
-                    let item_id = db.intern_module_type_alias(ModuleTypeAliasLongId(
-                        module_file_id,
-                        type_alias.stable_ptr(),
-                    ));
+                    let item_id =
+                        ModuleTypeAliasLongId(module_file_id, type_alias.stable_ptr()).intern(db);
                     type_aliases.insert(item_id, type_alias);
                     items.push(ModuleItemId::TypeAlias(item_id));
                 }
                 ast::ModuleItem::ImplAlias(impl_alias) => {
-                    let item_id = db.intern_impl_alias(ImplAliasLongId(
-                        module_file_id,
-                        impl_alias.stable_ptr(),
-                    ));
+                    let item_id =
+                        ImplAliasLongId(module_file_id, impl_alias.stable_ptr()).intern(db);
                     impl_aliases.insert(item_id, impl_alias);
                     items.push(ModuleItemId::ImplAlias(item_id));
                 }

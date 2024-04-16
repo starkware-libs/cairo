@@ -81,7 +81,7 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut dyn SemanticGroup) {
     }
 
     for Root { crate_long_id, crate_configuration, non_lib_source_mod } in crate_roots {
-        let crate_id = db.intern_crate(crate_long_id);
+        let crate_id = crate_long_id.intern(db);
         db.set_crate_config(crate_id, Some(crate_configuration));
 
         if let Some(file_stem) = non_lib_source_mod {

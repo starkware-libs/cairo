@@ -32,6 +32,7 @@ use itertools::{chain, zip_eq, Itertools};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use smol_str::SmolStr;
+use utils::Intern;
 
 use super::inference::canonic::ResultNoErrEx;
 use super::inference::conform::InferenceConform;
@@ -415,13 +416,14 @@ fn compute_expr_inline_macro_semantic(
     };
 
     // Create a file
-    let new_file = ctx.db.intern_file(FileLongId::Virtual(VirtualFile {
+    let new_file = FileLongId::Virtual(VirtualFile {
         parent: Some(ctx.diagnostics.file_id),
         name: code.name,
         content: Arc::new(code.content),
         code_mappings: Arc::new(code.code_mappings),
         kind: FileKind::Expr,
-    }));
+    })
+    .intern(ctx.db);
     let expr_syntax = ctx.db.file_expr_syntax(new_file)?;
     let old_file = std::mem::replace(&mut ctx.diagnostics.file_id, new_file);
     let expr = compute_expr_semantic(ctx, &expr_syntax, result_type);
@@ -444,7 +446,7 @@ fn compute_expr_unary_semantic(
                     let inference = &mut ctx.resolver.inference();
                     let inner_expr_stable_ptr = syntax.expr(syntax_db).stable_ptr().untyped();
                     let inner_result_type = inference.new_type_var(Some(inner_expr_stable_ptr));
-                    let actual_ty = ctx.db.intern_type(TypeLongId::Snapshot(inner_result_type));
+                    let actual_ty = TypeLongId::Snapshot(inner_result_type).intern(ctx.db);
                     // TODO(yuval): the conform here fails if result_type is not a snapshot. In this
                     // case, the diagnostics would contain `actual_type` which is a snapshot of a
                     // type var (e.g. @?1), as the type var was not yet
@@ -468,7 +470,7 @@ fn compute_expr_unary_semantic(
             );
             let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db), result_type_arg);
 
-            let ty = ctx.db.intern_type(TypeLongId::Snapshot(expr.ty()));
+            let ty = TypeLongId::Snapshot(expr.ty()).intern(ctx.db);
             Ok(Expr::Snapshot(ExprSnapshot {
                 inner: expr.id,
                 ty,
@@ -483,7 +485,7 @@ fn compute_expr_unary_semantic(
                     let inference = &mut ctx.resolver.inference();
                     let inner_result_type =
                         inference.new_type_var(Some(syntax.expr(syntax_db).stable_ptr().untyped()));
-                    let snapped_result_type = ctx.db.intern_type(TypeLongId::Snapshot(result_type));
+                    let snapped_result_type = TypeLongId::Snapshot(result_type).intern(ctx.db);
                     if let Err(err_set) =
                         inference.conform_ty(inner_result_type, snapped_result_type)
                     {
@@ -522,7 +524,7 @@ fn compute_expr_unary_semantic(
                             let desnap_expr_type = inference
                                 .new_type_var(Some(syntax.expr(syntax_db).stable_ptr().untyped()));
                             let desnapped_expr_type_var =
-                                ctx.db.intern_type(TypeLongId::Snapshot(desnap_expr_type));
+                                TypeLongId::Snapshot(desnap_expr_type).intern(ctx.db);
                             if let Err(err_set) =
                                 inference.conform_ty(desnapped_expr_type_var, desnapped_expr_type)
                             {
@@ -751,11 +753,11 @@ fn call_core_binary_op(
     ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
 
     if snapshot {
-        let ty = ctx.db.intern_type(TypeLongId::Snapshot(lexpr.ty()));
+        let ty = TypeLongId::Snapshot(lexpr.ty()).intern(ctx.db);
         let expr =
             Expr::Snapshot(ExprSnapshot { inner: lexpr.id, ty, stable_ptr: lexpr.stable_ptr() });
         lexpr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
-        let ty = ctx.db.intern_type(TypeLongId::Snapshot(rexpr.ty()));
+        let ty = TypeLongId::Snapshot(rexpr.ty()).intern(ctx.db);
         let expr =
             Expr::Snapshot(ExprSnapshot { inner: rexpr.id, ty, stable_ptr: rexpr.stable_ptr() });
         rexpr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
@@ -796,7 +798,7 @@ fn compute_expr_tuple_semantic(
                 .iter()
                 .map(|expr_syntax| inference.new_type_var(Some(expr_syntax.stable_ptr().untyped())))
                 .collect();
-            let actual_ty = db.intern_type(TypeLongId::Tuple(inner_result_types.clone()));
+            let actual_ty = TypeLongId::Tuple(inner_result_types.clone()).intern(db);
             if let Err(err_set) = inference.conform_ty(actual_ty, result_type) {
                 let diag_added = ctx.diagnostics.report_by_ptr(
                     result_type_stable_ptr,
@@ -820,7 +822,7 @@ fn compute_expr_tuple_semantic(
     assert_eq!(inner_result_types.len(), 0);
     Ok(Expr::Tuple(ExprTuple {
         items,
-        ty: db.intern_type(TypeLongId::Tuple(types)),
+        ty: TypeLongId::Tuple(types).intern(db),
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
@@ -834,7 +836,7 @@ fn compute_expr_fixed_size_array_semantic(
     let syntax_db = db.upcast();
     let exprs = syntax.exprs(syntax_db).elements(syntax_db);
     let fixed_size_array_ty =
-        |type_id, size: ConstValueId| db.intern_type(TypeLongId::FixedSizeArray { type_id, size });
+        |type_id, size: ConstValueId| TypeLongId::FixedSizeArray { type_id, size }.intern(db);
     let first_expr_semantic = |ctx: &mut ComputationContext<'_>,
                                first_expr: &ast::Expr,
                                size: ConstValueId| {
@@ -883,7 +885,7 @@ fn compute_expr_fixed_size_array_semantic(
             size_const_id,
         )
     } else if let Some((first_expr, tail_exprs)) = exprs.split_first() {
-        let size = db.intern_const_value(ConstValue::Int((tail_exprs.len() + 1).into()));
+        let size = ConstValue::Int((tail_exprs.len() + 1).into()).intern(db);
         let first_expr_semantic = first_expr_semantic(ctx, first_expr, size);
         let mut items: Vec<ExprId> = vec![first_expr_semantic.id];
         // The type of the first expression is the type of the array. All other expressions must
@@ -912,12 +914,12 @@ fn compute_expr_fixed_size_array_semantic(
         (
             FixedSizeArrayItems::Items(vec![]),
             ctx.resolver.inference().new_type_var(Some(syntax.stable_ptr().untyped())),
-            db.intern_const_value(ConstValue::Int(0.into())),
+            ConstValue::Int(0.into()).intern(db),
         )
     };
     Ok(Expr::FixedSizeArray(ExprFixedSizeArray {
         items,
-        ty: db.intern_type(TypeLongId::FixedSizeArray { type_id, size }),
+        ty: TypeLongId::FixedSizeArray { type_id, size }.intern(db),
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
@@ -939,7 +941,7 @@ fn compute_expr_function_call_semantic(
         ResolvedConcreteItem::Variant(concrete_variant) => {
             let concrete_enum_id = concrete_variant.concrete_enum_id;
             let concrete_enum_type =
-                db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)));
+                TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)).intern(db);
             if concrete_enum_id.has_attr(db, PHANTOM_ATTR)? {
                 ctx.diagnostics.report(syntax, CannotCreateInstancesOfPhantomTypes);
             }
@@ -1793,7 +1795,7 @@ fn compute_method_function_call_data(
     let first_param = signature.params.into_iter().next().unwrap();
     let mut fixed_expr = self_expr.clone();
     for _ in 0..n_snapshots {
-        let ty = ctx.db.intern_type(TypeLongId::Snapshot(fixed_expr.ty()));
+        let ty = TypeLongId::Snapshot(fixed_expr.ty()).intern(ctx.db);
         let expr = Expr::Snapshot(ExprSnapshot {
             inner: fixed_expr.id,
             ty,
@@ -1944,11 +1946,9 @@ fn maybe_compute_pattern_semantic(
             )
             .ok_or_else(|| ctx.diagnostics.report(&pattern_struct.path(syntax_db), NotAType))?;
             let inference = &mut ctx.resolver.inference();
-            inference
-                .conform_ty(pattern_ty, ctx.db.intern_type(peel_snapshots(ctx.db, ty).1))
-                .map_err(|err_set| {
-                    inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr)
-                })?;
+            inference.conform_ty(pattern_ty, peel_snapshots(ctx.db, ty).1.intern(ctx.db)).map_err(
+                |err_set| inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr),
+            )?;
             let ty = ctx.reduce_ty(ty);
             // Peel all snapshot wrappers.
             let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
@@ -2209,9 +2209,7 @@ fn create_variable_pattern(
 
     let var_id = match or_pattern_variables_map.get(&identifier.text(syntax_db)) {
         Some(var) => var.id,
-        None => ctx
-            .db
-            .intern_local_var(LocalVarLongId(ctx.resolver.module_file_id, identifier.stable_ptr())),
+        None => LocalVarLongId(ctx.resolver.module_file_id, identifier.stable_ptr()).intern(ctx.db),
     };
     let is_mut = match compute_mutability(ctx.diagnostics, syntax_db, modifier_list) {
         Mutability::Immutable => false,
@@ -2397,7 +2395,7 @@ fn struct_ctor_expr(
         concrete_struct_id,
         members: member_exprs.into_iter().filter_map(|(x, y)| Some((x, y?))).collect(),
         base_struct: base_struct.map(|(x, _)| x),
-        ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))),
+        ty: TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)).intern(db),
         stable_ptr: ctor_syntax.stable_ptr().into(),
     }))
 }
@@ -2439,8 +2437,7 @@ fn new_literal_expr(
     // Numeric trait.
     let trait_id = numeric_literal_trait(ctx.db);
     let generic_args = vec![GenericArgumentId::Type(ty)];
-    let concrete_trait_id =
-        ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
+    let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
     inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context).map_err(
@@ -2491,8 +2488,7 @@ fn new_string_literal_expr(
     // String trait.
     let trait_id = get_core_trait(ctx.db, "StringLiteral".into());
     let generic_args = vec![GenericArgumentId::Type(ty)];
-    let concrete_trait_id =
-        ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
+    let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
     inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context).map_err(
@@ -2760,7 +2756,7 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
         })),
         ResolvedConcreteItem::ConstGenericParameter(generic_param_id) => {
             Ok(Expr::ParamConstant(ExprParamConstant {
-                const_value_id: db.intern_const_value(ConstValue::Generic(generic_param_id)),
+                const_value_id: ConstValue::Generic(generic_param_id).intern(db),
                 ty: extract_matches!(
                     db.generic_param_semantic(generic_param_id)?,
                     GenericParam::Const
@@ -2775,7 +2771,7 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
             Ok(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
                 variant,
                 value_expr: unit_expr(ctx, stable_ptr),
-                ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id))),
+                ty: TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)).intern(db),
                 stable_ptr,
             }))
         }
@@ -2927,7 +2923,7 @@ fn maybe_pop_coupon_argument(
         let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_file_id);
         if name_terminal.text(ctx.db.upcast()) == "__coupon__" && coupons_enabled {
             // Check that the argument type is correct.
-            let expected_ty = ctx.db.intern_type(TypeLongId::Coupon(function_id));
+            let expected_ty = TypeLongId::Coupon(function_id).intern(ctx.db);
             let arg_typ = arg.ty();
             let actual_ty = ctx.reduce_ty(arg_typ);
             if !arg_typ.is_missing(ctx.db) {

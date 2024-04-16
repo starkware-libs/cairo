@@ -2,7 +2,7 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_sierra::extensions::lib_func::{SierraApChange, SignatureSpecializationContext};
 use cairo_lang_sierra::extensions::type_specialization_context::TypeSpecializationContext;
 use cairo_lang_sierra::program::ConcreteTypeLongId;
-use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::{Intern, LookupIntern};
 
 use crate::db::SierraGenGroup;
 
@@ -26,9 +26,12 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
         id: cairo_lang_sierra::ids::GenericTypeId,
         generic_args: &[cairo_lang_sierra::program::GenericArg],
     ) -> Option<cairo_lang_sierra::ids::ConcreteTypeId> {
-        Some(self.0.intern_concrete_type(crate::db::SierraGeneratorTypeLongId::Regular(
-            ConcreteTypeLongId { generic_id: id, generic_args: generic_args.to_vec() }.into(),
-        )))
+        Some(
+            crate::db::SierraGeneratorTypeLongId::Regular(
+                ConcreteTypeLongId { generic_id: id, generic_args: generic_args.to_vec() }.into(),
+            )
+            .intern(self.0),
+        )
     }
 
     fn try_get_function_signature(

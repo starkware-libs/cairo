@@ -4,6 +4,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
+use cairo_lang_utils::Intern;
 use indoc::indoc;
 use test_log::test;
 
@@ -34,13 +35,14 @@ impl DiagnosticEntry for SimpleDiag {
 
 fn setup() -> (FilesDatabaseForTesting, FileId) {
     let db_val = FilesDatabaseForTesting::default();
-    let file_id = db_val.intern_file(FileLongId::Virtual(VirtualFile {
+    let file_id = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "dummy_file.sierra".into(),
         content: Arc::new("abcd\nefg.\n".into()),
         code_mappings: Default::default(),
         kind: FileKind::Module,
-    }));
+    })
+    .intern(&db_val);
     (db_val, file_id)
 }
 
