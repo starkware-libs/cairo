@@ -17,7 +17,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{require, try_extract_matches, LookupIntern};
+use cairo_lang_utils::{require, try_extract_matches, Intern, LookupIntern};
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -356,7 +356,7 @@ impl<'db> Resolver<'db> {
                         db,
                         segments.next().unwrap(),
                         ResolvedConcreteItem::Module(ModuleId::CrateRoot(
-                            db.intern_crate(CrateLongId::Real(identifier.text(syntax_db))),
+                            CrateLongId::Real(identifier.text(syntax_db)).intern(db),
                         )),
                     )
                 }
@@ -477,7 +477,7 @@ impl<'db> Resolver<'db> {
                         db,
                         segments.next().unwrap(),
                         ResolvedGenericItem::Module(ModuleId::CrateRoot(
-                            db.intern_crate(CrateLongId::Real(identifier.text(syntax_db))),
+                            CrateLongId::Real(identifier.text(syntax_db)).intern(db),
                         )),
                     )
                 }
@@ -579,13 +579,12 @@ impl<'db> Resolver<'db> {
 
                 match trait_item_id {
                     TraitItemId::Function(trait_function_id) => {
-                        let concrete_trait_function = self.db.intern_concrete_trait_function(
-                            ConcreteTraitGenericFunctionLongId::new(
-                                self.db,
-                                *concrete_trait_id,
-                                trait_function_id,
-                            ),
-                        );
+                        let concrete_trait_function = ConcreteTraitGenericFunctionLongId::new(
+                            self.db,
+                            *concrete_trait_id,
+                            trait_function_id,
+                        )
+                        .intern(self.db);
                         let impl_lookup_context = self.impl_lookup_context();
                         let identifier_stable_ptr = identifier.stable_ptr().untyped();
                         let generic_function = self
@@ -611,12 +610,12 @@ impl<'db> Resolver<'db> {
                         )?))
                     }
                     TraitItemId::Type(trait_type_id) => {
-                        let concrete_trait_type =
-                            self.db.intern_concrete_trait_type(ConcreteTraitTypeLongId::new(
-                                self.db,
-                                *concrete_trait_id,
-                                trait_type_id,
-                            ));
+                        let concrete_trait_type = ConcreteTraitTypeLongId::new(
+                            self.db,
+                            *concrete_trait_id,
+                            trait_type_id,
+                        )
+                        .intern(self.db);
                         let impl_lookup_context = self.impl_lookup_context();
                         let identifier_stable_ptr = identifier.stable_ptr().untyped();
                         let ty = self
@@ -671,7 +670,7 @@ impl<'db> Resolver<'db> {
 
                         let ty = implize_type(
                             self.db,
-                            self.db.intern_type(type_long_id),
+                            type_long_id.intern(self.db),
                             self.trait_or_impl_ctx.impl_context(),
                             &mut self.inference(),
                         )?;
@@ -689,9 +688,7 @@ impl<'db> Resolver<'db> {
                 ) {
                     return Err(diagnostics.report(identifier, CouponForExternFunctionNotAllowed));
                 }
-                Ok(ResolvedConcreteItem::Type(
-                    self.db.intern_type(TypeLongId::Coupon(*function_id)),
-                ))
+                Ok(ResolvedConcreteItem::Type(TypeLongId::Coupon(*function_id).intern(self.db)))
             }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }
@@ -826,7 +823,7 @@ impl<'db> Resolver<'db> {
         if let Some(generic_param_id) = self.data.generic_param_by_name.get(&ident) {
             let item = match generic_param_id.kind(self.db.upcast()) {
                 GenericKind::Type => ResolvedConcreteItem::Type(
-                    self.db.intern_type(TypeLongId::GenericParameter(*generic_param_id)),
+                    TypeLongId::GenericParameter(*generic_param_id).intern(self.db),
                 ),
                 GenericKind::Const => {
                     ResolvedConcreteItem::ConstGenericParameter(*generic_param_id)
@@ -858,7 +855,7 @@ impl<'db> Resolver<'db> {
 
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
-        let crate_id = self.db.intern_crate(CrateLongId::Real(ident));
+        let crate_id = CrateLongId::Real(ident).intern(self.db);
         require(self.db.crate_config(crate_id).is_none())?;
         // Last resort, use the `prelude` module as the base module.
         Some(self.prelude_submodule())
@@ -895,7 +892,7 @@ impl<'db> Resolver<'db> {
         let generic_args =
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
 
-        Ok(self.db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }))
+        Ok(ConcreteTraitLongId { trait_id, generic_args }.intern(self.db))
     }
 
     /// Specializes an impl.
@@ -915,7 +912,7 @@ impl<'db> Resolver<'db> {
         let generic_args =
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
 
-        Ok(self.db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args }))
+        Ok(ConcreteImplLongId { impl_def_id, generic_args }.intern(self.db))
     }
 
     /// Specializes a generic function.
@@ -932,9 +929,8 @@ impl<'db> Resolver<'db> {
         let generic_args =
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
 
-        Ok(self.db.intern_function(FunctionLongId {
-            function: ConcreteFunction { generic_function, generic_args },
-        }))
+        Ok(FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }
+            .intern(self.db))
     }
 
     /// Specializes a generic type.
@@ -953,11 +949,8 @@ impl<'db> Resolver<'db> {
         let generic_args =
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
 
-        Ok(self.db.intern_type(TypeLongId::Concrete(ConcreteTypeId::new(
-            self.db,
-            generic_type,
-            generic_args,
-        ))))
+        Ok(TypeLongId::Concrete(ConcreteTypeId::new(self.db, generic_type, generic_args))
+            .intern(self.db))
     }
 
     pub fn impl_lookup_context(&self) -> ImplLookupContext {
@@ -1106,11 +1099,11 @@ impl<'db> Resolver<'db> {
                 );
 
                 match const_value {
-                    ConstValue::Int(value) => GenericArgumentId::Constant(
-                        self.db.intern_const_value(ConstValue::Int(value)),
-                    ),
+                    ConstValue::Int(value) => {
+                        GenericArgumentId::Constant(ConstValue::Int(value).intern(self.db))
+                    }
                     ConstValue::Generic(generic_param_id) => GenericArgumentId::Constant(
-                        self.db.intern_const_value(ConstValue::Generic(generic_param_id)),
+                        ConstValue::Generic(generic_param_id).intern(self.db),
                     ),
                     ConstValue::Missing(err) => return Err(err),
                     _ => unreachable!("Invalid const value."),
@@ -1208,15 +1201,13 @@ fn resolve_self_segment(
         TraitOrImplContext::Trait(TraitContext { trait_id }) => {
             // TODO(yuval): use generics
             let concrete_trait_id =
-                db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args: vec![] });
+                ConcreteTraitLongId { trait_id, generic_args: vec![] }.intern(db);
             Ok(ResolvedConcreteItem::Trait(concrete_trait_id))
         }
         TraitOrImplContext::Impl(ImplContext { impl_def_id }) => {
-            let impl_id =
-                ImplId::Concrete(db.intern_concrete_impl(ConcreteImplLongId {
-                    impl_def_id,
-                    generic_args: vec![],
-                }));
+            let impl_id = ImplId::Concrete(
+                ConcreteImplLongId { impl_def_id, generic_args: vec![] }.intern(db),
+            );
             Ok(ResolvedConcreteItem::Impl(impl_id))
         }
     })

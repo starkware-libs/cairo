@@ -18,7 +18,7 @@ use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, LookupIntern, OptionFrom, Upcast};
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern, OptionFrom, Upcast};
 use once_cell::sync::Lazy;
 
 use crate::db::{SemanticDatabase, SemanticGroup};
@@ -120,13 +120,14 @@ pub fn setup_test_crate_ex(
     content: &str,
     crate_settings: Option<&str>,
 ) -> CrateId {
-    let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
+    let file_id = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "lib.cairo".into(),
         content: Arc::new(content.into()),
         code_mappings: Default::default(),
         kind: FileKind::Module,
-    }));
+    })
+    .intern(db);
 
     let settings: CrateSettings = if let Some(crate_settings) = crate_settings {
         toml::from_str(crate_settings).expect("Invalid config.")
@@ -141,7 +142,7 @@ pub fn setup_test_crate_ex(
         }
     };
 
-    db.intern_crate(CrateLongId::Virtual {
+    CrateLongId::Virtual {
         name: "test".into(),
         config: CrateConfiguration {
             root: Directory::Virtual {
@@ -150,7 +151,8 @@ pub fn setup_test_crate_ex(
             },
             settings,
         },
-    })
+    }
+    .intern(db)
 }
 
 /// See [setup_test_crate_ex].

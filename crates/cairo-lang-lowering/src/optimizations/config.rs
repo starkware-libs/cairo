@@ -3,6 +3,7 @@ use std::sync::Arc;
 use cairo_lang_semantic::corelib;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_lang_utils::Intern;
 
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId};
@@ -67,9 +68,13 @@ pub fn priv_movable_function_ids(db: &dyn LoweringGroup) -> Arc<UnorderedHashSet
                 continue;
             }
 
-            return db.intern_lowering_function(FunctionLongId::Semantic(
-                corelib::get_function_id(semantic_db, module, path_item.into(), vec![]),
-            ));
+            return FunctionLongId::Semantic(corelib::get_function_id(
+                semantic_db,
+                module,
+                path_item.into(),
+                vec![],
+            ))
+            .intern(db);
         }
 
         panic!("Got empty string as movable_function");

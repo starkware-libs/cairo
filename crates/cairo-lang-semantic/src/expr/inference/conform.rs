@@ -1,4 +1,4 @@
-use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::zip_eq;
 
 use super::canonic::ResultNoErrEx;
@@ -122,7 +122,7 @@ impl<'db> InferenceConform for Inference<'db> {
                     concrete0.generic_type(self.db),
                     gargs,
                 ));
-                Ok((self.db.intern_type(long_ty), n_snapshots))
+                Ok((long_ty.intern(self.db), n_snapshots))
             }
             TypeLongId::Tuple(tys0) => {
                 let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
@@ -135,7 +135,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 let tys = zip_eq(tys0, tys1)
                     .map(|(subty0, subty1)| self.conform_ty(subty0, subty1))
                     .collect::<Result<Vec<_>, _>>()?;
-                Ok((self.db.intern_type(TypeLongId::Tuple(tys)), n_snapshots))
+                Ok((TypeLongId::Tuple(tys).intern(self.db), n_snapshots))
             }
             TypeLongId::FixedSizeArray { type_id, size } => {
                 let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
@@ -144,17 +144,14 @@ impl<'db> InferenceConform for Inference<'db> {
                 };
                 let size = self.conform_const(size, size1)?;
                 let ty = self.conform_ty(type_id, type_id1)?;
-                Ok((
-                    self.db.intern_type(TypeLongId::FixedSizeArray { type_id: ty, size }),
-                    n_snapshots,
-                ))
+                Ok((TypeLongId::FixedSizeArray { type_id: ty, size }.intern(self.db), n_snapshots))
             }
             TypeLongId::Snapshot(ty0) => {
                 let TypeLongId::Snapshot(ty1) = long_ty1 else {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
                 let (ty, n_snapshots) = self.conform_ty_ex(ty0, ty1, ty0_is_self)?;
-                Ok((self.db.intern_type(TypeLongId::Snapshot(ty)), n_snapshots))
+                Ok((TypeLongId::Snapshot(ty).intern(self.db), n_snapshots))
             }
             TypeLongId::GenericParameter(_) | TypeLongId::ImplType(_) => {
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
@@ -180,11 +177,13 @@ impl<'db> InferenceConform for Inference<'db> {
                     self.conform_generic_args(&func0.generic_args, &func1.generic_args)?;
 
                 Ok((
-                    self.db.intern_type(TypeLongId::Coupon(self.db.intern_function(
+                    TypeLongId::Coupon(
                         FunctionLongId {
                             function: ConcreteFunction { generic_function, generic_args },
-                        },
-                    ))),
+                        }
+                        .intern(self.db),
+                    )
+                    .intern(self.db),
                     n_snapshots,
                 ))
             }
@@ -319,10 +318,10 @@ impl<'db> InferenceConform for Inference<'db> {
                 let gargs0 = concrete0.generic_args;
                 let gargs1 = concrete1.generic_args;
                 let generic_args = self.conform_generic_args(&gargs0, &gargs1)?;
-                Ok(ImplId::Concrete(self.db.intern_concrete_impl(ConcreteImplLongId {
-                    impl_def_id: concrete0.impl_def_id,
-                    generic_args,
-                })))
+                Ok(ImplId::Concrete(
+                    ConcreteImplLongId { impl_def_id: concrete0.impl_def_id, generic_args }
+                        .intern(self.db),
+                ))
             }
             ImplId::GenericParameter(_) => {
                 Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
@@ -345,9 +344,7 @@ impl<'db> InferenceConform for Inference<'db> {
             }));
         }
         let generic_args = self.conform_generic_args(&trt0.generic_args, &trt1.generic_args)?;
-        Ok(self
-            .db
-            .intern_concrete_trait(ConcreteTraitLongId { trait_id: trt0.trait_id, generic_args }))
+        Ok(ConcreteTraitLongId { trait_id: trt0.trait_id, generic_args }.intern(self.db))
     }
 
     fn conform_generic_function(
