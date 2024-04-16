@@ -2,6 +2,7 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_sierra::extensions::lib_func::{SierraApChange, SignatureSpecializationContext};
 use cairo_lang_sierra::extensions::type_specialization_context::TypeSpecializationContext;
 use cairo_lang_sierra::program::ConcreteTypeLongId;
+use cairo_lang_utils::LookupIntern;
 
 use crate::db::SierraGenGroup;
 
@@ -48,9 +49,8 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
         &self,
         function_id: &cairo_lang_sierra::ids::FunctionId,
     ) -> Option<SierraApChange> {
-        let function = self
-            .0
-            .lookup_intern_sierra_function(function_id.clone())
+        let function = function_id
+            .lookup_intern(self.0)
             .body(self.0.upcast())
             .unwrap_or_default()
             .expect(
