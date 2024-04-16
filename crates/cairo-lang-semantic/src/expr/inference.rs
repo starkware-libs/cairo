@@ -19,7 +19,7 @@ use cairo_lang_utils::{define_short_id, extract_matches};
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{enrich_lookup_context, Ambiguity, SolutionSet};
-use crate::corelib::{core_felt252_ty, get_core_trait};
+use crate::corelib::{core_felt252_ty, get_core_trait, numeric_literal_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -207,7 +207,7 @@ impl InferenceError {
             }
             InferenceError::NoImplsFound { concrete_trait_id } => {
                 let trait_id = concrete_trait_id.trait_id(db);
-                if trait_id == get_core_trait(db, "NumericLiteral".into()) {
+                if trait_id == numeric_literal_trait(db) {
                     let generic_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],
                         GenericArgumentId::Type
@@ -583,7 +583,7 @@ impl<'db> Inference<'db> {
             return Err((ErrorSet, None));
         }
 
-        let numeric_trait_id = get_core_trait(self.db, "NumericLiteral".into());
+        let numeric_trait_id = numeric_literal_trait(self.db);
         let felt_ty = core_felt252_ty(self.db);
 
         // Conform all uninferred numeric literals to felt252.

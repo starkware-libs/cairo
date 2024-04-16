@@ -44,8 +44,8 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_option_ty, core_result_ty, core_unary_operator,
-    false_literal_expr, get_core_trait, never_ty, true_literal_expr, try_get_core_ty_by_name,
-    unit_expr, unit_ty, unwrap_error_propagation_type,
+    false_literal_expr, get_core_trait, never_ty, numeric_literal_trait, true_literal_expr,
+    try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -2439,7 +2439,7 @@ fn new_literal_expr(
     };
 
     // Numeric trait.
-    let trait_id = get_core_trait(ctx.db, "NumericLiteral".into());
+    let trait_id = numeric_literal_trait(ctx.db);
     let generic_args = vec![GenericArgumentId::Type(ty)];
     let concrete_trait_id =
         ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
