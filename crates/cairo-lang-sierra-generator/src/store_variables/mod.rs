@@ -13,8 +13,8 @@ use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::extensions::lib_func::{LibfuncSignature, ParamSignature, SierraApChange};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{extract_matches, LookupIntern};
 use itertools::zip_eq;
 use sierra::extensions::function_call::{CouponCallLibfunc, FunctionCallLibfunc};
 use sierra::extensions::gas::RedepositGasLibfunc;
@@ -138,7 +138,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 let signature = libfunc_info.signature;
                 let state = &mut state_opt.unwrap_or_default();
 
-                let libfunc_long_id = self.db.lookup_intern_concrete_lib_func(libfunc_id.clone());
+                let libfunc_long_id = libfunc_id.lookup_intern(self.db);
                 let arg_states = match libfunc_long_id.generic_id.0.as_str() {
                     FunctionCallLibfunc::STR_ID | CouponCallLibfunc::STR_ID => {
                         // The arguments were already stored using `push_values`.

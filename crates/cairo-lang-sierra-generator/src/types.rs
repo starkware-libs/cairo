@@ -110,7 +110,7 @@ pub fn get_concrete_long_type_id(
                                 }
                                 semantic::GenericArgumentId::Constant(value_id) => {
                                     SierraGenericArg::Value(extract_matches!(
-                                        db.lookup_intern_const_value(value_id),
+                                        value_id.lookup_intern(db),
                                         ConstValue::Int,
                                         "Only integer constants are supported."
                                     ))
@@ -206,9 +206,8 @@ pub fn type_dependencies(
         semantic::TypeLongId::Snapshot(ty) => vec![ty],
         semantic::TypeLongId::Coupon(_) => vec![],
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
-            let size = extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
-                .to_usize()
-                .unwrap();
+            let size =
+                extract_matches!(size.lookup_intern(db), ConstValue::Int).to_usize().unwrap();
             [type_id].repeat(size)
         }
         semantic::TypeLongId::GenericParameter(_)

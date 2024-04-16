@@ -7,6 +7,7 @@ use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
 use crate::statements_functions::StatementsFunctions;
@@ -111,7 +112,7 @@ pub fn function_identifier_relative_to_file_module(
     let file_id = location.file_id(db.upcast());
     if !statement_located_in_function
         && matches!(
-            db.lookup_intern_file(file_id),
+            file_id.lookup_intern(db),
             FileLongId::Virtual(VirtualFile { parent: Some(_), .. })
         )
     {
@@ -129,7 +130,7 @@ pub fn file_module_absolute_identifier(db: &dyn DefsGroup, mut file_id: FileId) 
     // that won't have a matching file module in the db. Instead, we find its non generated parent
     // which is in the same module and have a matching file module in the db.
     while let FileLongId::Virtual(VirtualFile { parent: Some(parent), .. }) =
-        db.lookup_intern_file(file_id)
+        file_id.lookup_intern(db)
     {
         file_id = parent;
     }
