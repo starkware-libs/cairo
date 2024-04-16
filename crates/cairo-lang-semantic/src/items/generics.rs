@@ -10,7 +10,7 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern};
+use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::TypedStablePtr;
 
@@ -227,7 +227,7 @@ pub fn generic_impl_param_trait(
         .elements(syntax_db)
         .into_iter()
         .find(|param_syntax| {
-            db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()))
+            GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db)
                 == generic_param_id
         })
         .unwrap();
@@ -276,7 +276,7 @@ pub fn priv_generic_param_data(
         generic_params_syntax.generic_params(syntax_db).elements(syntax_db).into_iter()
     {
         let cur_generic_param_id =
-            db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()));
+            GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db);
         resolver.add_generic_param(cur_generic_param_id);
 
         if cur_generic_param_id == generic_param_id {
@@ -353,10 +353,8 @@ pub fn semantic_generic_params(
             .elements(syntax_db)
             .iter()
             .map(|param_syntax| {
-                let generic_param_id = db.intern_generic_param(GenericParamLongId(
-                    module_file_id,
-                    param_syntax.stable_ptr(),
-                ));
+                let generic_param_id =
+                    GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db);
                 let generic_param_data = db.priv_generic_param_data(generic_param_id)?;
                 let generic_param = generic_param_data.generic_param;
                 diagnostics.diagnostics.extend(generic_param_data.diagnostics);
@@ -384,7 +382,7 @@ fn semantic_from_generic_param_ast(
     param_syntax: &ast::GenericParam,
     parent_item_id: GenericItemId,
 ) -> GenericParam {
-    let id = db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()));
+    let id = GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db);
     match param_syntax {
         ast::GenericParam::Type(_) => GenericParam::Type(GenericParamType { id }),
         ast::GenericParam::Const(syntax) => {

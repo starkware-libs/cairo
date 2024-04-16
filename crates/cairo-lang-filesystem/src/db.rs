@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{LookupIntern, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use serde::{Deserialize, Serialize};
 
 use crate::cfg::CfgSet;
@@ -154,7 +154,7 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
 }
 
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathBuf) {
-    let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
+    let core_crate = CrateLongId::Real(CORELIB_CRATE_NAME.into()).intern(db);
     db.set_crate_config(
         core_crate,
         Some(CrateConfiguration {

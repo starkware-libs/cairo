@@ -14,7 +14,7 @@ use cairo_lang_sierra::extensions::lib_func::{LibfuncSignature, ParamSignature, 
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, LookupIntern};
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::zip_eq;
 use sierra::extensions::function_call::{CouponCallLibfunc, FunctionCallLibfunc};
 use sierra::extensions::gas::RedepositGasLibfunc;
@@ -616,10 +616,11 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
         let new_var_state = match state.pop_var_state(var) {
             VarState::TempVar { ty } => {
-                let redeposit_gas = self.db.intern_concrete_lib_func(ConcreteLibfuncLongId {
+                let redeposit_gas = ConcreteLibfuncLongId {
                     generic_id: GenericLibfuncId::new_inline(RedepositGasLibfunc::STR_ID),
                     generic_args: vec![],
-                });
+                }
+                .intern(self.db);
                 let vars = [var.clone()];
                 self.result.push(simple_statement(redeposit_gas, &vars, &vars));
                 VarState::Deferred {

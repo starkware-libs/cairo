@@ -10,7 +10,7 @@ use super::kind::SyntaxKind;
 use super::SyntaxNode;
 use crate::node::stable_ptr::SyntaxStablePtr;
 
-define_short_id!(GreenId, Arc::<GreenNode>, SyntaxGroup, lookup_intern_green);
+define_short_id!(GreenId, Arc::<GreenNode>, SyntaxGroup, lookup_intern_green, intern_green);
 impl GreenId {
     /// Returns the width of the node of this green id.
     pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
@@ -21,7 +21,13 @@ impl GreenId {
     }
 }
 
-define_short_id!(SyntaxStablePtrId, SyntaxStablePtr, SyntaxGroup, lookup_intern_stable_ptr);
+define_short_id!(
+    SyntaxStablePtrId,
+    SyntaxStablePtr,
+    SyntaxGroup,
+    lookup_intern_stable_ptr,
+    intern_stable_ptr
+);
 impl SyntaxStablePtrId {
     /// Lookups a syntax node using a stable syntax pointer.
     /// Should only be called on the root from which the stable pointer was generated.

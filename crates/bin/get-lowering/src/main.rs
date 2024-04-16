@@ -23,7 +23,7 @@ use cairo_lang_semantic::items::functions::{
 use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::{Intern, LookupIntern};
 use clap::Parser;
 use convert_case::Casing;
 use itertools::Itertools;
@@ -147,10 +147,11 @@ fn get_all_funcs(
                     res.insert(
                         impl_func.full_path(db.upcast()),
                         GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
-                            concrete_impl_id: db.intern_concrete_impl(ConcreteImplLongId {
+                            concrete_impl_id: ConcreteImplLongId {
                                 impl_def_id: *impl_def_id,
                                 generic_args: vec![],
-                            }),
+                            }
+                            .intern(db),
                             function: *impl_func,
                         }),
                     );
@@ -175,10 +176,7 @@ fn get_func_id_by_name(
 
     Ok(ConcreteFunctionWithBodyId::from_semantic(
         db,
-        db.intern_concrete_function_with_body(ConcreteFunctionWithBody {
-            generic_function: *func_id,
-            generic_args: vec![],
-        }),
+        ConcreteFunctionWithBody { generic_function: *func_id, generic_args: vec![] }.intern(db),
     ))
 }
 

@@ -15,7 +15,7 @@ use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_utils::{Upcast, UpcastMut};
+use cairo_lang_utils::{Intern, Upcast, UpcastMut};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use lowering::optimizations::config::OptimizationConfig;
@@ -171,10 +171,11 @@ pub fn dummy_simple_statement(
 }
 
 fn dummy_concrete_lib_func_id(db: &dyn SierraGenGroup, name: &str) -> ConcreteLibfuncId {
-    db.intern_concrete_lib_func(program::ConcreteLibfuncLongId {
+    program::ConcreteLibfuncLongId {
         generic_id: GenericLibfuncId::from_string(name),
         generic_args: vec![],
-    })
+    }
+    .intern(db)
 }
 
 /// Returns a vector of variable ids based on the inputs mapped into variable ids.
@@ -230,18 +231,15 @@ pub fn dummy_jump_statement(
 /// Returns the [pre_sierra::LabelId] for the given `id`.
 pub fn label_id_from_usize(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::LabelId {
     let free_function_id = get_dummy_function(db);
-    let semantic_function = db.intern_concrete_function_with_body(
-        semantic::items::functions::ConcreteFunctionWithBody {
-            generic_function: semantic::items::functions::GenericFunctionWithBodyId::Free(
-                free_function_id,
-            ),
-            generic_args: vec![],
-        },
-    );
-    let parent = db.intern_lowering_concrete_function_with_body(
-        ConcreteFunctionWithBodyLongId::Semantic(semantic_function),
-    );
-    db.intern_label_id(LabelLongId { parent, id })
+    let semantic_function = semantic::items::functions::ConcreteFunctionWithBody {
+        generic_function: semantic::items::functions::GenericFunctionWithBodyId::Free(
+            free_function_id,
+        ),
+        generic_args: vec![],
+    }
+    .intern(db);
+    let parent = ConcreteFunctionWithBodyLongId::Semantic(semantic_function).intern(db);
+    LabelLongId { parent, id }.intern(db)
 }
 
 /// Generates a dummy [PushValues](pre_sierra::Statement::PushValues) statement.

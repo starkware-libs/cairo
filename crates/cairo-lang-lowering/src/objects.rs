@@ -11,7 +11,7 @@ use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::{Intern, LookupIntern};
 use id_arena::{Arena, Id};
 
 pub mod blocks;
@@ -91,7 +91,7 @@ impl LocationId {
     pub fn inlined(self, db: &dyn LoweringGroup, inlining_location: StableLocation) -> Self {
         let mut location = self.lookup_intern(db);
         location.inline_locations.push(inlining_location);
-        db.intern_location(location)
+        location.intern(db)
     }
     /// Returns all relevant stable pointers of the location.
     pub fn all_locations(self, db: &dyn LoweringGroup) -> Vec<StableLocation> {

@@ -8,7 +8,7 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{LookupIntern, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::enumerate;
 use smol_str::SmolStr;
 
@@ -208,7 +208,7 @@ pub fn priv_enum_definition_data(
     let mut variants = OrderedHashMap::default();
     let mut variant_semantic = OrderedHashMap::default();
     for (variant_idx, variant) in enumerate(enum_ast.variants(syntax_db).elements(syntax_db)) {
-        let id = db.intern_variant(VariantLongId(module_file_id, variant.stable_ptr()));
+        let id = VariantLongId(module_file_id, variant.stable_ptr()).intern(db);
         let ty = match variant.type_clause(syntax_db) {
             ast::OptionTypeClause::Empty(_) => unit_ty(db),
             ast::OptionTypeClause::TypeClause(type_clause) => {
