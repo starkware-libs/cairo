@@ -9,6 +9,7 @@ use cairo_lang_diagnostics::FormattedDiagnosticEntry;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile, CAIRO_FILE_EXTENSION};
 use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
+use cairo_lang_utils::Intern;
 use diffy::{create_patch, PatchFormatter};
 use ignore::types::TypesBuilder;
 use ignore::WalkBuilder;
@@ -152,13 +153,14 @@ impl FormattableInput for &Path {
 
 impl FormattableInput for String {
     fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId> {
-        Ok(db.intern_file(FileLongId::Virtual(VirtualFile {
+        Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "string_to_format".into(),
             content: Arc::new(self.clone()),
             code_mappings: Default::default(),
             kind: FileKind::Module,
-        })))
+        })
+        .intern(db))
     }
 
     fn overwrite_content(&self, _content: String) -> Result<()> {
@@ -170,13 +172,14 @@ impl FormattableInput for StdinFmt {
     fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId> {
         let mut buffer = String::new();
         stdin().read_to_string(&mut buffer)?;
-        Ok(db.intern_file(FileLongId::Virtual(VirtualFile {
+        Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "<stdin>".into(),
             content: Arc::new(buffer),
             code_mappings: Default::default(),
             kind: FileKind::Module,
-        })))
+        })
+        .intern(db))
     }
     fn overwrite_content(&self, content: String) -> Result<()> {
         print!("{content}");

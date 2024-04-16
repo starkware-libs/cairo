@@ -7,6 +7,7 @@ use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
 use cairo_lang_semantic::corelib::get_core_trait;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::Intern;
 use itertools::{zip_eq, Itertools};
 
 use self::analysis::{Analyzer, StatementLocation};
@@ -98,17 +99,17 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         };
         let mut add_called_fn = |impl_id, function| {
             self.potential_destruct_calls.entry(block_id).or_default().push(
-                self.db
-                    .intern_function(cairo_lang_semantic::FunctionLongId {
-                        function: cairo_lang_semantic::ConcreteFunction {
-                            generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
-                                impl_id,
-                                function,
-                            }),
-                            generic_args: vec![],
-                        },
-                    })
-                    .lowered(self.db),
+                cairo_lang_semantic::FunctionLongId {
+                    function: cairo_lang_semantic::ConcreteFunction {
+                        generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
+                            impl_id,
+                            function,
+                        }),
+                        generic_args: vec![],
+                    },
+                }
+                .intern(self.db)
+                .lowered(self.db),
             );
         };
         let destruct_err = match var.destruct_impl.clone() {

@@ -2,7 +2,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::substitution::{
     GenericSubstitution, SemanticRewriter, SubstitutionRewriter,
 };
-use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::{Intern, LookupIntern};
 
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId, GeneratedFunction};
@@ -23,7 +23,7 @@ fn concretize_function(
             })
         }
     };
-    Ok(db.intern_lowering_function(long_id))
+    Ok(long_id.intern(db))
 }
 
 /// Concretizes a lowered generic function by applying a generic parameter substitution on its

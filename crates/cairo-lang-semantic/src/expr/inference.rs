@@ -15,7 +15,7 @@ use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{define_short_id, extract_matches, LookupIntern};
+use cairo_lang_utils::{define_short_id, extract_matches, Intern, LookupIntern};
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{enrich_lookup_context, Ambiguity, SolutionSet};
@@ -97,7 +97,7 @@ pub struct ImplVar {
 }
 impl ImplVar {
     pub fn intern(&self, db: &dyn SemanticGroup) -> ImplVarId {
-        db.intern_impl_var(self.clone())
+        self.clone().intern(db)
     }
 }
 
@@ -109,7 +109,7 @@ pub struct LocalImplVarId(pub usize);
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject)]
 pub struct LocalConstVarId(pub usize);
 
-define_short_id!(ImplVarId, ImplVar, SemanticGroup, lookup_intern_impl_var);
+define_short_id!(ImplVarId, ImplVar, SemanticGroup, lookup_intern_impl_var, intern_impl_var);
 impl ImplVarId {
     pub fn get(&self, db: &dyn SemanticGroup) -> ImplVar {
         self.lookup_intern(db)
@@ -449,7 +449,7 @@ impl<'db> Inference<'db> {
     pub fn new_type_var(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> TypeId {
         let var = self.new_type_var_raw(stable_ptr);
 
-        self.db.intern_type(TypeLongId::Var(var))
+        TypeLongId::Var(var).intern(self.db)
     }
 
     /// Allocates a new [TypeVar] for an unknown type that needs to be inferred.
@@ -468,7 +468,7 @@ impl<'db> Inference<'db> {
     /// Returns a wrapping [ConstValueId].
     pub fn new_const_var(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> ConstValueId {
         let var = self.new_const_var_raw(stable_ptr);
-        self.db.intern_const_value(ConstValue::Var(var))
+        ConstValue::Var(var).intern(self.db)
     }
 
     /// Allocates a new [ConstVar] for an unknown type that needs to be inferred.
@@ -652,7 +652,7 @@ impl<'db> Inference<'db> {
     fn first_undetermined_variable(&mut self) -> Option<(InferenceVar, InferenceError)> {
         for (id, var) in self.type_vars.iter().enumerate() {
             if self.type_assignment(LocalTypeVarId(id)).is_none() {
-                let ty = self.db.intern_type(TypeLongId::Var(*var));
+                let ty = TypeLongId::Var(*var).intern(self.db);
                 return Some((InferenceVar::Type(var.id), InferenceError::TypeNotInferred { ty }));
             }
         }
@@ -712,7 +712,7 @@ impl<'db> Inference<'db> {
     fn assign_ty(&mut self, var: TypeVar, ty: TypeId) -> InferenceResult<TypeId> {
         if var.inference_id != self.inference_id {
             return Err(self.set_error(InferenceError::TypeKindMismatch {
-                ty0: self.db.intern_type(TypeLongId::Var(var)),
+                ty0: TypeLongId::Var(var).intern(self.db),
                 ty1: ty,
             }));
         }
@@ -730,7 +730,7 @@ impl<'db> Inference<'db> {
     fn assign_const(&mut self, var: ConstVar, id: ConstValueId) -> InferenceResult<ConstValueId> {
         if var.inference_id != self.inference_id {
             return Err(self.set_error(InferenceError::ConstKindMismatch {
-                const0: self.db.intern_const_value(ConstValue::Var(var)),
+                const0: ConstValue::Var(var).intern(self.db),
                 const1: id,
             }));
         }
@@ -1006,7 +1006,7 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
                 let mut long_type_id = type_id.lookup_intern(self.db);
                 if let RewriteResult::Modified = self.internal_rewrite(&mut long_type_id)? {
                     *self.type_assignment.get_mut(&var.id).unwrap() =
-                        self.db.intern_type(long_type_id.clone());
+                        long_type_id.clone().intern(self.db);
                 }
                 *value = long_type_id;
                 return Ok(RewriteResult::Modified);
@@ -1022,7 +1022,7 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
                 let mut const_value = const_value_id.lookup_intern(self.db);
                 if let RewriteResult::Modified = self.internal_rewrite(&mut const_value)? {
                     *self.const_assignment.get_mut(&var.id).unwrap() =
-                        self.db.intern_const_value(const_value.clone());
+                        const_value.clone().intern(self.db);
                 }
                 *value = const_value;
                 return Ok(RewriteResult::Modified);

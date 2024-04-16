@@ -15,7 +15,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{define_short_id, LookupIntern};
+use cairo_lang_utils::{define_short_id, Intern, LookupIntern};
 use itertools::chain;
 use smol_str::SmolStr;
 
@@ -67,7 +67,13 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteTraitLongId {
     }
 }
 
-define_short_id!(ConcreteTraitId, ConcreteTraitLongId, SemanticGroup, lookup_intern_concrete_trait);
+define_short_id!(
+    ConcreteTraitId,
+    ConcreteTraitLongId,
+    SemanticGroup,
+    lookup_intern_concrete_trait,
+    intern_concrete_trait
+);
 semantic_object_for_id!(
     ConcreteTraitId,
     lookup_intern_concrete_trait,
@@ -125,7 +131,8 @@ define_short_id!(
     ConcreteTraitGenericFunctionId,
     ConcreteTraitGenericFunctionLongId,
     SemanticGroup,
-    lookup_intern_concrete_trait_function
+    lookup_intern_concrete_trait_function,
+    intern_concrete_trait_function
 );
 semantic_object_for_id!(
     ConcreteTraitGenericFunctionId,
@@ -139,11 +146,7 @@ impl ConcreteTraitGenericFunctionId {
         concrete_trait: ConcreteTraitId,
         trait_function: TraitFunctionId,
     ) -> Self {
-        db.intern_concrete_trait_function(ConcreteTraitGenericFunctionLongId::new(
-            db,
-            concrete_trait,
-            trait_function,
-        ))
+        ConcreteTraitGenericFunctionLongId::new(db, concrete_trait, trait_function).intern(db)
     }
 
     pub fn trait_function(&self, db: &dyn SemanticGroup) -> TraitFunctionId {
@@ -181,7 +184,8 @@ define_short_id!(
     ConcreteTraitTypeId,
     ConcreteTraitTypeLongId,
     SemanticGroup,
-    lookup_intern_concrete_trait_type
+    lookup_intern_concrete_trait_type,
+    intern_concrete_trait_type
 );
 semantic_object_for_id!(
     ConcreteTraitTypeId,
@@ -195,7 +199,7 @@ impl ConcreteTraitTypeId {
         concrete_trait: ConcreteTraitId,
         trait_type: TraitTypeId,
     ) -> Self {
-        db.intern_concrete_trait_type(ConcreteTraitTypeLongId::new(db, concrete_trait, trait_type))
+        ConcreteTraitTypeLongId::new(db, concrete_trait, trait_type).intern(db)
     }
 
     pub fn trait_type(&self, db: &dyn SemanticGroup) -> TraitTypeId {
@@ -456,10 +460,8 @@ pub fn priv_trait_definition_data(
         for item in body.items(syntax_db).elements(syntax_db) {
             match item {
                 ast::TraitItem::Function(func) => {
-                    let trait_func_id = db.intern_trait_function(TraitFunctionLongId(
-                        module_file_id,
-                        func.stable_ptr(),
-                    ));
+                    let trait_func_id =
+                        TraitFunctionLongId(module_file_id, func.stable_ptr()).intern(db);
                     let name_node = func.declaration(syntax_db).name(syntax_db);
                     let name = name_node.text(syntax_db);
                     if item_id_by_name
@@ -474,8 +476,7 @@ pub fn priv_trait_definition_data(
                     function_asts.insert(trait_func_id, func);
                 }
                 ast::TraitItem::Type(ty) => {
-                    let trait_type_id =
-                        db.intern_trait_type(TraitTypeLongId(module_file_id, ty.stable_ptr()));
+                    let trait_type_id = TraitTypeLongId(module_file_id, ty.stable_ptr()).intern(db);
                     let name_node = ty.name(syntax_db);
                     let name = name_node.text(syntax_db);
                     if item_id_by_name

@@ -8,7 +8,7 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{LookupIntern, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use smol_str::SmolStr;
 
 use super::generics::{semantic_generic_params, GenericParamsData};
@@ -186,7 +186,7 @@ pub fn priv_struct_definition_data(
     // Members.
     let mut members = OrderedHashMap::default();
     for member in struct_ast.members(syntax_db).elements(syntax_db) {
-        let id = db.intern_member(MemberLongId(module_file_id, member.stable_ptr()));
+        let id = MemberLongId(module_file_id, member.stable_ptr()).intern(db);
         let ty = resolve_type(
             db,
             &mut diagnostics,

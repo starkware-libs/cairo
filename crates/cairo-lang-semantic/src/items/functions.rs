@@ -14,7 +14,9 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, require, try_extract_matches, LookupIntern, OptionFrom};
+use cairo_lang_utils::{
+    define_short_id, require, try_extract_matches, Intern, LookupIntern, OptionFrom,
+};
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
 use syntax::attribute::consts::MUST_USE_ATTR;
@@ -256,7 +258,13 @@ impl DebugWithDb<dyn SemanticGroup> for FunctionLongId {
     }
 }
 
-define_short_id!(FunctionId, FunctionLongId, SemanticGroup, lookup_intern_function);
+define_short_id!(
+    FunctionId,
+    FunctionLongId,
+    SemanticGroup,
+    lookup_intern_function,
+    intern_function
+);
 semantic_object_for_id!(FunctionId, lookup_intern_function, intern_function, FunctionLongId);
 impl FunctionId {
     pub fn lookup(&self, db: &dyn SemanticGroup) -> FunctionLongId {
@@ -429,10 +437,11 @@ impl ConcreteFunctionWithBody {
                 let impl_def_params = db.impl_def_generic_params(impl_def_id)?;
                 let impl_generic_args = generic_params_to_args(&impl_def_params, db);
                 let impl_generic_function = ImplGenericFunctionWithBodyId {
-                    concrete_impl_id: db.intern_concrete_impl(ConcreteImplLongId {
+                    concrete_impl_id: ConcreteImplLongId {
                         impl_def_id,
                         generic_args: impl_generic_args,
-                    }),
+                    }
+                    .intern(db),
                     function: impl_function_id,
                 };
                 ConcreteFunctionWithBody {
@@ -449,7 +458,7 @@ impl ConcreteFunctionWithBody {
         })
     }
     pub fn function_id(&self, db: &dyn SemanticGroup) -> Maybe<FunctionId> {
-        Ok(db.intern_function(FunctionLongId { function: self.concrete(db)? }))
+        Ok(FunctionLongId { function: self.concrete(db)? }.intern(db))
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.function_with_body_id().name(db.upcast())
@@ -467,11 +476,11 @@ pub fn generic_params_to_args(
     params
         .iter()
         .map(|param| match param {
-            GenericParam::Type(param) => GenericArgumentId::Type(
-                db.intern_type(crate::TypeLongId::GenericParameter(param.id)),
-            ),
+            GenericParam::Type(param) => {
+                GenericArgumentId::Type(crate::TypeLongId::GenericParameter(param.id).intern(db))
+            }
             GenericParam::Const(param) => {
-                GenericArgumentId::Constant(db.intern_const_value(ConstValue::Generic(param.id)))
+                GenericArgumentId::Constant(ConstValue::Generic(param.id).intern(db))
             }
             GenericParam::Impl(param) => {
                 GenericArgumentId::Impl(ImplId::GenericParameter(param.id))
@@ -506,7 +515,8 @@ define_short_id!(
     ConcreteFunctionWithBodyId,
     ConcreteFunctionWithBody,
     SemanticGroup,
-    lookup_intern_concrete_function_with_body
+    lookup_intern_concrete_function_with_body,
+    intern_concrete_function_with_body
 );
 semantic_object_for_id!(
     ConcreteFunctionWithBodyId,
@@ -528,15 +538,10 @@ impl ConcreteFunctionWithBodyId {
         db: &dyn SemanticGroup,
         free_function_id: FreeFunctionId,
     ) -> Option<Self> {
-        Some(db.intern_concrete_function_with_body(
-            ConcreteFunctionWithBody::from_no_generics_free(db, free_function_id)?,
-        ))
+        Some(ConcreteFunctionWithBody::from_no_generics_free(db, free_function_id)?.intern(db))
     }
     pub fn from_generic(db: &dyn SemanticGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
-        Ok(db.intern_concrete_function_with_body(ConcreteFunctionWithBody::from_generic(
-            db,
-            function_id,
-        )?))
+        Ok(ConcreteFunctionWithBody::from_generic(db, function_id)?.intern(db))
     }
     pub fn concrete(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteFunction> {
         self.get(db).concrete(db)
@@ -577,10 +582,10 @@ impl ConcreteFunction {
         else {
             return Ok(None);
         };
-        Ok(Some(db.intern_concrete_function_with_body(ConcreteFunctionWithBody {
-            generic_function,
-            generic_args: self.generic_args.clone(),
-        })))
+        Ok(Some(
+            ConcreteFunctionWithBody { generic_function, generic_args: self.generic_args.clone() }
+                .intern(db),
+        ))
     }
     pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
         let maybe_generic_part = if !self.generic_args.is_empty() {
@@ -851,7 +856,7 @@ fn ast_param_to_semantic(
 
     let name = ast_param.name(syntax_db).text(syntax_db);
 
-    let id = db.intern_param(ParamLongId(resolver.module_file_id, ast_param.stable_ptr()));
+    let id = ParamLongId(resolver.module_file_id, ast_param.stable_ptr()).intern(db);
     let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
     let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
 

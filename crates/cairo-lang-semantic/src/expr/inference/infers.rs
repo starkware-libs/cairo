@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, TraitFunctionId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::{extract_matches, require, LookupIntern};
+use cairo_lang_utils::{extract_matches, require, Intern, LookupIntern};
 use itertools::Itertools;
 
 use super::canonic::ResultNoErrEx;
@@ -159,9 +159,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             lookup_context,
             stable_ptr,
         )?;
-        Ok(ImplId::Concrete(
-            self.db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args }),
-        ))
+        Ok(ImplId::Concrete(ConcreteImplLongId { impl_def_id, generic_args }.intern(self.db)))
     }
 
     /// Infers all the variables required to make an impl alias (possibly with free generic params)
@@ -334,10 +332,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             }
         }
 
-        Some((
-            self.db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }),
-            n_snapshots,
-        ))
+        Some((ConcreteTraitLongId { trait_id, generic_args }.intern(self.db), n_snapshots))
     }
 
     /// Infers a generic argument to be passed as a generic parameter.
@@ -393,9 +388,8 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             .generic_params(self.db)
             .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
         let generic_args = self.infer_generic_args(&generic_params, lookup_context, stable_ptr)?;
-        Ok(self.db.intern_function(FunctionLongId {
-            function: ConcreteFunction { generic_function, generic_args },
-        }))
+        Ok(FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }
+            .intern(self.db))
     }
 
     /// Infers the impl to be substituted instead of a trait for a given trait function.
@@ -430,10 +424,11 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             stable_ptr,
             lookup_context.clone(),
         )?;
-        Ok(self.db.intern_type(TypeLongId::ImplType(ImplTypeId::new(
+        Ok(TypeLongId::ImplType(ImplTypeId::new(
             impl_id,
             concrete_trait_type.trait_type(self.db),
             self.db,
-        ))))
+        ))
+        .intern(self.db))
     }
 }
