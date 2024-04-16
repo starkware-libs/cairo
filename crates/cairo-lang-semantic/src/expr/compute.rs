@@ -228,11 +228,16 @@ impl<'ctx> ComputationContext<'ctx> {
         )
     }
 
-    /// Rewrites all rewritable things in the computation context.
-    fn rewrite_all_inferred(&mut self) {
+    // Applies inference rewriter to all the expressions in the computation context.
+    pub fn apply_inference_rewriter_to_exprs(&mut self) {
         for (_id, expr) in self.exprs.iter_mut() {
             self.resolver.inference().internal_rewrite(expr).no_err();
         }
+    }
+
+    /// Applies inference rewriter to all the rewritable things in the computation context using the
+    fn apply_inference_rewriter(&mut self) {
+        self.apply_inference_rewriter_to_exprs();
         for (_id, pattern) in self.patterns.iter_mut() {
             self.resolver.inference().internal_rewrite(pattern).no_err();
         }
@@ -1097,7 +1102,7 @@ pub fn compute_root_expr(
     // Check fully resolved.
     inference.finalize(ctx.diagnostics, syntax.stable_ptr().untyped());
 
-    ctx.rewrite_all_inferred();
+    ctx.apply_inference_rewriter();
 
     Ok(res)
 }

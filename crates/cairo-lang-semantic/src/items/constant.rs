@@ -25,12 +25,10 @@ use crate::corelib::{
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment, ExprAndId};
-use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
-use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 use crate::{
     semantic_object_for_id, ConcreteVariant, Expr, ExprBlock, ExprFunctionCall,
@@ -187,10 +185,8 @@ pub fn resolve_const_expr_and_evaluate(
     }
     // Check fully resolved.
     inference.finalize(ctx.diagnostics, const_stable_ptr);
+    ctx.apply_inference_rewriter_to_exprs();
 
-    for (_, expr) in ctx.exprs.iter_mut() {
-        *expr = inference.rewrite(expr.clone()).no_err();
-    }
     match &value.expr {
         Expr::ParamConstant(expr) => (expr.ty, db.lookup_intern_const_value(expr.const_value_id)),
         // Check that the expression is a valid constant.
