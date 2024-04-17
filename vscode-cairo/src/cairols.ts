@@ -39,6 +39,26 @@ export async function setupLanguageServer(
     clientOptions,
   );
 
+  // Notify the server when client configuration changes.
+  // CairoLS pulls configuration properties it is interested in by itself, so it
+  // is not needed to attach any details in the notification payload.
+  const weakClient = new WeakRef(client);
+  vscode.workspace.onDidChangeConfiguration(
+    async () => {
+      const client = weakClient.deref();
+      if (client != undefined) {
+        await client.sendNotification(
+          lc.DidChangeConfigurationNotification.type,
+          {
+            settings: "",
+          },
+        );
+      }
+    },
+    null,
+    ctx.extension.subscriptions,
+  );
+
   client.registerFeature(new SemanticTokensFeature(client));
 
   const myProvider = new (class implements vscode.TextDocumentContentProvider {
