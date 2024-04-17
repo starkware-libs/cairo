@@ -101,12 +101,11 @@ fn append_formatted_to_byte_array<
 fn append_small_digits_util<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T, u8>, +Zeroable<T>,>(
     mut value: @T, ref byte_array: ByteArray, base_nz: NonZero<T>,
 ) {
-    if (*value).is_zero() {
-        return;
-    };
     let (new_value, digit) = DivRem::div_rem(*value, base_nz);
     let digit_as_u8: u8 = digit.try_into().unwrap();
-    append_big_digits_util(@new_value, ref byte_array, base_nz);
+    if !new_value.is_zero() {
+        append_big_digits_util(@new_value, ref byte_array, base_nz);
+    };
     byte_array.append_byte(digit_as_u8 + '0');
 }
 
@@ -114,12 +113,11 @@ fn append_small_digits_util<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T, u8>, 
 fn append_big_digits_util<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T, u8>, +Zeroable<T>,>(
     mut value: @T, ref byte_array: ByteArray, base_nz: NonZero<T>,
 ) {
-    if (*value).is_zero() {
-        return;
-    };
     let (new_value, digit) = DivRem::div_rem(*value, base_nz);
     let digit_as_u8: u8 = digit.try_into().unwrap();
-    append_big_digits_util(@new_value, ref byte_array, base_nz);
+    if !new_value.is_zero() {
+        append_big_digits_util(@new_value, ref byte_array, base_nz);
+    };
     byte_array.append_byte(get_big_base_digit_representation(:digit_as_u8));
 }
 
