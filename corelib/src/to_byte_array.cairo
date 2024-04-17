@@ -97,7 +97,7 @@ fn append_formatted_to_byte_array<
     }
 }
 
-/// Appends ascii representation of value in base_nz to byte_array for single digit base. 
+/// Appends ascii representation of value in base_nz to byte_array for single digit base.
 fn append_small_digits_util<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T, u8>, +Zeroable<T>,>(
     mut value: @T, ref byte_array: ByteArray, base_nz: NonZero<T>,
 ) {
