@@ -11,6 +11,8 @@ fn foo(d: bool) {
     // Note that a diagnostic is not reported for the wrong type when the name is wrong.
     bar(x: 0, 1, y: 2, 3, false);
     MyEnum::A(x: 0);
+    // Wrong number of params.
+    bar(0, 1, 2, 3, 4, 5);
 }
 
 //! > function_name
@@ -48,6 +50,11 @@ error: Named arguments are not supported in this context.
  --> lib.cairo:12:15
     MyEnum::A(x: 0);
               ^
+
+error: Wrong number of arguments. Expected 5, found: 6
+ --> lib.cairo:14:9
+    bar(0, 1, 2, 3, 4, 5);
+        ^**************^
 
 //! > ==========================================================================
 
