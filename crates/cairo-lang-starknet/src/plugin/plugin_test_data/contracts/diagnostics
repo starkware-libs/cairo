@@ -312,6 +312,18 @@ pub enum Event {}
         unsafe_new_contract_state()
     }
     
+    pub mod __member_module_mapping {
+        #[derive(Copy, Drop)]
+        pub struct ContractMemberState {}
+        impl StorageContractMemberStateAsPathImpl of starknet::storage::StorageAsPath<ContractMemberState, Map::<felt252, felt252>> {
+            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<Map::<felt252, felt252>> {
+                    starknet::storage::StoragePath { hash_state:
+                        core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4)
+                     }
+    
+                }
+        }
+    }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
@@ -370,25 +382,20 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
+error: Type not found.
  --> lib.cairo:5:18
         mapping: Map::<felt252, felt252>,
-                 ^*********************^
+                 ^*^
 
-error: Identifier not found.
- --> lib.cairo:5:9
+error: Type not found.
+ --> lib.cairo:5:18
         mapping: Map::<felt252, felt252>,
-        ^*****^
+                 ^*^
 
-error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter.
- --> lib.cairo[contract]:9:5
-    impl ContractStateDrop of Drop<ContractState> {}
-    ^**********************************************^
-
-error: Identifier not found.
- --> lib.cairo:5:9
-        mapping: Map::<felt252, felt252>,
-        ^*****^
+error: Type annotations needed. Failed to infer ?0.
+ --> lib.cairo[contract]:27:40
+                    starknet::storage::StoragePath { hash_state:
+                                       ^*********^
 
 //! > ==========================================================================
 
