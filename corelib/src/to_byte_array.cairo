@@ -97,6 +97,7 @@ fn append_formatted_to_byte_array<
     }
 }
 
+/// Appends ascii representation of value in base_nz to byte_array for single digit base. 
 #[inline]
 fn append_small_digits_util<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T, u8>, +Zeroable<T>,>(
     mut value: @T, ref byte_array: ByteArray, base_nz: NonZero<T>,
@@ -109,6 +110,7 @@ fn append_small_digits_util<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T, u8>, 
     byte_array.append_byte(digit_as_u8 + '0');
 }
 
+/// Appends ascii representation of value in base_nz to byte_array for any base.
 #[inline]
 fn append_big_digits_util<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T, u8>, +Zeroable<T>,>(
     mut value: @T, ref byte_array: ByteArray, base_nz: NonZero<T>,
