@@ -11,6 +11,7 @@ use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::executables::collect_executables;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
@@ -151,24 +152,26 @@ pub fn compile_prepared_db_program_artifact(
     compiler_config: CompilerConfig<'_>,
 ) -> Result<ProgramArtifact> {
     let add_statements_functions = compiler_config.add_statements_functions;
+    let sierra_program_with_debug =
+        compile_prepared_db(db, main_crate_ids.clone(), compiler_config)?;
 
-    let sierra_program_with_debug = compile_prepared_db(db, main_crate_ids, compiler_config)?;
-    let mut program_artifact = ProgramArtifact::stripped(sierra_program_with_debug.program);
-
+    let mut debug_info = DebugInfo::default();
     if add_statements_functions {
         let statements_functions = sierra_program_with_debug
             .debug_info
             .statements_locations
             .extract_statements_functions(db);
 
-        let debug_info = DebugInfo {
+        debug_info = DebugInfo {
             type_names: Default::default(),
             libfunc_names: Default::default(),
             user_func_names: Default::default(),
             annotations: Annotations::from(statements_functions),
+            executables: Default::default(),
         };
-        program_artifact = program_artifact.with_debug_info(debug_info);
     }
 
-    Ok(program_artifact)
+    let executables = collect_executables(db, main_crate_ids, &sierra_program_with_debug.program);
+    Ok(ProgramArtifact::stripped(sierra_program_with_debug.program)
+        .with_debug_info(DebugInfo { executables, ..debug_info }))
 }
