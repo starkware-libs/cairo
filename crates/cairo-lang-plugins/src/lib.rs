@@ -4,7 +4,8 @@ use std::sync::Arc;
 use cairo_lang_defs::plugin::MacroPlugin;
 
 use crate::plugins::{
-    CompileErrorPlugin, ConfigPlugin, DerivePlugin, GenerateTraitPlugin, PanicablePlugin,
+    CompileErrorPlugin, ConfigPlugin, DerivePlugin, ExecutablePlugin, GenerateTraitPlugin,
+    PanicablePlugin,
 };
 
 pub mod plugins;
@@ -24,5 +25,6 @@ pub fn get_base_plugins() -> Vec<Arc<dyn MacroPlugin>> {
         Arc::new(GenerateTraitPlugin::default()),
         Arc::new(PanicablePlugin::default()),
         Arc::new(CompileErrorPlugin::default()),
+        Arc::new(ExecutablePlugin::default()),
     ]
 }

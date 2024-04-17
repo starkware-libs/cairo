@@ -6,8 +6,8 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
-    DEPRECATED_ATTR, FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR,
-    MUST_USE_ATTR, PHANTOM_ATTR, STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
+    DEPRECATED_ATTR, EXECUTABLE_ATTR, FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR,
+    INLINE_ATTR, MUST_USE_ATTR, PHANTOM_ATTR, STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
 };
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -231,6 +231,7 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
         PHANTOM_ATTR.into(),
         IMPLICIT_PRECEDENCE_ATTR.into(),
         FMT_SKIP_ATTR.into(),
+        EXECUTABLE_ATTR.into(),
         // TODO(orizi): Remove this once `starknet` is removed from corelib.
         STARKNET_INTERFACE_ATTR.into(),
     ]);
