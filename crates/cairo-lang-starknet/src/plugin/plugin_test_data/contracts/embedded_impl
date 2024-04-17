@@ -583,7 +583,7 @@ pub enum Event {}
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StoragePathFinalize, StorageAsPointer, StorageAsPath, StoragePointerAccess
+    StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathFinalize
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x24989c51cc02d16815c925171e8167063fde5b6487bb15a58d126a7bc4f3591;
@@ -1467,7 +1467,7 @@ pub enum Event {}
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StoragePathFinalize, StorageAsPointer, StorageAsPath, StoragePointerAccess
+    StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathFinalize
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b;
@@ -1979,7 +1979,7 @@ pub enum Event {}
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StoragePathFinalize, StorageAsPointer, StorageAsPath, StoragePointerAccess
+    StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathFinalize
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47;

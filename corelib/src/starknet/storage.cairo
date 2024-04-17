@@ -107,3 +107,56 @@ impl StorableStoragePointerAccess<T, +starknet::Store<T>> of StoragePointerAcces
         )
     }
 }
+
+/// An intermediate struct to store a hash state, in order to be able to hash multiple values and
+/// get the final address.
+/// Storage path should have two interfaces, if T is storable then it should implement
+/// `StoragePathFinalize` in order to be able to get the address of the storage path. Otherwise, if
+/// T is not storable then it should implement some kind of updating trait, e.g. `StoragePathEntry`.
+#[derive(Copy, Drop)]
+pub struct GenericStoragePath<T, THashState> {
+    pub hash_state: THashState,
+}
+
+type StoragePath<T> = GenericStoragePath<T, core::poseidon::HashState>;
+
+/// Trait for creating a new `StoragePath` from a storage member.
+pub trait StorageAsPath<TMemberState, T> {
+    fn as_path(self: @TMemberState) -> StoragePath<T>;
+}
+
+/// Trait for finalizing the hash state and getting the final address.
+pub trait StoragePathFinalize<T> {
+    fn finalize(self: StoragePath<T>) -> StoragePointer<T>;
+}
+
+/// An implementation of `StoragePathFinalize` for any type that implements `Store`.
+impl StorableStoragePathFinalize<T, +starknet::Store<T>> of StoragePathFinalize<T> {
+    #[inline(always)]
+    fn finalize(self: StoragePath<T>) -> StoragePointer<T> {
+        StoragePointer::<
+            T
+        > { address: storage_base_address_from_felt252(self.hash_state.finalize()) }
+    }
+}
+
+/// Trait for updating the hash state with a value, using an `entry` method.
+pub trait StoragePathEntry<C, K, V> {
+    fn entry(self: StoragePath<C>, key: K) -> StoragePath<V>;
+}
+
+/// A struct that represents a map in a contract storage.
+#[phantom]
+pub struct Map<K, V> {}
+
+impl StoragePathEntryMap<
+    K, V, +Hash<K, core::poseidon::HashState>
+> of StoragePathEntry<Map<K, V>, K, V> {
+    #[inline(always)]
+    fn entry(self: StoragePath<Map<K, V>>, key: K) -> StoragePath<V> {
+        StoragePath::<
+            V
+        > { hash_state: Hash::<K, core::poseidon::HashState>::update_state(self.hash_state, key) }
+    }
+}
+

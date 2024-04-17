@@ -207,7 +207,7 @@ impl ContractSpecificGenerationData {
                 use starknet::storage::{{
                     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
                     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-                    StorageAsPointer, StoragePointerAccess
+                    StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathFinalize
                 }};
                 $test_config$
                 $entry_points_code$

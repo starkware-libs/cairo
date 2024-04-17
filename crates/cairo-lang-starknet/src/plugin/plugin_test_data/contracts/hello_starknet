@@ -94,7 +94,7 @@ impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StoragePathFinalize, StorageAsPointer, StorageAsPath, StoragePointerAccess
+    StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathFinalize
 };
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -598,7 +598,7 @@ impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StoragePathFinalize, StorageAsPointer, StorageAsPath, StoragePointerAccess
+    StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathFinalize
 };
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
