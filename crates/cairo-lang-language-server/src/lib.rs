@@ -1,10 +1,46 @@
-//! Cairo language server.
+//! # CairoLS
 //!
 //! Implements the LSP protocol over stdin/out.
+//!
+//! ## Running vanilla
+//!
+//! This is basically the source code of the `cairo-language-server` and
+//! `scarb cairo-language-server` binaries.
+//!
+//! ```no_run
+//! # #![allow(clippy::needless_doctest_main)]
+//! fn main() {
+//!     cairo_lang_language_server::start();
+//! }
+//! ```
+//!
+//! ## Running with customizations
+//!
+//! Due to the immaturity of various Cairo compiler parts (especially around potentially
+//! dynamically-loadable things), for some projects it might be necessary to provide a custom build
+//! of CairoLS that includes custom modifications to the compiler.
+//! The [`start_with_tricks`] function allows building a customized build of CairoLS that supports
+//! project-specific features.
+//! See the [`Tricks`] struct documentation for available customizations.
+//!
+//! ```no_run
+//! # #![allow(clippy::needless_doctest_main)]
+//! use cairo_lang_language_server::Tricks;
+//!
+//! # fn dojo_plugin_suite() -> cairo_lang_semantic::plugin::PluginSuite {
+//! #    // Returning something realistic, to make sure restrictive trait bounds do compile.
+//! #    cairo_lang_starknet::starknet_plugin_suite()
+//! # }
+//! fn main() {
+//!     let mut tricks = Tricks::default();
+//!     tricks.extra_plugin_suites = Some(&|| vec![dojo_plugin_suite()]);
+//!     cairo_lang_language_server::start_with_tricks(tricks);
+//! }
+//! ```
 
 use std::collections::{HashMap, HashSet};
 use std::io;
-use std::panic::AssertUnwindSafe;
+use std::panic::{AssertUnwindSafe, RefUnwindSafe};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -35,6 +71,7 @@ use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplId;
+use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
 use cairo_lang_starknet::starknet_plugin_suite;
@@ -73,8 +110,37 @@ mod server;
 mod toolchain;
 mod vfs;
 
+/// Carries various customizations that can be applied to CairoLS.
+///
+/// See [the top-level documentation][lib] documentation for usage examples.
+///
+/// [lib]: crate#running-with-customizations
+#[non_exhaustive]
+#[derive(Default)]
+pub struct Tricks {
+    /// A function that returns a list of additional compiler plugin suites to be loaded in the
+    /// language server database.
+    pub extra_plugin_suites:
+        Option<&'static (dyn Fn() -> Vec<PluginSuite> + Send + Sync + RefUnwindSafe)>,
+}
+
+/// Starts the language server.
+///
+/// See [the top-level documentation][lib] documentation for usage examples.
+///
+/// [lib]: crate#running-vanilla
+pub fn start() {
+    start_with_tricks(Tricks::default());
+}
+
+/// Starts the language server with customizations.
+///
+/// See [the top-level documentation][lib] documentation for usage examples.
+///
+/// [lib]: crate#running-with-customizations
+
 #[tokio::main]
-pub async fn start() {
+pub async fn start_with_tricks(tricks: Tricks) {
     let _log_guard = init_logging();
 
     info!("language server starting");
@@ -82,9 +148,7 @@ pub async fn start() {
 
     let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
 
-    let db = configured_db();
-
-    let (service, socket) = LspService::build(|client| Backend::new(client, db))
+    let (service, socket) = LspService::build(|client| Backend::new(client, tricks))
         .custom_method("vfs/provide", Backend::vfs_provide)
         .finish();
     Server::new(stdin, stdout, socket).serve(service).await;
@@ -159,15 +223,22 @@ fn init_logging() -> Option<impl Drop> {
     guard
 }
 
-fn configured_db() -> RootDatabase {
-    let db = RootDatabase::builder()
-        // TODO(mkaput): Cfg items should be pulled from Scarb metadata.
-        .with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]))
-        .with_plugin_suite(starknet_plugin_suite())
-        .with_plugin_suite(test_plugin_suite())
-        .build()
-        .expect("Failed to initialize Cairo compiler database.");
-    db
+fn configured_db(tricks: &Tricks) -> RootDatabase {
+    let mut b = RootDatabase::builder();
+
+    // TODO(mkaput): Cfg items should be pulled from Scarb metadata.
+    b.with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]));
+
+    b.with_plugin_suite(starknet_plugin_suite());
+    b.with_plugin_suite(test_plugin_suite());
+
+    if let Some(extra_plugin_suites) = tricks.extra_plugin_suites {
+        for suite in extra_plugin_suites() {
+            b.with_plugin_suite(suite);
+        }
+    }
+
+    b.build().expect("salsa initialization should never fail")
 }
 
 /// Makes sure that all open files exist in the new db, with their current changes.
@@ -190,25 +261,26 @@ fn ensure_exists_in_db(
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
-pub struct FileDiagnostics {
-    pub parser: Diagnostics<ParserDiagnostic>,
-    pub semantic: Diagnostics<SemanticDiagnostic>,
-    pub lowering: Diagnostics<LoweringDiagnostic>,
+struct FileDiagnostics {
+    parser: Diagnostics<ParserDiagnostic>,
+    semantic: Diagnostics<SemanticDiagnostic>,
+    lowering: Diagnostics<LoweringDiagnostic>,
 }
 impl std::panic::UnwindSafe for FileDiagnostics {}
 #[derive(Clone, Default)]
-pub struct State {
-    pub file_diagnostics: HashMap<Url, FileDiagnostics>,
-    pub open_files: HashSet<Url>,
+struct State {
+    file_diagnostics: HashMap<Url, FileDiagnostics>,
+    open_files: HashSet<Url>,
 }
 impl std::panic::UnwindSafe for State {}
 
-pub struct Backend {
-    pub client: Client,
+struct Backend {
+    client: Client,
+    tricks: Tricks,
     // TODO(spapini): Remove this once we support ParallelDatabase.
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
-    pub db_mutex: tokio::sync::Mutex<RootDatabase>,
-    pub state_mutex: tokio::sync::Mutex<State>,
+    db_mutex: tokio::sync::Mutex<RootDatabase>,
+    state_mutex: tokio::sync::Mutex<State>,
     config: tokio::sync::RwLock<Config>,
     scarb_toolchain: ScarbToolchain,
     last_replace: tokio::sync::Mutex<SystemTime>,
@@ -216,11 +288,13 @@ pub struct Backend {
 }
 
 impl Backend {
-    pub fn new(client: Client, db: RootDatabase) -> Self {
+    fn new(client: Client, tricks: Tricks) -> Self {
+        let db = configured_db(&tricks);
         let notifier = Notifier::new(&client);
         let scarb_toolchain = ScarbToolchain::new(&notifier);
         Self {
             client,
+            tricks,
             db_mutex: db.into(),
             state_mutex: State::default().into(),
             config: Config::default().into(),
@@ -386,10 +460,13 @@ impl Backend {
         let open_files = self.state_mut().await.open_files.clone();
         debug!("scheduled");
         let mut new_db = self
-            .with_db(|db| {
-                let mut new_db = configured_db();
-                ensure_exists_in_db(&mut new_db, db, open_files.iter().cloned());
-                new_db
+            .with_db({
+                let tricks = &self.tricks;
+                |db| {
+                    let mut new_db = configured_db(tricks);
+                    ensure_exists_in_db(&mut new_db, db, open_files.iter().cloned());
+                    new_db
+                }
             })
             .await?;
         debug!("initial setup done");
@@ -433,7 +510,7 @@ impl Backend {
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
-    pub async fn vfs_provide(
+    async fn vfs_provide(
         &self,
         params: ProvideVirtualFileRequest,
     ) -> LSPResult<ProvideVirtualFileResponse> {
@@ -501,7 +578,7 @@ impl Backend {
 
     /// Reload crate detection for all open files.
     #[tracing::instrument(level = "trace", skip_all)]
-    pub async fn reload(&self) -> LSPResult<()> {
+    async fn reload(&self) -> LSPResult<()> {
         self.config.write().await.reload(&self.client).await;
 
         let mut db = self.db_mut().await;
@@ -516,7 +593,7 @@ impl Backend {
     }
 }
 
-pub enum ServerCommands {
+enum ServerCommands {
     Reload,
 }
 
