@@ -223,6 +223,6 @@ error: Unexpected expression type. Expected: "core::felt252", found: "core::inte
                                           ^***^
 
 error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u16".
- --> lib.cairo:2:43
+ --> lib.cairo:2:30
     let _: Option<felt252> = Option::Some(3_u16);
-                                          ^***^
+                             ^*****************^

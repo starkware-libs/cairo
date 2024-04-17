@@ -348,3 +348,32 @@ Candidate `MyTrait::bar` inference failed with: Trait has no implementation in c
  --> lib.cairo:5:21
     (3_u16 + 3_u16).bar();
                     ^*^
+
+//! > ==========================================================================
+
+//! > Wrong num of arguments. 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    0.bar(1, 2, 3);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn bar(self: T, a: felt252, b: felt252);
+}
+impl MyImpl of MyTrait<felt252> {
+    fn bar(self: felt252, a: felt252, b: felt252) {}
+}
+
+//! > expected_diagnostics
+error: Wrong number of arguments. Expected 3, found: 4
+ --> lib.cairo:8:7
+    0.bar(1, 2, 3);
+      ^**********^

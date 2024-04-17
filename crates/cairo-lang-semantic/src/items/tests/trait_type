@@ -1105,9 +1105,9 @@ error: Unexpected expression type. Expected: "core::option::Option::<core::integ
                  ^
 
 error: Unexpected argument type. Expected: "core::integer::u32", found: "core::integer::u16".
- --> lib.cairo:45:18
+ --> lib.cairo:45:5
     Option::Some(x?)
-                 ^^
+    ^**************^
 
 //! > ==========================================================================
 
@@ -1234,9 +1234,9 @@ error: Unexpected expression type. Expected: "core::option::Option::<core::integ
                  ^
 
 error: Unexpected argument type. Expected: "core::integer::u32", found: "core::integer::u16".
- --> lib.cairo:14:18
+ --> lib.cairo:14:5
     Option::Some(x?)
-                 ^^
+    ^**************^
 
 error: Unexpected expression type. Expected: "core::integer::u32", found: "core::integer::u16".
  --> lib.cairo:17:6
