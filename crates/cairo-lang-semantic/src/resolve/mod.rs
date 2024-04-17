@@ -642,6 +642,11 @@ impl<'db> Resolver<'db> {
 
                         Ok(ResolvedConcreteItem::Type(ty))
                     }
+                    TraitItemId::Const(_trait_const_id) => {
+                        // TODO(TomerStarkware): resolve trait constants when impl consts are
+                        // supported.
+                        Err(diagnostics.report(identifier, Unsupported))
+                    }
                 }
             }
             ResolvedConcreteItem::Impl(impl_id) => {
@@ -676,6 +681,9 @@ impl<'db> Resolver<'db> {
                             &mut self.inference(),
                         )?;
                         Ok(ResolvedConcreteItem::Type(ty))
+                    }
+                    TraitItemId::Const(_trait_const_id) => {
+                        return Err(diagnostics.report(identifier, Unsupported));
                     }
                 }
             }

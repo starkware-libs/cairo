@@ -795,6 +795,7 @@ foo
 trait MyTrait {
     type X<T>;
     const Y: usize;
+    const Y: u64;
     impl Z of OtherTrait;
 }
 impl MyImpl of MyTrait {
@@ -808,13 +809,13 @@ trait OtherTrait {}
 impl OtherImpl of OtherTrait {}
 
 //! > expected_diagnostics
-error: Constant items are not yet supported in traits.
- --> lib.cairo:3:5
-    const Y: usize;
-    ^***^
+error: The name `Y` is defined multiple times.
+ --> lib.cairo:4:11
+    const Y: u64;
+          ^
 
 error: Impl items are not yet supported in traits.
- --> lib.cairo:4:5
+ --> lib.cairo:5:5
     impl Z of OtherTrait;
     ^**^
 
@@ -824,17 +825,22 @@ error: Generic parameters are not supported in Trait item type.
           ^*^
 
 error: Constant items are not yet supported in impls.
- --> lib.cairo:9:5
+ --> lib.cairo:10:5
     const Y: usize = 3;
     ^***^
 
 error: Impl items are not yet supported in impls.
- --> lib.cairo:10:5
+ --> lib.cairo:11:5
     impl Z = OtherImpl;
     ^**^
 
+error: Not all trait items are implemented. Missing: 'Y'.
+ --> lib.cairo:7:6
+impl MyImpl of MyTrait {
+     ^****^
+
 error: Impl item type `MyImpl::XX` is not a member of trait `MyTrait`.
- --> lib.cairo:8:5
+ --> lib.cairo:9:5
     type XX<T> = Array<T>;
     ^********************^
 
@@ -860,6 +866,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
+
 
 //! > ==========================================================================
 

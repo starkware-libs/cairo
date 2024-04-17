@@ -62,6 +62,8 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_trait_type(&self, id: TraitTypeLongId) -> TraitTypeId;
     #[salsa::interned]
+    fn intern_trait_const(&self, id: TraitConstLongId) -> TraitConstId;
+    #[salsa::interned]
     fn intern_trait_function(&self, id: TraitFunctionLongId) -> TraitFunctionId;
     #[salsa::interned]
     fn intern_impl(&self, id: ImplDefLongId) -> ImplDefId;

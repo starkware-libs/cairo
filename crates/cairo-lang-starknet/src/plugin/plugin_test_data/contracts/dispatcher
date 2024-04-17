@@ -713,11 +713,6 @@ error: Plugin diagnostic: `starknet::interface` does not yet support constant it
     const Y: usize;
     ^***^
 
-error: Constant items are not yet supported in traits.
- --> lib.cairo:4:5
-    const Y: usize;
-    ^***^
-
 //! > generated_cairo_code
 lib.cairo:
 

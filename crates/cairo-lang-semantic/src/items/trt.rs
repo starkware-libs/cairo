@@ -3,8 +3,9 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
-    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitContext, TraitFunctionId,
-    TraitFunctionLongId, TraitId, TraitItemId, TraitOrImplContext, TraitTypeId, TraitTypeLongId,
+    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitConstId, TraitConstLongId,
+    TraitContext, TraitFunctionId, TraitFunctionLongId, TraitId, TraitItemId, TraitOrImplContext,
+    TraitTypeId, TraitTypeLongId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -16,7 +17,6 @@ use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::chain;
 use smol_str::SmolStr;
 
 use super::feature_kind::extract_allowed_features;
@@ -32,6 +32,7 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::types::resolve_type;
 use crate::{
     semantic, semantic_object_for_id, FunctionBody, GenericArgumentId, GenericParam, Mutability,
     SemanticDiagnostic, TypeId,
@@ -207,6 +208,62 @@ impl ConcreteTraitTypeId {
     }
 }
 
+/// The ID of a const item in a concrete trait.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ConcreteTraitConstLongId {
+    // Note the members are private to prevent direct call to the constructor.
+    concrete_trait: ConcreteTraitId,
+    trait_const: TraitConstId,
+}
+impl ConcreteTraitConstLongId {
+    pub fn new(
+        db: &dyn SemanticGroup,
+        concrete_trait: ConcreteTraitId,
+        trait_const: TraitConstId,
+    ) -> Self {
+        assert_eq!(
+            concrete_trait.trait_id(db),
+            trait_const.trait_id(db.upcast()),
+            "Concrete trait and trait type must belong to the same generic trait."
+        );
+        Self { concrete_trait, trait_const }
+    }
+}
+define_short_id!(
+    ConcreteTraitConstId,
+    ConcreteTraitConstLongId,
+    SemanticGroup,
+    lookup_intern_concrete_trait_const
+);
+semantic_object_for_id!(
+    ConcreteTraitConstId,
+    lookup_intern_concrete_trait_const,
+    intern_concrete_trait_const,
+    ConcreteTraitConstLongId
+);
+impl ConcreteTraitConstId {
+    pub fn new(
+        db: &dyn SemanticGroup,
+        concrete_trait: ConcreteTraitId,
+        trait_const: TraitConstId,
+    ) -> Self {
+        db.intern_concrete_trait_const(ConcreteTraitConstLongId::new(
+            db,
+            concrete_trait,
+            trait_const,
+        ))
+    }
+
+    pub fn trait_const(&self, db: &dyn SemanticGroup) -> TraitConstId {
+        db.lookup_intern_concrete_trait_const(*self).trait_const
+    }
+
+    pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
+        db.lookup_intern_concrete_trait_const(*self).concrete_trait
+    }
+}
+
 // === Trait Declaration ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -331,6 +388,7 @@ pub struct TraitDefinitionData {
     // AST maps.
     function_asts: OrderedHashMap<TraitFunctionId, ast::TraitItemFunction>,
     item_type_asts: OrderedHashMap<TraitTypeId, ast::TraitItemType>,
+    item_const_asts: OrderedHashMap<TraitConstId, ast::TraitItemConstant>,
 
     /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
     item_id_by_name: Arc<OrderedHashMap<SmolStr, TraitItemId>>,
@@ -358,6 +416,9 @@ pub fn trait_semantic_definition_diagnostics(
     for trait_type_id in data.item_type_asts.keys() {
         diagnostics.extend(db.trait_type_diagnostics(*trait_type_id));
     }
+    for trait_const_id in data.item_const_asts.keys() {
+        diagnostics.extend(db.trait_const_diagnostics(*trait_const_id));
+    }
 
     diagnostics.build()
 }
@@ -367,9 +428,7 @@ pub fn trait_item_names(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
 ) -> Maybe<OrderedHashSet<SmolStr>> {
-    let trait_functions = db.trait_functions(trait_id)?;
-    let trait_types = db.trait_types(trait_id)?;
-    Ok(chain!(trait_functions.keys(), trait_types.keys()).cloned().collect())
+    Ok(db.priv_trait_definition_data(trait_id)?.item_id_by_name.keys().cloned().collect())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_item_by_name].
@@ -431,6 +490,31 @@ pub fn trait_type_by_name(
     Ok(db.trait_types(trait_id)?.get(&name).copied())
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_consts].
+pub fn trait_consts(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+) -> Maybe<OrderedHashMap<SmolStr, TraitConstId>> {
+    Ok(db
+        .priv_trait_definition_data(trait_id)?
+        .item_const_asts
+        .keys()
+        .map(|const_id| {
+            let const_long_id = db.lookup_intern_trait_const(*const_id);
+            (const_long_id.name(db.upcast()), *const_id)
+        })
+        .collect())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_const_by_name].
+pub fn trait_const_by_name(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+    name: SmolStr,
+) -> Maybe<Option<TraitConstId>> {
+    Ok(db.trait_consts(trait_id)?.get(&name).copied())
+}
+
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_definition_data].
@@ -450,6 +534,7 @@ pub fn priv_trait_definition_data(
 
     let mut function_asts = OrderedHashMap::default();
     let mut item_type_asts = OrderedHashMap::default();
+    let mut item_const_asts = OrderedHashMap::default();
     let mut item_id_by_name = OrderedHashMap::default();
 
     if let ast::MaybeTraitBody::Some(body) = trait_ast.body(syntax_db) {
@@ -489,11 +574,25 @@ pub fn priv_trait_definition_data(
                     }
                     item_type_asts.insert(trait_type_id, ty);
                 }
-                ast::TraitItem::Constant(constant) => report_unsupported_trait_item(
-                    &mut diagnostics,
-                    constant.const_kw(syntax_db),
-                    "Constant",
-                ),
+                ast::TraitItem::Constant(constant) => {
+                    let trait_const_id = db.intern_trait_const(TraitConstLongId(
+                        module_file_id,
+                        constant.stable_ptr(),
+                    ));
+
+                    let name_node = constant.name(syntax_db);
+                    let name = name_node.text(syntax_db);
+                    if item_id_by_name
+                        .insert(name.clone(), TraitItemId::Const(trait_const_id))
+                        .is_some()
+                    {
+                        diagnostics.report_by_ptr(
+                            name_node.stable_ptr().untyped(),
+                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
+                        );
+                    }
+                    item_const_asts.insert(trait_const_id, constant);
+                }
                 ast::TraitItem::Impl(imp) => {
                     report_unsupported_trait_item(&mut diagnostics, imp.impl_kw(syntax_db), "Impl")
                 }
@@ -506,6 +605,7 @@ pub fn priv_trait_definition_data(
         diagnostics: diagnostics.build(),
         function_asts,
         item_type_asts,
+        item_const_asts,
         item_id_by_name: item_id_by_name.into(),
     })
 }
@@ -635,6 +735,77 @@ pub fn priv_trait_type_data(
         attributes,
         resolver_data,
     })
+}
+
+// === Trait item const ===
+
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct TraitItemConstData {
+    pub diagnostics: Diagnostics<SemanticDiagnostic>,
+    pub ty: TypeId,
+    pub attributes: Vec<Attribute>,
+    pub resolver_data: Arc<ResolverData>,
+}
+
+// --- Selectors ---
+
+pub fn trait_const_diagnostics(
+    db: &dyn SemanticGroup,
+    trait_const_id: TraitConstId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_trait_const_data(trait_const_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_const_resolver_data].
+pub fn trait_const_resolver_data(
+    db: &dyn SemanticGroup,
+    trait_const_id: TraitConstId,
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_trait_const_data(trait_const_id)?.resolver_data)
+}
+
+pub fn trait_const_attributes(
+    db: &dyn SemanticGroup,
+    trait_const_id: TraitConstId,
+) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_trait_const_data(trait_const_id)?.attributes)
+}
+
+// --- Computation ---
+
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_const_data].
+pub fn priv_trait_const_data(
+    db: &dyn SemanticGroup,
+    trait_const_id: TraitConstId,
+) -> Maybe<TraitItemConstData> {
+    let syntax_db = db.upcast();
+    let module_file_id = trait_const_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let trait_id = trait_const_id.trait_id(db.upcast());
+    let data = db.priv_trait_definition_data(trait_id)?;
+    let const_syntax = &data.item_const_asts[&trait_const_id];
+
+    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::TraitItem(
+        TraitItemId::Const(trait_const_id),
+    ));
+    let parent_resolver_data = db.trait_resolver_data(trait_id)?;
+    let mut resolver =
+        Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id));
+    let trait_generic_params = db.trait_generic_params(trait_id)?;
+    for generic_param in trait_generic_params {
+        resolver.add_generic_param(generic_param.id());
+    }
+    let ty = resolve_type(
+        db,
+        &mut diagnostics,
+        &mut resolver,
+        &const_syntax.type_clause(syntax_db).ty(syntax_db),
+    );
+    let attributes = const_syntax.attributes(syntax_db).structurize(syntax_db);
+    let resolver_data = Arc::new(resolver.data);
+
+    Ok(TraitItemConstData { diagnostics: diagnostics.build(), ty, attributes, resolver_data })
 }
 
 // === Trait function Declaration ===
