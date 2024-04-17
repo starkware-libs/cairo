@@ -34,3 +34,6 @@ pub const STARKNET_INTERFACE_ATTR: &str = "starknet::interface";
 /// An attribute to define a type as a phantom type, phantom types cannot be created at run time and
 /// are typically used for meta-programming.
 pub const PHANTOM_ATTR: &str = "phantom";
+
+/// An attribute to mark function as an executable function, meaning a program execution entrypoint.
+pub const EXECUTABLE_ATTR: &str = "executable";

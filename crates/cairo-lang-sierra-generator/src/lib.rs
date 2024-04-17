@@ -6,6 +6,7 @@ mod ap_tracking;
 mod block_generator;
 pub mod canonical_id_replacer;
 pub mod db;
+pub mod executables;
 mod expr_generator_context;
 mod extra_sierra_info;
 mod function_generator;
