@@ -23,11 +23,11 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    get_originating_location, init_dev_corelib, AsFilesGroupMut, CrateConfiguration, CrateSettings,
-    FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
+    get_originating_location, init_dev_corelib, AsFilesGroupMut, FilesGroup, FilesGroupEx,
+    PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
+use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -58,8 +58,8 @@ use tracing::{debug, error, info, trace_span, warn, Instrument};
 use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
+use crate::project::backends::scarb::db::update_crate_roots;
 use crate::project::ProjectManifestPath;
-use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
 use crate::server::notifier::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
@@ -68,7 +68,6 @@ mod env_config;
 mod ide;
 mod lang;
 mod project;
-mod scarb_service;
 mod server;
 mod toolchain;
 mod vfs;
@@ -209,7 +208,7 @@ pub struct Backend {
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
     pub db_mutex: tokio::sync::Mutex<RootDatabase>,
     pub state_mutex: tokio::sync::Mutex<State>,
-    pub scarb: ScarbService,
+    scarb_toolchain: ScarbToolchain,
     last_replace: tokio::sync::Mutex<SystemTime>,
     db_replace_interval: Duration,
 }
@@ -217,13 +216,12 @@ pub struct Backend {
 impl Backend {
     pub fn new(client: Client, db: RootDatabase) -> Self {
         let notifier = Notifier::new(&client);
-        let scarb = ScarbToolchain::new(&notifier);
-        let scarb_service = ScarbService::new(&scarb);
+        let scarb_toolchain = ScarbToolchain::new(&notifier);
         Self {
             client,
             db_mutex: db.into(),
             state_mutex: State::default().into(),
-            scarb: scarb_service,
+            scarb_toolchain,
             last_replace: tokio::sync::Mutex::new(SystemTime::now()),
             db_replace_interval: env_config::db_replace_interval(),
         }
@@ -497,27 +495,21 @@ impl Backend {
         let corelib_fallback = self.get_corelib_fallback_path().await;
         match ProjectManifestPath::discover(&file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                let scarb = self.scarb.clone();
-                let Ok((corelib, source_paths)) = spawn_blocking(move || {
-                    let corelib = scarb
-                        .corelib_path(manifest_path.clone())
-                        .context("Failed to obtain scarb corelib path from manifest file.")
-                        .inspect_err(|err| warn!("{err:?}"))
+                let scarb = self.scarb_toolchain.clone();
+                let Ok(metadata) = spawn_blocking(move || {
+                    scarb
+                        .metadata(&manifest_path)
+                        .with_context(|| {
+                            format!(
+                                "failed to refresh scarb workspace: {}",
+                                manifest_path.display()
+                            )
+                        })
+                        .inspect_err(|e| {
+                            // TODO(mkaput): Send a notification to the language client.
+                            warn!("{e:?}");
+                        })
                         .ok()
-                        .flatten()
-                        .or_else(detect_corelib)
-                        .or(corelib_fallback);
-                    if corelib.is_none() {
-                        warn!("Failed to find corelib path.");
-                    }
-
-                    let source_paths = scarb
-                        .crate_source_paths(manifest_path)
-                        .context("Failed to obtain scarb metadata from manifest file.")
-                        .inspect_err(|err| warn!("{err:?}"))
-                        .ok();
-
-                    (corelib, source_paths)
                 })
                 .await
                 else {
@@ -525,12 +517,13 @@ impl Backend {
                     return;
                 };
 
-                if let Some(corelib) = corelib {
-                    init_dev_corelib(db, corelib);
-                }
-
-                if let Some(source_paths) = source_paths {
-                    update_crate_roots(db, source_paths);
+                if let Some(metadata) = metadata {
+                    update_crate_roots(&metadata, db);
+                } else {
+                    // Try to set up a corelib at least.
+                    if let Some(corelib) = detect_corelib().or(corelib_fallback) {
+                        init_dev_corelib(db, corelib);
+                    }
                 }
             }
 
@@ -684,7 +677,9 @@ impl LanguageServer for Backend {
         drop(db);
         // Reload workspace if Scarb.toml changed.
         for change in params.changes {
-            if is_scarb_manifest_path(&change.uri) {
+            let changed_file_path = change.uri.to_file_path().unwrap_or_default();
+            let changed_file_name = changed_file_path.file_name().unwrap_or_default();
+            if changed_file_name == "Scarb.toml" {
                 self.reload().await.ok();
             }
         }
@@ -1113,63 +1108,6 @@ fn find_node_module(
         module = ModuleId::Submodule(submodule);
     }
     Some(module)
-}
-
-#[tracing::instrument(level = "trace", skip_all)]
-fn update_crate_roots(
-    db: &mut dyn SemanticGroup,
-    source_paths: Vec<(CrateLongId, PathBuf, CrateSettings)>,
-) {
-    let source_paths = source_paths
-        .into_iter()
-        .filter_map(|(crate_long_id, source_path, crate_settings)| {
-            let file_stem =
-                source_path.clone().file_stem().map(|x| x.to_string_lossy().to_string());
-
-            let crate_root: Option<PathBuf> = if !source_path.is_dir() {
-                source_path.clone().parent().map(|x| x.to_path_buf())
-            } else {
-                Some(source_path.clone())
-            };
-
-            match (crate_root, file_stem) {
-                (Some(crate_root), Some(file_stem)) => {
-                    let crate_id = db.intern_crate(crate_long_id);
-                    Some((crate_id, crate_root, crate_settings, file_stem))
-                }
-                _ => None,
-            }
-        })
-        .collect::<Vec<_>>();
-
-    for (crate_id, crate_root, settings, _file_stem) in source_paths.clone() {
-        let crate_root = Directory::Real(crate_root);
-        db.set_crate_config(crate_id, Some(CrateConfiguration { root: crate_root, settings }));
-    }
-
-    let source_paths = source_paths
-        .into_iter()
-        .filter(|(_crate_id, _crate_root, _edition, file_stem)| *file_stem != "lib")
-        .map(|(crate_id, _crate_root, _edition, file_stem)| (crate_id, file_stem))
-        .collect::<Vec<_>>();
-
-    inject_virtual_wrapper_lib(db, source_paths);
-}
-
-/// Generates a wrapper lib file for appropriate compilation units.
-///
-/// This approach allows compiling crates that do not define `lib.cairo` file.
-/// For example, single file crates can be created this way.
-/// The actual single file module is defined as `mod` item in created lib file.
-#[tracing::instrument(level = "trace", skip_all)]
-fn inject_virtual_wrapper_lib(db: &mut dyn SemanticGroup, components: Vec<(CrateId, String)>) {
-    for (crate_id, file_stem) in components {
-        let module_id = ModuleId::CrateRoot(crate_id);
-        let file_id = db.module_main_file(module_id).unwrap();
-        // Inject virtual lib file wrapper.
-        db.as_files_group_mut()
-            .override_file_content(file_id, Some(Arc::new(format!("mod {file_stem};"))));
-    }
 }
 
 fn is_cairo_file_path(file_path: &Url) -> bool {
