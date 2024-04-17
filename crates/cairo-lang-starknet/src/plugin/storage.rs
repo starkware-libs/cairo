@@ -13,7 +13,7 @@ use super::consts::{
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
 use super::utils::has_v0_attribute;
-use super::STORAGE_AS_POINTER_TRAIT;
+use super::{STORAGE_AS_PATH_TRAIT, STORAGE_AS_POINTER_TRAIT};
 
 /// Generate getters and setters for the members of the storage struct.
 pub fn handle_storage_struct(
@@ -186,12 +186,32 @@ fn get_simple_storage_member_code(
                 .into(),
             ))
         }
-        Some((_, _, MappingType::NonLegacy)) => {
-            diagnostics.push(PluginDiagnostic::error(
-                type_ast.stable_ptr().untyped(),
-                format!("Non `{LEGACY_STORAGE_MAPPING}` mapping is not yet supported."),
-            ));
-            None
+        Some((key_type_ast, value_type_ast, MappingType::NonLegacy)) => {
+            let type_path = get_full_path_type(db, &type_ast);
+            let Some(key_type_path) = get_mapping_full_path_type(db, diagnostics, &key_type_ast)
+            else {
+                return Default::default();
+            };
+            let Some(value_type_path) =
+                get_mapping_full_path_type(db, diagnostics, &value_type_ast)
+            else {
+                return Default::default();
+            };
+            Some(RewriteNode::interpolate_patched(
+                &handle_nonlegacy_mapping_storage_member(&address, starknet_module_kind),
+                &[
+                    (
+                        "storage_member_name".to_string(),
+                        RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
+                    ),
+                    ("member_module_path".to_string(), member_module_path),
+                    ("extra_uses".to_string(), extra_uses_node),
+                    ("key_type".to_string(), key_type_path),
+                    ("value_type".to_string(), value_type_path),
+                    ("type_path".to_string(), type_path),
+                ]
+                .into(),
+            ))
         }
         None => {
             let type_path = get_full_path_type(db, &type_ast);
@@ -498,4 +518,30 @@ fn handle_legacy_mapping_storage_member(
     }}"
         ),
     }
+}
+
+/// Generate getters and setters skeleton for a non-legacy mapping member in the storage struct.
+fn handle_nonlegacy_mapping_storage_member(
+    address: &str,
+    starknet_module_kind: StarknetModuleKind,
+) -> String {
+    let member_state_name = starknet_module_kind.get_member_state_name();
+    format!(
+        "
+    pub mod $member_module_path$ {{$extra_uses$
+        #[derive(Copy, Drop)]
+        pub struct {member_state_name} {{}}
+        impl Storage{member_state_name}AsPathImpl of {STORAGE_AS_PATH_TRAIT}<{member_state_name}, \
+         $type_path$> {{
+            fn as_path(self: @{member_state_name}) -> starknet::storage::StoragePath<$type_path$> \
+         {{
+                    starknet::storage::StoragePath::<$type_path$> {{ hash_state:
+                        \
+         core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), {address})
+                     }}
+    
+                }}
+        }}
+    }}"
+    )
 }
