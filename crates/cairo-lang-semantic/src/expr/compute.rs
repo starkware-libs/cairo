@@ -588,6 +588,7 @@ fn compute_expr_unary_semantic(
                 ctx,
                 function,
                 vec![NamedArg(expr, None, Mutability::Immutable)],
+                syntax,
                 syntax.stable_ptr().into(),
             )
         }
@@ -770,6 +771,7 @@ fn call_core_binary_op(
             NamedArg(lexpr, None, first_param.mutability),
             NamedArg(rexpr, None, Mutability::Immutable),
         ],
+        syntax,
         stable_ptr,
     )
 }
@@ -931,7 +933,7 @@ fn compute_expr_function_call_semantic(
     let path = syntax.path(syntax_db);
     let item =
         ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path, NotFoundItemType::Function)?;
-    let args_syntax = syntax.arguments(syntax_db);
+    let args_syntax = syntax.arguments(syntax_db).arguments(syntax_db);
 
     match item {
         ResolvedConcreteItem::Variant(concrete_variant) => {
@@ -961,7 +963,6 @@ fn compute_expr_function_call_semantic(
             // TODO(Gil): Consider not invoking the TraitFunction inference below if there were
             // errors in argument semantics, in order to avoid unnecessary diagnostics.
             let named_args: Vec<_> = args_syntax
-                .arguments(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
                 .map(|arg_syntax| {
@@ -975,7 +976,7 @@ fn compute_expr_function_call_semantic(
                 .collect();
             if named_args.len() != 1 {
                 return Err(ctx.diagnostics.report(
-                    &args_syntax,
+                    syntax,
                     WrongNumberOfArguments { expected: 1, actual: named_args.len() },
                 ));
             }
@@ -990,10 +991,9 @@ fn compute_expr_function_call_semantic(
             let actual_ty = ctx.reduce_ty(arg.ty());
             let inference = &mut ctx.resolver.inference();
             if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
-                let diag_added = ctx.diagnostics.report(
-                    &args_syntax.arguments(syntax_db),
-                    WrongArgumentType { expected_ty, actual_ty },
-                );
+                let diag_added = ctx
+                    .diagnostics
+                    .report(&args_syntax, WrongArgumentType { expected_ty, actual_ty });
                 inference.consume_reported_error(err_set, diag_added);
                 return Err(diag_added);
             }
@@ -1009,7 +1009,7 @@ fn compute_expr_function_call_semantic(
             // errors in argument semantics, in order to avoid unnecessary diagnostics.
 
             // Note there may be n+1 arguments for n parameters, if the last one is a coupon.
-            let mut args_iter = args_syntax.arguments(syntax_db).elements(syntax_db).into_iter();
+            let mut args_iter = args_syntax.elements(syntax_db).into_iter();
             let function_parameter_types = function_parameter_types(ctx, function)?;
             // Normal parameters
             let mut named_args: Vec<_> = function_parameter_types
@@ -1030,7 +1030,7 @@ fn compute_expr_function_call_semantic(
             }
             assert!(args_iter.next().is_none(), "More arguments than parameters plus coupon");
 
-            expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
+            expr_function_call(ctx, function, named_args, syntax, syntax.stable_ptr().into())
         }
         _ => Err(ctx.diagnostics.report(
             &path,
@@ -1717,6 +1717,7 @@ fn compute_expr_indexed_semantic(
             NamedArg(fixed_expr, None, mutability),
             NamedArg(index_expr, None, Mutability::Immutable),
         ],
+        syntax,
         index_expr_syntax.stable_ptr(),
     )
 }
@@ -2637,7 +2638,7 @@ fn method_call_expr(
     }
     assert!(args_iter.next().is_none(), "More arguments than parameters plus coupon");
 
-    expr_function_call(ctx, function_id, named_args, stable_ptr)
+    expr_function_call(ctx, function_id, named_args, &expr, stable_ptr)
 }
 
 /// Computes the semantic model of a member access expression (e.g. "expr.member").
@@ -2831,6 +2832,7 @@ fn expr_function_call(
     ctx: &mut ComputationContext<'_>,
     function_id: FunctionId,
     mut named_args: Vec<NamedArg>,
+    call_syntax: &impl TypedSyntaxNode,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     let coupon_arg = maybe_pop_coupon_argument(ctx, &mut named_args, function_id);
@@ -2840,8 +2842,8 @@ fn expr_function_call(
 
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     if named_args.len() != signature.params.len() {
-        return Err(ctx.diagnostics.report_by_ptr(
-            stable_ptr.untyped(),
+        return Err(ctx.diagnostics.report(
+            call_syntax,
             WrongNumberOfArguments { expected: signature.params.len(), actual: named_args.len() },
         ));
     }
@@ -2908,7 +2910,7 @@ fn expr_function_call(
     if signature.panicable && has_panic_incompatibility(ctx, &expr_function_call) {
         // TODO(spapini): Delay this check until after inference, to allow resolving specific
         //   impls first.
-        return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable));
+        return Err(ctx.diagnostics.report(call_syntax, PanicableFromNonPanicable));
     }
     Ok(Expr::FunctionCall(expr_function_call))
 }
