@@ -65,7 +65,7 @@ mod ownable_erc20_contract {
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StoragePathFinalize, StorageAsPtr, StorageAsPath, StoragePointerAccess
+    StorageAsPtr, StoragePointerAccess, StorageAsPath, StoragePathFinalize
 };
 
 impl ContractStateIERC20 of
@@ -305,7 +305,7 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StoragePathFinalize, StorageAsPtr, StorageAsPath, StoragePointerAccess
+    StorageAsPtr, StoragePointerAccess, StorageAsPath, StoragePathFinalize
 };
 
 impl ContractStateIERC20 of

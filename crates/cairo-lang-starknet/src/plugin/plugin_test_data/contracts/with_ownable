@@ -113,7 +113,7 @@ impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StoragePathFinalize, StorageAsPtr, StorageAsPath, StoragePointerAccess
+    StorageAsPtr, StoragePointerAccess, StorageAsPath, StoragePathFinalize
 };
 
 impl ContractStateTransfer of
@@ -380,7 +380,7 @@ impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StoragePathFinalize, StorageAsPtr, StorageAsPath, StoragePointerAccess
+    StorageAsPtr, StoragePointerAccess, StorageAsPath, StoragePathFinalize
 };
 
 impl ContractStateTransfer of

@@ -84,7 +84,7 @@ mod mintable_erc20_ownable {
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StoragePathFinalize, StorageAsPtr, StorageAsPath, StoragePointerAccess
+    StorageAsPtr, StoragePointerAccess, StorageAsPath, StoragePathFinalize
 };
 
 impl ContractStateIERC20 of
@@ -677,7 +677,7 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StoragePathFinalize, StorageAsPtr, StorageAsPath, StoragePointerAccess
+    StorageAsPtr, StoragePointerAccess, StorageAsPath, StoragePathFinalize
 };
 
 impl ContractStateIERC20 of
