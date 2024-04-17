@@ -1,6 +1,7 @@
 use std::any::Any;
 use std::ops::Deref;
 use std::sync::Arc;
+use std::vec::IntoIter;
 
 use cairo_lang_diagnostics::Severity;
 use cairo_lang_filesystem::cfg::CfgSet;
@@ -102,6 +103,15 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     /// Note: They may not cause a diagnostic if some other plugin declares such attribute, but
     /// plugin writers should not rely on that.
     fn declared_attributes(&self) -> Vec<String>;
+
+    /// Attributes that should mark the function as an executable.
+    /// Functions marked with executable attributes will be listed
+    /// in a dedicated field in the generated program.
+    /// Must return a subset of `declared_attributes`.
+    /// This mechanism is optional.
+    fn executable_attributes(&self) -> IntoIter<String> {
+        Vec::new().into_iter()
+    }
 }
 
 /// Result of plugin code generation.
