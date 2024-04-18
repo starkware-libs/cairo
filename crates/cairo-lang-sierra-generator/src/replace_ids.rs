@@ -141,8 +141,7 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         cairo_lang_sierra::ids::FunctionId {
             id: sierra_id.id,
             debug_name: Some(
-                format!("{:?}", semantic_id.lookup(self.db.upcast()).debug(self.db.upcast()))
-                    .into(),
+                format!("{:?}", semantic_id.lookup_intern(self.db).debug(self.db.upcast())).into(),
             ),
         }
     }

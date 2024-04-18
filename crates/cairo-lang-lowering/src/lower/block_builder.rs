@@ -4,7 +4,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{require, Intern};
+use cairo_lang_utils::{require, Intern, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
 use semantic::items::structure::SemanticStructEx;
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
@@ -172,7 +172,7 @@ impl BlockBuilder {
             .collect::<Option<Vec<_>>>()
             .ok_or_else(|| {
                 ctx.diagnostics.report_by_location(
-                    location.get(ctx.db),
+                    location.lookup_intern(ctx.db),
                     LoweringDiagnosticKind::UnexpectedError,
                 )
             })?;
