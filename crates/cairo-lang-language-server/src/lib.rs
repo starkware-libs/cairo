@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use anyhow::{bail, Context, Error};
+use anyhow::{bail, Context};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::{get_all_path_leaves, DefsGroup};
@@ -23,10 +23,8 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    get_originating_location, init_dev_corelib, AsFilesGroupMut, FilesGroup, FilesGroupEx,
-    PrivRawFileContentQuery,
+    get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
-use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 use cairo_lang_lowering::db::LoweringGroup;
@@ -55,15 +53,18 @@ use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
 
+use crate::config::Config;
 use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
+use crate::project::backends::cairo_project::corelib::try_to_init_unmanaged_core;
 use crate::project::backends::scarb::db::update_crate_roots;
 use crate::project::ProjectManifestPath;
 use crate::server::notifier::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
+mod config;
 mod env_config;
 mod ide;
 mod lang;
@@ -208,6 +209,7 @@ pub struct Backend {
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
     pub db_mutex: tokio::sync::Mutex<RootDatabase>,
     pub state_mutex: tokio::sync::Mutex<State>,
+    config: tokio::sync::RwLock<Config>,
     scarb_toolchain: ScarbToolchain,
     last_replace: tokio::sync::Mutex<SystemTime>,
     db_replace_interval: Duration,
@@ -221,6 +223,7 @@ impl Backend {
             client,
             db_mutex: db.into(),
             state_mutex: State::default().into(),
+            config: Config::default().into(),
             scarb_toolchain,
             last_replace: tokio::sync::Mutex::new(SystemTime::now()),
             db_replace_interval: env_config::db_replace_interval(),
@@ -441,58 +444,10 @@ impl Backend {
         .await
     }
 
-    /// Get corelib path fallback from the client configuration.
-    ///
-    /// The value is set by the user under the `cairo1.corelibPath` key in client configuration.
-    /// The value is not required to be set.
-    /// The path may omit the `corelib/src` or `src` suffix.
-    #[tracing::instrument(level = "trace", skip_all)]
-    async fn get_corelib_fallback_path(&self) -> Option<PathBuf> {
-        const CORELIB_CONFIG_SECTION: &str = "cairo1.corelibPath";
-        let item = vec![ConfigurationItem {
-            scope_uri: None,
-            section: Some(CORELIB_CONFIG_SECTION.to_string()),
-        }];
-        let corelib_response = self.client.configuration(item).await;
-        match corelib_response.map_err(Error::from) {
-            Ok(value_vec) => {
-                if let Some(Value::String(value)) = value_vec.first() {
-                    if !value.is_empty() {
-                        let root_path: PathBuf = value.into();
-
-                        let mut path = root_path.clone();
-                        path.push("corelib");
-                        path.push("src");
-                        if path.exists() {
-                            return Some(path);
-                        }
-
-                        let mut path = root_path.clone();
-                        path.push("src");
-                        if path.exists() {
-                            return Some(path);
-                        }
-
-                        if root_path.exists() {
-                            return Some(root_path);
-                        }
-                    }
-                }
-            }
-            Err(err) => {
-                let err =
-                    err.context("Failed to get configuration under `cairo1.corelibPath` key.");
-                warn!("{err:?}");
-            }
-        };
-        None
-    }
-
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
     #[tracing::instrument(level = "trace", skip_all)]
     async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: PathBuf) {
-        let corelib_fallback = self.get_corelib_fallback_path().await;
         match ProjectManifestPath::discover(&file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
                 let scarb = self.scarb_toolchain.clone();
@@ -521,18 +476,12 @@ impl Backend {
                     update_crate_roots(&metadata, db);
                 } else {
                     // Try to set up a corelib at least.
-                    if let Some(corelib) = detect_corelib().or(corelib_fallback) {
-                        init_dev_corelib(db, corelib);
-                    }
+                    try_to_init_unmanaged_core(&*self.config.read().await, db);
                 }
             }
 
             Some(ProjectManifestPath::CairoProject(config_path)) => {
-                if let Some(corelib) = detect_corelib().or(corelib_fallback) {
-                    init_dev_corelib(db, corelib);
-                } else {
-                    warn!("Failed to find corelib path.");
-                }
+                try_to_init_unmanaged_core(&*self.config.read().await, db);
 
                 if let Ok(config) = ProjectConfig::from_file(&config_path) {
                     update_crate_roots_from_project_config(db, &config);
@@ -540,11 +489,7 @@ impl Backend {
             }
 
             None => {
-                if let Some(corelib) = detect_corelib().or(corelib_fallback) {
-                    init_dev_corelib(db, corelib);
-                } else {
-                    warn!("Failed to find corelib path.");
-                }
+                try_to_init_unmanaged_core(&*self.config.read().await, db);
 
                 if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
                     let file_path_s = file_path.to_string_lossy();
@@ -557,6 +502,8 @@ impl Backend {
     /// Reload crate detection for all open files.
     #[tracing::instrument(level = "trace", skip_all)]
     pub async fn reload(&self) -> LSPResult<()> {
+        self.config.write().await.reload(&self.client).await;
+
         let mut db = self.db_mut().await;
         for uri in self.state_mutex.lock().await.open_files.iter() {
             let file_id = db.file_for_url(uri);
@@ -634,6 +581,9 @@ impl LanguageServer for Backend {
 
     #[tracing::instrument(level = "debug", skip_all)]
     async fn initialized(&self, _: InitializedParams) {
+        // Initialize the configuration.
+        self.config.write().await.reload(&self.client).await;
+
         // Register patterns for client file watcher.
         // This is used to detect changes to Scarb.toml and invalidate .cairo files.
         let registration_options = DidChangeWatchedFilesRegistrationOptions {
@@ -660,9 +610,13 @@ impl LanguageServer for Backend {
         Ok(())
     }
 
+    #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_workspace_folders(&self, _: DidChangeWorkspaceFoldersParams) {}
 
-    async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {}
+    #[tracing::instrument(level = "debug", skip_all)]
+    async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {
+        self.config.write().await.reload(&self.client).await;
+    }
 
     #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_watched_files(&self, params: DidChangeWatchedFilesParams) {
