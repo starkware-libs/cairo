@@ -9,7 +9,7 @@ use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Mayb
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
+use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, LookupIntern};
 use id_arena::Arena;
 use itertools::Itertools;
 use num_bigint::BigInt;
@@ -67,17 +67,17 @@ define_short_id!(ConstValueId, ConstValue, SemanticGroup, lookup_intern_const_va
 semantic_object_for_id!(ConstValueId, lookup_intern_const_value, intern_const_value, ConstValue);
 impl ConstValueId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        format!("{:?}", db.lookup_intern_const_value(*self).debug(db.elongate()))
+        format!("{:?}", self.lookup_intern(db).debug(db.elongate()))
     }
 
     /// Returns true if the const does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
-        db.lookup_intern_const_value(*self).is_fully_concrete()
+        self.lookup_intern(db).is_fully_concrete()
     }
 
     /// Returns true if the const does not contain any inference variables.
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
-        db.lookup_intern_const_value(*self).is_var_free()
+        self.lookup_intern(db).is_var_free()
     }
 }
 
@@ -188,7 +188,7 @@ pub fn resolve_const_expr_and_evaluate(
     ctx.apply_inference_rewriter_to_exprs();
 
     match &value.expr {
-        Expr::ParamConstant(expr) => (expr.ty, db.lookup_intern_const_value(expr.const_value_id)),
+        Expr::ParamConstant(expr) => (expr.ty, expr.const_value_id.lookup_intern(db)),
         // Check that the expression is a valid constant.
         _ => evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics),
     }
@@ -314,7 +314,7 @@ pub fn evaluate_constant_expr(
                     .collect(),
                 crate::FixedSizeArrayItems::ValueAndSize(value, count) => {
                     let value = evaluate_constant_expr(db, exprs, *value, diagnostics).1;
-                    let count = db.lookup_intern_const_value(*count);
+                    let count = count.lookup_intern(db);
                     if let ConstValue::Int(count) = count {
                         (0..count.to_usize().unwrap())
                             .map(|_| value.clone())

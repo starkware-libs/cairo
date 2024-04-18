@@ -47,7 +47,7 @@ use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
+use cairo_lang_utils::{try_extract_matches, LookupIntern, OptionHelper, Upcast};
 use serde_json::Value;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
@@ -180,7 +180,7 @@ fn ensure_exists_in_db(
     let mut new_overrides: OrderedHashMap<FileId, Arc<String>> = Default::default();
     for uri in open_files {
         let file_id = old_db.file_for_url(&uri);
-        let new_file_id = new_db.intern_file(old_db.lookup_intern_file(file_id));
+        let new_file_id = new_db.intern_file(file_id.lookup_intern(old_db));
         if let Some(content) = overrides.get(&file_id) {
             new_overrides.insert(new_file_id, content.clone());
         }
@@ -415,7 +415,7 @@ impl Backend {
         };
         for uri in open_files {
             let file_id = db.file_for_url(&uri);
-            if let FileLongId::OnDisk(file_path) = db.lookup_intern_file(file_id) {
+            if let FileLongId::OnDisk(file_path) = file_id.lookup_intern(db) {
                 self.detect_crate_for(db, file_path).await;
             }
             query_diags(db, file_id);
@@ -846,7 +846,7 @@ fn resolved_concrete_item_def(
 ) -> Option<SyntaxStablePtrId> {
     match item {
         ResolvedConcreteItem::Type(ty) => {
-            if let TypeLongId::GenericParameter(param) = db.lookup_intern_type(ty) {
+            if let TypeLongId::GenericParameter(param) = ty.lookup_intern(db) {
                 Some(param.untyped_stable_ptr(db.upcast()))
             } else {
                 None

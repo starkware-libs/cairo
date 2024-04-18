@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, TraitFunctionId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::{extract_matches, require};
+use cairo_lang_utils::{extract_matches, require, LookupIntern};
 use itertools::Itertools;
 
 use super::canonic::ResultNoErrEx;
@@ -150,8 +150,8 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             }));
         }
 
-        let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
-        let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(imp_concrete_trait);
+        let long_concrete_trait = concrete_trait_id.lookup_intern(self.db);
+        let long_imp_concrete_trait = imp_concrete_trait.lookup_intern(self.db);
         let generic_args = self.infer_generic_assignment(
             &imp_generic_params,
             &long_imp_concrete_trait.generic_args,
@@ -191,8 +191,8 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             }));
         }
 
-        let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
-        let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(imp_concrete_trait);
+        let long_concrete_trait = concrete_trait_id.lookup_intern(self.db);
+        let long_imp_concrete_trait = imp_concrete_trait.lookup_intern(self.db);
         let generic_args = self.infer_generic_assignment(
             &impl_alias_generic_params,
             &long_imp_concrete_trait.generic_args,

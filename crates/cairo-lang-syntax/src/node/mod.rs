@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
-use cairo_lang_utils::require;
+use cairo_lang_utils::{require, LookupIntern};
 use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
@@ -77,7 +77,7 @@ impl SyntaxNode {
         }
     }
     pub fn green_node(&self, db: &dyn SyntaxGroup) -> Arc<GreenNode> {
-        db.lookup_intern_green(self.0.green)
+        self.0.green.lookup_intern(db)
     }
     pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
         let start = self.span_start_without_trivia(db);

@@ -8,7 +8,7 @@ use cairo_lang_semantic::corelib::{get_core_trait, unit_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::ConcreteFunction;
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
 use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::{TypeId, TypeLongId};
@@ -100,7 +100,7 @@ impl<'a> DestructAdder<'a> {
         if let [err_var] = introduced_vars[..] {
             let var = &self.lowered.variables[err_var];
 
-            let long_ty = self.db.lookup_intern_type(var.ty);
+            let long_ty = var.ty.lookup_intern(self.db);
             let TypeLongId::Tuple(tys) = long_ty else {
                 return;
             };
@@ -410,7 +410,7 @@ pub fn add_destructs(
                 let new_tuple_var = variables.new_var(VarRequest { ty: tuple_ty, location });
                 let orig_tuple_var = *tuple_var;
                 *tuple_var = new_tuple_var;
-                let long_ty = db.lookup_intern_type(tuple_ty);
+                let long_ty = tuple_ty.lookup_intern(db);
                 let TypeLongId::Tuple(tys) = long_ty else { unreachable!() };
 
                 let vars = tys

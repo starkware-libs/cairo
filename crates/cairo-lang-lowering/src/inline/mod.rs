@@ -11,6 +11,7 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::items::functions::InlineConfiguration;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::LookupIntern;
 use itertools::{izip, zip_eq};
 use statements_weights::InlineWeight;
 
@@ -317,7 +318,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         ));
 
         let db = self.variables.db;
-        let inlining_location = db.lookup_intern_location(call_stmt.location).stable_location;
+        let inlining_location = call_stmt.location.lookup_intern(db).stable_location;
 
         let mut mapper = Mapper {
             variables: &mut self.variables,

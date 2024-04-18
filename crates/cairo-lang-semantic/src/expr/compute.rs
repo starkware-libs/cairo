@@ -26,7 +26,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{extract_matches, try_extract_matches, OptionHelper};
+use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern, OptionHelper};
 use id_arena::Arena;
 use itertools::{chain, zip_eq, Itertools};
 use num_bigint::BigInt;
@@ -515,7 +515,7 @@ fn compute_expr_unary_semantic(
                     let desnapped_expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db), None);
                     let desnapped_expr_type = ctx.reduce_ty(desnapped_expr.ty());
 
-                    let desnapped_ty = match ctx.db.lookup_intern_type(desnapped_expr_type) {
+                    let desnapped_ty = match desnapped_expr_type.lookup_intern(ctx.db) {
                         TypeLongId::Var(_) => {
                             let inference = &mut ctx.resolver.inference();
                             // The type of the full desnap expr. E.g. the type of `*x` for `*x`.
@@ -736,8 +736,8 @@ fn call_core_binary_op(
     // and RHS expressions. Later wrap the resulting expressions with snapshots to fit to the
     // function signature.
     if snapshot {
-        lhs_type = extract_matches!(db.lookup_intern_type(lhs_type), TypeLongId::Snapshot);
-        rhs_type = extract_matches!(db.lookup_intern_type(rhs_type), TypeLongId::Snapshot);
+        lhs_type = extract_matches!(lhs_type.lookup_intern(db), TypeLongId::Snapshot);
+        rhs_type = extract_matches!(rhs_type.lookup_intern(db), TypeLongId::Snapshot);
     }
 
     let lhs_result_type =
@@ -870,11 +870,10 @@ fn compute_expr_fixed_size_array_semantic(
             return Err(ctx.diagnostics.report(syntax, FixedSizeArrayNonSingleValue));
         };
         let expr_semantic = first_expr_semantic(ctx, expr, size_const_id);
-        let size =
-            try_extract_matches!(db.lookup_intern_const_value(size_const_id), ConstValue::Int)
-                .ok_or_else(|| ctx.diagnostics.report(syntax, FixedSizeArrayNonNumericSize))?
-                .to_usize()
-                .unwrap();
+        let size = try_extract_matches!(size_const_id.lookup_intern(db), ConstValue::Int)
+            .ok_or_else(|| ctx.diagnostics.report(syntax, FixedSizeArrayNonNumericSize))?
+            .to_usize()
+            .unwrap();
         verify_fixed_size_array_size(ctx.diagnostics, &size.into(), syntax)?;
         (
             FixedSizeArrayItems::ValueAndSize(expr_semantic.id, size_const_id),
@@ -2125,9 +2124,8 @@ fn maybe_compute_tuple_like_pattern_semantic(
     let inner_tys = match long_ty {
         TypeLongId::Tuple(inner_tys) => inner_tys,
         TypeLongId::FixedSizeArray { type_id: inner_ty, size } => {
-            let size = extract_matches!(ctx.db.lookup_intern_const_value(size), ConstValue::Int)
-                .to_usize()
-                .unwrap();
+            let size =
+                extract_matches!(size.lookup_intern(ctx.db), ConstValue::Int).to_usize().unwrap();
             [inner_ty].repeat(size)
         }
         _ => unreachable!(),
@@ -2253,10 +2251,9 @@ fn struct_ctor_expr(
         }
     }
 
-    let concrete_struct_id =
-        try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
-            .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
-            .ok_or_else(|| ctx.diagnostics.report(&path, NotAStruct))?;
+    let concrete_struct_id = try_extract_matches!(ty.lookup_intern(ctx.db), TypeLongId::Concrete)
+        .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
+        .ok_or_else(|| ctx.diagnostics.report(&path, NotAStruct))?;
 
     if concrete_struct_id.has_attr(db, PHANTOM_ATTR)? {
         ctx.diagnostics.report(ctor_syntax, CannotCreateInstancesOfPhantomTypes);
@@ -3108,16 +3105,14 @@ pub fn compute_statement_semantic(
                 ctx.diagnostics.report_after(&expr_syntax, MissingSemicolon);
             }
             let ty: TypeId = expr.ty();
-            if let TypeLongId::Concrete(concrete) = db.lookup_intern_type(ty) {
+            if let TypeLongId::Concrete(concrete) = ty.lookup_intern(db) {
                 if concrete.is_must_use(db)? {
                     ctx.diagnostics.report(&expr_syntax, UnhandledMustUseType { ty });
                 }
             }
             if let Expr::FunctionCall(expr_function_call) = &expr.expr {
-                let generic_function_id = db
-                    .lookup_intern_function(expr_function_call.function)
-                    .function
-                    .generic_function;
+                let generic_function_id =
+                    expr_function_call.function.lookup_intern(db).function.generic_function;
                 if generic_function_id.is_must_use(db)? {
                     ctx.diagnostics.report(&expr_syntax, UnhandledMustUseFunction);
                 }
