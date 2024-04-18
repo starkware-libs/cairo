@@ -6,8 +6,8 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
-use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
+use cairo_lang_utils::{try_extract_matches, LookupIntern};
 use itertools::{zip_eq, Itertools};
 use num_traits::ToPrimitive;
 use semantic::corelib::{core_felt252_ty, unit_ty};
@@ -408,7 +408,7 @@ fn lower_tuple_match_arm(
         .or(match_tuple_ctx.otherwise_variant.as_ref())
         .ok_or_else(|| {
             LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-                match_tuple_ctx.match_location.get(ctx.db),
+                match_tuple_ctx.match_location.lookup_intern(ctx.db),
                 MatchError(MatchError {
                     kind: match_type,
                     error: MatchDiagnostic::MissingMatchArm(format!(
@@ -755,7 +755,7 @@ pub(crate) fn lower_concrete_enum_match(
                 .or(otherwise_variant.as_ref())
                 .ok_or_else(|| {
                     LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-                        location.get(ctx.db),
+                        location.lookup_intern(ctx.db),
                         MatchError(MatchError {
                             kind: match_type,
                             error: MatchDiagnostic::MissingMatchArm(format!(
@@ -914,7 +914,7 @@ pub(crate) fn lower_optimized_extern_match(
                 .or(otherwise_variant.as_ref())
                 .ok_or_else(|| {
                     LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-                        location.get(ctx.db),
+                        location.lookup_intern(ctx.db),
                         MatchError(MatchError {
                             kind: match_type,
                             error: MatchDiagnostic::MissingMatchArm(format!(

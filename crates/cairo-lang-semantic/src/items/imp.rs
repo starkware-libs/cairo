@@ -209,7 +209,7 @@ impl DebugWithDb<dyn SemanticGroup> for ImplId {
         match self {
             ImplId::Concrete(concrete_impl_id) => write!(f, "{:?}", concrete_impl_id.debug(db)),
             ImplId::GenericParameter(param) => write!(f, "{:?}", param.debug(db)),
-            ImplId::ImplVar(var) => write!(f, "?{}", var.get(db).id.0),
+            ImplId::ImplVar(var) => write!(f, "?{}", var.lookup_intern(db).id.0),
         }
     }
 }
@@ -358,7 +358,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
                 extract_matches!(db.generic_param_semantic(param)?, GenericParam::Impl);
             param_impl.concrete_trait
         }
-        ImplId::ImplVar(var) => Ok(var.get(db).concrete_trait_id),
+        ImplId::ImplVar(var) => Ok(var.lookup_intern(db).concrete_trait_id),
     }
 }
 

@@ -571,7 +571,7 @@ fn extract_coupon_function(
     concrete: ids::FunctionId,
 ) -> Maybe<Option<ids::ConcreteFunctionWithBodyId>> {
     // Check that the function is a semantic function.
-    let ids::FunctionLongId::Semantic(function_id) = concrete.lookup(db) else {
+    let ids::FunctionLongId::Semantic(function_id) = concrete.lookup_intern(db) else {
         return Ok(None);
     };
 

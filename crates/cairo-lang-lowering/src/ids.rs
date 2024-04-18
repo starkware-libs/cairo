@@ -156,20 +156,17 @@ impl ConcreteFunctionWithBodyId {
     ) -> Self {
         ConcreteFunctionWithBodyLongId::Semantic(semantic).intern(db)
     }
-    pub fn get(&self, db: &dyn LoweringGroup) -> ConcreteFunctionWithBodyLongId {
-        self.lookup_intern(db)
-    }
     pub fn function_with_body_id(&self, db: &dyn LoweringGroup) -> FunctionWithBodyId {
-        self.get(db).function_with_body_id(db)
+        self.lookup_intern(db).function_with_body_id(db)
     }
     pub fn substitution(&self, db: &dyn LoweringGroup) -> Maybe<GenericSubstitution> {
-        self.get(db).substitution(db)
+        self.lookup_intern(db).substitution(db)
     }
     pub fn function_id(&self, db: &dyn LoweringGroup) -> Maybe<FunctionId> {
-        self.get(db).function_id(db)
+        self.lookup_intern(db).function_id(db)
     }
     pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
-        self.get(db).name(db)
+        self.lookup_intern(db).name(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         let generic_signature = self.function_with_body_id(db).signature(db)?;
@@ -191,11 +188,11 @@ impl ConcreteFunctionWithBodyId {
         &self,
         db: &dyn LoweringGroup,
     ) -> semantic::ConcreteFunctionWithBodyId {
-        self.get(db).base_semantic_function(db)
+        self.lookup_intern(db).base_semantic_function(db)
     }
     pub fn stable_location(&self, db: &dyn LoweringGroup) -> Maybe<StableLocation> {
         let semantic_db = db.upcast();
-        Ok(match self.get(db) {
+        Ok(match self.lookup_intern(db) {
             ConcreteFunctionWithBodyLongId::Semantic(id) => id.stable_location(semantic_db),
             ConcreteFunctionWithBodyLongId::Generated(generated) => {
                 let parent_id = generated.parent.function_with_body_id(semantic_db);
@@ -261,23 +258,20 @@ impl FunctionLongId {
     }
 }
 impl FunctionId {
-    pub fn lookup(&self, db: &dyn LoweringGroup) -> FunctionLongId {
-        self.lookup_intern(db)
-    }
     pub fn body(&self, db: &dyn LoweringGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
-        self.lookup(db).body(db)
+        self.lookup_intern(db).body(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
-        self.lookup(db).signature(db)
+        self.lookup_intern(db).signature(db)
     }
     pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
-        self.lookup(db).name(db)
+        self.lookup_intern(db).name(db)
     }
     pub fn semantic_full_path(&self, db: &dyn LoweringGroup) -> String {
-        self.lookup(db).semantic_full_path(db)
+        self.lookup_intern(db).semantic_full_path(db)
     }
     pub fn get_extern(&self, db: &dyn LoweringGroup) -> Option<ExternFunctionId> {
-        let semantic = try_extract_matches!(self.lookup(db), FunctionLongId::Semantic)?;
+        let semantic = try_extract_matches!(self.lookup_intern(db), FunctionLongId::Semantic)?;
         let generic = semantic.get_concrete(db.upcast()).generic_function;
         try_extract_matches!(generic, GenericFunctionId::Extern)
     }
@@ -387,16 +381,12 @@ impl LocationId {
         Location::new(stable_location).intern(db)
     }
 
-    pub fn get(&self, db: &dyn LoweringGroup) -> Location {
-        self.lookup_intern(db)
-    }
-
-    // Adds a note to the location.
+    /// Adds a note to the location.
     pub fn with_note(&self, db: &dyn LoweringGroup, note: DiagnosticNote) -> LocationId {
-        self.get(db).with_note(note).intern(db)
+        self.lookup_intern(db).with_note(note).intern(db)
     }
 
-    // Adds a note that this location was generated while compiling an auto-generated function.
+    /// Adds a note that this location was generated while compiling an auto-generated function.
     pub fn with_auto_generation_note(
         &self,
         db: &dyn LoweringGroup,
