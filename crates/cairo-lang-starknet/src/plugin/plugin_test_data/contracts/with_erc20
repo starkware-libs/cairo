@@ -56,7 +56,6 @@ mod erc20_contract {
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StorageAsPointer, StoragePointerAccess
 };
 
 impl ContractStateIERC20 of
@@ -238,7 +237,6 @@ impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StorageAsPointer, StoragePointerAccess
 };
 
 impl ContractStateIERC20 of

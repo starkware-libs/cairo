@@ -84,6 +84,9 @@ pub struct StoragePointer<T> {
     pub address: StorageBaseAddress,
 }
 
+/// Trait for converting a storage member to a `StoragePointer`.
+// TODO(Gil): Once associated types are stabilized, use a trait of `TMemberState` with an associated
+// type instead of `T`.
 pub trait StorageAsPointer<TMemberState, T> {
     fn as_ptr(self: @TMemberState) -> StoragePointer<T>;
 }

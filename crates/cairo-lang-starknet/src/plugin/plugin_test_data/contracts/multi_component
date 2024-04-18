@@ -91,7 +91,6 @@ pub mod contract_with_4_components {
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StorageAsPointer, StoragePointerAccess
 };
 
 impl ContractStateIERC20 of
@@ -733,7 +732,6 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StorageAsPointer, StoragePointerAccess
 };
 
 impl ContractStateIERC20 of

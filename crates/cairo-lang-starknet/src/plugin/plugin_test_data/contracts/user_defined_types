@@ -149,25 +149,10 @@ pub enum Event {}
                 starknet::storage_access::storage_base_address_const::<0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71>()
             }
             fn read(self: @ContractMemberState) -> WrappedFelt252 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<WrappedFelt252>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
-                )
+                starknet::storage::StoragePointerAccess::read( InternalPointerAccessContractMemberStateImpl::as_ptr(self))
             }
             fn write(ref self: ContractMemberState, value: WrappedFelt252) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<WrappedFelt252>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
-                )
+                starknet::storage::StoragePointerAccess::write( InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value)
             }
         }
     }
@@ -200,25 +185,10 @@ pub enum Event {}
                 starknet::storage_access::storage_base_address_const::<0x219cc4423c8eab3d10a1f42659ee7172b916579fccdaadceb6efdf1782911b6>()
             }
             fn read(self: @ContractMemberState) -> ZeroSize {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<ZeroSize>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
-                )
+                starknet::storage::StoragePointerAccess::read( InternalPointerAccessContractMemberStateImpl::as_ptr(self))
             }
             fn write(ref self: ContractMemberState, value: ZeroSize) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<ZeroSize>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
-                )
+                starknet::storage::StoragePointerAccess::write( InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value)
             }
         }
     }
@@ -313,7 +283,6 @@ pub enum Event {}
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait, 
-    StorageAsPointer, StoragePointerAccess
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x22a6a9ef9e77b4a6859543ea1095bf317324bd00f9420953f068bcafc59b605;
