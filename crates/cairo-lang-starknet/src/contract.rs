@@ -211,7 +211,7 @@ fn get_impl_aliases_abi_functions(
                         &mut diagnostics,
                         impl_alias.stable_ptr().untyped(),
                         GenericFunctionId::Free(f),
-                        generic_args.clone(),
+                        &generic_args,
                     )
                     .to_option()?
                     .get_concrete(db)
