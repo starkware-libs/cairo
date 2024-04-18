@@ -334,7 +334,7 @@ mod gas_costs {
 
     /// Entry point initial gas cost enforced by the compiler.
     /// Should match `ENTRY_POINT_COST` at `crates/cairo-lang-starknet/src/casm_contract_class.rs`.
-    const ENTRY_POINT_INITIAL_BUDGET: usize = 100 * STEP;
+    pub const ENTRY_POINT_INITIAL_BUDGET: usize = 100 * STEP;
     /// OS gas costs.
     const ENTRY_POINT: usize = ENTRY_POINT_INITIAL_BUDGET + 500 * STEP;
     // The required gas for each syscall minus the base amount that was pre-charged (by the
@@ -1139,7 +1139,7 @@ impl<'a> CairoHintProcessor<'a> {
             .run_function_with_starknet_context(
                 function,
                 &[Arg::Array(calldata.into_iter().map(Arg::Value).collect())],
-                Some(*gas_counter),
+                Some(*gas_counter + gas_costs::ENTRY_POINT_INITIAL_BUDGET),
                 self.starknet_state.clone(),
             )
             .expect("Internal runner error.");
