@@ -392,7 +392,7 @@ pub fn get_concrete_libfunc_id(
     assert!(!with_coupon, "Coupon cannot be used with extern functions.");
 
     let semantic =
-        extract_matches!(function.lookup(db.upcast()), lowering::ids::FunctionLongId::Semantic);
+        extract_matches!(function.lookup_intern(db), lowering::ids::FunctionLongId::Semantic);
     let concrete_function = semantic.lookup_intern(db).function;
     let extern_id = extract_matches!(concrete_function.generic_function, GenericFunctionId::Extern);
 

@@ -111,17 +111,14 @@ pub struct LocalConstVarId(pub usize);
 
 define_short_id!(ImplVarId, ImplVar, SemanticGroup, lookup_intern_impl_var, intern_impl_var);
 impl ImplVarId {
-    pub fn get(&self, db: &dyn SemanticGroup) -> ImplVar {
-        self.lookup_intern(db)
-    }
     pub fn id(&self, db: &dyn SemanticGroup) -> LocalImplVarId {
-        self.get(db).id
+        self.lookup_intern(db).id
     }
     pub fn concrete_trait_id(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
-        self.get(db).concrete_trait_id
+        self.lookup_intern(db).concrete_trait_id
     }
     pub fn lookup_context(&self, db: &dyn SemanticGroup) -> ImplLookupContext {
-        self.get(db).lookup_context
+        self.lookup_intern(db).lookup_context
     }
 }
 semantic_object_for_id!(ImplVarId, lookup_intern_impl_var, intern_impl_var, ImplVar);
@@ -697,7 +694,7 @@ impl<'db> Inference<'db> {
 
     /// Tries to assigns value to an [ImplVarId]. Return the assigned impl, or an error.
     fn assign_impl(&mut self, var_id: ImplVarId, impl_id: ImplId) -> InferenceResult<ImplId> {
-        let var = var_id.get(self.db);
+        let var = var_id.lookup_intern(self.db);
         if var.inference_id != self.inference_id {
             return Err(self.set_error(InferenceError::ImplKindMismatch {
                 impl0: ImplId::ImplVar(var_id),
@@ -899,7 +896,11 @@ impl<'db> Inference<'db> {
 
     /// Returns whether an error is set (either pending or consumed).
     pub fn is_error_set(&self) -> InferenceResult<()> {
-        if self.error_status.is_err() { Err(ErrorSet) } else { Ok(()) }
+        if self.error_status.is_err() {
+            Err(ErrorSet)
+        } else {
+            Ok(())
+        }
     }
 
     /// Consumes the error but doesn't report it. If there is no error, or the error is consumed,
@@ -1035,7 +1036,7 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
         if let ImplId::ImplVar(var) = value {
             // Relax the candidates.
-            let impl_var_id = var.get(self.db).id;
+            let impl_var_id = var.lookup_intern(self.db).id;
             if let Some(mut impl_id) = self.impl_assignment(impl_var_id) {
                 if let RewriteResult::Modified = self.internal_rewrite(&mut impl_id)? {
                     *self.impl_assignment.get_mut(&impl_var_id).unwrap() = impl_id;

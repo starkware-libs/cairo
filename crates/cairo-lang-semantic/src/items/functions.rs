@@ -267,12 +267,8 @@ define_short_id!(
 );
 semantic_object_for_id!(FunctionId, lookup_intern_function, intern_function, FunctionLongId);
 impl FunctionId {
-    pub fn lookup(&self, db: &dyn SemanticGroup) -> FunctionLongId {
-        self.lookup_intern(db)
-    }
-
     pub fn get_concrete(&self, db: &dyn SemanticGroup) -> ConcreteFunction {
-        self.lookup(db).function
+        self.lookup_intern(db).function
     }
 
     /// Returns the ExternFunctionId if this is an extern function. Otherwise returns none.
@@ -525,14 +521,11 @@ semantic_object_for_id!(
     ConcreteFunctionWithBody
 );
 impl ConcreteFunctionWithBodyId {
-    fn get(&self, db: &dyn SemanticGroup) -> ConcreteFunctionWithBody {
-        self.lookup_intern(db)
-    }
     pub fn function_with_body_id(&self, db: &dyn SemanticGroup) -> FunctionWithBodyId {
-        self.get(db).function_with_body_id()
+        self.lookup_intern(db).function_with_body_id()
     }
     pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
-        self.get(db).substitution(db)
+        self.lookup_intern(db).substitution(db)
     }
     pub fn from_no_generics_free(
         db: &dyn SemanticGroup,
@@ -544,23 +537,23 @@ impl ConcreteFunctionWithBodyId {
         Ok(ConcreteFunctionWithBody::from_generic(db, function_id)?.intern(db))
     }
     pub fn concrete(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteFunction> {
-        self.get(db).concrete(db)
+        self.lookup_intern(db).concrete(db)
     }
     pub fn function_id(&self, db: &dyn SemanticGroup) -> Maybe<FunctionId> {
-        self.get(db).function_id(db)
+        self.lookup_intern(db).function_id(db)
     }
     pub fn generic_function(&self, db: &dyn SemanticGroup) -> GenericFunctionWithBodyId {
-        self.get(db).generic_function
+        self.lookup_intern(db).generic_function
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
-        self.get(db).name(db)
+        self.lookup_intern(db).name(db)
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
-        self.get(db).full_path(db)
+        self.lookup_intern(db).full_path(db)
     }
 
     pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
-        self.get(db).generic_function.stable_location(db)
+        self.lookup_intern(db).generic_function.stable_location(db)
     }
 }
 
@@ -783,7 +776,7 @@ pub fn concrete_function_implized_signature(
 ) -> Maybe<Signature> {
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let mut signature = db.concrete_function_signature(function_id)?;
-    let generic_function = function_id.lookup(db).function.generic_function;
+    let generic_function = function_id.lookup_intern(db).function.generic_function;
 
     // If the generic function is not an impl function, nothing to implize.
     let crate::items::functions::GenericFunctionId::Impl(impl_generic_function) = generic_function

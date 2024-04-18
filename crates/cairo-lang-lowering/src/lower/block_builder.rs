@@ -4,7 +4,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{require, Intern};
+use cairo_lang_utils::{require, Intern, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
 use semantic::items::structure::SemanticStructEx;
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
@@ -172,7 +172,7 @@ impl BlockBuilder {
             .collect::<Option<Vec<_>>>()
             .ok_or_else(|| {
                 ctx.diagnostics.report_by_location(
-                    location.get(ctx.db),
+                    location.lookup_intern(ctx.db),
                     LoweringDiagnosticKind::UnexpectedError,
                 )
             })?;
@@ -329,14 +329,9 @@ impl SealedBlockBuilder {
             let mut remapping = VarRemapping::default();
             // Since SemanticRemapping should have unique variable ids, these asserts will pass.
             for (semantic, remapped_var) in semantic_remapping.member_path_value.iter() {
-                assert!(
-                    remapping
-                        .insert(
-                            *remapped_var,
-                            builder.get_ref_raw(ctx, semantic, location).unwrap()
-                        )
-                        .is_none()
-                );
+                assert!(remapping
+                    .insert(*remapped_var, builder.get_ref_raw(ctx, semantic, location).unwrap())
+                    .is_none());
             }
             if let Some(remapped_var) = semantic_remapping.expr {
                 let var_usage = expr.unwrap_or_else(|| {

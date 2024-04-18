@@ -1,5 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_utils::LookupIntern;
 use id_arena::Arena;
 use itertools::Itertools;
 
@@ -145,7 +146,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarUsage {
                 f,
                 "{{`{}`}}",
                 self.location
-                    .get(ctx.db)
+                    .lookup_intern(ctx.db)
                     .stable_location
                     .syntax_node(ctx.db.upcast())
                     .get_text_without_trivia(ctx.db.upcast())
@@ -209,7 +210,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementConst {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}(", self.function.lookup(ctx.db).debug(ctx.db))?;
+        write!(f, "{:?}(", self.function.lookup_intern(ctx.db).debug(ctx.db))?;
         for (i, var) in self.inputs.iter().enumerate() {
             let is_last = i == self.inputs.len() - 1;
             if is_last && self.with_coupon {
@@ -226,7 +227,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
 
 impl DebugWithDb<LoweredFormatter<'_>> for MatchExternInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "match {:?}(", self.function.lookup(ctx.db).debug(ctx.db))?;
+        write!(f, "match {:?}(", self.function.lookup_intern(ctx.db).debug(ctx.db))?;
         let mut inputs = self.inputs.iter().peekable();
         while let Some(var) = inputs.next() {
             var.fmt(f, ctx)?;

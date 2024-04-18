@@ -11,7 +11,7 @@ use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, Upcast};
+use cairo_lang_utils::{extract_matches, LookupIntern, Upcast};
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_module_ex;
@@ -119,7 +119,7 @@ fn test_location_and_diagnostics() {
             db,
             DiagnosticNote::with_location("Adding destructor for".to_string(), expr_location),
         )
-        .get(db);
+        .lookup_intern(db);
 
     assert_eq!(
         format!("{:?}", location.debug(db)),

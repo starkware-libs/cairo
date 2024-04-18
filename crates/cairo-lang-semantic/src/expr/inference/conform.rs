@@ -292,7 +292,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 .db
                 .impl_concrete_trait(impl0)
                 .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
-            self.conform_traits(var.get(self.db).concrete_trait_id, impl_concrete_trait)?;
+            self.conform_traits(var.lookup_intern(self.db).concrete_trait_id, impl_concrete_trait)?;
             let impl_id = self.rewrite(impl0).no_err();
             return self.assign_impl(var, impl_id);
         }
@@ -302,7 +302,10 @@ impl<'db> InferenceConform for Inference<'db> {
                     .db
                     .impl_concrete_trait(impl1)
                     .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
-                self.conform_traits(var.get(self.db).concrete_trait_id, impl_concrete_trait)?;
+                self.conform_traits(
+                    var.lookup_intern(self.db).concrete_trait_id,
+                    impl_concrete_trait,
+                )?;
                 let impl_id = self.rewrite(impl1).no_err();
                 self.assign_impl(var, impl_id)
             }
@@ -406,10 +409,11 @@ impl<'db> InferenceConform for Inference<'db> {
             ),
             ImplId::GenericParameter(_) => false,
             ImplId::ImplVar(new_var) => {
-                if InferenceVar::Impl(new_var.get(self.db).id) == var {
+                let new_var_local_id = new_var.lookup_intern(self.db).id;
+                if InferenceVar::Impl(new_var_local_id) == var {
                     return true;
                 }
-                if let Some(impl_id) = self.impl_assignment(new_var.get(self.db).id) {
+                if let Some(impl_id) = self.impl_assignment(new_var_local_id) {
                     return self.impl_contains_var(&impl_id, var);
                 }
                 false

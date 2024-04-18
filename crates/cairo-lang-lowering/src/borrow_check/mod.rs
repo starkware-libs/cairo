@@ -7,7 +7,7 @@ use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
 use cairo_lang_semantic::corelib::get_core_trait;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::Intern;
+use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::{zip_eq, Itertools};
 
 use self::analysis::{Analyzer, StatementLocation};
@@ -76,7 +76,7 @@ impl DropPosition {
         };
         DiagnosticNote::with_location(
             text.into(),
-            location.get(db).stable_location.diagnostic_location(db.upcast()),
+            location.lookup_intern(db).stable_location.diagnostic_location(db.upcast()),
         )
     }
 }
@@ -131,7 +131,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
             None
         };
 
-        let mut location = var.location.get(self.db);
+        let mut location = var.location.lookup_intern(self.db);
         if let Some(drop_position) = opt_drop_position {
             location = location.with_note(drop_position.as_note(self.db));
         }
@@ -153,7 +153,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         if let Err(inference_error) = var.copyable.clone() {
             self.success = Err(self.diagnostics.report_by_location(
                 next_usage_position
-                    .get(self.db)
+                    .lookup_intern(self.db)
                     .add_note_with_location(self.db, "variable was previously used here", position)
                     .with_note(DiagnosticNote::text_only(inference_error.format(self.db.upcast()))),
                 VariableMoved { inference_error },
@@ -193,7 +193,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                 let var = &self.lowered.variables[stmt.output];
                 if let Err(inference_error) = var.copyable.clone() {
                     self.success = Err(self.diagnostics.report_by_location(
-                        var.location.get(self.db).with_note(DiagnosticNote::text_only(
+                        var.location.lookup_intern(self.db).with_note(DiagnosticNote::text_only(
                             inference_error.format(self.db.upcast()),
                         )),
                         DesnappingANonCopyableType { inference_error },
