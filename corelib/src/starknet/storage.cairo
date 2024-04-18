@@ -1,5 +1,4 @@
 use core::poseidon::HashState;
-use core::hash::{HashStateTrait, Hash};
 use starknet::storage_access::StorageBaseAddress;
 use starknet::SyscallResult;
 use starknet::storage_access::storage_base_address_from_felt252;
@@ -108,5 +107,62 @@ impl StorableStoragePointerAccess<T, +starknet::Store<T>> of StoragePointerAcces
         starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<T>::write(0, self.address, value)
         )
+    }
+}
+
+/// An intermediate struct to store a hash state, in order to be able to hash multiple values and
+/// get the final address.
+/// Storage path should have two interfaces, if T is storable then it should implement
+/// `StorageAsPointer` in order to be able to get the address of the storage path. Otherwise, if
+/// T is not storable then it should implement some kind of updating trait, e.g. `StoragePathEntry`.
+#[derive(Copy, Drop)]
+pub struct GenericStoragePath<T, THashState> {
+    pub hash_state: THashState,
+}
+
+/// A 'GenericStoragePath' that uses the Poseidon hash function. Used as the default storage path.
+type StoragePath<T> = GenericStoragePath<T, core::poseidon::HashState>;
+
+/// Trait for creating a new `StoragePath` from a storage member.
+pub trait StorageAsPath<TMemberState, T> {
+    fn as_path(self: @TMemberState) -> StoragePath<T>;
+}
+
+/// An implementation of `StorageAsPointer` for any `StoragePath` with inner type that implements
+/// `Store`.
+impl StorableStoragePathAsPointer<T, +starknet::Store<T>> of StorageAsPointer<StoragePath<T>, T> {
+    fn as_ptr(self: @StoragePath<T>) -> StoragePointer<T> {
+        StoragePointer::<
+            T
+        > {
+            address: starknet::storage_access::storage_base_address_from_felt252(
+                core::hash::HashStateTrait::<core::poseidon::HashState>::finalize(*self.hash_state)
+            )
+        }
+    }
+}
+
+/// Trait for updating the hash state with a value, using an `entry` method.
+// TODO(Gil): Once associated types are stabilized, make `K` and `V` associated types of this trait.
+pub trait StoragePathEntry<C, K, V> {
+    fn entry(self: StoragePath<C>, key: K) -> StoragePath<V>;
+}
+
+/// A struct that represents a map in a contract storage.
+#[phantom]
+pub struct Map<K, V> {}
+
+impl StoragePathEntryMap<
+    K, V, +core::hash::Hash<K, core::poseidon::HashState>
+> of StoragePathEntry<Map<K, V>, K, V> {
+    #[inline(always)]
+    fn entry(self: StoragePath<Map<K, V>>, key: K) -> StoragePath<V> {
+        StoragePath::<
+            V
+        > {
+            hash_state: core::hash::Hash::<
+                K, core::poseidon::HashState
+            >::update_state(self.hash_state, key)
+        }
     }
 }
