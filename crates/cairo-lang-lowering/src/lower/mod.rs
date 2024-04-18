@@ -316,7 +316,7 @@ pub fn lower_loop_function(
     loop_expr_id: semantic::ExprId,
 ) -> Maybe<FlatLowered> {
     let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, loop_signature.clone())?;
-    ctx.current_loop_expr_id = Some(loop_expr_id);
+    let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
 
     // Initialize builder.
     let root_block_id = alloc_empty_block(&mut ctx);
@@ -370,6 +370,7 @@ pub fn lower_loop_function(
 
         Ok(root_block_id)
     })();
+    ctx.current_loop_expr_id = old_loop_expr_id;
 
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
@@ -1252,9 +1253,10 @@ fn lower_expr_loop(
     encapsulating_ctx.lowerings.insert(loop_expr_id, lowered);
 
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
-    ctx.current_loop_expr_id = Some(loop_expr_id);
-
-    call_loop_func(ctx, loop_signature, builder, loop_expr_id, stable_ptr.untyped())
+    let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
+    let call = call_loop_func(ctx, loop_signature, builder, loop_expr_id, stable_ptr.untyped());
+    ctx.current_loop_expr_id = old_loop_expr_id;
+    call
 }
 
 /// Adds a call to an inner loop-generated function.
