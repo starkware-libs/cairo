@@ -19,7 +19,9 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, LookupIntern};
+use cairo_lang_utils::{
+    define_short_id, extract_matches, try_extract_matches, Intern, LookupIntern,
+};
 use itertools::{chain, izip};
 use smol_str::SmolStr;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -74,7 +76,13 @@ pub struct ConcreteImplLongId {
     pub impl_def_id: ImplDefId,
     pub generic_args: Vec<GenericArgumentId>,
 }
-define_short_id!(ConcreteImplId, ConcreteImplLongId, SemanticGroup, lookup_intern_concrete_impl);
+define_short_id!(
+    ConcreteImplId,
+    ConcreteImplLongId,
+    SemanticGroup,
+    lookup_intern_concrete_impl,
+    intern_concrete_impl
+);
 semantic_object_for_id!(
     ConcreteImplId,
     lookup_intern_concrete_impl,
@@ -637,10 +645,8 @@ pub fn priv_impl_definition_data(
                     report_invalid_impl_item(syntax_db, &mut diagnostics, enm.enum_kw(syntax_db))
                 }
                 ImplItem::Function(func) => {
-                    let impl_function_id = db.intern_impl_function(ImplFunctionLongId(
-                        module_file_id,
-                        func.stable_ptr(),
-                    ));
+                    let impl_function_id =
+                        ImplFunctionLongId(module_file_id, func.stable_ptr()).intern(db);
                     let name_node = func.declaration(syntax_db).name(syntax_db);
                     let name = name_node.text(syntax_db);
                     if item_id_by_name
@@ -656,7 +662,7 @@ pub fn priv_impl_definition_data(
                 }
                 ImplItem::Type(ty) => {
                     let impl_type_id =
-                        db.intern_impl_type_def(ImplTypeDefLongId(module_file_id, ty.stable_ptr()));
+                        ImplTypeDefLongId(module_file_id, ty.stable_ptr()).intern(db);
                     let name_node = ty.name(syntax_db);
                     let name = name_node.text(syntax_db);
                     if item_id_by_name
@@ -1130,9 +1136,9 @@ pub fn infer_impl_by_self(
         |_| {},
     )?;
 
-    let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(
-        ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function_id),
-    );
+    let concrete_trait_function_id =
+        ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function_id)
+            .intern(ctx.db);
     let trait_func_generic_params =
         ctx.db.concrete_trait_function_generic_params(concrete_trait_function_id).unwrap();
     let generic_args = ctx
@@ -1157,9 +1163,8 @@ pub fn infer_impl_by_self(
         .unwrap();
 
     Some((
-        ctx.db.intern_function(FunctionLongId {
-            function: ConcreteFunction { generic_function, generic_args },
-        }),
+        FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }
+            .intern(ctx.db),
         n_snapshots,
     ))
 }

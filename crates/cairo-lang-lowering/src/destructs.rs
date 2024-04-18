@@ -8,7 +8,7 @@ use cairo_lang_semantic::corelib::{get_core_trait, unit_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::ConcreteFunction;
-use cairo_lang_utils::{extract_matches, LookupIntern};
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
 use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::{TypeId, TypeLongId};
@@ -344,7 +344,7 @@ pub fn add_destructs(
 
             match destruction {
                 DestructionEntry::Plain(plain_destruct) => {
-                    let semantic_function = db.intern_function(semantic::FunctionLongId {
+                    let semantic_function = semantic::FunctionLongId {
                         function: ConcreteFunction {
                             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
                                 impl_id: plain_destruct.impl_id,
@@ -352,7 +352,8 @@ pub fn add_destructs(
                             }),
                             generic_args: vec![],
                         },
-                    });
+                    }
+                    .intern(db);
 
                     stmts.push(StatementCall {
                         function: semantic_function.lowered(db),
@@ -364,7 +365,7 @@ pub fn add_destructs(
                 }
 
                 DestructionEntry::Panic(panic_destruct) => {
-                    let semantic_function = db.intern_function(semantic::FunctionLongId {
+                    let semantic_function = semantic::FunctionLongId {
                         function: ConcreteFunction {
                             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
                                 impl_id: panic_destruct.impl_id,
@@ -372,7 +373,8 @@ pub fn add_destructs(
                             }),
                             generic_args: vec![],
                         },
-                    });
+                    }
+                    .intern(db);
 
                     let new_panic_var = variables.new_var(VarRequest { ty: panic_ty, location });
 

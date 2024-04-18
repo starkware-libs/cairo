@@ -3,7 +3,7 @@
 
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
-use cairo_lang_utils::{extract_matches, LookupIntern};
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::chain;
 use semantic::items::constant::ConstValue;
 
@@ -116,9 +116,10 @@ impl EnumConstruct {
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
     ) -> VarUsage {
-        let ty = ctx.db.intern_type(semantic::TypeLongId::Concrete(
-            semantic::ConcreteTypeId::Enum(self.variant.concrete_enum_id),
-        ));
+        let ty = semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(
+            self.variant.concrete_enum_id,
+        ))
+        .intern(ctx.db);
         let output = ctx.new_var(VarRequest { ty, location: self.location });
         builder.push_statement(Statement::EnumConstruct(StatementEnumConstruct {
             variant: self.variant,
@@ -142,7 +143,7 @@ impl Snapshot {
     ) -> (VariableId, VariableId) {
         let input_var = &ctx.variables[self.input.var_id];
         let input_ty = input_var.ty;
-        let ty = ctx.db.intern_type(semantic::TypeLongId::Snapshot(input_ty));
+        let ty = semantic::TypeLongId::Snapshot(input_ty).intern(ctx.db);
 
         // The location of the original input var is likely to be more relevant to the user.
         let output_original =

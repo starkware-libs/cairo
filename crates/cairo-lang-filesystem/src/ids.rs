@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_lang_utils::{define_short_id, LookupIntern};
+use cairo_lang_utils::{define_short_id, Intern, LookupIntern};
 use path_clean::PathClean;
 use smol_str::SmolStr;
 
@@ -27,7 +27,7 @@ impl CrateLongId {
         }
     }
 }
-define_short_id!(CrateId, CrateLongId, FilesGroup, lookup_intern_crate);
+define_short_id!(CrateId, CrateLongId, FilesGroup, lookup_intern_crate, intern_crate);
 impl CrateId {
     pub fn name(&self, db: &dyn FilesGroup) -> SmolStr {
         self.lookup_intern(db).name()
@@ -49,10 +49,10 @@ impl UnstableSalsaId for CrateId {
 /// The long ID for a compilation flag.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FlagLongId(pub SmolStr);
-define_short_id!(FlagId, FlagLongId, FilesGroup, lookup_intern_flag);
+define_short_id!(FlagId, FlagLongId, FilesGroup, lookup_intern_flag, intern_flag);
 impl FlagId {
     pub fn new(db: &dyn FilesGroup, name: &str) -> Self {
-        db.intern_flag(FlagLongId(name.into()))
+        FlagLongId(name.into()).intern(db)
     }
 }
 
@@ -120,10 +120,10 @@ impl VirtualFile {
     }
 }
 
-define_short_id!(FileId, FileLongId, FilesGroup, lookup_intern_file);
+define_short_id!(FileId, FileLongId, FilesGroup, lookup_intern_file, intern_file);
 impl<'b> FileId {
     pub fn new(db: &dyn FilesGroup, path: PathBuf) -> FileId {
-        db.intern_file(FileLongId::OnDisk(path.clean()))
+        FileLongId::OnDisk(path.clean()).intern(db)
     }
     pub fn file_name(self, db: &'b dyn FilesGroup) -> String {
         match self.lookup_intern(db) {
