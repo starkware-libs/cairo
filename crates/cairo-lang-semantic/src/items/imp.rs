@@ -1146,7 +1146,7 @@ pub fn infer_impl_by_self(
         .resolve_generic_args(
             ctx.diagnostics,
             &trait_func_generic_params,
-            generic_args_syntax.unwrap_or_default(),
+            &generic_args_syntax.unwrap_or_default(),
             stable_ptr,
         )
         .unwrap();

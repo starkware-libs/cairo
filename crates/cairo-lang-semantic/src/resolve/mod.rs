@@ -506,7 +506,11 @@ impl<'db> Resolver<'db> {
                 ModuleId::Submodule(submodule_id) => submodule_id.parent_module(self.db.upcast()),
             };
         }
-        if module_id == self.module_file_id.0 { None } else { Some(Ok(module_id)) }
+        if module_id == self.module_file_id.0 {
+            None
+        } else {
+            Some(Ok(module_id))
+        }
     }
 
     /// Given the current resolved item, resolves the next segment.
@@ -606,7 +610,7 @@ impl<'db> Resolver<'db> {
                             diagnostics,
                             identifier_stable_ptr,
                             generic_function,
-                            generic_args_syntax.unwrap_or_default(),
+                            &generic_args_syntax.unwrap_or_default(),
                         )?))
                     }
                     TraitItemId::Type(trait_type_id) => {
@@ -661,7 +665,7 @@ impl<'db> Resolver<'db> {
                             diagnostics,
                             identifier.stable_ptr().untyped(),
                             generic_function_id,
-                            generic_args_syntax.unwrap_or_default(),
+                            &generic_args_syntax.unwrap_or_default(),
                         )?))
                     }
                     TraitItemId::Type(trait_type_id) => {
@@ -715,7 +719,7 @@ impl<'db> Resolver<'db> {
                     diagnostics,
                     identifier.stable_ptr().untyped(),
                     generic_function,
-                    generic_args_syntax.unwrap_or_default(),
+                    &generic_args_syntax.unwrap_or_default(),
                 )?)
             }
             ResolvedGenericItem::GenericType(generic_type) => {
@@ -723,7 +727,7 @@ impl<'db> Resolver<'db> {
                     diagnostics,
                     identifier.stable_ptr().untyped(),
                     generic_type,
-                    generic_args_syntax.unwrap_or_default(),
+                    &generic_args_syntax.unwrap_or_default(),
                 )?)
             }
             ResolvedGenericItem::GenericTypeAlias(module_type_alias_id) => {
@@ -733,7 +737,7 @@ impl<'db> Resolver<'db> {
                 let generic_args = self.resolve_generic_args(
                     diagnostics,
                     &generic_params,
-                    generic_args_syntax.unwrap_or_default(),
+                    &generic_args_syntax.unwrap_or_default(),
                     identifier.stable_ptr().untyped(),
                 )?;
                 let substitution = GenericSubstitution::new(&generic_params, &generic_args);
@@ -747,7 +751,7 @@ impl<'db> Resolver<'db> {
                 let generic_args = self.resolve_generic_args(
                     diagnostics,
                     &generic_params,
-                    generic_args_syntax.unwrap_or_default(),
+                    &generic_args_syntax.unwrap_or_default(),
                     identifier.stable_ptr().untyped(),
                 )?;
                 let substitution = GenericSubstitution::new(&generic_params, &generic_args);
@@ -760,7 +764,7 @@ impl<'db> Resolver<'db> {
                     diagnostics,
                     identifier.stable_ptr().untyped(),
                     trait_id,
-                    generic_args_syntax.unwrap_or_default(),
+                    &generic_args_syntax.unwrap_or_default(),
                 )?)
             }
             ResolvedGenericItem::Impl(impl_def_id) => {
@@ -768,7 +772,7 @@ impl<'db> Resolver<'db> {
                     diagnostics,
                     identifier.stable_ptr().untyped(),
                     impl_def_id,
-                    generic_args_syntax.unwrap_or_default(),
+                    &generic_args_syntax.unwrap_or_default(),
                 )?))
             }
             ResolvedGenericItem::Variant(_) => panic!("Variant is not a module item."),
@@ -881,7 +885,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         stable_ptr: SyntaxStablePtrId,
         trait_id: TraitId,
-        generic_args: Vec<ast::GenericArg>,
+        generic_args: &[ast::GenericArg],
     ) -> Maybe<ConcreteTraitId> {
         // TODO(lior): Should we report diagnostic if `trait_generic_params` failed?
         let generic_params = self
@@ -901,7 +905,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         stable_ptr: SyntaxStablePtrId,
         impl_def_id: ImplDefId,
-        generic_args: Vec<ast::GenericArg>,
+        generic_args: &[ast::GenericArg],
     ) -> Maybe<ConcreteImplId> {
         // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
         let generic_params = self
@@ -921,7 +925,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         stable_ptr: SyntaxStablePtrId,
         generic_function: GenericFunctionId,
-        generic_args: Vec<ast::GenericArg>,
+        generic_args: &[ast::GenericArg],
     ) -> Maybe<FunctionId> {
         // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
         let generic_params: Vec<_> = generic_function.generic_params(self.db)?;
@@ -939,7 +943,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         stable_ptr: SyntaxStablePtrId,
         generic_type: GenericTypeId,
-        generic_args: Vec<ast::GenericArg>,
+        generic_args: &[ast::GenericArg],
     ) -> Maybe<TypeId> {
         let generic_params = self
             .db
@@ -961,7 +965,7 @@ impl<'db> Resolver<'db> {
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         generic_params: &[GenericParam],
-        generic_args_syntax: Vec<ast::GenericArg>,
+        generic_args_syntax: &[ast::GenericArg],
         stable_ptr: SyntaxStablePtrId,
     ) -> Maybe<Vec<GenericArgumentId>> {
         let syntax_db = self.db.upcast();
