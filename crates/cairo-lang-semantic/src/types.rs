@@ -57,10 +57,6 @@ impl OptionFrom<TypeLongId> for ConcreteTypeId {
 define_short_id!(TypeId, TypeLongId, SemanticGroup, lookup_intern_type, intern_type);
 semantic_object_for_id!(TypeId, lookup_intern_type, intern_type, TypeLongId);
 impl TypeId {
-    pub fn lookup(&self, db: &dyn SemanticGroup) -> TypeLongId {
-        self.lookup_intern(db)
-    }
-
     pub fn missing(db: &dyn SemanticGroup, diag_added: DiagnosticAdded) -> Self {
         TypeLongId::Missing(diag_added).intern(db)
     }
@@ -198,7 +194,7 @@ fn implize_type_recursive(
     let type_to_reduce = inference.rewrite(type_to_reduce).unwrap();
 
     // Then, reduce recursively.
-    let mut long_ty = type_to_reduce.lookup(db);
+    let mut long_ty = type_to_reduce.lookup_intern(db);
     match &mut long_ty {
         TypeLongId::Concrete(concrete_type) => {
             let mut generic_args = concrete_type.generic_args(db);

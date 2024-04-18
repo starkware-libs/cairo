@@ -261,23 +261,20 @@ impl FunctionLongId {
     }
 }
 impl FunctionId {
-    pub fn lookup(&self, db: &dyn LoweringGroup) -> FunctionLongId {
-        self.lookup_intern(db)
-    }
     pub fn body(&self, db: &dyn LoweringGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
-        self.lookup(db).body(db)
+        self.lookup_intern(db).body(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
-        self.lookup(db).signature(db)
+        self.lookup_intern(db).signature(db)
     }
     pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
-        self.lookup(db).name(db)
+        self.lookup_intern(db).name(db)
     }
     pub fn semantic_full_path(&self, db: &dyn LoweringGroup) -> String {
-        self.lookup(db).semantic_full_path(db)
+        self.lookup_intern(db).semantic_full_path(db)
     }
     pub fn get_extern(&self, db: &dyn LoweringGroup) -> Option<ExternFunctionId> {
-        let semantic = try_extract_matches!(self.lookup(db), FunctionLongId::Semantic)?;
+        let semantic = try_extract_matches!(self.lookup_intern(db), FunctionLongId::Semantic)?;
         let generic = semantic.get_concrete(db.upcast()).generic_function;
         try_extract_matches!(generic, GenericFunctionId::Extern)
     }

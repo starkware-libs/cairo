@@ -267,12 +267,8 @@ define_short_id!(
 );
 semantic_object_for_id!(FunctionId, lookup_intern_function, intern_function, FunctionLongId);
 impl FunctionId {
-    pub fn lookup(&self, db: &dyn SemanticGroup) -> FunctionLongId {
-        self.lookup_intern(db)
-    }
-
     pub fn get_concrete(&self, db: &dyn SemanticGroup) -> ConcreteFunction {
-        self.lookup(db).function
+        self.lookup_intern(db).function
     }
 
     /// Returns the ExternFunctionId if this is an extern function. Otherwise returns none.
@@ -783,7 +779,7 @@ pub fn concrete_function_implized_signature(
 ) -> Maybe<Signature> {
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let mut signature = db.concrete_function_signature(function_id)?;
-    let generic_function = function_id.lookup(db).function.generic_function;
+    let generic_function = function_id.lookup_intern(db).function.generic_function;
 
     // If the generic function is not an impl function, nothing to implize.
     let crate::items::functions::GenericFunctionId::Impl(impl_generic_function) = generic_function
