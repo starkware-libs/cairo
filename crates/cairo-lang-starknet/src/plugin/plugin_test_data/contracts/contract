@@ -27,7 +27,9 @@ mod test_contract {
     fn set_something(ref self: ContractState, ref arg: felt252, num: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_func(ref self: ContractState, from_address: felt252, arg: felt252, num: felt252) {}
+    fn l1_handler_func(
+        ref self: ContractState, from_address: felt252, arg: felt252, num: felt252
+    ) {}
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -78,7 +80,9 @@ mod test_contract {
     fn set_something(ref self: ContractState, ref arg: felt252, num: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_func(ref self: ContractState, from_address: felt252, arg: felt252, num: felt252) {}
+    fn l1_handler_func(
+        ref self: ContractState, from_address: felt252, arg: felt252, num: felt252
+    ) {}
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -125,8 +129,8 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
-pub const TEST_CLASS_HASH: felt252 = 0x23beac7cb7e82c7f5e87d1938f705760cd22de93f3a5ad133f48f1fdbcc14c1;
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: felt252 = 0x2cd967636a47442d438bb2596f3c9848f0a831f916f4bb50d807e6eb90df576;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {

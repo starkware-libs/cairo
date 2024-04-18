@@ -2,6 +2,9 @@ use std::iter;
 
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
+use cairo_lang_sierra::extensions::bounded_int::{
+    BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm,
+};
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
@@ -76,16 +79,6 @@ pub trait CostOperations {
     /// Gets a cost from step count.
     fn steps(&self, steps: i32) -> Self::CostType {
         self.const_cost(ConstCost { steps, ..ConstCost::default() })
-    }
-
-    /// Gets a cost from hole count.
-    fn holes(&self, holes: i32) -> Self::CostType {
-        self.const_cost(ConstCost { holes, ..ConstCost::default() })
-    }
-
-    /// Gets a cost from range check count.
-    fn range_checks(&self, range_checks: i32) -> Self::CostType {
-        self.const_cost(ConstCost { range_checks, ..ConstCost::default() })
     }
 
     /// Gets a cost of the given token type.
@@ -420,6 +413,7 @@ pub fn core_libfunc_cost(
         },
         Const(libfunc) => match libfunc {
             ConstConcreteLibfunc::AsBox(_) => vec![ConstCost::steps(3).into()],
+            ConstConcreteLibfunc::AsImmediate(_) => vec![ConstCost::steps(0).into()],
         },
         Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(libfunc) => {
@@ -435,6 +429,27 @@ pub fn core_libfunc_cost(
                     function: libfunc.function.clone(),
                     sign: BranchCostSign::Add,
                 }]
+            }
+        },
+        BoundedInt(libfunc) => match libfunc {
+            BoundedIntConcreteLibfunc::Add(_)
+            | BoundedIntConcreteLibfunc::Sub(_)
+            | BoundedIntConcreteLibfunc::Mul(_) => vec![ConstCost::steps(0).into()],
+            BoundedIntConcreteLibfunc::DivRem(libfunc) => {
+                vec![
+                    match BoundedIntDivRemAlgorithm::new(&libfunc.lhs, &libfunc.rhs).unwrap() {
+                        BoundedIntDivRemAlgorithm::KnownSmallRhs => {
+                            ConstCost { steps: 7, holes: 0, range_checks: 3 }
+                        }
+                        BoundedIntDivRemAlgorithm::KnownSmallQuotient(_) => {
+                            ConstCost { steps: 9, holes: 0, range_checks: 4 }
+                        }
+                        BoundedIntDivRemAlgorithm::KnownSmallLhs(_) => {
+                            ConstCost { steps: 11, holes: 0, range_checks: 4 }
+                        }
+                    }
+                    .into(),
+                ]
             }
         },
     }

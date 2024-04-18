@@ -11,8 +11,8 @@ fn foo(b: A) -> felt252 {
         (7, 1) => { x },
         (A::b(x), 1, _) => { x },
     }
-    let x = (5,true);
-    let (y,_) = x;
+    let x = (5, true);
+    let (y, _) = x;
     y
 }
 
@@ -81,10 +81,10 @@ error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
         A::b(_) => 1,
         ^*****^
 
-error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
- --> lib.cairo:6:15
+error: Trait has no implementation in context: core::traits::Add::<core::bool>.
+ --> lib.cairo:6:11
     match a + 1 {
-              ^
+          ^***^
 
 //! > ==========================================================================
 
@@ -111,6 +111,11 @@ enum A {
 }
 
 //! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::felt252", found: "core::bool".
+ --> lib.cairo:5:40
+fn foo(a: felt252, b: bool) -> felt252 {
+                                       ^
+
 error: Match arms have incompatible types: "core::felt252" and "core::bool"
  --> lib.cairo:8:14
         _ => b,
@@ -153,6 +158,37 @@ error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
 
 //! > ==========================================================================
 
+//! > Match arm types incompatible, also with expected type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(x: Option<()>) {
+    match x {
+        Option::Some(_) => true,
+        Option::None => 0,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "()", found: "core::bool".
+ --> lib.cairo:1:23
+fn foo(x: Option<()>) {
+                      ^
+
+error: Unexpected return type. Expected: "()", found: "core::bool".
+ --> lib.cairo:1:23
+fn foo(x: Option<()>) {
+                      ^
+
+//! > ==========================================================================
+
 //! > Test match with or pattern inconsistent mutability
 
 //! > test_runner_name
@@ -160,10 +196,10 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: MyEnum) -> felt252 {
-  match a {
-    MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
-    MyEnum::C((x, _, t)) | MyEnum::D(P{x, z: mut t, .. }) => x + t,
-  }
+    match a {
+        MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: mut t, .. }) => x + t,
+    }
 }
 
 //! > function_name
@@ -171,25 +207,62 @@ foo
 
 //! > module_code
 struct P {
-  x: felt252,
-  y: felt252,
-  z: felt252,
-  w: felt252,
+    x: felt252,
+    y: felt252,
+    z: felt252,
+    w: felt252,
 }
 enum MyEnum {
-  A: felt252,
-  B: (felt252, felt252),
-  C: (felt252, felt252, felt252),
-  D: P,
+    A: felt252,
+    B: (felt252, felt252),
+    C: (felt252, felt252, felt252),
+    D: P,
 }
 
 //! > expected_diagnostics
 error: variable is bound inconsistently across alternatives separated by `|` bound in different ways
- --> lib.cairo:15:35
-    MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
-                                  ^
+ --> lib.cairo:15:39
+        MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
+                                      ^
 
 error: variable is bound inconsistently across alternatives separated by `|` bound in different ways
- --> lib.cairo:16:46
-    MyEnum::C((x, _, t)) | MyEnum::D(P{x, z: mut t, .. }) => x + t,
-                                             ^***^
+ --> lib.cairo:16:52
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: mut t, .. }) => x + t,
+                                                   ^***^
+
+//! > ==========================================================================
+
+//! > Test conform in or pattern
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let a = MyEnum::A(5);
+    match a {
+        MyEnum::A(x) | MyEnum::B((x, _)) => x,
+    }
+    bar(a);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum<T> {
+    A: T,
+    B: (felt252, felt252),
+}
+fn bar(a: MyEnum<u32>) {}
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "test::MyEnum::<core::integer::u32>", found: "test::MyEnum::<core::felt252>".
+ --> lib.cairo:11:9
+    bar(a);
+        ^
+
+error: Unexpected argument type. Expected: "test::MyEnum::<core::integer::u32>", found: "test::MyEnum::<core::felt252>".
+ --> lib.cairo:11:9
+    bar(a);
+        ^

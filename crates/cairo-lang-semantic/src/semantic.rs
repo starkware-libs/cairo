@@ -3,15 +3,15 @@ use cairo_lang_defs::ids::LocalVarId;
 // Reexport objects
 pub use cairo_lang_defs::ids::{ParamId, VarId};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use smol_str::SmolStr;
 
 pub use super::expr::objects::*;
 use crate::db::SemanticGroup;
 pub use crate::expr::pattern::{
-    Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternStringLiteral,
-    PatternStruct, PatternTuple, PatternVariable,
+    Pattern, PatternEnumVariant, PatternFixedSizeArray, PatternLiteral, PatternOtherwise,
+    PatternStringLiteral, PatternStruct, PatternTuple, PatternVariable,
 };
 pub use crate::items::enm::{ConcreteVariant, MatchArmSelector, ValueSelectorArm, Variant};
 pub use crate::items::function_with_body::FunctionBody;

@@ -1,0 +1,52 @@
+//! > Test test_scrub_units simple scenario.
+
+//! > test_runner_name
+test_scrub_units
+
+//! > function
+fn foo(a: Option<()>) {
+    bar::<(), MyDestruct>(a.expect('Should be some.'))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T, +Destruct<T>>(a: T) {}
+
+
+pub impl MyDestruct of Destruct<()> {
+    #[inline(always)]
+    fn destruct(self: ()) nopanic {
+        my_fn()
+    }
+}
+
+extern fn my_fn() nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::option::Option::<()>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 433078840523992521883553776259654958
+  (v2: ()) <- core::option::OptionTraitImpl::<()>::expect(v0, v1)
+  (v3: ()) <- test::bar::<(), test::MyDestruct>(v2)
+End:
+  Return(v3)
+
+//! > after
+Parameters: v0: core::option::Option::<()>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 433078840523992521883553776259654958
+  () <- core::option::OptionTraitImpl::<()>::expect(v0, v1)
+  (v2: ()) <- struct_construct()
+  () <- test::bar::<(), test::MyDestruct>(v2)
+  (v3: ()) <- struct_construct()
+  () <- struct_destructure(v3)
+End:
+  Return()

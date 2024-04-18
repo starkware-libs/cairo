@@ -2,9 +2,9 @@ use cairo_felt::{felt_str, Felt252};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::byte_array::{BYTES_IN_WORD, BYTE_ARRAY_MAGIC};
-use cairo_lang_utils::OptionHelper;
+use cairo_lang_utils::{require, OptionHelper};
 use itertools::chain;
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
@@ -166,9 +166,7 @@ fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fel
     else {
         return None;
     };
-    if name != "expected" {
-        return None;
-    }
+    require(name == "expected")?;
 
     match value {
         ast::Expr::Tuple(panic_exprs) => {

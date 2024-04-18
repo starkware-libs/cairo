@@ -27,12 +27,12 @@ impl From<RunProfilerConfigArg> for RunProfilerConfig {
     }
 }
 
-/// Command line args parser.
-/// Exits with 0/1 if the input is formatted correctly/incorrectly.
+/// Compiles a Cairo project and runs all the functions marked as `#[test]`.
+/// Exits with 1 if the compilation or run fails, otherwise 0.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
-    /// The path to compile and run its tests.
+    /// The Cairo project path to compile and run its tests.
     path: PathBuf,
     /// Whether path is a single file.
     #[arg(short, long)]
@@ -56,6 +56,12 @@ struct Args {
     /// [cairo_lang_test_runner::RunProfilerConfig]
     #[clap(short, long, default_value_t, value_enum)]
     run_profiler: RunProfilerConfigArg,
+    /// Should disable gas calculation.
+    #[arg(long)]
+    gas_disabled: bool,
+    /// Whether to print resource usage after each test.
+    #[arg(long, default_value_t = false)]
+    print_resource_usage: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -69,6 +75,8 @@ fn main() -> anyhow::Result<()> {
         ignored: args.ignored,
         include_ignored: args.include_ignored,
         run_profiler: args.run_profiler.into(),
+        gas_enabled: !args.gas_disabled,
+        print_resource_usage: args.print_resource_usage,
     };
 
     let runner = TestRunner::new(&args.path, args.starknet, args.allow_warnings, config)?;

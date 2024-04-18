@@ -45,12 +45,12 @@ fn test_internal_func() {
 fn test_flow() {
     // Set up.
     let (address0, _) = deploy_syscall(
-        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, array![100].span(), false
+        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, [100].span(), false
     )
         .unwrap();
     let mut contract0 = IContractDispatcher { contract_address: address0 };
     let (address1, _) = deploy_syscall(
-        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, array![200].span(), false
+        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, [200].span(), false
     )
         .unwrap();
     let mut contract1 = IContractDispatcher { contract_address: address1 };
@@ -73,7 +73,7 @@ fn test_flow() {
 fn test_flow_safe_dispatcher() {
     // Set up.
     let (contract_address, _) = deploy_syscall(
-        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, array![100].span(), false
+        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, [100].span(), false
     )
         .unwrap();
     let mut contract = IContractSafeDispatcher { contract_address };
@@ -89,9 +89,9 @@ fn test_flow_safe_dispatcher() {
 }
 
 // If the test is failing do to gas usage changes, update the gas limit by taking `test_flow` test
-// gas usage and add about 300000.
+// gas usage and add about 110000.
 #[test]
-#[available_gas(1150000)]
+#[available_gas(890000)]
 #[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED',))]
 fn test_flow_out_of_gas() {
     // Calling the `test_flow` test but a low gas limit.
@@ -100,8 +100,10 @@ fn test_flow_out_of_gas() {
 
 #[test]
 fn test_class_hash_not_found() {
-    let mut err = deploy_syscall(5.try_into().unwrap(), 0, array![100].span(), false).unwrap_err();
-    assert_eq!(err.pop_front().unwrap(), 'CLASS_HASH_NOT_FOUND');
+    assert_eq!(
+        deploy_syscall(5.try_into().unwrap(), 0, [100].span(), false),
+        Result::Err(array!['CLASS_HASH_NOT_FOUND'])
+    );
 }
 
 #[test]
@@ -170,7 +172,7 @@ fn test_entrypoint_failed() {
 }
 
 #[test]
-#[should_panic(expected: ('GET_BLOCK_HASH_UNIMPLEMENTED',))]
+#[should_panic(expected: ('GET_BLOCK_HASH_NOT_SET',))]
 fn test_get_block_hash() {
     get_block_hash_syscall(0).unwrap_syscall();
 }

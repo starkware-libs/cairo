@@ -7,44 +7,68 @@ test_expand_plugin(expect_diagnostics: false)
 ["a", "b", ["k", "a"], ["k", "b"]]
 
 //! > cairo_code
-fn f0() -> felt252 { 0 }
+fn f0() -> felt252 {
+    0
+}
 
 #[cfg(a)]
-fn f1() -> felt252 { 0 }
+fn f1() -> felt252 {
+    0
+}
 
 #[cfg(X)]
-fn f2() -> felt252 { 0 }
+fn f2() -> felt252 {
+    0
+}
 
 #[cfg(k: 'a')]
-fn f3() -> felt252 { 0 }
+fn f3() -> felt252 {
+    0
+}
 
 #[cfg(k: 'X')]
-fn f4() -> felt252 { 0 }
+fn f4() -> felt252 {
+    0
+}
 
 #[cfg(a, b)]
-fn f5() -> felt252 { 0 }
+fn f5() -> felt252 {
+    0
+}
 
 #[cfg(a, b, c)]
-fn f6() -> felt252 { 0 }
+fn f6() -> felt252 {
+    0
+}
 
 #[cfg(k: 'a', k: 'b')]
-fn f7() -> felt252 { 0 }
+fn f7() -> felt252 {
+    0
+}
 
 #[cfg(k: 'a', k: 'b', k: 'c')]
-fn f8() -> felt252 { 0 }
+fn f8() -> felt252 {
+    0
+}
 
 #[cfg(a)]
 #[cfg(b)]
-fn f9() -> felt252 { 0 }
+fn f9() -> felt252 {
+    0
+}
 
 #[cfg(a)]
 #[cfg(c)]
 #[cfg(b)]
-fn f10() -> felt252 { 0 }
+fn f10() -> felt252 {
+    0
+}
 
 #[cfg(no_cfg)]
 #[unsupported_attr]
-fn f11() -> felt252 { 0 }
+fn f11() -> felt252 {
+    0
+}
 
 trait RemoveTraitItem {
     fn f0();
@@ -101,64 +125,110 @@ impl RemoveTraitItem of SomeTrait {
 }
 
 mod remove_module_item {
-    fn f0() -> felt252 { 0 }
+    fn f0() -> felt252 {
+        0
+    }
     #[cfg(a)]
-    fn f1() -> felt252 { 0 }
+    fn f1() -> felt252 {
+        0
+    }
     #[cfg(X)]
-    fn f2() -> felt252 { 0 }
+    fn f2() -> felt252 {
+        0
+    }
     #[cfg(k: 'a')]
-    fn f3() -> felt252 { 0 }
+    fn f3() -> felt252 {
+        0
+    }
     #[cfg(k: 'X')]
-    fn f4() -> felt252 { 0 }
+    fn f4() -> felt252 {
+        0
+    }
     #[cfg(a, b)]
-    fn f5() -> felt252 { 0 }
+    fn f5() -> felt252 {
+        0
+    }
     #[cfg(a, b, c)]
-    fn f6() -> felt252 { 0 }
+    fn f6() -> felt252 {
+        0
+    }
     #[cfg(k: 'a', k: 'b')]
-    fn f7() -> felt252 { 0 }
+    fn f7() -> felt252 {
+        0
+    }
     #[cfg(k: 'a', k: 'b', k: 'c')]
-    fn f8() -> felt252 { 0 }
+    fn f8() -> felt252 {
+        0
+    }
     #[cfg(a)]
     #[cfg(b)]
-    fn f9() -> felt252 { 0 }
+    fn f9() -> felt252 {
+        0
+    }
     #[cfg(a)]
     #[cfg(c)]
     #[cfg(b)]
-    fn f10() -> felt252 { 0 }
+    fn f10() -> felt252 {
+        0
+    }
 }
 
 //! > expanded_cairo_code
-fn f0() -> felt252 { 0 }
+fn f0() -> felt252 {
+    0
+}
 
 #[cfg(a)]
-fn f1() -> felt252 { 0 }
+fn f1() -> felt252 {
+    0
+}
 
 #[cfg(k: 'a')]
-fn f3() -> felt252 { 0 }
+fn f3() -> felt252 {
+    0
+}
 
 #[cfg(a, b)]
-fn f5() -> felt252 { 0 }
+fn f5() -> felt252 {
+    0
+}
 
 #[cfg(k: 'a', k: 'b')]
-fn f7() -> felt252 { 0 }
+fn f7() -> felt252 {
+    0
+}
 
 #[cfg(a)]
 #[cfg(b)]
-fn f9() -> felt252 { 0 }
+fn f9() -> felt252 {
+    0
+}
 
 mod remove_module_item {
-    fn f0() -> felt252 { 0 }
+    fn f0() -> felt252 {
+        0
+    }
     #[cfg(a)]
-    fn f1() -> felt252 { 0 }
+    fn f1() -> felt252 {
+        0
+    }
     #[cfg(k: 'a')]
-    fn f3() -> felt252 { 0 }
+    fn f3() -> felt252 {
+        0
+    }
     #[cfg(a, b)]
-    fn f5() -> felt252 { 0 }
+    fn f5() -> felt252 {
+        0
+    }
     #[cfg(k: 'a', k: 'b')]
-    fn f7() -> felt252 { 0 }
+    fn f7() -> felt252 {
+        0
+    }
     #[cfg(a)]
     #[cfg(b)]
-    fn f9() -> felt252 { 0 }
+    fn f9() -> felt252 {
+        0
+    }
 }
 
 trait RemoveTraitItem {

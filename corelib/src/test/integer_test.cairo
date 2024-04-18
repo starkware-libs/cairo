@@ -796,6 +796,17 @@ fn test_u512_safe_div_rem_by_u256() {
 }
 
 #[test]
+fn test_u512_try_into_u256() {
+    assert!(
+        u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 0 }
+            .try_into() == Option::Some(0x200000000000000000000000000000001_u256)
+    );
+    assert!(u512 { limb0: 1, limb1: 2, limb2: 3, limb3: 0 }.try_into() == Option::<u256>::None);
+    assert!(u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 4 }.try_into() == Option::<u256>::None);
+    assert!(u512 { limb0: 1, limb1: 2, limb2: 3, limb3: 4 }.try_into() == Option::<u256>::None);
+}
+
+#[test]
 fn test_min() {
     let min_u8: u8 = BoundedInt::min();
     let min_u16: u16 = BoundedInt::min();
@@ -875,6 +886,11 @@ fn test_default_values() {
     assert_eq(@Default::default(), @0_u64, '0 == 0');
     assert_eq(@Default::default(), @0_u128, '0 == 0');
     assert_eq(@Default::default(), @0_u256, '0 == 0');
+    assert_eq(@Default::default(), @0_i8, '0 == 0');
+    assert_eq(@Default::default(), @0_i16, '0 == 0');
+    assert_eq(@Default::default(), @0_i32, '0 == 0');
+    assert_eq(@Default::default(), @0_i64, '0 == 0');
+    assert_eq(@Default::default(), @0_i128, '0 == 0');
 }
 
 #[test]
@@ -1847,18 +1863,16 @@ fn test_signed_int_diff() {
     assert_eq(@integer::i128_diff(3, 5).unwrap_err(), @~(2 - 1), 'i128: 3 - 5 == -2');
 }
 
-mod special_casts {
+mod bounded_int {
     extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
     extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
     extern fn upcast<T, S>(index: T) -> S nopanic;
 
-    impl DropBoundedInt120_180 of Drop<BoundedInt<120, 180>>;
+    impl DropBoundedInt<const MIN: felt252, const MAX: felt252> of Drop<BoundedInt<MIN, MAX>>;
     const U128_UPPER: felt252 = 0x100000000000000000000000000000000;
-    type BoundedIntU128Upper =
-        BoundedInt<0x100000000000000000000000000000000, 0x100000000000000000000000000000000>;
-    const U128_MAX: felt252 = 0xffffffffffffffffffffffffffffffff;
-    type BoundedIntU128Max =
-        BoundedInt<0xffffffffffffffffffffffffffffffff, 0xffffffffffffffffffffffffffffffff>;
+    type BoundedIntU128Upper = BoundedInt<U128_UPPER, U128_UPPER>;
+    const U128_MAX: felt252 = U128_UPPER - 1;
+    type BoundedIntU128Max = BoundedInt<U128_MAX, U128_MAX>;
 
     /// Is `value` the equivalent value of `expected` in `T` type.
     fn is_some_of<T>(value: Option<T>, expected: felt252) -> bool {
@@ -1935,5 +1949,156 @@ mod special_casts {
         );
         let v181 = downcast::<felt252, BoundedInt<181, 181>>(181).unwrap();
         assert!(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(upcast(v181)).is_none());
+    }
+
+    /// A trait used for Sierra extern functions to ignore the following params when actually
+    /// generating Sierra code, while still being able to use the parameters in high level cairo
+    /// code.
+    trait IgnoreNext;
+    impl ImplIgnoreNext of IgnoreNext;
+
+    extern fn bounded_int_add<T1, T2, +IgnoreNext, R>(a: T1, b: T2) -> R nopanic;
+    type U8AddRes = BoundedInt<0, 510>;
+    type I8AddRes = BoundedInt<-256, 254>;
+
+    #[test]
+    fn test_add() {
+        assert!(upcast(bounded_int_add::<u8, u8, _, U8AddRes>(0, 0)) == 0_felt252);
+        assert!(upcast(bounded_int_add::<u8, u8, _, U8AddRes>(0, 255)) == 255_felt252);
+        assert!(upcast(bounded_int_add::<u8, u8, _, U8AddRes>(255, 0)) == 255_felt252);
+        assert!(upcast(bounded_int_add::<u8, u8, _, U8AddRes>(255, 255)) == 510_felt252);
+        assert!(upcast(bounded_int_add::<i8, i8, _, I8AddRes>(-128, -128)) == -256_felt252);
+        assert!(upcast(bounded_int_add::<i8, i8, _, I8AddRes>(-128, 127)) == -1_felt252);
+        assert!(upcast(bounded_int_add::<i8, i8, _, I8AddRes>(127, -128)) == -1_felt252);
+        assert!(upcast(bounded_int_add::<i8, i8, _, I8AddRes>(127, 127)) == 254_felt252);
+    }
+
+    extern fn bounded_int_sub<T1, T2, +IgnoreNext, R>(a: T1, b: T2) -> R nopanic;
+    type U8SubRes = BoundedInt<-255, 255>;
+    type I8SubRes = BoundedInt<-255, 255>;
+
+    #[test]
+    fn test_sub() {
+        assert!(upcast(bounded_int_sub::<u8, u8, _, U8SubRes>(0, 0)) == 0_felt252);
+        assert!(upcast(bounded_int_sub::<u8, u8, _, U8SubRes>(0, 255)) == -255_felt252);
+        assert!(upcast(bounded_int_sub::<u8, u8, _, U8SubRes>(255, 0)) == 255_felt252);
+        assert!(upcast(bounded_int_sub::<u8, u8, _, U8SubRes>(255, 255)) == 0_felt252);
+        assert!(upcast(bounded_int_sub::<i8, i8, _, I8SubRes>(-128, -128)) == 0_felt252);
+        assert!(upcast(bounded_int_sub::<i8, i8, _, I8SubRes>(-128, 127)) == -255_felt252);
+        assert!(upcast(bounded_int_sub::<i8, i8, _, I8SubRes>(127, -128)) == 255_felt252);
+        assert!(upcast(bounded_int_sub::<i8, i8, _, I8SubRes>(127, 127)) == 0_felt252);
+    }
+
+    extern fn bounded_int_mul<T1, T2, +IgnoreNext, R>(a: T1, b: T2) -> R nopanic;
+    type U8MulRes = BoundedInt<0, {
+        255 * 255
+    }>;
+    type I8MulRes = BoundedInt<{
+        127 * -128
+    }, {
+        128 * 128
+    }>;
+
+    #[test]
+    fn test_mul() {
+        assert!(upcast(bounded_int_mul::<u8, u8, _, U8MulRes>(0, 0)) == 0_felt252);
+        assert!(upcast(bounded_int_mul::<u8, u8, _, U8MulRes>(0, 255)) == 0_felt252);
+        assert!(upcast(bounded_int_mul::<u8, u8, _, U8MulRes>(255, 0)) == 0_felt252);
+        assert!(upcast(bounded_int_mul::<u8, u8, _, U8MulRes>(255, 255)) == 255_felt252 * 255);
+        assert!(upcast(bounded_int_mul::<i8, i8, _, I8MulRes>(-128, -128)) == -128_felt252 * -128);
+        assert!(upcast(bounded_int_mul::<i8, i8, _, I8MulRes>(-128, 127)) == -128_felt252 * 127);
+        assert!(upcast(bounded_int_mul::<i8, i8, _, I8MulRes>(127, -128)) == 127_felt252 * -128);
+        assert!(upcast(bounded_int_mul::<i8, i8, _, I8MulRes>(127, 127)) == 127_felt252 * 127);
+    }
+
+    fn bi_value<const MIN: felt252, const MAX: felt252>(v: u128) -> BoundedInt<MIN, MAX> {
+        downcast(v).unwrap()
+    }
+
+    extern fn bounded_int_div_rem<T1, T2, +IgnoreNext, Q, R>(
+        a: T1, b: T2
+    ) -> (Q, R) implicits(RangeCheck) nopanic;
+
+    fn div_rem_helper(a: u128, b: u128) -> (felt252, felt252) {
+        let (q, r) = bounded_int_div_rem(bi_value::<128, 255>(a), bi_value::<3, 8>(b));
+        (upcast::<BoundedInt<16, 85>>(q), upcast::<BoundedInt<0, 7>>(r))
+    }
+
+    #[test]
+    fn test_div_rem() {
+        assert!(div_rem_helper(128, 3) == (42, 2));
+        assert!(div_rem_helper(255, 3) == (85, 0));
+        assert!(div_rem_helper(128, 8) == (16, 0));
+        assert!(div_rem_helper(255, 8) == (31, 7));
+    }
+
+    fn div_rem_wide_helper(a: u128, b: u128) -> (felt252, felt252) {
+        let (q, r) = bounded_int_div_rem(a, bi_value::<1, 0xffffffffffffffffffffffffffffffff>(b));
+        (
+            upcast::<BoundedInt<0, 0xffffffffffffffffffffffffffffffff>>(q),
+            upcast::<BoundedInt<0, 0xfffffffffffffffffffffffffffffffe>>(r)
+        )
+    }
+
+    #[test]
+    fn test_div_rem_wide() {
+        assert!(div_rem_wide_helper(128, 3) == (42, 2));
+        assert!(div_rem_wide_helper(255, 3) == (85, 0));
+        assert!(div_rem_wide_helper(128, 8) == (16, 0));
+        assert!(div_rem_wide_helper(255, 8) == (31, 7));
+    }
+
+    fn bi_const<const V: felt252>() -> BoundedInt<V, V> {
+        downcast(V).unwrap()
+    }
+
+    fn div_rem_small_quotient_helper<
+        const A_MAX: felt252,
+        const B: felt252,
+        const MAX_Q: felt252,
+        const MAX_R: felt252,
+        const A: felt252,
+    >(
+        a: BoundedInt<A, A>
+    ) -> (felt252, felt252) {
+        let (q, r) = bounded_int_div_rem::<BoundedInt<0, A_MAX>>(upcast(a), bi_const::<B>());
+        (upcast::<BoundedInt<0, MAX_Q>>(q), upcast::<BoundedInt<0, MAX_R>>(r))
+    }
+
+    const POW_2_124: felt252 = 0x10000000000000000000000000000000;
+    const MASK4: felt252 = 0xf;
+    const MASK124: felt252 = POW_2_124 - 1;
+    const POW_2_251: felt252 = 0x800000000000000000000000000000000000000000000000000000000000000;
+    const POW_2_123: felt252 = 0x8000000000000000000000000000000;
+
+    #[test]
+    fn test_div_rem_small_quotient() {
+        assert!(
+            div_rem_small_quotient_helper::<
+                U128_MAX, POW_2_124, MASK4, MASK124
+            >(bi_const::<0>()) == (0, 0)
+        );
+        assert!(
+            div_rem_small_quotient_helper::<
+                U128_MAX, POW_2_124, MASK4, MASK124
+            >(bi_const::<0x50000000000000000000000000000032>()) == (0x5, 0x32)
+        );
+        assert!(
+            div_rem_small_quotient_helper::<
+                U128_MAX, POW_2_124, MASK4, MASK124
+            >(bi_const::<0xf0000000000000000000000000012345>()) == (0xf, 0x12345)
+        );
+        assert!(
+            div_rem_small_quotient_helper::<
+                U128_MAX, POW_2_124, MASK4, MASK124
+            >(bi_const::<U128_MAX>()) == (MASK4, MASK124)
+        );
+        assert!(
+            div_rem_small_quotient_helper::<
+                POW_2_251, U128_MAX, POW_2_123, {
+                    U128_MAX - 1
+                }
+            >(bi_const::<POW_2_251>()) == (POW_2_123, POW_2_123)
+        );
     }
 }

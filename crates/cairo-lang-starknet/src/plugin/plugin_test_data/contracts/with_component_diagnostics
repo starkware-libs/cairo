@@ -148,7 +148,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x2943e6b272892c78655f823e0abb3da425a1ac0c3f9bdd70869a3f37bc54797;
 
 
@@ -397,7 +397,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0xe61d99740f46b06b2ccd91d014bc9f9acc438fec59d79dd30fd0d852e5210;
 
 
@@ -634,7 +634,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x14aaf6de6aff44d64b4c3609768860615e979fdd851d125bbdfc10597a50a1d;
 
 
@@ -751,7 +751,9 @@ mod test_contract {
     // {} instead of ().
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
     // Too many arguments.
-    component!(path: super::test_component, storage: test_component_storage, event: ABC, another: x);
+    component!(
+        path: super::test_component, storage: test_component_storage, event: ABC, another: x
+    );
     // Too few arguments.
     component!(path: super::test_component, storage: test_component_storage);
 }
@@ -782,7 +784,9 @@ mod test_contract {
     // {} instead of ().
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
     // Too many arguments.
-    component!(path: super::test_component, storage: test_component_storage, event: ABC, another: x);
+    component!(
+        path: super::test_component, storage: test_component_storage, event: ABC, another: x
+    );
     // Too few arguments.
     component!(path: super::test_component, storage: test_component_storage);
 }
@@ -880,8 +884,8 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
-pub const TEST_CLASS_HASH: felt252 = 0x2cffa3f882c4d652a366356180352e5af2bb4ea9b0e50532f2a0f11f077643a;
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: felt252 = 0x215c44bbf0e7c3b987e93bf1597778322461e87fd0059894735b0464ce94aff;
 
 
 pub mod __external {
@@ -963,11 +967,11 @@ error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<
 
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
  --> lib.cairo:24:5
-    component!(path: super::test_component, storage: test_component_storage, event: ABC, another: x);
-    ^***********************************************************************************************^
+    component!(
+    ^*********^
 
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
- --> lib.cairo:26:5
+ --> lib.cairo:28:5
     component!(path: super::test_component, storage: test_component_storage);
     ^***********************************************************************^
 
@@ -1135,7 +1139,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x13a81b6876baa1445c90fd69add3e928a4f6c6807e5227544ac6f6698c463b2;
 
 
@@ -1397,7 +1401,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x1092f63083af07b77ee426fd76d9695c3747a2e42571a914cee1dd17960254f;
 
 
@@ -1529,7 +1533,7 @@ error: Type not found.
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Type annotations needed. Failed to infer ?0
+error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo[contract]:37:27
                 starknet::SyscallResultTrait::unwrap_syscall(
                           ^****************^
@@ -1666,8 +1670,8 @@ contract:
         unsafe_new_contract_state()
     }
     
-    use __member_module_test_component_storage::InternalContractMemberStateTrait as test_component_storageContractMemberStateTrait;
-    mod __member_module_test_component_storage {
+    pub use __member_module_test_component_storage::InternalContractMemberStateTrait as test_component_storageContractMemberStateTrait;
+    pub mod __member_module_test_component_storage {
         use super::Event;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -1708,7 +1712,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x8618264598f52601eed9355f5b7c0fc7c8912d966e620eb0a2914ed8cb5c10;
 
 
@@ -1944,7 +1948,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x8f9d2a9bd3a3fe28e42c16030ed25a2756a86a13d4297597e43683c3df9a02;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -2237,7 +2241,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x150d2e1961908098174a1d0101315691e91ab91682760b04003683fab54f03e;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -2327,7 +2331,7 @@ mod test_contract {
     #[derive(Drop, starknet::Event)]
     enum Event {
         Comp1Event: super::component1::Event,
-        // Comp2Event: super::component2::Event,
+    // Comp2Event: super::component2::Event,
     }
 
     #[external(v0)]
@@ -2383,7 +2387,7 @@ mod test_contract {
     #[derive(Drop, starknet::Event)]
     enum Event {
         Comp1Event: super::component1::Event,
-        // Comp2Event: super::component2::Event,
+    // Comp2Event: super::component2::Event,
     }
 
     #[external(v0)]
@@ -2560,8 +2564,8 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
-pub const TEST_CLASS_HASH: felt252 = 0xa09b926ceb282d29edce76bb84e4aeb97f1a82ce15099322f1c2869a49b549;
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: felt252 = 0x3aa40c01c626d72d07c8dbda3c92460e7f71827931a5429b93fc69603190369;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {

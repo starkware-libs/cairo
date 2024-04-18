@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
@@ -68,11 +68,10 @@ pub fn priv_struct_declaration_data(
     let attributes = struct_ast.attributes(syntax_db).structurize(syntax_db);
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(struct_ast.stable_ptr().untyped()));
-    }
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(StructDeclarationData {
         diagnostics: diagnostics.build(),
@@ -121,10 +120,10 @@ pub fn struct_generic_params_data(
         module_file_id,
         &struct_ast.generic_params(db.upcast()),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, struct_ast.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
@@ -208,12 +207,11 @@ pub fn priv_struct_definition_data(
     }
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(struct_ast.stable_ptr().untyped()));
-    }
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+
     for (_, member) in members.iter_mut() {
-        member.ty = resolver.inference().rewrite(member.ty).no_err();
+        member.ty = inference.rewrite(member.ty).no_err();
     }
 
     let resolver_data = Arc::new(resolver.data);

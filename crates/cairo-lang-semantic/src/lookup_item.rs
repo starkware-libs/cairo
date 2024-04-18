@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FileIndex, FreeFunctionId,
-    FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeId,
+    FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeDefId,
     LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId,
     StructId, SubmoduleId, TraitFunctionId, TraitId, TraitItemId, TraitTypeId, UseId,
 };
@@ -203,9 +203,9 @@ impl HasResolverData for ImplItemId {
     }
 }
 
-impl HasResolverData for ImplTypeId {
+impl HasResolverData for ImplTypeDefId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
-        db.impl_type_resolver_data(*self)
+        db.impl_type_def_resolver_data(*self)
     }
 }
 

@@ -29,7 +29,9 @@ use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::errors::memory_errors::MemoryError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
-use cairo_vm::vm::runners::cairo_runner::{CairoRunner, ResourceTracker, RunResources};
+use cairo_vm::vm::runners::cairo_runner::{
+    CairoRunner, ExecutionResources, ResourceTracker, RunResources,
+};
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
 use itertools::Itertools;
@@ -41,7 +43,7 @@ use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 use self::contract_address::calculate_contract_address;
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
-use crate::{Arg, RunResultValue, SierraCasmRunner};
+use crate::{Arg, RunResultValue, SierraCasmRunner, StarknetExecutionResources};
 
 #[cfg(test)]
 mod test;
@@ -92,14 +94,16 @@ struct Secp256r1ExecutionScope {
 /// HintProcessor for Cairo compiler hints.
 pub struct CairoHintProcessor<'a> {
     /// The Cairo runner.
-    #[allow(dead_code)]
     pub runner: Option<&'a SierraCasmRunner>,
-    // A mapping from a string that represents a hint to the hint object.
+    /// A mapping from a string that represents a hint to the hint object.
     pub string_to_hint: HashMap<String, Hint>,
-    // The starknet state.
+    /// The starknet state.
     pub starknet_state: StarknetState,
-    // Maintains the resources of the run.
+    /// Maintains the resources of the run.
     pub run_resources: RunResources,
+    /// Resources used during syscalls - does not include resources used during the current VM run.
+    /// At the end of the run - adding both would result in the actual expected resource usage.
+    pub syscalls_used_resources: StarknetExecutionResources,
 }
 
 pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
@@ -131,20 +135,15 @@ pub struct StarknetState {
     /// The values of addresses in the simulated storage per contract.
     storage: HashMap<Felt252, HashMap<Felt252, Felt252>>,
     /// A mapping from contract address to class hash.
-    #[allow(dead_code)]
     deployed_contracts: HashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
     logs: HashMap<Felt252, ContractLogs>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
-    next_id: Felt252,
+    /// A mock history, mapping block number to the class hash.
+    block_hash: HashMap<u64, Felt252>,
 }
 impl StarknetState {
-    pub fn get_next_id(&mut self) -> Felt252 {
-        self.next_id += Felt252::from(1);
-        self.next_id.clone()
-    }
-
     /// Replaces the addresses in the context.
     pub fn open_caller_context(
         &mut self,
@@ -347,6 +346,7 @@ mod gas_costs {
     pub const GET_EXECUTION_INFO: usize = 10 * STEP;
     pub const KECCAK: usize = 0;
     pub const KECCAK_ROUND_COST: usize = 180000;
+    pub const SHA256_PROCESS_BLOCK: usize = 2000 * STEP;
     pub const LIBRARY_CALL: usize = CALL_CONTRACT;
     pub const REPLACE_CLASS: usize = 50 * STEP;
     pub const SECP256K1_ADD: usize = 254 * STEP + 29 * RANGE_CHECK;
@@ -583,6 +583,15 @@ impl<'a> MemBuffer<'a> {
         vm_get_range(self.vm.vm(), start, end)
     }
 
+    /// Returns the array of integer values pointed to by the next address in the buffer and
+    /// with a fixed size and advances the buffer by one. Will fail if the next value is not
+    /// an address or if the address does not point to an array of integers.
+    pub fn next_fixed_size_arr_pointer(&mut self, size: usize) -> Result<Vec<Felt252>, HintError> {
+        let start = self.next_addr()?;
+        let end = (start + size)?;
+        vm_get_range(self.vm.vm(), start, end)
+    }
+
     /// Writes a value to the current position of the buffer and advances it by one.
     pub fn write<T: Into<MaybeRelocatable>>(&mut self, value: T) -> Result<(), MemoryError> {
         let ptr = self.next();
@@ -651,7 +660,9 @@ impl<'a> CairoHintProcessor<'a> {
                 }
                 Ok(())
             };
-        match std::str::from_utf8(&selector).unwrap() {
+        let selector = std::str::from_utf8(&selector).unwrap();
+        *self.syscalls_used_resources.syscalls.entry(selector.into()).or_default() += 1;
+        match selector {
             "StorageWrite" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.storage_write(
                     gas_counter,
@@ -685,6 +696,15 @@ impl<'a> CairoHintProcessor<'a> {
             }),
             "Keccak" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 keccak(gas_counter, system_buffer.next_arr()?)
+            }),
+            "Sha256ProcessBlock" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                sha_256_process_block(
+                    gas_counter,
+                    system_buffer.next_fixed_size_arr_pointer(8)?,
+                    system_buffer.next_arr()?,
+                    exec_scopes,
+                    system_buffer,
+                )
             }),
             "Secp256k1New" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 secp256k1_new(
@@ -835,13 +855,14 @@ impl<'a> CairoHintProcessor<'a> {
     fn get_block_hash(
         &mut self,
         gas_counter: &mut usize,
-        _block_number: u64,
+        block_number: u64,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, GET_BLOCK_HASH);
-        // TODO(Arni, 28/5/2023): Replace the temporary return value with the required value.
-        //      One design suggestion - to perform a storage read. Have an arbitrary, hardcoded
-        //      (For example, addr=1) contain the mapping from block number to block hash.
-        fail_syscall!(b"GET_BLOCK_HASH_UNIMPLEMENTED");
+        if let Some(block_hash) = self.starknet_state.block_hash.get(&block_number) {
+            Ok(SyscallResult::Success(vec![block_hash.clone().into()]))
+        } else {
+            fail_syscall!(b"GET_BLOCK_HASH_NOT_SET");
+        }
     }
 
     /// Executes the `get_execution_info_syscall` syscall.
@@ -966,9 +987,14 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Set the class hash of the deployed contract before executing the constructor,
         // as the constructor could make an external call to this address.
-        self.starknet_state
+        if self
+            .starknet_state
             .deployed_contracts
-            .insert(deployed_contract_address.clone(), class_hash);
+            .insert(deployed_contract_address.clone(), class_hash)
+            .is_some()
+        {
+            fail_syscall!(b"CONTRACT_ALREADY_DEPLOYED");
+        }
 
         // Call constructor if it exists.
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
@@ -1112,12 +1138,12 @@ impl<'a> CairoHintProcessor<'a> {
         let mut res = runner
             .run_function_with_starknet_context(
                 function,
-                &[Arg::Array(calldata)],
+                &[Arg::Array(calldata.into_iter().map(Arg::Value).collect())],
                 Some(*gas_counter),
                 self.starknet_state.clone(),
             )
             .expect("Internal runner error.");
-
+        self.syscalls_used_resources += res.used_resources;
         *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
         match res.value {
             RunResultValue::Success(value) => {
@@ -1150,15 +1176,14 @@ impl<'a> CairoHintProcessor<'a> {
         let inputs = vm_get_range(vm, input_start, input_end)?;
 
         // Helper for all the instances requiring only a single input.
-        let as_single_input = |inputs: Vec<Felt252>| {
-            if inputs.len() != 1 {
-                Err(HintError::CustomHint(Box::from(format!(
+        let as_single_input = |inputs| {
+            vec_as_array(inputs, || {
+                format!(
                     "`{selector}` cheatcode invalid args: pass span of an array with exactly one \
                      element",
-                ))))
-            } else {
-                Ok(inputs[0].clone())
-            }
+                )
+            })
+            .map(|[value]| value)
         };
 
         let mut res_segment = MemBuffer::new_segment(vm);
@@ -1202,6 +1227,17 @@ impl<'a> CairoHintProcessor<'a> {
             "set_signature" => {
                 self.starknet_state.exec_info.tx_info.signature = inputs;
             }
+            "set_block_hash" => {
+                let [block_number, block_hash] = vec_as_array(inputs, || {
+                    format!(
+                        "`{selector}` cheatcode invalid args: pass span of an array with exactly \
+                         two elements",
+                    )
+                })?;
+                self.starknet_state
+                    .block_hash
+                    .insert(block_number.to_u64().unwrap(), block_hash.clone());
+            }
             "pop_log" => {
                 let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
                 if let Some((keys, data)) =
@@ -1234,6 +1270,14 @@ impl<'a> CairoHintProcessor<'a> {
     }
 }
 
+/// Extracts an array of felt252s from a vector of such.
+fn vec_as_array<const COUNT: usize>(
+    inputs: Vec<Felt252>,
+    err_msg: impl FnOnce() -> String,
+) -> Result<[Felt252; COUNT], HintError> {
+    inputs.try_into().map_err(|_| HintError::CustomHint(Box::from(err_msg())))
+}
+
 /// Executes the `keccak_syscall` syscall.
 fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, KECCAK);
@@ -1252,6 +1296,36 @@ fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, 
         ((Felt252::from(state[1]) << 64u32) + Felt252::from(state[0])).into(),
         ((Felt252::from(state[3]) << 64u32) + Felt252::from(state[2])).into(),
     ]))
+}
+
+/// Executes the `sha256_process_block` syscall.
+fn sha_256_process_block(
+    gas_counter: &mut usize,
+    prev_state: Vec<Felt252>,
+    data: Vec<Felt252>,
+    exec_scopes: &mut ExecutionScopes,
+    vm: &mut dyn VMWrapper,
+) -> Result<SyscallResult, HintError> {
+    deduct_gas!(gas_counter, SHA256_PROCESS_BLOCK);
+    if data.len() != 16 {
+        fail_syscall!(b"Invalid sha256_chunk input size");
+    }
+
+    let data_as_bytes = sha2::digest::generic_array::GenericArray::from_exact_iter(
+        data.iter().flat_map(|felt| felt.to_bigint().to_u32().unwrap().to_be_bytes()),
+    )
+    .unwrap();
+    let mut state_as_words: [u32; 8] = prev_state
+        .iter()
+        .map(|felt| felt.to_bigint().to_u32().unwrap())
+        .collect_vec()
+        .try_into()
+        .unwrap();
+    sha2::compress256(&mut state_as_words, &[data_as_bytes]);
+    let next_state_ptr = alloc_memory(exec_scopes, vm.vm(), 8)?;
+    let mut buff: MemBuffer<'_> = MemBuffer::new(vm, next_state_ptr);
+    buff.write_data(state_as_words.into_iter().map(Felt252::from))?;
+    Ok(SyscallResult::Success(vec![next_state_ptr.into()]))
 }
 
 // --- secp256k1 ---
@@ -1562,6 +1636,25 @@ pub fn execute_deprecated_hint(
         | DeprecatedHint::AssertLtAssertValidInput { .. } => {}
     }
     Ok(())
+}
+
+/// Allocates a memory buffer of size `size` on a vm segment.
+/// Segment will be reused between calls.
+fn alloc_memory(
+    exec_scopes: &mut ExecutionScopes,
+    vm: &mut VirtualMachine,
+    size: usize,
+) -> Result<Relocatable, HintError> {
+    const NAME: &str = "memory_exec_scope";
+    if exec_scopes.get_ref::<MemoryExecScope>(NAME).is_err() {
+        exec_scopes.assign_or_update_variable(
+            NAME,
+            Box::new(MemoryExecScope { next_address: vm.add_memory_segment() }),
+        );
+    }
+    let scope = exec_scopes.get_mut_ref::<MemoryExecScope>(NAME)?;
+    let updated = (scope.next_address + size)?;
+    Ok(std::mem::replace(&mut scope.next_address, updated))
 }
 
 /// Executes a core hint.
@@ -1900,11 +1993,8 @@ pub fn execute_core_hint(
         CoreHint::AssertLeFindSmallArcs { a, b, range_check_ptr } => {
             let a_val = get_val(vm, a)?;
             let b_val = get_val(vm, b)?;
-            let mut lengths_and_indices = vec![
-                (a_val.clone(), 0),
-                (b_val.clone() - a_val, 1),
-                (Felt252::from(-1) - b_val, 2),
-            ];
+            let mut lengths_and_indices =
+                [(a_val.clone(), 0), (b_val.clone() - a_val, 1), (Felt252::from(-1) - b_val, 2)];
             lengths_and_indices.sort();
             exec_scopes
                 .assign_or_update_variable("excluded_arc", Box::new(lengths_and_indices[2].1));
@@ -1951,19 +2041,8 @@ pub fn execute_core_hint(
         }
         CoreHint::AllocConstantSize { size, dst } => {
             let object_size = get_val(vm, size)?.to_usize().expect("Object size too large.");
-            let memory_exec_scope =
-                match exec_scopes.get_mut_ref::<MemoryExecScope>("memory_exec_scope") {
-                    Ok(memory_exec_scope) => memory_exec_scope,
-                    Err(_) => {
-                        exec_scopes.assign_or_update_variable(
-                            "memory_exec_scope",
-                            Box::new(MemoryExecScope { next_address: vm.add_memory_segment() }),
-                        );
-                        exec_scopes.get_mut_ref::<MemoryExecScope>("memory_exec_scope")?
-                    }
-                };
-            insert_value_to_cellref!(vm, dst, memory_exec_scope.next_address)?;
-            memory_exec_scope.next_address.offset += object_size;
+            let ptr = alloc_memory(exec_scopes, vm, object_size)?;
+            insert_value_to_cellref!(vm, dst, ptr)?;
         }
         CoreHint::U256InvModN {
             b0,
@@ -2088,8 +2167,6 @@ pub struct RunFunctionContext<'a> {
     pub data_len: usize,
 }
 
-type RunFunctionRes = (Vec<Option<Felt252>>, usize);
-
 /// Runs CairoRunner on layout with prime.
 /// Allows injecting custom CairoRunner.
 pub fn run_function_with_runner(
@@ -2131,7 +2208,17 @@ pub fn build_cairo_runner(
     CairoRunner::new(&program, "all_cairo", false).map_err(CairoRunError::from).map_err(Box::new)
 }
 
-/// Runs `bytecode` on layout with prime, and returns the memory layout and ap value.
+/// The result of [run_function].
+pub struct RunFunctionResult {
+    /// The memory layout after the run.
+    pub memory: Vec<Option<Felt252>>,
+    /// The ap value after the run.
+    pub ap: usize,
+    /// The used resources after the run.
+    pub used_resources: ExecutionResources,
+}
+
+/// Runs `bytecode` on layout with prime, and returns the matching [RunFunctionResult].
 /// Allows injecting custom HintProcessor.
 pub fn run_function<'a, 'b: 'a>(
     vm: &mut VirtualMachine,
@@ -2142,15 +2229,21 @@ pub fn run_function<'a, 'b: 'a>(
     ) -> Result<(), Box<CairoRunError>>,
     hint_processor: &mut dyn HintProcessor,
     hints_dict: HashMap<usize, Vec<HintParams>>,
-) -> Result<RunFunctionRes, Box<CairoRunError>> {
+) -> Result<RunFunctionResult, Box<CairoRunError>> {
     let data: Vec<MaybeRelocatable> =
         bytecode.map(Felt252::from).map(MaybeRelocatable::from).collect();
     let data_len = data.len();
     let mut runner = build_cairo_runner(data, builtins, hints_dict)?;
 
     run_function_with_runner(vm, data_len, additional_initialization, hint_processor, &mut runner)?;
-
-    Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
+    let used_resources = runner
+        .get_execution_resources(vm)
+        .expect("Failed to get execution resources, but the run was successful.");
+    Ok(RunFunctionResult {
+        memory: runner.relocated_memory,
+        ap: vm.get_relocated_trace().unwrap().last().unwrap().ap,
+        used_resources,
+    })
 }
 
 /// Formats the given felts as a debug string.
@@ -2200,9 +2293,7 @@ pub fn format_next_item<T>(values: &mut T) -> Option<FormattedItem>
 where
     T: Iterator<Item = Felt252> + Clone,
 {
-    let Some(first_felt) = values.next() else {
-        return None;
-    };
+    let first_felt = values.next()?;
 
     if first_felt == felt252_str!(BYTE_ARRAY_MAGIC, 16) {
         if let Some(string) = try_format_string(values) {

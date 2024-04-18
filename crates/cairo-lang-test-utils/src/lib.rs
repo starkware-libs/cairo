@@ -1,4 +1,4 @@
-#![cfg(any(feature = "testing", test))]
+#![cfg(feature = "testing")]
 
 pub mod parse_test_file;
 use std::fs;
@@ -7,6 +7,7 @@ use std::str::FromStr;
 use std::sync::{Mutex, MutexGuard};
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::require;
 pub use parse_test_file::parse_test_file;
 
 /// Returns the content of the relevant test file.
@@ -46,12 +47,8 @@ pub fn verify_diagnostics_expectation(
     args: &OrderedHashMap<String, String>,
     diagnostics: &str,
 ) -> Option<String> {
-    let Some(expect_diagnostics) = args.get("expect_diagnostics") else {
-        return None;
-    };
-    if expect_diagnostics == "*" {
-        return None;
-    }
+    let expect_diagnostics = args.get("expect_diagnostics")?;
+    require(expect_diagnostics != "*")?;
 
     let expect_diagnostics = bool_input(expect_diagnostics);
     let has_diagnostics = !diagnostics.is_empty();

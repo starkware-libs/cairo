@@ -8,7 +8,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::replace_sierra_ids;
-use crate::statements_locations::containing_function_identifier;
+use crate::statements_locations::containing_function_identifier_for_tests;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 /// Compiles a single function to Sierra and checks the generated code, together with the
@@ -39,17 +39,18 @@ pub fn test_sierra_locations(
         for stmt in function.unwrap().body.iter() {
             sierra_code
                 .push_str(&format!("{}\n", replace_sierra_ids(db, stmt).statement.to_string(db),));
-            // TODO(Gil): Improve the location string.
-            let location_str = if let Some(location) = stmt.location {
-                format!(
-                    "Originating location:\n{}\nIn function: {}",
-                    get_location_marks(db, &location.diagnostic_location(db)),
-                    containing_function_identifier(db, stmt.location)
-                )
-            } else {
-                "".to_string()
-            };
-            sierra_code.push_str(format!("{}\n", location_str).as_str());
+            for (i, location) in stmt.location.iter().enumerate() {
+                if i == 0 {
+                    sierra_code.push_str("Originating location:\n");
+                } else {
+                    sierra_code.push_str("Inlined at:\n");
+                }
+                sierra_code.push_str(&get_location_marks(db, &location.diagnostic_location(db)));
+                sierra_code.push_str(&format!(
+                    "\nIn function: {}\n",
+                    containing_function_identifier_for_tests(db, *location)
+                ));
+            }
         }
     }
 

@@ -1,10 +1,10 @@
+use cairo_lang_defs::extract_macro_unnamed_args;
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
-use cairo_lang_semantic::extract_macro_unnamed_args;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 
 /// Macro for getting a component given a contract state that has it.

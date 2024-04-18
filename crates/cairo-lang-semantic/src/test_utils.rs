@@ -13,8 +13,8 @@ use cairo_lang_filesystem::ids::{
     CrateId, CrateLongId, Directory, FileKind, FileLongId, VirtualFile,
 };
 use cairo_lang_parser::db::ParserDatabase;
-use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -306,19 +306,23 @@ pub fn setup_test_block(
 
 pub fn test_expr_diagnostics(
     inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
-    TestRunnerResult::success(OrderedHashMap::from([(
-        "expected_diagnostics".into(),
-        setup_test_expr(
-            db,
-            inputs["expr_code"].as_str(),
-            inputs["module_code"].as_str(),
-            inputs["function_body"].as_str(),
-        )
-        .get_diagnostics(),
-    )]))
+
+    let diagnostics = setup_test_expr(
+        db,
+        inputs["expr_code"].as_str(),
+        inputs["module_code"].as_str(),
+        inputs["function_body"].as_str(),
+    )
+    .get_diagnostics();
+    let error = verify_diagnostics_expectation(args, &diagnostics);
+
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([("expected_diagnostics".into(), diagnostics)]),
+        error,
+    }
 }
 
 pub fn test_function_diagnostics(
@@ -361,8 +365,8 @@ fn get_recursive_module_semantic_diagnostics(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    let mut diagnostics = DiagnosticsBuilder::default();
-    diagnostics.extend(db.module_semantic_diagnostics(module_id).unwrap());
+    let mut diagnostics: DiagnosticsBuilder<_> =
+        db.module_semantic_diagnostics(module_id).unwrap().into();
     for submodule_id in db.module_submodules_ids(module_id).unwrap().iter() {
         if is_submodule_inline(db, *submodule_id) {
             diagnostics.extend(get_recursive_module_semantic_diagnostics(

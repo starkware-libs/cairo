@@ -37,6 +37,7 @@ impl<'a, TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
 #[derive(Clone, Debug)]
 enum ApTrackingBase {
     FunctionStart(FunctionId),
+    #[allow(dead_code)]
     EnableStatement(StatementIdx),
 }
 
@@ -237,8 +238,8 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
                 continue;
             }
             match self.tracking_info.entry(target) {
-                Entry::Occupied(mut e) => {
-                    e.get_mut().ap_change = e.get().ap_change.max(base_info.ap_change);
+                Entry::Occupied(e) => {
+                    e.into_mut().ap_change = e.get().ap_change.max(base_info.ap_change);
                 }
                 Entry::Vacant(e) => {
                     e.insert(base_info);
@@ -290,7 +291,9 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         if let Some(source_ap_change) = source_ap_change {
             self.effective_ap_change_from_base.insert(idx, source_ap_change);
             for (target, path_ap_change) in paths_ap_change {
-                self.variable_values.insert(target, path_ap_change - source_ap_change);
+                if path_ap_change != source_ap_change {
+                    self.variable_values.insert(target, path_ap_change - source_ap_change);
+                }
             }
         }
         Ok(())

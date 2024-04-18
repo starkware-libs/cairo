@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo(a: Result::<Result::<u128, felt252>, felt252>) -> Result::<felt252, felt252> {
+fn foo(a: Result<Result<u128, felt252>, felt252>) -> Result<felt252, felt252> {
     a??;
     Result::<felt252, felt252>::Ok(1)
 }
@@ -32,25 +32,25 @@ blk1:
 Statements:
 End:
   Match(match_enum(v1) {
-    Result::Ok(v5) => blk2,
-    Result::Err(v6) => blk3,
+    Result::Ok(v3) => blk2,
+    Result::Err(v4) => blk3,
   })
 
 blk2:
 Statements:
-  (v9: core::felt252) <- 1u
-  (v10: core::result::Result::<core::felt252, core::felt252>) <- Result::Ok(v9)
+  (v5: core::felt252) <- 1
+  (v6: core::result::Result::<core::felt252, core::felt252>) <- Result::Ok(v5)
 End:
-  Return(v10)
+  Return(v6)
 
 blk3:
 Statements:
-  (v7: core::result::Result::<core::felt252, core::felt252>) <- Result::Err(v6)
+  (v7: core::result::Result::<core::felt252, core::felt252>) <- Result::Err(v4)
 End:
   Return(v7)
 
 blk4:
 Statements:
-  (v3: core::result::Result::<core::felt252, core::felt252>) <- Result::Err(v2)
+  (v8: core::result::Result::<core::felt252, core::felt252>) <- Result::Err(v2)
 End:
-  Return(v3)
+  Return(v8)

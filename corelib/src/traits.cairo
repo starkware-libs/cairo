@@ -310,3 +310,6 @@ impl TupleSize4Default<
         (Default::default(), Default::default(), Default::default(), Default::default())
     }
 }
+
+impl FixedSizedArrayDrop<T, +Drop<T>, const N: u32> of Drop<[T; N]>;
+impl FixedSizedArrayCopy<T, +Copy<T>, const N: u32> of Copy<[T; N]>;

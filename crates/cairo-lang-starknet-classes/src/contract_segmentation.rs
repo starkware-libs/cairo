@@ -4,6 +4,7 @@ mod test;
 
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
+use cairo_lang_utils::require;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -58,9 +59,8 @@ fn find_functions_segments(program: &Program) -> Result<Vec<usize>, Segmentation
     let mut function_statement_ids: Vec<usize> =
         program.funcs.iter().map(|func| func.entry_point.0).collect();
     function_statement_ids.sort();
-    if function_statement_ids.first() != Some(&0) {
-        return Err(SegmentationError::NoFunctionStartAtZero);
-    }
+    require(matches!(function_statement_ids.first(), Some(0)))
+        .ok_or(SegmentationError::NoFunctionStartAtZero)?;
 
     // Sanity check: go over the statements and check that there are no jump outside of functions.
     let mut current_function = FunctionInfo::new(0);
@@ -93,7 +93,7 @@ fn functions_statement_ids_to_offsets(
             .sierra_statement_info
             .get(statement_id)
             .unwrap_or_else(|| panic!("Missing bytecode offset for statement id {statement_id}."))
-            .code_offset
+            .start_offset
     };
     segment_starts_statements.iter().map(|start| statement_to_offset(*start)).collect()
 }

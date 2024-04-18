@@ -53,7 +53,7 @@ fn test_replace_flow() {
     let (address0, _) = deploy_syscall(
         class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap(),
         contract_address_salt: 0,
-        calldata: array![100].span(),
+        calldata: [100].span(),
         deploy_from_zero: false
     )
         .unwrap();
@@ -75,7 +75,7 @@ fn test_cannot_replace_with_non_existing_class_hash() {
     let (address0, _) = deploy_syscall(
         class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap(),
         contract_address_salt: 0,
-        calldata: array![100].span(),
+        calldata: [100].span(),
         deploy_from_zero: false
     )
         .unwrap();

@@ -52,7 +52,7 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
         code_mappings: Default::default(),
         kind: FileKind::Module,
     }));
-    let mut diagnostics = DiagnosticsBuilder::new();
+    let mut diagnostics = DiagnosticsBuilder::default();
     let syntax_root =
         Parser::parse_file(db, &mut diagnostics, virtual_file, content.as_str()).as_syntax_node();
     get_formatted_file(db, &syntax_root, FormatterConfig::default())

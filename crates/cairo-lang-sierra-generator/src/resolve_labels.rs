@@ -12,7 +12,7 @@ use crate::pre_sierra;
 pub fn resolve_labels_and_extract_locations(
     statements: Vec<pre_sierra::StatementWithLocation>,
     label_replacer: &LabelReplacer,
-) -> (Vec<program::Statement>, Vec<Option<StableLocation>>) {
+) -> (Vec<program::Statement>, Vec<Vec<StableLocation>>) {
     statements
         .into_iter()
         .filter_map(|statement| match statement.statement {

@@ -11,9 +11,9 @@ use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::extract_matches;
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{extract_matches, require};
 
 use self::component::generate_component_specific_code;
 use self::contract::generate_contract_specific_code;
@@ -282,9 +282,7 @@ fn grand_grand_parent_starknet_module(
     // Get the containing module node. The parent is the item list, the grand parent is the module
     // body, and the grand grand parent is the module.
     let module_node = item_node.parent()?.parent()?.parent()?;
-    if module_node.kind(db) != SyntaxKind::ItemModule {
-        return None;
-    }
+    require(module_node.kind(db) == SyntaxKind::ItemModule)?;
     let module_ast = ast::ItemModule::from_syntax_node(db, module_node);
     let module_kind = StarknetModuleKind::from_module(db, &module_ast)?;
     Some((module_ast, module_kind))

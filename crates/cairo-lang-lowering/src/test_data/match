@@ -67,45 +67,45 @@ End:
 
 blk1:
 Statements:
-  (v8: core::felt252) <- 11u
+  (v2: core::felt252) <- 11
 End:
-  Return(v8)
+  Return(v2)
 
 blk2:
 Statements:
-  (v2: core::felt252) <- 2u
-  (v13: core::felt252) <- core::felt252_sub(v0, v2)
+  (v3: core::felt252) <- 2
+  (v4: core::felt252) <- core::felt252_sub(v0, v3)
 End:
-  Match(match core::felt252_is_zero(v13) {
+  Match(match core::felt252_is_zero(v4) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero(v4) => blk4,
+    IsZeroResult::NonZero(v5) => blk4,
   })
 
 blk3:
 Statements:
-  (v9: core::felt252) <- 33u
+  (v6: core::felt252) <- 33
 End:
-  Return(v9)
+  Return(v6)
 
 blk4:
 Statements:
-  (v5: core::felt252) <- 1u
-  (v14: core::felt252) <- core::felt252_sub(v0, v5)
+  (v7: core::felt252) <- 1
+  (v8: core::felt252) <- core::felt252_sub(v0, v7)
 End:
-  Match(match core::felt252_is_zero(v14) {
+  Match(match core::felt252_is_zero(v8) {
     IsZeroResult::Zero => blk5,
-    IsZeroResult::NonZero(v7) => blk6,
+    IsZeroResult::NonZero(v9) => blk6,
   })
 
 blk5:
 Statements:
-  (v10: core::felt252) <- 22u
+  (v10: core::felt252) <- 22
 End:
   Return(v10)
 
 blk6:
 Statements:
-  (v11: core::felt252) <- 44u
+  (v11: core::felt252) <- 44
 End:
   Return(v11)
 
@@ -117,8 +117,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: felt252) -> felt252 {
-    let x = 7;
+fn foo(a: felt252, x: felt252) -> felt252 {
     match x {
         0 => a + 1,
         _ => x,
@@ -135,10 +134,9 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt252
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 7u
 End:
   Match(match core::felt252_is_zero(v1) {
     IsZeroResult::Zero => blk1,
@@ -147,10 +145,10 @@ End:
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
-  (v6: core::felt252) <- core::felt252_add(v0, v3)
+  (v3: core::felt252) <- 1
+  (v4: core::felt252) <- core::felt252_add(v0, v3)
 End:
-  Return(v6)
+  Return(v4)
 
 blk2:
 Statements:
@@ -179,28 +177,28 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v7: core::RangeCheck, v0: @core::array::Array::<core::felt252>
+Parameters: v0: core::RangeCheck, v1: @core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
-  (v1: core::integer::u32) <- 0u
+  (v2: core::integer::u32) <- 0
 End:
-  Match(match core::array::array_get::<core::felt252>(v7, v0, v1) {
-    Option::Some(v8, v2) => blk1,
-    Option::None(v9) => blk2,
+  Match(match core::array::array_get::<core::felt252>(v0, v1, v2) {
+    Option::Some(v3, v4) => blk1,
+    Option::None(v5) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v2)
+  (v6: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v4)
 End:
-  Return(v8, v3)
+  Return(v3, v6)
 
 blk2:
 Statements:
-  (v4: ()) <- struct_construct()
-  (v5: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v4)
+  (v7: ()) <- struct_construct()
+  (v8: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v7)
 End:
-  Return(v9, v5)
+  Return(v5, v8)
 
 //! > ==========================================================================
 
@@ -295,7 +293,7 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::integer::u8) <- 5u
+  (v0: core::integer::u8) <- 5
   (v1: core::felt252) <- core::integer::u8_to_felt252(v0)
 End:
   Match(match core::felt252_is_zero(v1) {
@@ -306,14 +304,14 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk8, {})
+  Return()
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 1u
-  (v14: core::felt252) <- core::felt252_sub(v1, v3)
+  (v3: core::felt252) <- 1
+  (v4: core::felt252) <- core::felt252_sub(v1, v3)
 End:
-  Match(match core::felt252_is_zero(v14) {
+  Match(match core::felt252_is_zero(v4) {
     IsZeroResult::Zero => blk3,
     IsZeroResult::NonZero(v5) => blk4,
   })
@@ -325,10 +323,10 @@ End:
 
 blk4:
 Statements:
-  (v6: core::felt252) <- 2u
-  (v15: core::felt252) <- core::felt252_sub(v1, v6)
+  (v6: core::felt252) <- 2
+  (v7: core::felt252) <- core::felt252_sub(v1, v6)
 End:
-  Match(match core::felt252_is_zero(v15) {
+  Match(match core::felt252_is_zero(v7) {
     IsZeroResult::Zero => blk5,
     IsZeroResult::NonZero(v8) => blk7,
   })
@@ -341,18 +339,12 @@ End:
 blk6:
 Statements:
 End:
-  Goto(blk8, {})
+  Return()
 
 blk7:
 Statements:
 End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
-  (v13: ()) <- struct_construct()
-End:
-  Return(v13)
+  Return()
 
 //! > ==========================================================================
 
@@ -376,7 +368,7 @@ foo
 //! > module_code
 
 //! > semantic_diagnostics
-error: Type mismatch: `core::felt252` and `core::integer::u8`
+error: Type mismatch: `core::felt252` and `core::integer::u8`.
  --> lib.cairo:4:9
         1_felt252 | 2_u8 => 8,
         ^*******^
@@ -384,6 +376,7 @@ error: Type mismatch: `core::felt252` and `core::integer::u8`
 //! > lowering_diagnostics
 
 //! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -525,7 +518,7 @@ End:
 
 blk1:
 Statements:
-  (v0: core::felt252) <- 2u
+  (v0: core::felt252) <- 2
 End:
   Return(v0)
 
@@ -541,7 +534,7 @@ End:
 
 blk4:
 Statements:
-  (v1: core::felt252) <- 3u
+  (v1: core::felt252) <- 3
 End:
   Return(v1)
 
@@ -601,15 +594,15 @@ End:
 
 blk1:
 Statements:
-  (v6: core::felt252) <- 1u
+  (v5: core::felt252) <- 1
 End:
-  Return(v6)
+  Return(v5)
 
 blk2:
 Statements:
-  (v5: core::felt252) <- 2u
+  (v6: core::felt252) <- 2
 End:
-  Return(v5)
+  Return(v6)
 
 blk3:
 Statements:
@@ -623,7 +616,7 @@ End:
 
 blk5:
 Statements:
-  (v7: core::felt252) <- 3u
+  (v7: core::felt252) <- 3
 End:
   Return(v7)
 
@@ -669,15 +662,15 @@ End:
 
 blk1:
 Statements:
-  (v1: core::felt252) <- 1u
+  (v0: core::felt252) <- 1
 End:
-  Return(v1)
+  Return(v0)
 
 blk2:
 Statements:
-  (v0: core::felt252) <- 2u
+  (v1: core::felt252) <- 2
 End:
-  Return(v0)
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -719,15 +712,15 @@ End:
 
 blk1:
 Statements:
-  (v4: core::felt252) <- 1u
+  (v3: core::felt252) <- 1
 End:
-  Return(v4)
+  Return(v3)
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 2u
+  (v4: core::felt252) <- 2
 End:
-  Return(v3)
+  Return(v4)
 
 //! > ==========================================================================
 
@@ -869,15 +862,15 @@ End:
 
 blk1:
 Statements:
-  (v4: core::felt252) <- 1u
+  (v3: core::felt252) <- 1
 End:
-  Return(v4)
+  Return(v3)
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 2u
+  (v4: core::felt252) <- 2
 End:
-  Return(v3)
+  Return(v4)
 
 //! > ==========================================================================
 
@@ -890,7 +883,7 @@ test_function_lowering
 fn foo(a: MyEnum) -> felt252 {
     match a {
         MyEnum::A(x) | MyEnum::B((x, _)) => x,
-        MyEnum::C((x, _, t)) | MyEnum::D(P{x, z: t, .. }) => x + t,
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: t, .. }) => x + t,
     }
 }
 
@@ -923,8 +916,8 @@ End:
   Match(match_enum(v0) {
     MyEnum::A(v1) => blk1,
     MyEnum::C(v2) => blk2,
-    MyEnum::B(v6) => blk3,
-    MyEnum::D(v9) => blk4,
+    MyEnum::B(v3) => blk3,
+    MyEnum::D(v4) => blk4,
   })
 
 blk1:
@@ -934,27 +927,27 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt252, v4: core::felt252, v5: core::felt252) <- struct_destructure(v2)
+  (v5: core::felt252, v6: core::felt252, v7: core::felt252) <- struct_destructure(v2)
 End:
-  Goto(blk5, {v3 -> v15, v5 -> v16})
+  Goto(blk5, {v5 -> v8, v7 -> v9})
 
 blk3:
 Statements:
-  (v7: core::felt252, v8: core::felt252) <- struct_destructure(v6)
+  (v10: core::felt252, v11: core::felt252) <- struct_destructure(v3)
 End:
-  Return(v7)
+  Return(v10)
 
 blk4:
 Statements:
-  (v10: core::felt252, v11: core::felt252, v12: core::felt252, v13: core::felt252) <- struct_destructure(v9)
+  (v12: core::felt252, v13: core::felt252, v14: core::felt252, v15: core::felt252) <- struct_destructure(v4)
 End:
-  Goto(blk5, {v10 -> v15, v12 -> v16})
+  Goto(blk5, {v12 -> v8, v14 -> v9})
 
 blk5:
 Statements:
-  (v19: core::felt252) <- core::felt252_add(v15, v16)
+  (v16: core::felt252) <- core::felt252_add(v8, v9)
 End:
-  Return(v19)
+  Return(v16)
 
 //! > ==========================================================================
 
@@ -1010,10 +1003,10 @@ End:
 
 blk2:
 Statements:
-  (v2: core::felt252) <- 1u
-  (v15: core::felt252) <- core::felt252_sub(v0, v2)
+  (v2: core::felt252) <- 1
+  (v3: core::felt252) <- core::felt252_sub(v0, v2)
 End:
-  Match(match core::felt252_is_zero(v15) {
+  Match(match core::felt252_is_zero(v3) {
     IsZeroResult::Zero => blk3,
     IsZeroResult::NonZero(v4) => blk5,
   })
@@ -1025,18 +1018,18 @@ End:
 
 blk4:
 Statements:
-  (v11: core::felt252) <- 11u
+  (v5: core::felt252) <- 11
 End:
-  Return(v11)
+  Return(v5)
 
 blk5:
 Statements:
-  (v5: core::felt252) <- 2u
-  (v16: core::felt252) <- core::felt252_sub(v0, v5)
+  (v6: core::felt252) <- 2
+  (v7: core::felt252) <- core::felt252_sub(v0, v6)
 End:
-  Match(match core::felt252_is_zero(v16) {
+  Match(match core::felt252_is_zero(v7) {
     IsZeroResult::Zero => blk6,
-    IsZeroResult::NonZero(v7) => blk7,
+    IsZeroResult::NonZero(v8) => blk7,
   })
 
 blk6:
@@ -1046,12 +1039,12 @@ End:
 
 blk7:
 Statements:
-  (v8: core::felt252) <- 3u
-  (v17: core::felt252) <- core::felt252_sub(v0, v8)
+  (v9: core::felt252) <- 3
+  (v10: core::felt252) <- core::felt252_sub(v0, v9)
 End:
-  Match(match core::felt252_is_zero(v17) {
+  Match(match core::felt252_is_zero(v10) {
     IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v10) => blk10,
+    IsZeroResult::NonZero(v11) => blk10,
   })
 
 blk8:
@@ -1061,13 +1054,13 @@ End:
 
 blk9:
 Statements:
-  (v12: core::felt252) <- 12u
+  (v12: core::felt252) <- 12
 End:
   Return(v12)
 
 blk10:
 Statements:
-  (v13: core::felt252) <- 13u
+  (v13: core::felt252) <- 13
 End:
   Return(v13)
 
@@ -1117,24 +1110,24 @@ Statements:
 End:
   Match(match_enum(v7) {
     A::One(v9) => blk1,
-    A::Two(v13) => blk5,
-    A::Three(v19) => blk10,
+    A::Two(v10) => blk5,
+    A::Three(v11) => blk10,
   })
 
 blk1:
 Statements:
 End:
   Match(match_enum(v8) {
-    A::One(v10) => blk2,
-    A::Two(v11) => blk3,
-    A::Three(v12) => blk4,
+    A::One(v12) => blk2,
+    A::Two(v13) => blk3,
+    A::Three(v14) => blk4,
   })
 
 blk2:
 Statements:
-  (v28: core::felt252) <- 1u
+  (v15: core::felt252) <- 1
 End:
-  Return(v28)
+  Return(v15)
 
 blk3:
 Statements:
@@ -1150,20 +1143,20 @@ blk5:
 Statements:
 End:
   Match(match_enum(v8) {
-    A::One(v14) => blk6,
+    A::One(v16) => blk6,
     A::Two(v17) => blk7,
     A::Three(v18) => blk8,
   })
 
 blk6:
 Statements:
-  (v15: @@core::felt252, v16: @@core::felt252) <- struct_destructure(v13)
-  (v23: @core::felt252) <- desnap(v15)
-  (v24: core::felt252) <- desnap(v23)
-  (v25: core::felt252) <- 3u
-  (v32: core::felt252) <- core::felt252_add(v24, v25)
+  (v19: @@core::felt252, v20: @@core::felt252) <- struct_destructure(v10)
+  (v21: @core::felt252) <- desnap(v19)
+  (v22: core::felt252) <- desnap(v21)
+  (v23: core::felt252) <- 3
+  (v24: core::felt252) <- core::felt252_add(v22, v23)
 End:
-  Return(v32)
+  Return(v24)
 
 blk7:
 Statements:
@@ -1177,17 +1170,17 @@ End:
 
 blk9:
 Statements:
-  (v27: core::felt252) <- 2u
+  (v25: core::felt252) <- 2
 End:
-  Return(v27)
+  Return(v25)
 
 blk10:
 Statements:
 End:
   Match(match_enum(v8) {
-    A::One(v20) => blk11,
-    A::Two(v21) => blk12,
-    A::Three(v22) => blk14,
+    A::One(v26) => blk11,
+    A::Two(v27) => blk12,
+    A::Three(v28) => blk14,
   })
 
 blk11:
@@ -1202,9 +1195,9 @@ End:
 
 blk13:
 Statements:
-  (v30: core::felt252) <- 6u
+  (v29: core::felt252) <- 6
 End:
-  Return(v30)
+  Return(v29)
 
 blk14:
 Statements:
@@ -1213,9 +1206,9 @@ End:
 
 blk15:
 Statements:
-  (v29: core::felt252) <- 3u
+  (v30: core::felt252) <- 3
 End:
-  Return(v29)
+  Return(v30)
 
 //! > ==========================================================================
 
@@ -1364,38 +1357,38 @@ Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::False(v1)
 End:
-  Goto(blk3, {v2 -> v5})
+  Goto(blk3, {v2 -> v3})
 
 blk2:
 Statements:
-  (v3: ()) <- struct_construct()
-  (v4: core::bool) <- bool::True(v3)
+  (v4: ()) <- struct_construct()
+  (v5: core::bool) <- bool::True(v4)
 End:
-  Goto(blk3, {v4 -> v5})
+  Goto(blk3, {v5 -> v3})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v0) {
     A::One(v6) => blk4,
-    A::Two(v9) => blk7,
-    A::Three(v12) => blk10,
-    A::Four(v15) => blk13,
+    A::Two(v7) => blk7,
+    A::Three(v8) => blk10,
+    A::Four(v9) => blk13,
   })
 
 blk4:
 Statements:
 End:
-  Match(match_enum(v5) {
-    bool::False(v7) => blk5,
-    bool::True(v8) => blk6,
+  Match(match_enum(v3) {
+    bool::False(v10) => blk5,
+    bool::True(v11) => blk6,
   })
 
 blk5:
 Statements:
-  (v20: core::felt252) <- 1u
+  (v12: core::felt252) <- 1
 End:
-  Return(v20)
+  Return(v12)
 
 blk6:
 Statements:
@@ -1405,29 +1398,29 @@ End:
 blk7:
 Statements:
 End:
-  Match(match_enum(v5) {
-    bool::False(v10) => blk8,
-    bool::True(v11) => blk9,
+  Match(match_enum(v3) {
+    bool::False(v13) => blk8,
+    bool::True(v14) => blk9,
   })
 
 blk8:
 Statements:
-  (v19: core::felt252) <- 2u
+  (v15: core::felt252) <- 2
 End:
-  Return(v19)
+  Return(v15)
 
 blk9:
 Statements:
-  (v18: core::felt252) <- 5u
+  (v16: core::felt252) <- 5
 End:
-  Return(v18)
+  Return(v16)
 
 blk10:
 Statements:
 End:
-  Match(match_enum(v5) {
-    bool::False(v13) => blk11,
-    bool::True(v14) => blk12,
+  Match(match_enum(v3) {
+    bool::False(v17) => blk11,
+    bool::True(v18) => blk12,
   })
 
 blk11:
@@ -1443,9 +1436,9 @@ End:
 blk13:
 Statements:
 End:
-  Match(match_enum(v5) {
-    bool::False(v16) => blk14,
-    bool::True(v17) => blk15,
+  Match(match_enum(v3) {
+    bool::False(v19) => blk14,
+    bool::True(v20) => blk15,
   })
 
 blk14:
@@ -1460,7 +1453,7 @@ End:
 
 blk16:
 Statements:
-  (v21: core::felt252) <- 6u
+  (v21: core::felt252) <- 6
 End:
   Return(v21)
 
@@ -1497,16 +1490,22 @@ Parameters:
 
 //! > ==========================================================================
 
-//! > Test match tuples with underscore.
+//! > Test match ints optimization.
 
 //! > test_runner_name
 test_function_lowering
 
 //! > function
 fn foo() -> felt252 {
-    match (true, false) {
-        (true, true) => 1,
-        _ => 2
+    match 5_u32 {
+        0 => 1,
+        1 => 2,
+        2 => 3,
+        3 => 4,
+        4 => 5,
+        5 => 6,
+        6 => 7,
+        _ => 8
     }
 }
 
@@ -1520,58 +1519,73 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters:
+Parameters: v0: core::RangeCheck
 blk0 (root):
 Statements:
-  (v0: ()) <- struct_construct()
-  (v1: core::bool) <- bool::True(v0)
-  (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::False(v2)
+  (v1: core::integer::u32) <- 5
 End:
-  Match(match_enum(v1) {
-    bool::False(v4) => blk1,
-    bool::True(v7) => blk4,
+  Match(match core::integer::downcast::<core::integer::u32, core::internal::BoundedInt::<0, 6>>(v0, v1) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4) => blk9,
   })
 
 blk1:
 Statements:
 End:
-  Match(match_enum(v3) {
-    bool::False(v5) => blk2,
-    bool::True(v6) => blk3,
+  Match(match_enum.(v3) {
+    0(v5) => blk2,
+    1(v6) => blk3,
+    2(v7) => blk4,
+    3(v8) => blk5,
+    4(v9) => blk6,
+    5(v10) => blk7,
+    6(v11) => blk8,
   })
 
 blk2:
 Statements:
+  (v12: core::felt252) <- 1
 End:
-  Goto(blk6, {})
+  Return(v2, v12)
 
 blk3:
 Statements:
+  (v13: core::felt252) <- 2
 End:
-  Goto(blk6, {})
+  Return(v2, v13)
 
 blk4:
 Statements:
+  (v14: core::felt252) <- 3
 End:
-  Match(match_enum(v3) {
-    bool::False(v8) => blk5,
-    bool::True(v9) => blk7,
-  })
+  Return(v2, v14)
 
 blk5:
 Statements:
+  (v15: core::felt252) <- 4
 End:
-  Goto(blk6, {})
+  Return(v2, v15)
 
 blk6:
 Statements:
-  (v11: core::felt252) <- 2u
+  (v16: core::felt252) <- 5
 End:
-  Return(v11)
+  Return(v2, v16)
 
 blk7:
 Statements:
-  (v10: core::felt252) <- 1u
+  (v17: core::felt252) <- 6
 End:
-  Return(v10)
+  Return(v2, v17)
+
+blk8:
+Statements:
+  (v18: core::felt252) <- 7
+End:
+  Return(v2, v18)
+
+blk9:
+Statements:
+  (v19: core::felt252) <- 8
+End:
+  Return(v4, v19)

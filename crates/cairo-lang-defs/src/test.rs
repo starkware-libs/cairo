@@ -10,7 +10,7 @@ use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches, Upcast};
@@ -18,7 +18,8 @@ use indoc::indoc;
 
 use crate::db::{DefsDatabase, DefsGroup};
 use crate::ids::{
-    FileIndex, GenericParamLongId, ModuleFileId, ModuleId, ModuleItemId, SubmoduleLongId,
+    FileIndex, GenericParamLongId, ModuleFileId, ModuleId, ModuleItemId, NamedLanguageElementId,
+    SubmoduleLongId,
 };
 use crate::plugin::{
     GeneratedFileAuxData, MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile,

@@ -4,7 +4,9 @@
 test_expr_semantics(expect_diagnostics: false)
 
 //! > module_code
-fn foo() {6;}
+fn foo() {
+    6;
+}
 
 //! > expr_code
 foo()

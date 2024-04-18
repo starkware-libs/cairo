@@ -16,8 +16,10 @@ fn test_resolve_labels() {
         pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(db, id) })
             .into_statement_without_location()
     };
-    let jump =
-        |id| jump_statement(ConcreteLibfuncId::from_string("jump"), label_id_from_usize(db, id));
+    let jump = |id| {
+        jump_statement(ConcreteLibfuncId::from_string("jump"), label_id_from_usize(db, id))
+            .into_statement_without_location()
+    };
 
     let statements: Vec<pre_sierra::StatementWithLocation> = vec![
         label(7),

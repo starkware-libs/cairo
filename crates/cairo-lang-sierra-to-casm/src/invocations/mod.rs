@@ -20,8 +20,8 @@ use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, zip_eq, Itertools};
+use num_bigint::BigInt;
 use thiserror::Error;
-use {cairo_lang_casm, cairo_lang_sierra};
 
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
@@ -101,7 +101,7 @@ pub enum ApTrackingChange {
 
 /// Describes the changes to the set of references at a single branch target, as well as changes to
 /// the environment.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BranchChanges {
     /// New references defined at a given branch.
     /// should correspond to BranchInfo.results.
@@ -531,10 +531,11 @@ impl CompiledInvocationBuilder<'_> {
             });
         if !itertools::equal(gas_changes.clone(), final_costs_with_extra.clone()) {
             panic!(
-                "Wrong costs for {}. Expected: {:?}, actual: {:?}.",
+                "Wrong costs for {}. Expected: {:?}, actual: {:?}, Costs from casm_builder: {:?}.",
                 self.invocation,
                 gas_changes.collect_vec(),
-                final_costs_with_extra.collect_vec()
+                final_costs_with_extra.collect_vec(),
+                final_costs,
             );
         }
         let branch_relocations = branches.iter().zip_eq(branch_extractions.iter()).flat_map(
@@ -610,6 +611,8 @@ impl CompiledInvocationBuilder<'_> {
 pub struct ProgramInfo<'a> {
     pub metadata: &'a Metadata,
     pub type_sizes: &'a TypeSizeMap,
+    /// Returns the given a const type returns a vector of cells value representing it.
+    pub const_data_values: &'a dyn Fn(&ConcreteTypeId) -> Vec<BigInt>,
 }
 
 /// Given a Sierra invocation statement and concrete libfunc, creates a compiled casm representation
@@ -685,6 +688,7 @@ pub fn compile_invocation(
                 Ok(builder.build_only_reference_changes([].into_iter()))
             }
         },
+        BoundedInt(libfunc) => int::bounded::build(libfunc, builder),
     }
 }
 

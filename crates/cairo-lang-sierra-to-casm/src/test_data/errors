@@ -65,7 +65,7 @@ store_temp_felt252([1]) -> ([1]);
 test_program@0([1]: felt252) -> ();
 
 //! > error
-Error from program registry: Could not find the requested libfunc
+Error from program registry: Could not find requested libfunc `store_temp_felt252`.
 
 //! > ==========================================================================
 
@@ -81,7 +81,7 @@ libfunc store_temp_felt252 = store_temp<felt252>;
 libfunc store_temp_felt252 = store_temp<felt252>;
 
 //! > error
-Error from program registry: Used the same concrete libfunc id twice
+Error from program registry: Used concrete libfunc id `store_temp_felt252` twice.
 
 //! > ==========================================================================
 
@@ -165,7 +165,7 @@ return();
 foo@0([0]: BadType) -> ();
 
 //! > error
-Error from program registry: Could not find the requested type
+Error from program registry: Could not find requested type `BadType`.
 
 //! > ==========================================================================
 
@@ -192,7 +192,7 @@ type NonZeroFelt252 = NonZero<felt252>;
 type felt252 = felt252;
 
 //! > error
-Error from program registry: Error during type specialization
+Error from program registry: Error during type specialization of `NonZeroFelt252`: Could not specialize type
 
 //! > ==========================================================================
 
@@ -311,7 +311,7 @@ return ([2], [3]);
 test_program@0([1]: felt252) -> (felt252, felt252);
 
 //! > error
-#11: Inconsistent references annotations.
+#11: Inconsistent references annotations: Variable [3] expression mismatch. Expected `[[ap + -1]]`, got `[[ap + -2]]`.
 
 //! > ==========================================================================
 
@@ -352,7 +352,7 @@ return ([2]); // The failed merge statement #13.
 test_program@0([1]: felt252) -> (felt252);
 
 //! > error
-#13: Inconsistent references annotations.
+#13: Inconsistent references annotations: Variable [2] introduction point mismatch. Expected `#4->#5[0]`, got `#10->#11[0]`.
 
 //! > ==========================================================================
 
@@ -611,7 +611,7 @@ return ();
 foo@0() -> ();
 
 //! > error
-Error from program registry: Error during libfunc specialization
+Error from program registry: Error during libfunc specialization of store_temp_felt252: Could not specialize libfunc `store_temp` with generic_args: [UninitializedFelt252]. Error: Provided generic argument is unsupported.
 
 //! > ==========================================================================
 
@@ -671,7 +671,7 @@ return ();
 foo@0([1]: UninitializedFelt252) -> ();
 
 //! > error
-Error from program registry: Function parameter type must be storable
+Error from program registry: Function `foo`'s parameter type `UninitializedFelt252` is not storable.
 
 //! > ==========================================================================
 
@@ -689,7 +689,7 @@ return ();
 foo@0() -> ();
 
 //! > error
-Error from program registry: Error during type specialization
+Error from program registry: Error during type specialization of `Const<u8, 5, 3>`: Could not specialize type
 
 //! > ==========================================================================
 
@@ -707,7 +707,7 @@ return ();
 foo@0() -> ();
 
 //! > error
-Error from program registry: Error during type specialization
+Error from program registry: Error during type specialization of `Const<u8, 256>`: Could not specialize type
 
 //! > ==========================================================================
 
@@ -725,7 +725,7 @@ return ();
 foo@0() -> ();
 
 //! > error
-Error from program registry: Error during type specialization
+Error from program registry: Error during type specialization of `ECPoint`: Could not specialize type
 
 //! > ==========================================================================
 
@@ -750,7 +750,7 @@ return ();
 foo@0() -> ();
 
 //! > error
-Error from program registry: Error during type specialization
+Error from program registry: Error during type specialization of `Const<Tuple<felt252, felt252>, Const<felt252, 5>>`: Could not specialize type
 
 //! > ==========================================================================
 
@@ -778,7 +778,131 @@ return ();
 foo@0() -> ();
 
 //! > error
-Error from program registry: Error during type specialization
+Error from program registry: Error during type specialization of `Const<Tuple<u8, u8>, Const<felt252, 5>, Const<felt252, 5>>`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > Zero const NonZero u128 type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u128 = u128;
+type NonZero<u128> = NonZero<u128>;
+type ConstZeroU128 = Const<u128, 0>;
+type ConstNzZeroU128 = Const<NonZero<u128>, ConstZeroU128>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ConstNzZeroU128`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > Zero const NonZero u256 type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u128 = u128;
+type u256 = Struct<ut@u256, u128, u128>;
+type NonZero<u256> = NonZero<u256>;
+type ConstZeroU128 = Const<u128, 0>;
+type ConstZeroU256 = Const<u256, ConstZeroU128, ConstZeroU128>;
+type ConstNzZeroU256 = Const<NonZero<u256>, ConstZeroU256>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ConstNzZeroU256`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > const NonZero enum type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type Unit = Struct<ut@Unit>;
+type Const<Unit> = Const<Unit>;
+type E = Enum<ut@E, Unit, Unit>;
+type NonZero<E> = NonZero<E>;
+type ConstE = Const<E, 0, Const<Unit>>;
+type ConstNzE = Const<NonZero<E>, ConstE>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ConstNzE`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > const NonZero empty struct type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type Unit = Struct<ut@Unit>;
+type NonZero<Unit> = NonZero<Unit>;
+type ConstUnit = Const<Unit>;
+type ConstNzUnit = Const<NonZero<Unit>, ConstUnit>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ConstNzUnit`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > const NonZero non-flat structure.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u128 = u128;
+type u256 = Struct<ut@core::integer::u256, u128, u128>;
+type wrapped_u256 = Struct<ut@wrapped_u256, u256>;
+type NonZero<u256> = NonZero<u256>;
+type ConstU128 = Const<u128, 1>;
+type ConstU256 = Const<u256, ConstU128, ConstU128>;
+type ConstWrappedU256 = Const<wrapped_u256, ConstU256>;
+type ConstNzWrappedU256 = Const<NonZero<wrapped_u256>, ConstWrappedU256>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ConstNzWrappedU256`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > const NonZero u256 like structure.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u128 = u128;
+type u256 = Struct<ut@core::integer::u256_wrong, u128, u128>;
+type NonZero<u256> = NonZero<u256>;
+type ConstU128 = Const<u128, 1>;
+type ConstU256 = Const<u256, ConstU128, ConstU128>;
+type ConstNzU256 = Const<NonZero<u256>, ConstU256>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization of `ConstNzU256`: Could not specialize type
 
 //! > ==========================================================================
 

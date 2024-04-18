@@ -5,8 +5,8 @@ test_match_optimizer
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-   let b = a - 0;
-   b - 0
+    let b = a - 0;
+    b - 0
 }
 
 //! > function_name
@@ -22,20 +22,744 @@ foo
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0u
-  (v5: core::felt252) <- core::felt252_sub(v0, v1)
-  (v3: core::felt252) <- 0u
-  (v6: core::felt252) <- core::felt252_sub(v5, v3)
+  (v1: core::felt252) <- 0
+  (v2: core::felt252) <- core::felt252_sub(v0, v1)
+  (v3: core::felt252) <- 0
+  (v4: core::felt252) <- core::felt252_sub(v2, v3)
 End:
-  Return(v6)
+  Return(v4)
 
 //! > after
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0u
-  (v5: core::felt252) <- core::felt252_sub(v0, v1)
-  (v3: core::felt252) <- 0u
-  (v6: core::felt252) <- core::felt252_sub(v0, v3)
+  (v1: core::felt252) <- 0
+  (v2: core::felt252) <- core::felt252_sub(v0, v1)
+  (v3: core::felt252) <- 0
+  (v4: core::felt252) <- core::felt252_sub(v0, v3)
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > Basic box const folding.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> Box<felt252> {
+    BoxTrait::new(0)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v1: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v0)
+End:
+  Return(v1)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v1: core::box::Box::<core::felt252>) <- 0.into_box()
+End:
+  Return(v1)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Box struct const folding.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+struct A {
+    a: felt252
+}
+
+fn foo() -> Box<A> {
+    BoxTrait::new(A { a: 1 })
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1
+  (v1: test::A) <- struct_construct(v0)
+  (v2: core::box::Box::<test::A>) <- core::box::into_box::<test::A>(v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1
+  (v1: test::A) <- struct_construct(v0)
+  (v2: core::box::Box::<test::A>) <- { 1: core::felt252 }.into_box()
+End:
+  Return(v2)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Box enum const folding.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> Box<Option<felt252>> {
+    BoxTrait::new(Option::Some(2))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 2
+  (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
+  (v2: core::box::Box::<core::option::Option::<core::felt252>>) <- core::box::into_box::<core::option::Option::<core::felt252>>(v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 2
+  (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
+  (v2: core::box::Box::<core::option::Option::<core::felt252>>) <- Option::Some(2).into_box()
+End:
+  Return(v2)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Division by const non-zero.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(x: u8) -> u8 {
+    x / 4
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u8
+blk0 (root):
+Statements:
+  (v1: core::integer::u8) <- 4
+End:
+  Match(match core::integer::u8_is_zero(v1) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v4: core::felt252) <- 5420154128225384396790819266608
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)
+  (v6: core::panics::Panic) <- struct_construct()
+  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
+End:
+  Goto(blk3, {v8 -> v9})
+
+blk2:
+Statements:
+  (v10: core::integer::u8, v11: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v2)
+  (v12: (core::integer::u8,)) <- struct_construct(v10)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v12)
+End:
+  Goto(blk3, {v13 -> v9})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v9) {
+    PanicResult::Ok(v14) => blk4,
+    PanicResult::Err(v15) => blk5,
+  })
+
+blk4:
+Statements:
+  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v14)
+End:
+  Return(v18)
+
+blk5:
+Statements:
+  (v19: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v15)
+End:
+  Return(v19)
+
+//! > after
+Parameters: v0: core::integer::u8
+blk0 (root):
+Statements:
+  (v1: core::integer::u8) <- 4
+  (v2: core::zeroable::NonZero::<core::integer::u8>) <- 4
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v4: core::felt252) <- 5420154128225384396790819266608
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)
+  (v6: core::panics::Panic) <- struct_construct()
+  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
+End:
+  Goto(blk3, {v8 -> v9})
+
+blk2:
+Statements:
+  (v10: core::integer::u8, v11: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v2)
+  (v12: (core::integer::u8,)) <- struct_construct(v10)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v12)
+End:
+  Goto(blk3, {v13 -> v9})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v9) {
+    PanicResult::Ok(v14) => blk4,
+    PanicResult::Err(v15) => blk5,
+  })
+
+blk4:
+Statements:
+  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v14)
+End:
+  Return(v18)
+
+blk5:
+Statements:
+  (v19: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v15)
+End:
+  Return(v19)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Division by const zero.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(x: u8) -> u8 {
+    x / 0
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u8
+blk0 (root):
+Statements:
+  (v1: core::integer::u8) <- 0
+End:
+  Match(match core::integer::u8_is_zero(v1) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v4: core::felt252) <- 5420154128225384396790819266608
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)
+  (v6: core::panics::Panic) <- struct_construct()
+  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
+End:
+  Goto(blk3, {v8 -> v9})
+
+blk2:
+Statements:
+  (v10: core::integer::u8, v11: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v2)
+  (v12: (core::integer::u8,)) <- struct_construct(v10)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v12)
+End:
+  Goto(blk3, {v13 -> v9})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v9) {
+    PanicResult::Ok(v14) => blk4,
+    PanicResult::Err(v15) => blk5,
+  })
+
+blk4:
+Statements:
+  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v14)
+End:
+  Return(v18)
+
+blk5:
+Statements:
+  (v19: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v15)
+End:
+  Return(v19)
+
+//! > after
+Parameters: v0: core::integer::u8
+blk0 (root):
+Statements:
+  (v1: core::integer::u8) <- 0
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v4: core::felt252) <- 5420154128225384396790819266608
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)
+  (v6: core::panics::Panic) <- struct_construct()
+  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
+End:
+  Goto(blk3, {v8 -> v9})
+
+blk2:
+Statements:
+  (v10: core::integer::u8, v11: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v2)
+  (v12: (core::integer::u8,)) <- struct_construct(v10)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v12)
+End:
+  Goto(blk3, {v13 -> v9})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v9) {
+    PanicResult::Ok(v14) => blk4,
+    PanicResult::Err(v15) => blk5,
+  })
+
+blk4:
+Statements:
+  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v14)
+End:
+  Return(v18)
+
+blk5:
+Statements:
+  (v19: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v15)
+End:
+  Return(v19)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Division by const u256 non-zero.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(x: u256) -> u256 {
+    x / 4
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u256
+blk0 (root):
+Statements:
+  (v1: core::integer::u256) <- { 4: core::integer::u128, 0: core::integer::u128 }
+End:
+  Match(match core::integer::u256_is_zero(v1) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v4: core::felt252) <- 5420154128225384396790819266608
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)
+  (v6: core::panics::Panic) <- struct_construct()
+  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
+  (v8: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v7)
+End:
+  Goto(blk3, {v8 -> v9})
+
+blk2:
+Statements:
+  (v10: core::integer::u256, v11: core::integer::u256, v12: core::integer::U128MulGuarantee) <- core::integer::u256_safe_divmod(v0, v2)
+  () <- core::integer::u128_mul_guarantee_verify(v12)
+  (v13: (core::integer::u256,)) <- struct_construct(v10)
+  (v14: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v13)
+End:
+  Goto(blk3, {v14 -> v9})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v9) {
+    PanicResult::Ok(v15) => blk4,
+    PanicResult::Err(v16) => blk5,
+  })
+
+blk4:
+Statements:
+  (v19: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v15)
+End:
+  Return(v19)
+
+blk5:
+Statements:
+  (v20: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v16)
+End:
+  Return(v20)
+
+//! > after
+Parameters: v0: core::integer::u256
+blk0 (root):
+Statements:
+  (v1: core::integer::u256) <- { 4: core::integer::u128, 0: core::integer::u128 }
+  (v2: core::zeroable::NonZero::<core::integer::u256>) <- { 4: core::integer::u128, 0: core::integer::u128 }
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v4: core::felt252) <- 5420154128225384396790819266608
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)
+  (v6: core::panics::Panic) <- struct_construct()
+  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
+  (v8: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v7)
+End:
+  Goto(blk3, {v8 -> v9})
+
+blk2:
+Statements:
+  (v10: core::integer::u256, v11: core::integer::u256, v12: core::integer::U128MulGuarantee) <- core::integer::u256_safe_divmod(v0, v2)
+  () <- core::integer::u128_mul_guarantee_verify(v12)
+  (v13: (core::integer::u256,)) <- struct_construct(v10)
+  (v14: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v13)
+End:
+  Goto(blk3, {v14 -> v9})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v9) {
+    PanicResult::Ok(v15) => blk4,
+    PanicResult::Err(v16) => blk5,
+  })
+
+blk4:
+Statements:
+  (v19: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v15)
+End:
+  Return(v19)
+
+blk5:
+Statements:
+  (v20: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v16)
+End:
+  Return(v20)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Division by const u256 zero.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(x: u256) -> u256 {
+    x / 0
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u256
+blk0 (root):
+Statements:
+  (v1: core::integer::u256) <- { 0: core::integer::u128, 0: core::integer::u128 }
+End:
+  Match(match core::integer::u256_is_zero(v1) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v4: core::felt252) <- 5420154128225384396790819266608
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)
+  (v6: core::panics::Panic) <- struct_construct()
+  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
+  (v8: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v7)
+End:
+  Goto(blk3, {v8 -> v9})
+
+blk2:
+Statements:
+  (v10: core::integer::u256, v11: core::integer::u256, v12: core::integer::U128MulGuarantee) <- core::integer::u256_safe_divmod(v0, v2)
+  () <- core::integer::u128_mul_guarantee_verify(v12)
+  (v13: (core::integer::u256,)) <- struct_construct(v10)
+  (v14: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v13)
+End:
+  Goto(blk3, {v14 -> v9})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v9) {
+    PanicResult::Ok(v15) => blk4,
+    PanicResult::Err(v16) => blk5,
+  })
+
+blk4:
+Statements:
+  (v19: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v15)
+End:
+  Return(v19)
+
+blk5:
+Statements:
+  (v20: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v16)
+End:
+  Return(v20)
+
+//! > after
+Parameters: v0: core::integer::u256
+blk0 (root):
+Statements:
+  (v1: core::integer::u256) <- { 0: core::integer::u128, 0: core::integer::u128 }
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v4: core::felt252) <- 5420154128225384396790819266608
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)
+  (v6: core::panics::Panic) <- struct_construct()
+  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
+  (v8: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v7)
+End:
+  Goto(blk3, {v8 -> v9})
+
+blk2:
+Statements:
+  (v10: core::integer::u256, v11: core::integer::u256, v12: core::integer::U128MulGuarantee) <- core::integer::u256_safe_divmod(v0, v2)
+  () <- core::integer::u128_mul_guarantee_verify(v12)
+  (v13: (core::integer::u256,)) <- struct_construct(v10)
+  (v14: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v13)
+End:
+  Goto(blk3, {v14 -> v9})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v9) {
+    PanicResult::Ok(v15) => blk4,
+    PanicResult::Err(v16) => blk5,
+  })
+
+blk4:
+Statements:
+  (v19: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v15)
+End:
+  Return(v19)
+
+blk5:
+Statements:
+  (v20: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v16)
+End:
+  Return(v20)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Upcast const.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(x: u128) -> u128 {
+    x / 1_u64.into()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u128
+blk0 (root):
+Statements:
+  (v1: core::integer::u64) <- 1
+  (v2: core::integer::u128) <- core::integer::upcast::<core::integer::u64, core::integer::u128>(v1)
+End:
+  Match(match core::integer::u128_is_zero(v2) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v5: core::felt252) <- 5420154128225384396790819266608
+  (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v5)
+  (v7: core::panics::Panic) <- struct_construct()
+  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v7, v6)
+  (v9: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: core::integer::u128, v12: core::integer::u128) <- core::integer::u128_safe_divmod(v0, v3)
+  (v13: (core::integer::u128,)) <- struct_construct(v11)
+  (v14: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v13)
+End:
+  Goto(blk3, {v14 -> v10})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v10) {
+    PanicResult::Ok(v15) => blk4,
+    PanicResult::Err(v16) => blk5,
+  })
+
+blk4:
+Statements:
+  (v19: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v15)
+End:
+  Return(v19)
+
+blk5:
+Statements:
+  (v20: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v16)
+End:
+  Return(v20)
+
+//! > after
+Parameters: v0: core::integer::u128
+blk0 (root):
+Statements:
+  (v1: core::integer::u64) <- 1
+  (v2: core::integer::u128) <- 1
+  (v3: core::zeroable::NonZero::<core::integer::u128>) <- 1
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v5: core::felt252) <- 5420154128225384396790819266608
+  (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v5)
+  (v7: core::panics::Panic) <- struct_construct()
+  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v7, v6)
+  (v9: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: core::integer::u128, v12: core::integer::u128) <- core::integer::u128_safe_divmod(v0, v3)
+  (v13: (core::integer::u128,)) <- struct_construct(v11)
+  (v14: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v13)
+End:
+  Goto(blk3, {v14 -> v10})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v10) {
+    PanicResult::Ok(v15) => blk4,
+    PanicResult::Err(v16) => blk5,
+  })
+
+blk4:
+Statements:
+  (v19: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v15)
+End:
+  Return(v19)
+
+blk5:
+Statements:
+  (v20: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v16)
+End:
+  Return(v20)
+
+//! > lowering_diagnostics

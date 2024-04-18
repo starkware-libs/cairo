@@ -3,6 +3,7 @@ use cairo_lang_semantic::corelib::{
     core_array_felt252_ty, core_felt252_ty, core_module, core_submodule, get_function_id,
     get_ty_by_name, option_none_variant, option_some_variant, unit_ty,
 };
+use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeLongId};
 use num_bigint::{BigInt, Sign};
 
@@ -11,7 +12,7 @@ use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo, MatchInfo, Statement,
-    StatementCall, StatementLiteral, StatementStructConstruct, VarUsage,
+    StatementCall, StatementConst, StatementStructConstruct, VarUsage,
 };
 
 /// Main function for the add_withdraw_gas lowering phase. Adds a `withdraw_gas` statement to the
@@ -131,12 +132,12 @@ fn create_panic_block(
                 )
                 .lowered(db),
                 inputs: vec![],
-                coupon_input: None,
+                with_coupon: false,
                 outputs: vec![new_array_var],
                 location,
             }),
-            Statement::Literal(StatementLiteral {
-                value: BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes()),
+            Statement::Const(StatementConst {
+                value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes())),
                 output: out_of_gas_err_var,
             }),
             Statement::Call(StatementCall {
@@ -151,7 +152,7 @@ fn create_panic_block(
                     .into_iter()
                     .map(add_location)
                     .collect(),
-                coupon_input: None,
+                with_coupon: false,
                 outputs: vec![panic_data_var],
                 location,
             }),

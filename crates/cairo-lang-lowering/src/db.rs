@@ -1,37 +1,35 @@
 use std::sync::Arc;
 
 use cairo_lang_defs as defs;
-use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
+use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::{self as semantic, TypeId};
+use cairo_lang_semantic::items::enm::SemanticEnumEx;
+use cairo_lang_semantic::items::structure::SemanticStructEx;
+use cairo_lang_semantic::{self as semantic, corelib, ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{extract_matches, Upcast};
+use defs::ids::NamedLanguageElementId;
 use itertools::Itertools;
-use semantic::corelib;
+use num_traits::ToPrimitive;
+use semantic::items::constant::ConstValue;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
-use crate::borrow_check::borrow_check;
+use crate::borrow_check::{borrow_check, PotentialDestructCalls};
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
-use crate::ids::FunctionLongId;
-use crate::implicits::lower_implicits;
-use crate::inline::{apply_inlining, PrivInlineData};
+use crate::ids::{FunctionId, FunctionLongId};
+use crate::inline::get_inline_diagnostics;
 use crate::lower::{lower_semantic_function, MultiLowering};
-use crate::optimizations::branch_inversion::branch_inversion;
-use crate::optimizations::cancel_ops::cancel_ops;
 use crate::optimizations::config::OptimizationConfig;
-use crate::optimizations::const_folding::const_folding;
-use crate::optimizations::match_optimizer::optimize_matches;
-use crate::optimizations::remappings::optimize_remappings;
-use crate::optimizations::reorder_statements::reorder_statements;
-use crate::optimizations::return_optimization::return_optimization;
+use crate::optimizations::scrub_units::scrub_units;
+use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyId};
 use crate::panic::lower_panics;
-use crate::reorganize_blocks::reorganize_blocks;
 use crate::{
     ids, BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement,
 };
@@ -55,9 +53,8 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::interned]
     fn intern_location(&self, id: Location) -> ids::LocationId;
 
-    // Reports inlining diagnostics.
-    #[salsa::invoke(crate::inline::priv_inline_data)]
-    fn priv_inline_data(&self, function_id: ids::FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
+    #[salsa::interned]
+    fn intern_strategy(&self, id: OptimizationStrategy) -> OptimizationStrategyId;
 
     /// Computes the lowered representation of a function with a body, along with all it generated
     /// functions (e.g. closures, lambdas, loops, ...).
@@ -73,6 +70,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     ) -> Maybe<Arc<FlatLowered>>;
 
     /// Computes the lowered representation of a function with a body.
+    /// Additionally applies borrow checking testing, and returns the possible calls per block.
+    fn function_with_body_lowering_with_borrow_check(
+        &self,
+        function_id: ids::FunctionWithBodyId,
+    ) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)>;
+
+    /// Computes the lowered representation of a function with a body.
     fn function_with_body_lowering(
         &self,
         function_id: ids::FunctionWithBodyId,
@@ -84,26 +88,33 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
-    /// Computes the lowered representation after the inlining phase.
-    fn priv_concrete_function_with_body_postinline_lowered(
-        &self,
-        function_id: ids::ConcreteFunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
-
     /// Computes the lowered representation after the panic phase.
     fn concrete_function_with_body_postpanic_lowered(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
+    /// Applies optimizations to the post_panic lowering.
+    fn optimized_concrete_function_with_body_lowered(
+        &self,
+        function: ids::ConcreteFunctionWithBodyId,
+        optimization_strategy: OptimizationStrategyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Computes the lowered representation of a function to be considered for inlining.
+    fn inlined_function_with_body_lowered(
+        &self,
+        function_id: ids::ConcreteFunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
     /// Computes the final lowered representation (after all the internal transformations).
-    fn concrete_function_with_body_lowered(
+    fn final_concrete_function_with_body_lowered(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
     /// Returns the set of direct callees of a concrete function with a body after the inline phase.
-    fn concrete_function_with_body_postinline_direct_callees(
+    fn concrete_function_with_body_direct_callees(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
         dependency_type: DependencyType,
@@ -118,7 +129,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
     /// a body (i.e. excluding libfunc callees), after the inline phase.
-    fn concrete_function_with_body_postinline_direct_callees_with_body(
+    fn concrete_function_with_body_direct_callees_with_body(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
         dependency_type: DependencyType,
@@ -302,9 +313,26 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::optimizations::config::priv_movable_function_ids)]
     fn priv_movable_function_ids(&self) -> Arc<UnorderedHashSet<ids::FunctionId>>;
 
+    // Internal query for a heuristic to decide if a given `function_id` should be inlined.
+    #[salsa::invoke(crate::inline::priv_should_inline)]
+    fn priv_should_inline(&self, function_id: ids::ConcreteFunctionWithBodyId) -> Maybe<bool>;
+
     /// Returns the configuration struct that controls the behavior of the optimization passes.
     #[salsa::input]
     fn optimization_config(&self) -> Arc<OptimizationConfig>;
+
+    /// Returns the final optimization strategy that is applied on top of
+    /// inlined_function_optimization_strategy.
+    #[salsa::invoke(crate::optimizations::strategy::final_optimization_strategy)]
+    fn final_optimization_strategy(&self) -> OptimizationStrategyId;
+
+    /// Returns the baseline optimization strategy.
+    /// This strategy is used for inlining decistion and as a starting point for the final lowering.
+    #[salsa::invoke(crate::optimizations::strategy::baseline_optimization_strategy)]
+    fn baseline_optimization_strategy(&self) -> OptimizationStrategyId;
+
+    /// Returns the expected size of a type.
+    fn type_size(&self, ty: TypeId) -> usize;
 }
 
 pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
@@ -318,7 +346,9 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
         moveable_functions.push(format!("integer::{}_wide_mul", ty));
     }
 
-    db.set_optimization_config(Arc::new(OptimizationConfig { moveable_functions }));
+    db.set_optimization_config(Arc::new(
+        OptimizationConfig::default().with_moveable_functions(moveable_functions),
+    ));
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
@@ -353,14 +383,21 @@ fn priv_function_with_body_lowering(
     Ok(Arc::new(lowered))
 }
 
+fn function_with_body_lowering_with_borrow_check(
+    db: &dyn LoweringGroup,
+    function_id: ids::FunctionWithBodyId,
+) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)> {
+    let mut lowered = (*db.priv_function_with_body_lowering(function_id)?).clone();
+    let module_file_id = function_id.base_semantic_function(db).module_file_id(db.upcast());
+    let block_extra_calls = borrow_check(db, module_file_id, &mut lowered);
+    Ok((Arc::new(lowered), Arc::new(block_extra_calls)))
+}
+
 fn function_with_body_lowering(
     db: &dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.priv_function_with_body_lowering(function_id)?).clone();
-    let module_file_id = function_id.base_semantic_function(db).module_file_id(db.upcast());
-    borrow_check(db, module_file_id, &mut lowered);
-    Ok(Arc::new(lowered))
+    Ok(db.function_with_body_lowering_with_borrow_check(function_id)?.0)
 }
 
 // * Concretizes lowered representation (monomorphization).
@@ -375,16 +412,6 @@ fn priv_concrete_function_with_body_lowered_flat(
     Ok(Arc::new(lowered))
 }
 
-// Applies inlining.
-fn priv_concrete_function_with_body_postinline_lowered(
-    db: &dyn LoweringGroup,
-    function: ids::ConcreteFunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
-    apply_inlining(db, function, &mut lowered)?;
-    Ok(Arc::new(lowered))
-}
-
 // * Adds `withdraw_gas` calls.
 // * Adds panics.
 // * Adds destructor calls.
@@ -392,46 +419,44 @@ fn concrete_function_with_body_postpanic_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.priv_concrete_function_with_body_postinline_lowered(function)?).clone();
+    let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
 
     add_withdraw_gas(db, function, &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
-    return_optimization(db, &mut lowered);
     add_destructs(db, function, &mut lowered);
+    scrub_units(db, &mut lowered);
+
     Ok(Arc::new(lowered))
 }
 
-// * Optimizes remappings.
-// * Delays var definitions.
-// * Lowers implicits.
-// * Optimizes matches.
-// * Optimizes remappings again.
-// * Reorganizes blocks (topological sort).
-fn concrete_function_with_body_lowered(
+/// Query implementation of [LoweringGroup::optimized_concrete_function_with_body_lowered].
+fn optimized_concrete_function_with_body_lowered(
+    db: &dyn LoweringGroup,
+    function: ids::ConcreteFunctionWithBodyId,
+    optimization_strategy: OptimizationStrategyId,
+) -> Maybe<Arc<FlatLowered>> {
+    let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
+    optimization_strategy.apply_strategy(db, function, &mut lowered)?;
+    Ok(Arc::new(lowered))
+}
+
+/// Query implementation of [LoweringGroup::inlined_function_with_body_lowered].
+fn inlined_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
-    optimize_remappings(&mut lowered);
-    // The call to `reorder_statements` before and after `branch_inversion` is intentional.
-    // See description of `branch_inversion` for more details.
-    reorder_statements(db, &mut lowered);
-    branch_inversion(db, &mut lowered);
-    reorder_statements(db, &mut lowered);
-    const_folding(db, &mut lowered);
-    optimize_matches(&mut lowered);
-    lower_implicits(db, function, &mut lowered);
-    optimize_remappings(&mut lowered);
-    cancel_ops(&mut lowered);
-    reorder_statements(db, &mut lowered);
-    // `reorder_statements` may have caused some remappings to be redundant, so they need to be
-    // removed.
-    // `reorganize_blocks` assumes that there is no remappings on a goto to a block with 1 incoming
-    // edge.
-    // SierraGen drop additions assumes all remappings are of used variables.
-    optimize_remappings(&mut lowered);
-    reorganize_blocks(&mut lowered);
+    db.optimized_concrete_function_with_body_lowered(function, db.baseline_optimization_strategy())
+}
 
+/// Query implementation of [LoweringGroup::final_concrete_function_with_body_lowered].
+fn final_concrete_function_with_body_lowered(
+    db: &dyn LoweringGroup,
+    function: ids::ConcreteFunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    // Start from the `inlined_function_with_body_lowered` as it might already be computed.
+    let mut lowered = (*db.inlined_function_with_body_lowered(function)?).clone();
+
+    db.final_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
     Ok(Arc::new(lowered))
 }
 
@@ -442,8 +467,8 @@ pub(crate) fn get_direct_callees(
     db: &dyn LoweringGroup,
     lowered_function: &FlatLowered,
     dependency_type: DependencyType,
+    block_extra_calls: &UnorderedHashMap<BlockId, Vec<FunctionId>>,
 ) -> Vec<ids::FunctionId> {
-    // TODO(orizi): Follow calls for destructors as well.
     let mut direct_callees = Vec::new();
     if lowered_function.blocks.is_empty() {
         return direct_callees;
@@ -463,14 +488,16 @@ pub(crate) fn get_direct_callees(
                 // If the dependency_type is DependencyType::Cost and this call has a coupon input,
                 // then the call statement has a constant cost and therefore there
                 // is no cost dependency in the called function.
-                if dependency_type != DependencyType::Cost || statement_call.coupon_input.is_none()
-                {
+                if dependency_type != DependencyType::Cost || !statement_call.with_coupon {
                     direct_callees.push(statement_call.function);
                 }
             }
         }
+        if let Some(extra_calls) = block_extra_calls.get(&block_id) {
+            direct_callees.extend(extra_calls.iter().copied());
+        }
         match &block.end {
-            FlatBlockEnd::NotSet | FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) => {}
+            FlatBlockEnd::NotSet | FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => {}
             FlatBlockEnd::Goto(next, _) => stack.push(*next),
             FlatBlockEnd::Match { info } => {
                 let mut arms = info.arms().iter();
@@ -490,13 +517,13 @@ pub(crate) fn get_direct_callees(
     direct_callees
 }
 
-fn concrete_function_with_body_postinline_direct_callees(
+fn concrete_function_with_body_direct_callees(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::FunctionId>> {
-    let lowered_function = db.priv_concrete_function_with_body_postinline_lowered(function_id)?;
-    Ok(get_direct_callees(db, &lowered_function, dependency_type))
+    let lowered_function = db.priv_concrete_function_with_body_lowered_flat(function_id)?;
+    Ok(get_direct_callees(db, &lowered_function, dependency_type, &Default::default()))
 }
 
 fn concrete_function_with_body_postpanic_direct_callees(
@@ -505,7 +532,7 @@ fn concrete_function_with_body_postpanic_direct_callees(
     dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::FunctionId>> {
     let lowered_function = db.concrete_function_with_body_postpanic_lowered(function_id)?;
-    Ok(get_direct_callees(db, &lowered_function, dependency_type))
+    Ok(get_direct_callees(db, &lowered_function, dependency_type, &Default::default()))
 }
 
 /// Given a vector of FunctionIds returns the vector of FunctionWithBodyIds of the
@@ -579,14 +606,14 @@ fn extract_coupon_function(
     Ok(Some(ids::ConcreteFunctionWithBodyId::from_semantic(db, coupon_function_with_body_id)))
 }
 
-fn concrete_function_with_body_postinline_direct_callees_with_body(
+fn concrete_function_with_body_direct_callees_with_body(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
     functions_with_body_from_function_ids(
         db,
-        db.concrete_function_with_body_postinline_direct_callees(function_id, dependency_type)?,
+        db.concrete_function_with_body_direct_callees(function_id, dependency_type)?,
         dependency_type,
     )
 }
@@ -615,12 +642,8 @@ fn function_with_body_lowering_diagnostics(
             && !lowered.signature.panicable
             && db.in_cycle(function_id, DependencyType::Cost)?
         {
-            let location = Location {
-                stable_location: function_id
-                    .base_semantic_function(db)
-                    .stable_location(db.upcast()),
-                notes: vec![],
-            };
+            let location =
+                Location::new(function_id.base_semantic_function(db).stable_location(db.upcast()));
             diagnostics.add(LoweringDiagnostic {
                 location,
                 kind: LoweringDiagnosticKind::NoPanicFunctionCycle,
@@ -628,11 +651,9 @@ fn function_with_body_lowering_diagnostics(
         }
     }
 
-    diagnostics.extend(
-        db.priv_inline_data(function_id)
-            .map(|inline_data| inline_data.diagnostics.clone())
-            .unwrap_or_default(),
-    );
+    if let Ok(diag) = get_inline_diagnostics(db, function_id) {
+        diagnostics.extend(diag);
+    }
 
     Ok(diagnostics.build())
 }
@@ -709,4 +730,49 @@ fn file_lowering_diagnostics(
         }
     }
     Ok(diagnostics.build())
+}
+
+fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
+    match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
+            ConcreteTypeId::Struct(struct_id) => db
+                .concrete_struct_members(struct_id)
+                .unwrap()
+                .into_iter()
+                .map(|(_, member)| db.type_size(member.ty))
+                .sum::<usize>(),
+            ConcreteTypeId::Enum(enum_id) => {
+                1 + db
+                    .concrete_enum_variants(enum_id)
+                    .unwrap()
+                    .into_iter()
+                    .map(|variant| db.type_size(variant.ty))
+                    .max()
+                    .unwrap_or_default()
+            }
+            ConcreteTypeId::Extern(extern_id) => {
+                match extern_id.extern_type_id(db.upcast()).name(db.upcast()).as_str() {
+                    "Array" | "SquashedFelt252Dict" | "EcPoint" => 2,
+                    "EcState" => 3,
+                    "Uint128MulGuarantee" => 4,
+                    _ => 1,
+                }
+            }
+        },
+        TypeLongId::Tuple(types) => types.into_iter().map(|ty| db.type_size(ty)).sum::<usize>(),
+        TypeLongId::Snapshot(ty) => db.type_size(ty),
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            db.type_size(type_id)
+                * extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
+                    .to_usize()
+                    .unwrap()
+        }
+        TypeLongId::Coupon(_) => 0,
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::ImplType(_)
+        | TypeLongId::Missing(_) => {
+            panic!("Function should only be called with fully concrete types")
+        }
+    }
 }

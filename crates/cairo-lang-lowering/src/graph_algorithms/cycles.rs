@@ -12,8 +12,9 @@ pub fn function_with_body_direct_callees(
     function_id: FunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<FunctionId>> {
-    let lowered = db.function_with_body_lowering(function_id)?;
-    Ok(get_direct_callees(db, &lowered, dependency_type).into_iter().collect())
+    let (lowered, block_extra_calls) =
+        db.function_with_body_lowering_with_borrow_check(function_id)?;
+    Ok(get_direct_callees(db, &lowered, dependency_type, &block_extra_calls).into_iter().collect())
 }
 
 /// Query implementation of
@@ -40,10 +41,8 @@ pub fn contains_cycle(
     function_id: ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Maybe<bool> {
-    let direct_callees = db.concrete_function_with_body_postinline_direct_callees_with_body(
-        function_id,
-        dependency_type,
-    )?;
+    let direct_callees =
+        db.concrete_function_with_body_direct_callees_with_body(function_id, dependency_type)?;
     for callee in direct_callees {
         if db.contains_cycle(callee, dependency_type)? {
             return Ok(true);

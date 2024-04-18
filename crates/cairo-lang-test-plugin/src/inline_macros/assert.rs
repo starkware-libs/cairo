@@ -2,12 +2,12 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
-use cairo_lang_semantic::inline_macros::{
+use cairo_lang_defs::plugin_utils::{
     escape_node, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
 };
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use indoc::formatdoc;
 
 /// A trait for compare assertion plugin.
@@ -85,7 +85,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 {{
                     {maybe_assign_lhs}
                     {maybe_assign_rhs}
-                    if !(@$lhs_value$ {operator} @$rhs_value$) {{
+                    if !($lhs_value$ {operator} $rhs_value$) {{
                         let mut {f}: core::fmt::Formatter = core::traits::Default::default();
                         core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
                             write!({f}, "assertion `{lhs_escaped} {operator} {rhs_escaped}` failed")
@@ -206,4 +206,32 @@ define_compare_assert_macro!(
     AssertNeMacro,
     "assert_ne",
     "!="
+);
+
+define_compare_assert_macro!(
+    /// Macro for less-than assertion.
+    AssertLtMacro,
+    "assert_lt",
+    "<"
+);
+
+define_compare_assert_macro!(
+    /// Macro for less-than-or-equal assertion.
+    AssertLeMacro,
+    "assert_le",
+    "<="
+);
+
+define_compare_assert_macro!(
+    /// Macro for greater-than assertion.
+    AssertGtMacro,
+    "assert_gt",
+    ">"
+);
+
+define_compare_assert_macro!(
+    /// Macro for greater-than-or-equal assertion.
+    AssertGeMacro,
+    "assert_ge",
+    ">="
 );

@@ -49,7 +49,7 @@ pub fn reformat_rust_code(text: String) -> String {
 }
 pub fn reformat_rust_code_inner(text: String) -> String {
     let sh = Shell::new().unwrap();
-    sh.set_var("RUSTUP_TOOLCHAIN", "nightly-2023-07-05");
+    sh.set_var("RUSTUP_TOOLCHAIN", "nightly-2024-03-09");
     let rustfmt_toml = project_root().join("rustfmt.toml");
     let mut stdout = cmd!(sh, "rustfmt --config-path {rustfmt_toml}").stdin(text).read().unwrap();
     if !stdout.ends_with('\n') {
@@ -203,7 +203,7 @@ fn generate_ast_code() -> rust::Tokens {
         use super::kind::SyntaxKind;
         use super::{
             GreenId, GreenNode, SyntaxGroup, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId,
-            Terminal, Token, TypedSyntaxNode,
+            Terminal, Token, TypedStablePtr, TypedSyntaxNode,
         };
 
         #[path = "ast_ext.rs"]
@@ -259,11 +259,12 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&ptr_name)(pub SyntaxStablePtrId);
-        impl $(&ptr_name) {
-            pub fn untyped(&self) -> SyntaxStablePtrId {
+        impl TypedStablePtr for $(&ptr_name) {
+            type SyntaxNode = $(&name);
+            fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
             }
-            pub fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
+            fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
                 $(&name)::from_syntax_node(db, self.0.lookup(db))
             }
         }
@@ -310,11 +311,12 @@ fn gen_separated_list_code(
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&ptr_name)(pub SyntaxStablePtrId);
-        impl $(&ptr_name) {
-            pub fn untyped(&self) -> SyntaxStablePtrId {
+        impl TypedStablePtr for $(&ptr_name) {
+            type SyntaxNode = $(&name);
+            fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
             }
-            pub fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
+            fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
                 $(&name)::from_syntax_node(db, self.0.lookup(db))
             }
         }
@@ -427,11 +429,12 @@ fn gen_enum_code(
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&ptr_name)(pub SyntaxStablePtrId);
-        impl $(&ptr_name) {
-            pub fn untyped(&self) -> SyntaxStablePtrId {
+        impl TypedStablePtr for $(&ptr_name) {
+            type SyntaxNode = $(&name);
+            fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
             }
-            pub fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
+            fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
                 $(&name)::from_syntax_node(db, self.0.lookup(db))
             }
         }
@@ -501,11 +504,12 @@ fn gen_token_code(name: String) -> rust::Tokens {
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&ptr_name)(pub SyntaxStablePtrId);
-        impl $(&ptr_name) {
-            pub fn untyped(&self) -> SyntaxStablePtrId {
+        impl TypedStablePtr for $(&ptr_name) {
+            type SyntaxNode = $(&name);
+            fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
             }
-            pub fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
+            fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
                 $(&name)::from_syntax_node(db, self.0.lookup(db))
             }
         }
@@ -643,11 +647,13 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         pub struct $(&ptr_name)(pub SyntaxStablePtrId);
         impl $(&ptr_name) {
             $ptr_getters
-
-            pub fn untyped(&self) -> SyntaxStablePtrId {
+        }
+        impl TypedStablePtr for $(&ptr_name) {
+            type SyntaxNode = $(&name);
+            fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
             }
-            pub fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
+            fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
                 $(&name)::from_syntax_node(db, self.0.lookup(db))
             }
         }

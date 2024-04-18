@@ -9,6 +9,8 @@ use core::array::SpanTrait;
 pub trait NumericLiteral<T>;
 impl NumericLiteralfelt252 of NumericLiteral<felt252>;
 
+impl NumericLiteralNonZero<T, +NumericLiteral<T>> of NumericLiteral<NonZero<T>>;
+
 #[derive(Copy, Drop)]
 pub extern type u128;
 impl NumericLiteralu128 of NumericLiteral<u128>;
@@ -230,6 +232,7 @@ impl U128PartialOrd of PartialOrd<u128> {
 }
 
 pub extern type Bitwise;
+/// Returns the bitwise operations (AND, XOR, OR) between `lhs` and `rhs`.
 extern fn bitwise(lhs: u128, rhs: u128) -> (u128, u128, u128) implicits(Bitwise) nopanic;
 impl U128BitAnd of BitAnd<u128> {
     #[inline(always)]
@@ -1360,7 +1363,8 @@ pub fn u512_safe_div_rem_by_u256(
 }
 
 /// Calculates division with remainder of a u512 by a non-zero u256.
-/// Additionally returns several `U128MulGuarantee`s that are required for validating the calculation.
+/// Additionally returns several `U128MulGuarantee`s that are required for validating the
+/// calculation.
 extern fn u512_safe_divmod_by_u256(
     lhs: u512, rhs: NonZero<u256>
 ) -> (
@@ -1372,6 +1376,16 @@ extern fn u512_safe_divmod_by_u256(
     U128MulGuarantee,
     U128MulGuarantee
 ) implicits(RangeCheck) nopanic;
+
+impl U512TryIntoU256 of TryInto<u512, u256> {
+    fn try_into(self: u512) -> Option<u256> {
+        if self.limb2 != 0 || self.limb3 != 0 {
+            Option::None
+        } else {
+            Option::Some(u256 { low: self.limb0, high: self.limb1 })
+        }
+    }
+}
 
 /// Bounded
 pub trait BoundedInt<T> {
@@ -1725,6 +1739,40 @@ impl U256Default of Default<u256> {
     }
 }
 
+impl I8Default of Default<i8> {
+    #[inline(always)]
+    fn default() -> i8 nopanic {
+        0_i8
+    }
+}
+
+impl I16Default of Default<i16> {
+    #[inline(always)]
+    fn default() -> i16 nopanic {
+        0_i16
+    }
+}
+
+impl I32Default of Default<i32> {
+    #[inline(always)]
+    fn default() -> i32 nopanic {
+        0_i32
+    }
+}
+
+impl I64Default of Default<i64> {
+    #[inline(always)]
+    fn default() -> i64 nopanic {
+        0_i64
+    }
+}
+
+impl I128Default of Default<i128> {
+    #[inline(always)]
+    fn default() -> i128 nopanic {
+        0_i128
+    }
+}
 
 /// Default values for felt252_dict values.
 impl U8Felt252DictValue of Felt252DictValue<u8> {
@@ -1784,7 +1832,7 @@ impl U8IntoU256 of Into<u8, u256> {
 
 impl U256TryIntoU8 of TryInto<u256, u8> {
     fn try_into(self: u256) -> Option<u8> {
-        let u256{low: low, high: high } = self;
+        let u256 { low, high } = self;
 
         if high != 0 {
             return Option::None;
@@ -1802,7 +1850,7 @@ impl U16IntoU256 of Into<u16, u256> {
 
 impl U256TryIntoU16 of TryInto<u256, u16> {
     fn try_into(self: u256) -> Option<u16> {
-        let u256{low: low, high: high } = self;
+        let u256 { low, high } = self;
 
         if high != 0 {
             return Option::None;
@@ -1820,7 +1868,7 @@ impl U32IntoU256 of Into<u32, u256> {
 
 impl U256TryIntoU32 of TryInto<u256, u32> {
     fn try_into(self: u256) -> Option<u32> {
-        let u256{low: low, high: high } = self;
+        let u256 { low, high } = self;
 
         if high != 0 {
             return Option::None;
@@ -1838,7 +1886,7 @@ impl U64IntoU256 of Into<u64, u256> {
 
 impl U256TryIntoU64 of TryInto<u256, u64> {
     fn try_into(self: u256) -> Option<u64> {
-        let u256{low: low, high: high } = self;
+        let u256 { low, high } = self;
 
         if high != 0 {
             return Option::None;
@@ -1856,7 +1904,7 @@ impl U128IntoU256 of Into<u128, u256> {
 
 impl U256TryIntoU128 of TryInto<u256, u128> {
     fn try_into(self: u256) -> Option<u128> {
-        let u256{low: low, high: high } = self;
+        let u256 { low, high } = self;
 
         if high != 0 {
             return Option::None;
@@ -2365,10 +2413,7 @@ impl I128Neg of Neg<i128> {
 
 impl I128Mul of Mul<i128> {
     fn mul(lhs: i128, rhs: i128) -> i128 {
-        let (lhs_u127, lhs_neg) = match i128_diff(lhs, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
-        };
+        let (lhs_u127, lhs_neg) = lhs.abs_and_sign();
         let (rhs_u127, res_neg) = match i128_diff(rhs, 0) {
             Result::Ok(v) => (v, lhs_neg),
             Result::Err(v) => (~v + 1, !lhs_neg),
@@ -2742,5 +2787,438 @@ impl I128One of core::num::traits::One<i128> {
     #[inline(always)]
     fn is_non_one(self: @i128) -> bool {
         !self.is_one()
+    }
+}
+
+// OverflowingAdd implementations
+impl U8OverflowingAdd of core::num::traits::OverflowingAdd<u8> {
+    fn overflowing_add(self: u8, v: u8) -> (u8, bool) {
+        match u8_overflowing_add(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U16OverflowingAdd of core::num::traits::OverflowingAdd<u16> {
+    fn overflowing_add(self: u16, v: u16) -> (u16, bool) {
+        match u16_overflowing_add(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U32OverflowingAdd of core::num::traits::OverflowingAdd<u32> {
+    fn overflowing_add(self: u32, v: u32) -> (u32, bool) {
+        match u32_overflowing_add(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U64OverflowingAdd of core::num::traits::OverflowingAdd<u64> {
+    fn overflowing_add(self: u64, v: u64) -> (u64, bool) {
+        match u64_overflowing_add(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U128OverflowingAdd of core::num::traits::OverflowingAdd<u128> {
+    fn overflowing_add(self: u128, v: u128) -> (u128, bool) {
+        match u128_overflowing_add(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U256OverflowingAdd of core::num::traits::OverflowingAdd<u256> {
+    fn overflowing_add(self: u256, v: u256) -> (u256, bool) {
+        u256_overflowing_add(self, v)
+    }
+}
+
+impl I8OverflowingAdd of core::num::traits::OverflowingAdd<i8> {
+    fn overflowing_add(self: i8, v: i8) -> (i8, bool) {
+        match i8_overflowing_add_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I16OverflowingAdd of core::num::traits::OverflowingAdd<i16> {
+    fn overflowing_add(self: i16, v: i16) -> (i16, bool) {
+        match i16_overflowing_add_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I32OverflowingAdd of core::num::traits::OverflowingAdd<i32> {
+    fn overflowing_add(self: i32, v: i32) -> (i32, bool) {
+        match i32_overflowing_add_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I64OverflowingAdd of core::num::traits::OverflowingAdd<i64> {
+    fn overflowing_add(self: i64, v: i64) -> (i64, bool) {
+        match i64_overflowing_add_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I128OverflowingAdd of core::num::traits::OverflowingAdd<i128> {
+    fn overflowing_add(self: i128, v: i128) -> (i128, bool) {
+        match i128_overflowing_add_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+// OverflowingSub implementations
+impl U8OverflowingSub of core::num::traits::OverflowingSub<u8> {
+    fn overflowing_sub(self: u8, v: u8) -> (u8, bool) {
+        match u8_overflowing_sub(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U16OverflowingSub of core::num::traits::OverflowingSub<u16> {
+    fn overflowing_sub(self: u16, v: u16) -> (u16, bool) {
+        match u16_overflowing_sub(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U32OverflowingSub of core::num::traits::OverflowingSub<u32> {
+    fn overflowing_sub(self: u32, v: u32) -> (u32, bool) {
+        match u32_overflowing_sub(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U64OverflowingSub of core::num::traits::OverflowingSub<u64> {
+    fn overflowing_sub(self: u64, v: u64) -> (u64, bool) {
+        match u64_overflowing_sub(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U128OverflowingSub of core::num::traits::OverflowingSub<u128> {
+    fn overflowing_sub(self: u128, v: u128) -> (u128, bool) {
+        match u128_overflowing_sub(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U256OverflowingSub of core::num::traits::OverflowingSub<u256> {
+    fn overflowing_sub(self: u256, v: u256) -> (u256, bool) {
+        u256_overflow_sub(self, v)
+    }
+}
+
+impl I8OverflowingSub of core::num::traits::OverflowingSub<i8> {
+    fn overflowing_sub(self: i8, v: i8) -> (i8, bool) {
+        match i8_overflowing_sub_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I16OverflowingSub of core::num::traits::OverflowingSub<i16> {
+    fn overflowing_sub(self: i16, v: i16) -> (i16, bool) {
+        match i16_overflowing_sub_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I32OverflowingSub of core::num::traits::OverflowingSub<i32> {
+    fn overflowing_sub(self: i32, v: i32) -> (i32, bool) {
+        match i32_overflowing_sub_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I64OverflowingSub of core::num::traits::OverflowingSub<i64> {
+    fn overflowing_sub(self: i64, v: i64) -> (i64, bool) {
+        match i64_overflowing_sub_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I128OverflowingSub of core::num::traits::OverflowingSub<i128> {
+    fn overflowing_sub(self: i128, v: i128) -> (i128, bool) {
+        match i128_overflowing_sub_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+// OverflowingMul implementations
+impl U8OverflowingMul of core::num::traits::OverflowingMul<u8> {
+    fn overflowing_mul(self: u8, v: u8) -> (u8, bool) {
+        let wide_result = u8_wide_mul(self, v);
+        let MASK: u16 = BoundedInt::<u8>::max().into();
+        let (v_low, _, v_with_low_masked) = u16_bitwise(wide_result, MASK);
+        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+    }
+}
+
+impl U16OverflowingMul of core::num::traits::OverflowingMul<u16> {
+    fn overflowing_mul(self: u16, v: u16) -> (u16, bool) {
+        let wide_result = u16_wide_mul(self, v);
+        let MASK: u32 = BoundedInt::<u16>::max().into();
+        let (v_low, _, v_with_low_masked) = u32_bitwise(wide_result, MASK);
+        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+    }
+}
+
+impl U32OverflowingMul of core::num::traits::OverflowingMul<u32> {
+    fn overflowing_mul(self: u32, v: u32) -> (u32, bool) {
+        let wide_result = u32_wide_mul(self, v);
+        let MASK: u64 = BoundedInt::<u32>::max().into();
+        let (v_low, _, v_with_low_masked) = u64_bitwise(wide_result, MASK);
+        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+    }
+}
+
+impl U64OverflowingMul of core::num::traits::OverflowingMul<u64> {
+    fn overflowing_mul(self: u64, v: u64) -> (u64, bool) {
+        let wide_result = u64_wide_mul(self, v);
+        let MASK: u128 = BoundedInt::<u64>::max().into();
+        let (v_low, _, v_with_low_masked) = bitwise(wide_result, MASK);
+        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+    }
+}
+
+impl U128OverflowingMul of core::num::traits::OverflowingMul<u128> {
+    fn overflowing_mul(self: u128, v: u128) -> (u128, bool) {
+        u128_overflowing_mul(self, v)
+    }
+}
+
+impl U256OverflowingMul of core::num::traits::OverflowingMul<u256> {
+    fn overflowing_mul(self: u256, v: u256) -> (u256, bool) {
+        u256_overflow_mul(self, v)
+    }
+}
+
+/// WrappingAdd implementations
+impl U8WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u8>;
+impl U16WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u16>;
+impl U32WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u32>;
+impl U64WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u64>;
+impl U128WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u128>;
+impl U256WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u256>;
+impl I8WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i8>;
+impl I16WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i16>;
+impl I32WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i32>;
+impl I64WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i64>;
+impl I128WrappingAdd = core::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i128>;
+
+/// WrappingSub implementations
+impl U8WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<u8>;
+impl U16WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<u16>;
+impl U32WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<u32>;
+impl U64WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<u64>;
+impl U128WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<u128>;
+impl U256WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<u256>;
+impl I8WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<i8>;
+impl I16WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<i16>;
+impl I32WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<i32>;
+impl I64WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<i64>;
+impl I128WrappingSub = core::num::traits::ops::wrapping::overflow_based::TWrappingSub<i128>;
+
+/// WrappingMul implementations
+impl U8WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u8>;
+impl U16WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u16>;
+impl U32WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u32>;
+impl U64WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u64>;
+impl U128WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u128>;
+impl U256WrappingMul = core::num::traits::ops::wrapping::overflow_based::TWrappingMul<u256>;
+
+// CheckedAdd implementations
+impl U8CheckedAdd of core::num::traits::CheckedAdd<u8> {
+    fn checked_add(self: u8, v: u8) -> Option<u8> {
+        u8_checked_add(self, v)
+    }
+}
+
+impl U16CheckedAdd of core::num::traits::CheckedAdd<u16> {
+    fn checked_add(self: u16, v: u16) -> Option<u16> {
+        u16_checked_add(self, v)
+    }
+}
+
+impl U32CheckedAdd of core::num::traits::CheckedAdd<u32> {
+    fn checked_add(self: u32, v: u32) -> Option<u32> {
+        u32_checked_add(self, v)
+    }
+}
+
+impl U64CheckedAdd of core::num::traits::CheckedAdd<u64> {
+    fn checked_add(self: u64, v: u64) -> Option<u64> {
+        u64_checked_add(self, v)
+    }
+}
+
+impl U128CheckedAdd of core::num::traits::CheckedAdd<u128> {
+    fn checked_add(self: u128, v: u128) -> Option<u128> {
+        u128_checked_add(self, v)
+    }
+}
+
+impl U256CheckedAdd of core::num::traits::CheckedAdd<u256> {
+    fn checked_add(self: u256, v: u256) -> Option<u256> {
+        u256_checked_add(self, v)
+    }
+}
+
+impl I8CheckedAdd = core::num::traits::ops::checked::overflow_based::TCheckedAdd<i8>;
+impl I16CheckedAdd = core::num::traits::ops::checked::overflow_based::TCheckedAdd<i16>;
+impl I32CheckedAdd = core::num::traits::ops::checked::overflow_based::TCheckedAdd<i32>;
+impl I64CheckedAdd = core::num::traits::ops::checked::overflow_based::TCheckedAdd<i64>;
+impl I128CheckedAdd = core::num::traits::ops::checked::overflow_based::TCheckedAdd<i128>;
+
+// CheckedSub implementations
+impl U8CheckedSub of core::num::traits::CheckedSub<u8> {
+    fn checked_sub(self: u8, v: u8) -> Option<u8> {
+        u8_checked_sub(self, v)
+    }
+}
+
+impl U16CheckedSub of core::num::traits::CheckedSub<u16> {
+    fn checked_sub(self: u16, v: u16) -> Option<u16> {
+        u16_checked_sub(self, v)
+    }
+}
+
+impl U32CheckedSub of core::num::traits::CheckedSub<u32> {
+    fn checked_sub(self: u32, v: u32) -> Option<u32> {
+        u32_checked_sub(self, v)
+    }
+}
+
+impl U64CheckedSub of core::num::traits::CheckedSub<u64> {
+    fn checked_sub(self: u64, v: u64) -> Option<u64> {
+        u64_checked_sub(self, v)
+    }
+}
+
+impl U128CheckedSub of core::num::traits::CheckedSub<u128> {
+    fn checked_sub(self: u128, v: u128) -> Option<u128> {
+        u128_checked_sub(self, v)
+    }
+}
+
+impl U256CheckedSub of core::num::traits::CheckedSub<u256> {
+    fn checked_sub(self: u256, v: u256) -> Option<u256> {
+        u256_checked_sub(self, v)
+    }
+}
+
+impl I8CheckedSub = core::num::traits::ops::checked::overflow_based::TCheckedSub<i8>;
+impl I16CheckedSub = core::num::traits::ops::checked::overflow_based::TCheckedSub<i16>;
+impl I32CheckedSub = core::num::traits::ops::checked::overflow_based::TCheckedSub<i32>;
+impl I64CheckedSub = core::num::traits::ops::checked::overflow_based::TCheckedSub<i64>;
+impl I128CheckedSub = core::num::traits::ops::checked::overflow_based::TCheckedSub<i128>;
+
+// CheckedMul implementations
+impl U8CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u8>;
+impl U16CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u16>;
+impl U32CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u32>;
+impl U64CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u64>;
+impl U128CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u128>;
+impl U256CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u256>;
+
+/// Internal trait for easier finding of absolute values.
+pub(crate) trait AbsAndSign<Signed, Unsigned> {
+    /// Returns the absolute value of the `Signed` value as `Unsigned` and the original sign.
+    /// Returns `true` for sign if the number was negative and `false` otherwise.
+    fn abs_and_sign(self: Signed) -> (Unsigned, bool);
+}
+
+impl I8ToU8 of AbsAndSign<i8, u8> {
+    fn abs_and_sign(self: i8) -> (u8, bool) {
+        match i8_diff(self, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        }
+    }
+}
+
+impl I16ToU16 of AbsAndSign<i16, u16> {
+    fn abs_and_sign(self: i16) -> (u16, bool) {
+        match i16_diff(self, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        }
+    }
+}
+
+impl I32ToU32 of AbsAndSign<i32, u32> {
+    fn abs_and_sign(self: i32) -> (u32, bool) {
+        match i32_diff(self, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        }
+    }
+}
+
+impl I64ToU64 of AbsAndSign<i64, u64> {
+    fn abs_and_sign(self: i64) -> (u64, bool) {
+        match i64_diff(self, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        }
+    }
+}
+
+impl I128ToU128 of AbsAndSign<i128, u128> {
+    fn abs_and_sign(self: i128) -> (u128, bool) {
+        match i128_diff(self, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        }
     }
 }

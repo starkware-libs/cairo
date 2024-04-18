@@ -427,9 +427,9 @@ impl CasmBuilder {
     /// by merging.
     fn set_or_test_label_state(&mut self, label: String, state: State) {
         match self.label_state.entry(label) {
-            Entry::Occupied(mut e) => {
+            Entry::Occupied(e) => {
                 let read_only = self.read_labels.contains(e.key());
-                e.get_mut().intersect(&state, read_only);
+                e.into_mut().intersect(&state, read_only);
             }
             Entry::Vacant(e) => {
                 e.insert(state);

@@ -6,6 +6,8 @@ use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::{
     CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
 };
+use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
+use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, VarId};
@@ -17,6 +19,7 @@ use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::{ToPrimitive, Zero};
@@ -25,10 +28,10 @@ use thiserror::Error;
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
 use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
-    check_references_on_stack, compile_invocation, InvocationError, ProgramInfo,
+    check_references_on_stack, compile_invocation, BranchChanges, InvocationError, ProgramInfo,
 };
 use crate::metadata::Metadata;
-use crate::references::{check_types_match, ReferencesError};
+use crate::references::{check_types_match, ReferenceValue, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
 
 #[cfg(test)]
@@ -66,6 +69,16 @@ pub enum CompilationError {
     ConstSegmentsOutOfOrder,
     #[error("Code size limit exceeded.")]
     CodeSizeLimitExceeded,
+    #[error("Unknown function id in metadata.")]
+    MetadataUnknownFunctionId,
+    #[error("Statement #{0} out of bounds in metadata.")]
+    MetadataStatementOutOfBound(StatementIdx),
+    #[error("Statement #{0} should not have gas variables.")]
+    StatementNotSupportingGasVariables(StatementIdx),
+    #[error("Statement #{0} should not have ap-change variables.")]
+    StatementNotSupportingApChangeVariables(StatementIdx),
+    #[error("Expected all gas variables to be positive.")]
+    MetadataNegativeGasVariable,
 }
 
 /// Configuration for the Sierra to CASM compilation.
@@ -159,12 +172,40 @@ impl CairoProgram {
 }
 
 /// The debug information of a compilation from Sierra to casm.
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct SierraStatementDebugInfo {
-    /// The offset of the sierra statement within the bytecode.
-    pub code_offset: usize,
+    /// The start offset of the sierra statement within the bytecode.
+    pub start_offset: usize,
+    /// The end offset of the sierra statement within the bytecode.
+    pub end_offset: usize,
     /// The index of the sierra statement in the instructions vector.
     pub instruction_idx: usize,
+    /// Statement-kind-dependent information.
+    pub additional_kind_info: StatementKindDebugInfo,
+}
+
+/// Additional debug information for a Sierra statement, depending on its kind
+/// (invoke/return/dummy).
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub enum StatementKindDebugInfo {
+    Return(ReturnStatementDebugInfo),
+    Invoke(InvokeStatementDebugInfo),
+}
+
+/// Additional debug information for a return Sierra statement.
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct ReturnStatementDebugInfo {
+    /// The references of a Sierra return statement.
+    pub ref_values: Vec<ReferenceValue>,
+}
+
+/// Additional debug information for an invoke Sierra statement.
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct InvokeStatementDebugInfo {
+    /// The result branch changes of a Sierra invoke statement.
+    pub result_branch_changes: Vec<BranchChanges>,
+    /// The references of a Sierra invoke statement.
+    pub ref_values: Vec<ReferenceValue>,
 }
 
 /// The debug information of a compilation from Sierra to casm.
@@ -282,6 +323,12 @@ fn extract_const_value(
                     _ => return Err(CompilationError::ConstDataMismatch),
                 }
             }
+            CoreTypeConcrete::NonZero(_) => match &const_type.inner_data[..] {
+                [GenericArg::Type(inner)] => {
+                    types_stack.push(inner.clone());
+                }
+                _ => return Err(CompilationError::ConstDataMismatch),
+            },
             _ => match &const_type.inner_data[..] {
                 [GenericArg::Value(value)] => {
                     values.push(value.clone());
@@ -326,20 +373,36 @@ pub fn compile(
 ) -> Result<CairoProgram, Box<CompilationError>> {
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
-    // Maps statement_idx to program_offset. The last value (for statement_idx=number-of-statements)
+
+    // Maps statement_idx to its debug info.
+    // The last value (for statement_idx=number-of-statements)
     // contains the final offset (the size of the program code segment).
-    let mut statement_offsets = Vec::with_capacity(program.statements.len());
-    let mut statement_indices = Vec::with_capacity(program.statements.len());
+    let mut sierra_statement_info: Vec<SierraStatementDebugInfo> =
+        Vec::with_capacity(program.statements.len());
 
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new_with_ap_change(
         program,
         metadata.ap_change_info.function_ap_change.clone(),
     )
     .map_err(CompilationError::ProgramRegistryError)?;
+    validate_metadata(program, &registry, metadata)?;
     let type_sizes = get_type_size_map(program, &registry)
         .ok_or(CompilationError::FailedBuildingTypeInformation)?;
+    let mut backwards_jump_indices = UnorderedHashSet::<_>::default();
+    for (statement_id, statement) in program.statements.iter().enumerate() {
+        if let Statement::Invocation(invocation) = statement {
+            for branch in &invocation.branches {
+                if let BranchTarget::Statement(target) = branch.target {
+                    if target.0 < statement_id {
+                        backwards_jump_indices.insert(target);
+                    }
+                }
+            }
+        }
+    }
     let mut program_annotations = ProgramAnnotations::create(
         program.statements.len(),
+        backwards_jump_indices,
         &program.funcs,
         metadata,
         config.gas_usage_check,
@@ -351,8 +414,7 @@ pub fn compile(
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
         let statement_idx = StatementIdx(statement_id);
-        statement_indices.push(instructions.len());
-        statement_offsets.push(program_offset);
+
         if program_offset > config.max_bytecode_size {
             return Err(Box::new(CompilationError::CodeSizeLimitExceeded));
         }
@@ -386,8 +448,20 @@ pub fn compile(
                     _ => CompilationError::InvocationError { statement_idx, error },
                 })?;
 
+                let start_offset = program_offset;
+
                 let ret_instruction = RetInstruction {};
                 program_offset += ret_instruction.op_size();
+
+                sierra_statement_info.push(SierraStatementDebugInfo {
+                    start_offset,
+                    end_offset: program_offset,
+                    instruction_idx: instructions.len(),
+                    additional_kind_info: StatementKindDebugInfo::Return(
+                        ReturnStatementDebugInfo { ref_values: return_refs },
+                    ),
+                });
+
                 instructions.push(Instruction::new(InstructionBody::Ret(ret_instruction), false));
             }
             Statement::Invocation(invocation) => {
@@ -410,7 +484,13 @@ pub fn compile(
                 })?;
                 invoke_refs.iter().for_each(|r| r.validate(&type_sizes));
                 let compiled_invocation = compile_invocation(
-                    ProgramInfo { metadata, type_sizes: &type_sizes },
+                    ProgramInfo {
+                        metadata,
+                        type_sizes: &type_sizes,
+                        const_data_values: &|ty| {
+                            extract_const_value(&registry, &type_sizes, ty).unwrap()
+                        },
+                    },
                     invocation,
                     libfunc,
                     statement_idx,
@@ -419,9 +499,23 @@ pub fn compile(
                 )
                 .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
+                let start_offset = program_offset;
+
                 for instruction in &compiled_invocation.instructions {
                     program_offset += instruction.body.op_size();
                 }
+
+                sierra_statement_info.push(SierraStatementDebugInfo {
+                    start_offset,
+                    end_offset: program_offset,
+                    instruction_idx: instructions.len(),
+                    additional_kind_info: StatementKindDebugInfo::Invoke(
+                        InvokeStatementDebugInfo {
+                            result_branch_changes: compiled_invocation.results.clone(),
+                            ref_values: invoke_refs,
+                        },
+                    ),
+                });
 
                 for entry in compiled_invocation.relocations {
                     relocations.push(RelocationEntry {
@@ -431,15 +525,20 @@ pub fn compile(
                 }
                 instructions.extend(compiled_invocation.instructions);
 
-                let updated_annotations = StatementAnnotations {
+                let branching_libfunc = compiled_invocation.results.len() > 1;
+                // Using a vector of annotations for the loop allows us to clone the annotations
+                // only in the case of more the 1 branch, which is less common.
+                let mut all_updated_annotations = vec![StatementAnnotations {
                     environment: compiled_invocation.environment,
                     ..annotations
-                };
+                }];
+                while all_updated_annotations.len() < compiled_invocation.results.len() {
+                    all_updated_annotations.push(all_updated_annotations[0].clone());
+                }
 
-                let branching_libfunc = compiled_invocation.results.len() > 1;
-
-                for (branch_info, branch_changes) in
+                for ((branch_info, branch_changes), updated_annotations) in
                     zip_eq(&invocation.branches, compiled_invocation.results)
+                        .zip(all_updated_annotations)
                 {
                     let destination_statement_idx = statement_idx.next(&branch_info.target);
                     if branching_libfunc
@@ -458,7 +557,7 @@ pub fn compile(
                         .propagate_annotations(
                             statement_idx,
                             destination_statement_idx,
-                            &updated_annotations,
+                            updated_annotations,
                             branch_info,
                             branch_changes,
                             branching_libfunc,
@@ -468,9 +567,11 @@ pub fn compile(
             }
         }
     }
-    // Push the final offset and index at the end of the vectors.
-    statement_indices.push(instructions.len());
-    statement_offsets.push(program_offset);
+
+    let statement_offsets: Vec<usize> = std::iter::once(0)
+        .chain(sierra_statement_info.iter().map(|s: &SierraStatementDebugInfo| s.end_offset))
+        .collect();
+
     let const_segments_max_size = config
         .max_bytecode_size
         .checked_sub(program_offset)
@@ -486,15 +587,70 @@ pub fn compile(
     Ok(CairoProgram {
         instructions,
         consts_info,
-        debug_info: CairoProgramDebugInfo {
-            sierra_statement_info: zip_eq(statement_offsets, statement_indices)
-                .map(|(code_offset, instruction_idx)| SierraStatementDebugInfo {
-                    code_offset,
-                    instruction_idx,
-                })
-                .collect(),
-        },
+        debug_info: CairoProgramDebugInfo { sierra_statement_info },
     })
+}
+
+/// Runs basic validations on the given metadata.
+pub fn validate_metadata(
+    program: &Program,
+    registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    metadata: &Metadata,
+) -> Result<(), CompilationError> {
+    // Function validations.
+    for function_id in metadata.ap_change_info.function_ap_change.keys() {
+        registry
+            .get_function(function_id)
+            .map_err(|_| CompilationError::MetadataUnknownFunctionId)?;
+    }
+    for (function_id, costs) in metadata.gas_info.function_costs.iter() {
+        registry
+            .get_function(function_id)
+            .map_err(|_| CompilationError::MetadataUnknownFunctionId)?;
+        for (_token_type, value) in costs.iter() {
+            if *value < 0 {
+                return Err(CompilationError::MetadataNegativeGasVariable);
+            }
+        }
+    }
+
+    // Get the libfunc for the given statement index, or an error.
+    let get_libfunc = |idx: &StatementIdx| -> Result<&CoreConcreteLibfunc, CompilationError> {
+        if let Statement::Invocation(invocation) =
+            program.get_statement(idx).ok_or(CompilationError::MetadataStatementOutOfBound(*idx))?
+        {
+            registry
+                .get_libfunc(&invocation.libfunc_id)
+                .map_err(CompilationError::ProgramRegistryError)
+        } else {
+            Err(CompilationError::StatementNotSupportingApChangeVariables(*idx))
+        }
+    };
+
+    // Statement validations.
+    for idx in metadata.ap_change_info.variable_values.keys() {
+        if !matches!(get_libfunc(idx)?, CoreConcreteLibfunc::BranchAlign(_)) {
+            return Err(CompilationError::StatementNotSupportingApChangeVariables(*idx));
+        }
+    }
+    for ((idx, _token), value) in metadata.gas_info.variable_values.iter() {
+        if *value < 0 {
+            return Err(CompilationError::MetadataNegativeGasVariable);
+        }
+        if !matches!(
+            get_libfunc(idx)?,
+            CoreConcreteLibfunc::BranchAlign(_)
+                | CoreConcreteLibfunc::Coupon(CouponConcreteLibfunc::Refund(_))
+                | CoreConcreteLibfunc::Gas(
+                    GasConcreteLibfunc::WithdrawGas(_)
+                        | GasConcreteLibfunc::BuiltinWithdrawGas(_)
+                        | GasConcreteLibfunc::RedepositGas(_)
+                )
+        ) {
+            return Err(CompilationError::StatementNotSupportingGasVariables(*idx));
+        }
+    }
+    Ok(())
 }
 
 /// Returns true if `statement` is an invocation of the branch_align libfunc.

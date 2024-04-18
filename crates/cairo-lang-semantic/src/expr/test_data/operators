@@ -15,10 +15,10 @@ foo
 extern type MyType;
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::Mul::<test::MyType>
- --> lib.cairo:3:9
+error: Trait has no implementation in context: core::traits::Add::<test::MyType>.
+ --> lib.cairo:3:5
     a + a * a;
-        ^***^
+    ^*******^
 
 //! > ==========================================================================
 
@@ -31,10 +31,9 @@ test_function_diagnostics(expect_diagnostics: true)
 fn foo(a: u128, b: bool) implicits(RangeCheck) {
     // Valid.
     a + a * a - a;
-    (b & b) | (b & ((a == a) | (a > a)))
-    & (a<a) & (a<=a) & (a>=a);
+    (b & b) | (b & ((a == a) | (a > a))) & (a < a) & (a <= a) & (a >= a);
     // Errors.
-    a>a>a;
+    a > a > a;
     a - b
 }
 
@@ -44,25 +43,25 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::bool", found: "core::integer::u128".
+ --> lib.cairo:6:13
+    a > a > a;
+            ^
+
 error: Unexpected argument type. Expected: "core::bool", found: "core::integer::u128".
- --> lib.cairo:7:9
-    a>a>a;
-        ^
+ --> lib.cairo:6:13
+    a > a > a;
+            ^
 
 error: Unexpected argument type. Expected: "core::integer::u128", found: "core::bool".
- --> lib.cairo:8:9
+ --> lib.cairo:7:9
     a - b
         ^
 
-error: Unexpected return type. Expected: "()", found: "?17".
+error: Unexpected return type. Expected: "()", found: "core::integer::u128".
  --> lib.cairo:1:48
 fn foo(a: u128, b: bool) implicits(RangeCheck) {
                                                ^
-
-error: Trait has no implementation in context: core::traits::PartialOrd::<core::bool>
- --> lib.cairo:7:5
-    a>a>a;
-    ^***^
 
 //! > ==========================================================================
 
@@ -84,7 +83,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::Neg::<core::bool>
+error: Trait has no implementation in context: core::traits::Neg::<core::bool>.
  --> lib.cairo:2:5
     -(1 == 2);
     ^*******^
@@ -129,8 +128,8 @@ impl Struct2Index of Index<Struct2, usize, felt252> {
 
 //! > expected_diagnostics
 error: Type `test::Struct1` could not be indexed.
-Candidate `Index::index` inference failed with: Trait has no implementation in context: core::traits::Index::<test::Struct1, ?3, ?4>
-Candidate `IndexView::index` inference failed with: Trait has no implementation in context: core::traits::IndexView::<test::Struct1, ?3, ?4>
+Candidate `Index::index` inference failed with: Trait has no implementation in context: core::traits::Index::<test::Struct1, ?2, ?3>.
+Candidate `IndexView::index` inference failed with: Trait has no implementation in context: core::traits::IndexView::<test::Struct1, ?2, ?3>.
  --> lib.cairo:21:15
     let _y1 = x1[0];
               ^***^

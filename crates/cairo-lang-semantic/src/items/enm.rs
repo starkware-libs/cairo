@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 use itertools::enumerate;
@@ -64,11 +64,10 @@ pub fn priv_enum_declaration_data(
     let attributes = enum_ast.attributes(syntax_db).structurize(syntax_db);
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(enum_ast.stable_ptr().untyped()));
-    }
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(EnumDeclarationData {
@@ -115,10 +114,10 @@ pub fn enum_generic_params_data(
         module_file_id,
         &enum_ast.generic_params(db.upcast()),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, enum_ast.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
@@ -156,8 +155,7 @@ pub struct Variant {
     pub idx: usize,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteVariant {
     pub concrete_enum_id: ConcreteEnumId,
     pub id: VariantId,
@@ -177,8 +175,7 @@ pub struct ValueSelectorArm {
 }
 
 /// Selector pattern of a match arm.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum MatchArmSelector {
     VariantId(ConcreteVariant),
     Value(ValueSelectorArm),
@@ -226,12 +223,11 @@ pub fn priv_enum_definition_data(
     }
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(enum_ast.stable_ptr().untyped()));
-    }
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
+
     for (_, variant) in variant_semantic.iter_mut() {
-        variant.ty = resolver.inference().rewrite(variant.ty).no_err();
+        variant.ty = inference.rewrite(variant.ty).no_err();
     }
 
     let resolver_data = Arc::new(resolver.data);

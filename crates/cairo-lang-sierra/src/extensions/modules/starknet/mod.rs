@@ -38,11 +38,14 @@ use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc,
     StorageAddressTryFromFelt252Trait, StorageAddressType, StorageBaseAddressFromFelt252Libfunc,
 };
-use self::syscalls::KeccakLibfunc;
+use self::syscalls::{
+    KeccakLibfunc, Sha256ProcessBlockLibfunc, Sha256StateHandleDigestLibfunc,
+    Sha256StateHandleInitLibfunc, Sha256StateHandleType,
+};
 use self::testing::TestingLibfunc;
 use super::array::ArrayType;
 use super::felt252::Felt252Type;
-use super::int::unsigned::Uint64Type;
+use super::int::unsigned::{Uint32Type, Uint64Type};
 use super::snapshot::snapshot_ty;
 use super::structure::StructType;
 use super::try_from_felt252::TryFromFelt252Libfunc;
@@ -55,6 +58,7 @@ define_type_hierarchy! {
         StorageAddress(StorageAddressType),
         System(SystemType),
         Secp256Point(Secp256PointType),
+        Sha256StateHandle(Sha256StateHandleType),
     }, StarkNetTypeConcrete
 }
 
@@ -81,6 +85,9 @@ define_libfunc_hierarchy! {
          GetExecutionInfoV2(GetterLibfunc<GetExecutionInfoV2Trait>),
          Deploy(DeployLibfunc),
          Keccak(KeccakLibfunc),
+         Sha256ProcessBlock(Sha256ProcessBlockLibfunc),
+         Sha256StateHandleInit(Sha256StateHandleInitLibfunc),
+         Sha256StateHandleDigest(Sha256StateHandleDigestLibfunc),
          LibraryCall(LibraryCallLibfunc),
          ReplaceClass(ReplaceClassLibfunc),
          SendMessageToL1(SendMessageToL1Libfunc),
@@ -121,4 +128,11 @@ fn u64_span_ty(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
     span_ty(context, context.get_concrete_type(Uint64Type::id(), &[])?, "core::integer::u64")
+}
+
+/// User type for `Span<u32>`.
+fn u32_span_ty(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    span_ty(context, context.get_concrete_type(Uint32Type::id(), &[])?, "core::integer::u32")
 }

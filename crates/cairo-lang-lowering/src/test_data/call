@@ -7,13 +7,11 @@ test_function_lowering
 fn foo(ref a: felt252) -> felt252 {
     let b = true;
     if true {
-      bar(ref a, b);
-    } else {
-    }
+        bar(ref a, b);
+    } else {}
     if false {
-      return 6;
-    } else {
-    }
+        return 6;
+    } else {}
     5
 }
 
@@ -21,8 +19,8 @@ fn foo(ref a: felt252) -> felt252 {
 foo
 
 //! > module_code
-fn bar(ref a: felt252, b: bool) {
-}
+#[inline(never)]
+fn bar(ref a: felt252, b: bool) {}
 
 //! > semantic_diagnostics
 
@@ -34,10 +32,10 @@ blk0 (root):
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v7: core::felt252, v6: ()) <- test::bar(v0, v2)
-  (v15: core::felt252) <- 5u
+  (v3: core::felt252) <- test::bar(v0, v2)
+  (v4: core::felt252) <- 5
 End:
-  Return(v7, v15)
+  Return(v3, v4)
 
 //! > ==========================================================================
 
@@ -48,9 +46,9 @@ test_function_lowering
 
 //! > function
 fn foo() -> Option::<felt252> {
-  let x = Option::None;
-  let _ = x.is_some();
-  x
+    let x = Option::None;
+    let _ = x.is_some();
+    x
 }
 
 //! > function_name

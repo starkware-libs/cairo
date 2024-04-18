@@ -1,0 +1,56 @@
+//! > Fixed size array
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo() {
+    let x = [10, 20, 30];
+    bar(x);
+}
+
+#[inline(never)]
+fn bar(x: [felt252; 3]) {
+    let _y = x;
+}
+
+//! > casm
+[ap + 0] = 10, ap++;
+[ap + 0] = 20, ap++;
+[ap + 0] = 30, ap++;
+call rel 3;
+ret;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+test::bar: OrderedHashMap({})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 30> = Const<felt252, 30> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 20> = Const<felt252, 20> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 10> = Const<felt252, 10> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<felt252, 10>> = const_as_immediate<Const<felt252, 10>>;
+libfunc const_as_immediate<Const<felt252, 20>> = const_as_immediate<Const<felt252, 20>>;
+libfunc const_as_immediate<Const<felt252, 30>> = const_as_immediate<Const<felt252, 30>>;
+libfunc struct_construct<Tuple<felt252, felt252, felt252>> = struct_construct<Tuple<felt252, felt252, felt252>>;
+libfunc store_temp<Tuple<felt252, felt252, felt252>> = store_temp<Tuple<felt252, felt252, felt252>>;
+libfunc function_call<user@test::bar> = function_call<user@test::bar>;
+libfunc drop<Tuple<felt252, felt252, felt252>> = drop<Tuple<felt252, felt252, felt252>>;
+
+const_as_immediate<Const<felt252, 10>>() -> ([0]); // 0
+const_as_immediate<Const<felt252, 20>>() -> ([1]); // 1
+const_as_immediate<Const<felt252, 30>>() -> ([2]); // 2
+struct_construct<Tuple<felt252, felt252, felt252>>([0], [1], [2]) -> ([3]); // 3
+store_temp<Tuple<felt252, felt252, felt252>>([3]) -> ([3]); // 4
+function_call<user@test::bar>([3]) -> (); // 5
+return(); // 6
+drop<Tuple<felt252, felt252, felt252>>([0]) -> (); // 7
+return(); // 8
+
+test::foo@0() -> ();
+test::bar@7([0]: Tuple<felt252, felt252, felt252>) -> ();

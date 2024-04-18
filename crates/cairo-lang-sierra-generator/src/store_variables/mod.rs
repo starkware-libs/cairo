@@ -18,8 +18,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
 use sierra::extensions::function_call::{CouponCallLibfunc, FunctionCallLibfunc};
 use sierra::extensions::gas::RedepositGasLibfunc;
-use sierra::extensions::structure::StructDeconstructLibfunc;
-use sierra::extensions::{NamedLibfunc, OutputVarReferenceInfo};
+use sierra::extensions::NamedLibfunc;
 use sierra::ids::GenericLibfuncId;
 use sierra::program::ConcreteLibfuncLongId;
 use state::{
@@ -78,10 +77,10 @@ where
     // Go over the statements, restarting whenever we see a branch or a label.
     for statement in statements.into_iter() {
         let prev_len = handler.result.len();
-        let location = statement.location;
+        let location = statement.location.clone();
         state_opt = handler.handle_statement(state_opt, statement, get_lib_func_signature);
         for statement in &mut handler.result[prev_len..] {
-            statement.set_location(location)
+            statement.set_location(location.clone())
         }
     }
     handler.finalize(state_opt)
@@ -146,49 +145,6 @@ impl<'a> AddStoreVariableStatements<'a> {
                         // Avoid calling `prepare_libfunc_arguments` as it might copy the
                         // arguments to a local variables.
                         invocation.args.iter().map(|var| state.pop_var_state(var)).collect()
-                    }
-                    StructDeconstructLibfunc::STR_ID => {
-                        let arg = &invocation.args[0];
-                        let var_state = state.pop_var_state(arg);
-
-                        let results = &invocation.branches[0].results;
-                        let mut non_zero_sized_outputs = vec![];
-                        for (output, output_info) in
-                            zip_eq(results, &signature.branch_signatures[0].vars)
-                        {
-                            let output_state = match var_state {
-                                VarState::ZeroSizedVar => VarState::ZeroSizedVar,
-                                _ if matches!(
-                                    output_info.ref_info,
-                                    OutputVarReferenceInfo::ZeroSized
-                                ) =>
-                                {
-                                    VarState::ZeroSizedVar
-                                }
-                                VarState::TempVar { .. } => {
-                                    VarState::TempVar { ty: output_info.ty.clone() }
-                                }
-                                VarState::Deferred { info: DeferredVariableInfo { kind, .. } } => {
-                                    VarState::Deferred {
-                                        info: DeferredVariableInfo {
-                                            kind,
-                                            ty: output_info.ty.clone(),
-                                        },
-                                    }
-                                }
-                                VarState::LocalVar => VarState::LocalVar,
-                                VarState::Removed => unreachable!(),
-                            };
-
-                            if !matches!(output_state, VarState::ZeroSizedVar) {
-                                non_zero_sized_outputs.push(output.clone())
-                            }
-
-                            state.variables.insert(output.clone(), output_state);
-                        }
-                        state.known_stack.deconstruct_variable(arg, &non_zero_sized_outputs);
-                        self.result.push(statement);
-                        return Some(std::mem::take(state));
                     }
                     _ => self.prepare_libfunc_arguments(
                         state,
@@ -397,11 +353,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
     }
 
-    fn push_values(
-        &mut self,
-        state: &mut VariablesState,
-        push_values: &Vec<pre_sierra::PushValue>,
-    ) {
+    fn push_values(&mut self, state: &mut VariablesState, push_values: &[pre_sierra::PushValue]) {
         if push_values.is_empty() {
             return;
         }

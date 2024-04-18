@@ -43,60 +43,54 @@ Statements:
 End:
   Match(match_enum(v0) {
     MyEnum::a(v1) => blk1,
-    MyEnum::b(v6) => blk2,
-    MyEnum::c(v9) => blk3,
-    MyEnum::d(v10) => blk4,
-    MyEnum::e(v13) => blk5,
-    MyEnum::f(v14) => blk6,
-    MyEnum::g(v16) => blk7,
-    MyEnum::h(v17) => blk8,
+    MyEnum::b(v2) => blk2,
+    MyEnum::c(v3) => blk3,
+    MyEnum::d(v4) => blk4,
+    MyEnum::e(v5) => blk5,
+    MyEnum::f(v6) => blk6,
+    MyEnum::g(v7) => blk7,
+    MyEnum::h(v8) => blk8,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk2:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk3:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk4:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk5:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk7:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {})
-
-blk9:
-Statements:
-  (v18: ()) <- struct_construct()
-End:
-  Return(v18)
+  Return()
 
 //! > ==========================================================================
 
@@ -124,14 +118,14 @@ foo
 
 //! > module_code
 enum MyEnum {
-  a: (felt252, (felt252, felt252)),
-  b: (felt252, (felt252, felt252)),
-  c: (felt252, (felt252, felt252)),
-  d: (felt252, felt252),
-  e: (felt252, felt252),
-  f: (felt252,),
-  g: (felt252,),
-  h: felt252
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252
 }
 extern fn bar(ref a: felt252) -> MyEnum nopanic;
 
@@ -146,60 +140,54 @@ Statements:
 End:
   Match(match test::bar(v0) {
     MyEnum::a(v1, v2, v3) => blk1,
-    MyEnum::b(v6, v7, v8) => blk2,
-    MyEnum::c(v9, v10, v11) => blk3,
-    MyEnum::d(v13, v14, v15) => blk4,
-    MyEnum::e(v16, v17, v18) => blk5,
-    MyEnum::f(v20, v21) => blk6,
-    MyEnum::g(v22, v23) => blk7,
-    MyEnum::h(v25, v26) => blk8,
+    MyEnum::b(v4, v5, v6) => blk2,
+    MyEnum::c(v7, v8, v9) => blk3,
+    MyEnum::d(v10, v11, v12) => blk4,
+    MyEnum::e(v13, v14, v15) => blk5,
+    MyEnum::f(v16, v17) => blk6,
+    MyEnum::g(v18, v19) => blk7,
+    MyEnum::h(v20, v21) => blk8,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk9, {v1 -> v27})
+  Return(v1)
 
 blk2:
 Statements:
 End:
-  Goto(blk9, {v6 -> v27})
+  Return(v4)
 
 blk3:
 Statements:
 End:
-  Goto(blk9, {v9 -> v27})
+  Return(v7)
 
 blk4:
 Statements:
 End:
-  Goto(blk9, {v13 -> v27})
+  Return(v10)
 
 blk5:
 Statements:
 End:
-  Goto(blk9, {v16 -> v27})
+  Return(v13)
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {v20 -> v27})
+  Return(v16)
 
 blk7:
 Statements:
 End:
-  Goto(blk9, {v22 -> v27})
+  Return(v18)
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v25 -> v27})
-
-blk9:
-Statements:
-  (v28: ()) <- struct_construct()
-End:
-  Return(v27, v28)
+  Return(v20)
 
 //! > ==========================================================================
 
@@ -228,14 +216,14 @@ foo
 
 //! > module_code
 enum MyEnum {
-  a: (felt252, (felt252, felt252)),
-  b: (felt252, (felt252, felt252)),
-  c: (felt252, (felt252, felt252)),
-  d: (felt252, felt252),
-  e: (felt252, felt252),
-  f: (felt252,),
-  g: (felt252,),
-  h: felt252
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252
 }
 extern fn bar() -> MyEnum nopanic;
 
@@ -250,60 +238,54 @@ Statements:
 End:
   Match(match test::bar() {
     MyEnum::a(v0, v1) => blk1,
-    MyEnum::b(v4, v5) => blk2,
-    MyEnum::c(v8, v9) => blk3,
-    MyEnum::d(v12, v13) => blk4,
-    MyEnum::e(v16, v17) => blk5,
-    MyEnum::f(v20) => blk6,
-    MyEnum::g(v23) => blk7,
-    MyEnum::h(v26) => blk8,
+    MyEnum::b(v2, v3) => blk2,
+    MyEnum::c(v4, v5) => blk3,
+    MyEnum::d(v6, v7) => blk4,
+    MyEnum::e(v8, v9) => blk5,
+    MyEnum::f(v10) => blk6,
+    MyEnum::g(v11) => blk7,
+    MyEnum::h(v12) => blk8,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk2:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk3:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk4:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk5:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk7:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {})
-
-blk9:
-Statements:
-  (v46: ()) <- struct_construct()
-End:
-  Return(v46)
+  Return()
 
 //! > ==========================================================================
 
@@ -315,14 +297,14 @@ test_function_lowering
 //! > function
 fn foo(mut z: felt252) {
     match bar(ref z) {
-      MyEnum::a((_x, (_y, _z))) => {},
-      MyEnum::b((_x, _y)) => {},
-      MyEnum::c(_x) => {},
-      MyEnum::d((_x, _y)) => {},
-      MyEnum::e(_x) => {},
-      MyEnum::f((_x,)) => {},
-      MyEnum::g(_x) => {},
-      MyEnum::h(_x) => {},
+        MyEnum::a((_x, (_y, _z))) => {},
+        MyEnum::b((_x, _y)) => {},
+        MyEnum::c(_x) => {},
+        MyEnum::d((_x, _y)) => {},
+        MyEnum::e(_x) => {},
+        MyEnum::f((_x,)) => {},
+        MyEnum::g(_x) => {},
+        MyEnum::h(_x) => {},
     }
 }
 
@@ -331,14 +313,14 @@ foo
 
 //! > module_code
 enum MyEnum {
-  a: (felt252, (felt252, felt252)),
-  b: (felt252, (felt252, felt252)),
-  c: (felt252, (felt252, felt252)),
-  d: (felt252, felt252),
-  e: (felt252, felt252),
-  f: (felt252,),
-  g: (felt252,),
-  h: felt252
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252
 }
 extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
@@ -347,66 +329,60 @@ extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v29: core::RangeCheck, v0: core::felt252
+Parameters: v0: core::RangeCheck, v1: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match test::bar(v29, v0) {
-    MyEnum::a(v30, v1, v2, v3) => blk1,
-    MyEnum::b(v31, v6, v7, v8) => blk2,
-    MyEnum::c(v32, v9, v10, v11) => blk3,
-    MyEnum::d(v33, v13, v14, v15) => blk4,
-    MyEnum::e(v34, v16, v17, v18) => blk5,
-    MyEnum::f(v35, v20, v21) => blk6,
-    MyEnum::g(v36, v22, v23) => blk7,
-    MyEnum::h(v37, v25, v26) => blk8,
+  Match(match test::bar(v0, v1) {
+    MyEnum::a(v2, v3, v4, v5) => blk1,
+    MyEnum::b(v6, v7, v8, v9) => blk2,
+    MyEnum::c(v10, v11, v12, v13) => blk3,
+    MyEnum::d(v14, v15, v16, v17) => blk4,
+    MyEnum::e(v18, v19, v20, v21) => blk5,
+    MyEnum::f(v22, v23, v24) => blk6,
+    MyEnum::g(v25, v26, v27) => blk7,
+    MyEnum::h(v28, v29, v30) => blk8,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk9, {v30 -> v38})
+  Return(v2)
 
 blk2:
 Statements:
 End:
-  Goto(blk9, {v31 -> v38})
+  Return(v6)
 
 blk3:
 Statements:
 End:
-  Goto(blk9, {v32 -> v38})
+  Return(v10)
 
 blk4:
 Statements:
 End:
-  Goto(blk9, {v33 -> v38})
+  Return(v14)
 
 blk5:
 Statements:
 End:
-  Goto(blk9, {v34 -> v38})
+  Return(v18)
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {v35 -> v38})
+  Return(v22)
 
 blk7:
 Statements:
 End:
-  Goto(blk9, {v36 -> v38})
+  Return(v25)
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v37 -> v38})
-
-blk9:
-Statements:
-  (v28: ()) <- struct_construct()
-End:
-  Return(v38, v28)
+  Return(v28)
 
 //! > ==========================================================================
 
@@ -435,14 +411,14 @@ foo
 
 //! > module_code
 enum MyEnum {
-  a: (felt252, (felt252, felt252)),
-  b: (felt252, (felt252, felt252)),
-  c: (felt252, (felt252, felt252)),
-  d: (felt252, felt252),
-  e: (felt252, felt252),
-  f: (felt252,),
-  g: (felt252,),
-  h: felt252
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252
 }
 extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
@@ -451,63 +427,57 @@ extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v57: core::RangeCheck, v0: core::felt252
+Parameters: v0: core::RangeCheck, v1: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match test::bar(v57, v0) {
-    MyEnum::a(v58, v1, v2, v3) => blk1,
-    MyEnum::b(v59, v6, v7, v8) => blk2,
-    MyEnum::c(v60, v11, v12, v13) => blk3,
-    MyEnum::d(v61, v16, v17, v18) => blk4,
-    MyEnum::e(v62, v21, v22, v23) => blk5,
-    MyEnum::f(v63, v26, v27) => blk6,
-    MyEnum::g(v64, v30, v31) => blk7,
-    MyEnum::h(v65, v34, v35) => blk8,
+  Match(match test::bar(v0, v1) {
+    MyEnum::a(v2, v3, v4, v5) => blk1,
+    MyEnum::b(v6, v7, v8, v9) => blk2,
+    MyEnum::c(v10, v11, v12, v13) => blk3,
+    MyEnum::d(v14, v15, v16, v17) => blk4,
+    MyEnum::e(v18, v19, v20, v21) => blk5,
+    MyEnum::f(v22, v23, v24) => blk6,
+    MyEnum::g(v25, v26, v27) => blk7,
+    MyEnum::h(v28, v29, v30) => blk8,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk9, {v58 -> v67})
+  Return(v2)
 
 blk2:
 Statements:
 End:
-  Goto(blk9, {v59 -> v67})
+  Return(v6)
 
 blk3:
 Statements:
 End:
-  Goto(blk9, {v60 -> v67})
+  Return(v10)
 
 blk4:
 Statements:
 End:
-  Goto(blk9, {v61 -> v67})
+  Return(v14)
 
 blk5:
 Statements:
 End:
-  Goto(blk9, {v62 -> v67})
+  Return(v18)
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {v63 -> v67})
+  Return(v22)
 
 blk7:
 Statements:
 End:
-  Goto(blk9, {v64 -> v67})
+  Return(v25)
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v65 -> v67})
-
-blk9:
-Statements:
-  (v56: ()) <- struct_construct()
-End:
-  Return(v67, v56)
+  Return(v28)

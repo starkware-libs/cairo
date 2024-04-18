@@ -1,3 +1,4 @@
+use core::serde::Serde;
 use starknet::{
     eth_address::U256IntoEthAddress, EthAddress, secp256k1::Secp256k1Impl, SyscallResultTrait
 };
@@ -6,6 +7,31 @@ use starknet::secp256_trait::{
 };
 use starknet::secp256k1::{Secp256k1Point, Secp256k1PointImpl};
 use starknet::eth_signature::verify_eth_signature;
+
+#[test]
+fn test_secp256k1_point_serde() {
+    let (x, y): (u256, u256) = (
+        0xa9a02d48081294b9bb0d8740d70d3607feb20876964d432846d9b9100b91eefd,
+        0x18b410b5523a1431024a6ab766c89fa5d062744c75e49efb9925bf8025a7c09e
+    );
+    let mut serialized_coordinates = array![];
+    (x, y).serialize(ref serialized_coordinates);
+    let mut serialized_coordinates = serialized_coordinates.span();
+    let point = Serde::<Secp256k1Point>::deserialize(ref serialized_coordinates).unwrap();
+
+    let mut actual_coordinates = array![];
+    point.serialize(ref actual_coordinates);
+
+    assert_eq!(
+        (@x.low.into(), @x.high.into(), @y.low.into(), @y.high.into()),
+        (
+            actual_coordinates.at(0),
+            actual_coordinates.at(1),
+            actual_coordinates.at(2),
+            actual_coordinates.at(3)
+        )
+    );
+}
 
 #[test]
 fn test_secp256k1_recover_public_key() {

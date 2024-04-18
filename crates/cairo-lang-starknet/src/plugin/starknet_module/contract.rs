@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{
     is_single_arg_attr, GetIdentifier, PathSegmentEx, QueryAttrs,
 };
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use const_format::formatcp;
 use indoc::formatdoc;
 use smol_str::SmolStr;
@@ -325,7 +325,7 @@ pub(super) fn generate_contract_specific_code(
     );
 
     generation_data.specific.test_config = RewriteNode::Text(formatdoc!(
-        "#[cfg(test)]
+        "#[cfg(target: 'test')]
             pub const TEST_CLASS_HASH: felt252 = {test_class_hash};
 "
     ));

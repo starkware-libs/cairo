@@ -82,8 +82,8 @@ mod counter_contract {
         }
     }
     
-    use __member_module_counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
-    mod __member_module_counter {
+    pub use __member_module_counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
+    pub mod __member_module_counter {
         use super::upgradable_comp;
         use super::ownable_comp;
         use super::Event;
@@ -849,8 +849,8 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
         }
     }
     
-    use __member_module_counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
-    mod __member_module_counter {
+    pub use __member_module_counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
+    pub mod __member_module_counter {
         use super::upgradable_comp;
         use super::ownable_comp;
         use super::Event;

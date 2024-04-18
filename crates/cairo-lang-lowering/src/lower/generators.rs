@@ -5,15 +5,15 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
 use cairo_lang_utils::extract_matches;
 use itertools::chain;
-use num_bigint::BigInt;
+use semantic::items::constant::ConstValue;
 
 use super::context::VarRequest;
 use super::VariableId;
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 use crate::objects::{
-    Statement, StatementCall, StatementLiteral, StatementStructConstruct,
-    StatementStructDestructure, VarUsage,
+    Statement, StatementCall, StatementConst, StatementStructConstruct, StatementStructDestructure,
+    VarUsage,
 };
 use crate::{StatementDesnap, StatementEnumConstruct, StatementSnapshot};
 
@@ -28,20 +28,20 @@ impl StatementsBuilder {
     }
 }
 
-/// Generator for [StatementLiteral].
-pub struct Literal {
-    pub value: BigInt,
+/// Generator for [StatementConst].
+pub struct Const {
+    pub value: ConstValue,
     pub location: LocationId,
     pub ty: semantic::TypeId,
 }
-impl Literal {
+impl Const {
     pub fn add(
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
     ) -> VarUsage {
         let output = ctx.new_var(VarRequest { ty: self.ty, location: self.location });
-        builder.push_statement(Statement::Literal(StatementLiteral { value: self.value, output }));
+        builder.push_statement(Statement::Const(StatementConst { value: self.value, output }));
         VarUsage { var_id: output, location: self.location }
     }
 }
@@ -82,10 +82,13 @@ impl Call {
         let outputs =
             chain!(&extra_outputs, &returns).map(|var_usage: &VarUsage| var_usage.var_id).collect();
 
+        let with_coupon = self.coupon_input.is_some();
+        let mut inputs = self.inputs;
+        inputs.extend(self.coupon_input);
         builder.push_statement(Statement::Call(StatementCall {
             function: self.function,
-            inputs: self.inputs,
-            coupon_input: self.coupon_input,
+            inputs,
+            with_coupon,
             outputs,
             location: self.location,
         }));
@@ -145,11 +148,11 @@ impl Snapshot {
         let output_original =
             ctx.new_var(VarRequest { ty: input_ty, location: input_var.location });
         let output_snapshot = ctx.new_var(VarRequest { ty, location: self.location });
-        builder.push_statement(Statement::Snapshot(StatementSnapshot {
-            input: self.input,
+        builder.push_statement(Statement::Snapshot(StatementSnapshot::new(
+            self.input,
             output_original,
             output_snapshot,
-        }));
+        )));
         (output_original, output_snapshot)
     }
 }

@@ -17,7 +17,7 @@ mod test_contract {
 
     #[external(v0)]
     #[raw_output]
-    fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  > {
+    fn test_raw_output_with_spaces(ref self: ContractState) -> Span::<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 }
@@ -38,7 +38,7 @@ mod test_contract {
 
     #[external(v0)]
     #[raw_output]
-    fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  > {
+    fn test_raw_output_with_spaces(ref self: ContractState) -> Span::<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 }
@@ -68,8 +68,8 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
-pub const TEST_CLASS_HASH: felt252 = 0xe8fd97ed2950722a36523186b7f01aeba6db1a2faedf427e91639a6252388a;
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: felt252 = 0x2a1a1bba6d0c773fab786191dfb5454782701d3308f2d60e686ba861815e841;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {

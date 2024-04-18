@@ -2,6 +2,7 @@
 //!
 //! The impls here are visible through [`super`] module.
 
+use cairo_lang_utils::require;
 use num_bigint::{BigInt, Sign};
 use num_traits::Num;
 use smol_str::SmolStr;
@@ -87,9 +88,7 @@ impl TerminalShortString {
     pub fn suffix(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
         let text = self.text(db);
         let (_literal, mut suffix) = text[1..].rsplit_once('\'')?;
-        if suffix.is_empty() {
-            return None;
-        }
+        require(!suffix.is_empty())?;
         if suffix.starts_with('_') {
             suffix = &suffix[1..];
         }
@@ -112,22 +111,16 @@ impl TerminalString {
 
 /// Interpret the given text as a string with the given delimiter. Returns the text and the suffix.
 fn string_value(text: &str, delimiter: char) -> Option<(String, &str)> {
-    let Some((prefix, text)) = text.split_once(delimiter) else {
-        return None;
-    };
+    let (prefix, text) = text.split_once(delimiter)?;
     if !prefix.is_empty() {
         unreachable!();
     }
 
-    let Some((text, suffix)) = text.rsplit_once(delimiter) else {
-        return None;
-    };
+    let (text, suffix) = text.rsplit_once(delimiter)?;
 
     let text = unescape(text).ok()?;
 
-    if !text.is_ascii() {
-        return None;
-    }
+    require(text.is_ascii())?;
 
     Some((text, suffix))
 }

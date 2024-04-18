@@ -37,7 +37,7 @@ pub fn build(
 }
 
 /// Handles a felt252 operation with a variable.
-fn build_felt252_op_with_var(
+pub fn build_felt252_op_with_var(
     builder: CompiledInvocationBuilder<'_>,
     op: Felt252BinaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {

@@ -1,0 +1,21 @@
+[package]
+name = "get-lowering"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Compiler executable for the Cairo programming language with the StarkNet plugin."
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+convert_case.workspace = true
+itertools.workspace = true
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.6.3" }
+cairo-lang-debug = { path = "../../cairo-lang-debug", version = "2.6.3" }
+cairo-lang-defs = { path = "../../cairo-lang-defs", version = "2.6.3" }
+cairo-lang-filesystem = { path = "../../cairo-lang-filesystem", version = "~2.6.3" }
+cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.6.3" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "~2.6.3" }
+cairo-lang-semantic = { path = "../../cairo-lang-semantic", version = "~2.6.3" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.6.3" }

@@ -5,20 +5,23 @@
 
 - Install link:https://www.rust-lang.org/tools/install[Rust]
 - Setup Rust:
-```bash
+[source,bash]
+----
 rustup override set stable && rustup update
-```
+----
 
 Clone the Cairo repo:
 
-```sh
+[source,bash]
+----
 git clone https://github.com/starkware-libs/cairo
-```
+----
 
 Ensure Rust was installed correctly by running the following from the root project directory:
-```bash
+[source,bash]
+----
 cd cairo && cargo test
-```
+----
 
 ## Development environment setup
 
@@ -31,6 +34,7 @@ To set up a development environment, please follow these steps:
 The `rustfmt` configuration used by cairo requires a nightly version of Rust.
 You can install the nightly version by running.
 
-```sh
-rustup install nightly-2022-11-03
-```
+[source,bash]
+----
+rustup install nightly-2024-03-09
+----

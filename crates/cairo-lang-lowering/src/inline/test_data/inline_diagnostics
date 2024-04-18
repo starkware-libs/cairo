@@ -6,8 +6,8 @@ test_function_inlining
 //! > function
 #[inline(always)]
 fn foo(ref a: felt252, b: felt252) -> felt252 {
-  foo(ref a, b);
-  b
+    foo(ref a, b);
+    b
 }
 
 //! > function_name
@@ -27,12 +27,99 @@ error: Cannot inline a function that might call itself.
 Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::felt252, v2: core::felt252) <- test::foo(v0, v1)
 End:
-  Return(v3, v1)
+  Match(match core::gas::withdraw_gas() {
+    Option::Some => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v9: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo(v0, v1)
+End:
+  Match(match_enum(v9) {
+    PanicResult::Ok(v10) => blk4,
+    PanicResult::Err(v13) => blk5,
+  })
+
+blk2:
+Statements:
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v5: core::felt252) <- 375233589013918064796019
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v5)
+  (v6: core::panics::Panic) <- struct_construct()
+  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v7)
+  (v14: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v8)
+End:
+  Return(v14)
+
+blk3:
+Statements:
+  (v15: (core::felt252, core::felt252)) <- struct_construct(v3, v1)
+  (v16: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Ok(v15)
+End:
+  Return(v16)
+
+blk4:
+Statements:
+  (v11: core::felt252, v12: core::felt252) <- struct_destructure(v10)
+End:
+  Goto(blk3, {v11 -> v3, v12 -> v2})
+
+blk5:
+Statements:
+  (v17: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v13)
+End:
+  Return(v17)
 
 //! > after
 Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas() {
+    Option::Some => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v9: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo(v0, v1)
+End:
+  Match(match_enum(v9) {
+    PanicResult::Ok(v10) => blk4,
+    PanicResult::Err(v13) => blk5,
+  })
+
+blk2:
+Statements:
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v5: core::felt252) <- 375233589013918064796019
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v5)
+  (v6: core::panics::Panic) <- struct_construct()
+  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v7)
+  (v14: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v8)
+End:
+  Return(v14)
+
+blk3:
+Statements:
+  (v15: (core::felt252, core::felt252)) <- struct_construct(v3, v1)
+  (v16: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Ok(v15)
+End:
+  Return(v16)
+
+blk4:
+Statements:
+  (v11: core::felt252, v12: core::felt252) <- struct_destructure(v10)
+End:
+  Goto(blk3, {v11 -> v3, v12 -> v2})
+
+blk5:
+Statements:
+  (v17: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v13)
+End:
+  Return(v17)
 
 //! > ==========================================================================
 
@@ -46,17 +133,17 @@ foo
 
 //! > function
 fn foo(n: felt252) -> felt252 {
-  bar(n)
+    bar(n)
 }
 
 //! > module_code
 #[inline(always)]
 fn bar(n: felt252) -> felt252 {
-  if n == 0 {
-    return 1;
-  } else {
-    return 1;
-  }
+    if n == 0 {
+        return 1;
+    } else {
+        return 1;
+    }
 }
 
 //! > semantic_diagnostics
@@ -91,13 +178,13 @@ End:
 
 blk3:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v3: core::felt252) <- 1
 End:
   Goto(blk1, {v3 -> v1})
 
 blk4:
 Statements:
-  (v4: core::felt252) <- 1u
+  (v4: core::felt252) <- 1
 End:
   Goto(blk1, {v4 -> v1})
 

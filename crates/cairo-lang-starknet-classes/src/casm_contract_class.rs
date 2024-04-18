@@ -25,6 +25,7 @@ use cairo_lang_sierra_to_casm::metadata::{
 };
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
@@ -292,9 +293,7 @@ impl TypeResolver<'_> {
     /// Extracts types `TOk`, `TErr` from the type `Result<TOk, TErr>`.
     fn extract_result_ty(&self, ty: &ConcreteTypeId) -> Option<(&ConcreteTypeId, &ConcreteTypeId)> {
         let long_id = self.get_long_id(ty);
-        if long_id.generic_id != EnumType::id() {
-            return None;
-        }
+        require(long_id.generic_id == EnumType::id())?;
         let [GenericArg::UserType(_), GenericArg::Type(result_tuple_ty), GenericArg::Type(err_ty)] =
             long_id.generic_args.as_slice()
         else {
@@ -306,9 +305,7 @@ impl TypeResolver<'_> {
     /// Extracts type `T` from the tuple type `(T,)`.
     fn extract_struct1(&self, ty: &ConcreteTypeId) -> Option<&ConcreteTypeId> {
         let long_id = self.get_long_id(ty);
-        if long_id.generic_id != StructType::id() {
-            return None;
-        }
+        require(long_id.generic_id == StructType::id())?;
         let [GenericArg::UserType(_), GenericArg::Type(ty0)] = long_id.generic_args.as_slice()
         else {
             return None;
@@ -319,9 +316,7 @@ impl TypeResolver<'_> {
     /// Extracts types `T0`, `T1` from the tuple type `(T0, T1)`.
     fn extract_struct2(&self, ty: &ConcreteTypeId) -> Option<(&ConcreteTypeId, &ConcreteTypeId)> {
         let long_id = self.get_long_id(ty);
-        if long_id.generic_id != StructType::id() {
-            return None;
-        }
+        require(long_id.generic_id == StructType::id())?;
         let [GenericArg::UserType(_), GenericArg::Type(ty0), GenericArg::Type(ty1)] =
             long_id.generic_args.as_slice()
         else {
@@ -462,27 +457,22 @@ impl CasmContractClass {
             let statement_id = function.entry_point;
 
             // The expected return types are [builtins.., gas_builtin, system, PanicResult].
-            if function.signature.ret_types.len() < 3 {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignatureMissingArgs);
-            }
+            require(function.signature.ret_types.len() >= 3)
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignatureMissingArgs)?;
 
             let (input_span, input_builtins) = function.signature.param_types.split_last().unwrap();
 
             let type_resolver = TypeResolver { type_decl: &program.type_declarations };
-            if !type_resolver.is_felt252_span(input_span) {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
-            }
+            require(type_resolver.is_felt252_span(input_span))
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
             let (panic_result, output_builtins) =
                 function.signature.ret_types.split_last().unwrap();
 
-            if input_builtins != output_builtins {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
-            }
-
-            if !type_resolver.is_valid_entry_point_return_type(panic_result) {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
-            }
+            require(input_builtins == output_builtins)
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
+            require(type_resolver.is_valid_entry_point_return_type(panic_result))
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
             for type_id in input_builtins.iter() {
                 if !builtin_types.contains(type_resolver.get_generic_id(type_id)) {
@@ -515,7 +505,7 @@ impl CasmContractClass {
                 .sierra_statement_info
                 .get(statement_id.0)
                 .ok_or(StarknetSierraCompilationError::EntryPointError)?
-                .code_offset;
+                .start_offset;
             assert_eq!(
                 metadata.gas_info.function_costs[&function.id],
                 OrderedHashMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),

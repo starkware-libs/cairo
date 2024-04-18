@@ -70,6 +70,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 trait Foo<T> {
     fn foo<S>(x: T, y: S);
 }
+#[cairofmt::skip]
 impl FooImpl<W> of Foo::<u8> {
     fn foo<W>(x: u8, y: W) {
     }
@@ -106,7 +107,18 @@ FunctionWithBody
     │       │       └── body (kind: TokenSemicolon): ';'
     │       └── rbrace (kind: TokenRBrace): '}'
     └── child #1 (kind: ItemImpl)
-        ├── attributes (kind: AttributeList) []
+        ├── attributes (kind: AttributeList)
+        │   └── child #0 (kind: Attribute)
+        │       ├── hash (kind: TokenHash): '#'
+        │       ├── lbrack (kind: TokenLBrack): '['
+        │       ├── attr (kind: ExprPath)
+        │       │   ├── item #0 (kind: PathSegmentSimple)
+        │       │   │   └── ident (kind: TokenIdentifier): 'cairofmt'
+        │       │   ├── separator #0 (kind: TokenColonColon): '::'
+        │       │   └── item #1 (kind: PathSegmentSimple)
+        │       │       └── ident (kind: TokenIdentifier): 'skip'
+        │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+        │       └── rbrack (kind: TokenRBrack): ']'
         ├── visibility (kind: VisibilityDefault) []
         ├── impl_kw (kind: TokenImpl): 'impl'
         ├── name (kind: TokenIdentifier): 'FooImpl'

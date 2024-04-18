@@ -15,6 +15,20 @@ pub struct Attribute {
     pub args: Vec<AttributeArg>,
     pub args_stable_ptr: ast::OptionArgListParenthesizedPtr,
 }
+impl Attribute {
+    /// Checks if the given attribute has a single argument with the given name.
+    pub fn is_single_unnamed_arg(&self, db: &dyn SyntaxGroup, arg_name: &str) -> bool {
+        match &self.args[..] {
+            [arg] => match &arg.variant {
+                AttributeArgVariant::Unnamed { value, .. } => {
+                    value.as_syntax_node().get_text_without_trivia(db) == arg_name
+                }
+                _ => false,
+            },
+            _ => false,
+        }
+    }
+}
 
 /// Easier to digest representation of a single attribute value.
 #[derive(Clone, Debug, PartialEq, Eq)]

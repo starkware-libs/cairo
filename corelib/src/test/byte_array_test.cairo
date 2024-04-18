@@ -12,7 +12,7 @@ fn test_append_byte() {
         c += 1;
     };
 
-    let expected_data = array![0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
+    let expected_data = [0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
     compare_byte_array(@ba, expected_data.span(), 2, 0x2021);
 }
 
@@ -22,11 +22,11 @@ fn test_append_word() {
 
     ba.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e, 30);
     compare_byte_array(
-        @ba, array![].span(), 30, 0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        @ba, [].span(), 30, 0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
     );
 
     ba.append_word(0x1f2021, 3);
-    let expected_data = array![0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
+    let expected_data = [0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
     compare_byte_array(@ba, expected_data.span(), 2, 0x2021);
 
     ba.append_word(0x2223, 2);
@@ -37,7 +37,7 @@ fn test_append_word() {
     compare_byte_array(@ba, expected_data.span(), 4, 0x20212223);
 
     ba.append_word(0x2425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e, 27);
-    let expected_data = array![
+    let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
         0x202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e
     ];
@@ -54,7 +54,7 @@ fn test_append() {
 
     ba1.append(@ba2);
 
-    let expected_data = array![
+    let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
         0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
     ];
@@ -69,7 +69,7 @@ fn test_add_eq() {
 
     ba1 += ba2;
 
-    let expected_data = array![
+    let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
         0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
     ];
@@ -83,7 +83,7 @@ fn test_concat() {
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
 
-    let expected_data = array![
+    let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
         0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
     ];
@@ -98,7 +98,7 @@ fn test_add() {
 
     let ba3 = ba1 + ba2;
 
-    let expected_data = array![
+    let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
         0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
     ];
@@ -113,7 +113,7 @@ fn test_concat_first_empty() {
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
 
-    let expected_data = array![0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
+    let expected_data = [0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
     compare_byte_array(@ba3, expected_data.span(), 1, 0x20);
 }
 
@@ -125,7 +125,7 @@ fn test_concat_second_empty() {
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
 
-    let expected_data = array![0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
+    let expected_data = [0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
     compare_byte_array(@ba3, expected_data.span(), 1, 0x20);
 }
 
@@ -137,7 +137,7 @@ fn test_concat_first_pending_0() {
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
 
-    let expected_data = array![
+    let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
     ];
@@ -152,7 +152,7 @@ fn test_concat_second_pending_0() {
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
 
-    let expected_data = array![
+    let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
         0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
     ];
@@ -167,7 +167,7 @@ fn test_concat_split_index_16() {
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
 
-    let expected_data = array![0x0102030405060708091a0b0c0d0e0f100102030405060708091a0b0c0d0e0f];
+    let expected_data = [0x0102030405060708091a0b0c0d0e0f100102030405060708091a0b0c0d0e0f];
     compare_byte_array(@ba3, expected_data.span(), 17, 0x101112131415161718191a1b1c1d1e1f20);
 }
 
@@ -179,7 +179,7 @@ fn test_concat_split_index_lt_16() {
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
 
-    let expected_data = array![0x010102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e];
+    let expected_data = [0x010102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e];
     compare_byte_array(@ba3, expected_data.span(), 2, 0x1f20);
 }
 
@@ -191,7 +191,7 @@ fn test_concat_split_index_gt_16() {
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
 
-    let expected_data = array![
+    let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e01,
         0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20
     ];
@@ -206,7 +206,7 @@ fn test_concat_pending_sum_up_to_full() {
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
 
-    let expected_data = array![
+    let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
         0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
     ];
@@ -222,7 +222,7 @@ fn test_concat_pending_sum_up_to_more_than_word_16() {
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
 
-    let expected_data = array![0x0102030405060708091a0b0c0d0e0f10110102030405060708091a0b0c0d0e];
+    let expected_data = [0x0102030405060708091a0b0c0d0e0f10110102030405060708091a0b0c0d0e];
     compare_byte_array(@ba3, expected_data.span(), 16, 0x0f101112131415161718191a1b1c1d1e);
 }
 
@@ -235,7 +235,7 @@ fn test_concat_pending_sum_up_to_more_than_word_lt16() {
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
 
-    let expected_data = array![0x01020102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d];
+    let expected_data = [0x01020102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d];
     compare_byte_array(@ba3, expected_data.span(), 1, 0x1e);
 }
 
@@ -248,7 +248,7 @@ fn test_concat_pending_sum_up_to_more_than_word_gt16() {
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
 
-    let expected_data = array![0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e01];
+    let expected_data = [0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e01];
     compare_byte_array(
         @ba3, expected_data.span(), 29, 0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
     );
@@ -448,30 +448,32 @@ fn test_reverse() {
 fn test_serde() {
     let mut serialized = array![];
     let ba: ByteArray = "";
-    let expected_serialized = array![0, 0, 0];
     ba.serialize(ref serialized);
-    compare_spans(serialized.span(), expected_serialized.span());
+    compare_spans(serialized.span(), [0, 0, 0].span());
 
     let mut serialized = array![];
     let ba: ByteArray = "hello";
-    let expected_serialized = array![
-        0, // data len
+    ba.serialize(ref serialized);
+    compare_spans(
+        serialized.span(),
+        [0, // data len
          0x68656c6c6f, // pending_word
          5 // pending_word_len
-    ];
-    ba.serialize(ref serialized);
-    compare_spans(serialized.span(), expected_serialized.span());
+        ].span()
+    );
 
     let mut serialized = array![];
     let ba: ByteArray = "Long string, more than 31 characters.";
-    let expected_serialized = array![
-        1, // data len
-        0x4c6f6e6720737472696e672c206d6f7265207468616e203331206368617261, // data
-        0x63746572732e, // pending_word
-        6 // pending_word_len
-    ];
     ba.serialize(ref serialized);
-    compare_spans(serialized.span(), expected_serialized.span());
+    compare_spans(
+        serialized.span(),
+        [
+            1, // data len
+            0x4c6f6e6720737472696e672c206d6f7265207468616e203331206368617261, // data
+            0x63746572732e, // pending_word
+            6 // pending_word_len
+        ].span()
+    );
 }
 
 // ========= Test helper functions =========
