@@ -759,11 +759,20 @@ pub fn trait_constant_resolver_data(
     Ok(db.priv_trait_constant_data(trait_constant)?.resolver_data)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_constant_attributes].
 pub fn trait_constant_attributes(
     db: &dyn SemanticGroup,
     trait_constant: TraitConstantId,
 ) -> Maybe<Vec<Attribute>> {
     Ok(db.priv_trait_constant_data(trait_constant)?.attributes)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_constant_type].
+pub fn trait_constant_type(
+    db: &dyn SemanticGroup,
+    trait_constant_id: TraitConstantId,
+) -> Maybe<TypeId> {
+    Ok(db.priv_trait_constant_data(trait_constant_id)?.ty)
 }
 
 // --- Computation ---
@@ -796,6 +805,20 @@ pub fn priv_trait_constant_data(
     let resolver_data = Arc::new(resolver.data);
 
     Ok(TraitItemConstantData { diagnostics: diagnostics.build(), ty, attributes, resolver_data })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::concrete_trait_constant_type].
+pub fn concrete_trait_constant_type(
+    db: &dyn SemanticGroup,
+    concrete_trait_constant_id: ConcreteTraitConstantId,
+) -> Maybe<TypeId> {
+    let concrete_trait_id = concrete_trait_constant_id.concrete_trait(db);
+    let substitution = GenericSubstitution::new(
+        &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
+        &concrete_trait_id.generic_args(db),
+    );
+    let generic_ty = db.trait_constant_type(concrete_trait_constant_id.trait_constant(db))?;
+    SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_ty)
 }
 
 // === Trait function Declaration ===
