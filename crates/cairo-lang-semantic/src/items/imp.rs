@@ -4,10 +4,12 @@ use std::{panic, vec};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, ImplFunctionLongId, ImplItemId, ImplTypeDefId, ImplTypeDefLongId,
-    LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
-    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitTypeId,
+    FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId,
+    ImplConstantDefId, ImplConstantDefLongId, ImplContext, ImplDefId, ImplFunctionId,
+    ImplFunctionLongId, ImplItemId, ImplTypeDefId, ImplTypeDefLongId, LanguageElementId,
+    LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId, NamedLanguageElementLongId,
+    TopLevelLanguageElementId, TraitConstantId, TraitFunctionId, TraitId, TraitOrImplContext,
+    TraitTypeId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -30,6 +32,7 @@ use syntax::node::helpers::OptionWrappedGenericParamListHelper;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 
+use super::constant::{constant_semantic_data_helper, ConstValue, ConstantData};
 use super::enm::SemanticEnumEx;
 use super::feature_kind::extract_allowed_features;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
@@ -40,7 +43,9 @@ use super::generics::{
     generic_params_to_args, semantic_generic_params, GenericArgumentHead, GenericParamsData,
 };
 use super::structure::SemanticStructEx;
-use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use super::trt::{
+    ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId,
+};
 use super::type_aliases::{
     type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
     type_alias_semantic_data_helper, TypeAliasData,
@@ -62,7 +67,7 @@ use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{add_type_based_diagnostics, implize_type, ImplTypeId};
+use crate::types::{add_type_based_diagnostics, implize_type, resolve_type, ImplTypeId};
 use crate::{
     semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
     FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
@@ -458,6 +463,7 @@ pub struct ImplDefinitionData {
     // AST maps.
     function_asts: OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>,
     item_type_asts: Arc<OrderedHashMap<ImplTypeDefId, ast::ItemTypeAlias>>,
+    item_constant_asts: Arc<OrderedHashMap<ImplConstantDefId, ast::ItemConstant>>,
 
     /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
     item_id_by_name: Arc<OrderedHashMap<SmolStr, ImplItemId>>,
@@ -488,6 +494,9 @@ pub fn impl_semantic_definition_diagnostics(
         if let Ok(ty) = db.impl_type_def_resolved_type(*impl_item_type_id) {
             add_type_based_diagnostics(db, &mut diagnostics, ty, impl_item_type_id);
         }
+    }
+    for impl_item_constant_id in data.item_constant_asts.keys() {
+        diagnostics.extend(db.impl_constant_def_semantic_diagnostics(*impl_item_constant_id));
     }
     diagnostics.build()
 }
@@ -576,6 +585,14 @@ pub fn impl_type_by_trait_type(
     })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_constants].
+pub fn impl_constants(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+) -> Maybe<Arc<OrderedHashMap<ImplConstantDefId, ast::ItemConstant>>> {
+    Ok(db.priv_impl_definition_data(impl_def_id)?.item_constant_asts)
+}
+
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_definition_data].
@@ -610,6 +627,7 @@ pub fn priv_impl_definition_data(
 
     let mut function_asts = OrderedHashMap::default();
     let mut item_type_asts = OrderedHashMap::default();
+    let mut item_constant_asts = OrderedHashMap::default();
     let mut item_id_by_name = OrderedHashMap::default();
 
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
@@ -679,11 +697,22 @@ pub fn priv_impl_definition_data(
                     }
                     item_type_asts.insert(impl_type_id, ty);
                 }
-                ImplItem::Constant(constant) => report_unsupported_impl_item(
-                    &mut diagnostics,
-                    constant.const_kw(syntax_db),
-                    "Constant",
-                ),
+                ImplItem::Constant(constant) => {
+                    let impl_constant_id =
+                        ImplConstantDefLongId(module_file_id, constant.stable_ptr()).intern(db);
+                    let name_node = constant.name(syntax_db);
+                    let name = name_node.text(syntax_db);
+                    if item_id_by_name
+                        .insert(name.clone(), ImplItemId::Constant(impl_constant_id))
+                        .is_some()
+                    {
+                        diagnostics.report_by_ptr(
+                            name_node.stable_ptr().untyped(),
+                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
+                        );
+                    }
+                    item_constant_asts.insert(impl_constant_id, constant);
+                }
                 ImplItem::Impl(imp) => {
                     report_unsupported_impl_item(&mut diagnostics, imp.impl_kw(syntax_db), "Impl")
                 }
@@ -719,6 +748,7 @@ pub fn priv_impl_definition_data(
         function_asts,
         item_type_asts: item_type_asts.into(),
         item_id_by_name: item_id_by_name.into(),
+        item_constant_asts: item_constant_asts.into(),
     })
 }
 
@@ -1426,6 +1456,194 @@ pub fn impl_type_concrete_implized_cycle(
     impl_type_concrete_implized(db, *impl_type_id)
 }
 
+// === Impl Item Constant definition ===
+
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ImplItemConstantData {
+    constant_data: ConstantData,
+    trait_constant_id: Maybe<TraitConstantId>,
+    /// The diagnostics of the impl constant, including the ones for the constant itself.
+    diagnostics: Diagnostics<SemanticDiagnostic>,
+}
+
+// --- Selectors ---
+
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_semantic_diagnostics].
+pub fn impl_constant_def_semantic_diagnostics(
+    db: &dyn SemanticGroup,
+    impl_constant_def_id: ImplConstantDefId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_impl_constant_semantic_data(impl_constant_def_id)
+        .map(|data| data.diagnostics)
+        .unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_value].
+pub fn impl_constant_def_value(
+    db: &dyn SemanticGroup,
+    impl_constant_def_id: ImplConstantDefId,
+) -> Maybe<ConstValue> {
+    Ok(db.priv_impl_constant_semantic_data(impl_constant_def_id)?.constant_data.const_value)
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::impl_constant_def_value].
+pub fn impl_constant_def_value_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_constant_def_id: &ImplConstantDefId,
+) -> Maybe<ConstValue> {
+    // Forwarding cycle handling to `priv_impl_constant_semantic_data` handler.
+    impl_constant_def_value(db, *impl_constant_def_id)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_resolver_data].
+pub fn impl_constant_def_resolver_data(
+    db: &dyn SemanticGroup,
+    impl_constant_def_id: ImplConstantDefId,
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_impl_constant_semantic_data(impl_constant_def_id)?.constant_data.resolver_data)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_trait_constant].
+pub fn impl_constant_def_trait_constant(
+    db: &dyn SemanticGroup,
+    impl_constant_def_id: ImplConstantDefId,
+) -> Maybe<TraitConstantId> {
+    db.priv_impl_constant_semantic_data(impl_constant_def_id)?.trait_constant_id
+}
+
+// --- Computation ---
+
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_constant_semantic_data].
+pub fn priv_impl_constant_semantic_data(
+    db: &dyn SemanticGroup,
+    impl_constant_def_id: ImplConstantDefId,
+) -> Maybe<ImplItemConstantData> {
+    let module_file_id = impl_constant_def_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::default();
+    let impl_def_id = impl_constant_def_id.impl_def_id(db.upcast());
+    let impl_constant_defs = db.impl_constants(impl_def_id)?;
+    let impl_constant_def_ast = impl_constant_defs.get(&impl_constant_def_id).to_maybe()?;
+    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Constant(impl_constant_def_id));
+
+    let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ImplItem(
+        ImplItemId::Constant(impl_constant_def_id),
+    ));
+    let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
+    let mut resolver =
+        Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
+
+    let trait_constant_id = validate_impl_item_constant(
+        db,
+        &mut diagnostics,
+        impl_constant_def_id,
+        impl_constant_def_ast,
+        &mut resolver,
+    );
+
+    Ok(ImplItemConstantData {
+        constant_data: constant_semantic_data_helper(
+            db,
+            impl_constant_def_ast,
+            lookup_item_id,
+            Some(Arc::new(resolver.data)),
+            &impl_def_id,
+        )?,
+        trait_constant_id,
+        diagnostics: diagnostics.build(),
+    })
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::priv_impl_constant_semantic_data].
+pub fn priv_impl_constant_semantic_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_constant_def_id: &ImplConstantDefId,
+) -> Maybe<ImplItemConstantData> {
+    let module_file_id = impl_constant_def_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::default();
+    let impl_def_id = impl_constant_def_id.impl_def_id(db.upcast());
+    let impl_constant_defs = db.impl_constants(impl_def_id)?;
+    let impl_constant_def_ast = impl_constant_defs.get(impl_constant_def_id).to_maybe()?;
+    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Constant(*impl_constant_def_id));
+
+    let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ImplItem(
+        ImplItemId::Constant(*impl_constant_def_id),
+    ));
+    let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
+    let mut resolver =
+        Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
+
+    let trait_constant_id = validate_impl_item_constant(
+        db,
+        &mut diagnostics,
+        *impl_constant_def_id,
+        impl_constant_def_ast,
+        &mut resolver,
+    );
+
+    Ok(ImplItemConstantData {
+        constant_data: constant_semantic_data_helper(
+            db,
+            impl_constant_def_ast,
+            lookup_item_id,
+            Some(Arc::new(resolver.data)),
+            &impl_def_id,
+        )?,
+        trait_constant_id,
+        diagnostics: diagnostics.build(),
+    })
+}
+
+/// Validates the impl item constant, and returns the matching trait constant id.
+fn validate_impl_item_constant(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    impl_constant_def_id: ImplConstantDefId,
+    impl_constant_ast: &ast::ItemConstant,
+    resolver: &mut Resolver<'_>,
+) -> Maybe<TraitConstantId> {
+    let syntax_db = db.upcast();
+    let defs_db = db.upcast();
+    let impl_def_id = impl_constant_def_id.impl_def_id(defs_db);
+    let concrete_trait_id = db.impl_def_concrete_trait(impl_def_id)?;
+    let trait_id = concrete_trait_id.trait_id(db);
+    let constant_name = impl_constant_def_id.name(defs_db);
+
+    let trait_constant_id =
+        db.trait_constant_by_name(trait_id, constant_name.clone())?.ok_or_else(|| {
+            diagnostics.report(
+                impl_constant_ast,
+                ImplItemNotInTrait {
+                    impl_def_id,
+                    impl_item_name: constant_name,
+                    trait_id,
+                    item_kind: "const".into(),
+                },
+            )
+        })?;
+    let concrete_trait_constant =
+        ConcreteTraitConstantId::new(db, concrete_trait_id, trait_constant_id);
+    let concrete_trait_constant_ty = db.concrete_trait_constant_type(concrete_trait_constant)?;
+
+    let impl_constant_type_clause_ast = impl_constant_ast.type_clause(syntax_db);
+
+    let constant_ty =
+        resolve_type(db, diagnostics, resolver, &impl_constant_type_clause_ast.ty(syntax_db));
+    let impl_ctx = Some(ImplContext { impl_def_id });
+
+    let inference = &mut resolver.inference();
+
+    let expected_ty = implize_type(db, concrete_trait_constant_ty, impl_ctx, inference)?;
+    let actual_ty = implize_type(db, constant_ty, impl_ctx, inference)?;
+    if expected_ty != actual_ty {
+        let location_ptr = impl_constant_type_clause_ast.stable_ptr().untyped();
+        diagnostics.report_by_ptr(location_ptr, WrongType { expected_ty, actual_ty });
+    }
+    Ok(trait_constant_id)
+}
+
 // === Impl Function Declaration ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -1691,6 +1909,7 @@ fn validate_impl_function_signature(
                 },
             )
         })?;
+
     let concrete_trait_function =
         ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, trait_function_id);
     let concrete_trait_signature = db.concrete_trait_function_signature(concrete_trait_function)?;
@@ -1709,6 +1928,7 @@ fn validate_impl_function_signature(
         );
         return Ok(trait_function_id);
     }
+
     let substitution =
         GenericSubstitution::new(&func_generics, &generic_params_to_args(impl_func_generics, db));
     let concrete_trait_signature = SubstitutionRewriter { db, substitution: &substitution }
