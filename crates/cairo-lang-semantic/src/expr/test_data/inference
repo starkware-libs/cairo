@@ -589,21 +589,15 @@ fn foo() {}
 foo
 
 //! > module_code
-trait BashStateTrait<S> {
-    fn update(self: S, value: felt252) -> S;
-    fn finalize(self: S) -> felt252;
+trait Bash<S> {
+    fn foo(state: S);
 }
-trait Bash<T, S, impl X: BashStateTrait<S>> {
-    fn update_state(state: S, value: T) -> S;
+trait BashExTrait<S> {
+    fn bar(self: S);
 }
-trait BashStateExTrait<S, T> {
-    fn update_with(self: S, value: T) -> S;
-}
-impl BashStateEx<
-    S, impl X0: BashStateTrait<S>, T, impl Y0: Bash<T, S, _>
-> of BashStateExTrait<S, T> {
-    fn update_with(self: S, value: T) -> S {
-        Bash::update_state(self, value)
+impl BashEx<S, +Bash<S>> of BashExTrait<S> {
+    fn bar(self: S) {
+        Bash::<_>::foo(self);
     }
 }
 
