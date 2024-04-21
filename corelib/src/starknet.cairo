@@ -98,3 +98,10 @@ pub const VALIDATED: felt252 = 'VALID';
 
 /// Module for starknet testing only.
 pub mod testing;
+
+mod internal {
+    const U251_MAX: felt252 = 0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    pub(crate) type u251 = core::internal::BoundedInt<0, U251_MAX>;
+    const STORAGE_BASE_MAX: felt252 = U251_MAX - 256;
+    pub(crate) type StorageBaseRange = core::internal::BoundedInt<0, STORAGE_BASE_MAX>;
+}

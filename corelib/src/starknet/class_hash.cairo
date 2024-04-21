@@ -6,7 +6,7 @@ use core::hash::{Hash, HashStateTrait};
 #[derive(Copy, Drop)]
 pub extern type ClassHash;
 
-pub extern fn class_hash_const<const address: felt252>() -> ClassHash nopanic;
+pub extern fn class_hash_const<const address: starknet::internal::u251>() -> ClassHash nopanic;
 pub(crate) extern fn class_hash_to_felt252(address: ClassHash) -> felt252 nopanic;
 
 pub(crate) extern fn class_hash_try_from_felt252(

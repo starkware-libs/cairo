@@ -19,7 +19,9 @@ pub extern type StorageAddress;
 pub extern type StorageBaseAddress;
 
 // Storage.
-pub extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
+pub extern fn storage_base_address_const<
+    const address: starknet::internal::StorageBaseRange
+>() -> StorageBaseAddress nopanic;
 pub extern fn storage_base_address_from_felt252(
     addr: felt252
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;

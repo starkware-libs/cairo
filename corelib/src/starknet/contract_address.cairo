@@ -7,8 +7,9 @@ use core::hash::{Hash, HashStateTrait};
 #[derive(Copy, Drop)]
 pub extern type ContractAddress;
 
-
-pub extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
+pub extern fn contract_address_const<
+    const address: starknet::internal::u251
+>() -> ContractAddress nopanic;
 pub(crate) extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
 pub(crate) extern fn contract_address_try_from_felt252(
