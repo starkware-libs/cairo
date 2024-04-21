@@ -808,11 +808,6 @@ trait OtherTrait {}
 impl OtherImpl of OtherTrait {}
 
 //! > expected_diagnostics
-error: Constant items are not yet supported in traits.
- --> lib.cairo:3:5
-    const Y: usize;
-    ^***^
-
 error: Impl items are not yet supported in traits.
  --> lib.cairo:4:5
     impl Z of OtherTrait;
@@ -832,6 +827,11 @@ error: Impl items are not yet supported in impls.
  --> lib.cairo:10:5
     impl Z = OtherImpl;
     ^**^
+
+error: Not all trait items are implemented. Missing: 'Y'.
+ --> lib.cairo:6:6
+impl MyImpl of MyTrait {
+     ^****^
 
 error: Impl item type `MyImpl::XX` is not a member of trait `MyTrait`.
  --> lib.cairo:8:5
@@ -857,6 +857,26 @@ trait MyTrait {
 }
 impl MyImpl of MyTrait {
     type X = u32;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test const items in trait/impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
 }
 
 //! > expected_diagnostics
