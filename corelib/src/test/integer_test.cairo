@@ -2083,4 +2083,60 @@ mod bounded_int {
             >(bi_const::<POW_2_251>()) == (POW_2_123, POW_2_123)
         );
     }
+
+    extern fn bounded_int_constrain<T, const BOUNDARY: felt252, +IgnoreNext, R_LOW, R_HIGH>(
+        value: T
+    ) -> Result<R_LOW, R_HIGH> implicits(RangeCheck) nopanic;
+
+    fn test_constrain_helper<
+        T,
+        const MIN: felt252,
+        const BOUNDARY_MINUS_1: felt252,
+        const BOUNDARY: felt252,
+        const MAX: felt252,
+        +Copy<T>,
+    >(
+        value: T
+    ) -> bool {
+        match bounded_int_constrain::<
+            _, BOUNDARY, _, BoundedInt<MIN, BOUNDARY_MINUS_1>, BoundedInt<BOUNDARY, MAX>
+        >(value) {
+            Result::Ok(result) => upcast(result),
+            Result::Err(result) => upcast(result),
+        } == upcast::<_, felt252>(value)
+    }
+
+    const U129_MAX: felt252 = U128_MAX + U128_UPPER;
+
+    #[test]
+    fn test_constrain() {
+        assert!(test_constrain_helper::<u8, 0, 0x7f, 0x80, 0xff>(0));
+        assert!(test_constrain_helper::<u8, 0, 0x7f, 0x80, 0xff>(0x7f));
+        assert!(test_constrain_helper::<u8, 0, 0x7f, 0x80, 0xff>(0x80));
+        assert!(test_constrain_helper::<u8, 0, 0x7f, 0x80, 0xff>(0xff));
+        assert!(test_constrain_helper::<i8, -0x80, -1, 0, 0x7f>(-0x80));
+        assert!(test_constrain_helper::<i8, -0x80, -1, 0, 0x7f>(-1));
+        assert!(test_constrain_helper::<i8, -0x80, -1, 0, 0x7f>(0));
+        assert!(test_constrain_helper::<i8, -0x80, -1, 0, 0x7f>(0x7f));
+        assert!(
+            test_constrain_helper::<
+                BoundedInt<0, U129_MAX>, 0, U128_MAX, U128_UPPER, U129_MAX
+            >(upcast(bi_const::<0>()))
+        );
+        assert!(
+            test_constrain_helper::<
+                BoundedInt<0, U129_MAX>, 0, U128_MAX, U128_UPPER, U129_MAX
+            >(upcast(bi_const::<U128_MAX>()))
+        );
+        assert!(
+            test_constrain_helper::<
+                BoundedInt<0, U129_MAX>, 0, U128_MAX, U128_UPPER, U129_MAX
+            >(upcast(bi_const::<U128_UPPER>()))
+        );
+        assert!(
+            test_constrain_helper::<
+                BoundedInt<0, U129_MAX>, 0, U128_MAX, U128_UPPER, U129_MAX
+            >(upcast(bi_const::<U129_MAX>()))
+        );
+    }
 }
