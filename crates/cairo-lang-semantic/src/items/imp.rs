@@ -704,6 +704,7 @@ pub fn priv_impl_definition_data(
         diagnostics.report(
             // TODO(yuval): change this to point to impl declaration (need to add ImplDeclaration
             // in cairo_spec).
+            // TODO(TomerStarkware): make sure we do not report missing if the item is unsupported.
             &impl_ast.name(syntax_db),
             SemanticDiagnosticKind::MissingItemsInImpl { item_names: missing_items_in_impl },
         );

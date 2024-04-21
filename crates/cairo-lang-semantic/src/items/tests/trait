@@ -699,6 +699,32 @@ error: The name `X` is defined multiple times.
 
 //! > ==========================================================================
 
+//! > trait/impl const declared twice.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bla() {}
+
+//! > function_name
+bla
+
+//! > module_code
+trait MyTrait<T> {
+    const X: i32;
+    const X: i32;
+}
+///TODO(TomerStarkware): add multiple impls of the same const when it is supported.
+
+//! > expected_diagnostics
+error: The name `X` is defined multiple times.
+ --> lib.cairo:3:11
+    const X: i32;
+          ^
+
+//! > ==========================================================================
+
 //! > trait/impl function declared twice.
 
 //! > test_runner_name
@@ -794,13 +820,11 @@ foo
 //! > module_code
 trait MyTrait {
     type X<T>;
-    const Y: usize;
     impl Z of OtherTrait;
 }
 impl MyImpl of MyTrait {
     type X = u32;
     type XX<T> = Array<T>;
-    const Y: usize = 3;
     impl Z = OtherImpl;
 }
 
@@ -808,13 +832,8 @@ trait OtherTrait {}
 impl OtherImpl of OtherTrait {}
 
 //! > expected_diagnostics
-error: Constant items are not yet supported in traits.
- --> lib.cairo:3:5
-    const Y: usize;
-    ^***^
-
 error: Impl items are not yet supported in traits.
- --> lib.cairo:4:5
+ --> lib.cairo:3:5
     impl Z of OtherTrait;
     ^**^
 
@@ -823,18 +842,13 @@ error: Generic parameters are not supported in Trait item type.
     type X<T>;
           ^*^
 
-error: Constant items are not yet supported in impls.
- --> lib.cairo:9:5
-    const Y: usize = 3;
-    ^***^
-
 error: Impl items are not yet supported in impls.
- --> lib.cairo:10:5
+ --> lib.cairo:8:5
     impl Z = OtherImpl;
     ^**^
 
 error: Impl item type `MyImpl::XX` is not a member of trait `MyTrait`.
- --> lib.cairo:8:5
+ --> lib.cairo:7:5
     type XX<T> = Array<T>;
     ^********************^
 
@@ -858,6 +872,27 @@ trait MyTrait {
 impl MyImpl of MyTrait {
     type X = u32;
 }
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test const items in trait/impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
+}
+//TODO(TomerStarkware): add const impls.
 
 //! > expected_diagnostics
 
