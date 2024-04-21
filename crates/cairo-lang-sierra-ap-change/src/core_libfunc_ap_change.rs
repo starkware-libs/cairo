@@ -1,3 +1,5 @@
+use std::ops::Shl;
+
 use cairo_lang_sierra::extensions::ap_tracking::ApTrackingConcreteLibfunc;
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
@@ -35,7 +37,8 @@ use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
-use num_traits::Zero;
+use num_bigint::BigInt;
+use num_traits::{One, Zero};
 
 use crate::ApChange;
 
@@ -369,6 +372,12 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                         BoundedIntDivRemAlgorithm::KnownSmallLhs(_) => 7,
                     },
                 )]
+            }
+            BoundedIntConcreteLibfunc::Constrain(libfunc) => {
+                vec![
+                    ApChange::Known(1 + usize::from(libfunc.boundary != BigInt::one().shl(128))),
+                    ApChange::Known(1 + usize::from(!libfunc.boundary.is_zero())),
+                ]
             }
         },
     }

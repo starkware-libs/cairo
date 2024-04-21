@@ -12,8 +12,8 @@ use num_traits::One;
 
 use crate::invocations::felt252::build_felt252_op_with_var;
 use crate::invocations::{
-    add_input_variables, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
-    InvocationError,
+    add_input_variables, get_non_fallthrough_statement_id, CompiledInvocation,
+    CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
 
 /// Builds instructions for bounded int operations.
@@ -33,6 +33,9 @@ pub fn build(
         }
         BoundedIntConcreteLibfunc::DivRem(libfunc) => {
             build_div_rem(builder, &libfunc.lhs, &libfunc.rhs)
+        }
+        BoundedIntConcreteLibfunc::Constrain(libfunc) => {
+            build_constrain(builder, &libfunc.boundary)
         }
     }
 }
@@ -155,6 +158,50 @@ pub fn build_div_rem(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[q], &[r]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
+}
+
+/// Build constrain on bounded ints.
+fn build_constrain(
+    builder: CompiledInvocationBuilder<'_>,
+    boundary: &BigInt,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [range_check, value] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(1) range_check;
+        deref value;
+    };
+    casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
+        const under_fixer = (BigInt::one().shl(128) - boundary) as BigInt;
+        const rc_bound_imm = BigInt::one().shl(128) as BigInt;
+        const minus_boundary = -boundary;
+        tempvar is_under;
+        let canonical_value = value + minus_boundary;
+        hint TestLessThanOrEqual {lhs: rc_bound_imm, rhs: canonical_value} into {dst: is_under};
+        jump Under if is_under != 0;
+    // Over:
+        maybe_tempvar shifted_value = canonical_value;
+        assert shifted_value = *(range_check++);
+        jump Over;
+    Under:
+        // value < boundary  <=>  value + (2**128 - boundary) < 2**128.
+        maybe_tempvar shifted_value = value + under_fixer;
+        assert shifted_value = *(range_check++);
+    };
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[range_check], &[value]], None),
+            ("Over", &[&[range_check], &[value]], Some(target_statement_id)),
+        ],
         CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,

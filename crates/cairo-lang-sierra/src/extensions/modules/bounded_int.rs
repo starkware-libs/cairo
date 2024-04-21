@@ -10,8 +10,9 @@ use super::range_check::RangeCheckType;
 use super::utils::Range;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureOnlyGenericLibfunc, SignatureSpecializationContext, SpecializationContext,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
+    SpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
@@ -76,6 +77,7 @@ define_libfunc_hierarchy! {
         Sub(BoundedIntSubLibfunc),
         Mul(BoundedIntMulLibfunc),
         DivRem(BoundedIntDivRemLibfunc),
+        Constrain(BoundedIntConstrainLibfunc),
     }, BoundedIntConcreteLibfunc
 }
 
@@ -251,6 +253,82 @@ impl BoundedIntDivRemAlgorithm {
         }
         // No algorithm found.
         None
+    }
+}
+
+/// Libfunc for constraining a BoundedInt to one of two non-empty ranges.
+#[derive(Default)]
+pub struct BoundedIntConstrainLibfunc {}
+impl NamedLibfunc for BoundedIntConstrainLibfunc {
+    type Concrete = BoundedIntConstrainConcreteLibfunc;
+
+    const STR_ID: &'static str = "bounded_int_constrain";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let (ty, boundary) = match args {
+            [GenericArg::Type(ty), GenericArg::Value(boundary)] => Ok((ty, boundary)),
+            [_, _] => Err(SpecializationError::UnsupportedGenericArg),
+            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+        }?;
+        let range = Range::from_type(context, ty.clone())?;
+        let under_range = Range::half_open(range.lower, boundary.clone());
+        let over_range = Range::half_open(boundary.clone(), range.upper);
+        require(
+            under_range.size() >= BigInt::one()
+                && over_range.size() >= BigInt::one()
+                && under_range.is_small_range()
+                && over_range.is_small_range(),
+        )
+        .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let branch_signature = |rng: Range| {
+            Ok(BranchSignature {
+                vars: vec![
+                    OutputVarInfo::new_builtin(range_check_type.clone(), 0),
+                    OutputVarInfo {
+                        ty: bounded_int_ty(context, rng.lower, rng.upper - 1)?,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                    },
+                ],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            })
+        };
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(ty.clone()),
+            ],
+            branch_signatures: vec![branch_signature(under_range)?, branch_signature(over_range)?],
+            fallthrough: Some(0),
+        })
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let boundary = match args {
+            [GenericArg::Type(_), GenericArg::Value(boundary)] => Ok(boundary.clone()),
+            [_, _] => Err(SpecializationError::UnsupportedGenericArg),
+            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+        }?;
+        let context = context.upcast();
+        Ok(Self::Concrete { boundary, signature: self.specialize_signature(context, args)? })
+    }
+}
+
+pub struct BoundedIntConstrainConcreteLibfunc {
+    pub boundary: BigInt,
+    signature: LibfuncSignature,
+}
+impl SignatureBasedConcreteLibfunc for BoundedIntConstrainConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
     }
 }
 

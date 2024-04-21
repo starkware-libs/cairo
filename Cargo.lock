@@ -806,6 +806,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "itertools 0.12.1",
+ "num-bigint",
  "num-traits 0.2.18",
  "thiserror",
 ]
@@ -822,6 +823,7 @@ dependencies = [
  "env_logger",
  "indoc",
  "itertools 0.12.1",
+ "num-bigint",
  "num-traits 0.2.18",
  "pretty_assertions",
  "test-case",

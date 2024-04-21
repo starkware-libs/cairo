@@ -1,4 +1,5 @@
 use std::iter;
+use std::ops::Shl;
 
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
@@ -44,7 +45,8 @@ use cairo_lang_sierra::program::Function;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, Itertools};
-use num_traits::Zero;
+use num_bigint::BigInt;
+use num_traits::{One, Zero};
 
 use crate::objects::{
     BranchCost, BranchCostSign, ConstCost, CostInfoProvider, PreCost, WithdrawGasBranchInfo,
@@ -448,6 +450,22 @@ pub fn core_libfunc_cost(
                             ConstCost { steps: 11, holes: 0, range_checks: 4 }
                         }
                     }
+                    .into(),
+                ]
+            }
+            BoundedIntConcreteLibfunc::Constrain(libfunc) => {
+                vec![
+                    (ConstCost {
+                        steps: 2 + i32::from(libfunc.boundary != BigInt::one().shl(128)),
+                        holes: 0,
+                        range_checks: 1,
+                    })
+                    .into(),
+                    (ConstCost {
+                        steps: 3 + i32::from(!libfunc.boundary.is_zero()),
+                        holes: 0,
+                        range_checks: 1,
+                    })
                     .into(),
                 ]
             }
