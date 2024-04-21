@@ -452,12 +452,13 @@ trait MyTrait {
     fn foo1();
     fn foo2();
     type X;
+    const C: u32;
 }
 impl MyImpl of MyTrait;
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X'.
- --> lib.cairo:6:6
+error: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X', 'C'.
+ --> lib.cairo:7:6
 impl MyImpl of MyTrait;
      ^****^
 
@@ -481,15 +482,18 @@ trait MyTrait {
     fn foo3();
     type X;
     type Y;
+    const C: u32;
+    const D: u32;
 }
 impl MyImpl of MyTrait {
     fn foo2() {}
     type X = u32;
+    const C: u32 = 3;
 }
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y'.
- --> lib.cairo:8:6
+error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D'.
+ --> lib.cairo:10:6
 impl MyImpl of MyTrait {
      ^****^
 
@@ -511,6 +515,7 @@ trait MyTrait {}
 impl MyImpl of MyTrait {
     fn bar() {}
     type X = u32;
+    const C: u32 = 3;
 }
 
 //! > expected_diagnostics
@@ -523,6 +528,11 @@ error: Impl item type `MyImpl::X` is not a member of trait `MyTrait`.
  --> lib.cairo:4:5
     type X = u32;
     ^***********^
+
+error: Impl item const `MyImpl::C` is not a member of trait `MyTrait`.
+ --> lib.cairo:5:5
+    const C: u32 = 3;
+    ^***************^
 
 //! > ==========================================================================
 
@@ -821,6 +831,7 @@ foo
 trait MyTrait {
     type X<T>;
     impl Z of OtherTrait;
+    fn foo() -> usize;
 }
 impl MyImpl of MyTrait {
     type X = u32;
@@ -843,12 +854,17 @@ error: Generic parameters are not supported in Trait item type.
           ^*^
 
 error: Impl items are not yet supported in impls.
- --> lib.cairo:8:5
+ --> lib.cairo:9:5
     impl Z = OtherImpl;
     ^**^
 
+error: Not all trait items are implemented. Missing: 'foo'.
+ --> lib.cairo:6:6
+impl MyImpl of MyTrait {
+     ^****^
+
 error: Impl item type `MyImpl::XX` is not a member of trait `MyTrait`.
- --> lib.cairo:7:5
+ --> lib.cairo:8:5
     type XX<T> = Array<T>;
     ^********************^
 
@@ -880,7 +896,7 @@ impl MyImpl of MyTrait {
 //! > Test const items in trait/impl.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {}
@@ -891,10 +907,22 @@ foo
 //! > module_code
 trait MyTrait {
     const X: u32;
+    fn foo() -> u32;
 }
-//TODO(TomerStarkware): add const impls.
+
+impl MyImpl of MyTrait {
+    const X: u32 = 3;
+    fn foo() -> u32 {
+        ///TODO(TomerStarkware): remove diagnostic when impl const are resolved.
+        Self::X
+    }
+}
 
 //! > expected_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:10:15
+        Self::X
+              ^
 
 //! > ==========================================================================
 
