@@ -7,6 +7,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_syntax::node::ast::ItemConstant;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, LookupIntern};
@@ -133,37 +134,60 @@ pub fn priv_constant_semantic_data(
     db: &dyn SemanticGroup,
     const_id: ConstantId,
 ) -> Maybe<ConstantData> {
-    let module_file_id = const_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(const_id));
+    constant_semantic_data_helper(
+        db,
+        &db.module_constant_by_id(const_id)?.to_maybe()?,
+        lookup_item_id,
+        None,
+        &const_id,
+    )
+}
+
+/// returns constant semantic data for the given Item_constant.
+pub fn constant_semantic_data_helper(
+    db: &dyn SemanticGroup,
+    constant_ast: &ItemConstant,
+    lookup_item_id: LookupItemId,
+    parent_resolver_data: Option<Arc<ResolverData>>,
+    element_id: &impl LanguageElementId,
+) -> Maybe<ConstantData> {
+    let module_file_id = element_id.module_file_id(db.upcast());
+    let mut diagnostics: SemanticDiagnostics =
+        SemanticDiagnostics::new(element_id.module_file_id(db.upcast()).file_id(db.upcast())?);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let const_ast = db.module_constant_by_id(const_id)?.to_maybe()?;
     let syntax_db = db.upcast();
 
-    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(const_id));
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    resolver.data.allowed_features =
-        extract_allowed_features(db.upcast(), &const_id, &const_ast, &mut diagnostics);
 
-    let const_type = resolve_type(
+    let mut resolver = match parent_resolver_data {
+        Some(parent_resolver_data) => {
+            Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id))
+        }
+        None => Resolver::new(db, module_file_id, inference_id),
+    };
+    resolver.data.allowed_features =
+        extract_allowed_features(db.upcast(), element_id, constant_ast, &mut diagnostics);
+
+    let constant_type = resolve_type(
         db,
         &mut diagnostics,
         &mut resolver,
-        &const_ast.type_clause(syntax_db).ty(syntax_db),
+        &constant_ast.type_clause(syntax_db).ty(syntax_db),
     );
 
     let environment = Environment::empty();
     let mut ctx = ComputationContext::new(db, &mut diagnostics, None, resolver, None, environment);
 
-    let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db), None);
+    let value = compute_expr_semantic(&mut ctx, &constant_ast.value(syntax_db), None);
     let (ty, const_value) = resolve_const_expr_and_evaluate(
         db,
         &mut ctx,
         &value,
-        const_ast.stable_ptr().untyped(),
-        const_type,
+        constant_ast.stable_ptr().untyped(),
+        constant_type,
     );
 
     let resolver_data = Arc::new(ctx.resolver.data);
