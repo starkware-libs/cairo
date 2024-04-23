@@ -231,7 +231,7 @@ pub fn starknet_compile(
     let contract = compile_path(
         &crate_path,
         contract_path.as_deref(),
-        if let Some(config) = config { config } else { CompilerConfig::default() },
+        config.unwrap_or_default(),
     )?;
     contract.validate_version_compatible(
         if let Some(allowed_libfuncs_list) = allowed_libfuncs_list {
