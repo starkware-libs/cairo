@@ -4,9 +4,7 @@ use std::collections::{HashMap, VecDeque};
 use std::ops::{Deref, Shl};
 use std::vec::IntoIter;
 
-use ark_ff::fields::{Fp256, MontBackend, MontConfig};
-use ark_ff::{BigInteger, Field, PrimeField};
-use ark_std::UniformRand;
+use ark_ff::{BigInteger, PrimeField};
 use cairo_felt::{felt_str as felt252_str, Felt252};
 use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, Hint, StarknetHint};
 use cairo_lang_casm::operand::{
@@ -37,7 +35,9 @@ use dict_manager::DictManagerExecScope;
 use itertools::Itertools;
 use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
-use num_traits::{FromPrimitive, Signed, ToPrimitive, Zero};
+use num_traits::{Signed, ToPrimitive, Zero};
+use rand::Rng;
+use starknet_crypto::FieldElement;
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::contract_address::calculate_contract_address;
@@ -50,18 +50,6 @@ mod test;
 
 mod contract_address;
 mod dict_manager;
-
-// TODO(orizi): This def is duplicated.
-/// Returns the Beta value of the Starkware elliptic curve.
-fn get_beta() -> Felt252 {
-    felt252_str!("3141592653589793238462643383279502884197169399375105820974944592307816406665")
-}
-
-#[derive(MontConfig)]
-#[modulus = "3618502788666131213697322783095070105623107215331596699973092056135872020481"]
-#[generator = "3"]
-struct FqConfig;
-type Fq = Fp256<MontBackend<FqConfig, 4>>;
 
 /// Convert a Hint to the cairo-vm class HintParams by canonically serializing it to a string.
 pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
@@ -1815,28 +1803,28 @@ pub fn execute_core_hint(
         CoreHint::RandomEcPoint { x, y } => {
             // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
             // residue.
-            let beta = Fq::from(get_beta().to_biguint());
-            let mut rng = ark_std::test_rng();
-            let (random_x, random_y_squared) = loop {
-                let random_x = Fq::rand(&mut rng);
-                let random_y_squared = random_x * random_x * random_x + random_x + beta;
-                if random_y_squared.legendre().is_qr() {
-                    break (random_x, random_y_squared);
+            let mut rng = rand::thread_rng();
+            let (random_x, random_y) = loop {
+                // Randominzing 31 bytes to make sure is in range.
+                // TODO(orizi): Use `FieldElement` random implementation when exists.
+                let x_bytes: [u8; 31] = rng.gen();
+                let random_x = FieldElement::from_byte_slice_be(&x_bytes).unwrap();
+                let random_y_squared = random_x * random_x * random_x + random_x + ec::BETA;
+                if let Some(random_y) = random_y_squared.sqrt() {
+                    break (random_x, random_y);
                 }
             };
-            let x_bigint: BigUint = random_x.into_bigint().into();
-            let y_bigint: BigUint = random_y_squared.sqrt().unwrap().into_bigint().into();
+            let x_bigint: BigUint = BigUint::from_bytes_be(&random_x.to_bytes_be());
+            let y_bigint: BigUint = BigUint::from_bytes_be(&random_y.to_bytes_be());
             insert_value_to_cellref!(vm, x, Felt252::from(x_bigint))?;
             insert_value_to_cellref!(vm, y, Felt252::from(y_bigint))?;
         }
         CoreHint::FieldSqrt { val, sqrt } => {
-            let val = Fq::from(get_val(vm, val)?.to_biguint());
+            let val = FieldElement::from_bytes_be(&get_val(vm, val)?.to_be_bytes()).unwrap();
             insert_value_to_cellref!(vm, sqrt, {
-                let three_fq = Fq::from(BigUint::from_usize(3).unwrap());
-                let res =
-                    (if val.legendre().is_qr() { val } else { val * three_fq }).sqrt().unwrap();
-                let root0: BigUint = res.into_bigint().into();
-                let root1: BigUint = (-res).into_bigint().into();
+                let res = val.sqrt().unwrap_or_else(|| (val * FieldElement::THREE).sqrt().unwrap());
+                let root0 = BigUint::from_bytes_be(&res.to_bytes_be());
+                let root1 = BigUint::from_bytes_be(&(-res).to_bytes_be());
                 let res_big_uint = std::cmp::min(root0, root1);
                 Felt252::from(res_big_uint)
             })?;
@@ -2340,4 +2328,30 @@ where
     *values = cloned_values_iter;
 
     Some(format!("{full_words_string}{pending_word_string}"))
+}
+
+// TODO(orizi): Remove when const not from montgomery is supported.
+mod ec {
+    use starknet_crypto::FieldElement;
+
+    /// Returns the Beta value of the Starkware elliptic curve.
+    pub const BETA: FieldElement = FieldElement::from_mont([
+        3863487492851900874,
+        7432612994240712710,
+        12360725113329547591,
+        88155977965380735,
+    ]);
+
+    #[cfg(test)]
+    #[test]
+    fn constant_validation() {
+        assert_eq!(
+            BETA.into_mont(),
+            FieldElement::from_dec_str(
+                "3141592653589793238462643383279502884197169399375105820974944592307816406665"
+            )
+            .unwrap()
+            .into_mont()
+        );
+    }
 }
