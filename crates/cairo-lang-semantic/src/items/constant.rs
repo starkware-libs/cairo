@@ -32,7 +32,7 @@ use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::types::resolve_type;
 use crate::{
-    semantic_object_for_id, ConcreteVariant, Expr, ExprBlock, ExprFunctionCall,
+    semantic_object_for_id, ConcreteVariant, Expr, ExprBlock, ExprConstant, ExprFunctionCall,
     ExprFunctionCallArg, ExprId, ExprMemberAccess, ExprStructCtor, FunctionId, SemanticDiagnostic,
     TypeId,
 };
@@ -218,7 +218,9 @@ pub fn resolve_const_expr_and_evaluate(
     ctx.apply_inference_rewriter_to_exprs();
 
     match &value.expr {
-        Expr::ParamConstant(expr) => (expr.ty, expr.const_value_id.lookup_intern(db)),
+        Expr::Constant(ExprConstant { const_value_id, ty, .. }) => {
+            (*ty, const_value_id.lookup_intern(db))
+        }
         // Check that the expression is a valid constant.
         _ => evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics),
     }
@@ -287,9 +289,7 @@ pub fn evaluate_constant_expr(
     (
         expr.ty(),
         match expr {
-            Expr::Constant(expr) => priv_constant_semantic_data(db, expr.constant_id)
-                .map(|data| data.const_value)
-                .unwrap_or_else(ConstValue::Missing),
+            Expr::Constant(expr) => expr.const_value_id.lookup_intern(db),
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. })
                 if statements.is_empty() =>
             {
@@ -544,7 +544,27 @@ pub fn constant_const_value(db: &dyn SemanticGroup, const_id: ConstantId) -> May
     Ok(db.priv_constant_semantic_data(const_id)?.const_value)
 }
 
+/// Cycle handling for [crate::db::SemanticGroup::constant_const_value].
+pub fn constant_const_value_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    const_id: &ConstantId,
+) -> Maybe<ConstValue> {
+    // Forwarding cycle handling to `priv_constant_semantic_data` handler.
+    Ok(db.priv_constant_semantic_data(*const_id)?.const_value)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::constant_const_type].
 pub fn constant_const_type(db: &dyn SemanticGroup, const_id: ConstantId) -> Maybe<TypeId> {
     Ok(db.priv_constant_semantic_data(const_id)?.ty)
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::constant_const_type].
+pub fn constant_const_type_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    const_id: &ConstantId,
+) -> Maybe<TypeId> {
+    // Forwarding cycle handling to `priv_constant_semantic_data` handler.
+    Ok(db.priv_constant_semantic_data(*const_id)?.ty)
 }
