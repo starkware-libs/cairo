@@ -134,7 +134,7 @@ pub fn priv_constant_semantic_data(
     const_id: ConstantId,
 ) -> Maybe<ConstantData> {
     let module_file_id = const_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -207,7 +207,7 @@ pub fn priv_constant_semantic_data_cycle(
     const_id: &ConstantId,
 ) -> Maybe<ConstantData> {
     let module_file_id = const_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let const_ast = db.module_constant_by_id(*const_id)?.to_maybe()?;
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(*const_id));
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);

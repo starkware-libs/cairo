@@ -44,8 +44,7 @@ pub fn priv_struct_declaration_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
 ) -> Maybe<StructDeclarationData> {
-    let module_file_id = struct_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -103,7 +102,7 @@ pub fn struct_generic_params_data(
     struct_id: StructId,
 ) -> Maybe<GenericParamsData> {
     let module_file_id = struct_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -164,7 +163,7 @@ pub fn priv_struct_definition_data(
     struct_id: StructId,
 ) -> Maybe<StructDefinitionData> {
     let module_file_id = struct_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.

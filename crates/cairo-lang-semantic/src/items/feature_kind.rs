@@ -154,8 +154,7 @@ pub fn extract_allowed_features(
 ) -> OrderedHashSet<SmolStr> {
     let syntax_db = db.upcast();
     let mut allowed_features = extract_item_allowed_features(syntax_db, syntax, diagnostics);
-    let ignored_diagnostics =
-        &mut SemanticDiagnostics::new(element_id.module_file_id(db).file_id(db).unwrap());
+    let ignored_diagnostics = &mut SemanticDiagnostics::default();
     let mut curr_module_id = element_id.parent_module(db);
     loop {
         let submodule_id = match curr_module_id {

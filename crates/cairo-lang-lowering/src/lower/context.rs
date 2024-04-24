@@ -166,7 +166,6 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
         let db = global_ctx.db;
         let concrete_function_id = function_id.to_concrete(db)?;
         let semantic_function = function_id.base_semantic_function(db);
-        let module_file_id = semantic_function.module_file_id(db.upcast());
         Ok(Self {
             encapsulating_ctx: Some(global_ctx),
             variables: VariableAllocator::new(db, semantic_function, Default::default())?,
@@ -174,7 +173,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
             function_id,
             concrete_function_id,
             current_loop_expr_id: Option::None,
-            diagnostics: LoweringDiagnostics::new(module_file_id.file_id(db.upcast())?),
+            diagnostics: LoweringDiagnostics::default(),
             blocks: Default::default(),
         })
     }

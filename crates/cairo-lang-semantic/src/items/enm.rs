@@ -43,8 +43,7 @@ pub fn priv_enum_declaration_data(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
 ) -> Maybe<EnumDeclarationData> {
-    let module_file_id = enum_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -100,7 +99,7 @@ pub fn enum_generic_params_data(
     enum_id: EnumId,
 ) -> Maybe<GenericParamsData> {
     let module_file_id = enum_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
 
     // Generic params.
@@ -187,7 +186,7 @@ pub fn priv_enum_definition_data(
     enum_id: EnumId,
 ) -> Maybe<EnumDefinitionData> {
     let module_file_id = enum_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.

@@ -1,8 +1,8 @@
 use anyhow::{bail, Context};
 use cairo_felt::Felt252;
 use cairo_lang_defs::ids::{
-    FileIndex, FreeFunctionId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
-    ModuleItemId, NamedLanguageElementId, SubmoduleId,
+    FreeFunctionId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
+    NamedLanguageElementId, SubmoduleId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
@@ -160,8 +160,7 @@ fn get_impl_aliases_abi_functions(
 ) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId>>> {
     let syntax_db = db.upcast();
     let generated_module_id = get_generated_contract_module(db, contract)?;
-    let module_file_id = ModuleFileId(generated_module_id, FileIndex(0));
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast()).unwrap());
+    let mut diagnostics = SemanticDiagnostics::default();
     let mut all_abi_functions = vec![];
     for (impl_alias_id, impl_alias) in db
         .module_impl_aliases(generated_module_id)

@@ -251,7 +251,7 @@ pub fn impl_def_generic_params_data(
     impl_def_id: ImplDefId,
 ) -> Maybe<GenericParamsData> {
     let module_file_id = impl_def_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
 
     let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
     let inference_id =
@@ -328,7 +328,7 @@ pub fn impl_def_attributes(
 /// Query implementation of [crate::db::SemanticGroup::impl_def_trait].
 pub fn impl_def_trait(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> Maybe<TraitId> {
     let module_file_id = impl_def_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
 
     let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
     let inference_id = InferenceId::ImplDefTrait(impl_def_id);
@@ -388,8 +388,7 @@ pub fn priv_impl_declaration_data_inner(
     impl_def_id: ImplDefId,
     resolve_trait: bool,
 ) -> Maybe<ImplDeclarationData> {
-    let module_file_id = impl_def_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
 
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -583,7 +582,7 @@ pub fn priv_impl_definition_data(
     let syntax_db = db.upcast();
 
     let module_file_id = impl_def_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
 
     let generic_params = db.impl_def_generic_params(impl_def_id)?;
     let concrete_trait = db.priv_impl_declaration_data(impl_def_id)?.concrete_trait?;
@@ -1286,8 +1285,7 @@ pub fn priv_impl_type_semantic_data(
     db: &dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId,
 ) -> Maybe<ImplItemTypeData> {
-    let module_file_id = impl_type_def_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let impl_type_defs = db.impl_types(impl_type_def_id.impl_def_id(db.upcast()))?;
     let impl_type_def_ast = impl_type_defs.get(&impl_type_def_id).to_maybe()?;
     let generic_params_data = db.priv_impl_type_def_generic_params_data(impl_type_def_id)?;
@@ -1317,8 +1315,7 @@ pub fn priv_impl_type_semantic_data_cycle(
     _cycle: &[String],
     impl_type_def_id: &ImplTypeDefId,
 ) -> Maybe<ImplItemTypeData> {
-    let module_file_id = impl_type_def_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let impl_type_defs = db.impl_types(impl_type_def_id.impl_def_id(db.upcast()))?;
     let impl_type_def_ast = impl_type_defs.get(impl_type_def_id).to_maybe()?;
     let generic_params_data = db.priv_impl_type_def_generic_params_data(*impl_type_def_id)?;
@@ -1469,7 +1466,7 @@ pub fn priv_impl_function_generic_params_data(
     impl_function_id: ImplFunctionId,
 ) -> Maybe<GenericParamsData> {
     let module_file_id = impl_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let impl_def_id = impl_function_id.impl_def_id(db.upcast());
     let data = db.priv_impl_definition_data(impl_def_id)?;
     let function_syntax = &data.function_asts[&impl_function_id];
@@ -1567,8 +1564,7 @@ pub fn priv_impl_function_declaration_data(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
 ) -> Maybe<ImplFunctionDeclarationData> {
-    let module_file_id = impl_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let impl_def_id = impl_function_id.impl_def_id(db.upcast());
     let data = db.priv_impl_definition_data(impl_def_id)?;
     let function_syntax = &data.function_asts[&impl_function_id];
@@ -1845,8 +1841,7 @@ pub fn priv_impl_function_body_data(
     impl_function_id: ImplFunctionId,
 ) -> Maybe<FunctionBodyData> {
     let defs_db = db.upcast();
-    let module_file_id = impl_function_id.module_file_id(defs_db);
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let impl_def_id = impl_function_id.impl_def_id(defs_db);
     let data = db.priv_impl_definition_data(impl_def_id)?;
     let function_syntax = &data.function_asts[&impl_function_id];
