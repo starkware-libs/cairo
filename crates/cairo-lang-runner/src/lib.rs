@@ -13,7 +13,7 @@ use cairo_lang_sierra::extensions::enm::EnumType;
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasBuiltinType};
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::poseidon::PoseidonType;
-use cairo_lang_sierra::extensions::range_check::RangeCheckType;
+use cairo_lang_sierra::extensions::range_check::{RangeCheck96Type, RangeCheckType};
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
@@ -611,6 +611,8 @@ impl SierraCasmRunner {
             (BitwiseType::ID, 5),
             (EcOpType::ID, 4),
             (PoseidonType::ID, 3),
+            // TODO(ilya): Fix the following once RangeCheck96 is supported by cairo-vm.
+            (RangeCheck96Type::ID, 1),
         ]);
         let mut ap_offset: i16 = 0;
         let mut array_args_data_iter = prep_array_args(&mut ctx, args, &mut ap_offset).into_iter();
