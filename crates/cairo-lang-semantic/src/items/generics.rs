@@ -240,7 +240,7 @@ pub fn generic_impl_param_trait(
         }
     };
 
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::GenericImplParamTrait(generic_param_id);
     // TODO(spapini): We should not create a new resolver -  we are missing the other generic params
     // in the context.
@@ -259,7 +259,7 @@ pub fn priv_generic_param_data(
 ) -> Maybe<GenericParamData> {
     let syntax_db: &dyn SyntaxGroup = db.upcast();
     let module_file_id = generic_param_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let parent_item_id = generic_param_id.generic_item(db.upcast());
     let lookup_item: LookupItemId = parent_item_id.into();
     let context_resolver_data = lookup_item.resolver_context(db)?;
@@ -311,9 +311,7 @@ pub fn priv_generic_param_data_cycle(
     _cycle: &[String],
     generic_param_id: &GenericParamId,
 ) -> Maybe<GenericParamData> {
-    let diagnostics = &mut SemanticDiagnostics::new(
-        generic_param_id.module_file_id(db.upcast()).file_id(db.upcast())?,
-    );
+    let mut diagnostics = SemanticDiagnostics::default();
     Err(diagnostics.report_by_ptr(
         generic_param_id.stable_ptr(db.upcast()).untyped(),
         SemanticDiagnosticKind::ImplRequirementCycle,

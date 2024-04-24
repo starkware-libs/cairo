@@ -33,8 +33,7 @@ pub fn priv_impl_alias_semantic_data(
     db: &(dyn SemanticGroup),
     impl_alias_id: ImplAliasId,
 ) -> Maybe<ImplAliasData> {
-    let module_file_id = impl_alias_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -87,7 +86,7 @@ pub fn priv_impl_alias_semantic_data_cycle(
     impl_alias_id: &ImplAliasId,
 ) -> Maybe<ImplAliasData> {
     let module_file_id = impl_alias_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let impl_alias_ast = db.module_impl_alias_by_id(*impl_alias_id)?.to_maybe()?;
     let syntax_db = db.upcast();
     let err = Err(diagnostics.report(&impl_alias_ast.name(syntax_db), ImplAliasCycle));
@@ -148,7 +147,7 @@ pub fn impl_alias_generic_params_data(
     impl_alias_id: ImplAliasId,
 ) -> Maybe<GenericParamsData> {
     let module_file_id = impl_alias_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
     let syntax_db = db.upcast();
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
@@ -199,7 +198,7 @@ pub fn impl_alias_attributes(
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_impl_def].
 pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -> Maybe<ImplDefId> {
     let module_file_id = impl_alias_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
     let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
 

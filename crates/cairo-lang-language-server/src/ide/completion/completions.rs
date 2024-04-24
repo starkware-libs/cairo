@@ -128,7 +128,7 @@ pub fn colon_colon_completions(
     };
     let mut resolver = Resolver::with_data(db, resolver_data);
 
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast()).ok()?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let item = resolver
         .resolve_concrete_path(&mut diagnostics, segments, NotFoundItemType::Identifier)
         .ok()?;

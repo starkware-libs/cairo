@@ -11,7 +11,6 @@ use cairo_lang_diagnostics::{
     error_code, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics,
     DiagnosticsBuilder, ErrorCode, Severity,
 };
-use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax as syntax;
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -30,14 +29,11 @@ use crate::types::peel_snapshots;
 #[path = "diagnostic_test.rs"]
 mod test;
 
+#[derive(Default)]
 pub struct SemanticDiagnostics {
     pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
-    pub file_id: FileId,
 }
 impl SemanticDiagnostics {
-    pub fn new(file_id: FileId) -> Self {
-        Self { file_id, diagnostics: DiagnosticsBuilder::default() }
-    }
     pub fn build(self) -> Diagnostics<SemanticDiagnostic> {
         self.diagnostics.build()
     }

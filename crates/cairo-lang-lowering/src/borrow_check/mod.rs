@@ -2,7 +2,7 @@
 #[path = "test.rs"]
 mod test;
 
-use cairo_lang_defs::ids::{ModuleFileId, TraitFunctionId};
+use cairo_lang_defs::ids::TraitFunctionId;
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
 use cairo_lang_semantic::corelib::get_core_trait;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
@@ -274,15 +274,11 @@ pub type PotentialDestructCalls = UnorderedHashMap<BlockId, Vec<FunctionId>>;
 
 /// Report borrow checking diagnostics.
 /// Returns the potential destruct function calls per block.
-pub fn borrow_check(
-    db: &dyn LoweringGroup,
-    module_file_id: ModuleFileId,
-    lowered: &mut FlatLowered,
-) -> PotentialDestructCalls {
+pub fn borrow_check(db: &dyn LoweringGroup, lowered: &mut FlatLowered) -> PotentialDestructCalls {
     if lowered.blocks.has_root().is_err() {
         return Default::default();
     }
-    let mut diagnostics = LoweringDiagnostics::new(module_file_id.file_id(db.upcast()).unwrap());
+    let mut diagnostics = LoweringDiagnostics::default();
     diagnostics.diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
     let destruct_trait_id = get_core_trait(db.upcast(), "Destruct".into());
     let destruct_fn =

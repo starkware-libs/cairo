@@ -83,7 +83,7 @@ pub fn free_function_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let syntax_db = db.upcast();
     let module_file_id = free_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
     let declaration = free_function_syntax.declaration(syntax_db);
 
@@ -132,8 +132,7 @@ pub fn priv_free_function_declaration_data(
     free_function_id: FreeFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
     let syntax_db = db.upcast();
-    let module_file_id = free_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
     let declaration = free_function_syntax.declaration(syntax_db);
 
@@ -222,8 +221,7 @@ pub fn priv_free_function_body_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<FunctionBodyData> {
-    let module_file_id = free_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
     // Compute declaration semantic.
     let declaration = db.priv_free_function_declaration_data(free_function_id)?;

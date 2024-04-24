@@ -3,7 +3,6 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, Diagnostics,
     DiagnosticsBuilder,
 };
-use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::LiteralError;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -12,14 +11,11 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 
 use crate::Location;
 
+#[derive(Default)]
 pub struct LoweringDiagnostics {
     pub diagnostics: DiagnosticsBuilder<LoweringDiagnostic>,
-    pub file_id: FileId,
 }
 impl LoweringDiagnostics {
-    pub fn new(file_id: FileId) -> Self {
-        Self { file_id, diagnostics: DiagnosticsBuilder::default() }
-    }
     pub fn build(self) -> Diagnostics<LoweringDiagnostic> {
         self.diagnostics.build()
     }

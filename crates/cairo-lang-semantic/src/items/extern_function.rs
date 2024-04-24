@@ -71,7 +71,7 @@ pub fn extern_function_declaration_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let syntax_db = db.upcast();
     let module_file_id = extern_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
     let declaration = extern_function_syntax.declaration(syntax_db);
 
@@ -135,8 +135,7 @@ pub fn priv_extern_function_declaration_data(
     extern_function_id: ExternFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
     let syntax_db = db.upcast();
-    let module_file_id = extern_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
 
     let declaration = extern_function_syntax.declaration(syntax_db);
