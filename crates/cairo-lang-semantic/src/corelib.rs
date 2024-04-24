@@ -6,7 +6,9 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::Terminal;
-use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern, OptionFrom};
+use cairo_lang_utils::{
+    extract_matches, require, try_extract_matches, Intern, LookupIntern, OptionFrom,
+};
 use num_bigint::BigInt;
 use num_traits::{Num, Signed, ToPrimitive, Zero};
 use smol_str::SmolStr;
@@ -733,7 +735,9 @@ pub fn validate_literal(
             validate_literal(db, nz_wrapped_ty, value)
         };
     }
-    let is_out_of_range = if ty == core_felt252_ty(db) {
+    let is_out_of_range = if let Some((min, max)) = try_extract_bounded_int_type_ranges(db, ty) {
+        value < min || value > max
+    } else if ty == core_felt252_ty(db) {
         value.abs()
             > BigInt::from_str_radix(
                 "800000000000011000000000000000000000000000000000000000000000000",
@@ -775,4 +779,22 @@ pub fn try_extract_nz_wrapped_type(db: &dyn SemanticGroup, ty: TypeId) -> Option
     let ConcreteExternTypeLongId { extern_type_id, generic_args } = extern_ty.lookup_intern(db);
     let [GenericArgumentId::Type(inner)] = generic_args[..] else { return None };
     (extern_type_id.name(db.upcast()) == "NonZero").then_some(inner)
+}
+
+/// Returns the ranges of a BoundedInt if it is a BoundedInt type.
+fn try_extract_bounded_int_type_ranges(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+) -> Option<(BigInt, BigInt)> {
+    let concrete_ty = try_extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete)?;
+    let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
+    let ConcreteExternTypeLongId { extern_type_id, generic_args } =
+        db.lookup_intern_concrete_extern_type(extern_ty);
+    require(extern_type_id.name(db.upcast()) == "BoundedInt")?;
+    let [GenericArgumentId::Constant(min), GenericArgumentId::Constant(max)] = generic_args[..]
+    else {
+        return None;
+    };
+    let to_int = |id| try_extract_matches!(db.lookup_intern_const_value(id), ConstValue::Int);
+    Some((to_int(min)?, to_int(max)?))
 }

@@ -1864,15 +1864,13 @@ fn test_signed_int_diff() {
 }
 
 mod bounded_int {
-    extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+    use core::internal::BoundedInt;
     extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
     extern fn upcast<T, S>(index: T) -> S nopanic;
 
-    impl DropBoundedInt<const MIN: felt252, const MAX: felt252> of Drop<BoundedInt<MIN, MAX>>;
+    type SingleInt<const VALUE: felt252> = BoundedInt<VALUE, VALUE>;
     const U128_UPPER: felt252 = 0x100000000000000000000000000000000;
-    type BoundedIntU128Upper = BoundedInt<U128_UPPER, U128_UPPER>;
     const U128_MAX: felt252 = U128_UPPER - 1;
-    type BoundedIntU128Max = BoundedInt<U128_MAX, U128_MAX>;
 
     /// Is `value` the equivalent value of `expected` in `T` type.
     fn is_some_of<T>(value: Option<T>, expected: felt252) -> bool {
@@ -1901,54 +1899,42 @@ mod bounded_int {
 
     #[test]
     fn test_felt252_downcasts() {
-        assert!(downcast_invalid::<felt252, BoundedInt<0, 0>>(1));
-        assert!(felt252_downcast_valid::<BoundedInt<0, 0>>(0));
-        assert!(downcast_invalid::<felt252, BoundedInt<0, 0>>(-1));
-        assert!(downcast_invalid::<felt252, BoundedInt<-1, -1>>(-2));
-        assert!(felt252_downcast_valid::<BoundedInt<-1, -1>>(-1));
-        assert!(downcast_invalid::<felt252, BoundedInt<-1, -1>>(0));
+        assert!(downcast_invalid::<felt252, SingleInt<0>>(1));
+        assert!(felt252_downcast_valid::<SingleInt<0>>(0));
+        assert!(downcast_invalid::<felt252, SingleInt<0>>(-1));
+        assert!(downcast_invalid::<felt252, SingleInt<-1>>(-2));
+        assert!(felt252_downcast_valid::<SingleInt<-1>>(-1));
+        assert!(downcast_invalid::<felt252, SingleInt<-1>>(0));
         assert!(downcast_invalid::<felt252, BoundedInt<120, 180>>(119));
         assert!(felt252_downcast_valid::<BoundedInt<120, 180>>(120));
         assert!(felt252_downcast_valid::<BoundedInt<120, 180>>(180));
         assert!(downcast_invalid::<felt252, BoundedInt<120, 180>>(181));
-        assert!(downcast_invalid::<felt252, BoundedIntU128Max>(U128_MAX - 1));
-        assert!(felt252_downcast_valid::<BoundedIntU128Max>(U128_MAX));
-        assert!(downcast_invalid::<felt252, BoundedIntU128Max>(U128_MAX + 1));
-        assert!(downcast_invalid::<felt252, BoundedIntU128Upper>(U128_UPPER - 1));
-        assert!(felt252_downcast_valid::<BoundedIntU128Upper>(U128_UPPER));
-        assert!(downcast_invalid::<felt252, BoundedIntU128Upper>(U128_UPPER + 1));
+        assert!(downcast_invalid::<felt252, SingleInt<U128_MAX>>(U128_MAX - 1));
+        assert!(felt252_downcast_valid::<SingleInt<U128_MAX>>(U128_MAX));
+        assert!(downcast_invalid::<felt252, SingleInt<U128_MAX>>(U128_MAX + 1));
+        assert!(downcast_invalid::<felt252, SingleInt<U128_UPPER>>(U128_UPPER - 1));
+        assert!(felt252_downcast_valid::<SingleInt<U128_UPPER>>(U128_UPPER));
+        assert!(downcast_invalid::<felt252, SingleInt<U128_UPPER>>(U128_UPPER + 1));
     }
 
-    // Full prime range, but where the max element is 0.
-    type OneMinusPToZero =
-        BoundedInt<-0x800000000000011000000000000000000000000000000000000000000000000, 0>;
+    const ONE_MINUS_P: felt252 = -0x800000000000011000000000000000000000000000000000000000000000000;
 
-    type OneMinusPOnly =
-        BoundedInt<
-            -0x800000000000011000000000000000000000000000000000000000000000000,
-            -0x800000000000011000000000000000000000000000000000000000000000000
-        >;
+    // Full prime range, but where the max element is 0.
+    type OneMinusPToZero = BoundedInt<ONE_MINUS_P, 0>;
+
+    fn bi_const<const V: felt252>() -> SingleInt<V> {
+        downcast(V).unwrap()
+    }
 
     #[test]
     fn test_bounded_int_casts() {
-        let minus_1 = downcast::<felt252, BoundedInt<-1, -1>>(-1).unwrap();
-        assert!(downcast::<OneMinusPToZero, u8>(upcast(minus_1)).is_none());
-        let zero = downcast::<felt252, BoundedInt<0, 0>>(0).unwrap();
-        assert!(downcast::<OneMinusPToZero, u8>(upcast(zero)) == Option::Some(0));
-        let one_minus_p = downcast::<felt252, OneMinusPOnly>(1).unwrap();
-        assert!(downcast::<OneMinusPToZero, u8>(upcast(one_minus_p)).is_none());
-        let v119 = downcast::<felt252, BoundedInt<119, 119>>(119).unwrap();
-        assert!(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(upcast(v119)).is_none());
-        let v120 = downcast::<felt252, BoundedInt<120, 120>>(120).unwrap();
-        assert!(
-            is_some_of(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(upcast(v120)), 120)
-        );
-        let v180 = downcast::<felt252, BoundedInt<180, 180>>(180).unwrap();
-        assert!(
-            is_some_of(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(upcast(v180)), 180)
-        );
-        let v181 = downcast::<felt252, BoundedInt<181, 181>>(181).unwrap();
-        assert!(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(upcast(v181)).is_none());
+        assert!(downcast::<OneMinusPToZero, u8>(upcast(bi_const::<-1>())).is_none());
+        assert!(downcast::<OneMinusPToZero, u8>(0) == Option::Some(0));
+        assert!(downcast::<OneMinusPToZero, u8>(upcast(bi_const::<ONE_MINUS_P>())).is_none());
+        assert!(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(119).is_none());
+        assert!(is_some_of(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(120), 120));
+        assert!(is_some_of(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(180), 180));
+        assert!(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(181).is_none());
     }
 
     /// A trait used for Sierra extern functions to ignore the following params when actually
@@ -2046,10 +2032,6 @@ mod bounded_int {
         assert!(div_rem_wide_helper(255, 3) == (85, 0));
         assert!(div_rem_wide_helper(128, 8) == (16, 0));
         assert!(div_rem_wide_helper(255, 8) == (31, 7));
-    }
-
-    fn bi_const<const V: felt252>() -> BoundedInt<V, V> {
-        downcast(V).unwrap()
     }
 
     fn div_rem_small_quotient_helper<
