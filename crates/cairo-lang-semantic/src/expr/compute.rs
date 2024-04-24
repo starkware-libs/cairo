@@ -2749,12 +2749,12 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
 
     match resolved_item {
         ResolvedConcreteItem::Constant(constant_id) => Ok(Expr::Constant(ExprConstant {
-            constant_id,
-            ty: db.constant_semantic_data(constant_id)?.ty(),
+            const_value_id: db.constant_const_value(constant_id)?.intern(db),
+            ty: db.constant_const_type(constant_id)?,
             stable_ptr: path.stable_ptr().into(),
         })),
         ResolvedConcreteItem::ConstGenericParameter(generic_param_id) => {
-            Ok(Expr::ParamConstant(ExprParamConstant {
+            Ok(Expr::Constant(ExprConstant {
                 const_value_id: ConstValue::Generic(generic_param_id).intern(db),
                 ty: extract_matches!(
                     db.generic_param_semantic(generic_param_id)?,
