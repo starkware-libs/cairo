@@ -99,6 +99,8 @@ impl BoolIntoFelt252 of Into<bool, felt252> {
 }
 pub mod boolean;
 
+pub mod circuit;
+
 /// General purpose implicits.
 pub extern type RangeCheck;
 pub extern type SegmentArena;
