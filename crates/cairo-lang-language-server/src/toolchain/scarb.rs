@@ -10,6 +10,7 @@ use crate::env_config;
 use crate::server::notifier::Notifier;
 
 pub const SCARB_TOML: &str = "Scarb.toml";
+pub const SCARB_LOCK: &str = "Scarb.lock";
 
 // TODO(mkaput): Collect `scarb --version` and display it in the editor UI.
 /// The ultimate object for invoking Scarb.

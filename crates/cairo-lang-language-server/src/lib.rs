@@ -45,9 +45,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use anyhow::{bail, Context};
+use anyhow::bail;
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, ModuleId, SubmoduleLongId,
@@ -57,13 +56,12 @@ use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
-use cairo_lang_filesystem::ids::{FileId, FileLongId};
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextPosition, TextSpan};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::ParserDiagnostic;
-use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplId;
@@ -91,9 +89,7 @@ use crate::lang::lsp::LsProtoGroup;
 use crate::lang::semantic::LsSemanticGroup;
 use crate::lang::syntax::LsSyntaxGroup;
 use crate::lsp::client_capabilities::ClientCapabilitiesExt;
-use crate::project::scarb::db::update_crate_roots;
-use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
-use crate::project::ProjectManifestPath;
+use crate::project::ProjectManager;
 use crate::server::notifier::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
@@ -284,7 +280,7 @@ struct Backend {
     db_mutex: tokio::sync::Mutex<RootDatabase>,
     state_mutex: tokio::sync::Mutex<State>,
     config: tokio::sync::RwLock<Config>,
-    scarb_toolchain: ScarbToolchain,
+    projects: Arc<tokio::sync::Mutex<ProjectManager>>,
     last_replace: tokio::sync::Mutex<SystemTime>,
     db_replace_interval: Duration,
 }
@@ -299,15 +295,17 @@ impl Backend {
     fn new(client: Client, tricks: Tricks) -> Self {
         let db = configured_db(&tricks);
         let notifier = Notifier::new(&client);
+        let config = Config::default();
         let scarb_toolchain = ScarbToolchain::new(&notifier);
+        let projects = ProjectManager::new(&config, &scarb_toolchain);
         Self {
             client,
             client_capabilities: Default::default(),
             tricks,
             db_mutex: db.into(),
             state_mutex: State::default().into(),
-            config: Config::default().into(),
-            scarb_toolchain,
+            config: config.into(),
+            projects: Arc::new(projects.into()),
             last_replace: tokio::sync::Mutex::new(SystemTime::now()),
             db_replace_interval: env_config::db_replace_interval(),
         }
@@ -322,7 +320,7 @@ impl Backend {
         let db_mut = self.db_mut().await;
         let db = db_mut.snapshot();
         drop(db_mut);
-        std::panic::catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
+        catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
             error!("caught panic in LSP worker thread");
             LSPError::internal_error()
         })
@@ -338,6 +336,33 @@ impl Backend {
     #[tracing::instrument(level = "trace", skip_all)]
     async fn state_mut(&self) -> tokio::sync::MutexGuard<'_, State> {
         self.state_mutex.lock().await
+    }
+
+    /// Apply mutation to the [`ProjectManager`] object (with necessary context) and update the
+    /// database if needed.
+    #[tracing::instrument(level = "trace", skip_all)]
+    async fn mutate_projects<T, F>(&self, f: F) -> T
+    where
+        T: Send + 'static,
+        F: FnOnce(&mut ProjectManager) -> T + Send + 'static,
+    {
+        let result = spawn_blocking({
+            let projects = self.projects.clone();
+            move || {
+                let mut projects = projects.blocking_lock();
+                f(&mut projects)
+            }
+        })
+        .await
+        .unwrap();
+
+        {
+            let projects = self.projects.lock().await;
+            let mut db = self.db_mut().await;
+            projects.apply_db_changes(&mut db);
+        }
+
+        result
     }
 
     // TODO(spapini): Consider managing vfs in a different way, using the
@@ -490,6 +515,7 @@ impl Backend {
             })
             .await?;
         debug!("initial setup done");
+        self.ensure_projects_crate_roots_up_to_date(&mut new_db).await;
         self.ensure_diagnostics_queries_up_to_date(&mut new_db, open_files.into_iter()).await;
         debug!("initial compilation done");
         let mut db = self.db_mut().await;
@@ -499,6 +525,13 @@ impl Backend {
         *db = new_db;
         debug!("done");
         Ok(())
+    }
+
+    /// Ensures that all projects have their crate roots up to date.
+    #[tracing::instrument(level = "trace", skip_all)]
+    async fn ensure_projects_crate_roots_up_to_date(&self, db: &mut RootDatabase) {
+        let projects = self.projects.lock().await;
+        projects.apply_db_changes(db);
     }
 
     /// Ensures that all diagnostics are up to date.
@@ -515,9 +548,6 @@ impl Backend {
         };
         for uri in open_files {
             let Some(file_id) = db.file_for_url(&uri) else { continue };
-            if let FileLongId::OnDisk(file_path) = file_id.lookup_intern(db) {
-                self.detect_crate_for(db, file_path).await;
-            }
             query_diags(db, file_id);
         }
         for crate_id in db.crates() {
@@ -544,78 +574,11 @@ impl Backend {
         .await
     }
 
-    /// Tries to detect the crate root the config that contains a cairo file, and add it to the
-    /// system.
-    #[tracing::instrument(level = "trace", skip_all)]
-    async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: PathBuf) {
-        match ProjectManifestPath::discover(&file_path) {
-            Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                let scarb = self.scarb_toolchain.clone();
-                let Ok(metadata) = spawn_blocking(move || {
-                    scarb
-                        .metadata(&manifest_path)
-                        .with_context(|| {
-                            format!(
-                                "failed to refresh scarb workspace: {}",
-                                manifest_path.display()
-                            )
-                        })
-                        .inspect_err(|e| {
-                            // TODO(mkaput): Send a notification to the language client.
-                            warn!("{e:?}");
-                        })
-                        .ok()
-                })
-                .await
-                else {
-                    error!("scarb invoking thread panicked");
-                    return;
-                };
-
-                if let Some(metadata) = metadata {
-                    update_crate_roots(&metadata, db);
-                } else {
-                    // Try to set up a corelib at least.
-                    try_to_init_unmanaged_core(&*self.config.read().await, db);
-                }
-            }
-
-            Some(ProjectManifestPath::CairoProject(config_path)) => {
-                // The base path of ProjectConfig must be absolute to ensure that all paths in Salsa
-                // DB will also be absolute.
-                assert!(config_path.is_absolute());
-
-                try_to_init_unmanaged_core(&*self.config.read().await, db);
-
-                if let Ok(config) = ProjectConfig::from_file(&config_path) {
-                    update_crate_roots_from_project_config(db, &config);
-                };
-            }
-
-            None => {
-                try_to_init_unmanaged_core(&*self.config.read().await, db);
-
-                if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
-                    let file_path_s = file_path.to_string_lossy();
-                    error!("error loading file {file_path_s} as a single crate: {err}");
-                }
-            }
-        }
-    }
-
     /// Reload crate detection for all open files.
     #[tracing::instrument(level = "trace", skip_all)]
     async fn reload(&self) -> LSPResult<()> {
         self.reload_config().await;
-
-        let mut db = self.db_mut().await;
-        for uri in self.state_mutex.lock().await.open_files.iter() {
-            let Some(file_id) = db.file_for_url(uri) else { continue };
-            if let FileLongId::OnDisk(file_path) = db.lookup_intern_file(file_id) {
-                self.detect_crate_for(&mut db, file_path).await;
-            }
-        }
-        drop(db);
+        self.mutate_projects(ProjectManager::reload).await;
         self.refresh_diagnostics().await
     }
 
@@ -626,6 +589,8 @@ impl Backend {
             let client_capabilities = self.client_capabilities.read().await;
             config.reload(&self.client, &client_capabilities).await;
         }
+
+        self.projects.lock().await.on_config_changed(&config);
     }
 }
 
@@ -706,13 +671,17 @@ impl LanguageServer for Backend {
             // Register patterns for client file watcher.
             // This is used to detect changes to Scarb.toml and invalidate .cairo files.
             let registration_options = DidChangeWatchedFilesRegistrationOptions {
-                watchers: vec!["/**/*.cairo", "/**/Scarb.toml"]
-                    .into_iter()
-                    .map(|glob_pattern| FileSystemWatcher {
-                        glob_pattern: GlobPattern::String(glob_pattern.to_string()),
-                        kind: None,
-                    })
-                    .collect(),
+                watchers: [
+                    "/**/*.cairo",
+                    "/**/Scarb.toml",
+                    "/**/Scarb.lock",
+                    "/**/cairo_project.toml",
+                ]
+                .map(|glob_pattern| FileSystemWatcher {
+                    glob_pattern: GlobPattern::String(glob_pattern.to_string()),
+                    kind: None,
+                })
+                .into(),
             };
             let registration = Registration {
                 id: "workspace/didChangeWatchedFiles".to_string(),
@@ -741,22 +710,24 @@ impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_watched_files(&self, params: DidChangeWatchedFilesParams) {
         // Invalidate changed cairo files.
-        let mut db = self.db_mut().await;
-        for change in &params.changes {
-            if is_cairo_file_path(&change.uri) {
-                let Some(file) = db.file_for_url(&change.uri) else { continue };
-                PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
+        {
+            let mut db = self.db_mut().await;
+            for change in &params.changes {
+                if is_cairo_file_path(&change.uri) {
+                    let Some(file) = db.file_for_url(&change.uri) else { continue };
+                    PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
+                }
             }
         }
-        drop(db);
-        // Reload workspace if Scarb.toml changed.
-        for change in params.changes {
-            let changed_file_path = change.uri.to_file_path().unwrap_or_default();
-            let changed_file_name = changed_file_path.file_name().unwrap_or_default();
-            if changed_file_name == "Scarb.toml" {
-                self.reload().await.ok();
+
+        // Check for changes in project files.
+        self.mutate_projects(move |projects| {
+            for change in &params.changes {
+                let Ok(path) = change.uri.to_file_path() else { continue };
+                projects.on_file_changed(&path);
             }
-        }
+        })
+        .await;
     }
 
     #[tracing::instrument(level = "debug", skip_all, fields(command = params.command))]
@@ -781,20 +752,23 @@ impl LanguageServer for Backend {
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        let mut db = self.db_mut().await;
+        // The concept of a "project" only applies to physical files.
+        // The database always has up-to-date inputs for virtual files.
         let uri = params.text_document.uri;
-
-        // Try to detect the crate for physical files.
-        // The crate for virtual files is already known.
         if uri.scheme() == "file" {
             let Ok(path) = uri.to_file_path() else { return };
-            self.detect_crate_for(&mut db, path).await;
+            self.mutate_projects(move |projects| {
+                projects.on_file_opened(&path);
+            })
+            .await;
         }
 
-        let Some(file_id) = db.file_for_url(&uri) else { return };
-        self.state_mut().await.open_files.insert(uri);
-        db.override_file_content(file_id, Some(Arc::new(params.text_document.text)));
-        drop(db);
+        {
+            let mut db = self.db_mut().await;
+            let Some(file_id) = db.file_for_url(&uri) else { return };
+            self.state_mut().await.open_files.insert(uri);
+            db.override_file_content(file_id, Some(Arc::new(params.text_document.text)));
+        }
         self.refresh_diagnostics().await.ok();
     }
 
@@ -817,19 +791,40 @@ impl LanguageServer for Backend {
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_save(&self, params: DidSaveTextDocumentParams) {
-        let mut db = self.db_mut().await;
-        let Some(file) = db.file_for_url(&params.text_document.uri) else { return };
-        PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
-        db.override_file_content(file, None);
+        let uri = &params.text_document.uri;
+
+        {
+            let mut db = self.db_mut().await;
+            let Some(file) = db.file_for_url(uri) else { return };
+            PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
+            db.override_file_content(file, None);
+        }
+
+        if let Ok(path) = uri.to_file_path() {
+            self.mutate_projects(move |projects| {
+                projects.on_file_changed(&path);
+            })
+            .await;
+        }
     }
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
-        let mut db = self.db_mut().await;
-        self.state_mut().await.open_files.remove(&params.text_document.uri);
-        let Some(file) = db.file_for_url(&params.text_document.uri) else { return };
-        db.override_file_content(file, None);
-        drop(db);
+        let uri = &params.text_document.uri;
+
+        {
+            let mut db = self.db_mut().await;
+            self.state_mut().await.open_files.remove(uri);
+            let Some(file) = db.file_for_url(uri) else { return };
+            db.override_file_content(file, None);
+        }
+
+        if let Ok(path) = uri.to_file_path() {
+            self.mutate_projects(move |projects| {
+                projects.on_file_changed(&path);
+            })
+            .await;
+        }
         self.refresh_diagnostics().await.ok();
     }
 

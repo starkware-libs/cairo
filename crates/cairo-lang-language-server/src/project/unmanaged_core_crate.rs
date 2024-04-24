@@ -7,33 +7,56 @@ use tracing::{error, warn};
 
 use crate::config::Config;
 
-/// Try to find a Cairo `core` crate (see [`find_unmanaged_core`]) and initialize it in the
-/// provided database.
-pub fn try_to_init_unmanaged_core(config: &Config, db: &mut (dyn FilesGroup + 'static)) {
-    if let Some(path) = find_unmanaged_core(config) {
-        init_dev_corelib(db, path);
-    } else {
-        warn!("failed to find unmanaged core crate")
+/// A helper object for managing the unmanaged Cairo `core` crate.
+///
+/// An unmanaged `core` is one that is used in projects whose managers do not handle the `core`
+/// crate themselves.
+/// This is the case for `cairo_project.toml`-based projects and for detached files.
+pub struct UnmanagedCoreCrate {
+    core_path: Option<PathBuf>,
+}
+
+impl UnmanagedCoreCrate {
+    /// Constructs a new [`UnmanagedCoreCrate`].
+    pub fn new(config: &Config) -> Self {
+        Self { core_path: config.unmanaged_core_path.clone() }
+    }
+
+    /// Reacts to changes in the [`Config`].
+    pub fn on_config_changed(&mut self, config: &Config) {
+        self.core_path.clone_from(&config.unmanaged_core_path);
+    }
+
+    /// Tries to find a Cairo `core` crate and initializes it in the provided database.
+    pub fn apply_db_changes(&self, db: &mut (dyn FilesGroup + 'static)) {
+        if let Some(path) = self.discover() {
+            // FIXME(mkaput): This should actually read from cairo_project.toml/Scarb.toml.
+            //   init_dev_corelib has to die.
+            init_dev_corelib(db, path);
+        } else {
+            warn!("failed to find unmanaged core crate")
+        }
+    }
+
+    /// Tries to find a Cairo `core` crate in various well-known places, for use in project backends
+    /// that do not manage the `core` crate (i.e., anything non-Scarb).
+    ///
+    /// The path is guaranteed to be absolute, so it can be safely used as a `FileId` in LS Salsa
+    /// DB.
+    fn discover(&self) -> Option<PathBuf> {
+        // TODO(mkaput): First, try to find Scarb-managed `core` package if we have Scarb toolchain.
+        //   The most reliable way to do this is to create an empty Scarb package, and run
+        //   `scarb metadata` on it. The `core` package will be a component of this empty package.
+        //   For minimal packages, `scarb metadata` should be pretty fast.
+        find_core_at_config_path(&self.core_path)
+            .or_else(cairo_lang_filesystem::detect::detect_corelib)
+            .and_then(ensure_absolute)
     }
 }
 
-/// Try to find a Cairo `core` crate in various well-known places, for use in project backends that
-/// do not manage the `core` crate (i.e., anything non-Scarb).
-///
-/// The path is guaranteed to be absolute, so it can be safely used as a `FileId` in LS Salsa DB.
-pub fn find_unmanaged_core(config: &Config) -> Option<PathBuf> {
-    // TODO(mkaput): First, try to find Scarb-managed `core` package if we have Scarb toolchain.
-    //   The most reliable way to do this is to create an empty Scarb package, and run
-    //   `scarb metadata` on it. The `core` package will be a component of this empty package.
-    //   For minimal packages, `scarb metadata` should be pretty fast.
-    find_core_at_config_path(config)
-        .or_else(cairo_lang_filesystem::detect::detect_corelib)
-        .and_then(ensure_absolute)
-}
-
 /// Attempts to find the `core` crate source root at the path provided in the configuration.
-fn find_core_at_config_path(config: &Config) -> Option<PathBuf> {
-    find_core_at_path(config.unmanaged_core_path.as_ref()?.as_path())
+fn find_core_at_config_path(core_path: &Option<PathBuf>) -> Option<PathBuf> {
+    find_core_at_path(core_path.as_ref()?.as_path())
 }
 
 /// Attempts to find the `core` crate source root at a given path.
