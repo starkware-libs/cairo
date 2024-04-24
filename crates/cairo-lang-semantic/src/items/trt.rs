@@ -244,7 +244,7 @@ pub fn trait_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let syntax_db: &dyn SyntaxGroup = db.upcast();
     let module_file_id = trait_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
 
     // Generic params.
@@ -285,8 +285,7 @@ pub fn priv_trait_declaration_data(
     trait_id: TraitId,
 ) -> Maybe<TraitDeclarationData> {
     let syntax_db: &dyn SyntaxGroup = db.upcast();
-    let module_file_id = trait_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -445,7 +444,7 @@ pub fn priv_trait_definition_data(
     let syntax_db: &dyn SyntaxGroup = db.upcast();
 
     let module_file_id = trait_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
 
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -565,7 +564,7 @@ pub fn priv_trait_type_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let syntax_db = db.upcast();
     let module_file_id = trait_type_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_type_id.trait_id(db.upcast());
     let data = db.priv_trait_definition_data(trait_id)?;
     let trait_type_ast = &data.item_type_asts[&trait_type_id];
@@ -610,8 +609,7 @@ pub fn priv_trait_type_data(
     trait_type_id: TraitTypeId,
 ) -> Maybe<TraitItemTypeData> {
     let syntax_db = db.upcast();
-    let module_file_id = trait_type_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_type_id.trait_id(db.upcast());
     let data = db.priv_trait_definition_data(trait_id)?;
     let type_syntax = &data.item_type_asts[&trait_type_id];
@@ -675,7 +673,7 @@ pub fn priv_trait_function_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let syntax_db = db.upcast();
     let module_file_id = trait_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_function_id.trait_id(db.upcast());
     let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];
@@ -754,8 +752,7 @@ pub fn priv_trait_function_declaration_data(
     trait_function_id: TraitFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
     let syntax_db = db.upcast();
-    let module_file_id = trait_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_function_id.trait_id(db.upcast());
     let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];
@@ -918,8 +915,7 @@ pub fn priv_trait_function_body_data(
     trait_function_id: TraitFunctionId,
 ) -> Maybe<Option<FunctionBodyData>> {
     let defs_db = db.upcast();
-    let module_file_id = trait_function_id.module_file_id(defs_db);
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_function_id.trait_id(defs_db);
     let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];

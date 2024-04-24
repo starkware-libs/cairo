@@ -417,7 +417,7 @@ fn compute_expr_inline_macro_semantic(
 
     // Create a file
     let new_file = FileLongId::Virtual(VirtualFile {
-        parent: Some(ctx.diagnostics.file_id),
+        parent: Some(syntax.stable_ptr().untyped().file_id(ctx.db.upcast())),
         name: code.name,
         content: Arc::new(code.content),
         code_mappings: Arc::new(code.code_mappings),
@@ -425,9 +425,7 @@ fn compute_expr_inline_macro_semantic(
     })
     .intern(ctx.db);
     let expr_syntax = ctx.db.file_expr_syntax(new_file)?;
-    let old_file = std::mem::replace(&mut ctx.diagnostics.file_id, new_file);
     let expr = compute_expr_semantic(ctx, &expr_syntax, result_type);
-    ctx.diagnostics.file_id = old_file;
     Ok(expr.expr)
 }
 

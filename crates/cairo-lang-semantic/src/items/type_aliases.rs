@@ -34,7 +34,7 @@ pub fn type_alias_generic_params_data_helper(
     lookup_item_id: LookupItemId,
     parent_resolver_data: Option<Arc<ResolverData>>,
 ) -> Maybe<GenericParamsData> {
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
 
     let mut resolver = match parent_resolver_data {

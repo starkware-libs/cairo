@@ -388,8 +388,7 @@ fn function_with_body_lowering_with_borrow_check(
     function_id: ids::FunctionWithBodyId,
 ) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)> {
     let mut lowered = (*db.priv_function_with_body_lowering(function_id)?).clone();
-    let module_file_id = function_id.base_semantic_function(db).module_file_id(db.upcast());
-    let block_extra_calls = borrow_check(db, module_file_id, &mut lowered);
+    let block_extra_calls = borrow_check(db, &mut lowered);
     Ok((Arc::new(lowered), Arc::new(block_extra_calls)))
 }
 
