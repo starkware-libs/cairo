@@ -724,7 +724,6 @@ fn lower_expr(
     let expr = ctx.function_body.exprs[expr_id].clone();
     match &expr {
         semantic::Expr::Constant(expr) => lower_expr_constant(ctx, expr, builder),
-        semantic::Expr::ParamConstant(expr) => lower_expr_param_constant(ctx, expr, builder),
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, builder),
         semantic::Expr::Snapshot(expr) => lower_expr_snapshot(ctx, expr, builder),
         semantic::Expr::Desnap(expr) => lower_expr_desnap(ctx, expr, builder),
@@ -931,33 +930,12 @@ fn lower_expr_constant(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a constant: {:?}", expr.debug(&ctx.expr_formatter));
-    let (value, ty) = ctx
-        .db
-        .constant_const_value(expr.constant_id)
-        .map(|value| {
-            (
-                value,
-                ctx.db.constant_const_type(expr.constant_id).expect("Constant must have a type."),
-            )
-        })
-        .map_err(LoweringFlowError::Failed)?;
+    let value = expr.const_value_id.lookup_intern(ctx.db);
+    let ty = expr.ty;
+
     let location = ctx.get_location(expr.stable_ptr.untyped());
     Ok(LoweredExpr::AtVariable(
         generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
-    ))
-}
-
-/// Lowers an expression of type [semantic::ExprParamConstant].
-fn lower_expr_param_constant(
-    ctx: &mut LoweringContext<'_, '_>,
-    expr: &semantic::ExprParamConstant,
-    builder: &mut BlockBuilder,
-) -> LoweringResult<LoweredExpr> {
-    log::trace!("Lowering a constant parameter: {:?}", expr.debug(&ctx.expr_formatter));
-    let value = expr.const_value_id.lookup_intern(ctx.db);
-    let location = ctx.get_location(expr.stable_ptr.untyped());
-    Ok(LoweredExpr::AtVariable(
-        generators::Const { value, ty: expr.ty, location }.add(ctx, &mut builder.statements),
     ))
 }
 
