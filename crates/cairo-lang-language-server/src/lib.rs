@@ -939,7 +939,7 @@ fn resolved_generic_item_def(
 ) -> SyntaxStablePtrId {
     let defs_db = db.upcast();
     match item {
-        ResolvedGenericItem::Constant(item) => item.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(defs_db),
         ResolvedGenericItem::Module(module_id) => {
             // Check if the module is an inline submodule.
             if let ModuleId::Submodule(submodule_id) = module_id {

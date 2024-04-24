@@ -280,11 +280,7 @@ fn generate_statement_const_code(
 ) -> Maybe<()> {
     let output_var = context.get_sierra_variable(statement.output);
     context.push_statement(simple_basic_statement(
-        const_libfunc_id_by_type(
-            context.get_db(),
-            context.get_var_type(statement.output),
-            &statement.value,
-        ),
+        const_libfunc_id_by_type(context.get_db(), &statement.value),
         &[],
         &[output_var],
     ));

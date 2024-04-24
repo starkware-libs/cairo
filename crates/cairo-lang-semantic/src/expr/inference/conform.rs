@@ -216,11 +216,11 @@ impl<'db> InferenceConform for Inference<'db> {
         }
         match id1.lookup_intern(self.db) {
             ConstValue::Missing(_) => return Ok(id1),
-            ConstValue::Var(var) => return self.assign_const(var, id0),
+            ConstValue::Var(var, _) => return self.assign_const(var, id0),
             _ => {}
         }
         match const_value0 {
-            ConstValue::Var(var) => Ok(self.assign_const(var, id1)?),
+            ConstValue::Var(var, _) => Ok(self.assign_const(var, id1)?),
             _ => {
                 Err(self.set_error(InferenceError::ConstKindMismatch { const0: id0, const1: id1 }))
             }
