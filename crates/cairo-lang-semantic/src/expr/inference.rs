@@ -65,6 +65,7 @@ pub struct TypeVar {
 pub struct ConstVar {
     pub inference_id: InferenceId,
     pub id: LocalConstVarId,
+    pub ty: TypeId,
 }
 
 /// An id for an inference context. Each inference variable is associated with an inference id.
@@ -452,17 +453,26 @@ impl<'db> Inference<'db> {
 
     /// Allocates a new [ConstVar] for an unknown consts that needs to be inferred.
     /// Returns a wrapping [ConstValueId].
-    pub fn new_const_var(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> ConstValueId {
-        let var = self.new_const_var_raw(stable_ptr);
+    pub fn new_const_var(
+        &mut self,
+        stable_ptr: Option<SyntaxStablePtrId>,
+        ty: TypeId,
+    ) -> ConstValueId {
+        let var = self.new_const_var_raw(stable_ptr, ty);
         ConstValue::Var(var).intern(self.db)
     }
 
     /// Allocates a new [ConstVar] for an unknown type that needs to be inferred.
     /// Returns the variable id.
-    pub fn new_const_var_raw(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> ConstVar {
+    pub fn new_const_var_raw(
+        &mut self,
+        stable_ptr: Option<SyntaxStablePtrId>,
+        ty: TypeId,
+    ) -> ConstVar {
         let var = ConstVar {
             inference_id: self.inference_id,
             id: LocalConstVarId(self.const_vars.len()),
+            ty,
         };
         if let Some(stable_ptr) = stable_ptr {
             self.stable_ptrs.insert(InferenceVar::Const(var.id), stable_ptr);
