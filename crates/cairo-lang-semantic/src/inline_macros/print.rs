@@ -73,7 +73,9 @@ fn generate_code_inner(
             ),
             (
                 "args".to_string(),
-                RewriteNode::new_trimmed(arguments.arg_list(db).unwrap().as_syntax_node()),
+                arguments.arg_list(db).map_or_else(RewriteNode::empty, |n| {
+                    RewriteNode::new_trimmed(n.as_syntax_node())
+                }),
             ),
         ]
         .into(),
