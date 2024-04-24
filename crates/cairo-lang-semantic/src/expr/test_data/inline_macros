@@ -635,6 +635,9 @@ fn foo() {
 
     // Unused arguments.
     print!("{2}{0}", ba, 2, 1);
+
+    // Missing parens.
+    print!;
 }
 
 //! > function_name
@@ -643,6 +646,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:32:11
+    print!;
+          ^
+
 error: Plugin diagnostic: Macro `write` does not support this bracket type.
  --> lib.cairo:5:11
     print!["{}", ba];
@@ -687,6 +695,16 @@ error: Plugin diagnostic: Unused argument.
  --> lib.cairo:29:26
     print!("{2}{0}", ba, 2, 1);
                          ^
+
+error: Plugin diagnostic: Macro `write` does not support this bracket type.
+ --> lib.cairo:32:11
+    print!;
+          ^
+
+error: Wrong number of arguments. Expected 1, found: 2
+ --> lib.cairo[print_macro]:3:5
+    core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+    ^********************************************************^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
@@ -735,6 +753,9 @@ fn foo() {
 
     // Unused arguments.
     println!("{2}{0}", ba, 2, 1);
+    
+    // Missing parens.
+    println!;
 }
 
 //! > function_name
@@ -743,6 +764,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:32:13
+    println!;
+            ^
+
 error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
  --> lib.cairo:5:13
     println!["{}", ba];
@@ -787,6 +813,16 @@ error: Plugin diagnostic: Unused argument.
  --> lib.cairo:29:28
     println!("{2}{0}", ba, 2, 1);
                            ^
+
+error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
+ --> lib.cairo:32:13
+    println!;
+            ^
+
+error: Wrong number of arguments. Expected 1, found: 2
+ --> lib.cairo[println_macro]:3:5
+    core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+    ^********************************************************^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
