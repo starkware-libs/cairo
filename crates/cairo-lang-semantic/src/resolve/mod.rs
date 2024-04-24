@@ -224,8 +224,7 @@ impl<'db> Resolver<'db> {
                 &mut Resolver<'_>,
                 &mut SemanticDiagnostics,
                 &ResolvedItem,
-                &ast::TerminalIdentifier,
-                Option<Vec<ast::GenericArg>>,
+                &ast::PathSegment,
                 NotFoundItemType,
             ) -> Maybe<ResolvedItem>,
             impl FnMut(&mut SemanticDiagnostics, &ast::PathSegment) -> Maybe<()>,
@@ -249,8 +248,6 @@ impl<'db> Resolver<'db> {
         // Follow modules.
         while let Some(segment) = segments.next() {
             (callbacks.validate_segment)(diagnostics, segment)?;
-            let identifier = segment.identifier_ast(syntax_db);
-            let generic_args = segment.generic_args(syntax_db);
 
             // If this is not the last segment, set the expected type to
             // [NotFoundItemType::Identifier].
@@ -262,8 +259,7 @@ impl<'db> Resolver<'db> {
                 self,
                 diagnostics,
                 &item,
-                &identifier,
-                generic_args,
+                segment,
                 cur_item_type,
             )?;
             (callbacks.mark)(&mut self.resolved_items, db, segment, item.clone());
@@ -288,17 +284,11 @@ impl<'db> Resolver<'db> {
                 resolve_path_first_segment: |resolver, diagnostics, segments| {
                     resolver.resolve_concrete_path_first_segment(diagnostics, segments)
                 },
-                resolve_path_next_segment: |resolver,
-                                            diagnostics,
-                                            item,
-                                            identifier,
-                                            generic_args_syntax,
-                                            item_type| {
+                resolve_path_next_segment: |resolver, diagnostics, item, segment, item_type| {
                     resolver.resolve_path_next_segment_concrete(
                         diagnostics,
                         item,
-                        identifier,
-                        generic_args_syntax,
+                        segment,
                         item_type,
                     )
                 },
@@ -416,16 +406,12 @@ impl<'db> Resolver<'db> {
                         allow_generic_args,
                     )
                 },
-                resolve_path_next_segment: |resolver,
-                                            diagnostics,
-                                            item,
-                                            identifier,
-                                            _generic_args_syntax,
-                                            item_type| {
+                resolve_path_next_segment: |resolver, diagnostics, item, segment, item_type| {
+                    let identifier = segment.identifier_ast(self.db.upcast());
                     resolver.resolve_path_next_segment_generic(
                         diagnostics,
                         item,
-                        identifier,
+                        &identifier,
                         item_type,
                     )
                 },
@@ -506,7 +492,7 @@ impl<'db> Resolver<'db> {
                 ModuleId::Submodule(submodule_id) => submodule_id.parent_module(self.db.upcast()),
             };
         }
-        if module_id == self.module_file_id.0 { None } else { Some(Ok(module_id)) }
+        (module_id != self.module_file_id.0).then_some(Ok(module_id))
     }
 
     /// Given the current resolved item, resolves the next segment.
@@ -514,11 +500,13 @@ impl<'db> Resolver<'db> {
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         containing_item: &ResolvedConcreteItem,
-        identifier: &ast::TerminalIdentifier,
-        generic_args_syntax: Option<Vec<ast::GenericArg>>,
+        segment: &ast::PathSegment,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedConcreteItem> {
         let syntax_db = self.db.upcast();
+        let identifier = &segment.identifier_ast(syntax_db);
+        let generic_args_syntax = segment.generic_args(syntax_db);
+
         let ident = identifier.text(syntax_db);
 
         if identifier.text(syntax_db) == "Self" {
@@ -1230,8 +1218,7 @@ where
         &mut Resolver<'_>,
         &mut SemanticDiagnostics,
         &ResolvedItem,
-        &ast::TerminalIdentifier,
-        Option<Vec<ast::GenericArg>>,
+        &ast::PathSegment,
         NotFoundItemType,
     ) -> Maybe<ResolvedItem>,
     Validate: FnMut(&mut SemanticDiagnostics, &ast::PathSegment) -> Maybe<()>,
