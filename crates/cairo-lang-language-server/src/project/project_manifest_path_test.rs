@@ -7,7 +7,7 @@ use super::*;
 fn discover_cairo_project_toml() {
     let t = TempDir::new().unwrap();
 
-    let manifest = t.child("cairo_project.toml");
+    let manifest = t.child(PROJECT_FILE_NAME);
     manifest.touch().unwrap();
 
     let source_path = t.child("src/lib.cairo");
@@ -21,7 +21,7 @@ fn discover_cairo_project_toml() {
 fn discover_scarb_toml() {
     let t = TempDir::new().unwrap();
 
-    let manifest = t.child("Scarb.toml");
+    let manifest = t.child(SCARB_TOML);
     manifest.touch().unwrap();
 
     let source_path = t.child("src/lib.cairo");
@@ -46,10 +46,10 @@ fn discover_no_manifest() {
 fn discover_precedence() {
     let t = TempDir::new().unwrap();
 
-    let scarb_manifest = t.child("Scarb.toml");
+    let scarb_manifest = t.child(SCARB_TOML);
     scarb_manifest.touch().unwrap();
 
-    let cairo_manifest = t.child("cairo_project.toml");
+    let cairo_manifest = t.child(PROJECT_FILE_NAME);
     cairo_manifest.touch().unwrap();
 
     let source_path = t.child("src/lib.cairo");

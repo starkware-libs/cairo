@@ -3,12 +3,13 @@ use std::{fmt, fs};
 
 use cairo_lang_project::PROJECT_FILE_NAME;
 
+use crate::toolchain::scarb::SCARB_TOML;
+
 #[cfg(test)]
 #[path = "project_manifest_path_test.rs"]
 mod project_manifest_path_test;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
-const SCARB_TOML: &str = "Scarb.toml";
 
 /// An absolute path to a manifest file of a single Cairo project.
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd, Hash)]
