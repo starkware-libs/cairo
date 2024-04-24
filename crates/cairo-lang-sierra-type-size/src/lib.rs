@@ -33,6 +33,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Sint64(_)
             | CoreTypeConcrete::Sint128(_)
             | CoreTypeConcrete::RangeCheck(_)
+            | CoreTypeConcrete::RangeCheck96(_)
             | CoreTypeConcrete::Box(_)
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::System(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageBaseAddress(_))

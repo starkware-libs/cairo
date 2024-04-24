@@ -1,5 +1,5 @@
 //! Basic runner for running a Sierra program on the vm.
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use cairo_felt::Felt252;
 use cairo_lang_casm::hints::Hint;
@@ -13,7 +13,7 @@ use cairo_lang_sierra::extensions::enm::EnumType;
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasBuiltinType};
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::poseidon::PoseidonType;
-use cairo_lang_sierra::extensions::range_check::RangeCheckType;
+use cairo_lang_sierra::extensions::range_check::{RangeCheck96Type, RangeCheckType};
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
@@ -612,6 +612,13 @@ impl SierraCasmRunner {
             (EcOpType::ID, 4),
             (PoseidonType::ID, 3),
         ]);
+
+        let emulated_builtins = HashSet::from([
+            SystemType::ID,
+            // TODO(ilya): Move to `builtin_offsets` when supported by cairo-vm.
+            RangeCheck96Type::ID,
+        ]);
+
         let mut ap_offset: i16 = 0;
         let mut array_args_data_iter = prep_array_args(&mut ctx, args, &mut ap_offset).into_iter();
         let after_arrays_data_offset = ap_offset;
@@ -640,7 +647,7 @@ impl SierraCasmRunner {
                     [ap + 0] = [fp - offset], ap++;
                 }
                 ap_offset += 1;
-            } else if generic_ty == &SystemType::ID {
+            } else if emulated_builtins.contains(generic_ty) {
                 casm_extend! {ctx,
                     %{ memory[ap + 0] = segments.add() %}
                     ap += 1;
