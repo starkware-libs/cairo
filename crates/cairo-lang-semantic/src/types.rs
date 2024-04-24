@@ -521,19 +521,18 @@ pub fn extract_fixed_size_array_size(
             );
             let mut ctx = ComputationContext::new(db, diagnostics, resolver, None, environment);
             let size_expr_syntax = size_clause.size(syntax_db);
-            let size = compute_expr_semantic(&mut ctx, &size_expr_syntax);
-            let (_, const_value) = resolve_const_expr_and_evaluate(
+            let size = compute_expr_semantic(&mut ctx, &size_expr_syntax, None);
+            let const_value = resolve_const_expr_and_evaluate(
                 db,
                 &mut ctx,
                 &size,
                 size_expr_syntax.stable_ptr().untyped(),
                 get_usize_ty(db),
             );
-            match &const_value {
-                ConstValue::Int(_) => Ok(Some(const_value.intern(db))),
-                ConstValue::Generic(_) => Ok(Some(const_value.intern(db))),
-
-                _ => Err(diagnostics.report(syntax, FixedSizeArrayNonNumericSize)),
+            if matches!(const_value, ConstValue::Int(_, _) | ConstValue::Generic(_)) {
+                Ok(Some(const_value.intern(db)))
+            } else {
+                Err(diagnostics.report(syntax, FixedSizeArrayNonNumericSize))
             }
         }
         ast::OptionFixedSizeArraySize::Empty(_) => Ok(None),
@@ -640,7 +639,7 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
                 || matches!(size.lookup_intern(db),
-                            ConstValue::Int(value) if value.is_zero())
+                            ConstValue::Int(value, _) if value.is_zero())
         }
     })
 }
@@ -725,7 +724,7 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
         | TypeLongId::TraitType(_)
         | TypeLongId::ImplType(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
-            if matches!(size.lookup_intern(db), ConstValue::Int(value) if value.is_zero())
+            if matches!(size.lookup_intern(db), ConstValue::Int(value,_) if value.is_zero())
                 || db.type_size_info(type_id)? == TypeSizeInformation::ZeroSized
             {
                 return Ok(TypeSizeInformation::ZeroSized);

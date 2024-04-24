@@ -470,9 +470,13 @@ impl<'db> Inference<'db> {
 
     /// Allocates a new [ConstVar] for an unknown consts that needs to be inferred.
     /// Returns a wrapping [ConstValueId].
-    pub fn new_const_var(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> ConstValueId {
+    pub fn new_const_var(
+        &mut self,
+        stable_ptr: Option<SyntaxStablePtrId>,
+        ty: TypeId,
+    ) -> ConstValueId {
         let var = self.new_const_var_raw(stable_ptr);
-        ConstValue::Var(var).intern(self.db)
+        ConstValue::Var(var, ty).intern(self.db)
     }
 
     /// Allocates a new [ConstVar] for an unknown type that needs to be inferred.
@@ -753,7 +757,8 @@ impl<'db> Inference<'db> {
     fn assign_const(&mut self, var: ConstVar, id: ConstValueId) -> InferenceResult<ConstValueId> {
         if var.inference_id != self.inference_id {
             return Err(self.set_error(InferenceError::ConstKindMismatch {
-                const0: ConstValue::Var(var).intern(self.db),
+                const0: ConstValue::Var(var, TypeId::missing(self.db, skip_diagnostic()))
+                    .intern(self.db),
                 const1: id,
             }));
         }
@@ -806,7 +811,7 @@ impl<'db> Inference<'db> {
                 return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer(concrete_trait_id)));
             }
             Some(GenericArgumentId::Constant(const_value)) => {
-                if let ConstValue::Var(_) = const_value.lookup_intern(self.db) {
+                if let ConstValue::Var(_, _) = const_value.lookup_intern(self.db) {
                     // Don't try to infer such impls.
                     return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer(concrete_trait_id)));
                 }
@@ -1050,7 +1055,7 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
 }
 impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, NoError> {
-        if let ConstValue::Var(var) = value {
+        if let ConstValue::Var(var, _) = value {
             if let Some(const_value_id) = self.const_assignment.get(&var.id) {
                 let mut const_value = const_value_id.lookup_intern(self.db);
                 if let RewriteResult::Modified = self.internal_rewrite(&mut const_value)? {
