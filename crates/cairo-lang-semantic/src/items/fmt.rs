@@ -10,15 +10,15 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
         let db = db.upcast();
         match self {
-            ConstValue::Int(value) => write!(f, "{}", value),
-            ConstValue::Struct(inner) => {
+            ConstValue::Int(value, _ty) => write!(f, "{}", value),
+            ConstValue::Struct(inner, _) => {
                 write!(f, "{{")?;
                 let mut inner = inner.iter().peekable();
-                while let Some((ty, value)) = inner.next() {
+                while let Some(value) = inner.next() {
                     write!(f, " ")?;
                     value.fmt(f, db)?;
                     write!(f, ": ")?;
-                    ty.fmt(f, db.elongate())?;
+                    value.ty(db).unwrap().fmt(f, db.elongate())?;
                     if inner.peek().is_some() {
                         write!(f, ",")?;
                     } else {
@@ -33,8 +33,8 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
                 inner.fmt(f, db)?;
                 write!(f, ")")
             }
-            ConstValue::NonZero(_, value) => value.fmt(f, db),
-            ConstValue::Boxed(_, value) => {
+            ConstValue::NonZero(value) => value.fmt(f, db),
+            ConstValue::Boxed(value) => {
                 value.fmt(f, db)?;
                 write!(f, ".into_box()")
             }
