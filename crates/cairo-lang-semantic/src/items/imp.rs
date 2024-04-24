@@ -1400,30 +1400,6 @@ fn validate_impl_item_type(
 
 // === Impl Type ===
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_implized_by_context].
-pub fn impl_type_implized_by_context(
-    db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeId,
-    impl_def_id: ImplDefId,
-) -> Maybe<Option<TypeId>> {
-    let Some(impl_type_def_id) = db.impl_type_by_trait_type(impl_def_id, impl_type_id.ty())? else {
-        return Ok(None);
-    };
-
-    Ok(Some(db.impl_type_def_resolved_type(impl_type_def_id)?))
-}
-
-/// Cycle handling for [crate::db::SemanticGroup::impl_type_implized_by_context].
-pub fn impl_type_implized_by_context_cycle(
-    db: &dyn SemanticGroup,
-    _cycle: &[String],
-    impl_type_id: &ImplTypeId,
-    impl_def_id: &ImplDefId,
-) -> Maybe<Option<TypeId>> {
-    // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
-    impl_type_implized_by_context(db, *impl_type_id, *impl_def_id)
-}
-
 /// Query implementation of [crate::db::SemanticGroup::impl_type_concrete_implized].
 pub fn impl_type_concrete_implized(
     db: &dyn SemanticGroup,
@@ -1434,7 +1410,7 @@ pub fn impl_type_concrete_implized(
     };
 
     let impl_def_id = concrete_impl.impl_def_id(db);
-    db.impl_type_implized_by_context(impl_type_id, impl_def_id)
+    db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id)
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_type_concrete_implized].
