@@ -22,8 +22,7 @@ use crate::ids::{
     SubmoduleLongId,
 };
 use crate::plugin::{
-    GeneratedFileAuxData, MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile,
-    PluginResult,
+    MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -203,18 +202,6 @@ fn test_submodules() {
         &db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap()[..],
         vec![subsubmodule_id]
     );
-}
-
-#[derive(Debug)]
-struct DummyAuxData;
-impl GeneratedFileAuxData for DummyAuxData {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
-    fn eq(&self, _other: &dyn GeneratedFileAuxData) -> bool {
-        false
-    }
 }
 
 #[derive(Debug)]

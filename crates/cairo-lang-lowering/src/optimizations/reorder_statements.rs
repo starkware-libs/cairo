@@ -162,7 +162,7 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
             }
             info
         });
-        let mut info = if let Some(first) = infos.next() { first } else { Self::Info::default() };
+        let mut info = infos.next().unwrap_or_default();
         for arm_info in infos {
             info.next_use.merge(&arm_info.next_use, |e, _| {
                 *e.into_mut() = statement_location;
