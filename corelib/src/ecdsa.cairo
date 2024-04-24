@@ -71,10 +71,7 @@ pub fn check_ecdsa_signature(
     let mut sR_state = init_ec.clone();
     sR_state.add_mul(signature_s, signature_r_point);
     let sR_x = match sR_state.finalize_nz() {
-        Option::Some(pt) => {
-            let (x, _) = ec::ec_point_unwrap(pt);
-            x
-        },
+        Option::Some(pt) => pt.x(),
         Option::None => { return false; },
     };
 
@@ -94,28 +91,20 @@ pub fn check_ecdsa_signature(
     // Check the `(zG + rQ).x = sR.x` case.
     let mut zG_plus_eQ_state = zG_state.clone();
     zG_plus_eQ_state.add(rQ);
-    match zG_plus_eQ_state.finalize_nz() {
-        Option::Some(pt) => {
-            let (x, _) = ec::ec_point_unwrap(pt);
-            if (x == sR_x) {
-                return true;
-            }
-        },
-        Option::None => {},
-    };
+    if let Option::Some(pt) = zG_plus_eQ_state.finalize_nz() {
+        if pt.x() == sR_x {
+            return true;
+        }
+    }
 
     // Check the `(zG - rQ).x = sR.x` case.
     let mut zG_minus_eQ_state = zG_state;
     zG_minus_eQ_state.sub(rQ);
-    match zG_minus_eQ_state.finalize_nz() {
-        Option::Some(pt) => {
-            let (x, _) = ec::ec_point_unwrap(pt);
-            if (x == sR_x) {
-                return true;
-            }
-        },
-        Option::None => {},
-    };
+    if let Option::Some(pt) = zG_minus_eQ_state.finalize_nz() {
+        if pt.x() == sR_x {
+            return true;
+        }
+    }
 
     return false;
 }
@@ -126,8 +115,7 @@ pub fn recover_public_key(
     message_hash: felt252, signature_r: felt252, signature_s: felt252, y_parity: bool
 ) -> Option<felt252> {
     let mut signature_r_point = EcPointTrait::new_from_x(signature_r)?;
-    let (_, y) = signature_r_point.try_into()?.coordinates();
-    let y: u256 = y.into();
+    let y: u256 = signature_r_point.try_into()?.y().into();
     // If the actual the parity of the actual y is different than requested, flip the parity.
     if (y.low & 1 == 1) != y_parity {
         signature_r_point = -signature_r_point;
@@ -157,6 +145,5 @@ pub fn recover_public_key(
     let z_div_r: felt252 = math::u256_mul_mod_n(message_hash.into(), r_inv, ord_nz).try_into()?;
     let s_div_rR: EcPoint = signature_r_point.mul(s_div_r);
     let z_div_rG: EcPoint = gen_point.mul(z_div_r);
-    let (x, _) = (s_div_rR - z_div_rG).try_into()?.coordinates();
-    Option::Some(x)
+    Option::Some((s_div_rR - z_div_rG).try_into()?.x())
 }

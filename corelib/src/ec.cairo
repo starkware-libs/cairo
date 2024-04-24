@@ -142,9 +142,18 @@ pub impl EcPointImpl of EcPointTrait {
         ec_point_from_x_nz(:x)
     }
     /// Returns the coordinates of the EC point.
-    #[inline(always)]
     fn coordinates(self: NonZeroEcPoint) -> (felt252, felt252) {
         ec_point_unwrap(self)
+    }
+    /// Returns the x coordinate of the EC point.
+    fn x(self: NonZeroEcPoint) -> felt252 {
+        let (x, _) = self.coordinates();
+        x
+    }
+    /// Returns the y coordinate of the EC point.
+    fn y(self: NonZeroEcPoint) -> felt252 {
+        let (_, y) = self.coordinates();
+        y
     }
     /// Computes the product of an EC point `p` by the given scalar `scalar`.
     fn mul(self: EcPoint, scalar: felt252) -> EcPoint {
@@ -195,13 +204,10 @@ impl EcPointSub of Sub<EcPoint> {
     /// Computes the difference between two points on the curve.
     fn sub(lhs: EcPoint, rhs: EcPoint) -> EcPoint {
         let nz_point: Option<NonZero<EcPoint>> = rhs.try_into();
-        match nz_point {
-            Option::Some(_) => {},
-            Option::None => {
-                // lhs - 0 = lhs.
-                return lhs;
-            },
-        };
+        if nz_point.is_none() {
+            // lhs - 0 = lhs.
+            return lhs;
+        }
         // lhs - rhs = lhs + (-rhs).
         lhs + (-rhs)
     }
