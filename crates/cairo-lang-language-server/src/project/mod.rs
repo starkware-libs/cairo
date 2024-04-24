@@ -1,5 +1,6 @@
 pub use self::project_manifest_path::*;
 
-// TODO(mkaput): This is `pub` temporarily.
-pub(crate) mod backends;
 mod project_manifest_path;
+// TODO(mkaput): These two are `pub` temporarily.
+pub(crate) mod scarb;
+pub(crate) mod unmanaged_core_crate;
