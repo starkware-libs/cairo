@@ -242,7 +242,7 @@ fn implize_type_recursive(
 
     // Try to implize by the impl context, if given. E.g. for `Self::MyType` inside an impl.
     if let Some(ImplContext { impl_def_id }) = impl_ctx {
-        if let Some(ty) = db.impl_type_implized_by_context(impl_type_id, impl_def_id)? {
+        if let Some(ty) = db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id)? {
             return Ok(ty);
         }
     }

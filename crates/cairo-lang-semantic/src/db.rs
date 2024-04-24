@@ -694,14 +694,6 @@ pub trait SemanticGroup:
 
     // Impl type.
     // ================
-    /// Returns the given impl type, implized by the given impl context.
-    #[salsa::invoke(items::imp::impl_type_implized_by_context)]
-    #[salsa::cycle(items::imp::impl_type_implized_by_context_cycle)]
-    fn impl_type_implized_by_context(
-        &self,
-        impl_type_def_id: ImplTypeId,
-        impl_def_id: ImplDefId,
-    ) -> Maybe<Option<TypeId>>;
     /// Returns the implized impl type if the impl is concrete. Returns a TypeId that's not an impl
     /// type with a concrete impl.
     #[salsa::invoke(items::imp::impl_type_concrete_implized)]
@@ -795,6 +787,17 @@ pub trait SemanticGroup:
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Maybe<items::function_with_body::FunctionBodyData>;
+
+    // Implizations.
+    // ==============
+    /// Returns the impl type for the given trait type, by implization by the given impl context.
+    #[salsa::invoke(items::implization::trait_type_implized_by_context)]
+    #[salsa::cycle(items::implization::trait_type_implized_by_context_cycle)]
+    fn trait_type_implized_by_context(
+        &self,
+        trait_type_def_id: TraitTypeId,
+        impl_def_id: ImplDefId,
+    ) -> Maybe<Option<TypeId>>;
 
     // Free function.
     // ==============
