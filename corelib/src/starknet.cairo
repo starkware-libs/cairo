@@ -47,6 +47,9 @@ use eth_address::{
 pub mod eth_signature;
 use eth_signature::verify_eth_signature;
 
+/// Circuits
+pub mod circuits;
+
 /// ClassHash
 pub mod class_hash;
 pub use class_hash::ClassHash;
