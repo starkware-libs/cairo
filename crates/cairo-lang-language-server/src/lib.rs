@@ -40,7 +40,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::io;
-use std::panic::{AssertUnwindSafe, RefUnwindSafe};
+use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -403,13 +403,24 @@ impl Backend {
         let db = self.db_mut().await;
 
         let file_id = db.file_for_url(uri);
+
+        macro_rules! diags {
+            ($db:ident. $query:ident($file_id:expr), $f:expr) => {
+                trace_span!(stringify!($query)).in_scope(|| {
+                    catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
+                        .map($f)
+                        .inspect_err(|_| {
+                            error!("caught panic when computing diagnostics for {uri}");
+                        })
+                        .unwrap_or_default()
+                })
+            };
+        }
+
         let new_file_diagnostics = FileDiagnostics {
-            parser: trace_span!("file_syntax_diagnostics")
-                .in_scope(|| db.file_syntax_diagnostics(file_id)),
-            semantic: trace_span!("file_semantic_diagnostics")
-                .in_scope(|| db.file_semantic_diagnostics(file_id).unwrap_or_default()),
-            lowering: trace_span!("file_lowering_diagnostics")
-                .in_scope(|| db.file_lowering_diagnostics(file_id).unwrap_or_default()),
+            parser: diags!(db.file_syntax_diagnostics(file_id), |r| r),
+            semantic: diags!(db.file_semantic_diagnostics(file_id), Result::unwrap_or_default),
+            lowering: diags!(db.file_lowering_diagnostics(file_id), Result::unwrap_or_default),
         };
 
         let mut state = self.state_mut().await;
