@@ -2,6 +2,7 @@
 //! the code, while type checking.
 //! It is invoked by queries for function bodies and other code blocks.
 
+use core::panic;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -44,9 +45,10 @@ use super::pattern::{
     PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
-    never_ty, numeric_literal_trait, true_literal_expr, try_get_core_ty_by_name, unit_expr,
-    unit_ty, unwrap_error_propagation_type, CoreTraitContext,
+    core_binary_operator, core_bool_ty, core_option_ty, core_result_ty, core_unary_operator,
+    false_literal_expr, get_core_trait, get_usize_ty, never_ty, numeric_literal_trait,
+    true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type,
+    CoreTraitContext,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -70,8 +72,8 @@ use crate::types::{
     resolve_type, verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
 };
 use crate::{
-    ConcreteEnumId, GenericArgumentId, GenericParam, Member, Mutability, Parameter,
-    PatternStringLiteral, PatternStruct, Signature,
+    ConcreteEnumId, GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral,
+    PatternStruct, Signature,
 };
 
 /// Expression with its id.
@@ -649,6 +651,37 @@ fn compute_expr_fixed_size_array_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
     let exprs = syntax.exprs(syntax_db).elements(syntax_db);
+    let fixed_size_array_ty =
+        |type_id, size: ConstValueId| TypeLongId::FixedSizeArray { type_id, size }.intern(db);
+    let first_expr_semantic = |ctx: &mut ComputationContext<'_>,
+                               first_expr: &ast::Expr,
+                               size: ConstValueId| {
+        if let Some(ResultType { ty: result_type, stable_ptr: result_type_stable_ptr }) =
+            result_type
+        {
+            let inference = &mut ctx.resolver.inference();
+            let inner_result_type = inference.new_type_var(Some(first_expr.into()));
+            let actual_ty = fixed_size_array_ty(inner_result_type, size);
+            if let Err((err_set, actual_ty, expected_ty)) =
+                inference.conform_ty_for_diag(actual_ty, result_type)
+            {
+                let diag_added = ctx
+                    .diagnostics
+                    .report(result_type_stable_ptr, WrongArgumentType { expected_ty, actual_ty });
+                inference.consume_reported_error(err_set, diag_added);
+            }
+            let inner_result_type = ctx.reduce_ty(inner_result_type);
+            compute_expr_semantic(
+                ctx,
+                first_expr,
+                Some(ResultType { ty: inner_result_type, stable_ptr: first_expr.into() }),
+            )
+        } else {
+            compute_expr_semantic(ctx, first_expr, None)
+        }
+    };
+
+    let size_ty = get_usize_ty(db);
     let (items, type_id, size) = if let Some(size_const_id) =
         extract_fixed_size_array_size(db, ctx.diagnostics, syntax, &ctx.resolver)?
     {
@@ -656,11 +689,14 @@ fn compute_expr_fixed_size_array_semantic(
         let [expr] = exprs.as_slice() else {
             return Err(ctx.diagnostics.report(syntax, FixedSizeArrayNonSingleValue));
         };
-        let expr_semantic = compute_expr_semantic(ctx, expr);
-        let size = try_extract_matches!(size_const_id.lookup_intern(db), ConstValue::Int)
+        let expr_semantic = first_expr_semantic(ctx, expr, size_const_id);
+        let const_value = size_const_id.lookup_intern(db);
+        let size = const_value
+            .into_int()
             .ok_or_else(|| ctx.diagnostics.report(syntax, FixedSizeArrayNonNumericSize))?
             .to_usize()
             .unwrap();
+
         verify_fixed_size_array_size(ctx.diagnostics, &size.into(), syntax)?;
         (
             FixedSizeArrayItems::ValueAndSize(expr_semantic.id, size_const_id),
@@ -668,8 +704,8 @@ fn compute_expr_fixed_size_array_semantic(
             size_const_id,
         )
     } else if let Some((first_expr, tail_exprs)) = exprs.split_first() {
-        let size = ConstValue::Int((tail_exprs.len() + 1).into()).intern(db);
-        let first_expr_semantic = compute_expr_semantic(ctx, first_expr);
+        let size = ConstValue::Int((tail_exprs.len() + 1).into(), size_ty).intern(db);
+        let first_expr_semantic = first_expr_semantic(ctx, first_expr, size);
         let mut items: Vec<ExprId> = vec![first_expr_semantic.id];
         // The type of the first expression is the type of the array. All other expressions must
         // have the same type.
@@ -693,7 +729,7 @@ fn compute_expr_fixed_size_array_semantic(
         (
             FixedSizeArrayItems::Items(vec![]),
             ctx.resolver.inference().new_type_var(Some(syntax.into())),
-            ConstValue::Int(0.into()).intern(db),
+            ConstValue::Int(0.into(), size_ty).intern(db),
         )
     };
     Ok(Expr::FixedSizeArray(ExprFixedSizeArray {
@@ -1780,8 +1816,12 @@ fn maybe_compute_tuple_like_pattern_semantic(
     let inner_tys = match long_ty {
         TypeLongId::Tuple(inner_tys) => inner_tys,
         TypeLongId::FixedSizeArray { type_id: inner_ty, size } => {
-            let size =
-                extract_matches!(size.lookup_intern(ctx.db), ConstValue::Int).to_usize().unwrap();
+            let size = size
+                .lookup_intern(ctx.db)
+                .into_int()
+                .expect("Expected ConstValue::Int for size")
+                .to_usize()
+                .unwrap();
             [inner_ty].repeat(size)
         }
         _ => unreachable!(),
@@ -2390,22 +2430,12 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
         ctx.resolver.resolve_concrete_path(ctx.diagnostics, path, NotFoundItemType::Identifier)?;
 
     match resolved_item {
-        ResolvedConcreteItem::Constant(constant_id) => Ok(Expr::Constant(ExprConstant {
-            constant_id,
-            ty: db.constant_semantic_data(constant_id)?.ty(),
+        ResolvedConcreteItem::Constant(const_value_id) => Ok(Expr::Constant(ExprConstant {
+            const_value_id,
+            ty: const_value_id.ty(db)?,
             stable_ptr: path.stable_ptr().into(),
         })),
-        ResolvedConcreteItem::ConstGenericParameter(generic_param_id) => {
-            Ok(Expr::ParamConstant(ExprParamConstant {
-                const_value_id: ConstValue::Generic(generic_param_id).intern(db),
-                ty: extract_matches!(
-                    db.generic_param_semantic(generic_param_id)?,
-                    GenericParam::Const
-                )
-                .ty,
-                stable_ptr: path.stable_ptr().into(),
-            }))
-        }
+
         ResolvedConcreteItem::Variant(variant) if variant.ty == unit_ty(db) => {
             let stable_ptr = path.stable_ptr().into();
             let concrete_enum_id = variant.concrete_enum_id;

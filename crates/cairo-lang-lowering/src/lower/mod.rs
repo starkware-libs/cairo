@@ -663,7 +663,10 @@ fn lower_tuple_like_pattern_helper(
             let tys = match long_type_id {
                 TypeLongId::Tuple(tys) => tys,
                 TypeLongId::FixedSizeArray { type_id, size } => {
-                    let size = extract_matches!(size.lookup_intern(ctx.db), ConstValue::Int)
+                    let size = size
+                        .lookup_intern(ctx.db)
+                        .into_int()
+                        .expect("Expected ConstValue::Int for size")
                         .to_usize()
                         .unwrap();
                     vec![type_id; size]
@@ -875,7 +878,7 @@ fn add_chunks_to_data_array<'a>(
     let remainder = chunks.remainder();
     for chunk in chunks {
         let chunk_usage = generators::Const {
-            value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, chunk)),
+            value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, chunk), bytes31_ty),
             ty: bytes31_ty,
             location: ctx.get_location(expr_stable_ptr),
         }
@@ -909,7 +912,7 @@ fn add_pending_word(
     let felt252_ty = core_felt252_ty(ctx.db.upcast());
 
     let pending_word_usage = generators::Const {
-        value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes)),
+        value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes), felt252_ty),
         ty: felt252_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
@@ -917,7 +920,7 @@ fn add_pending_word(
 
     let pending_word_len = expr.value.len() % 31;
     let pending_word_len_usage = generators::Const {
-        value: ConstValue::Int(pending_word_len.into()),
+        value: ConstValue::Int(pending_word_len.into(), u32_ty),
         ty: u32_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
@@ -993,8 +996,12 @@ fn lower_expr_fixed_size_array(
         semantic::FixedSizeArrayItems::ValueAndSize(value, size) => {
             let lowered_value = lower_expr(ctx, builder, *value)?;
             let var_usage = lowered_value.as_var_usage(ctx, builder)?;
-            let size =
-                extract_matches!(size.lookup_intern(ctx.db), ConstValue::Int).to_usize().unwrap();
+            let size = size
+                .lookup_intern(ctx.db)
+                .into_int()
+                .expect("Expected ConstValue::Int for size")
+                .to_usize()
+                .unwrap();
             if size == 0 {
                 return Err(LoweringFlowError::Failed(
                     ctx.diagnostics

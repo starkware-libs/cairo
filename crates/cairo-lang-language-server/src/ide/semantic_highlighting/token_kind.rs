@@ -141,7 +141,7 @@ impl SemanticTokenKind {
                     db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
                 {
                     return Some(match item {
-                        ResolvedGenericItem::Constant(_) => SemanticTokenKind::EnumMember,
+                        ResolvedGenericItem::GenericConstant(_) => SemanticTokenKind::EnumMember,
                         ResolvedGenericItem::Module(_) => SemanticTokenKind::Namespace,
                         ResolvedGenericItem::GenericFunction(_)
                         | ResolvedGenericItem::TraitFunction(_) => SemanticTokenKind::Function,
@@ -163,8 +163,7 @@ impl SemanticTokenKind {
                         ResolvedConcreteItem::Module(_) => SemanticTokenKind::Namespace,
                         ResolvedConcreteItem::Function(_)
                         | ResolvedConcreteItem::TraitFunction(_) => SemanticTokenKind::Function,
-                        ResolvedConcreteItem::Type(_)
-                        | ResolvedConcreteItem::ConstGenericParameter(_) => SemanticTokenKind::Type,
+                        ResolvedConcreteItem::Type(_) => SemanticTokenKind::Type,
                         ResolvedConcreteItem::Variant(_) => SemanticTokenKind::EnumMember,
                         ResolvedConcreteItem::Trait(_) => SemanticTokenKind::Interface,
                         ResolvedConcreteItem::Impl(_) => SemanticTokenKind::Class,
