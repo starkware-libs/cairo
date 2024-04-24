@@ -14,7 +14,6 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{define_short_id, extract_matches, Intern, LookupIntern};
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
@@ -270,11 +269,6 @@ pub type InferenceResult<T> = Result<T, ErrorSet>;
 pub enum InferenceErrorStatus {
     Pending,
     Consumed,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct ImplVarData {
-    candidates: Option<OrderedHashSet<UninferredImpl>>,
 }
 
 /// State of inference.
