@@ -75,6 +75,10 @@ pub mod storage;
 pub extern type System;
 
 /// An Helper function to force the inclusion of `System` in the list of implicits.
+#[deprecated(
+    feature: "use_system_implicit",
+    note: "Use `core::internal::require_implicit::<System>` instead."
+)]
 fn use_system_implicit() implicits(System) {}
 
 /// The result type for a syscall.
