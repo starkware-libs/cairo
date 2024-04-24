@@ -95,7 +95,7 @@ pub fn generic_completions(
 
 fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> CompletionItemKind {
     match item {
-        ResolvedGenericItem::Constant(_) => CompletionItemKind::CONSTANT,
+        ResolvedGenericItem::GenericConstant(_) => CompletionItemKind::CONSTANT,
         ResolvedGenericItem::Module(_) => CompletionItemKind::MODULE,
         ResolvedGenericItem::GenericFunction(_) | ResolvedGenericItem::TraitFunction(_) => {
             CompletionItemKind::FUNCTION
