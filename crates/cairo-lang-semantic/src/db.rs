@@ -131,8 +131,10 @@ pub trait SemanticGroup:
     #[salsa::cycle(items::constant::constant_resolver_data_cycle)]
     fn constant_resolver_data(&self, use_id: ConstantId) -> Maybe<Arc<ResolverData>>;
     #[salsa::invoke(items::constant::constant_const_value)]
+    #[salsa::cycle(items::constant::constant_const_value_cycle)]
     fn constant_const_value(&self, const_id: ConstantId) -> Maybe<ConstValue>;
     #[salsa::invoke(items::constant::constant_const_type)]
+    #[salsa::cycle(items::constant::constant_const_type_cycle)]
     fn constant_const_type(&self, const_id: ConstantId) -> Maybe<TypeId>;
 
     // Use.
