@@ -7,7 +7,7 @@ use cairo_lang_semantic::corelib;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{extract_matches, Intern};
+use cairo_lang_utils::Intern;
 use itertools::{chain, zip_eq};
 use num_traits::Zero;
 
@@ -102,7 +102,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                 Statement::Call(StatementCall { function, ref mut inputs, outputs, .. }) => {
                     // (a - 0) can be replaced by a.
                     if function == &felt_sub {
-                        if let Some(VarInfo::Const(ConstValue::Int(val))) =
+                        if let Some(VarInfo::Const(ConstValue::Int(val, _))) =
                             var_info.get(&inputs[1].var_id)
                         {
                             if val.is_zero() {
@@ -112,10 +112,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                     } else if let Some(extrn) = function.get_extern(db) {
                         if extrn == into_box {
                             if let Some(VarInfo::Const(val)) = var_info.get(&inputs[0].var_id) {
-                                let value = ConstValue::Boxed(
-                                    lowered.variables[inputs[0].var_id].ty,
-                                    val.clone().into(),
-                                );
+                                let value = ConstValue::Boxed(val.clone().into());
                                 // Not inserting the value into the `var_info` map because the
                                 // resulting box isn't an actual const at the Sierra level.
                                 *stmt =
@@ -136,22 +133,22 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                         .iter()
                         .map(|input| {
                             if let Some(VarInfo::Const(val)) = var_info.get(&input.var_id) {
-                                Some((lowered.variables[input.var_id].ty, val.clone()))
+                                Some(val.clone())
                             } else {
                                 None
                             }
                         })
                         .collect::<Option<Vec<_>>>()
                     {
-                        let value = ConstValue::Struct(args);
-                        var_info.insert(*output, VarInfo::Const(value.clone()));
+                        let value = ConstValue::Struct(args, lowered.variables[*output].ty);
+                        var_info.insert(*output, VarInfo::Const(value));
                     }
                 }
                 Statement::StructDestructure(StatementStructDestructure { input, outputs }) => {
-                    if let Some(VarInfo::Const(ConstValue::Struct(args))) =
+                    if let Some(VarInfo::Const(ConstValue::Struct(args, _))) =
                         var_info.get(&input.var_id)
                     {
-                        for (output, (_, val)) in zip_eq(outputs, args.clone()) {
+                        for (output, val) in zip_eq(outputs, args.clone()) {
                             var_info.insert(*output, VarInfo::Const(val));
                         }
                     }
@@ -189,9 +186,12 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                             let input_var = inputs[0].var_id;
                             if let Some(VarInfo::Const(val)) = var_info.get(&input_var) {
                                 let is_zero = match val {
-                                    ConstValue::Int(v) => v.is_zero(),
-                                    ConstValue::Struct(s) => s.iter().all(|(_, v)| {
-                                        extract_matches!(v, ConstValue::Int).is_zero()
+                                    ConstValue::Int(v, _) => v.is_zero(),
+                                    ConstValue::Struct(s, _) => s.iter().all(|v| {
+                                        let ConstValue::Int(v, _) = v else {
+                                            unreachable!("expected int")
+                                        };
+                                        v.is_zero()
                                     }),
                                     _ => unreachable!(),
                                 };
@@ -201,10 +201,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                                 } else {
                                     let arm = &arms[1];
                                     let nz_var = arm.var_ids[0];
-                                    let nz_val = ConstValue::NonZero(
-                                        lowered.variables[input_var].ty,
-                                        Box::new(val.clone()),
-                                    );
+                                    let nz_val = ConstValue::NonZero(Box::new(val.clone()));
                                     var_info.insert(nz_var, VarInfo::Const(nz_val.clone()));
                                     block.statements.push(Statement::Const(StatementConst {
                                         value: nz_val,

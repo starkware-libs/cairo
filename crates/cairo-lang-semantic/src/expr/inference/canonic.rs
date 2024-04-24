@@ -214,6 +214,7 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Canonicalizer<'a> {
         *value = ConstValue::Var(ConstVar {
             id: *self.to_canonic.const_var_mapping.entry(var.id).or_insert(next_id),
             inference_id: InferenceId::Canonical,
+            ..*var
         });
         Ok(RewriteResult::Modified)
     }
@@ -372,7 +373,11 @@ impl<'db> SemanticRewriter<ConstValue, MapperError> for Mapper<'db> {
             .get(&var.id)
             .copied()
             .ok_or(MapperError(InferenceVar::Const(var.id)))?;
-        *value = ConstValue::Var(ConstVar { id, inference_id: self.mapping.target_inference_id });
+        *value = ConstValue::Var(ConstVar {
+            id,
+            inference_id: self.mapping.target_inference_id,
+            ..*var
+        });
         Ok(RewriteResult::Modified)
     }
 }

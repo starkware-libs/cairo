@@ -10,7 +10,7 @@ use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
-use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{try_extract_matches, Intern, LookupIntern};
 use itertools::chain;
 use num_traits::ToPrimitive;
 use semantic::items::constant::ConstValue;
@@ -105,11 +105,12 @@ pub fn get_concrete_long_type_id(
                                     SierraGenericArg::Type(db.get_concrete_type_id(ty).unwrap())
                                 }
                                 semantic::GenericArgumentId::Constant(value_id) => {
-                                    SierraGenericArg::Value(extract_matches!(
-                                        value_id.lookup_intern(db),
-                                        ConstValue::Int,
-                                        "Only integer constants are supported."
-                                    ))
+                                    let ConstValue::Int(value, _) = value_id.lookup_intern(db)
+                                    else {
+                                        unreachable!("Only integer constants are supported.");
+                                    };
+
+                                    SierraGenericArg::Value(value)
                                 }
                                 semantic::GenericArgumentId::Impl(_) => {
                                     panic!("Extern function with impl generics are not supported.")
@@ -203,8 +204,10 @@ pub fn type_dependencies(
         semantic::TypeLongId::Snapshot(ty) => vec![ty],
         semantic::TypeLongId::Coupon(_) => vec![],
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
-            let size =
-                extract_matches!(size.lookup_intern(db), ConstValue::Int).to_usize().unwrap();
+            let ConstValue::Int(size, _) = size.lookup_intern(db) else {
+                unreachable!("FixedSizeArray size should be a constant.");
+            };
+            let size = size.to_usize().unwrap();
             [type_id].repeat(size)
         }
         semantic::TypeLongId::GenericParameter(_)

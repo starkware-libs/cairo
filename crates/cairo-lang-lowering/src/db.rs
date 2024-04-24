@@ -11,7 +11,7 @@ use cairo_lang_semantic::{self as semantic, corelib, ConcreteTypeId, TypeId, Typ
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{extract_matches, Intern, LookupIntern, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use defs::ids::NamedLanguageElementId;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -759,8 +759,10 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
         TypeLongId::Tuple(types) => types.into_iter().map(|ty| db.type_size(ty)).sum::<usize>(),
         TypeLongId::Snapshot(ty) => db.type_size(ty),
         TypeLongId::FixedSizeArray { type_id, size } => {
-            db.type_size(type_id)
-                * extract_matches!(size.lookup_intern(db), ConstValue::Int).to_usize().unwrap()
+            let ConstValue::Int(size_value, _) = size.lookup_intern(db) else {
+                panic!("Expected ConstValue::Int for size");
+            };
+            db.type_size(type_id) * size_value.to_usize().unwrap()
         }
         TypeLongId::Coupon(_) => 0,
         TypeLongId::GenericParameter(_)

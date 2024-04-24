@@ -32,6 +32,7 @@ impl StatementsBuilder {
 pub struct Const {
     pub value: ConstValue,
     pub location: LocationId,
+    // TODO(TomerStarkware): Remove this field and use the type from value.
     pub ty: semantic::TypeId,
 }
 impl Const {
