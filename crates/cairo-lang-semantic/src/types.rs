@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplContext, ImplTypeDefId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplDefId, ImplTypeDefId,
     LanguageElementId, ModuleFileId, NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
@@ -46,6 +46,7 @@ pub enum TypeLongId {
         size: ConstValueId,
     },
     ImplType(ImplTypeId),
+    TraitType(TraitTypeId),
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -108,6 +109,7 @@ impl TypeId {
 }
 impl TypeLongId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        let def_db = db.upcast();
         match self {
             TypeLongId::Concrete(concrete) => concrete.format(db),
             TypeLongId::Tuple(inner_types) => {
@@ -119,20 +121,23 @@ impl TypeLongId {
             }
             TypeLongId::Snapshot(ty) => format!("@{}", ty.format(db)),
             TypeLongId::GenericParameter(generic_param) => {
-                format!("{}", generic_param.name(db.upcast()).unwrap_or_else(|| "_".into()))
+                format!("{}", generic_param.name(def_db).unwrap_or_else(|| "_".into()))
             }
             TypeLongId::ImplType(impl_type_id) => {
-                format!(
-                    "{}::{}",
-                    impl_type_id.impl_id.name(db.upcast()),
-                    impl_type_id.ty.name(db.upcast())
-                )
+                format!("{}::{}", impl_type_id.impl_id.name(db), impl_type_id.ty.name(def_db))
             }
             TypeLongId::Var(var) => format!("?{}", var.id.0),
             TypeLongId::Coupon(function_id) => format!("{}::Coupon", function_id.full_name(db)),
             TypeLongId::Missing(_) => "<missing>".to_string(),
             TypeLongId::FixedSizeArray { type_id, size } => {
                 format!("[{}; {:?}]", type_id.format(db), size.debug(db.elongate()))
+            }
+            TypeLongId::TraitType(trait_type_id) => {
+                format!(
+                    "{}::{}",
+                    trait_type_id.trait_id(def_db).name(def_db),
+                    trait_type_id.name(def_db)
+                )
             }
         }
     }
@@ -148,7 +153,8 @@ impl TypeLongId {
             TypeLongId::GenericParameter(_)
             | TypeLongId::Var(_)
             | TypeLongId::Missing(_)
-            | TypeLongId::ImplType(_) => {
+            | TypeLongId::ImplType(_)
+            | TypeLongId::TraitType(_) => {
                 return None;
             }
         })
@@ -171,6 +177,7 @@ impl TypeLongId {
             | TypeLongId::GenericParameter(_)
             | TypeLongId::Var(_)
             | TypeLongId::Coupon(_)
+            | TypeLongId::TraitType(_)
             | TypeLongId::ImplType(_)
             | TypeLongId::Missing(_) => false,
         }
@@ -200,9 +207,10 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
 pub fn implize_type(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
-    impl_ctx: Option<ImplContext>,
+    impl_ctx: Option<ImplDefId>,
     inference: &mut Inference<'_>,
 ) -> Maybe<TypeId> {
+    // TODO(yuval): inline.
     implize_type_recursive(db, type_to_reduce, impl_ctx, inference)
 }
 
@@ -216,7 +224,7 @@ pub fn implize_type(
 fn implize_type_recursive(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
-    impl_ctx: Option<ImplContext>,
+    impl_ctx: Option<ImplDefId>,
     inference: &mut Inference<'_>,
 ) -> Maybe<TypeId> {
     // First, reduce if already inferred.
@@ -251,6 +259,14 @@ fn implize_type_recursive(
         TypeLongId::FixedSizeArray { type_id, .. } => {
             *type_id = implize_type_recursive(db, *type_id, impl_ctx, inference)?
         }
+        TypeLongId::TraitType(ty) => {
+            let Some(impl_ctx) = impl_ctx else {
+                // Nothing to implize. No need to report anything as it should be reported during
+                // resolution.
+                return Ok(type_to_reduce);
+            };
+            return Ok(db.trait_type_implized_by_context(*ty, impl_ctx)?.unwrap_or(type_to_reduce));
+        }
     }
     let type_to_reduce = long_ty.intern(db);
 
@@ -270,7 +286,7 @@ fn implize_type_recursive(
     }
 
     // Try to implize by the impl context, if given. E.g. for `Self::MyType` inside an impl.
-    if let Some(ImplContext { impl_def_id }) = impl_ctx {
+    if let Some(impl_def_id) = impl_ctx {
         if let Some(ty) = db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id)? {
             return Ok(ty);
         }
@@ -765,7 +781,8 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
         | TypeLongId::Coupon(_)
-        | TypeLongId::ImplType(_) => false,
+        | TypeLongId::ImplType(_)
+        | TypeLongId::TraitType(_) => false,
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
                 || matches!(size.lookup_intern(db),
@@ -816,6 +833,7 @@ pub fn direct_recursive_type(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
         | TypeLongId::Coupon(_)
+        | TypeLongId::TraitType(_)
         | TypeLongId::ImplType(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
             if !matches!(size.lookup_intern(db), ConstValue::Int(value) if value.is_zero()) {
@@ -863,7 +881,8 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
-        | TypeLongId::ImplType(_) => false,
+        | TypeLongId::ImplType(_)
+        | TypeLongId::TraitType(_) => false,
         TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_fully_concrete(db) && size.is_fully_concrete(db)
@@ -882,6 +901,7 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_var_free(db) && size.is_var_free(db)
         }
+        TypeLongId::TraitType(_) => true,
     }
 }
 

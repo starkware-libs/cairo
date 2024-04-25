@@ -4,11 +4,10 @@ use std::{panic, vec};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplContext,
-    ImplDefId, ImplFunctionId, ImplFunctionLongId, ImplItemId, ImplTypeDefId, ImplTypeDefLongId,
+    FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
+    ImplFunctionId, ImplFunctionLongId, ImplItemId, ImplTypeDefId, ImplTypeDefLongId,
     LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
-    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
-    TraitOrImplContext, TraitTypeId,
+    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -35,17 +34,18 @@ use super::enm::SemanticEnumEx;
 use super::feature_kind::extract_allowed_features;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
-    forbid_inline_always_with_impl_generic_param, generic_params_to_args, FunctionDeclarationData,
-    InlineConfiguration,
+    forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
 };
-use super::generics::{semantic_generic_params, GenericArgumentHead, GenericParamsData};
-use super::resolve_trait_path;
+use super::generics::{
+    generic_params_to_args, semantic_generic_params, GenericArgumentHead, GenericParamsData,
+};
 use super::structure::SemanticStructEx;
 use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use super::type_aliases::{
     type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
     type_alias_semantic_data_helper, TypeAliasData,
 };
+use super::{resolve_trait_path, TraitOrImplContext};
 use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -434,7 +434,7 @@ pub fn priv_impl_declaration_data_inner(
 
     let attributes = impl_ast.attributes(syntax_db).structurize(syntax_db);
     let mut resolver_data = resolver.data;
-    resolver_data.trait_or_impl_ctx = TraitOrImplContext::Impl(ImplContext { impl_def_id });
+    resolver_data.trait_or_impl_ctx = TraitOrImplContext::Impl(impl_def_id);
     Ok(ImplDeclarationData {
         diagnostics: diagnostics.build(),
         generic_params,
@@ -806,7 +806,7 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
         TypeLongId::GenericParameter(_) => {
             return Err(skip_diagnostic());
         }
-        TypeLongId::Var(_) | TypeLongId::ImplType(_) => {
+        TypeLongId::Var(_) | TypeLongId::TraitType(_) | TypeLongId::ImplType(_) => {
             panic!("Types should be fully resolved at this point.")
         }
         TypeLongId::Coupon(_) => vec![],
@@ -1726,7 +1726,7 @@ fn validate_impl_function_signature(
             },
         );
     }
-    let impl_ctx = Some(ImplContext { impl_def_id });
+    let impl_ctx = Some(impl_def_id);
     for (idx, (param, trait_param)) in
         izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {
@@ -1785,6 +1785,7 @@ fn validate_impl_function_signature(
 
     let expected_ty = implize_type(db, concrete_trait_signature.return_type, impl_ctx, inference)?;
     let actual_ty = implize_type(db, signature.return_type, impl_ctx, inference)?;
+
     if expected_ty != actual_ty {
         let location_ptr = match signature_syntax.ret_ty(syntax_db) {
             OptionReturnTypeClause::ReturnTypeClause(ret_ty) => {
