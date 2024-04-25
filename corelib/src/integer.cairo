@@ -2476,7 +2476,7 @@ impl U8Zero of core::num::traits::Zero<u8> {
     }
     #[inline(always)]
     fn is_zero(self: @u8) -> bool {
-        *self == U8Zero::zero()
+        *self == Self::zero()
     }
     #[inline(always)]
     fn is_non_zero(self: @u8) -> bool {
@@ -2490,7 +2490,7 @@ impl U16Zero of core::num::traits::Zero<u16> {
     }
     #[inline(always)]
     fn is_zero(self: @u16) -> bool {
-        *self == U16Zero::zero()
+        *self == Self::zero()
     }
     #[inline(always)]
     fn is_non_zero(self: @u16) -> bool {
@@ -2504,7 +2504,7 @@ impl U32Zero of core::num::traits::Zero<u32> {
     }
     #[inline(always)]
     fn is_zero(self: @u32) -> bool {
-        *self == U32Zero::zero()
+        *self == Self::zero()
     }
     #[inline(always)]
     fn is_non_zero(self: @u32) -> bool {
@@ -2518,7 +2518,7 @@ impl U64Zero of core::num::traits::Zero<u64> {
     }
     #[inline(always)]
     fn is_zero(self: @u64) -> bool {
-        *self == U64Zero::zero()
+        *self == Self::zero()
     }
     #[inline(always)]
     fn is_non_zero(self: @u64) -> bool {
@@ -2532,7 +2532,7 @@ impl U128Zero of core::num::traits::Zero<u128> {
     }
     #[inline(always)]
     fn is_zero(self: @u128) -> bool {
-        *self == U128Zero::zero()
+        *self == Self::zero()
     }
     #[inline(always)]
     fn is_non_zero(self: @u128) -> bool {
@@ -2546,7 +2546,7 @@ impl U256Zero of core::num::traits::Zero<u256> {
     }
     #[inline(always)]
     fn is_zero(self: @u256) -> bool {
-        *self == U256Zero::zero()
+        *self == Self::zero()
     }
     #[inline(always)]
     fn is_non_zero(self: @u256) -> bool {
@@ -2560,7 +2560,7 @@ impl I8Zero of core::num::traits::Zero<i8> {
     }
     #[inline(always)]
     fn is_zero(self: @i8) -> bool {
-        *self == I8Zero::zero()
+        *self == Self::zero()
     }
     #[inline(always)]
     fn is_non_zero(self: @i8) -> bool {
@@ -2574,7 +2574,7 @@ impl I16Zero of core::num::traits::Zero<i16> {
     }
     #[inline(always)]
     fn is_zero(self: @i16) -> bool {
-        *self == I16Zero::zero()
+        *self == Self::zero()
     }
     #[inline(always)]
     fn is_non_zero(self: @i16) -> bool {
@@ -2588,7 +2588,7 @@ impl I32Zero of core::num::traits::Zero<i32> {
     }
     #[inline(always)]
     fn is_zero(self: @i32) -> bool {
-        *self == I32Zero::zero()
+        *self == Self::zero()
     }
     #[inline(always)]
     fn is_non_zero(self: @i32) -> bool {
@@ -2602,7 +2602,7 @@ impl I64Zero of core::num::traits::Zero<i64> {
     }
     #[inline(always)]
     fn is_zero(self: @i64) -> bool {
-        *self == I64Zero::zero()
+        *self == Self::zero()
     }
     #[inline(always)]
     fn is_non_zero(self: @i64) -> bool {
@@ -2616,7 +2616,7 @@ impl I128Zero of core::num::traits::Zero<i128> {
     }
     #[inline(always)]
     fn is_zero(self: @i128) -> bool {
-        *self == I128Zero::zero()
+        *self == Self::zero()
     }
     #[inline(always)]
     fn is_non_zero(self: @i128) -> bool {
@@ -2632,7 +2632,7 @@ impl U8One of core::num::traits::One<u8> {
     }
     #[inline(always)]
     fn is_one(self: @u8) -> bool {
-        *self == U8One::one()
+        *self == Self::one()
     }
     #[inline(always)]
     fn is_non_one(self: @u8) -> bool {
@@ -2646,7 +2646,7 @@ impl U16One of core::num::traits::One<u16> {
     }
     #[inline(always)]
     fn is_one(self: @u16) -> bool {
-        *self == U16One::one()
+        *self == Self::one()
     }
     #[inline(always)]
     fn is_non_one(self: @u16) -> bool {
@@ -2660,7 +2660,7 @@ impl U32One of core::num::traits::One<u32> {
     }
     #[inline(always)]
     fn is_one(self: @u32) -> bool {
-        *self == U32One::one()
+        *self == Self::one()
     }
     #[inline(always)]
     fn is_non_one(self: @u32) -> bool {
@@ -2674,7 +2674,7 @@ impl U64One of core::num::traits::One<u64> {
     }
     #[inline(always)]
     fn is_one(self: @u64) -> bool {
-        *self == U64One::one()
+        *self == Self::one()
     }
     #[inline(always)]
     fn is_non_one(self: @u64) -> bool {
@@ -2688,7 +2688,7 @@ impl U128One of core::num::traits::One<u128> {
     }
     #[inline(always)]
     fn is_one(self: @u128) -> bool {
-        *self == U128One::one()
+        *self == Self::one()
     }
     #[inline(always)]
     fn is_non_one(self: @u128) -> bool {
@@ -2702,7 +2702,7 @@ impl U256One of core::num::traits::One<u256> {
     }
     #[inline(always)]
     fn is_one(self: @u256) -> bool {
-        *self == U256One::one()
+        *self == Self::one()
     }
     #[inline(always)]
     fn is_non_one(self: @u256) -> bool {
@@ -2717,7 +2717,7 @@ impl I8One of core::num::traits::One<i8> {
 
     #[inline(always)]
     fn is_one(self: @i8) -> bool {
-        *self == I8One::one()
+        *self == Self::one()
     }
 
     #[inline(always)]
@@ -2733,7 +2733,7 @@ impl I16One of core::num::traits::One<i16> {
 
     #[inline(always)]
     fn is_one(self: @i16) -> bool {
-        *self == I16One::one()
+        *self == Self::one()
     }
 
     #[inline(always)]
@@ -2749,7 +2749,7 @@ impl I32One of core::num::traits::One<i32> {
 
     #[inline(always)]
     fn is_one(self: @i32) -> bool {
-        *self == I32One::one()
+        *self == Self::one()
     }
 
     #[inline(always)]
@@ -2765,7 +2765,7 @@ impl I64One of core::num::traits::One<i64> {
 
     #[inline(always)]
     fn is_one(self: @i64) -> bool {
-        *self == I64One::one()
+        *self == Self::one()
     }
 
     #[inline(always)]
@@ -2781,7 +2781,7 @@ impl I128One of core::num::traits::One<i128> {
 
     #[inline(always)]
     fn is_one(self: @i128) -> bool {
-        *self == I128One::one()
+        *self == Self::one()
     }
 
     #[inline(always)]
