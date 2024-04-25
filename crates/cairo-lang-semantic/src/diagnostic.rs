@@ -782,6 +782,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => {
                 "Can not create instances of phantom types.".into()
             }
+            SemanticDiagnosticKind::NonPhantomTypeContainingPhantomType => {
+                "Non-phantom type containing phantom type.".into()
+            }
         }
     }
 
@@ -843,6 +846,7 @@ pub enum SemanticDiagnosticKind {
     UnexpectedGenericArgs,
     UnknownMember,
     CannotCreateInstancesOfPhantomTypes,
+    NonPhantomTypeContainingPhantomType,
     MemberSpecifiedMoreThanOnce,
     StructBaseStructExpressionNotLast,
     StructBaseStructExpressionNoEffect,

@@ -43,3 +43,51 @@ error: Direct recursive type "test::A".
  --> lib.cairo:2:5
     Variant: A,
     ^********^
+
+//! > ==========================================================================
+
+//! > Test phantom recursive enum.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+enum A {
+    Variant: A,
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test enum containing phantom.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+struct A {}
+
+enum B {
+    Variant: A,
+}
+
+//! > expected_diagnostics
+error: Non-phantom type containing phantom type.
+ --> lib.cairo:5:5
+    Variant: A,
+    ^********^
