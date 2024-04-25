@@ -393,9 +393,9 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
 
-        impl InternalPointerAccess{member_state_name}Impl of 
+        impl InternalPointerAccess{member_state_name}Impl of
             {STORAGE_AS_POINTER_TRAIT}<{member_state_name}, $type_path$> {{
-            fn as_ptr(self: @{member_state_name}) -> 
+            fn as_ptr(self: @{member_state_name}) ->
                 starknet::storage::StoragePointer<$type_path$> {{
                 starknet::storage::StoragePointer{{
                     address: Internal{member_state_name}Impl::address(self)
@@ -415,12 +415,12 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
                 starknet::storage_access::storage_base_address_const::<{address}>()
             }}
             fn read(self: @{member_state_name}) -> $type_path$ {{
-                starknet::storage::StoragePointerAccess::read( 
+                starknet::storage::StoragePointerAccess::read(
                     InternalPointerAccess{member_state_name}Impl::as_ptr(self)
                 )
             }}
             fn write(ref self: {member_state_name}, value: $type_path$) {{
-                starknet::storage::StoragePointerAccess::write( 
+                starknet::storage::StoragePointerAccess::write(
                     InternalPointerAccess{member_state_name}Impl::as_ptr(@self), value
                 )
             }}
@@ -481,7 +481,7 @@ fn handle_legacy_mapping_storage_member(
                 starknet::SyscallResultTrait::unwrap_syscall(
                     {STORE_TRAIT}::<$value_type$>::read(
                         address_domain,
-                        Internal{member_state_name}Impl::address(self, key),
+                        Self::address(self, key),
                     )
                 )
             }}
@@ -491,7 +491,7 @@ fn handle_legacy_mapping_storage_member(
                 starknet::SyscallResultTrait::unwrap_syscall(
                     {STORE_TRAIT}::<$value_type$>::write(
                         address_domain,
-                        Internal{member_state_name}Impl::address(@self, key),
+                        Self::address(@self, key),
                         value,
                     )
                 )
@@ -539,7 +539,7 @@ fn handle_nonlegacy_mapping_storage_member(
                         \
          core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), {address})
                      }}
-    
+
                 }}
         }}
     }}"
