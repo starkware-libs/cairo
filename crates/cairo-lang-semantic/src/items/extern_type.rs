@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::resolve::Resolver;
@@ -102,7 +102,7 @@ pub fn priv_extern_type_declaration_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
     let syntax_db = db.upcast();
     let attributes = extern_type_syntax.attributes(syntax_db).structurize(syntax_db);
 

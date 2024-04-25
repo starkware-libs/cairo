@@ -15,7 +15,7 @@ use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::corelib::get_core_generic_function_id;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
@@ -150,7 +150,7 @@ pub fn priv_extern_function_declaration_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
     resolver.data.allowed_features = extract_allowed_features(
         db.upcast(),
         &extern_function_id,

@@ -28,7 +28,7 @@ use super::{
     lower_tail_expr, lowered_expr_to_block_scope_end,
 };
 use crate::diagnostic::LoweringDiagnosticKind::*;
-use crate::diagnostic::{MatchDiagnostic, MatchError, MatchKind};
+use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::{LocationId, SemanticFunctionIdEx};
 use crate::lower::context::VarRequest;
 use crate::lower::external::extern_facade_expr;

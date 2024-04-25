@@ -4,7 +4,7 @@ use cairo_lang_syntax::node::Terminal;
 use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind::RedundantModifier;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::Mutability;
 
 /// Returns the mutability of a variable, given the list of modifiers in the AST.

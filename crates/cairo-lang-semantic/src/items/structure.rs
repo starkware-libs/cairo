@@ -15,7 +15,7 @@ use super::generics::{semantic_generic_params, GenericParamsData};
 use super::visibility::Visibility;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::resolve::{Resolver, ResolverData};
@@ -62,7 +62,7 @@ pub fn priv_struct_declaration_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
 
     let attributes = struct_ast.attributes(syntax_db).structurize(syntax_db);
 
@@ -180,7 +180,7 @@ pub fn priv_struct_definition_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
 
     // Members.
     let mut members = OrderedHashMap::default();
@@ -192,11 +192,8 @@ pub fn priv_struct_definition_data(
             &mut resolver,
             &member.type_clause(syntax_db).ty(syntax_db),
         );
-        let visibility = Visibility::from_ast(
-            syntax_db,
-            &mut diagnostics.diagnostics,
-            &member.visibility(syntax_db),
-        );
+        let visibility =
+            Visibility::from_ast(syntax_db, &mut diagnostics, &member.visibility(syntax_db));
         let member_name = member.name(syntax_db).text(syntax_db);
         if let Some(_other_member) =
             members.insert(member_name.clone(), Member { id, ty, visibility })

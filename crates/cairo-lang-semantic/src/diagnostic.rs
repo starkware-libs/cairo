@@ -8,8 +8,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    error_code, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics,
-    DiagnosticsBuilder, ErrorCode, Severity,
+    error_code, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder,
+    ErrorCode, Severity,
 };
 use cairo_lang_syntax as syntax;
 use itertools::Itertools;
@@ -29,36 +29,47 @@ use crate::types::peel_snapshots;
 #[path = "diagnostic_test.rs"]
 mod test;
 
-#[derive(Default)]
-pub struct SemanticDiagnostics {
-    pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
-}
-impl SemanticDiagnostics {
-    pub fn build(self) -> Diagnostics<SemanticDiagnostic> {
-        self.diagnostics.build()
-    }
+pub type SemanticDiagnostics = DiagnosticsBuilder<SemanticDiagnostic>;
+pub trait SemanticDiagnosticsBuilder {
     /// Report a diagnostic in the location of the given node.
-    pub fn report<TNode: TypedSyntaxNode>(
+    fn report<TNode: TypedSyntaxNode>(
         &mut self,
         node: &TNode,
         kind: SemanticDiagnosticKind,
-    ) -> DiagnosticAdded {
-        self.diagnostics.add(SemanticDiagnostic::new(StableLocation::from_ast(node), kind))
-    }
+    ) -> DiagnosticAdded;
     /// Report a diagnostic in the location after the given node (with width 0).
-    pub fn report_after<TNode: TypedSyntaxNode>(
+    fn report_after<TNode: TypedSyntaxNode>(
+        &mut self,
+        node: &TNode,
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded;
+    fn report_by_ptr(
+        &mut self,
+        stable_ptr: SyntaxStablePtrId,
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded;
+}
+impl SemanticDiagnosticsBuilder for SemanticDiagnostics {
+    fn report<TNode: TypedSyntaxNode>(
         &mut self,
         node: &TNode,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(SemanticDiagnostic::new_after(StableLocation::from_ast(node), kind))
+        self.add(SemanticDiagnostic::new(StableLocation::from_ast(node), kind))
     }
-    pub fn report_by_ptr(
+    fn report_after<TNode: TypedSyntaxNode>(
+        &mut self,
+        node: &TNode,
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded {
+        self.add(SemanticDiagnostic::new_after(StableLocation::from_ast(node), kind))
+    }
+    fn report_by_ptr(
         &mut self,
         stable_ptr: SyntaxStablePtrId,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(SemanticDiagnostic::new(StableLocation::new(stable_ptr), kind))
+        self.add(SemanticDiagnostic::new(StableLocation::new(stable_ptr), kind))
     }
 }
 

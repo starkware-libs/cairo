@@ -145,7 +145,7 @@ pub fn priv_free_function_declaration_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
     resolver.data.allowed_features = extract_allowed_features(
         db.upcast(),
         &free_function_id,

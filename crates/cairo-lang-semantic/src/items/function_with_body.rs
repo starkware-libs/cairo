@@ -14,7 +14,7 @@ use itertools::Itertools;
 use super::functions::InlineConfiguration;
 use crate::corelib::try_get_core_ty_by_name;
 use crate::db::SemanticGroup;
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::ResolverData;
 use crate::{semantic, ExprId, PatternId, SemanticDiagnostic, TypeId};

@@ -15,7 +15,7 @@ use super::generators::StatementsBuilder;
 use super::refs::{SemanticLoweringMapping, StructRecomposer};
 use super::usage::MemberPath;
 use crate::db::LoweringGroup;
-use crate::diagnostic::LoweringDiagnosticKind;
+use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,

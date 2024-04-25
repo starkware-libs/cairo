@@ -17,7 +17,7 @@ use crate::blocks::Blocks;
 use crate::borrow_check::analysis::BackAnalysis;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
-use crate::diagnostic::LoweringDiagnostics;
+use crate::diagnostic::{LoweringDiagnostics, LoweringDiagnosticsBuilder};
 use crate::ids::{FunctionId, LocationId, SemanticFunctionIdEx};
 use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 
@@ -279,7 +279,7 @@ pub fn borrow_check(db: &dyn LoweringGroup, lowered: &mut FlatLowered) -> Potent
         return Default::default();
     }
     let mut diagnostics = LoweringDiagnostics::default();
-    diagnostics.diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
+    diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
     let destruct_trait_id = get_core_trait(db.upcast(), "Destruct".into());
     let destruct_fn =
         db.trait_function_by_name(destruct_trait_id, "destruct".into()).unwrap().unwrap();

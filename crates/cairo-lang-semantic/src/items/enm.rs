@@ -16,7 +16,7 @@ use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::resolve::{Resolver, ResolverData};
@@ -58,7 +58,7 @@ pub fn priv_enum_declaration_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
     let generic_params = generic_params_data.generic_params;
     let attributes = enum_ast.attributes(syntax_db).structurize(syntax_db);
 
@@ -201,7 +201,7 @@ pub fn priv_enum_definition_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
 
     // Variants.
     let mut variants = OrderedHashMap::default();

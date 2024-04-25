@@ -4,7 +4,7 @@ use cairo_lang_syntax::node::ast::ExprPath;
 use cairo_lang_utils::try_extract_matches;
 
 use crate::diagnostic::SemanticDiagnosticKind::NotATrait;
-use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::resolve::{ResolvedGenericItem, Resolver};
 
 pub mod attribute;

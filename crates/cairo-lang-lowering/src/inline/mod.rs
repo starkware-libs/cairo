@@ -18,7 +18,9 @@ use statements_weights::InlineWeight;
 use self::statements_weights::ApproxCasmInlineWeight;
 use crate::blocks::{FlatBlocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
-use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
+use crate::diagnostic::{
+    LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder,
+};
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::utils::{Rebuilder, RebuilderEx};

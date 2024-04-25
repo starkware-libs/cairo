@@ -11,7 +11,7 @@ use super::generics::{semantic_generic_params, GenericParamsData};
 use super::imp::ImplId;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
@@ -49,7 +49,7 @@ pub fn priv_impl_alias_semantic_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
 
     let item = resolver.resolve_concrete_path(
         &mut diagnostics,
@@ -92,7 +92,7 @@ pub fn priv_impl_alias_semantic_data_cycle(
     let err = Err(diagnostics.report(&impl_alias_ast.name(syntax_db), ImplAliasCycle));
     let generic_params_data = db.impl_alias_generic_params_data(*impl_alias_id)?;
     let generic_params = generic_params_data.generic_params.clone();
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
         ModuleItemId::ImplAlias(*impl_alias_id),
     ));

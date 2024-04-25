@@ -26,7 +26,9 @@ use super::generics::{semantic_generic_params, GenericParamsData};
 use super::imp::{GenericsHeadFilter, TraitFilter};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
-use crate::diagnostic::{report_unsupported_trait_item, SemanticDiagnostics};
+use crate::diagnostic::{
+    report_unsupported_trait_item, SemanticDiagnostics, SemanticDiagnosticsBuilder,
+};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
@@ -300,7 +302,7 @@ pub fn priv_trait_declaration_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
 
     let attributes = trait_ast.attributes(syntax_db).structurize(syntax_db);
 
@@ -623,7 +625,7 @@ pub fn priv_trait_type_data(
         db,
         (*type_generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(type_generic_params_data.diagnostics);
+    diagnostics.extend(type_generic_params_data.diagnostics);
 
     let attributes = type_syntax.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
@@ -766,7 +768,7 @@ pub fn priv_trait_function_declaration_data(
         db,
         (*function_generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(function_generic_params_data.diagnostics);
+    diagnostics.extend(function_generic_params_data.diagnostics);
     resolver.data.allowed_features = extract_allowed_features(
         db.upcast(),
         &trait_function_id,

@@ -29,7 +29,7 @@ use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
 use crate::expr::inference::Inference;
 use crate::lookup_item::HasResolverData;
