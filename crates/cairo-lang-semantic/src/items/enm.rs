@@ -21,7 +21,7 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::resolve_type;
+use crate::types::{add_type_based_diagnostics, resolve_type};
 use crate::{semantic, ConcreteEnumId, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -243,7 +243,14 @@ pub fn enum_definition_diagnostics(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_enum_definition_data(enum_id).map(|data| data.diagnostics).unwrap_or_default()
+    let Ok(data) = db.priv_enum_definition_data(enum_id) else {
+        return Default::default();
+    };
+    let mut diagnostics = SemanticDiagnostics::from(data.diagnostics);
+    for (_, variant) in data.variant_semantic.iter() {
+        add_type_based_diagnostics(db, &mut diagnostics, variant.ty, &variant.id);
+    }
+    diagnostics.build()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_definition_resolver_data].

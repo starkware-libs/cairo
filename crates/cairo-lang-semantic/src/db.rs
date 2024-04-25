@@ -1137,6 +1137,10 @@ pub trait SemanticGroup:
     #[salsa::invoke(types::single_value_type)]
     fn single_value_type(&self, ty: types::TypeId) -> Maybe<bool>;
 
+    #[salsa::invoke(types::direct_recursive_type)]
+    #[salsa::cycle(types::direct_recursive_type_cycle)]
+    fn direct_recursive_type(&self, ty: types::TypeId) -> Maybe<bool>;
+
     /// Returns the generic_type of a generic function. This include free types, extern
     /// types, etc...
     #[salsa::invoke(types::type_info)]

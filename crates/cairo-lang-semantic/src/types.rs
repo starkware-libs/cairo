@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplContext, ImplTypeDefId, ModuleFileId,
-    NamedLanguageElementId, StructId, TraitTypeId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplContext, ImplTypeDefId,
+    LanguageElementId, ModuleFileId, NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -752,6 +752,65 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
                             ConstValue::Int(value) if value.is_zero())
         }
     })
+}
+
+/// Adds diagnostics for a type, post semantic analysis of types.
+pub fn add_type_based_diagnostics(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    ty: TypeId,
+    node: &impl LanguageElementId,
+) {
+    if db.direct_recursive_type(ty).unwrap_or_default() {
+        diagnostics.report_by_ptr(node.untyped_stable_ptr(db.upcast()), RecursiveType { ty });
+    }
+}
+
+/// Query implementation of [crate::db::SemanticGroup::direct_recursive_type].
+pub fn direct_recursive_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
+    match ty.lookup_intern(db) {
+        TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
+            ConcreteTypeId::Struct(id) => {
+                for member in db.struct_members(id.struct_id(db))?.values() {
+                    db.direct_recursive_type(member.ty)?;
+                }
+            }
+            ConcreteTypeId::Enum(id) => {
+                for (_, variant) in db.enum_variants(id.enum_id(db))? {
+                    db.direct_recursive_type(db.variant_semantic(id.enum_id(db), variant)?.ty)?;
+                }
+            }
+            ConcreteTypeId::Extern(_) => {}
+        },
+        TypeLongId::Tuple(types) => {
+            for ty in types {
+                db.direct_recursive_type(ty)?;
+            }
+        }
+        TypeLongId::Snapshot(ty) => {
+            db.direct_recursive_type(ty)?;
+        }
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::Missing(_)
+        | TypeLongId::Coupon(_)
+        | TypeLongId::ImplType(_) => {}
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            if !matches!(size.lookup_intern(db), ConstValue::Int(value) if value.is_zero()) {
+                db.direct_recursive_type(type_id)?;
+            }
+        }
+    }
+    Ok(false)
+}
+
+/// Cycle handling of [crate::db::SemanticGroup::direct_recursive_type].
+pub fn direct_recursive_type_cycle(
+    _db: &dyn SemanticGroup,
+    _cycle: &[String],
+    _ty: &TypeId,
+) -> Maybe<bool> {
+    Ok(true)
 }
 
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.
