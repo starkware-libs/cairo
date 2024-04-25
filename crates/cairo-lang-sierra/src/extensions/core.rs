@@ -40,7 +40,7 @@ use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::poseidon::{PoseidonLibfunc, PoseidonType};
-use super::range_check::RangeCheckType;
+use super::range_check::{RangeCheck96Type, RangeCheckType};
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
 use super::span::SpanType;
@@ -77,6 +77,7 @@ define_type_hierarchy! {
         NonZero(NonZeroType),
         Nullable(NullableType),
         RangeCheck(RangeCheckType),
+        RangeCheck96(RangeCheck96Type),
         Uninitialized(UninitializedType),
         Enum(EnumType),
         Struct(StructType),
