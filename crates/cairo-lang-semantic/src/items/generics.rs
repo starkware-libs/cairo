@@ -18,7 +18,9 @@ use super::constant::ConstValueId;
 use super::imp::{ImplHead, ImplId};
 use super::resolve_trait_path;
 use crate::db::SemanticGroup;
-use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
+use crate::diagnostic::{
+    NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
+};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::lookup_item::LookupItemEx;
@@ -355,7 +357,7 @@ pub fn semantic_generic_params(
                     GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db);
                 let generic_param_data = db.priv_generic_param_data(generic_param_id)?;
                 let generic_param = generic_param_data.generic_param;
-                diagnostics.diagnostics.extend(generic_param_data.diagnostics);
+                diagnostics.extend(generic_param_data.diagnostics);
                 resolver.add_generic_param(generic_param_id);
                 Ok(generic_param)
             })

@@ -23,7 +23,7 @@ use crate::corelib::{
     validate_literal, LiteralError,
 };
 use crate::db::SemanticGroup;
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment, ExprAndId};
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
@@ -335,12 +335,10 @@ pub fn evaluate_constant_expr(
                     }
                 }
             }),
-            _ if diagnostics.diagnostics.error_count == 0 => {
-                ConstValue::Missing(diagnostics.report_by_ptr(
-                    expr.stable_ptr().untyped(),
-                    SemanticDiagnosticKind::UnsupportedConstant,
-                ))
-            }
+            _ if diagnostics.error_count == 0 => ConstValue::Missing(diagnostics.report_by_ptr(
+                expr.stable_ptr().untyped(),
+                SemanticDiagnosticKind::UnsupportedConstant,
+            )),
             _ => ConstValue::Missing(skip_diagnostic()),
         },
     )

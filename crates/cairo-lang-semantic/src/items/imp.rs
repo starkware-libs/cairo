@@ -49,7 +49,9 @@ use super::type_aliases::{
 use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
-use crate::diagnostic::{report_unsupported_impl_item, NotFoundItemType, SemanticDiagnostics};
+use crate::diagnostic::{
+    report_unsupported_impl_item, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
+};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment, ResultType};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
@@ -406,7 +408,7 @@ pub fn priv_impl_declaration_data_inner(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
 
     let concrete_trait = if resolve_trait {
@@ -1579,7 +1581,7 @@ pub fn priv_impl_function_declaration_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
     resolver.data.allowed_features =
         extract_allowed_features(db.upcast(), &impl_function_id, function_syntax, &mut diagnostics);
 

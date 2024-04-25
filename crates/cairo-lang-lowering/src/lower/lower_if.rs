@@ -11,7 +11,7 @@ use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
 use super::lowered_expr_to_block_scope_end;
 use crate::diagnostic::LoweringDiagnosticKind::{self};
-use crate::diagnostic::{MatchDiagnostic, MatchError, MatchKind};
+use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::LocationId;
 use crate::lower::context::VarRequest;
 use crate::lower::lower_match::{

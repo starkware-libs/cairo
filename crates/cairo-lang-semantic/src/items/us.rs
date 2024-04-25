@@ -10,7 +10,7 @@ use cairo_lang_utils::Upcast;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
 use crate::resolve::{ResolvedGenericItem, Resolver, ResolverData};
 use crate::SemanticDiagnostic;

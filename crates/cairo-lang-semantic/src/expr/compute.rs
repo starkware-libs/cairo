@@ -51,8 +51,8 @@ use crate::corelib::{
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{
-    ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
-    UnsupportedOutsideOfFunctionFeatureName,
+    ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics,
+    SemanticDiagnosticsBuilder, TraitInferenceErrors, UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId};
