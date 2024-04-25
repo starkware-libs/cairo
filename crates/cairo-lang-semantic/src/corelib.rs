@@ -393,6 +393,10 @@ pub fn unwrap_error_propagation_type(
         | TypeLongId::ImplType(_)
         | TypeLongId::Missing(_)
         | TypeLongId::FixedSizeArray { .. } => None,
+        // TODO(yuval): for trait function default implementation, this may need to change.
+        TypeLongId::TraitType(_) => {
+            panic!("Trait types should only appear in traits, where there are no function bodies.")
+        }
     }
 }
 

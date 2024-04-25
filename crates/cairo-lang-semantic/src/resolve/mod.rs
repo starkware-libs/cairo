@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
-    GenericKind, GenericParamId, GenericTypeId, ImplContext, ImplDefId, LanguageElementId,
-    ModuleFileId, ModuleId, TraitContext, TraitId, TraitItemId, TraitOrImplContext,
+    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
+    ModuleId, TraitId, TraitItemId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::Edition;
@@ -17,7 +17,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{require, try_extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{extract_matches, require, try_extract_matches, Intern, LookupIntern};
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -26,7 +26,7 @@ use syntax::node::TypedStablePtr;
 
 use crate::corelib::{core_submodule, get_submodule};
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind::*;
+use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::conform::InferenceConform;
@@ -36,13 +36,14 @@ use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::FeatureKind;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
+use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
     ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId,
     ConcreteTraitTypeLongId,
 };
-use crate::items::visibility;
+use crate::items::{visibility, TraitOrImplContext};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{are_coupons_enabled, implize_type, resolve_type, ImplTypeId};
 use crate::{
@@ -328,7 +329,7 @@ impl<'db> Resolver<'db> {
                 let identifier = simple_segment.ident(syntax_db);
 
                 if let Some(resolved_item) =
-                    resolve_self_segment(db, diagnostics, &identifier, self.data.trait_or_impl_ctx)
+                    resolve_self_segment(db, diagnostics, &identifier, &self.data.trait_or_impl_ctx)
                 {
                     // The first segment is "Self". Consume it and return.
                     segments.next().unwrap();
@@ -525,15 +526,28 @@ impl<'db> Resolver<'db> {
                     .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
 
+                let segment_stable_ptr = segment.stable_ptr().untyped();
+
                 self.validate_item_usability(diagnostics, *module_id, identifier, &inner_item_info);
                 let inner_generic_item =
                     ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
-                Ok(self.specialize_generic_module_item(
+                let specialized_item = self.specialize_generic_module_item(
                     diagnostics,
                     identifier,
                     inner_generic_item,
-                    generic_args_syntax,
-                )?)
+                    generic_args_syntax.clone(),
+                )?;
+                // TODO(yuval): on a breaking version change, consider changing warning diagnostics
+                // to error diagnostics. Currently we ignore the returned result (`.ok()`), but if
+                // changed to errors, we should fail on it (`?`).
+                self.warn_same_impl_trait(
+                    diagnostics,
+                    &specialized_item,
+                    &generic_args_syntax.unwrap_or_default(),
+                    segment_stable_ptr,
+                )
+                .ok();
+                Ok(specialized_item)
             }
             ResolvedConcreteItem::Type(ty) => {
                 if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
@@ -604,6 +618,15 @@ impl<'db> Resolver<'db> {
                             trait_type_id,
                         )
                         .intern(self.db);
+
+                        if let TraitOrImplContext::Trait(ctx_trait_id) = &self.trait_or_impl_ctx {
+                            if trait_id == *ctx_trait_id {
+                                return Ok(ResolvedConcreteItem::Type(
+                                    TypeLongId::TraitType(trait_type_id).intern(self.db),
+                                ));
+                            }
+                        }
+
                         let impl_lookup_context = self.impl_lookup_context();
                         let identifier_stable_ptr = identifier.stable_ptr().untyped();
                         let ty = self
@@ -952,10 +975,45 @@ impl<'db> Resolver<'db> {
         generic_args_syntax: &[ast::GenericArg],
         stable_ptr: SyntaxStablePtrId,
     ) -> Maybe<Vec<GenericArgumentId>> {
-        let syntax_db = self.db.upcast();
         let mut substitution = GenericSubstitution::default();
         let mut resolved_args = vec![];
-        let mut arg_syntax_for_param =
+        let arg_syntax_per_param =
+            self.get_arg_syntax_per_param(diagnostics, generic_params, generic_args_syntax)?;
+
+        for generic_param in generic_params.iter() {
+            let generic_param = SubstitutionRewriter { db: self.db, substitution: &substitution }
+                .rewrite(*generic_param)?;
+            let generic_arg = self.resolve_generic_arg(
+                generic_param,
+                arg_syntax_per_param
+                    .get(&generic_param.id())
+                    .and_then(|arg_syntax| {
+                        if let ast::GenericArgValue::Expr(expr) = arg_syntax {
+                            Some(expr.expr(self.db.upcast()))
+                        } else {
+                            None
+                        }
+                    })
+                    .as_ref(),
+                stable_ptr,
+                diagnostics,
+            )?;
+            resolved_args.push(generic_arg);
+            substitution.0.insert(generic_param.id(), generic_arg);
+        }
+
+        Ok(resolved_args)
+    }
+
+    /// Returns a map of generic param id -> its assigned arg syntax.
+    fn get_arg_syntax_per_param(
+        &self,
+        diagnostics: &mut SemanticDiagnostics,
+        generic_params: &[GenericParam],
+        generic_args_syntax: &[ast::GenericArg],
+    ) -> Maybe<UnorderedHashMap<GenericParamId, ast::GenericArgValue>> {
+        let syntax_db = self.db.upcast();
+        let mut arg_syntax_per_param =
             UnorderedHashMap::<GenericParamId, ast::GenericArgValue>::default();
         let mut last_named_arg_index = None;
         let generic_param_by_name = generic_params
@@ -963,8 +1021,7 @@ impl<'db> Resolver<'db> {
             .enumerate()
             .filter_map(|(i, param)| Some((param.id().name(self.db.upcast())?, (i, param.id()))))
             .collect::<UnorderedHashMap<_, _>>();
-
-        for (i, generic_arg_syntax) in generic_args_syntax.iter().enumerate() {
+        for (idx, generic_arg_syntax) in generic_args_syntax.iter().enumerate() {
             match generic_arg_syntax {
                 ast::GenericArg::Named(arg_syntax) => {
                     let name = arg_syntax.name(syntax_db).text(syntax_db);
@@ -979,7 +1036,7 @@ impl<'db> Resolver<'db> {
                         }
                     }
                     last_named_arg_index = Some(index);
-                    if arg_syntax_for_param
+                    if arg_syntax_per_param
                         .insert(*generic_param_id, arg_syntax.value(syntax_db))
                         .is_some()
                     {
@@ -990,7 +1047,7 @@ impl<'db> Resolver<'db> {
                     if last_named_arg_index.is_some() {
                         return Err(diagnostics.report(arg_syntax, PositionalGenericAfterNamed));
                     }
-                    let generic_param = generic_params.get(i).ok_or_else(|| {
+                    let generic_param = generic_params.get(idx).ok_or_else(|| {
                         diagnostics.report(
                             arg_syntax,
                             TooManyGenericArguments {
@@ -1000,7 +1057,7 @@ impl<'db> Resolver<'db> {
                         )
                     })?;
                     assert_eq!(
-                        arg_syntax_for_param
+                        arg_syntax_per_param
                             .insert(generic_param.id(), arg_syntax.value(syntax_db)),
                         None,
                         "Unexpected duplication in ordered params."
@@ -1008,30 +1065,7 @@ impl<'db> Resolver<'db> {
                 }
             }
         }
-
-        for generic_param in generic_params.iter() {
-            let generic_param = SubstitutionRewriter { db: self.db, substitution: &substitution }
-                .rewrite(*generic_param)?;
-            let generic_arg = self.resolve_generic_arg(
-                generic_param,
-                arg_syntax_for_param
-                    .get(&generic_param.id())
-                    .and_then(|arg_syntax| {
-                        if let ast::GenericArgValue::Expr(expr) = arg_syntax {
-                            Some(expr.expr(syntax_db))
-                        } else {
-                            None
-                        }
-                    })
-                    .as_ref(),
-                stable_ptr,
-                diagnostics,
-            )?;
-            resolved_args.push(generic_arg);
-            substitution.0.insert(generic_param.id(), generic_arg);
-        }
-
-        Ok(resolved_args)
+        Ok(arg_syntax_per_param)
     }
 
     fn resolve_generic_arg(
@@ -1172,6 +1206,171 @@ impl<'db> Resolver<'db> {
             _ => {}
         }
     }
+
+    /// Warns about the use of a trait in a path inside the same trait or an impl of it, and the use
+    /// of an impl in a path inside the same impl.
+    /// That is, warns about using the actual path equivalent to `Self`, where `Self` can be used.
+    fn warn_same_impl_trait(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        specialized_item: &ResolvedConcreteItem,
+        generic_args_syntax_slice: &[ast::GenericArg],
+        segment_stable_ptr: SyntaxStablePtrId,
+    ) -> Maybe<()> {
+        match *specialized_item {
+            ResolvedConcreteItem::Trait(current_segment_concrete_trait) => {
+                match self.trait_or_impl_ctx {
+                    TraitOrImplContext::None => {}
+                    TraitOrImplContext::Trait(ctx_trait) => {
+                        self.warn_trait_in_same_trait(
+                            diagnostics,
+                            current_segment_concrete_trait.trait_id(self.db),
+                            generic_args_syntax_slice,
+                            ctx_trait,
+                            segment_stable_ptr,
+                        )?;
+                    }
+                    TraitOrImplContext::Impl(ctx_impl_def_id) => {
+                        self.warn_trait_in_its_impl(
+                            diagnostics,
+                            current_segment_concrete_trait,
+                            ctx_impl_def_id,
+                            segment_stable_ptr,
+                        )?;
+                    }
+                };
+            }
+            ResolvedConcreteItem::Impl(current_segment_impl_id) => {
+                if let TraitOrImplContext::Impl(ctx_impl) = self.trait_or_impl_ctx {
+                    // A ResolvedConcreteItem::Impl returned by
+                    // `specialize_generic_module_item` must be ImplId::Concrete.
+                    let current_segment_concrete_impl_id =
+                        extract_matches!(current_segment_impl_id, ImplId::Concrete);
+                    self.warn_impl_in_same_impl(
+                        diagnostics,
+                        current_segment_concrete_impl_id.impl_def_id(self.db),
+                        generic_args_syntax_slice,
+                        ctx_impl,
+                        segment_stable_ptr,
+                    )?;
+                }
+            }
+            _ => {}
+        };
+        Ok(())
+    }
+
+    /// Raises a warning diagnostic (and returns an error) if the segment describes an impl in the
+    /// context of that impl (that is, could be expressed as `Self`).
+    fn warn_impl_in_same_impl(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        current_segment_impl_def_id: ImplDefId,
+        current_segment_generic_args: &[ast::GenericArg],
+        ctx_impl: ImplDefId,
+        segment_stable_ptr: SyntaxStablePtrId,
+    ) -> Maybe<()> {
+        if current_segment_impl_def_id != ctx_impl {
+            return Ok(());
+        }
+
+        let generic_params = self.db.impl_def_generic_params(ctx_impl)?;
+        self.compare_segment_args_to_params(
+            diagnostics,
+            current_segment_generic_args,
+            generic_params,
+            segment_stable_ptr,
+            ImplInImplMustBeExplicit,
+            ImplItemForbiddenInTheImpl,
+        )
+    }
+
+    /// Raises a warning diagnostic (and returns an error) if the segment is of a concrete trait in
+    /// the context of an impl of that concrete trait (that is, could be expressed as `Self`).
+    fn warn_trait_in_its_impl(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        current_segment_concrete_trait_id: ConcreteTraitId,
+        impl_ctx: ImplDefId,
+        segment_stable_ptr: SyntaxStablePtrId,
+    ) -> Maybe<()> {
+        let ctx_impl_trait = self.db.impl_def_trait(impl_ctx)?;
+        if current_segment_concrete_trait_id.trait_id(self.db) != ctx_impl_trait {
+            return Ok(());
+        }
+
+        let ctx_impl_concrete_trait = self.db.impl_def_concrete_trait(impl_ctx)?;
+        if ctx_impl_concrete_trait.generic_args(self.db)
+            == current_segment_concrete_trait_id.generic_args(self.db)
+        {
+            return Err(diagnostics.report_by_ptr(segment_stable_ptr, TraitItemForbiddenInItsImpl));
+        }
+        Ok(())
+    }
+
+    /// Raises a warning diagnostic (and returns an error) if the segment describes a trait in the
+    /// context of that trait (that is, could be expressed as `Self`).
+    fn warn_trait_in_same_trait(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        current_segment_trait_id: TraitId,
+        current_segment_generic_args: &[ast::GenericArg],
+        ctx_trait: TraitId,
+        segment_stable_ptr: SyntaxStablePtrId,
+    ) -> Maybe<()> {
+        if current_segment_trait_id != ctx_trait {
+            return Ok(());
+        }
+
+        let generic_params = self.db.trait_generic_params(ctx_trait)?;
+        self.compare_segment_args_to_params(
+            diagnostics,
+            current_segment_generic_args,
+            generic_params,
+            segment_stable_ptr,
+            TraitInTraitMustBeExplicit,
+            TraitItemForbiddenInTheTrait,
+        )
+    }
+
+    /// Check if the given generic arguments exactly match the given generic parameters.
+    /// This is used to check if a path segment is forbidden in the context of the item referred to
+    /// by the segment.
+    ///
+    /// Fails if not all arguments are explicitly specified or if they are all specified and exactly
+    /// the same as the parameters.
+    fn compare_segment_args_to_params(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        current_segment_generic_args: &[ast::GenericArg],
+        generic_params: Vec<GenericParam>,
+        segment_stable_ptr: SyntaxStablePtrId,
+        must_be_explicit_error: SemanticDiagnosticKind,
+        item_forbidden_in_itself_explicit_error: SemanticDiagnosticKind,
+    ) -> Result<(), cairo_lang_diagnostics::DiagnosticAdded> {
+        // This assumes the current segment item and the context items are equal. In this specific
+        // case we disallow implicit arguments.
+        if current_segment_generic_args.len() < generic_params.len() {
+            return Err(diagnostics.report_by_ptr(segment_stable_ptr, must_be_explicit_error));
+        }
+
+        let resolved_args = self.resolve_generic_args(
+            diagnostics,
+            &generic_params,
+            current_segment_generic_args,
+            segment_stable_ptr,
+        )?;
+
+        if generic_params
+            .iter()
+            .zip_eq(resolved_args.iter())
+            .all(|(gparam, garg)| gparam.as_arg(self.db) == *garg)
+        {
+            return Err(diagnostics
+                .report_by_ptr(segment_stable_ptr, item_forbidden_in_itself_explicit_error));
+        }
+        Ok(())
+    }
 }
 
 /// Resolves the segment if it's "Self". Returns the Some(ResolvedConcreteItem) or Some(Err) if
@@ -1180,25 +1379,42 @@ fn resolve_self_segment(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     identifier: &ast::TerminalIdentifier,
-    trait_or_impl_ctx: TraitOrImplContext,
+    trait_or_impl_ctx: &TraitOrImplContext,
 ) -> Option<Maybe<ResolvedConcreteItem>> {
     require(identifier.text(db.upcast()) == "Self")?;
+    Some(resolve_actual_self_segment(db, diagnostics, identifier, trait_or_impl_ctx))
+}
 
-    Some(match trait_or_impl_ctx {
+/// Resolves the "Self" segment given that it's actually "Self".
+fn resolve_actual_self_segment(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    identifier: &ast::TerminalIdentifier,
+    trait_or_impl_ctx: &TraitOrImplContext,
+) -> Maybe<ResolvedConcreteItem> {
+    match trait_or_impl_ctx {
         TraitOrImplContext::None => Err(diagnostics.report(identifier, SelfNotSupportedInContext)),
-        TraitOrImplContext::Trait(TraitContext { trait_id }) => {
-            // TODO(yuval): use generics
-            let concrete_trait_id =
-                ConcreteTraitLongId { trait_id, generic_args: vec![] }.intern(db);
+        TraitOrImplContext::Trait(trait_id) => {
+            let generic_parameters = db.trait_generic_params(*trait_id)?;
+            let concrete_trait_id = ConcreteTraitLongId {
+                trait_id: *trait_id,
+                generic_args: generic_params_to_args(&generic_parameters, db),
+            }
+            .intern(db);
             Ok(ResolvedConcreteItem::Trait(concrete_trait_id))
         }
-        TraitOrImplContext::Impl(ImplContext { impl_def_id }) => {
+        TraitOrImplContext::Impl(impl_def_id) => {
+            let generic_parameters = db.impl_def_generic_params(*impl_def_id)?;
             let impl_id = ImplId::Concrete(
-                ConcreteImplLongId { impl_def_id, generic_args: vec![] }.intern(db),
+                ConcreteImplLongId {
+                    impl_def_id: *impl_def_id,
+                    generic_args: generic_params_to_args(&generic_parameters, db),
+                }
+                .intern(db),
             );
             Ok(ResolvedConcreteItem::Impl(impl_id))
         }
-    })
+    }
 }
 
 /// Extracts the edition of a crate.

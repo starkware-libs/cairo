@@ -949,8 +949,7 @@ mod inner {
     }
     impl MyImpl of MyTrait {
         fn foo1() {
-            super::inner::MyImpl::foo2(); // This is ok.
-            super::inner::Self::foo2(); // This is not.
+            super::inner::Self::foo2(); // This is not ok.
         }
         fn foo2() {}
     }
@@ -958,8 +957,8 @@ mod inner {
 
 //! > expected_diagnostics
 error: `Self` can only be the first segment of a path.
- --> lib.cairo:9:27
-            super::inner::Self::foo2(); // This is not.
+ --> lib.cairo:8:27
+            super::inner::Self::foo2(); // This is not ok.
                           ^**^
 
 //! > ==========================================================================

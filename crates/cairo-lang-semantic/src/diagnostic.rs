@@ -479,6 +479,28 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 NotFoundItemType::Trait => "Trait not found.".into(),
                 NotFoundItemType::Impl => "Impl not found.".into(),
             },
+            SemanticDiagnosticKind::TraitInTraitMustBeExplicit => {
+                "In a trait, paths of the same trait must be fully explicit. Either use `Self` if \
+                 this is the intention, or explicitly specify all the generic arguments."
+                    .to_string()
+            }
+            SemanticDiagnosticKind::ImplInImplMustBeExplicit => {
+                "In an impl, paths of the same impl must be fully explicit. Either use `Self` if \
+                 this is the intention, or explicitly specify all the generic arguments."
+                    .to_string()
+            }
+            SemanticDiagnosticKind::TraitItemForbiddenInTheTrait => {
+                "In a trait, paths of the same trait are not allowed. Did you mean to use `Self::`?"
+                    .to_string()
+            }
+            SemanticDiagnosticKind::TraitItemForbiddenInItsImpl => "In an impl, paths of the \
+                                                                    impl's trait are not allowed. \
+                                                                    Did you mean to use `Self::`?"
+                .to_string(),
+            SemanticDiagnosticKind::ImplItemForbiddenInTheImpl => {
+                "In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?"
+                    .to_string()
+            }
             SemanticDiagnosticKind::SuperUsedInRootModule => {
                 "'super' cannot be used for the crate's root module.".into()
             }
@@ -717,7 +739,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!("Generic argument `{}` is out of order.", name)
             }
             SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
-                "Only `_` is a valid for negative impls.".into()
+                "Only `_` is valid as a negative impl argument.".into()
             }
             SemanticDiagnosticKind::UnsupportedTraitItem { kind } => {
                 format!("{kind} items are not yet supported in traits.")
@@ -783,7 +805,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
         match &self.kind {
             SemanticDiagnosticKind::UnusedVariable
             | SemanticDiagnosticKind::UnhandledMustUseType { .. }
-            | SemanticDiagnosticKind::UnhandledMustUseFunction => Severity::Warning,
+            | SemanticDiagnosticKind::UnhandledMustUseFunction
+            | SemanticDiagnosticKind::TraitInTraitMustBeExplicit
+            | SemanticDiagnosticKind::ImplInImplMustBeExplicit
+            | SemanticDiagnosticKind::TraitItemForbiddenInTheTrait
+            | SemanticDiagnosticKind::TraitItemForbiddenInItsImpl
+            | SemanticDiagnosticKind::ImplItemForbiddenInTheImpl => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -994,6 +1021,11 @@ pub enum SemanticDiagnosticKind {
     InvalidMemberExpression,
     InvalidPath,
     PathNotFound(NotFoundItemType),
+    TraitInTraitMustBeExplicit,
+    ImplInImplMustBeExplicit,
+    TraitItemForbiddenInTheTrait,
+    TraitItemForbiddenInItsImpl,
+    ImplItemForbiddenInTheImpl,
     SuperUsedInRootModule,
     ItemNotVisible {
         item_id: ModuleItemId,
