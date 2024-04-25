@@ -98,6 +98,13 @@ impl TypeId {
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
         db.priv_type_is_var_free(*self)
     }
+
+    /// Returns whether the type is phantom.
+    /// Type is considered phantom if it has the `#[phantom]` attribute, or is a tuple or fixed
+    /// sized array containing it.
+    pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
+        self.lookup_intern(db).is_phantom(db)
+    }
 }
 impl TypeLongId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -145,6 +152,28 @@ impl TypeLongId {
                 return None;
             }
         })
+    }
+
+    /// Returns whether the type is phantom.
+    /// Type is considered phantom if it has the `#[phantom]` attribute, or is a tuple or fixed
+    /// sized array containing it.
+    pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
+        match self {
+            TypeLongId::Concrete(id) => match id {
+                ConcreteTypeId::Struct(id) => id.has_attr(db, PHANTOM_ATTR),
+                ConcreteTypeId::Enum(id) => id.has_attr(db, PHANTOM_ATTR),
+                ConcreteTypeId::Extern(id) => id.has_attr(db, PHANTOM_ATTR),
+            }
+            .unwrap_or_default(),
+            TypeLongId::Tuple(inner) => inner.iter().any(|ty| ty.is_phantom(db)),
+            TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_phantom(db),
+            TypeLongId::Snapshot(_)
+            | TypeLongId::GenericParameter(_)
+            | TypeLongId::Var(_)
+            | TypeLongId::Coupon(_)
+            | TypeLongId::ImplType(_)
+            | TypeLongId::Missing(_) => false,
+        }
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
@@ -330,15 +359,6 @@ impl ConcreteTypeId {
                 generic_type_format,
                 generic_args.iter().map(|arg| arg.format(db)).join(", ")
             )
-        }
-    }
-
-    /// Returns whether the type has the `#[phantom]` attribute.
-    pub fn is_phantom(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
-        match self {
-            ConcreteTypeId::Struct(id) => id.has_attr(db, PHANTOM_ATTR),
-            ConcreteTypeId::Enum(id) => id.has_attr(db, PHANTOM_ATTR),
-            ConcreteTypeId::Extern(id) => id.has_attr(db, PHANTOM_ATTR),
         }
     }
 
