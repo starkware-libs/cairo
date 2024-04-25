@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplContext, ImplTypeDefId, ModuleFileId,
-    NamedLanguageElementId, StructId, TraitTypeId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplContext, ImplTypeDefId,
+    LanguageElementId, ModuleFileId, NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -98,6 +98,13 @@ impl TypeId {
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
         db.priv_type_is_var_free(*self)
     }
+
+    /// Returns whether the type is phantom.
+    /// Type is considered phantom if it has the `#[phantom]` attribute, or is a tuple or fixed
+    /// sized array containing it.
+    pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
+        self.lookup_intern(db).is_phantom(db)
+    }
 }
 impl TypeLongId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -145,6 +152,28 @@ impl TypeLongId {
                 return None;
             }
         })
+    }
+
+    /// Returns whether the type is phantom.
+    /// Type is considered phantom if it has the `#[phantom]` attribute, or is a tuple or fixed
+    /// sized array containing it.
+    pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
+        match self {
+            TypeLongId::Concrete(id) => match id {
+                ConcreteTypeId::Struct(id) => id.has_attr(db, PHANTOM_ATTR),
+                ConcreteTypeId::Enum(id) => id.has_attr(db, PHANTOM_ATTR),
+                ConcreteTypeId::Extern(id) => id.has_attr(db, PHANTOM_ATTR),
+            }
+            .unwrap_or_default(),
+            TypeLongId::Tuple(inner) => inner.iter().any(|ty| ty.is_phantom(db)),
+            TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_phantom(db),
+            TypeLongId::Snapshot(_)
+            | TypeLongId::GenericParameter(_)
+            | TypeLongId::Var(_)
+            | TypeLongId::Coupon(_)
+            | TypeLongId::ImplType(_)
+            | TypeLongId::Missing(_) => false,
+        }
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
@@ -330,15 +359,6 @@ impl ConcreteTypeId {
                 generic_type_format,
                 generic_args.iter().map(|arg| arg.format(db)).join(", ")
             )
-        }
-    }
-
-    /// Returns whether the type has the `#[phantom]` attribute.
-    pub fn is_phantom(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
-        match self {
-            ConcreteTypeId::Struct(id) => id.has_attr(db, PHANTOM_ATTR),
-            ConcreteTypeId::Enum(id) => id.has_attr(db, PHANTOM_ATTR),
-            ConcreteTypeId::Extern(id) => id.has_attr(db, PHANTOM_ATTR),
         }
     }
 
@@ -752,6 +772,67 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
                             ConstValue::Int(value) if value.is_zero())
         }
     })
+}
+
+/// Adds diagnostics for a type, post semantic analysis of types.
+pub fn add_type_based_diagnostics(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    ty: TypeId,
+    node: &impl LanguageElementId,
+) {
+    if db.direct_recursive_type(ty) {
+        diagnostics.report_by_ptr(node.untyped_stable_ptr(db.upcast()), RecursiveType { ty });
+    }
+}
+
+/// Query implementation of [crate::db::SemanticGroup::direct_recursive_type].
+pub fn direct_recursive_type(db: &dyn SemanticGroup, ty: TypeId) -> bool {
+    match ty.lookup_intern(db) {
+        TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
+            ConcreteTypeId::Struct(id) => {
+                for (_, member) in db.struct_members(id.struct_id(db)).into_iter().flatten() {
+                    db.direct_recursive_type(member.ty);
+                }
+            }
+            ConcreteTypeId::Enum(id) => {
+                for (_, variant) in db.enum_variants(id.enum_id(db)).into_iter().flatten() {
+                    if let Ok(variant) = db.variant_semantic(id.enum_id(db), variant) {
+                        db.direct_recursive_type(variant.ty);
+                    }
+                }
+            }
+            ConcreteTypeId::Extern(_) => {}
+        },
+        TypeLongId::Tuple(types) => {
+            for ty in types {
+                db.direct_recursive_type(ty);
+            }
+        }
+        TypeLongId::Snapshot(ty) => {
+            db.direct_recursive_type(ty);
+        }
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::Missing(_)
+        | TypeLongId::Coupon(_)
+        | TypeLongId::ImplType(_) => {}
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            if !matches!(size.lookup_intern(db), ConstValue::Int(value) if value.is_zero()) {
+                db.direct_recursive_type(type_id);
+            }
+        }
+    }
+    false
+}
+
+/// Cycle handling of [crate::db::SemanticGroup::direct_recursive_type].
+pub fn direct_recursive_type_cycle(
+    _db: &dyn SemanticGroup,
+    _cycle: &[String],
+    _ty: &TypeId,
+) -> bool {
+    true
 }
 
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.

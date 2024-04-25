@@ -13,7 +13,6 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
-use cairo_lang_syntax::attribute::consts::PHANTOM_ATTR;
 use cairo_lang_syntax::node::ast::{
     BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
 };
@@ -54,7 +53,6 @@ use crate::diagnostic::{
     ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics,
     SemanticDiagnosticsBuilder, TraitInferenceErrors, UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_allowed_features;
@@ -936,11 +934,10 @@ fn compute_expr_function_call_semantic(
     let args_syntax = syntax.arguments(syntax_db).arguments(syntax_db);
 
     match item {
-        ResolvedConcreteItem::Variant(concrete_variant) => {
-            let concrete_enum_id = concrete_variant.concrete_enum_id;
+        ResolvedConcreteItem::Variant(variant) => {
             let concrete_enum_type =
-                TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)).intern(db);
-            if concrete_enum_id.has_attr(db, PHANTOM_ATTR)? {
+                TypeLongId::Concrete(ConcreteTypeId::Enum(variant.concrete_enum_id)).intern(db);
+            if concrete_enum_type.is_phantom(db) {
                 ctx.diagnostics.report(syntax, CannotCreateInstancesOfPhantomTypes);
             }
 
@@ -970,7 +967,7 @@ fn compute_expr_function_call_semantic(
                     compute_named_argument_clause(
                         ctx,
                         arg_syntax,
-                        Some(ResultType { ty: concrete_variant.ty, stable_ptr: arg_stable_ptr }),
+                        Some(ResultType { ty: variant.ty, stable_ptr: arg_stable_ptr }),
                     )
                 })
                 .collect();
@@ -987,7 +984,7 @@ fn compute_expr_function_call_semantic(
             if mutability != Mutability::Immutable {
                 return Err(ctx.diagnostics.report(&args_syntax, VariantCtorNotImmutable));
             }
-            let expected_ty = ctx.reduce_ty(concrete_variant.ty);
+            let expected_ty = ctx.reduce_ty(variant.ty);
             let actual_ty = ctx.reduce_ty(arg.ty());
             let inference = &mut ctx.resolver.inference();
             if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
@@ -998,7 +995,7 @@ fn compute_expr_function_call_semantic(
                 return Err(diag_added);
             }
             Ok(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
-                variant: concrete_variant,
+                variant,
                 value_expr: arg.id,
                 ty: concrete_enum_type,
                 stable_ptr: syntax.stable_ptr().into(),
@@ -2252,7 +2249,7 @@ fn struct_ctor_expr(
         .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
         .ok_or_else(|| ctx.diagnostics.report(&path, NotAStruct))?;
 
-    if concrete_struct_id.has_attr(db, PHANTOM_ATTR)? {
+    if ty.is_phantom(db) {
         ctx.diagnostics.report(ctor_syntax, CannotCreateInstancesOfPhantomTypes);
     }
 

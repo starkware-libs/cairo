@@ -371,6 +371,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     enum_id.full_path(db.upcast())
                 )
             }
+            SemanticDiagnosticKind::RecursiveType { ty } => {
+                format!(r#"Direct recursive type "{}"."#, ty.format(db))
+            }
             SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
                 format!(
                     r#"Redefinition of parameter name "{param_name}" in function "{}"."#,
@@ -937,6 +940,9 @@ pub enum SemanticDiagnosticKind {
     EnumVariantRedefinition {
         enum_id: EnumId,
         variant_name: SmolStr,
+    },
+    RecursiveType {
+        ty: semantic::TypeId,
     },
     ParamNameRedefinition {
         function_title_id: FunctionTitleId,

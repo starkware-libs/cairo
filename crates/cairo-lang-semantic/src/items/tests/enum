@@ -19,3 +19,27 @@ enum A<T> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test invalid recursive enum.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    Variant: A,
+}
+
+//! > expected_diagnostics
+error: Direct recursive type "test::A".
+ --> lib.cairo:2:5
+    Variant: A,
+    ^********^
