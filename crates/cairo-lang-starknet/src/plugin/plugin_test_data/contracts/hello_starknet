@@ -49,9 +49,9 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl InternalPointerAccessContractMemberStateImpl of 
+        impl InternalPointerAccessContractMemberStateImpl of
             starknet::storage::StorageAsPointer<ContractMemberState, usize> {
-            fn as_ptr(self: @ContractMemberState) -> 
+            fn as_ptr(self: @ContractMemberState) ->
                 starknet::storage::StoragePointer<usize> {
                 starknet::storage::StoragePointer{
                     address: InternalContractMemberStateImpl::address(self)
@@ -70,12 +70,12 @@ pub enum Event {}
                 starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
             fn read(self: @ContractMemberState) -> usize {
-                starknet::storage::StoragePointerAccess::read( 
+                starknet::storage::StoragePointerAccess::read(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(self)
                 )
             }
             fn write(ref self: ContractMemberState, value: usize) {
-                starknet::storage::StoragePointerAccess::write( 
+                starknet::storage::StoragePointerAccess::write(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
                 )
             }
@@ -544,9 +544,9 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl InternalPointerAccessContractMemberStateImpl of 
+        impl InternalPointerAccessContractMemberStateImpl of
             starknet::storage::StorageAsPointer<ContractMemberState, usize> {
-            fn as_ptr(self: @ContractMemberState) -> 
+            fn as_ptr(self: @ContractMemberState) ->
                 starknet::storage::StoragePointer<usize> {
                 starknet::storage::StoragePointer{
                     address: InternalContractMemberStateImpl::address(self)
@@ -565,12 +565,12 @@ pub enum Event {}
                 starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
             fn read(self: @ContractMemberState) -> usize {
-                starknet::storage::StoragePointerAccess::read( 
+                starknet::storage::StoragePointerAccess::read(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(self)
                 )
             }
             fn write(ref self: ContractMemberState, value: usize) {
-                starknet::storage::StoragePointerAccess::write( 
+                starknet::storage::StoragePointerAccess::write(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
                 )
             }
