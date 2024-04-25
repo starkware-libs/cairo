@@ -322,6 +322,7 @@ pub fn maybe_compute_expr_semantic(
 ) -> Maybe<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
+
     // TODO(spapini): When Expr holds the syntax pointer, add it here as well.
     let expr = match syntax {
         ast::Expr::Path(path) => resolve_expr_path(ctx, path),
@@ -371,7 +372,7 @@ pub fn maybe_compute_expr_semantic(
     }?;
     if let Some(ResultType { ty: result_type, stable_ptr: result_type_stable_ptr }) = result_type {
         let actual_ty = ctx.reduce_ty(expr.ty());
-        let result_type = ctx.reduce_ty(result_type);
+        let result_type = ctx.implize_type(result_type)?;
         let inference = &mut ctx.resolver.inference();
         if let Err(err_set) = inference.conform_ty(actual_ty, result_type) {
             inference.report_modified_if_pending(err_set, || {
@@ -2714,6 +2715,9 @@ fn member_access_expr(
         TypeLongId::FixedSizeArray { .. } => {
             Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name }))
         }
+        TypeLongId::TraitType(_) => {
+            panic!("Trait types should only appear in traits, where there are no function bodies.")
+        }
     }
 }
 
@@ -3278,7 +3282,7 @@ fn function_parameter_types(
     ctx: &mut ComputationContext<'_>,
     function: FunctionId,
 ) -> Maybe<impl Iterator<Item = TypeId>> {
-    let signature = ctx.db.concrete_function_signature(function)?;
+    let signature = ctx.db.concrete_function_implized_signature(function)?;
     let param_types = signature.params.into_iter().map(|param| param.ty);
     Ok(param_types)
 }

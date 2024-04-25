@@ -320,7 +320,7 @@ pub enum Event {}
                     starknet::storage::StoragePath::<Map::<felt252, felt252>> { hash_state:
                         core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4)
                      }
-    
+
                 }
         }
     }
@@ -1617,9 +1617,9 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl InternalPointerAccessContractMemberStateImpl of 
+        impl InternalPointerAccessContractMemberStateImpl of
             starknet::storage::StorageAsPointer<ContractMemberState, felt252> {
-            fn as_ptr(self: @ContractMemberState) -> 
+            fn as_ptr(self: @ContractMemberState) ->
                 starknet::storage::StoragePointer<felt252> {
                 starknet::storage::StoragePointer{
                     address: InternalContractMemberStateImpl::address(self)
@@ -1638,12 +1638,12 @@ pub enum Event {}
                 starknet::storage_access::storage_base_address_const::<0x26673b81123c540a9238f376b833c3914834c3c0cdf4e609f834963616d3ef9>()
             }
             fn read(self: @ContractMemberState) -> felt252 {
-                starknet::storage::StoragePointerAccess::read( 
+                starknet::storage::StoragePointerAccess::read(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(self)
                 )
             }
             fn write(ref self: ContractMemberState, value: felt252) {
-                starknet::storage::StoragePointerAccess::write( 
+                starknet::storage::StoragePointerAccess::write(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
                 )
             }

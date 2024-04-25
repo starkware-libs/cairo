@@ -4,8 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
     NamedLanguageElementLongId, TopLevelLanguageElementId, TraitConstantId, TraitConstantLongId,
-    TraitContext, TraitFunctionId, TraitFunctionLongId, TraitId, TraitItemId, TraitOrImplContext,
-    TraitTypeId, TraitTypeLongId,
+    TraitFunctionId, TraitFunctionLongId, TraitId, TraitItemId, TraitTypeId, TraitTypeLongId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -24,6 +23,7 @@ use super::function_with_body::{get_implicit_precedence, get_inline_config, Func
 use super::functions::{FunctionDeclarationData, ImplicitPrecedence, InlineConfiguration};
 use super::generics::{semantic_generic_params, GenericParamsData};
 use super::imp::{GenericsHeadFilter, TraitFilter};
+use super::TraitOrImplContext;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{
@@ -367,7 +367,7 @@ pub fn priv_trait_declaration_data(
     let generic_params = inference.rewrite(generic_params).no_err();
 
     let mut resolver_data = resolver.data;
-    resolver_data.trait_or_impl_ctx = TraitOrImplContext::Trait(TraitContext { trait_id });
+    resolver_data.trait_or_impl_ctx = TraitOrImplContext::Trait(trait_id);
     Ok(TraitDeclarationData {
         diagnostics: diagnostics.build(),
         generic_params,

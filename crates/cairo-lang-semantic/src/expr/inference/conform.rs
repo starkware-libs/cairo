@@ -156,6 +156,11 @@ impl<'db> InferenceConform for Inference<'db> {
             TypeLongId::GenericParameter(_) | TypeLongId::ImplType(_) => {
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
+            TypeLongId::TraitType(_) => {
+                // This should never happen as the trait type should be implized when conformed, but
+                // don't panic in case of a bug.
+                Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
+            }
             TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, n_snapshots)),
             TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),
             TypeLongId::Coupon(function_id0) => {
@@ -461,9 +466,10 @@ impl Inference<'_> {
                 }
                 false
             }
-            TypeLongId::GenericParameter(_) | TypeLongId::ImplType(_) | TypeLongId::Missing(_) => {
-                false
-            }
+            TypeLongId::GenericParameter(_)
+            | TypeLongId::TraitType(_)
+            | TypeLongId::ImplType(_)
+            | TypeLongId::Missing(_) => false,
             TypeLongId::Coupon(function_id) => self.function_contains_var(function_id, var),
             TypeLongId::FixedSizeArray { type_id, .. } => {
                 self.internal_ty_contains_var(type_id, var)
