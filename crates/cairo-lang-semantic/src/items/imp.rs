@@ -62,7 +62,7 @@ use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{implize_type, ImplTypeId};
+use crate::types::{add_type_based_diagnostics, implize_type, ImplTypeId};
 use crate::{
     semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
     FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
@@ -485,8 +485,10 @@ pub fn impl_semantic_definition_diagnostics(
     }
     for impl_item_type_id in data.item_type_asts.keys() {
         diagnostics.extend(db.impl_type_def_semantic_diagnostics(*impl_item_type_id));
+        if let Ok(ty) = db.impl_type_def_resolved_type(*impl_item_type_id) {
+            add_type_based_diagnostics(db, &mut diagnostics, ty, impl_item_type_id);
+        }
     }
-
     diagnostics.build()
 }
 
