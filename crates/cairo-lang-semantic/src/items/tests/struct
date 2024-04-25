@@ -65,3 +65,51 @@ error: Direct recursive type "test::B".
  --> lib.cairo:11:5
     member: B,
     ^*******^
+
+//! > ==========================================================================
+
+//! > Test phantom recursive struct.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+struct A {
+    member: A,
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test struct containing phantom.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+struct A {}
+
+struct B {
+    member: A,
+}
+
+//! > expected_diagnostics
+error: Non-phantom type containing phantom type.
+ --> lib.cairo:5:5
+    member: A,
+    ^*******^
