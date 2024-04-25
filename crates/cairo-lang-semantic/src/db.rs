@@ -790,7 +790,8 @@ pub trait SemanticGroup:
 
     // Implizations.
     // ==============
-    /// Returns the impl type for the given trait type, by implization by the given impl context.
+    /// Returns the impl type for the given trait type, by implization by the given impl context, if
+    /// the impl matches the trait of the trait type.
     #[salsa::invoke(items::implization::trait_type_implized_by_context)]
     #[salsa::cycle(items::implization::trait_type_implized_by_context_cycle)]
     fn trait_type_implized_by_context(

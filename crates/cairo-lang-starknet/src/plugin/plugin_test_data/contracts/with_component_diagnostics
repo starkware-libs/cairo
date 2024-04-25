@@ -1545,7 +1545,7 @@ error: Type not found.
 
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo[contract]:46:36
-                starknet::storage::StoragePointerAccess::read( 
+                starknet::storage::StoragePointerAccess::read(
                                    ^******************^
 
 error: Type not found.
@@ -1555,7 +1555,7 @@ error: Type not found.
 
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo[contract]:51:36
-                starknet::storage::StoragePointerAccess::write( 
+                starknet::storage::StoragePointerAccess::write(
                                    ^******************^
 
 //! > generated_cairo_code
@@ -1681,9 +1681,9 @@ contract:
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl InternalPointerAccessContractMemberStateImpl of 
+        impl InternalPointerAccessContractMemberStateImpl of
             starknet::storage::StorageAsPointer<ContractMemberState, super::super::test_component::Storage> {
-            fn as_ptr(self: @ContractMemberState) -> 
+            fn as_ptr(self: @ContractMemberState) ->
                 starknet::storage::StoragePointer<super::super::test_component::Storage> {
                 starknet::storage::StoragePointer{
                     address: InternalContractMemberStateImpl::address(self)
@@ -1702,12 +1702,12 @@ contract:
                 starknet::storage_access::storage_base_address_const::<0x19021f3e2d5378318bca36a3cf603805c3cb1938bd7e1be1ce4ab2c7158890>()
             }
             fn read(self: @ContractMemberState) -> super::super::test_component::Storage {
-                starknet::storage::StoragePointerAccess::read( 
+                starknet::storage::StoragePointerAccess::read(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(self)
                 )
             }
             fn write(ref self: ContractMemberState, value: super::super::test_component::Storage) {
-                starknet::storage::StoragePointerAccess::write( 
+                starknet::storage::StoragePointerAccess::write(
                     InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
                 )
             }
