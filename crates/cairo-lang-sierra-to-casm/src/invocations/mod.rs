@@ -5,6 +5,7 @@ use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
+use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::lib_func::{BranchSignature, OutputVarInfo, SierraApChange};
 use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
@@ -19,10 +20,9 @@ use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, zip_eq, Itertools};
+use num_bigint::BigInt;
 use thiserror::Error;
-use {cairo_lang_casm, cairo_lang_sierra};
 
-use crate::compiler::ConstSegmentInfoBuilder;
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
@@ -41,7 +41,7 @@ mod casts;
 mod const_type;
 mod debug;
 mod ec;
-mod enm;
+pub mod enm;
 mod felt252;
 mod felt252_dict;
 mod function_call;
@@ -101,7 +101,7 @@ pub enum ApTrackingChange {
 
 /// Describes the changes to the set of references at a single branch target, as well as changes to
 /// the environment.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BranchChanges {
     /// New references defined at a given branch.
     /// should correspond to BranchInfo.results.
@@ -359,7 +359,6 @@ pub struct CompiledInvocationBuilder<'a> {
     /// The arguments of the libfunc.
     pub refs: &'a [ReferenceValue],
     pub environment: Environment,
-    pub const_segment_info_builder: &'a mut ConstSegmentInfoBuilder,
 }
 impl CompiledInvocationBuilder<'_> {
     /// Creates a new invocation.
@@ -532,10 +531,11 @@ impl CompiledInvocationBuilder<'_> {
             });
         if !itertools::equal(gas_changes.clone(), final_costs_with_extra.clone()) {
             panic!(
-                "Wrong costs for {}. Expected: {:?}, actual: {:?}.",
+                "Wrong costs for {}. Expected: {:?}, actual: {:?}, Costs from casm_builder: {:?}.",
                 self.invocation,
                 gas_changes.collect_vec(),
-                final_costs_with_extra.collect_vec()
+                final_costs_with_extra.collect_vec(),
+                final_costs,
             );
         }
         let branch_relocations = branches.iter().zip_eq(branch_extractions.iter()).flat_map(
@@ -611,6 +611,8 @@ impl CompiledInvocationBuilder<'_> {
 pub struct ProgramInfo<'a> {
     pub metadata: &'a Metadata,
     pub type_sizes: &'a TypeSizeMap,
+    /// Returns the given a const type returns a vector of cells value representing it.
+    pub const_data_values: &'a dyn Fn(&ConcreteTypeId) -> Vec<BigInt>,
 }
 
 /// Given a Sierra invocation statement and concrete libfunc, creates a compiled casm representation
@@ -622,17 +624,9 @@ pub fn compile_invocation(
     idx: StatementIdx,
     refs: &[ReferenceValue],
     environment: Environment,
-    const_segment_info_builder: &mut ConstSegmentInfoBuilder,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let builder = CompiledInvocationBuilder {
-        program_info,
-        invocation,
-        libfunc,
-        idx,
-        refs,
-        environment,
-        const_segment_info_builder,
-    };
+    let builder =
+        CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
     match libfunc {
         Felt252(libfunc) => felt252::build(libfunc, builder),
         Bool(libfunc) => boolean::build(libfunc, builder),
@@ -671,7 +665,7 @@ pub fn compile_invocation(
         Dup(_) => misc::build_dup(builder),
         Mem(libfunc) => mem::build(libfunc, builder),
         UnwrapNonZero(_) => misc::build_identity(builder),
-        FunctionCall(libfunc) => function_call::build(libfunc, builder),
+        FunctionCall(libfunc) | CouponCall(libfunc) => function_call::build(libfunc, builder),
         UnconditionalJump(_) => misc::build_jump(builder),
         ApTracking(_) => misc::build_update_ap_tracking(builder),
         Box(libfunc) => boxing::build(libfunc, builder),
@@ -687,6 +681,14 @@ pub fn compile_invocation(
         Felt252DictEntry(libfunc) => felt252_dict::build_entry(libfunc, builder),
         Bytes31(libfunc) => bytes31::build(libfunc, builder),
         Const(libfunc) => const_type::build(libfunc, builder),
+        Coupon(libfunc) => match libfunc {
+            CouponConcreteLibfunc::Buy(_) => Ok(builder
+                .build_only_reference_changes([ReferenceExpression::zero_sized()].into_iter())),
+            CouponConcreteLibfunc::Refund(_) => {
+                Ok(builder.build_only_reference_changes([].into_iter()))
+            }
+        },
+        BoundedInt(libfunc) => int::bounded::build(libfunc, builder),
     }
 }
 

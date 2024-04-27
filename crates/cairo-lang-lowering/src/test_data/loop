@@ -33,9 +33,10 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::bool) <- test::foo[expr28]()
+  (v0: ()) <- struct_construct()
+  (v1: core::bool) <- bool::True(v0)
 End:
-  Return(v0)
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -46,21 +47,21 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  loop {
-    // Some statements to prevent the loop function from being inlined.
-    let mut x = 0;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    x += 1;
-    break;
-  }; 
+    loop {
+        // Some statements to prevent the loop function from being inlined.
+        let mut x = 0;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        break;
+    };
 }
 
 //! > function_name
@@ -76,7 +77,5 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- test::foo[expr32]()
-  (v1: ()) <- struct_construct()
 End:
-  Return(v1)
+  Return()

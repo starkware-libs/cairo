@@ -45,6 +45,9 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         | StarkNetConcreteLibfunc::GetExecutionInfoV2(_) => syscall_cost(0),
         StarkNetConcreteLibfunc::Deploy(_) => syscall_cost(5),
         StarkNetConcreteLibfunc::Keccak(_) => syscall_cost(2),
+        StarkNetConcreteLibfunc::Sha256ProcessBlock(_) => syscall_cost(3),
+        StarkNetConcreteLibfunc::Sha256StateHandleInit(_) => vec![steps(0)],
+        StarkNetConcreteLibfunc::Sha256StateHandleDigest(_) => vec![steps(0)],
         StarkNetConcreteLibfunc::LibraryCall(_) => syscall_cost(4),
         StarkNetConcreteLibfunc::ReplaceClass(_) => syscall_cost(1),
         StarkNetConcreteLibfunc::SendMessageToL1(_) => syscall_cost(3),
@@ -75,5 +78,5 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
 /// Returns the costs for system calls.
 fn syscall_cost(arg_size: i32) -> Vec<ConstCost> {
     let cost = ConstCost { steps: SYSTEM_CALL_STEPS + 5 + arg_size, holes: 0, range_checks: 0 };
-    vec![cost.clone(), cost]
+    vec![cost, cost]
 }

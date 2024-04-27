@@ -39,8 +39,9 @@ mod issue4314;
 mod issue4318;
 mod issue4380;
 mod issue4897;
-
 mod issue4937;
+mod issue5411;
+mod issue5438;
 mod loop_break_in_match;
 mod loop_only_change;
 mod partial_param_local;

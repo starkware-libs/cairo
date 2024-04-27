@@ -27,6 +27,40 @@ error: Mismatched types. The type `core::bool` cannot be created from a numeric 
 
 //! > ==========================================================================
 
+//! > Loop break types incompatible, also with expected type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(x: Option<()>) {
+    loop {
+        if true {
+            break true;
+        } else {
+            break 0;
+        }
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "()", found: "core::bool".
+ --> lib.cairo:1:23
+fn foo(x: Option<()>) {
+                      ^
+
+error: Unexpected return type. Expected: "()", found: "core::bool".
+ --> lib.cairo:1:23
+fn foo(x: Option<()>) {
+                      ^
+
+//! > ==========================================================================
+
 //! > Continue outside a loop.
 
 //! > test_runner_name
@@ -125,7 +159,7 @@ foo
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo() -> bool{
+fn foo() -> bool {
     return;
 }
 
@@ -192,7 +226,7 @@ error: `return` not allowed inside a `loop`.
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo() -> bool{
+fn foo() -> bool {
     loop {
         break;
     }
@@ -204,10 +238,15 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Unexpected expression type. Expected: "core::bool", found: "()".
+ --> lib.cairo:1:18
+fn foo() -> bool {
+                 ^
+
 error: Unexpected return type. Expected: "core::bool", found: "()".
- --> lib.cairo:1:17
-fn foo() -> bool{
-                ^
+ --> lib.cairo:1:18
+fn foo() -> bool {
+                 ^
 
 //! > ==========================================================================
 

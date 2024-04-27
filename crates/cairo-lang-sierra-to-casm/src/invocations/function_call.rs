@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use cairo_lang_casm::casm;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, Register};
-use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
+use cairo_lang_sierra::extensions::function_call::SignatureAndFunctionConcreteLibfunc;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 
 use super::{
@@ -14,7 +14,7 @@ use crate::relocations::{Relocation, RelocationEntry};
 
 /// Handles a function call.
 pub fn build(
-    libfunc: &FunctionCallConcreteLibfunc,
+    libfunc: &SignatureAndFunctionConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     check_references_on_stack(builder.refs)?;

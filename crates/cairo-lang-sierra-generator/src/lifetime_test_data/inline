@@ -5,7 +5,7 @@ check_variable_lifetime
 
 //! > function_code
 fn foo(a: felt252) -> felt252 {
-  bar(a)
+    bar(a)
 }
 
 //! > function_name
@@ -14,10 +14,10 @@ foo
 //! > module_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
-  if a == 0 {
-    return 1;
-  }
-  0
+    if a == 0 {
+        return 1;
+    }
+    0
 }
 
 //! > lowering_format
@@ -27,28 +27,28 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v2: core::felt252) <- 1
 End:
-  Return(v3)
+  Return(v2)
 
 blk2:
 Statements:
-  (v4: core::felt252) <- 0u
+  (v3: core::felt252) <- 0
 End:
-  Return(v4)
+  Return(v3)
 
 //! > last_use
-v4: ((BlockId(2), 1), 0)
-v3: ((BlockId(1), 1), 0)
+v3: ((BlockId(2), 1), 0)
+v2: ((BlockId(1), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(2)): v2
+BeginningOfBlock(BlockId(2)): v1
 
 //! > ==========================================================================
 
@@ -59,11 +59,11 @@ check_variable_lifetime
 
 //! > function_code
 fn foo(a: felt252) -> felt252 {
-  if a == 2 {
-    bar(a)
-  } else {
-    a
-  }
+    if a == 2 {
+        bar(a)
+    } else {
+        a
+    }
 }
 
 //! > function_name
@@ -72,22 +72,22 @@ foo
 //! > module_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
-  if a == 0 {
-    return 1;
-  }
-  0
+    if a == 0 {
+        return 1;
+    }
+    0
 }
 
 //! > lowering_format
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 2u
-  (v6: core::felt252) <- core::felt252_sub(v0, v1)
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- core::felt252_sub(v0, v1)
 End:
-  Match(match core::felt252_is_zero(v6) {
+  Match(match core::felt252_is_zero(v2) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk4,
+    IsZeroResult::NonZero(v3) => blk4,
   })
 
 blk1:
@@ -95,20 +95,20 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v7) => blk3,
+    IsZeroResult::NonZero(v4) => blk3,
   })
 
 blk2:
 Statements:
-  (v8: core::felt252) <- 1u
+  (v5: core::felt252) <- 1
 End:
-  Return(v8)
+  Return(v5)
 
 blk3:
 Statements:
-  (v9: core::felt252) <- 0u
+  (v6: core::felt252) <- 0
 End:
-  Return(v9)
+  Return(v6)
 
 blk4:
 Statements:
@@ -117,15 +117,15 @@ End:
 
 //! > last_use
 v0: ((BlockId(4), 0), 0)
-v9: ((BlockId(3), 1), 0)
-v8: ((BlockId(2), 1), 0)
+v6: ((BlockId(3), 1), 0)
+v5: ((BlockId(2), 1), 0)
 v0: ((BlockId(1), 0), 0)
-v6: ((BlockId(0), 2), 0)
+v2: ((BlockId(0), 2), 0)
 v1: ((BlockId(0), 1), 1)
 
 //! > drops
-BeginningOfBlock(BlockId(3)): v7
-BeginningOfBlock(BlockId(4)): v4
+BeginningOfBlock(BlockId(3)): v4
+BeginningOfBlock(BlockId(4)): v3
 
 //! > ==========================================================================
 
@@ -139,7 +139,7 @@ foo
 
 //! > function_code
 fn foo(x: felt252) -> felt252 {
-   bar(x)
+    bar(x)
 }
 
 //! > module_code
@@ -156,7 +156,7 @@ fn bar(x: felt252) -> felt252 {
 }
 
 fn revoke_tempvars() {
-  revoke_tempvars()
+    revoke_tempvars()
 }
 
 //! > lowering_format
@@ -166,7 +166,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
@@ -176,20 +176,19 @@ End:
 
 blk2:
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v0)
-  (v5: ()) <- test::revoke_tempvars()
+  (v2: core::felt252) <- core::felt252_add(v0, v0)
+  () <- test::revoke_tempvars()
 End:
-  Return(v6)
+  Return(v2)
 
 //! > last_use
-v6: ((BlockId(2), 2), 0)
+v2: ((BlockId(2), 2), 0)
 v0: ((BlockId(2), 0), 1)
 v0: ((BlockId(1), 0), 0)
 
 //! > drops
-PostStatement((BlockId(2), 1)): v5
-BeginningOfBlock(BlockId(2)): v2
-BeginningOfBlock(BlockId(1)): UninitializedLocal(v6)
+BeginningOfBlock(BlockId(2)): v1
+BeginningOfBlock(BlockId(1)): UninitializedLocal(v2)
 
 //! > ==========================================================================
 
@@ -203,7 +202,7 @@ foo
 
 //! > function_code
 fn foo(data: Array::<felt252>) -> Array::<felt252> {
-     bar(data)
+    bar(data)
 }
 
 //! > module_code
@@ -216,50 +215,50 @@ fn bar(data: Array::<felt252>) -> Array::<felt252> {
 }
 
 //! > lowering_format
-Parameters: v55: core::RangeCheck, v56: core::gas::GasBuiltin, v0: core::array::Array::<core::felt252>
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas(v55, v56) {
-    Option::Some(v57, v58) => blk1,
-    Option::None(v59, v60) => blk2,
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v3, v4) => blk1,
+    Option::None(v5, v6) => blk2,
   })
 
 blk1:
 Statements:
-  (v42: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v19: (core::array::Array::<core::felt252>,)) <- struct_construct(v42)
-  (v20: core::panics::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Ok(v19)
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v8: (core::array::Array::<core::felt252>,)) <- struct_construct(v7)
+  (v9: core::panics::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Ok(v8)
 End:
-  Return(v57, v58, v20)
+  Return(v3, v4, v9)
 
 blk2:
 Statements:
-  (v43: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v14: core::felt252) <- 375233589013918064796019u
-  (v44: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v43, v14)
-  (v52: core::panics::Panic) <- struct_construct()
-  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v52, v44)
-  (v23: core::panics::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v17)
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v11: core::felt252) <- 375233589013918064796019
+  (v12: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v10, v11)
+  (v13: core::panics::Panic) <- struct_construct()
+  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v12)
+  (v15: core::panics::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v14)
 End:
-  Return(v59, v60, v23)
+  Return(v5, v6, v15)
 
 //! > last_use
-v23: ((BlockId(2), 6), 2)
-v60: ((BlockId(2), 6), 1)
-v59: ((BlockId(2), 6), 0)
-v17: ((BlockId(2), 5), 0)
-v44: ((BlockId(2), 4), 1)
-v52: ((BlockId(2), 4), 0)
-v14: ((BlockId(2), 2), 1)
-v43: ((BlockId(2), 2), 0)
-v20: ((BlockId(1), 3), 2)
-v58: ((BlockId(1), 3), 1)
-v57: ((BlockId(1), 3), 0)
-v19: ((BlockId(1), 2), 0)
-v42: ((BlockId(1), 1), 0)
-v56: ((BlockId(0), 0), 1)
-v55: ((BlockId(0), 0), 0)
+v15: ((BlockId(2), 6), 2)
+v6: ((BlockId(2), 6), 1)
+v5: ((BlockId(2), 6), 0)
+v14: ((BlockId(2), 5), 0)
+v12: ((BlockId(2), 4), 1)
+v13: ((BlockId(2), 4), 0)
+v11: ((BlockId(2), 2), 1)
+v10: ((BlockId(2), 2), 0)
+v9: ((BlockId(1), 3), 2)
+v4: ((BlockId(1), 3), 1)
+v3: ((BlockId(1), 3), 0)
+v8: ((BlockId(1), 2), 0)
+v7: ((BlockId(1), 1), 0)
+v1: ((BlockId(0), 0), 1)
+v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(0)): v0
+BeginningOfBlock(BlockId(0)): v2

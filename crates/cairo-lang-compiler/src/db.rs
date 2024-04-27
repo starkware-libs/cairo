@@ -9,6 +9,8 @@ use cairo_lang_filesystem::db::{
     CORELIB_CRATE_NAME,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
+use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_project::ProjectConfig;
@@ -79,6 +81,7 @@ impl Default for RootDatabase {
 pub struct RootDatabaseBuilder {
     plugin_suite: PluginSuite,
     detect_corelib: bool,
+    auto_withdraw_gas: bool,
     project_config: Option<Box<ProjectConfig>>,
     cfg_set: Option<CfgSet>,
 }
@@ -88,6 +91,7 @@ impl RootDatabaseBuilder {
         Self {
             plugin_suite: get_default_plugin_suite(),
             detect_corelib: false,
+            auto_withdraw_gas: true,
             project_config: None,
             cfg_set: None,
         }
@@ -118,6 +122,11 @@ impl RootDatabaseBuilder {
         self
     }
 
+    pub fn skip_auto_withdraw_gas(&mut self) -> &mut Self {
+        self.auto_withdraw_gas = false;
+        self
+    }
+
     pub fn build(&mut self) -> Result<RootDatabase> {
         // NOTE: Order of operations matters here!
         //   Errors if something is not OK are very subtle, mostly this results in missing
@@ -138,6 +147,12 @@ impl RootDatabaseBuilder {
                 detect_corelib().ok_or_else(|| anyhow!("Failed to find development corelib."))?;
             init_dev_corelib(&mut db, path)
         }
+
+        let add_withdraw_gas_flag_id = FlagId::new(db.upcast(), "add_withdraw_gas");
+        db.set_flag(
+            add_withdraw_gas_flag_id,
+            Some(Arc::new(Flag::AddWithdrawGas(self.auto_withdraw_gas))),
+        );
 
         if let Some(config) = &self.project_config {
             update_crate_roots_from_project_config(&mut db, config.as_ref());

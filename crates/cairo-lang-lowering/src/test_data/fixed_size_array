@@ -1,0 +1,267 @@
+//! > Test fixed size array.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+    let x = [10, 20, 30];
+    bar(x);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn bar(x: [felt252; 3]) {
+    let _y = x;
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 10
+  (v1: core::felt252) <- 20
+  (v2: core::felt252) <- 30
+  (v3: [core::felt252; 3]) <- struct_construct(v0, v1, v2)
+  () <- test::bar(v3)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test fixed size array, short notation.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> [felt252; 3] {
+    [get_10(); 3]
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn get_10() -> felt252 {
+    10
+}
+
+#[inline(never)]
+fn bar(x: [felt252; 3]) {
+    let _y = x;
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- test::get_10()
+  (v1: [core::felt252; 3]) <- struct_construct(v0, v0, v0)
+End:
+  Return(v1)
+
+//! > ==========================================================================
+
+//! > Test fixed size array, short notation, duplicateble, with generics.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> [MyStruct; 3] {
+    foo_ex()
+}
+fn foo_ex<T, +Drop<[T; 3]>, +Copy<T>, +CtorTrait<T>>() -> [T; 3] {
+    [CtorTrait::<T>::new(); 3]
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop, Copy)]
+struct MyStruct {
+    x: felt252,
+}
+
+trait CtorTrait<T> {
+    fn new() -> T;
+}
+
+impl CtorMyStruct of CtorTrait<MyStruct> {
+    fn new() -> MyStruct {
+        MyStruct { x: 10 }
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 10
+  (v1: test::MyStruct) <- struct_construct(v0)
+  (v2: [test::MyStruct; 3]) <- struct_construct(v1, v1, v1)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test fixed size array, short notation, not duplicateble.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> [MyStruct; 3] {
+    [MyStruct { x: 10 }; 3]
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct MyStruct {
+    x: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Fixed size array inner type must implement the `Copy` trait when the array size is greater than 1.
+ --> lib.cairo:6:5
+    [MyStruct { x: 10 }; 3]
+    ^*********************^
+
+//! > lowering_flat
+Parameters:
+
+//! > ==========================================================================
+
+//! > Test fixed size array, short notation, not duplicateble, with generics.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> [MyStruct; 3] {
+    foo_ex()
+}
+fn foo_ex<T, +Drop<[T; 3]>, +CtorTrait<T>>() -> [T; 3] {
+    [CtorTrait::<T>::new(); 3]
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct MyStruct {
+    x: felt252,
+}
+
+trait CtorTrait<T> {
+    fn new() -> T;
+}
+
+impl CtorMyStruct of CtorTrait<MyStruct> {
+    fn new() -> MyStruct {
+        MyStruct { x: 10 }
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Fixed size array inner type must implement the `Copy` trait when the array size is greater than 1.
+ --> lib.cairo:19:5
+    [CtorTrait::<T>::new(); 3]
+    ^************************^
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: [test::MyStruct; 3]) <- test::foo_ex::<test::MyStruct, core::traits::FixedSizedArrayDrop::<test::MyStruct, test::MyStructDrop, 3>, test::CtorMyStruct>()
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
+//! > Test fixed size array, short notation, not duplicateble, size 1.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> [MyStruct; 1] {
+    [MyStruct { x: 10 }; 1]
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct MyStruct {
+    x: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 10
+  (v1: test::MyStruct) <- struct_construct(v0)
+  (v2: [test::MyStruct; 1]) <- struct_construct(v1)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test fixed size array of size 0.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> [u32; 0] {
+    [0_u32; 0]
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Fixed size array repeated element size must be greater than 0.
+ --> lib.cairo:2:5
+    [0_u32; 0]
+    ^********^
+
+//! > lowering_flat
+Parameters:

@@ -5,9 +5,9 @@ use core::traits::Into;
 use core::traits::TryInto;
 use core::zeroable::Zeroable;
 
-// Re-imports
-// Store
+/// Store trait and implementations for various types.
 pub mod storage_access;
+/// Re-imports
 pub use storage_access::{Store, StorageAddress};
 use storage_access::{
     StorePacking, StorageBaseAddress, storage_base_address_const, storage_base_address_from_felt252,
@@ -15,7 +15,7 @@ use storage_access::{
     storage_address_try_from_felt252
 };
 
-// Module containing all the extern declaration of the syscalls.
+/// Module containing all the extern declaration of the syscalls.
 pub mod syscalls;
 use syscalls::{
     call_contract_syscall, deploy_syscall, emit_event_syscall, get_block_hash_syscall,
@@ -23,12 +23,12 @@ use syscalls::{
     storage_read_syscall, storage_write_syscall, replace_class_syscall, keccak_syscall
 };
 
-// secp256
+/// secp256
 pub mod secp256_trait;
 pub mod secp256k1;
 pub mod secp256r1;
 
-// ContractAddress
+/// ContractAddress
 pub mod contract_address;
 pub use contract_address::{ContractAddress, contract_address_const};
 use contract_address::{
@@ -36,18 +36,18 @@ use contract_address::{
     contract_address_try_from_felt252
 };
 
-// EthAddress
+/// EthAddress
 pub mod eth_address;
 pub use eth_address::EthAddress;
 use eth_address::{
     EthAddressIntoFelt252, EthAddressSerde, EthAddressZeroable, Felt252TryIntoEthAddress
 };
 
-// EthSignature
+/// EthSignature
 pub mod eth_signature;
 use eth_signature::verify_eth_signature;
 
-// ClassHash
+/// ClassHash
 pub mod class_hash;
 pub use class_hash::ClassHash;
 use class_hash::{
@@ -55,7 +55,7 @@ use class_hash::{
     class_hash_try_from_felt252
 };
 
-// Not `pub` on purpose, only used for direct reexport by the next line.
+/// Not `pub` on purpose, only used for direct reexport by the next line.
 mod info;
 pub use info::{
     v2::ExecutionInfo as ExecutionInfo, BlockInfo, v2::TxInfo as TxInfo, get_execution_info,
@@ -69,11 +69,16 @@ pub use event::Event;
 pub mod account;
 pub use account::AccountContract;
 
+/// Storage members interfaces.
 pub mod storage;
 
 pub extern type System;
 
-// An Helper function to force the inclusion of `System` in the list of implicits.
+/// An Helper function to force the inclusion of `System` in the list of implicits.
+#[deprecated(
+    feature: "use_system_implicit",
+    note: "Use `core::internal::require_implicit::<System>` instead."
+)]
 fn use_system_implicit() implicits(System) {}
 
 /// The result type for a syscall.
@@ -95,5 +100,5 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
 /// The expected return value of the `__validate*__` functions of an accounted contract.
 pub const VALIDATED: felt252 = 'VALID';
 
-// Module for starknet testing only.
+/// Module for starknet testing only.
 pub mod testing;

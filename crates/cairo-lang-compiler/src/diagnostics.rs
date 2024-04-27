@@ -1,12 +1,14 @@
+use std::fmt::Write;
+
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, Severity};
+use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, Severity};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -20,13 +22,13 @@ mod test;
 pub struct DiagnosticsError;
 
 trait DiagnosticCallback {
-    fn on_diagnostic(&mut self, severity: Severity, diagnostic: String);
+    fn on_diagnostic(&mut self, diagnostic: FormattedDiagnosticEntry);
 }
 
 impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
-    fn on_diagnostic(&mut self, severity: Severity, diagnostic: String) {
+    fn on_diagnostic(&mut self, diagnostic: FormattedDiagnosticEntry) {
         if let Some(callback) = self {
-            callback.on_diagnostic(severity, diagnostic)
+            callback.on_diagnostic(diagnostic)
         }
     }
 }
@@ -47,9 +49,7 @@ impl DiagnosticsReporter<'static> {
 
     /// Create a reporter which prints all diagnostics to [`std::io::Stderr`].
     pub fn stderr() -> Self {
-        Self::callback(|severity, diagnostic| {
-            eprint!("{severity}: {diagnostic}");
-        })
+        Self::callback(|diagnostic| eprint!("{diagnostic}"))
     }
 }
 
@@ -58,15 +58,15 @@ impl<'a> DiagnosticsReporter<'a> {
     //   impl<F> DiagnosticCallback for F where F: FnMut(Severity,String)
     //   and `new` could accept regular functions without need for this separate method.
     /// Create a reporter which calls `callback` for each diagnostic.
-    pub fn callback(callback: impl FnMut(Severity, String) + 'a) -> Self {
+    pub fn callback(callback: impl FnMut(FormattedDiagnosticEntry) + 'a) -> Self {
         struct Func<F>(F);
 
         impl<F> DiagnosticCallback for Func<F>
         where
-            F: FnMut(Severity, String),
+            F: FnMut(FormattedDiagnosticEntry),
         {
-            fn on_diagnostic(&mut self, severity: Severity, diagnostic: String) {
-                (self.0)(severity, diagnostic)
+            fn on_diagnostic(&mut self, diagnostic: FormattedDiagnosticEntry) {
+                self.0(diagnostic)
             }
         }
 
@@ -75,8 +75,8 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Create a reporter which appends all diagnostics to provided string.
     pub fn write_to_string(string: &'a mut String) -> Self {
-        Self::callback(|severity, diagnostic| {
-            string.push_str(&format!("{severity}: {diagnostic}"));
+        Self::callback(|diagnostic| {
+            write!(string, "{diagnostic}").unwrap();
         })
     }
 
@@ -105,16 +105,23 @@ impl<'a> DiagnosticsReporter<'a> {
         for crate_id in crates {
             let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(crate_id)) else {
                 found_diagnostics = true;
-                self.callback
-                    .on_diagnostic(Severity::Error, "Failed to get main module file".to_string());
+                self.callback.on_diagnostic(FormattedDiagnosticEntry::new(
+                    Severity::Error,
+                    None,
+                    "Failed to get main module file".to_string(),
+                ));
                 continue;
             };
 
             if db.file_content(module_file).is_none() {
-                match db.lookup_intern_file(module_file) {
-                    FileLongId::OnDisk(path) => self
-                        .callback
-                        .on_diagnostic(Severity::Error, format!("{} not found\n", path.display())),
+                match module_file.lookup_intern(db) {
+                    FileLongId::OnDisk(path) => {
+                        self.callback.on_diagnostic(FormattedDiagnosticEntry::new(
+                            Severity::Error,
+                            None,
+                            format!("{} not found\n", path.display()),
+                        ))
+                    }
                     FileLongId::Virtual(_) => panic!("Missing virtual file."),
                 }
                 found_diagnostics = true;
@@ -148,7 +155,7 @@ impl<'a> DiagnosticsReporter<'a> {
         let mut found: bool = false;
         for entry in group.format_with_severity(db) {
             if !entry.is_empty() {
-                self.callback.on_diagnostic(entry.severity(), entry.message().to_string());
+                self.callback.on_diagnostic(entry);
                 found |= !self.allow_warnings || group.check_error_free().is_err();
             }
         }

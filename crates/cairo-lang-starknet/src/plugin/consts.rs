@@ -21,6 +21,8 @@ pub const DEPRECATED_ABI_ATTR: &str = "abi";
 pub const EVENT_ATTR: &str = "event";
 pub const EVENT_TRAIT: &str = "starknet::Event";
 pub const STORE_TRAIT: &str = "starknet::Store";
+pub const STORAGE_AS_POINTER_TRAIT: &str = "starknet::storage::StorageAsPointer";
+pub const STORAGE_AS_PATH_TRAIT: &str = "starknet::storage::StorageAsPath";
 pub const INTERFACE_ATTR: &str = "starknet::interface";
 pub(super) const DEPRECATED_CONTRACT_ATTR: &str = "contract";
 pub const CONTRACT_ATTR: &str = "starknet::contract";
@@ -46,6 +48,7 @@ pub const VALIDATE_ENTRY_POINT_SELECTOR: &str = "__validate__";
 pub const EXECUTE_ENTRY_POINT_SELECTOR: &str = "__execute__";
 pub const ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS: &[&str] =
     &[VALIDATE_ENTRY_POINT_SELECTOR, EXECUTE_ENTRY_POINT_SELECTOR];
+pub const VALIDATE_DEPLOY_ENTRY_POINT_SELECTOR: &str = "__validate_deploy__";
 
 // ABI attribute
 pub const ABI_ATTR: &str = "abi";

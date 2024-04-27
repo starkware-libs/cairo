@@ -9,6 +9,7 @@
 test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
+#[cairofmt::skip]
 fn foo() {
     1 ! 2;
     1 @ 2;

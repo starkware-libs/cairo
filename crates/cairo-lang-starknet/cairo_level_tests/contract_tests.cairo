@@ -258,6 +258,22 @@ fn test_get_signature() {
 }
 
 #[test]
+fn test_get_block_hash() {
+    assert!(
+        starknet::syscalls::get_block_hash_syscall(
+            1337
+        ) == Result::Err(array!['GET_BLOCK_HASH_NOT_SET'])
+    );
+    starknet::testing::set_block_hash(1337, 'some-value');
+    assert!(starknet::syscalls::get_block_hash_syscall(1337) == Result::Ok('some-value'));
+    assert!(
+        starknet::syscalls::get_block_hash_syscall(
+            1338
+        ) == Result::Err(array!['GET_BLOCK_HASH_NOT_SET'])
+    );
+}
+
+#[test]
 #[should_panic]
 fn test_pop_log_empty_logs() {
     let contract_address = starknet::contract_address_const::<0x1234>();

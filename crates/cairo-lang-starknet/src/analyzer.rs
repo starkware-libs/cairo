@@ -5,7 +5,7 @@ use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::plugin::AnalyzerPlugin;
 use cairo_lang_syntax::attribute::consts::STARKNET_INTERFACE_ATTR;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 
 use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
 use crate::contract::module_contract;

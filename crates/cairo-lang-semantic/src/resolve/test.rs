@@ -3,9 +3,9 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::db::{AsFilesGroupMut, CrateConfiguration, FilesGroup, FilesGroupEx};
+use cairo_lang_filesystem::db::{AsFilesGroupMut, CrateConfiguration, FilesGroupEx};
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, Intern};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
@@ -44,13 +44,14 @@ fn test_resolve_path() {
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
          FunctionCall(ExprFunctionCall { function: test::bar::<(core::felt252, Q)>, args: \
-         [Value(Var(ParamId(test::value)))], ty: test::S::<()> }) }), Let(StatementLet { pattern: \
-         Variable(_c), expr: Var(ParamId(test::b)) })], tail: None, ty: () }))"
+         [Value(Var(ParamId(test::value)))], coupon_arg: None, ty: test::S::<()> }) }), \
+         Let(StatementLet { pattern: Variable(_c), expr: Var(ParamId(test::b)) })], tail: None, \
+         ty: () }))"
     );
 }
 
 fn set_file_content(db: &mut SemanticDatabaseForTesting, path: &str, content: &str) {
-    let file_id = db.intern_file(FileLongId::OnDisk(path.into()));
+    let file_id = FileLongId::OnDisk(path.into()).intern(db);
     db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.into())));
 }
 
@@ -59,7 +60,7 @@ fn test_resolve_path_super() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -140,7 +141,8 @@ fn test_resolve_path_trait_impl() {
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [], tail: Some(FunctionCall(ExprFunctionCall { \
          function: core::Felt252Add::add, args: [Value(FunctionCall(ExprFunctionCall { function: \
-         test::MyImpl::foo, args: [], ty: core::felt252 })), Value(Literal(ExprLiteral { value: \
-         1, ty: core::felt252 }))], ty: core::felt252 })), ty: core::felt252 }))"
+         test::MyImpl::foo, args: [], coupon_arg: None, ty: core::felt252 })), \
+         Value(Literal(ExprLiteral { value: 1, ty: core::felt252 }))], coupon_arg: None, ty: \
+         core::felt252 })), ty: core::felt252 }))"
     );
 }

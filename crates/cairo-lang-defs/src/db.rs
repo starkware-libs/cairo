@@ -6,18 +6,20 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
-    FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR, MUST_USE_ATTR,
-    STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
+    DEPRECATED_ATTR, FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR,
+    MUST_USE_ATTR, PHANTOM_ATTR, STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
 };
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::element_list::ElementList;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Intern, Upcast};
+use itertools::Itertools;
 
 use crate::ids::*;
 use crate::plugin::{
@@ -40,7 +42,7 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_free_function(&self, id: FreeFunctionLongId) -> FreeFunctionId;
     #[salsa::interned]
-    fn intern_impl_type(&self, id: ImplTypeLongId) -> ImplTypeId;
+    fn intern_impl_type_def(&self, id: ImplTypeDefLongId) -> ImplTypeDefId;
     #[salsa::interned]
     fn intern_impl_function(&self, id: ImplFunctionLongId) -> ImplFunctionId;
     #[salsa::interned]
@@ -59,6 +61,8 @@ pub trait DefsGroup:
     fn intern_trait(&self, id: TraitLongId) -> TraitId;
     #[salsa::interned]
     fn intern_trait_type(&self, id: TraitTypeLongId) -> TraitTypeId;
+    #[salsa::interned]
+    fn intern_trait_constant(&self, id: TraitConstantLongId) -> TraitConstantId;
     #[salsa::interned]
     fn intern_trait_function(&self, id: TraitFunctionLongId) -> TraitFunctionId;
     #[salsa::interned]
@@ -99,6 +103,13 @@ pub trait DefsGroup:
     fn module_file(&self, module_id: ModuleFileId) -> Maybe<FileId>;
     /// Gets the directory of a module.
     fn module_dir(&self, module_id: ModuleId) -> Maybe<Directory>;
+
+    // TODO(mkaput): Add tests.
+    /// Gets the documentation above an item definition.
+    fn get_item_documentation(&self, item_id: LookupItemId) -> Option<String>;
+    // TODO(mkaput): Add tests.
+    /// Gets the the definition of an item.
+    fn get_item_definition(&self, item_id: LookupItemId) -> String;
 
     // File to module.
     fn crate_modules(&self, crate_id: CrateId) -> Arc<Vec<ModuleId>>;
@@ -217,7 +228,9 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
         INLINE_ATTR.into(),
         MUST_USE_ATTR.into(),
         UNSTABLE_ATTR.into(),
+        DEPRECATED_ATTR.into(),
         FEATURE_ATTR.into(),
+        PHANTOM_ATTR.into(),
         IMPLICIT_PRECEDENCE_ATTR.into(),
         FMT_SKIP_ATTR.into(),
         // TODO(orizi): Remove this once `starknet` is removed from corelib.
@@ -279,6 +292,103 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
     }
 }
 
+/// Gets the documentation above an item definition.
+fn get_item_documentation(db: &dyn DefsGroup, item_id: LookupItemId) -> Option<String> {
+    // Get the text of the item (trivia + definition)
+    let doc = item_id.stable_location(db).syntax_node(db).get_text(db.upcast());
+    // Only get the doc comments (start with `///` or `//!`) above the function.
+    let doc = doc
+        .lines()
+        .take_while_ref(|line| {
+            !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
+        })
+        .filter_map(|line| {
+            (line.trim_start().starts_with("///") || line.trim_start().starts_with("//!"))
+                .then_some(line.trim_start())
+        })
+        .collect::<Vec<&str>>();
+    (!doc.is_empty()).then(|| doc.join("\n"))
+}
+
+/// Gets the the definition of an item.
+fn get_item_definition(db: &dyn DefsGroup, item_id: LookupItemId) -> String {
+    let syntax_node = item_id.stable_location(db).syntax_node(db);
+    let definition = match syntax_node.green_node(db.upcast()).kind {
+        SyntaxKind::ItemConstant
+        | SyntaxKind::TraitItemFunction
+        | SyntaxKind::ItemTypeAlias
+        | SyntaxKind::ItemImplAlias => syntax_node.clone().get_text_without_trivia(db.upcast()),
+        SyntaxKind::FunctionWithBody | SyntaxKind::ItemExternFunction => {
+            let children =
+                <dyn DefsGroup as Upcast<dyn SyntaxGroup>>::upcast(db).get_children(syntax_node);
+            children[1..]
+                .iter()
+                .map_while(|node| {
+                    let kind = node.kind(db.upcast());
+                    (kind != SyntaxKind::ExprBlock
+                        && kind != SyntaxKind::ImplBody
+                        && kind != SyntaxKind::TraitBody)
+                        .then_some(
+                            if kind == SyntaxKind::VisibilityPub
+                                || kind == SyntaxKind::TerminalExtern
+                            {
+                                node.clone().get_text_without_trivia(db.upcast()).trim().to_owned()
+                                    + " "
+                            } else {
+                                node.clone()
+                                    .get_text_without_trivia(db.upcast())
+                                    .lines()
+                                    .map(|line| line.trim())
+                                    .collect::<Vec<&str>>()
+                                    .join("")
+                            },
+                        )
+                })
+                .collect::<Vec<String>>()
+                .join("")
+        }
+        SyntaxKind::ItemEnum | SyntaxKind::ItemExternType | SyntaxKind::ItemStruct => {
+            <dyn DefsGroup as Upcast<dyn SyntaxGroup>>::upcast(db)
+                .get_children(syntax_node)
+                .iter()
+                .skip(1)
+                .map(|node| node.clone().get_text(db.upcast()))
+                .collect::<Vec<String>>()
+                .join("")
+        }
+        SyntaxKind::ItemTrait | SyntaxKind::ItemImpl => {
+            let children =
+                <dyn DefsGroup as Upcast<dyn SyntaxGroup>>::upcast(db).get_children(syntax_node);
+            children[1..]
+                .iter()
+                .enumerate()
+                .map_while(|(index, node)| {
+                    let kind = node.kind(db.upcast());
+                    if kind != SyntaxKind::ImplBody && kind != SyntaxKind::TraitBody {
+                        let text = node
+                            .clone()
+                            .get_text_without_trivia(db.upcast())
+                            .lines()
+                            .map(|line| line.trim())
+                            .collect::<Vec<&str>>()
+                            .join("");
+
+                        Some(if index == 0 || kind == SyntaxKind::WrappedGenericParamList {
+                            text
+                        } else {
+                            " ".to_owned() + &text
+                        })
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join("")
+        }
+        _ => "".to_owned(),
+    };
+    definition
+}
 /// Appends all the modules under the given module, including nested modules.
 fn collect_modules_under(db: &dyn DefsGroup, modules: &mut Vec<ModuleId>, module_id: ModuleId) {
     modules.push(module_id);
@@ -375,9 +485,11 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
 
                     // If this is an inline module, copy its generation file info from the parent
                     // module, from the file where this submodule was defined.
-                    main_file_info = parent_module_data.generated_file_infos
-                        [submodule_id.file_index(db).0]
-                        .clone();
+                    main_file_info = parent_module_data
+                        .generated_file_infos
+                        .into_iter()
+                        .nth(submodule_id.file_index(db).0)
+                        .unwrap();
                     body.items(syntax_db)
                 }
                 MaybeModuleBody::None(_) => file_syntax.items(syntax_db),
@@ -433,13 +545,14 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                 }
 
                 if let Some(generated) = result.code {
-                    let new_file = db.intern_file(FileLongId::Virtual(VirtualFile {
+                    let new_file = FileLongId::Virtual(VirtualFile {
                         parent: Some(module_file),
                         name: generated.name,
                         content: Arc::new(generated.content),
                         code_mappings: Arc::new(generated.code_mappings),
                         kind: FileKind::Module,
-                    }));
+                    })
+                    .intern(db);
                     generated_file_infos.push(Some(GeneratedFileInfo {
                         aux_data: generated.aux_data,
                         origin: module_file_id,
@@ -464,14 +577,12 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
             );
             match item_ast {
                 ast::ModuleItem::Constant(constant) => {
-                    let item_id =
-                        db.intern_constant(ConstantLongId(module_file_id, constant.stable_ptr()));
+                    let item_id = ConstantLongId(module_file_id, constant.stable_ptr()).intern(db);
                     constants.insert(item_id, constant);
                     items.push(ModuleItemId::Constant(item_id));
                 }
                 ast::ModuleItem::Module(module) => {
-                    let item_id =
-                        db.intern_submodule(SubmoduleLongId(module_file_id, module.stable_ptr()));
+                    let item_id = SubmoduleLongId(module_file_id, module.stable_ptr()).intern(db);
                     submodules.insert(item_id, module);
                     items.push(ModuleItemId::Submodule(item_id));
                 }
@@ -479,69 +590,59 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     let path_leaves = get_all_path_leaves(db.upcast(), us.use_path(syntax_db));
                     for path_leaf in path_leaves {
                         let path_leaf_id =
-                            db.intern_use(UseLongId(module_file_id, path_leaf.stable_ptr()));
+                            UseLongId(module_file_id, path_leaf.stable_ptr()).intern(db);
                         uses.insert(path_leaf_id, path_leaf);
                         items.push(ModuleItemId::Use(path_leaf_id));
                     }
                 }
                 ast::ModuleItem::FreeFunction(function) => {
-                    let item_id = db.intern_free_function(FreeFunctionLongId(
-                        module_file_id,
-                        function.stable_ptr(),
-                    ));
+                    let item_id =
+                        FreeFunctionLongId(module_file_id, function.stable_ptr()).intern(db);
                     free_functions.insert(item_id, function);
                     items.push(ModuleItemId::FreeFunction(item_id));
                 }
                 ast::ModuleItem::ExternFunction(extern_function) => {
-                    let item_id = db.intern_extern_function(ExternFunctionLongId(
-                        module_file_id,
-                        extern_function.stable_ptr(),
-                    ));
+                    let item_id =
+                        ExternFunctionLongId(module_file_id, extern_function.stable_ptr())
+                            .intern(db);
                     extern_functions.insert(item_id, extern_function);
                     items.push(ModuleItemId::ExternFunction(item_id));
                 }
                 ast::ModuleItem::ExternType(extern_type) => {
-                    let item_id = db.intern_extern_type(ExternTypeLongId(
-                        module_file_id,
-                        extern_type.stable_ptr(),
-                    ));
+                    let item_id =
+                        ExternTypeLongId(module_file_id, extern_type.stable_ptr()).intern(db);
                     extern_types.insert(item_id, extern_type);
                     items.push(ModuleItemId::ExternType(item_id));
                 }
                 ast::ModuleItem::Trait(trt) => {
-                    let item_id = db.intern_trait(TraitLongId(module_file_id, trt.stable_ptr()));
+                    let item_id = TraitLongId(module_file_id, trt.stable_ptr()).intern(db);
                     traits.insert(item_id, trt);
                     items.push(ModuleItemId::Trait(item_id));
                 }
                 ast::ModuleItem::Impl(imp) => {
-                    let item_id = db.intern_impl(ImplDefLongId(module_file_id, imp.stable_ptr()));
+                    let item_id = ImplDefLongId(module_file_id, imp.stable_ptr()).intern(db);
                     impls.insert(item_id, imp);
                     items.push(ModuleItemId::Impl(item_id));
                 }
                 ast::ModuleItem::Struct(structure) => {
-                    let item_id =
-                        db.intern_struct(StructLongId(module_file_id, structure.stable_ptr()));
+                    let item_id = StructLongId(module_file_id, structure.stable_ptr()).intern(db);
                     structs.insert(item_id, structure);
                     items.push(ModuleItemId::Struct(item_id));
                 }
                 ast::ModuleItem::Enum(enm) => {
-                    let item_id = db.intern_enum(EnumLongId(module_file_id, enm.stable_ptr()));
+                    let item_id = EnumLongId(module_file_id, enm.stable_ptr()).intern(db);
                     enums.insert(item_id, enm);
                     items.push(ModuleItemId::Enum(item_id));
                 }
                 ast::ModuleItem::TypeAlias(type_alias) => {
-                    let item_id = db.intern_module_type_alias(ModuleTypeAliasLongId(
-                        module_file_id,
-                        type_alias.stable_ptr(),
-                    ));
+                    let item_id =
+                        ModuleTypeAliasLongId(module_file_id, type_alias.stable_ptr()).intern(db);
                     type_aliases.insert(item_id, type_alias);
                     items.push(ModuleItemId::TypeAlias(item_id));
                 }
                 ast::ModuleItem::ImplAlias(impl_alias) => {
-                    let item_id = db.intern_impl_alias(ImplAliasLongId(
-                        module_file_id,
-                        impl_alias.stable_ptr(),
-                    ));
+                    let item_id =
+                        ImplAliasLongId(module_file_id, impl_alias.stable_ptr()).intern(db);
                     impl_aliases.insert(item_id, impl_alias);
                     items.push(ModuleItemId::ImplAlias(item_id));
                 }

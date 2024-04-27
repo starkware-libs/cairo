@@ -15,7 +15,7 @@ foo
 extern fn extern_get_bool() -> bool nopanic;
 #[inline(never)]
 fn get_bool() -> bool {
-  extern_get_bool()
+    extern_get_bool()
 }
 
 //! > semantic_diagnostics
@@ -28,8 +28,8 @@ blk0 (root):
 Statements:
 End:
   Match(match_enum(v0) {
-    bool::False(v9) => blk1,
-    bool::True(v10) => blk2,
+    bool::False(v2) => blk1,
+    bool::True(v3) => blk2,
   })
 
 blk1:
@@ -52,13 +52,13 @@ End:
 
 blk4:
 Statements:
-  (v14: core::bool) <- test::get_bool()
+  (v4: core::bool) <- test::get_bool()
 End:
-  Return(v14)
+  Return(v4)
 
 blk5:
 Statements:
-  (v12: ()) <- struct_construct()
-  (v13: core::bool) <- bool::True(v12)
+  (v5: ()) <- struct_construct()
+  (v6: core::bool) <- bool::True(v5)
 End:
-  Return(v13)
+  Return(v6)

@@ -3,17 +3,17 @@
 
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::chain;
-use num_bigint::BigInt;
+use semantic::items::constant::ConstValue;
 
 use super::context::VarRequest;
 use super::VariableId;
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 use crate::objects::{
-    Statement, StatementCall, StatementLiteral, StatementStructConstruct,
-    StatementStructDestructure, VarUsage,
+    Statement, StatementCall, StatementConst, StatementStructConstruct, StatementStructDestructure,
+    VarUsage,
 };
 use crate::{StatementDesnap, StatementEnumConstruct, StatementSnapshot};
 
@@ -28,20 +28,20 @@ impl StatementsBuilder {
     }
 }
 
-/// Generator for [StatementLiteral].
-pub struct Literal {
-    pub value: BigInt,
+/// Generator for [StatementConst].
+pub struct Const {
+    pub value: ConstValue,
     pub location: LocationId,
     pub ty: semantic::TypeId,
 }
-impl Literal {
+impl Const {
     pub fn add(
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
     ) -> VarUsage {
         let output = ctx.new_var(VarRequest { ty: self.ty, location: self.location });
-        builder.push_statement(Statement::Literal(StatementLiteral { value: self.value, output }));
+        builder.push_statement(Statement::Const(StatementConst { value: self.value, output }));
         VarUsage { var_id: output, location: self.location }
     }
 }
@@ -53,6 +53,8 @@ pub struct Call {
     pub function: crate::ids::FunctionId,
     /// Inputs to function.
     pub inputs: Vec<VarUsage>,
+    /// The `__coupon__` input to the function, if exists.
+    pub coupon_input: Option<VarUsage>,
     /// Types for `ref` parameters of the function. An output variable will be introduced for each.
     pub extra_ret_tys: Vec<semantic::TypeId>,
     /// Types for the returns of the function. An output variable will be introduced for each.
@@ -80,9 +82,13 @@ impl Call {
         let outputs =
             chain!(&extra_outputs, &returns).map(|var_usage: &VarUsage| var_usage.var_id).collect();
 
+        let with_coupon = self.coupon_input.is_some();
+        let mut inputs = self.inputs;
+        inputs.extend(self.coupon_input);
         builder.push_statement(Statement::Call(StatementCall {
             function: self.function,
-            inputs: self.inputs,
+            inputs,
+            with_coupon,
             outputs,
             location: self.location,
         }));
@@ -110,9 +116,10 @@ impl EnumConstruct {
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
     ) -> VarUsage {
-        let ty = ctx.db.intern_type(semantic::TypeLongId::Concrete(
-            semantic::ConcreteTypeId::Enum(self.variant.concrete_enum_id),
-        ));
+        let ty = semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(
+            self.variant.concrete_enum_id,
+        ))
+        .intern(ctx.db);
         let output = ctx.new_var(VarRequest { ty, location: self.location });
         builder.push_statement(Statement::EnumConstruct(StatementEnumConstruct {
             variant: self.variant,
@@ -136,17 +143,17 @@ impl Snapshot {
     ) -> (VariableId, VariableId) {
         let input_var = &ctx.variables[self.input.var_id];
         let input_ty = input_var.ty;
-        let ty = ctx.db.intern_type(semantic::TypeLongId::Snapshot(input_ty));
+        let ty = semantic::TypeLongId::Snapshot(input_ty).intern(ctx.db);
 
         // The location of the original input var is likely to be more relevant to the user.
         let output_original =
             ctx.new_var(VarRequest { ty: input_ty, location: input_var.location });
         let output_snapshot = ctx.new_var(VarRequest { ty, location: self.location });
-        builder.push_statement(Statement::Snapshot(StatementSnapshot {
-            input: self.input,
+        builder.push_statement(Statement::Snapshot(StatementSnapshot::new(
+            self.input,
             output_original,
             output_snapshot,
-        }));
+        )));
         (output_original, output_snapshot)
     }
 }
@@ -163,7 +170,7 @@ impl Desnap {
         builder: &mut StatementsBuilder,
     ) -> VarUsage {
         let ty = extract_matches!(
-            ctx.db.lookup_intern_type(ctx.variables[self.input.var_id].ty),
+            ctx.variables[self.input.var_id].ty.lookup_intern(ctx.db),
             semantic::TypeLongId::Snapshot
         );
         let output = ctx.new_var(VarRequest { ty, location: self.location });

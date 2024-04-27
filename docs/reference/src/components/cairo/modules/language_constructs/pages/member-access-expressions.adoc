@@ -7,7 +7,8 @@ identifier as its name.
 The type of the member access expression is the type of the member that the identifier refers to.
 
 Example:
-```rust
+[source,cairo]
+----
 struct Point {
     x: usize,
     y: usize,
@@ -16,4 +17,4 @@ struct Point {
 fn foo(p: Point) -> usize {
     p.x
 }
-```
+----

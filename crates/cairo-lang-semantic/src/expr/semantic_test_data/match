@@ -86,12 +86,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: core::bool,
-                                id: VariantId(core::True),
-                                ty: (),
-                                idx: 1,
-                            },
+                            variant: bool::True,
                             inner_pattern: None,
                             ty: core::bool,
                         },
@@ -108,12 +103,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: core::bool,
-                                id: VariantId(core::False),
-                                ty: (),
-                                idx: 0,
-                            },
+                            variant: bool::False,
                             inner_pattern: None,
                             ty: core::bool,
                         },
@@ -167,24 +157,14 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::A,
-                                id: VariantId(test::A),
-                                ty: (),
-                                idx: 0,
-                            },
+                            variant: A::A,
                             inner_pattern: None,
                             ty: test::A,
                         },
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::A,
-                                id: VariantId(test::B),
-                                ty: (),
-                                idx: 1,
-                            },
+                            variant: A::B,
                             inner_pattern: None,
                             ty: test::A,
                         },
@@ -201,12 +181,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::A,
-                                id: VariantId(test::C),
-                                ty: (),
-                                idx: 2,
-                            },
+                            variant: A::C,
                             inner_pattern: None,
                             ty: test::A,
                         },
@@ -266,12 +241,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::A),
-                                ty: core::integer::u8,
-                                idx: 0,
-                            },
+                            variant: MyEnum::A,
                             inner_pattern: Some(
                                 Variable(
                                     x,
@@ -282,12 +252,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::B),
-                                ty: (core::integer::u8, core::felt252),
-                                idx: 1,
-                            },
+                            variant: MyEnum::B,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -317,12 +282,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::C),
-                                ty: (core::integer::u8, core::integer::u8, core::integer::u8),
-                                idx: 2,
-                            },
+                            variant: MyEnum::C,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -348,12 +308,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::D),
-                                ty: test::P,
-                                idx: 3,
-                            },
+                            variant: MyEnum::D,
                             inner_pattern: Some(
                                 Struct(
                                     PatternStruct {
@@ -416,6 +371,7 @@ Match(
                                 ),
                             ),
                         ],
+                        coupon_arg: None,
                         ty: core::integer::u8,
                     },
                 ),
@@ -426,6 +382,192 @@ Match(
 )
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > `match` with type mismatch.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+enum MyEnum {
+    A,
+    B,
+}
+
+//! > function_body
+let a = MyEnum::A;
+
+//! > expr_code
+match a {
+    MyEnum::A => 3_u32,
+    MyEnum::B => 3_u16,
+}
+
+//! > expected_diagnostics
+error: Match arms have incompatible types: "core::integer::u32" and "core::integer::u16"
+ --> lib.cairo:8:18
+    MyEnum::B => 3_u16,
+                 ^***^
+
+//! > expected_semantics
+Match(
+    ExprMatch {
+        matched_expr: Var(
+            LocalVarId(test::a),
+        ),
+        arms: [
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::A,
+                            inner_pattern: None,
+                            ty: test::MyEnum,
+                        },
+                    ),
+                ],
+                expression: Literal(
+                    ExprLiteral {
+                        value: 3,
+                        ty: core::integer::u32,
+                    },
+                ),
+            },
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::B,
+                            inner_pattern: None,
+                            ty: test::MyEnum,
+                        },
+                    ),
+                ],
+                expression: Literal(
+                    ExprLiteral {
+                        value: 3,
+                        ty: core::integer::u16,
+                    },
+                ),
+            },
+        ],
+        ty: core::integer::u32,
+    },
+)
+
+//! > ==========================================================================
+
+//! > `match` with type mismatch with inference.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+enum MyEnum {
+    A,
+    B,
+}
+
+//! > function_body
+let a = MyEnum::A;
+
+//! > expr_code
+match a {
+    MyEnum::A => 3 + 3_u32,
+    MyEnum::B => 3 + 3_u16,
+}
+
+//! > expected_diagnostics
+error: Match arms have incompatible types: "core::integer::u32" and "core::integer::u16"
+ --> lib.cairo:8:18
+    MyEnum::B => 3 + 3_u16,
+                 ^*******^
+
+//! > expected_semantics
+Match(
+    ExprMatch {
+        matched_expr: Var(
+            LocalVarId(test::a),
+        ),
+        arms: [
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::A,
+                            inner_pattern: None,
+                            ty: test::MyEnum,
+                        },
+                    ),
+                ],
+                expression: FunctionCall(
+                    ExprFunctionCall {
+                        function: ?0::add,
+                        args: [
+                            Value(
+                                Literal(
+                                    ExprLiteral {
+                                        value: 3,
+                                        ty: core::integer::u32,
+                                    },
+                                ),
+                            ),
+                            Value(
+                                Literal(
+                                    ExprLiteral {
+                                        value: 3,
+                                        ty: core::integer::u32,
+                                    },
+                                ),
+                            ),
+                        ],
+                        coupon_arg: None,
+                        ty: core::integer::u32,
+                    },
+                ),
+            },
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::B,
+                            inner_pattern: None,
+                            ty: test::MyEnum,
+                        },
+                    ),
+                ],
+                expression: FunctionCall(
+                    ExprFunctionCall {
+                        function: ?3::add,
+                        args: [
+                            Value(
+                                Literal(
+                                    ExprLiteral {
+                                        value: 3,
+                                        ty: core::integer::u16,
+                                    },
+                                ),
+                            ),
+                            Value(
+                                Literal(
+                                    ExprLiteral {
+                                        value: 3,
+                                        ty: core::integer::u16,
+                                    },
+                                ),
+                            ),
+                        ],
+                        coupon_arg: None,
+                        ty: core::integer::u16,
+                    },
+                ),
+            },
+        ],
+        ty: core::integer::u32,
+    },
+)
 
 //! > ==========================================================================
 
@@ -467,12 +609,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::A),
-                                ty: core::felt252,
-                                idx: 0,
-                            },
+                            variant: MyEnum::A,
                             inner_pattern: Some(
                                 Variable(
                                     x,
@@ -483,12 +620,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::B),
-                                ty: (core::felt252, core::felt252),
-                                idx: 1,
-                            },
+                            variant: MyEnum::B,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -512,7 +644,7 @@ Match(
                 ],
                 expression: FunctionCall(
                     ExprFunctionCall {
-                        function: core::Felt252Add::add,
+                        function: ?1::add,
                         args: [
                             Value(
                                 Var(
@@ -525,6 +657,7 @@ Match(
                                 ),
                             ),
                         ],
+                        coupon_arg: None,
                         ty: core::felt252,
                     },
                 ),
@@ -533,12 +666,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::C),
-                                ty: (core::integer::u8, core::integer::u8, core::integer::u8),
-                                idx: 2,
-                            },
+                            variant: MyEnum::C,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -564,12 +692,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::D),
-                                ty: test::P,
-                                idx: 3,
-                            },
+                            variant: MyEnum::D,
                             inner_pattern: Some(
                                 Struct(
                                     PatternStruct {
@@ -619,7 +742,7 @@ Match(
                 ],
                 expression: FunctionCall(
                     ExprFunctionCall {
-                        function: core::integer::U8Add::add,
+                        function: ?2::add,
                         args: [
                             Value(
                                 Var(
@@ -632,6 +755,7 @@ Match(
                                 ),
                             ),
                         ],
+                        coupon_arg: None,
                         ty: core::integer::u8,
                     },
                 ),
@@ -652,7 +776,7 @@ error: Missing variable in pattern.
     MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
                    ^***************^
 
-error: Match arms have incompatible types: "?2" and "?3"
+error: Match arms have incompatible types: "core::felt252" and "core::integer::u8"
  --> lib.cairo:15:60
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
                                                            ^***^
@@ -697,12 +821,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u32>,
-                                id: VariantId(test::A),
-                                ty: core::integer::u8,
-                                idx: 0,
-                            },
+                            variant: MyEnum::A,
                             inner_pattern: Some(
                                 Variable(
                                     x,
@@ -713,12 +832,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u32>,
-                                id: VariantId(test::B),
-                                ty: (core::integer::u8, core::integer::u8),
-                                idx: 1,
-                            },
+                            variant: MyEnum::B,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -748,12 +862,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u32>,
-                                id: VariantId(test::C),
-                                ty: (core::integer::u32, core::integer::u8, core::integer::u8),
-                                idx: 2,
-                            },
+                            variant: MyEnum::C,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -781,12 +890,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u32>,
-                                id: VariantId(test::D),
-                                ty: test::P,
-                                idx: 3,
-                            },
+                            variant: MyEnum::D,
                             inner_pattern: Some(
                                 Struct(
                                     PatternStruct {
@@ -883,12 +987,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum,
-                                id: VariantId(test::A),
-                                ty: core::integer::u8,
-                                idx: 0,
-                            },
+                            variant: MyEnum::A,
                             inner_pattern: Some(
                                 Variable(
                                     x,
@@ -899,12 +998,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum,
-                                id: VariantId(test::B),
-                                ty: (core::integer::u8, core::integer::u8),
-                                idx: 1,
-                            },
+                            variant: MyEnum::B,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -939,7 +1033,7 @@ Match(
 )
 
 //! > expected_diagnostics
-warning: Unused variable. Consider ignoring by prefixing with `_`.
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:7:15
     MyEnum::A(x) | MyEnum::B((x, _)) => 1,
               ^

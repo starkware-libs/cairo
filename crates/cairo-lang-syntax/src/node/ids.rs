@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextWidth;
-use cairo_lang_utils::define_short_id;
+use cairo_lang_utils::{define_short_id, LookupIntern};
 
 use super::db::SyntaxGroup;
 use super::green::GreenNode;
@@ -10,23 +10,29 @@ use super::kind::SyntaxKind;
 use super::SyntaxNode;
 use crate::node::stable_ptr::SyntaxStablePtr;
 
-define_short_id!(GreenId, Arc::<GreenNode>, SyntaxGroup, lookup_intern_green);
+define_short_id!(GreenId, Arc::<GreenNode>, SyntaxGroup, lookup_intern_green, intern_green);
 impl GreenId {
     /// Returns the width of the node of this green id.
     pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
-        match &db.lookup_intern_green(*self).details {
+        match &self.lookup_intern(db).details {
             super::green::GreenNodeDetails::Token(text) => TextWidth::from_str(text),
             super::green::GreenNodeDetails::Node { width, .. } => *width,
         }
     }
 }
 
-define_short_id!(SyntaxStablePtrId, SyntaxStablePtr, SyntaxGroup, lookup_intern_stable_ptr);
+define_short_id!(
+    SyntaxStablePtrId,
+    SyntaxStablePtr,
+    SyntaxGroup,
+    lookup_intern_stable_ptr,
+    intern_stable_ptr
+);
 impl SyntaxStablePtrId {
     /// Lookups a syntax node using a stable syntax pointer.
     /// Should only be called on the root from which the stable pointer was generated.
     pub fn lookup(&self, db: &dyn SyntaxGroup) -> SyntaxNode {
-        let ptr = db.lookup_intern_stable_ptr(*self);
+        let ptr = self.lookup_intern(db);
         match ptr {
             SyntaxStablePtr::Root(file_id, green) => SyntaxNode::new_root(db, file_id, green),
             SyntaxStablePtr::Child { parent, .. } => {
@@ -41,7 +47,7 @@ impl SyntaxStablePtrId {
         }
     }
     pub fn file_id(&self, db: &dyn SyntaxGroup) -> FileId {
-        let ptr = db.lookup_intern_stable_ptr(*self);
+        let ptr = self.lookup_intern(db);
         match ptr {
             SyntaxStablePtr::Root(file_id, _) => file_id,
             SyntaxStablePtr::Child { parent, .. } => parent.file_id(db),
@@ -50,9 +56,7 @@ impl SyntaxStablePtrId {
     /// Returns the stable pointer of the parent of this stable pointer.
     /// Assumes that the parent exists (that is, `self` is not the root). Panics otherwise.
     pub fn parent(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(*self) else {
-            panic!()
-        };
+        let SyntaxStablePtr::Child { parent, .. } = self.lookup_intern(db) else { panic!() };
         parent
     }
     /// Returns the stable pointer of the `n`th parent of this stable pointer.
@@ -71,9 +75,7 @@ impl SyntaxStablePtrId {
     /// Returns the kind of this stable pointer.
     /// Assumes that `self` is not the root. Panics otherwise.
     pub fn kind(&self, db: &dyn SyntaxGroup) -> SyntaxKind {
-        let SyntaxStablePtr::Child { kind, .. } = db.lookup_intern_stable_ptr(*self) else {
-            panic!()
-        };
+        let SyntaxStablePtr::Child { kind, .. } = self.lookup_intern(db) else { panic!() };
         kind
     }
 }

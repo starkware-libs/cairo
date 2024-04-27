@@ -9,7 +9,7 @@ test_expr_diagnostics
 
 //! > module_code
 fn foo() -> UnknownType {
-  bar();
+    bar();
 }
 
 //! > function_body
@@ -21,9 +21,9 @@ fn foo() -> UnknownType {
             ^*********^
 
 error: Function not found.
- --> lib.cairo:2:3
-  bar();
-  ^*^
+ --> lib.cairo:2:5
+    bar();
+    ^*^
 
 //! > ==========================================================================
 

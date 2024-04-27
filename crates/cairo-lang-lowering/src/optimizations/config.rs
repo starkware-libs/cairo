@@ -3,6 +3,7 @@ use std::sync::Arc;
 use cairo_lang_semantic::corelib;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_lang_utils::Intern;
 
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId};
@@ -10,7 +11,7 @@ use crate::ids::{FunctionId, FunctionLongId};
 /// The default threshold for inlining small functions. Decided according to sample contracts
 /// profiling.
 // TODO(Gil): Expose this as a configuration in the project toml.
-const DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD: usize = 10;
+const DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD: usize = 24;
 
 /// A configuration struct that controls the behavior of the optimization passes.
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -27,6 +28,10 @@ impl OptimizationConfig {
     pub fn with_moveable_functions(mut self, moveable_functions: Vec<String>) -> Self {
         self.moveable_functions = moveable_functions;
         self
+    }
+    /// Sets the list of moveable functions to a minimal set, useful for testing.
+    pub fn with_minimal_movable_functions(self) -> Self {
+        self.with_moveable_functions(vec!["felt252_sub".into()])
     }
     /// Sets the threshold for inlining small functions.
     pub fn with_inline_small_functions_threshold(
@@ -63,9 +68,13 @@ pub fn priv_movable_function_ids(db: &dyn LoweringGroup) -> Arc<UnorderedHashSet
                 continue;
             }
 
-            return db.intern_lowering_function(FunctionLongId::Semantic(
-                corelib::get_function_id(semantic_db, module, path_item.into(), vec![]),
-            ));
+            return FunctionLongId::Semantic(corelib::get_function_id(
+                semantic_db,
+                module,
+                path_item.into(),
+                vec![],
+            ))
+            .intern(db);
         }
 
         panic!("Got empty string as movable_function");

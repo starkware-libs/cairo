@@ -7,6 +7,7 @@ use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroupEx};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 pub use cairo_lang_project::*;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_utils::Intern;
 use smol_str::SmolStr;
 
 #[derive(thiserror::Error, Debug)]
@@ -37,12 +38,12 @@ pub fn setup_single_file_project(
         return Err(ProjectError::NoSuchFile { path: path.to_string_lossy().to_string() });
     }
     let bad_path_err = || ProjectError::BadPath { path: path.to_string_lossy().to_string() };
+    let canonical = path.canonicalize().map_err(|_| bad_path_err())?;
+    let file_dir = canonical.parent().ok_or_else(bad_path_err)?;
     let file_stem = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
     if file_stem == "lib" {
-        let canonical = path.canonicalize().map_err(|_| bad_path_err())?;
-        let file_dir = canonical.parent().ok_or_else(bad_path_err)?;
         let crate_name = file_dir.to_str().ok_or_else(bad_path_err)?;
-        let crate_id = db.intern_crate(CrateLongId::Real(crate_name.into()));
+        let crate_id = CrateLongId::Real(crate_name.into()).intern(db);
         db.set_crate_config(
             crate_id,
             Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf()))),
@@ -50,12 +51,10 @@ pub fn setup_single_file_project(
         Ok(crate_id)
     } else {
         // If file_stem is not lib, create a fake lib file.
-        let crate_id = db.intern_crate(CrateLongId::Real(file_stem.into()));
+        let crate_id = CrateLongId::Real(file_stem.into()).intern(db);
         db.set_crate_config(
             crate_id,
-            Some(CrateConfiguration::default_for_root(Directory::Real(
-                path.parent().unwrap().to_path_buf(),
-            ))),
+            Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf()))),
         );
 
         let module_id = ModuleId::CrateRoot(crate_id);
@@ -88,7 +87,7 @@ pub fn update_crate_root(
     root: Directory,
 ) {
     let crate_settings = config.content.crates_config.get(&crate_name);
-    let crate_id = db.intern_crate(CrateLongId::Real(crate_name));
+    let crate_id = CrateLongId::Real(crate_name).intern(db);
     db.set_crate_config(
         crate_id,
         Some(CrateConfiguration { root, settings: crate_settings.clone() }),
@@ -140,6 +139,6 @@ pub fn get_main_crate_ids_from_project(
         .content
         .crate_roots
         .keys()
-        .map(|crate_id| db.intern_crate(CrateLongId::Real(crate_id.clone())))
+        .map(|crate_id| CrateLongId::Real(crate_id.clone()).intern(db))
         .collect()
 }

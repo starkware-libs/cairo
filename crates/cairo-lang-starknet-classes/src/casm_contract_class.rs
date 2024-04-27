@@ -19,12 +19,13 @@ use cairo_lang_sierra::extensions::structure::StructType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
-use cairo_lang_sierra_to_casm::compiler::CompilationError;
+use cairo_lang_sierra_to_casm::compiler::{CompilationError, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
@@ -38,8 +39,14 @@ use starknet_crypto::{poseidon_hash_many, FieldElement};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
-use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id, VersionId};
+use crate::compiler_version::{
+    current_compiler_version_id, current_sierra_version_id, VersionId,
+    CONTRACT_SEGMENTATION_MINOR_VERSION,
+};
 use crate::contract_class::{ContractClass, ContractEntryPoint};
+use crate::contract_segmentation::{
+    compute_bytecode_segment_lengths, NestedIntList, SegmentationError,
+};
 use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
 use crate::keccak::starknet_keccak;
 
@@ -63,6 +70,8 @@ pub enum StarknetSierraCompilationError {
     MetadataError(#[from] MetadataError),
     #[error(transparent)]
     AllowedLibfuncsError(#[from] AllowedLibfuncsError),
+    #[error(transparent)]
+    SegmentationError(#[from] SegmentationError),
     #[error("Invalid entry point.")]
     EntryPointError,
     #[error("Missing arguments in the entry point.")]
@@ -101,6 +110,8 @@ pub struct CasmContractClass {
     pub prime: BigUint,
     pub compiler_version: String,
     pub bytecode: Vec<BigUintAsHex>,
+    #[serde(skip_serializing_if = "skip_if_none")]
+    pub bytecode_segment_lengths: Option<NestedIntList>,
     pub hints: Vec<(usize, Vec<Hint>)>,
 
     // Optional pythonic hints in a format that can be executed by the python vm.
@@ -115,15 +126,7 @@ impl CasmContractClass {
         let external_funcs_hash = self.entry_points_hash(&self.entry_points_by_type.external);
         let l1_handlers_hash = self.entry_points_hash(&self.entry_points_by_type.l1_handler);
         let constructors_hash = self.entry_points_hash(&self.entry_points_by_type.constructor);
-        let bytecode_hash = poseidon_hash_many(
-            &self
-                .bytecode
-                .iter()
-                .map(|big_uint| {
-                    FieldElement::from_byte_slice_be(&big_uint.value.to_bytes_be()).unwrap()
-                })
-                .collect_vec(),
-        );
+        let bytecode_hash = self.compute_bytecode_hash();
 
         // Compute total hash by hashing each component on top of the previous one.
         Felt252::from_bytes_be(
@@ -137,6 +140,14 @@ impl CasmContractClass {
             .to_bytes_be(),
         )
     }
+
+    /// Returns the lengths of the bytecode segments.
+    ///
+    /// If the length field is missing, the entire bytecode is considered a single segment.
+    pub fn get_bytecode_segment_lengths(&self) -> NestedIntList {
+        self.bytecode_segment_lengths.clone().unwrap_or(NestedIntList::Leaf(self.bytecode.len()))
+    }
+
     /// Returns the hash for a set of entry points.
     fn entry_points_hash(&self, entry_points: &[CasmContractEntryPoint]) -> FieldElement {
         let mut entry_point_hash_elements = vec![];
@@ -154,6 +165,44 @@ impl CasmContractClass {
             ));
         }
         poseidon_hash_many(&entry_point_hash_elements)
+    }
+
+    /// Returns the bytecode hash.
+    fn compute_bytecode_hash(&self) -> FieldElement {
+        let mut bytecode_iter = self.bytecode.iter().map(|big_uint| {
+            FieldElement::from_byte_slice_be(&big_uint.value.to_bytes_be()).unwrap()
+        });
+
+        let (len, bytecode_hash) =
+            bytecode_hash_node(&mut bytecode_iter, &self.get_bytecode_segment_lengths());
+        assert_eq!(len, self.bytecode.len());
+
+        bytecode_hash
+    }
+}
+
+/// Computes the hash of a bytecode segment. See the documentation of `bytecode_hash_node` in
+/// the Starknet OS.
+///
+/// Returns the length of the processed segment and its hash.
+fn bytecode_hash_node(
+    iter: &mut impl Iterator<Item = FieldElement>,
+    node: &NestedIntList,
+) -> (usize, FieldElement) {
+    match node {
+        NestedIntList::Leaf(len) => {
+            let data = &iter.take(*len).collect_vec();
+            assert_eq!(data.len(), *len);
+            (*len, poseidon_hash_many(data))
+        }
+        NestedIntList::Node(nodes) => {
+            // Compute `1 + poseidon(len0, hash0, len1, hash1, ...)`.
+            let inner_nodes = nodes.iter().map(|node| bytecode_hash_node(iter, node)).collect_vec();
+            let hash = poseidon_hash_many(
+                &inner_nodes.iter().flat_map(|(len, hash)| [(*len).into(), *hash]).collect_vec(),
+            ) + 1u32.into();
+            (inner_nodes.iter().map(|(len, _)| len).sum(), hash)
+        }
     }
 }
 
@@ -244,9 +293,7 @@ impl TypeResolver<'_> {
     /// Extracts types `TOk`, `TErr` from the type `Result<TOk, TErr>`.
     fn extract_result_ty(&self, ty: &ConcreteTypeId) -> Option<(&ConcreteTypeId, &ConcreteTypeId)> {
         let long_id = self.get_long_id(ty);
-        if long_id.generic_id != EnumType::id() {
-            return None;
-        }
+        require(long_id.generic_id == EnumType::id())?;
         let [GenericArg::UserType(_), GenericArg::Type(result_tuple_ty), GenericArg::Type(err_ty)] =
             long_id.generic_args.as_slice()
         else {
@@ -258,9 +305,7 @@ impl TypeResolver<'_> {
     /// Extracts type `T` from the tuple type `(T,)`.
     fn extract_struct1(&self, ty: &ConcreteTypeId) -> Option<&ConcreteTypeId> {
         let long_id = self.get_long_id(ty);
-        if long_id.generic_id != StructType::id() {
-            return None;
-        }
+        require(long_id.generic_id == StructType::id())?;
         let [GenericArg::UserType(_), GenericArg::Type(ty0)] = long_id.generic_args.as_slice()
         else {
             return None;
@@ -271,9 +316,7 @@ impl TypeResolver<'_> {
     /// Extracts types `T0`, `T1` from the tuple type `(T0, T1)`.
     fn extract_struct2(&self, ty: &ConcreteTypeId) -> Option<(&ConcreteTypeId, &ConcreteTypeId)> {
         let long_id = self.get_long_id(ty);
-        if long_id.generic_id != StructType::id() {
-            return None;
-        }
+        require(long_id.generic_id == StructType::id())?;
         let [GenericArg::UserType(_), GenericArg::Type(ty0), GenericArg::Type(ty1)] =
             long_id.generic_args.as_slice()
         else {
@@ -289,6 +332,7 @@ impl CasmContractClass {
     pub fn from_contract_class(
         contract_class: ContractClass,
         add_pythonic_hints: bool,
+        max_bytecode_size: usize,
     ) -> Result<Self, StarknetSierraCompilationError> {
         let prime = Felt252::prime();
         for felt252 in &contract_class.sierra_program {
@@ -366,12 +410,16 @@ impl CasmContractClass {
                 .collect(),
             linear_gas_solver: no_eq_solver,
             linear_ap_change_solver: no_eq_solver,
+            skip_non_linear_solver_comparisons: false,
+            compute_runtime_costs: false,
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
 
-        let gas_usage_check = true;
-        let cairo_program =
-            cairo_lang_sierra_to_casm::compiler::compile(&program, &metadata, gas_usage_check)?;
+        let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
+            &program,
+            &metadata,
+            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size },
+        )?;
 
         let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
         let bytecode = bytecode
@@ -382,7 +430,14 @@ impl CasmContractClass {
                     value: if big_int.is_negative() { &prime - reminder } else { reminder },
                 }
             })
-            .collect();
+            .collect_vec();
+
+        let bytecode_segment_lengths =
+            if sierra_version.minor >= CONTRACT_SEGMENTATION_MINOR_VERSION {
+                Some(compute_bytecode_segment_lengths(&program, &cairo_program, bytecode.len())?)
+            } else {
+                None
+            };
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
             RangeCheckType::id(),
@@ -402,27 +457,22 @@ impl CasmContractClass {
             let statement_id = function.entry_point;
 
             // The expected return types are [builtins.., gas_builtin, system, PanicResult].
-            if function.signature.ret_types.len() < 3 {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignatureMissingArgs);
-            }
+            require(function.signature.ret_types.len() >= 3)
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignatureMissingArgs)?;
 
             let (input_span, input_builtins) = function.signature.param_types.split_last().unwrap();
 
             let type_resolver = TypeResolver { type_decl: &program.type_declarations };
-            if !type_resolver.is_felt252_span(input_span) {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
-            }
+            require(type_resolver.is_felt252_span(input_span))
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
             let (panic_result, output_builtins) =
                 function.signature.ret_types.split_last().unwrap();
 
-            if input_builtins != output_builtins {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
-            }
-
-            if !type_resolver.is_valid_entry_point_return_type(panic_result) {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
-            }
+            require(input_builtins == output_builtins)
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
+            require(type_resolver.is_valid_entry_point_return_type(panic_result))
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
             for type_id in input_builtins.iter() {
                 if !builtin_types.contains(type_resolver.get_generic_id(type_id)) {
@@ -455,7 +505,7 @@ impl CasmContractClass {
                 .sierra_statement_info
                 .get(statement_id.0)
                 .ok_or(StarknetSierraCompilationError::EntryPointError)?
-                .code_offset;
+                .start_offset;
             assert_eq!(
                 metadata.gas_info.function_costs[&function.id],
                 OrderedHashMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),
@@ -494,6 +544,7 @@ impl CasmContractClass {
             prime,
             compiler_version,
             bytecode,
+            bytecode_segment_lengths,
             hints,
             pythonic_hints,
             entry_points_by_type: CasmContractEntryPoints {

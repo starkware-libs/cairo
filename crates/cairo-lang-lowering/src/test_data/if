@@ -27,8 +27,8 @@ blk0 (root):
 Statements:
 End:
   Match(match_enum(v0) {
-    bool::False(v4) => blk1,
-    bool::True(v2) => blk2,
+    bool::False(v2) => blk1,
+    bool::True(v3) => blk2,
   })
 
 blk1:
@@ -38,9 +38,9 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v4: core::felt252) <- 1
 End:
-  Return(v3)
+  Return(v4)
 
 //! > ==========================================================================
 
@@ -74,14 +74,14 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt252) <- 1u
+  (v2: core::felt252) <- 1
 End:
-  Return(v1)
+  Return(v2)
 
 blk2:
 Statements:
@@ -116,23 +116,25 @@ foo
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+  (v1: core::felt252) <- 0
+  (v2: core::felt252) <- core::felt252_sub(v1, v0)
 End:
-  Match(match core::felt252_is_zero(v0) {
+  Match(match core::felt252_is_zero(v2) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v3) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt252) <- 10u
+  (v4: core::felt252) <- 10
 End:
-  Return(v1)
+  Return(v4)
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 20u
+  (v5: core::felt252) <- 20
 End:
-  Return(v3)
+  Return(v5)
 
 //! > ==========================================================================
 
@@ -163,24 +165,24 @@ foo
 Parameters: v0: core::felt252, v1: core::felt252, v2: core::felt252, v3: core::felt252
 blk0 (root):
 Statements:
-  (v11: core::felt252) <- core::felt252_add(v0, v1)
-  (v12: core::felt252) <- core::felt252_sub(v2, v3)
-  (v13: core::felt252) <- core::felt252_sub(v11, v12)
+  (v4: core::felt252) <- core::felt252_add(v0, v1)
+  (v5: core::felt252) <- core::felt252_sub(v2, v3)
+  (v6: core::felt252) <- core::felt252_sub(v4, v5)
 End:
-  Match(match core::felt252_is_zero(v13) {
+  Match(match core::felt252_is_zero(v6) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v8) => blk2,
+    IsZeroResult::NonZero(v7) => blk2,
   })
 
 blk1:
 Statements:
-  (v7: core::felt252) <- 0u
+  (v8: core::felt252) <- 0
 End:
-  Return(v7)
+  Return(v8)
 
 blk2:
 Statements:
-  (v9: core::felt252) <- 1u
+  (v9: core::felt252) <- 1
 End:
   Return(v9)
 
@@ -216,7 +218,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v27) => blk2,
+    IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
@@ -226,12 +228,12 @@ End:
 
 blk2:
 Statements:
-  (v11: core::felt252) <- 5u
-  (v43: core::felt252) <- core::felt252_sub(v0, v11)
+  (v2: core::felt252) <- 5
+  (v3: core::felt252) <- core::felt252_sub(v0, v2)
 End:
-  Match(match core::felt252_is_zero(v43) {
+  Match(match core::felt252_is_zero(v3) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero(v36) => blk5,
+    IsZeroResult::NonZero(v4) => blk5,
   })
 
 blk3:
@@ -241,15 +243,15 @@ End:
 
 blk4:
 Statements:
-  (v20: core::felt252) <- 0u
+  (v5: core::felt252) <- 0
 End:
-  Return(v20)
+  Return(v5)
 
 blk5:
 Statements:
-  (v22: core::felt252) <- 1u
+  (v6: core::felt252) <- 1
 End:
-  Return(v22)
+  Return(v6)
 
 //! > ==========================================================================
 
@@ -259,8 +261,8 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: myEnum) -> felt252 {
-    if let myEnum::A(x) = a {
+fn foo(a: MyEnum) -> felt252 {
+    if let MyEnum::A(x) = a {
         x
     } else {
         0
@@ -271,7 +273,7 @@ fn foo(a: myEnum) -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
@@ -282,14 +284,14 @@ enum myEnum {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: test::myEnum
+Parameters: v0: test::MyEnum
 blk0 (root):
 Statements:
 End:
   Match(match_enum(v0) {
-    myEnum::A(v1) => blk1,
-    myEnum::B(v2) => blk2,
-    myEnum::C(v3) => blk3,
+    MyEnum::A(v1) => blk1,
+    MyEnum::B(v2) => blk2,
+    MyEnum::C(v3) => blk3,
   })
 
 blk1:
@@ -309,7 +311,7 @@ End:
 
 blk4:
 Statements:
-  (v4: core::felt252) <- 0u
+  (v4: core::felt252) <- 0
 End:
   Return(v4)
 
@@ -323,7 +325,7 @@ test_function_lowering
 //! > function
 fn foo() -> felt252 {
     let mut y = 0;
-    if let myEnum::A(x) = a() {
+    if let MyEnum::A(x) = a() {
         y = y + x
     }
     y = y + 1;
@@ -334,12 +336,12 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
 }
-extern fn a() -> myEnum nopanic;
+extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -349,19 +351,19 @@ extern fn a() -> myEnum nopanic;
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 0u
+  (v0: core::felt252) <- 0
 End:
   Match(match test::a() {
-    myEnum::A(v1) => blk1,
-    myEnum::B => blk2,
-    myEnum::C => blk3,
+    MyEnum::A(v1) => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
   })
 
 blk1:
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v1)
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
 End:
-  Goto(blk5, {v6 -> v3})
+  Goto(blk5, {v2 -> v3})
 
 blk2:
 Statements:
@@ -380,10 +382,10 @@ End:
 
 blk5:
 Statements:
-  (v4: core::felt252) <- 1u
-  (v7: core::felt252) <- core::felt252_add(v3, v4)
+  (v4: core::felt252) <- 1
+  (v5: core::felt252) <- core::felt252_add(v3, v4)
 End:
-  Return(v7)
+  Return(v5)
 
 //! > ==========================================================================
 
@@ -395,7 +397,7 @@ test_function_lowering
 //! > function
 fn foo() -> felt252 {
     let mut y = 0;
-    if let (myEnum::A(x), true) = (a(), 5 == 6) {
+    if let (MyEnum::A(x), true) = (a(), 5 == 6) {
         y = y + x
     }
     y = y + 1;
@@ -406,12 +408,12 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
 }
-extern fn a() -> myEnum nopanic;
+extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -421,45 +423,45 @@ extern fn a() -> myEnum nopanic;
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 0u
-  (v1: core::felt252) <- 5u
-  (v4: core::felt252) <- 6u
-  (v39: core::felt252) <- core::felt252_sub(v1, v4)
+  (v0: core::felt252) <- 0
+  (v1: core::felt252) <- 5
+  (v2: core::felt252) <- 6
+  (v3: core::felt252) <- core::felt252_sub(v1, v2)
 End:
-  Match(match core::felt252_is_zero(v39) {
+  Match(match core::felt252_is_zero(v3) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v31) => blk2,
+    IsZeroResult::NonZero(v4) => blk2,
   })
 
 blk1:
 Statements:
-  (v32: ()) <- struct_construct()
-  (v33: core::bool) <- bool::True(v32)
+  (v5: ()) <- struct_construct()
+  (v6: core::bool) <- bool::True(v5)
 End:
-  Goto(blk3, {v33 -> v34})
+  Goto(blk3, {v6 -> v7})
 
 blk2:
 Statements:
-  (v35: ()) <- struct_construct()
-  (v36: core::bool) <- bool::False(v35)
+  (v8: ()) <- struct_construct()
+  (v9: core::bool) <- bool::False(v8)
 End:
-  Goto(blk3, {v36 -> v34})
+  Goto(blk3, {v9 -> v7})
 
 blk3:
 Statements:
 End:
   Match(match test::a() {
-    myEnum::A(v8) => blk4,
-    myEnum::B => blk7,
-    myEnum::C => blk10,
+    MyEnum::A(v10) => blk4,
+    MyEnum::B => blk7,
+    MyEnum::C => blk10,
   })
 
 blk4:
 Statements:
 End:
-  Match(match_enum(v34) {
-    bool::False(v16) => blk5,
-    bool::True(v17) => blk6,
+  Match(match_enum(v7) {
+    bool::False(v11) => blk5,
+    bool::True(v12) => blk6,
   })
 
 blk5:
@@ -469,16 +471,16 @@ End:
 
 blk6:
 Statements:
-  (v37: core::felt252) <- core::felt252_add(v0, v8)
+  (v13: core::felt252) <- core::felt252_add(v0, v10)
 End:
-  Goto(blk14, {v37 -> v25})
+  Goto(blk14, {v13 -> v14})
 
 blk7:
 Statements:
 End:
-  Match(match_enum(v34) {
-    bool::False(v19) => blk8,
-    bool::True(v20) => blk9,
+  Match(match_enum(v7) {
+    bool::False(v15) => blk8,
+    bool::True(v16) => blk9,
   })
 
 blk8:
@@ -494,9 +496,9 @@ End:
 blk10:
 Statements:
 End:
-  Match(match_enum(v34) {
-    bool::False(v22) => blk11,
-    bool::True(v23) => blk12,
+  Match(match_enum(v7) {
+    bool::False(v17) => blk11,
+    bool::True(v18) => blk12,
   })
 
 blk11:
@@ -512,14 +514,14 @@ End:
 blk13:
 Statements:
 End:
-  Goto(blk14, {v0 -> v25})
+  Goto(blk14, {v0 -> v14})
 
 blk14:
 Statements:
-  (v26: core::felt252) <- 1u
-  (v38: core::felt252) <- core::felt252_add(v25, v26)
+  (v19: core::felt252) <- 1
+  (v20: core::felt252) <- core::felt252_add(v14, v19)
 End:
-  Return(v38)
+  Return(v20)
 
 //! > ==========================================================================
 
@@ -531,7 +533,7 @@ test_function_lowering
 //! > function
 fn foo() -> felt252 {
     let mut y = 0;
-    if let (myEnum::A(x), 3) = (a(), 3) {
+    if let (MyEnum::A(x), 3) = (a(), 3) {
         y = y + x
     }
     y = y + 1;
@@ -542,19 +544,19 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
 }
-extern fn a() -> myEnum nopanic;
+extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error: Unsupported value in if-let. Currently, if-let on tuples only supports enums as tuple members.
  --> lib.cairo:9:32
-    if let (myEnum::A(x), 3) = (a(), 3) {
+    if let (MyEnum::A(x), 3) = (a(), 3) {
                                ^******^
 
 //! > lowering_flat
@@ -601,7 +603,7 @@ Parameters:
 test_function_lowering
 
 //! > function
-fn foo(a: myEnum) -> felt252 {
+fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     if let _ = a {
         y = y + 5;
@@ -614,7 +616,7 @@ fn foo(a: myEnum) -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
@@ -625,15 +627,15 @@ enum myEnum {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: test::myEnum
+Parameters: v0: test::MyEnum
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0u
+  (v1: core::felt252) <- 0
 End:
   Match(match_enum(v0) {
-    myEnum::A(v2) => blk1,
-    myEnum::B(v3) => blk2,
-    myEnum::C(v4) => blk3,
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v3) => blk2,
+    MyEnum::C(v4) => blk3,
   })
 
 blk1:
@@ -653,12 +655,12 @@ End:
 
 blk4:
 Statements:
-  (v5: core::felt252) <- 5u
-  (v10: core::felt252) <- core::felt252_add(v1, v5)
-  (v8: core::felt252) <- 1u
-  (v11: core::felt252) <- core::felt252_add(v10, v8)
+  (v5: core::felt252) <- 5
+  (v6: core::felt252) <- core::felt252_add(v1, v5)
+  (v7: core::felt252) <- 1
+  (v8: core::felt252) <- core::felt252_add(v6, v7)
 End:
-  Return(v11)
+  Return(v8)
 
 //! > ==========================================================================
 
@@ -668,7 +670,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: myEnum) -> felt252 {
+fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     if let _ = a {
         y = y + 5;
@@ -683,7 +685,7 @@ fn foo(a: myEnum) -> felt252 {
 foo
 
 //! > module_code
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B,
     C,
@@ -698,15 +700,15 @@ error: Unreachable else clause.
            ^
 
 //! > lowering_flat
-Parameters: v0: test::myEnum
+Parameters: v0: test::MyEnum
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0u
+  (v1: core::felt252) <- 0
 End:
   Match(match_enum(v0) {
-    myEnum::A(v2) => blk1,
-    myEnum::B(v3) => blk2,
-    myEnum::C(v4) => blk3,
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v3) => blk2,
+    MyEnum::C(v4) => blk3,
   })
 
 blk1:
@@ -726,12 +728,12 @@ End:
 
 blk4:
 Statements:
-  (v5: core::felt252) <- 5u
-  (v10: core::felt252) <- core::felt252_add(v1, v5)
-  (v8: core::felt252) <- 1u
-  (v11: core::felt252) <- core::felt252_add(v10, v8)
+  (v5: core::felt252) <- 5
+  (v6: core::felt252) <- core::felt252_add(v1, v5)
+  (v7: core::felt252) <- 1
+  (v8: core::felt252) <- core::felt252_add(v6, v7)
 End:
-  Return(v11)
+  Return(v8)
 
 //! > ==========================================================================
 
@@ -780,7 +782,7 @@ Parameters: v0: test::MyStruct
 test_function_lowering
 
 //! > function
-fn foo(a: myEnum) -> felt252 {
+fn foo(a: MyEnum) -> felt252 {
     loop {
         // Some statements to prevent the loop function from being inlined.
         let mut x = 0;
@@ -803,7 +805,7 @@ foo
 
 //! > module_code
 #[derive(Drop, Copy)]
-enum myEnum {
+enum MyEnum {
     A: felt252,
     B: felt252,
 }
@@ -813,9 +815,27 @@ enum myEnum {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: test::myEnum
+Parameters: v0: test::MyEnum
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- test::foo[expr30](v0)
 End:
-  Return(v1)
+  Match(match_enum(v0) {
+    MyEnum::A(v1) => blk1,
+    MyEnum::B(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v3: core::felt252) <- 2
+End:
+  Return(v3)

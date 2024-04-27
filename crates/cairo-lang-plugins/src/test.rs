@@ -13,11 +13,11 @@ use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Intern, Upcast};
 
 use crate::get_base_plugins;
 use crate::test_utils::expand_module_text;
@@ -26,6 +26,7 @@ cairo_lang_test_utils::test_file_test!(
     expand_plugin,
     "src/test_data",
     {
+        compile_error: "compile_error",
         config: "config",
         derive: "derive",
         generate_trait: "generate_trait",
@@ -112,12 +113,12 @@ pub fn test_expand_plugin_inner(
 
     let cairo_code = &inputs["cairo_code"];
 
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let root = Directory::Real("test_src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
-    let file_id = db.intern_file(FileLongId::OnDisk("test_src/lib.cairo".into()));
+    let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db);
     db.as_files_group_mut()
         .override_file_content(file_id, Some(Arc::new(format!("{cairo_code}\n"))));
 

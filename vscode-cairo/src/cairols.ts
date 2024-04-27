@@ -39,6 +39,26 @@ export async function setupLanguageServer(
     clientOptions,
   );
 
+  // Notify the server when client configuration changes.
+  // CairoLS pulls configuration properties it is interested in by itself, so it
+  // is not needed to attach any details in the notification payload.
+  const weakClient = new WeakRef(client);
+  vscode.workspace.onDidChangeConfiguration(
+    async () => {
+      const client = weakClient.deref();
+      if (client != undefined) {
+        await client.sendNotification(
+          lc.DidChangeConfigurationNotification.type,
+          {
+            settings: "",
+          },
+        );
+      }
+    },
+    null,
+    ctx.extension.subscriptions,
+  );
+
   client.registerFeature(new SemanticTokensFeature(client));
 
   const myProvider = new (class implements vscode.TextDocumentContentProvider {
@@ -125,16 +145,17 @@ async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
     ctx.log.error("failed to start CairoLS");
     throw new Error("failed to start CairoLS");
   }
-  ctx.log.debug(
-    `using CairoLS: ${serverExecutable.command} ${serverExecutable.args?.join(" ") ?? ""}`.trimEnd(),
-  );
+
+  insertLanguageServerExtraEnv(serverExecutable, ctx);
+
+  ctx.log.debug(`using CairoLS: ${quoteServerExecutable(serverExecutable)}`);
 
   const run = serverExecutable;
 
   const debug = structuredClone(serverExecutable);
   debug.options ??= {};
   debug.options.env ??= {};
-  debug.options.env["CAIRO_LS_LOG"] = "cairo_lang_language_server=debug";
+  debug.options.env["CAIRO_LS_LOG"] ??= "cairo_lang_language_server=debug";
 
   return { run, debug };
 }
@@ -162,4 +183,34 @@ async function determineLanguageServerExecutableProvider(
   }
 
   return await standalone();
+}
+
+function insertLanguageServerExtraEnv(
+  serverExecutable: lc.Executable,
+  ctx: Context,
+) {
+  const extraEnv = ctx.config.get("languageServerExtraEnv");
+  serverExecutable.options ??= {};
+  serverExecutable.options.env ??= {};
+  Object.assign(serverExecutable.options.env, extraEnv);
+}
+
+function quoteServerExecutable(serverExecutable: lc.Executable): string {
+  const parts: string[] = [];
+
+  if (serverExecutable.options?.env) {
+    for (const [key, value] of Object.entries(serverExecutable.options.env)) {
+      parts.push(`${key}=${value}`);
+    }
+  }
+
+  parts.push(serverExecutable.command);
+
+  if (serverExecutable.args) {
+    for (const arg of serverExecutable.args) {
+      parts.push(arg);
+    }
+  }
+
+  return parts.filter((s) => s.trim()).join(" ");
 }

@@ -4,12 +4,12 @@ use cairo_lang_defs::ids::{LookupItemId, ModuleFileId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::TypeAliasCycle;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::resolve::{Resolver, ResolverData};
@@ -25,15 +25,6 @@ pub struct TypeAliasData {
     pub attributes: Vec<Attribute>,
     pub resolver_data: Arc<ResolverData>,
 }
-impl TypeAliasData {
-    /// Returns Maybe::Err if a cycle is detected here.
-    // TODO(orizi): Remove this function when cycle validation is not required through a type's
-    // field.
-    pub fn check_no_cycle(&self) -> Maybe<()> {
-        self.resolved_type?;
-        Ok(())
-    }
-}
 
 /// Computes data about the generic parameters of a type-alias item.
 pub fn type_alias_generic_params_data_helper(
@@ -43,7 +34,7 @@ pub fn type_alias_generic_params_data_helper(
     lookup_item_id: LookupItemId,
     parent_resolver_data: Option<Arc<ResolverData>>,
 ) -> Maybe<GenericParamsData> {
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
 
     let mut resolver = match parent_resolver_data {
@@ -60,10 +51,10 @@ pub fn type_alias_generic_params_data_helper(
         &type_alias_ast.generic_params(db.upcast()),
     )?;
 
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, type_alias_ast.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, type_alias_ast.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
@@ -82,17 +73,16 @@ pub fn type_alias_semantic_data_helper(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
 
     let ty = resolve_type(db, diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(diagnostics, stable_ptr.unwrap_or(type_alias_ast.stable_ptr().untyped()));
-    }
-    let generic_params = resolver.inference().rewrite(generic_params_data.generic_params).no_err();
-    let ty = resolver.inference().rewrite(ty).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(diagnostics, type_alias_ast.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params_data.generic_params).no_err();
+    let ty = inference.rewrite(ty).no_err();
     let attributes = type_alias_ast.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
     Ok(TypeAliasData { resolved_type: Ok(ty), generic_params, attributes, resolver_data })
@@ -114,7 +104,7 @@ pub fn type_alias_semantic_data_cycle_helper(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
 
     let attributes = type_alias_ast.attributes(syntax_db).structurize(syntax_db);
 

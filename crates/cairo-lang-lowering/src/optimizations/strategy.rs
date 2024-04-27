@@ -1,5 +1,5 @@
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_utils::define_short_id;
+use cairo_lang_utils::{define_short_id, Intern, LookupIntern};
 
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
@@ -65,7 +65,8 @@ define_short_id!(
     OptimizationStrategyId,
     OptimizationStrategy,
     LoweringGroup,
-    lookup_intern_strategy
+    lookup_intern_strategy,
+    intern_strategy
 );
 
 /// A strategy is a sequence of optimization phases.
@@ -73,43 +74,57 @@ define_short_id!(
 pub struct OptimizationStrategy(pub Vec<OptimizationPhase>);
 
 impl OptimizationStrategyId {
-    /// The default strategy used in the lowering.
-    pub fn default_strategy(db: &dyn LoweringGroup) -> Self {
-        db.intern_strategy(OptimizationStrategy(vec![
-            OptimizationPhase::ApplyInlining,
-            OptimizationPhase::ReturnOptimization,
-            OptimizationPhase::ReorganizeBlocks,
-            // The call to `reorder_statements` before and after `branch_inversion` is intentional.
-            // See description of `branch_inversion` for more details.
-            OptimizationPhase::ReorderStatements,
-            OptimizationPhase::BranchInversion,
-            OptimizationPhase::ReorderStatements,
-            OptimizationPhase::ConstFolding,
-            OptimizationPhase::OptimizeMatches,
-            OptimizationPhase::SplitStructs,
-            OptimizationPhase::ReorganizeBlocks,
-            OptimizationPhase::ReorderStatements,
-            OptimizationPhase::OptimizeMatches,
-            OptimizationPhase::LowerImplicits,
-            OptimizationPhase::ReorganizeBlocks,
-            OptimizationPhase::CancelOps,
-            OptimizationPhase::ReorderStatements,
-            OptimizationPhase::ReorganizeBlocks,
-        ]))
-    }
-
-    /// Returns the lowering of `function` after applying the strategy to it.
+    /// Applies the optimization strategy phase to the lowering.
+    ///
+    /// Assumes `lowered` is a a lowering of `function`.
     pub fn apply_strategy(
         self,
         db: &dyn LoweringGroup,
         function: ConcreteFunctionWithBodyId,
-    ) -> Maybe<FlatLowered> {
-        let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
-
-        for phase in db.lookup_intern_strategy(self).0 {
-            phase.apply(db, function, &mut lowered)?;
+        lowered: &mut FlatLowered,
+    ) -> Maybe<()> {
+        for phase in self.lookup_intern(db).0 {
+            phase.apply(db, function, lowered)?;
         }
 
-        Ok(lowered)
+        Ok(())
     }
+}
+
+/// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
+pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
+    OptimizationStrategy(vec![
+        OptimizationPhase::ApplyInlining,
+        OptimizationPhase::ReturnOptimization,
+        OptimizationPhase::ReorganizeBlocks,
+        // The call to `reorder_statements` before and after `branch_inversion` is intentional.
+        // See description of `branch_inversion` for more details.
+        OptimizationPhase::ReorderStatements,
+        OptimizationPhase::BranchInversion,
+        OptimizationPhase::ReorderStatements,
+        OptimizationPhase::CancelOps,
+        OptimizationPhase::ConstFolding,
+        OptimizationPhase::OptimizeMatches,
+        OptimizationPhase::SplitStructs,
+        OptimizationPhase::ReorganizeBlocks,
+        OptimizationPhase::ReorderStatements,
+        OptimizationPhase::OptimizeMatches,
+        OptimizationPhase::ReorganizeBlocks,
+        OptimizationPhase::CancelOps,
+        OptimizationPhase::ReorderStatements,
+        OptimizationPhase::ReorganizeBlocks,
+    ])
+    .intern(db)
+}
+
+/// Query implementation of [crate::db::LoweringGroup::final_optimization_strategy].
+pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
+    OptimizationStrategy(vec![
+        OptimizationPhase::LowerImplicits,
+        OptimizationPhase::ReorganizeBlocks,
+        OptimizationPhase::CancelOps,
+        OptimizationPhase::ReorderStatements,
+        OptimizationPhase::ReorganizeBlocks,
+    ])
+    .intern(db)
 }

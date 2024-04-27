@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, require, LookupIntern};
 use syntax::node::green::{GreenNode, GreenNodeDetails};
 use syntax::node::ids::GreenId;
 
@@ -667,9 +667,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of node with pub visibility or None if not starting with "pub".
     fn try_parse_visibility_pub(&mut self) -> Option<VisibilityPubGreen> {
-        if self.peek().kind != SyntaxKind::TerminalPub {
-            return None;
-        }
+        require(self.peek().kind == SyntaxKind::TerminalPub)?;
         let pub_kw = self.take::<TerminalPub>();
         let argument_clause = if self.peek().kind != SyntaxKind::TerminalLParen {
             OptionVisibilityPubArgumentClauseEmpty::new_green(self.db).into()
@@ -1094,7 +1092,6 @@ impl<'a> Parser<'a> {
         lbrace_allowed: LbraceAllowed,
     ) -> TryParseResult<ExprGreen> {
         let mut expr = self.try_parse_atom_or_unary(lbrace_allowed)?;
-
         while let Some(precedence) = get_post_operator_precedence(self.peek().kind) {
             if precedence >= parent_precedence {
                 return Ok(expr);
@@ -1180,6 +1177,7 @@ impl<'a> Parser<'a> {
                 // [LbraceAllowed::Forbid].
                 Ok(self.expect_parenthesized_expr())
             }
+            SyntaxKind::TerminalLBrack => Ok(self.expect_fixed_size_array_expr().into()),
             SyntaxKind::TerminalLBrace if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.parse_block().into())
             }
@@ -1215,6 +1213,7 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalIdentifier => Ok(self.parse_type_path().into()),
             SyntaxKind::TerminalLParen => Ok(self.expect_type_tuple_expr()),
+            SyntaxKind::TerminalLBrack => Ok(self.expect_type_fixed_size_array_expr()),
             _ => {
                 // TODO(yuval): report to diagnostics.
                 Err(TryParseFailure::SkipToken)
@@ -1395,7 +1394,7 @@ impl<'a> Parser<'a> {
         let GreenNode {
             kind: SyntaxKind::ExprPath,
             details: GreenNodeDetails::Node { children: children0, .. },
-        } = &*self.db.lookup_intern_green(expr.0)
+        } = &*expr.0.lookup_intern(self.db)
         else {
             return None;
         };
@@ -1409,7 +1408,7 @@ impl<'a> Parser<'a> {
         let GreenNode {
             kind: SyntaxKind::PathSegmentSimple,
             details: GreenNodeDetails::Node { children: children1, .. },
-        } = &*self.db.lookup_intern_green(path_segment)
+        } = &*path_segment.lookup_intern(self.db)
         else {
             return None;
         };
@@ -1421,7 +1420,7 @@ impl<'a> Parser<'a> {
 
         // Check that it is indeed `TerminalIdentifier`.
         let GreenNode { kind: SyntaxKind::TerminalIdentifier, .. } =
-            self.db.lookup_intern_green(ident).as_ref()
+            ident.lookup_intern(self.db).as_ref()
         else {
             return None;
         };
@@ -1488,6 +1487,32 @@ impl<'a> Parser<'a> {
             lparen,
             ExprList::new_green(self.db, exprs),
             rparen,
+        )
+        .into()
+    }
+
+    /// Assumes the current token is LBrack.
+    /// Expected pattern: `\[<type_expr>; <expr>\]`.
+    /// Returns a GreenId of a node with kind ExprFixedSizeArray.
+    fn expect_type_fixed_size_array_expr(&mut self) -> ExprGreen {
+        let lbrack = self.take::<TerminalLBrack>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
+            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+                Self::try_parse_type_expr,
+                is_of_kind!(rbrack, semicolon),
+                "type expression",
+            );
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        let size_expr = self.parse_expr();
+        let fixed_size_array_size =
+            FixedSizeArraySize::new_green(self.db, semicolon, size_expr).into();
+        let rbrack = self.parse_token::<TerminalRBrack>();
+        ExprFixedSizeArray::new_green(
+            self.db,
+            lbrack,
+            ExprList::new_green(self.db, exprs),
+            fixed_size_array_size,
+            rbrack,
         )
         .into()
     }
@@ -1662,6 +1687,33 @@ impl<'a> Parser<'a> {
         ExprWhile::new_green(self.db, while_kw, condition, body)
     }
 
+    /// Assumes the current token is LBrack.
+    /// Expected pattern: `\[<expr>; <expr>\]`.
+    fn expect_fixed_size_array_expr(&mut self) -> ExprFixedSizeArrayGreen {
+        let lbrack = self.take::<TerminalLBrack>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
+            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+                Self::try_parse_expr,
+                is_of_kind!(rbrack, semicolon),
+                "expression",
+            );
+        let size_green = if self.peek().kind == SyntaxKind::TerminalSemicolon {
+            let semicolon = self.take::<TerminalSemicolon>();
+            let size = self.parse_expr();
+            FixedSizeArraySize::new_green(self.db, semicolon, size).into()
+        } else {
+            OptionFixedSizeArraySizeEmpty::new_green(self.db).into()
+        };
+        let rbrack = self.parse_token::<TerminalRBrack>();
+        ExprFixedSizeArray::new_green(
+            self.db,
+            lbrack,
+            ExprList::new_green(self.db, exprs),
+            size_green,
+            rbrack,
+        )
+    }
+
     /// Returns a GreenId of a node with a MatchArm kind or TryParseFailure if a match arm can't be
     /// parsed.
     pub fn try_parse_match_arm(&mut self) -> TryParseResult<MatchArmGreen> {
@@ -1732,7 +1784,7 @@ impl<'a> Parser<'a> {
                         PatternEnum::new_green(self.db, path, inner_pattern.into()).into()
                     }
                     _ => {
-                        let green_node = self.db.lookup_intern_green(path.0);
+                        let green_node = path.0.lookup_intern(self.db);
                         let children = match &green_node.details {
                             GreenNodeDetails::Node { children, width: _ } => children,
                             _ => return Err(TryParseFailure::SkipToken),
@@ -1767,6 +1819,20 @@ impl<'a> Parser<'a> {
                 ));
                 let rparen = self.parse_token::<TerminalRParen>();
                 PatternTuple::new_green(self.db, lparen, patterns, rparen).into()
+            }
+            SyntaxKind::TerminalLBrack => {
+                let lbrack = self.take::<TerminalLBrack>();
+                let patterns = PatternList::new_green(self.db,  self.parse_separated_list::<
+                    Pattern,
+                    TerminalComma,
+                    PatternListElementOrSeparatorGreen>
+                (
+                    Self::try_parse_pattern,
+                    is_of_kind!(rbrack, block, rbrace, module_item_kw),
+                    "pattern",
+                ));
+                let rbrack = self.parse_token::<TerminalRBrack>();
+                PatternFixedSizeArray::new_green(self.db, lbrack, patterns, rbrack).into()
             }
             _ => return Err(TryParseFailure::SkipToken),
         })
@@ -2762,7 +2828,7 @@ fn trivia_total_width(db: &dyn SyntaxGroup, trivia: &[TriviumGreen]) -> TextWidt
 
 /// The width of the trailing trivia, traversing the tree to the bottom right node.
 fn trailing_trivia_width(db: &dyn SyntaxGroup, green_id: GreenId) -> Option<TextWidth> {
-    let node = db.lookup_intern_green(green_id);
+    let node = green_id.lookup_intern(db);
     if node.kind == SyntaxKind::Trivia {
         return Some(node.width());
     }

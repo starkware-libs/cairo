@@ -17,3 +17,51 @@ struct A<T> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test invalid recursive struct.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    member: A,
+}
+
+struct B {
+    member: C,
+    member2: A,
+}
+
+struct C {
+    member: B,
+}
+
+//! > expected_diagnostics
+error: Direct recursive type "test::A".
+ --> lib.cairo:2:5
+    member: A,
+    ^*******^
+
+error: Direct recursive type "test::C".
+ --> lib.cairo:6:5
+    member: C,
+    ^*******^
+
+error: Direct recursive type "test::A".
+ --> lib.cairo:7:5
+    member2: A,
+    ^********^
+
+error: Direct recursive type "test::B".
+ --> lib.cairo:11:5
+    member: B,
+    ^*******^

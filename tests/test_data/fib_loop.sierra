@@ -1,4 +1,5 @@
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
@@ -9,7 +10,7 @@ libfunc dup<felt252> = dup<felt252>;
 libfunc felt252_is_zero = felt252_is_zero;
 libfunc branch_align = branch_align;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
-libfunc felt252_const<1> = felt252_const<1>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 libfunc felt252_sub = felt252_sub;
 libfunc felt252_add = felt252_add;
 
@@ -34,7 +35,7 @@ store_temp<felt252>([1]) -> ([1]); // 17
 return([0], [2], [5], [1]); // 18
 branch_align() -> (); // 19
 drop<NonZero<felt252>>([4]) -> (); // 20
-felt252_const<1>() -> ([6]); // 21
+const_as_immediate<Const<felt252, 1>>() -> ([6]); // 21
 felt252_sub([0], [6]) -> ([7]); // 22
 dup<felt252>([2]) -> ([2], [8]); // 23
 felt252_add([1], [8]) -> ([9]); // 24

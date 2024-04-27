@@ -27,7 +27,7 @@ extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 #[generate_trait]
 pub impl ArrayImpl<T> of ArrayTrait<T> {
     #[inline(always)]
-    fn new() -> Array<T> {
+    fn new() -> Array<T> nopanic {
         array_new()
     }
     #[inline(always)]
@@ -80,8 +80,8 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     }
     #[inline(always)]
     #[must_use]
-    fn span(self: @Array<T>) -> Span<T> {
-        Span { snapshot: self }
+    fn span(snapshot: @Array<T>) -> Span<T> {
+        Span { snapshot }
     }
 }
 
@@ -219,6 +219,40 @@ pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     #[inline(always)]
     fn index(self: @Span<T>, index: usize) -> @T {
         array_at(*self.snapshot, index).unbox()
+    }
+}
+
+pub trait ToSpanTrait<C, T> {
+    /// Returns a span pointing to the data in the input.
+    #[must_use]
+    fn span(self: @C) -> Span<T>;
+}
+
+impl ArrayToSpan<T> of ToSpanTrait<Array<T>, T> {
+    #[inline(always)]
+    fn span(self: @Array<T>) -> Span<T> {
+        ArrayTrait::span(self)
+    }
+}
+
+/// Returns a span from a box of struct of members of the same type.
+/// The additional `+Copy<@T>` arg is to prevent later stages from propagating the `S` type Sierra
+/// level, where it is deduced by the `T` type.
+extern fn span_from_tuple<T, +Copy<@T>, S>(struct_like: Box<@T>) -> @Array<S> nopanic;
+
+impl FixedSizeArrayToSpan<
+    T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
+> of ToSpanTrait<[T; SIZE], T> {
+    #[inline(always)]
+    fn span(self: @[T; SIZE]) -> Span<T> {
+        Span { snapshot: span_from_tuple(BoxTrait::new(self)) }
+    }
+}
+
+impl EmptyFixedSizeArrayImpl<T, +Drop<T>> of ToSpanTrait<[T; 0], T> {
+    #[inline(always)]
+    fn span(self: @[T; 0]) -> Span<T> {
+        array![].span()
     }
 }
 

@@ -1,17 +1,18 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_debug::DebugWithDb;
+use cairo_lang_diagnostics::{get_location_marks, Maybe};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
-use cairo_lang_sierra::program::{self, DeclaredTypeInfo};
+use cairo_lang_sierra::program::{self, DeclaredTypeInfo, StatementIdx};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use itertools::chain;
+use cairo_lang_utils::{try_extract_matches, LookupIntern};
+use itertools::{chain, Itertools};
 
 use crate::db::{sierra_concrete_long_id, SierraGenGroup};
 use crate::extra_sierra_info::type_has_const_size;
@@ -35,7 +36,7 @@ fn generate_libfunc_declarations<'a>(
         .into_iter()
         .map(|libfunc_id| program::LibfuncDeclaration {
             id: libfunc_id.clone(),
-            long_id: db.lookup_intern_concrete_lib_func(libfunc_id.clone()),
+            long_id: libfunc_id.lookup_intern(db),
         })
         .collect()
 }
@@ -129,17 +130,17 @@ fn generate_type_declarations_helper(
     });
 }
 
-/// Collects the set of all [ConcreteTypeId] that are used in the given list of
-/// [program::LibfuncDeclaration].
+/// Collects the set of all [ConcreteTypeId] that are used in the given lists of
+/// [program::LibfuncDeclaration] and user functions.
 fn collect_used_types(
     db: &dyn SierraGenGroup,
     libfunc_declarations: &[program::LibfuncDeclaration],
+    functions: &[Arc<pre_sierra::Function>],
 ) -> OrderedHashSet<ConcreteTypeId> {
-    libfunc_declarations
-        .iter()
-        .flat_map(|libfunc| {
-            // TODO(orizi): replace expect() with a diagnostic (unless this can never happen).
-            let signature = CoreLibfunc::specialize_signature_by_id(
+    // Collect types that appear in libfuncs.
+    let types_in_libfuncs = libfunc_declarations.iter().flat_map(|libfunc| {
+        // TODO(orizi): replace expect() with a diagnostic (unless this can never happen).
+        let signature = CoreLibfunc::specialize_signature_by_id(
                 &SierraSignatureSpecializationContext(db),
                 &libfunc.long_id.generic_id,
                 &libfunc.long_id.generic_args,
@@ -148,16 +149,25 @@ fn collect_used_types(
             // the libfuncs in the [`CoreLibfunc`] structured enum.
             .unwrap_or_else(|err| panic!("Failed to specialize: `{}`. Error: {err}",
                 DebugReplacer { db }.replace_libfunc_id(&libfunc.id)));
-            chain!(
-                signature.param_signatures.into_iter().map(|param_signature| param_signature.ty),
-                signature
-                    .branch_signatures
-                    .into_iter()
-                    .flat_map(|info| info.vars)
-                    .map(|var| var.ty)
-            )
-        })
-        .collect()
+        chain!(
+            signature.param_signatures.into_iter().map(|param_signature| param_signature.ty),
+            signature.branch_signatures.into_iter().flat_map(|info| info.vars).map(|var| var.ty),
+            libfunc.long_id.generic_args.iter().filter_map(|arg| match arg {
+                program::GenericArg::Type(ty) => Some(ty.clone()),
+                _ => None,
+            })
+        )
+    });
+
+    // Collect types that appear in user functions.
+    // This is only relevant for types that are arguments to entry points and are not used in
+    // any libfunc. For example, an empty entry point that gets and returns an empty struct, will
+    // have no libfuncs, but we still need to declare the struct.
+    let types_in_user_functions = functions.iter().flat_map(|func| {
+        chain!(func.parameters.iter().map(|param| param.ty.clone()), func.ret_types.iter().cloned())
+    });
+
+    chain!(types_in_libfuncs, types_in_user_functions).collect()
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -165,6 +175,52 @@ pub struct SierraProgramWithDebug {
     pub program: cairo_lang_sierra::program::Program,
     pub debug_info: SierraProgramDebugInfo,
 }
+/// Implementation for a debug print of a Sierra program with all locations.
+/// The print is a valid textual Sierra program.
+impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn SierraGenGroup) -> std::fmt::Result {
+        let sierra_program = DebugReplacer { db }.apply(&self.program);
+        for declaration in &sierra_program.type_declarations {
+            writeln!(f, "{declaration};")?;
+        }
+        writeln!(f)?;
+        for declaration in &sierra_program.libfunc_declarations {
+            writeln!(f, "{declaration};")?;
+        }
+        writeln!(f)?;
+        let sierra_program = DebugReplacer { db }.apply(&self.program);
+        let mut funcs = sierra_program.funcs.iter().peekable();
+        while let Some(func) = funcs.next() {
+            let start = func.entry_point.0;
+            let end = funcs
+                .peek()
+                .map(|f| f.entry_point.0)
+                .unwrap_or_else(|| sierra_program.statements.len());
+            writeln!(f, "// {}:", func.id)?;
+            for param in &func.params {
+                writeln!(f, "//   {}", param)?;
+            }
+            for i in start..end {
+                writeln!(f, "{}; // {i}", sierra_program.statements[i])?;
+                if let Some(loc) =
+                    &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
+                {
+                    let loc = get_location_marks(
+                        db.upcast(),
+                        &loc.first().unwrap().diagnostic_location(db.upcast()),
+                    );
+                    println!("{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"));
+                }
+            }
+        }
+        writeln!(f)?;
+        for func in &sierra_program.funcs {
+            writeln!(f, "{func};")?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SierraProgramDebugInfo {
     pub statements_locations: StatementsLocations,
@@ -197,7 +253,7 @@ pub fn get_sierra_program_for_functions(
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
     let type_declarations =
-        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations));
+        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations, &functions));
     // Resolve labels.
     let label_replacer = LabelReplacer::from_statements(&statements);
     let (resolved_statements, statements_locations) =
@@ -237,19 +293,32 @@ fn try_get_function_with_body_id(
         try_extract_matches!(&statement.statement, pre_sierra::Statement::Sierra)?,
         program::GenStatement::Invocation
     )?;
-    let libfunc = db.lookup_intern_concrete_lib_func(invc.libfunc_id.clone());
-    if libfunc.generic_id != "function_call".into() {
-        return None;
-    }
-    db.lookup_intern_sierra_function(
-        try_extract_matches!(
+    let libfunc = invc.libfunc_id.lookup_intern(db);
+    let inner_function = if libfunc.generic_id == "function_call".into()
+        || libfunc.generic_id == "coupon_call".into()
+    {
+        libfunc.generic_args.first()?.clone()
+    } else if libfunc.generic_id == "coupon_buy".into()
+        || libfunc.generic_id == "coupon_refund".into()
+    {
+        // TODO(lior): Instead of this code, unused coupons should be replaced with the unit type
+        //   or with a zero-valued coupon. Currently, the code is not optimal (since the coupon
+        //   costs more than it should) and some programs may not compile (if the coupon is
+        //   mentioned as a type but not mentioned in any libfuncs).
+        let coupon_ty = try_extract_matches!(
             libfunc.generic_args.first()?,
-            cairo_lang_sierra::program::GenericArg::UserFunc
-        )?
-        .clone(),
-    )
-    .body(db.upcast())
-    .expect("No diagnostics at this stage.")
+            cairo_lang_sierra::program::GenericArg::Type
+        )?;
+        let coupon_long_id = sierra_concrete_long_id(db, coupon_ty.clone()).unwrap();
+        coupon_long_id.generic_args.first()?.clone()
+    } else {
+        return None;
+    };
+
+    try_extract_matches!(inner_function, cairo_lang_sierra::program::GenericArg::UserFunc)?
+        .lookup_intern(db)
+        .body(db.upcast())
+        .expect("No diagnostics at this stage.")
 }
 
 pub fn get_sierra_program(

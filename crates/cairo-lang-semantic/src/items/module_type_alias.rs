@@ -42,6 +42,17 @@ pub fn module_type_alias_resolved_type(
     db.priv_module_type_alias_semantic_data(module_type_alias_id)?.type_alias_data.resolved_type
 }
 
+/// Trivial cycle handling for [crate::db::SemanticGroup::module_type_alias_resolved_type].
+pub fn module_type_alias_resolved_type_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    module_type_alias_id: &ModuleTypeAliasId,
+) -> Maybe<TypeId> {
+    // Forwarding (not as a query) cycle handling to `priv_module_type_alias_semantic_data` cycle
+    // handler.
+    module_type_alias_resolved_type(db, *module_type_alias_id)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::module_type_alias_generic_params].
 pub fn module_type_alias_generic_params(
     db: &dyn SemanticGroup,
@@ -56,6 +67,17 @@ pub fn module_type_alias_resolver_data(
     module_type_alias_id: ModuleTypeAliasId,
 ) -> Maybe<Arc<ResolverData>> {
     Ok(db.priv_module_type_alias_semantic_data(module_type_alias_id)?.type_alias_data.resolver_data)
+}
+
+/// Trivial cycle handling for [crate::db::SemanticGroup::module_type_alias_resolver_data].
+pub fn module_type_alias_resolver_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    module_type_alias_id: &ModuleTypeAliasId,
+) -> Maybe<Arc<ResolverData>> {
+    // Forwarding (not as a query) cycle handling to `priv_module_type_alias_semantic_data` cycle
+    // handler.
+    module_type_alias_resolver_data(db, *module_type_alias_id)
 }
 
 // --- Computation ---
@@ -76,7 +98,7 @@ pub fn priv_module_type_alias_semantic_data(
         db.priv_module_type_alias_generic_params_data(module_type_alias_id)?;
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(module_type_alias_id));
 
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let type_alias_data = type_alias_semantic_data_helper(
         db,
         &mut diagnostics,
@@ -100,7 +122,7 @@ pub fn priv_module_type_alias_semantic_data_cycle(
         db.priv_module_type_alias_generic_params_data(*module_type_alias_id)?;
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(*module_type_alias_id));
 
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let type_alias_data = type_alias_semantic_data_cycle_helper(
         db,
         &mut diagnostics,

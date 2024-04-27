@@ -6,15 +6,18 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::Terminal;
-use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
+use cairo_lang_utils::{
+    extract_matches, require, try_extract_matches, Intern, LookupIntern, OptionFrom,
+};
 use num_bigint::BigInt;
-use num_traits::{Num, Signed, ToPrimitive};
+use num_traits::{Num, Signed, ToPrimitive, Zero};
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::expr::inference::Inference;
+use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::ImplId;
@@ -22,9 +25,8 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
 };
 use crate::items::us::SemanticUseEx;
-use crate::literals::LiteralLongId;
 use crate::resolve::ResolvedGenericItem;
-use crate::types::ConcreteEnumLongId;
+use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId};
 use crate::{
     semantic, ConcreteEnumId, ConcreteFunction, ConcreteImplLongId, ConcreteTypeId,
     ConcreteVariant, Expr, ExprId, ExprTuple, FunctionId, FunctionLongId, GenericArgumentId,
@@ -60,7 +62,7 @@ pub fn core_submodule(db: &dyn SemanticGroup, submodule_name: &str) -> ModuleId 
 }
 
 pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
-    db.intern_crate(CrateLongId::Real("core".into()))
+    CrateLongId::Real("core".into()).intern(db)
 }
 
 pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -70,13 +72,13 @@ pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
 /// Returns the concrete type of a bounded int type with a given min and max.
 pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeId {
     let internal = core_submodule(db, "internal");
-    let lower_id = db.intern_literal(LiteralLongId { value: min });
-    let upper_id = db.intern_literal(LiteralLongId { value: max });
+    let lower_id = ConstValue::Int(min).intern(db);
+    let upper_id = ConstValue::Int(max).intern(db);
     try_get_ty_by_name(
         db,
         internal,
         "BoundedInt".into(),
-        vec![GenericArgumentId::Literal(lower_id), GenericArgumentId::Literal(upper_id)],
+        vec![GenericArgumentId::Constant(lower_id), GenericArgumentId::Constant(upper_id)],
     )
     .expect("could not find")
 }
@@ -87,6 +89,24 @@ pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
         core_submodule(db, "zeroable"),
         "NonZero".into(),
         vec![GenericArgumentId::Type(inner_type)],
+    )
+}
+
+pub fn core_result_ty(db: &dyn SemanticGroup, ok_type: TypeId, err_type: TypeId) -> TypeId {
+    get_ty_by_name(
+        db,
+        core_submodule(db, "result"),
+        "Result".into(),
+        vec![GenericArgumentId::Type(ok_type), GenericArgumentId::Type(err_type)],
+    )
+}
+
+pub fn core_option_ty(db: &dyn SemanticGroup, some_type: TypeId) -> TypeId {
+    get_ty_by_name(
+        db,
+        core_submodule(db, "option"),
+        "Option".into(),
+        vec![GenericArgumentId::Type(some_type)],
     )
 }
 
@@ -133,11 +153,12 @@ pub fn try_get_ty_by_name(
     }
     .unwrap_or_else(|| panic!("{name} is not a type."));
 
-    Ok(db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
+    Ok(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
         db,
         generic_type,
         generic_args,
-    ))))
+    ))
+    .intern(db))
 }
 
 pub fn get_core_ty_by_name(
@@ -165,11 +186,8 @@ pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
         .expect("Failed to load core lib.")
         .and_then(GenericTypeId::option_from)
         .expect("Type bool was not found in core lib.");
-    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
-        db,
-        generic_type,
-        vec![],
-    )))
+    semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(db, generic_type, vec![]))
+        .intern(db)
 }
 
 // TODO(spapini): Consider making all these queries for better caching.
@@ -182,7 +200,7 @@ pub fn core_bool_enum(db: &dyn SemanticGroup) -> ConcreteEnumId {
         .expect("Failed to load core lib.")
         .and_then(EnumId::option_from)
         .expect("Type bool was not found in core lib.");
-    db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] })
+    ConcreteEnumLongId { enum_id, generic_args: vec![] }.intern(db)
 }
 
 /// Generates a ConcreteVariant instance for `false`.
@@ -278,7 +296,7 @@ pub fn get_enum_concrete_variant(
     variant_name: &str,
 ) -> ConcreteVariant {
     let ty = get_ty_by_name(db, module_id, enum_name.into(), generic_args);
-    let concrete_ty = extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete);
+    let concrete_ty = extract_matches!(ty.lookup_intern(db), TypeLongId::Concrete);
     let concrete_enum_id = extract_matches!(concrete_ty, ConcreteTypeId::Enum);
     let enum_id = concrete_enum_id.enum_id(db);
     let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
@@ -299,7 +317,7 @@ pub fn get_core_enum_concrete_variant(
 
 /// Gets the unit type ().
 pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
-    db.intern_type(semantic::TypeLongId::Tuple(vec![]))
+    semantic::TypeLongId::Tuple(vec![]).intern(db)
 }
 
 /// Gets the never type ().
@@ -311,11 +329,27 @@ pub fn never_ty(db: &dyn SemanticGroup) -> TypeId {
         .expect("Failed to load core lib.")
         .and_then(GenericTypeId::option_from)
         .expect("Type bool was not found in core lib.");
-    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
-        db,
-        generic_type,
-        vec![],
-    )))
+    semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(db, generic_type, vec![]))
+        .intern(db)
+}
+
+pub enum ErrorPropagationType {
+    Option { some_variant: ConcreteVariant, none_variant: ConcreteVariant },
+    Result { ok_variant: ConcreteVariant, err_variant: ConcreteVariant },
+}
+impl ErrorPropagationType {
+    pub fn ok_variant(&self) -> &ConcreteVariant {
+        match self {
+            ErrorPropagationType::Option { some_variant, .. } => some_variant,
+            ErrorPropagationType::Result { ok_variant, .. } => ok_variant,
+        }
+    }
+    pub fn err_variant(&self) -> &ConcreteVariant {
+        match self {
+            ErrorPropagationType::Option { none_variant, .. } => none_variant,
+            ErrorPropagationType::Result { err_variant, .. } => err_variant,
+        }
+    }
 }
 
 /// Attempts to unwrap error propagation types (Option, Result).
@@ -323,22 +357,27 @@ pub fn never_ty(db: &dyn SemanticGroup) -> TypeId {
 pub fn unwrap_error_propagation_type(
     db: &dyn SemanticGroup,
     ty: TypeId,
-) -> Option<(ConcreteVariant, ConcreteVariant)> {
-    match db.lookup_intern_type(ty) {
+) -> Option<ErrorPropagationType> {
+    match ty.lookup_intern(db) {
         // Only enums may be `Result` and `Option` types.
         TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
-            let name = enm.enum_id(db.upcast()).name(db.upcast());
-            if name == "Option" || name == "Result" {
-                if let [ok_variant, err_variant] =
-                    db.concrete_enum_variants(enm).to_option()?.as_slice()
-                {
-                    Some((ok_variant.clone(), err_variant.clone()))
-                } else {
-                    None
+            if let [ok_variant, err_variant] =
+                db.concrete_enum_variants(enm).to_option()?.as_slice()
+            {
+                let name = enm.enum_id(db.upcast()).name(db.upcast());
+                if name == "Option" {
+                    return Some(ErrorPropagationType::Option {
+                        some_variant: ok_variant.clone(),
+                        none_variant: err_variant.clone(),
+                    });
+                } else if name == "Result" {
+                    return Some(ErrorPropagationType::Result {
+                        ok_variant: ok_variant.clone(),
+                        err_variant: err_variant.clone(),
+                    });
                 }
-            } else {
-                None
             }
+            None
         }
         TypeLongId::GenericParameter(_) => todo!(
             "When generic types are supported, if type is of matching type, allow unwrapping it \
@@ -350,7 +389,14 @@ pub fn unwrap_error_propagation_type(
         | TypeLongId::Tuple(_)
         | TypeLongId::Snapshot(_)
         | TypeLongId::Var(_)
-        | TypeLongId::Missing(_) => None,
+        | TypeLongId::Coupon(_)
+        | TypeLongId::ImplType(_)
+        | TypeLongId::Missing(_)
+        | TypeLongId::FixedSizeArray { .. } => None,
+        // TODO(yuval): for trait function default implementation, this may need to change.
+        TypeLongId::TraitType(_) => {
+            panic!("Trait types should only appear in traits, where there are no function bodies.")
+        }
     }
 }
 
@@ -359,7 +405,7 @@ pub fn unwrap_error_propagation_type(
 pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> ExprId {
     ctx.exprs.alloc(Expr::Tuple(ExprTuple {
         items: Vec::new(),
-        ty: ctx.db.intern_type(TypeLongId::Tuple(Vec::new())),
+        ty: TypeLongId::Tuple(Vec::new()).intern(ctx.db),
         stable_ptr,
     }))
 }
@@ -454,9 +500,8 @@ fn get_core_function_impl_method(
         _ => ImplDefId::option_from(module_item_id),
     }
     .unwrap_or_else(|| panic!("{impl_name} is not an impl."));
-    let impl_id = ImplId::Concrete(
-        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] }),
-    );
+    let impl_id =
+        ImplId::Concrete(ConcreteImplLongId { impl_def_id, generic_args: vec![] }.intern(db));
     let concrete_trait_id = db.impl_concrete_trait(impl_id).unwrap();
     let function = db
         .trait_functions(concrete_trait_id.trait_id(db))
@@ -465,20 +510,26 @@ fn get_core_function_impl_method(
         .unwrap_or_else(|| {
             panic!("no {method_name} in {}.", concrete_trait_id.trait_id(db).name(db.upcast()))
         });
-    db.intern_function(FunctionLongId {
+    FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }),
             generic_args: vec![],
         },
-    })
+    }
+    .intern(db)
 }
 
 pub fn core_felt252_is_zero(db: &dyn SemanticGroup) -> FunctionId {
     get_core_function_id(db, "felt252_is_zero".into(), vec![])
 }
 
-pub fn core_withdraw_gas(db: &dyn SemanticGroup) -> FunctionId {
-    get_function_id(db, core_submodule(db, "gas"), "withdraw_gas".into(), vec![])
+/// The gas withdrawal functions from the `gas` submodule.
+pub fn core_withdraw_gas_fns(db: &dyn SemanticGroup) -> [FunctionId; 2] {
+    let gas = core_submodule(db, "gas");
+    [
+        get_function_id(db, gas, "withdraw_gas".into(), vec![]),
+        get_function_id(db, gas, "withdraw_gas_all".into(), vec![]),
+    ]
 }
 
 pub fn internal_require_implicit(db: &dyn SemanticGroup) -> GenericFunctionId {
@@ -513,9 +564,7 @@ pub fn get_function_id(
 ) -> FunctionId {
     let generic_function = get_generic_function_id(db, module, name);
 
-    db.intern_function(FunctionLongId {
-        function: ConcreteFunction { generic_function, generic_args },
-    })
+    FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }.intern(db)
 }
 
 /// Given a core library function name, returns [GenericFunctionId].
@@ -572,6 +621,10 @@ pub fn destruct_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, "Destruct".into())
 }
 
+pub fn numeric_literal_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, "NumericLiteral".into())
+}
+
 /// Given a core library trait name and its generic arguments, returns [ConcreteTraitId].
 fn get_core_concrete_trait(
     db: &dyn SemanticGroup,
@@ -579,7 +632,7 @@ fn get_core_concrete_trait(
     generic_args: Vec<GenericArgumentId>,
 ) -> ConcreteTraitId {
     let trait_id = get_core_trait(db, name);
-    db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args })
+    semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(db)
 }
 
 /// Given a core library trait name, returns [TraitId].
@@ -610,49 +663,17 @@ fn get_core_trait_function_infer(
         .iter()
         .map(|_| GenericArgumentId::Type(inference.new_type_var(Some(stable_ptr))))
         .collect();
-    let concrete_trait_id =
-        db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
+    let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(db);
     let trait_function = db.trait_function_by_name(trait_id, function_name).unwrap().unwrap();
-    db.intern_concrete_trait_function(ConcreteTraitGenericFunctionLongId::new(
-        db,
-        concrete_trait_id,
-        trait_function,
-    ))
+    ConcreteTraitGenericFunctionLongId::new(db, concrete_trait_id, trait_function).intern(db)
 }
 
 pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
     get_core_ty_by_name(db.upcast(), "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
 }
 
-/// Returns the name of the libfunc that creates a constant of type `ty`;
-pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> String {
-    if ty == core_felt252_ty(db) {
-        "felt252_const".into()
-    } else if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
-        "u8_const".into()
-    } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
-        "u16_const".into()
-    } else if ty == get_core_ty_by_name(db, "u32".into(), vec![]) {
-        "u32_const".into()
-    } else if ty == get_core_ty_by_name(db, "u64".into(), vec![]) {
-        "u64_const".into()
-    } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
-        "u128_const".into()
-    } else if ty == get_core_ty_by_name(db, "i8".into(), vec![]) {
-        "i8_const".into()
-    } else if ty == get_core_ty_by_name(db, "i16".into(), vec![]) {
-        "i16_const".into()
-    } else if ty == get_core_ty_by_name(db, "i32".into(), vec![]) {
-        "i32_const".into()
-    } else if ty == get_core_ty_by_name(db, "i64".into(), vec![]) {
-        "i64_const".into()
-    } else if ty == get_core_ty_by_name(db, "i128".into(), vec![]) {
-        "i128_const".into()
-    } else if ty == get_core_ty_by_name(db, "bytes31".into(), vec![]) {
-        "bytes31_const".into()
-    } else {
-        panic!("No const libfunc for type {}.", ty.format(db))
-    }
+pub fn get_usize_ty(db: &dyn SemanticGroup) -> TypeId {
+    get_core_ty_by_name(db, "usize".into(), vec![])
 }
 
 /// Returns [FunctionId] of the libfunc that converts type of `ty` to felt252.
@@ -698,7 +719,7 @@ impl LiteralError {
                 ty.format(db.upcast())
             ),
             Self::InvalidTypeForLiteral(ty) => {
-                format!("A literal of type {} cannot be created.", ty.format(db.upcast()))
+                format!("A numeric literal of type {} cannot be created.", ty.format(db.upcast()))
             }
         }
     }
@@ -711,7 +732,16 @@ pub fn validate_literal(
     ty: TypeId,
     value: BigInt,
 ) -> Result<(), LiteralError> {
-    let is_out_of_range = if ty == core_felt252_ty(db) {
+    if let Some(nz_wrapped_ty) = try_extract_nz_wrapped_type(db, ty) {
+        return if value.is_zero() {
+            Err(LiteralError::OutOfRange(ty))
+        } else {
+            validate_literal(db, nz_wrapped_ty, value)
+        };
+    }
+    let is_out_of_range = if let Some((min, max)) = try_extract_bounded_int_type_ranges(db, ty) {
+        value < min || value > max
+    } else if ty == core_felt252_ty(db) {
         value.abs()
             > BigInt::from_str_radix(
                 "800000000000011000000000000000000000000000000000000000000000000",
@@ -744,4 +774,31 @@ pub fn validate_literal(
         return Err(LiteralError::InvalidTypeForLiteral(ty));
     };
     if is_out_of_range { Err(LiteralError::OutOfRange(ty)) } else { Ok(()) }
+}
+
+/// Returns the type if the inner value of a `NonZero` type, if it is wrapped in one.
+pub fn try_extract_nz_wrapped_type(db: &dyn SemanticGroup, ty: TypeId) -> Option<TypeId> {
+    let concrete_ty = try_extract_matches!(ty.lookup_intern(db), TypeLongId::Concrete)?;
+    let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
+    let ConcreteExternTypeLongId { extern_type_id, generic_args } = extern_ty.lookup_intern(db);
+    let [GenericArgumentId::Type(inner)] = generic_args[..] else { return None };
+    (extern_type_id.name(db.upcast()) == "NonZero").then_some(inner)
+}
+
+/// Returns the ranges of a BoundedInt if it is a BoundedInt type.
+fn try_extract_bounded_int_type_ranges(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+) -> Option<(BigInt, BigInt)> {
+    let concrete_ty = try_extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete)?;
+    let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
+    let ConcreteExternTypeLongId { extern_type_id, generic_args } =
+        db.lookup_intern_concrete_extern_type(extern_ty);
+    require(extern_type_id.name(db.upcast()) == "BoundedInt")?;
+    let [GenericArgumentId::Constant(min), GenericArgumentId::Constant(max)] = generic_args[..]
+    else {
+        return None;
+    };
+    let to_int = |id| try_extract_matches!(db.lookup_intern_const_value(id), ConstValue::Int);
+    Some((to_int(min)?, to_int(max)?))
 }

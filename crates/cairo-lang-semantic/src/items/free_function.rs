@@ -6,9 +6,10 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
+use super::feature_kind::extract_allowed_features;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
@@ -82,7 +83,7 @@ pub fn free_function_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let syntax_db = db.upcast();
     let module_file_id = free_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
     let declaration = free_function_syntax.declaration(syntax_db);
 
@@ -98,10 +99,11 @@ pub fn free_function_generic_params_data(
         module_file_id,
         &declaration.generic_params(syntax_db),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, free_function_syntax.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, free_function_syntax.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
@@ -130,8 +132,7 @@ pub fn priv_free_function_declaration_data(
     free_function_id: FreeFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
     let syntax_db = db.upcast();
-    let module_file_id = free_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
     let declaration = free_function_syntax.declaration(syntax_db);
 
@@ -144,9 +145,15 @@ pub fn priv_free_function_declaration_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
+    resolver.data.allowed_features = extract_allowed_features(
+        db.upcast(),
+        &free_function_id,
+        &free_function_syntax,
+        &mut diagnostics,
+    );
 
-    let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
+    let mut environment = Environment::empty();
 
     let signature_syntax = declaration.signature(syntax_db);
     let signature = semantic::Signature::from_ast(
@@ -167,12 +174,11 @@ pub fn priv_free_function_declaration_data(
     let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(declaration.stable_ptr().untyped()));
-    }
-    let signature = resolver.inference().rewrite(signature).no_err();
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+
+    inference.finalize(&mut diagnostics, declaration.stable_ptr().untyped());
+    let signature = inference.rewrite(signature).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
@@ -215,8 +221,7 @@ pub fn priv_free_function_body_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<FunctionBodyData> {
-    let module_file_id = free_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
     // Compute declaration semantic.
     let declaration = db.priv_free_function_declaration_data(free_function_id)?;

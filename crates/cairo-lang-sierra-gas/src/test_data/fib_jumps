@@ -8,14 +8,14 @@ test_solve_gas
 
 //! > gas_solution
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#4: OrderedHashMap({Const: 1070})
+#4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1070})
 #9: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#22: OrderedHashMap({Const: 470})
+#22: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 470})
 #26: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#28: OrderedHashMap({Const: 1070})
+#28: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1070})
 #29: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #40: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#45: OrderedHashMap({Const: 0})
+#45: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 
 Fibonacci: OrderedHashMap({Const: 1470})

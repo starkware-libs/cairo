@@ -4,9 +4,7 @@
 test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
-fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {
-
-}
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
 
 //! > top_level_kind
 GenericParamList

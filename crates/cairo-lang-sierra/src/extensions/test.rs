@@ -216,7 +216,7 @@ fn find_type_specialization(
             "function_call<&UnregisteredFunction>")]
 #[test_case("function_call", vec![GenericArg::UserFunc("RegisteredFunction".into())]
             => Ok(()); "function_call<&RegisteredFunction>")]
-#[test_case("function_call", vec![] => Err(UnsupportedGenericArg); "function_call")]
+#[test_case("function_call", vec![] => Err(WrongNumberOfGenericArgs); "function_call")]
 #[test_case("array_new", vec![] => Err(WrongNumberOfGenericArgs); "array_new")]
 #[test_case("array_new", vec![type_arg("u128")] => Ok(()); "array_new<u128>")]
 #[test_case("array_append", vec![] => Err(WrongNumberOfGenericArgs); "array_append")]
@@ -242,10 +242,10 @@ fn find_type_specialization(
 #[test_case("u128_const", vec![value_arg(8)] => Ok(()); "u128_const<8>")]
 #[test_case("u128_const", vec![] => Err(UnsupportedGenericArg); "u128_const")]
 #[test_case("storage_base_address_const", vec![value_arg(8)] => Ok(()); "storage_base_address_const<8>")]
-#[test_case("storage_base_address_const", vec![] => Err(UnsupportedGenericArg);
+#[test_case("storage_base_address_const", vec![] => Err(WrongNumberOfGenericArgs);
 "storage_base_address_const")]
 #[test_case("contract_address_const", vec![value_arg(8)] => Ok(()); "contract_address_const<8>")]
-#[test_case("contract_address_const", vec![] => Err(UnsupportedGenericArg);
+#[test_case("contract_address_const", vec![] => Err(WrongNumberOfGenericArgs);
 "contract_address_const")]
 #[test_case("drop", vec![type_arg("u128")] => Ok(()); "drop<u128>")]
 #[test_case("drop", vec![] => Err(WrongNumberOfGenericArgs); "drop<>")]
@@ -326,6 +326,8 @@ Ok(());"enum_init<Option,1>")]
 #[test_case("snapshot_take", vec![type_arg("felt252")] => Ok(()); "snapshot_take<felt252>")]
 #[test_case("snapshot_take", vec![type_arg("SnapshotRangeCheck")] => Ok(());
             "snapshot_take<SnapshotRangeCheck>")]
+#[test_case("coupon_buy", vec![type_arg("felt252")] => Err(UnsupportedGenericArg);
+            "coupon_buy<felt252>")]
 fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,

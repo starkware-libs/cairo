@@ -46,31 +46,26 @@ fn test_span() {
 
 #[test]
 fn test_slice() {
-    let span = array![10, 11, 12].span();
-    assert_eq(@span.slice(0, 3).len(), @3, 'Unexpected span length.');
-    assert_eq(span.slice(0, 3)[0], @10, 'Unexpected Element.');
-    assert_eq(@span.slice(0, 2).len(), @2, 'Unexpected span length.');
-    assert_eq(span.slice(0, 2)[0], @10, 'Unexpected Element.');
-    assert_eq(@span.slice(0, 1).len(), @1, 'Unexpected span length.');
-    assert_eq(span.slice(0, 1)[0], @10, 'Unexpected Element.');
-    assert_eq(@span.slice(0, 0).len(), @0, 'Unexpected span length.');
-    assert_eq(@span.slice(1, 2).len(), @2, 'Unexpected span length.');
-    assert_eq(span.slice(1, 2)[0], @11, 'Unexpected Element.');
-    assert_eq(@span.slice(1, 1).len(), @1, 'Unexpected span length.');
-    assert_eq(span.slice(1, 1)[0], @11, 'Unexpected Element.');
-    assert_eq(@span.slice(1, 0).len(), @0, 'Unexpected span length.');
+    let span = [10, 11, 12].span();
+    assert_eq!(span.slice(0, 3), span);
+    assert_eq!(span.slice(0, 2), [10, 11].span());
+    assert_eq!(span.slice(0, 1), [10].span());
+    assert!(span.slice(0, 0).is_empty());
+    assert_eq!(span.slice(1, 2), [11, 12].span());
+    assert_eq!(span.slice(1, 1), [11].span());
+    assert!(span.slice(1, 0).is_empty());
 }
 
 #[test]
 #[should_panic]
 fn test_slice_out_of_bound_1() {
-    array![10, 11, 12].span().slice(3, 1);
+    [10, 11, 12].span().slice(3, 1);
 }
 
 #[test]
 #[should_panic]
 fn test_slice_out_of_bound_2() {
-    array![10, 11, 12].span().slice(0, 4);
+    [10, 11, 12].span().slice(0, 4);
 }
 
 #[test]
@@ -117,19 +112,9 @@ fn test_append_span() {
     assert_eq(arr[5], @12, 'Unexpected element');
 }
 
-mod felt252_span_from_tuple {
-    pub extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
-}
-
-mod tuple_span_from_tuple {
-    pub extern fn span_from_tuple<T>(
-        struct_like: Box<@T>
-    ) -> @Array<(felt252, felt252, felt252)> nopanic;
-}
-
 #[test]
 fn test_felt252_span_from_tuple() {
-    let span = felt252_span_from_tuple::span_from_tuple(BoxTrait::new(@(10, 20, 30)));
+    let span: Span<felt252> = [10, 20, 30].span();
     assert!(*span[0] == 10);
     assert!(*span[1] == 20);
     assert!(*span[2] == 30);
@@ -137,10 +122,26 @@ fn test_felt252_span_from_tuple() {
 
 #[test]
 fn test_tuple_span_from_tuple() {
-    let multi_tuple = ((10, 20, 30), (40, 50, 60), (70, 80, 90));
-    let span = tuple_span_from_tuple::span_from_tuple(BoxTrait::new(@multi_tuple));
+    let span: Span<(felt252, felt252, felt252)> = [(10, 20, 30), (40, 50, 60), (70, 80, 90)].span();
     assert!(*span[0] == (10, 20, 30));
     assert!(*span[1] == (40, 50, 60));
     assert!(*span[2] == (70, 80, 90));
 }
 
+#[test]
+fn test_fixed_size_array() {
+    let arr = [10, 11, 12];
+    let [x, y, z] = arr;
+    assert_eq!(x, 10);
+    assert_eq!(y, 11);
+    assert_eq!(z, 12);
+}
+
+fn consume<const N: usize>(_arr: [felt252; N]) {}
+
+#[test]
+fn test_fixed_size_array_copy() {
+    let arr = [10, 11, 12];
+    consume(arr);
+    consume(arr);
+}

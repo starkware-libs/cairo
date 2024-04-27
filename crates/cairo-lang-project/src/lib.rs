@@ -19,7 +19,7 @@ pub enum DeserializationError {
     #[error("PathError")]
     PathError,
 }
-const PROJECT_FILE_NAME: &str = "cairo_project.toml";
+pub const PROJECT_FILE_NAME: &str = "cairo_project.toml";
 
 /// Cairo project config, including its file content and metadata about the file.
 /// This file is expected to be at a root of a crate and specify the crate name and location and

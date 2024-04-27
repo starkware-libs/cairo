@@ -1,5 +1,3 @@
-use std::vec;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_filesystem::flag::Flag;
@@ -7,8 +5,9 @@ use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
+use cairo_lang_utils::{try_extract_matches, LookupIntern};
 use itertools::{zip_eq, Itertools};
 use num_traits::ToPrimitive;
 use semantic::corelib::{core_felt252_ty, unit_ty};
@@ -29,7 +28,7 @@ use super::{
     lower_tail_expr, lowered_expr_to_block_scope_end,
 };
 use crate::diagnostic::LoweringDiagnosticKind::*;
-use crate::diagnostic::{MatchDiagnostic, MatchError, MatchKind};
+use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::{LocationId, SemanticFunctionIdEx};
 use crate::lower::context::VarRequest;
 use crate::lower::external::extern_facade_expr;
@@ -409,7 +408,7 @@ fn lower_tuple_match_arm(
         .or(match_tuple_ctx.otherwise_variant.as_ref())
         .ok_or_else(|| {
             LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-                match_tuple_ctx.match_location.get(ctx.db),
+                match_tuple_ctx.match_location.lookup_intern(ctx.db),
                 MatchError(MatchError {
                     kind: match_type,
                     error: MatchDiagnostic::MissingMatchArm(format!(
@@ -674,28 +673,13 @@ pub(crate) fn lower_expr_match(
 
     if ty == ctx.db.core_felt252_ty() {
         let match_input = lowered_expr.as_var_usage(ctx, builder)?;
-        return lower_expr_match_felt252(ctx, expr, match_input, builder);
+        return lower_expr_match_felt252(ctx, expr, match_input, builder, None);
     }
     if let Some(convert_function) =
         corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty)
     {
         let match_input = lowered_expr.as_var_usage(ctx, builder)?;
-        let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
-        let call_result = generators::Call {
-            function: convert_function.lowered(ctx.db),
-            inputs: vec![match_input],
-            extra_ret_tys: vec![],
-            ret_tys: vec![ret_ty],
-            location,
-        }
-        .add(ctx, &mut builder.statements);
-
-        return lower_expr_match_felt252(
-            ctx,
-            expr,
-            call_result.returns.into_iter().next().unwrap(),
-            builder,
-        );
+        return lower_expr_match_felt252(ctx, expr, match_input, builder, Some(convert_function));
     }
 
     let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
@@ -771,7 +755,7 @@ pub(crate) fn lower_concrete_enum_match(
                 .or(otherwise_variant.as_ref())
                 .ok_or_else(|| {
                     LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-                        location.get(ctx.db),
+                        location.lookup_intern(ctx.db),
                         MatchError(MatchError {
                             kind: match_type,
                             error: MatchDiagnostic::MissingMatchArm(format!(
@@ -930,7 +914,7 @@ pub(crate) fn lower_optimized_extern_match(
                 .or(otherwise_variant.as_ref())
                 .ok_or_else(|| {
                     LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-                        location.get(ctx.db),
+                        location.lookup_intern(ctx.db),
                         MatchError(MatchError {
                             kind: match_type,
                             error: MatchDiagnostic::MissingMatchArm(format!(
@@ -1212,6 +1196,7 @@ fn lower_expr_felt252_arm(
         let call_result = generators::Call {
             function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),
             inputs: vec![match_input, lowered_arm_val],
+            coupon_input: None,
             extra_ret_tys: vec![],
             ret_tys: vec![ret_ty],
             location,
@@ -1331,8 +1316,9 @@ fn lower_expr_match_index_enum(
 fn lower_expr_match_felt252(
     ctx: &mut LoweringContext<'_, '_>,
     expr: &semantic::ExprMatch,
-    match_input: VarUsage,
+    mut match_input: VarUsage,
     builder: &mut BlockBuilder,
+    convert_function: Option<semantic::FunctionId>,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a match-felt252 expression.");
     if expr.arms.is_empty() {
@@ -1426,7 +1412,25 @@ fn lower_expr_match_felt252(
         location,
     });
 
-    if max <= numeric_match_optimization_threshold(ctx) {
+    let semantic_db = ctx.db.upcast();
+    let felt252_ty = core_felt252_ty(semantic_db);
+
+    // max +2 is the number of arms in the match.
+    if max + 2 < numeric_match_optimization_threshold(ctx, convert_function.is_some()) {
+        if let Some(convert_function) = convert_function {
+            let call_result = generators::Call {
+                function: convert_function.lowered(ctx.db),
+                inputs: vec![match_input],
+                coupon_input: None,
+                extra_ret_tys: vec![],
+                ret_tys: vec![felt252_ty],
+                location,
+            }
+            .add(ctx, &mut builder.statements);
+
+            match_input = call_result.returns.into_iter().next().unwrap();
+        }
+
         let match_info =
             lower_expr_felt252_arm(ctx, expr, match_input, builder, 0, 0, &mut arms_vec)?;
 
@@ -1441,13 +1445,11 @@ fn lower_expr_match_felt252(
 
         return builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location);
     }
-    let semantic_db = ctx.db.upcast();
 
-    let felt252_ty = core_felt252_ty(semantic_db);
     let bounded_int_ty = corelib::bounded_int_ty(semantic_db, 0.into(), max.into());
 
-    let function_id =
-        corelib::core_downcast(semantic_db, felt252_ty, bounded_int_ty).lowered(ctx.db);
+    let ty = ctx.function_body.exprs[expr.matched_expr].ty();
+    let function_id = corelib::core_downcast(semantic_db, ty, bounded_int_ty).lowered(ctx.db);
 
     let in_range_block_input_var_id = ctx.new_var(VarRequest { ty: bounded_int_ty, location });
 
@@ -1508,14 +1510,20 @@ fn lower_expr_match_felt252(
 
 /// Returns the threshold for the number of arms for optimising numeric match expressions, by using
 /// a jump table instead of an if-else construct.
-fn numeric_match_optimization_threshold(ctx: &mut LoweringContext<'_, '_>) -> usize {
-    // Use [usize::max] as the default value, so that the optimization is not used by default.
-    // TODO(TomerStarkware): Set the default to be optimal on `sierra-minor-update` branch.
+/// `is_small_type` means the matched type has < 2**128 possible values.
+fn numeric_match_optimization_threshold(
+    ctx: &mut LoweringContext<'_, '_>,
+    is_small_type: bool,
+) -> usize {
+    // For felt252 the number of steps with if-else is 2 * min(n, number_of_arms) + 2 and 11~13 for
+    // jump table for small_types the number of steps with if-else is 2 * min(n, number_of_arms) + 4
+    // and 9~12 for jump table.
+    let default_threshold = if is_small_type { 8 } else { 10 };
     ctx.db
         .get_flag(FlagId::new(ctx.db.upcast(), "numeric_match_optimization_min_arms_threshold"))
         .map(|flag| match *flag {
             Flag::NumericMatchOptimizationMinArmsThreshold(threshold) => threshold,
             _ => panic!("Wrong type flag `{flag:?}`."),
         })
-        .unwrap_or(usize::MAX)
+        .unwrap_or(default_threshold)
 }

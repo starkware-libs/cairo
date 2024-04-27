@@ -14,7 +14,7 @@ use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
 use cairo_lang_lowering::fmt::LoweredFormatter;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_lowering::optimizations::strategy::OptimizationStrategyId;
+use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
 use cairo_lang_lowering::FlatLowered;
 use cairo_lang_semantic::items::functions::{
@@ -23,6 +23,7 @@ use cairo_lang_semantic::items::functions::{
 use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{Intern, LookupIntern};
 use clap::Parser;
 use convert_case::Casing;
 use itertools::Itertools;
@@ -38,12 +39,13 @@ fn test_lowering_consistency() {
 
     let db: &dyn LoweringGroup = &db_val;
 
-    format_phases_by_name(
+    let function_id = get_func_id_by_name(
         db,
         &[db.core_crate()],
         "core::poseidon::_poseidon_hash_span_inner".to_string(),
     )
     .unwrap();
+    format!("{:?}", PhasesFormatter { db, function_id });
 }
 
 /// Prints the lowering of a concrete function:
@@ -63,6 +65,10 @@ struct Args {
     #[arg(short, long)]
     single_file: bool,
 
+    /// whenever to print all lowering stages or only the final lowering.
+    #[arg(short, long)]
+    all: bool,
+
     /// The output file name (default: stdout).
     output: Option<String>,
 }
@@ -77,7 +83,6 @@ impl fmt::Debug for PhasesFormatter<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let db = self.db;
         let function_id = self.function_id;
-        let strategy = OptimizationStrategyId::default_strategy(db);
 
         let mut curr_state =
             (*db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap()).clone();
@@ -103,11 +108,14 @@ impl fmt::Debug for PhasesFormatter<'_> {
             *lowered = lower_panics(db, function_id, lowered).unwrap();
         });
         apply_stage("after_add_destructs", &|lowered| add_destructs(db, function_id, lowered));
+        apply_stage("scrub_units", &|lowered| scrub_units(db, lowered));
 
-        for phase in db.lookup_intern_strategy(strategy).0 {
-            let name = format!("{phase:?}").to_case(convert_case::Case::Snake);
-            phase.apply(db, function_id, &mut curr_state).unwrap();
-            add_stage_state(&name, &curr_state);
+        for strategy in [db.baseline_optimization_strategy(), db.final_optimization_strategy()] {
+            for phase in strategy.lookup_intern(db).0 {
+                let name = format!("{phase:?}").to_case(convert_case::Case::Snake);
+                phase.apply(db, function_id, &mut curr_state).unwrap();
+                add_stage_state(&name, &curr_state);
+            }
         }
 
         Ok(())
@@ -139,10 +147,11 @@ fn get_all_funcs(
                     res.insert(
                         impl_func.full_path(db.upcast()),
                         GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
-                            concrete_impl_id: db.intern_concrete_impl(ConcreteImplLongId {
+                            concrete_impl_id: ConcreteImplLongId {
                                 impl_def_id: *impl_def_id,
                                 generic_args: vec![],
-                            }),
+                            }
+                            .intern(db),
                             function: *impl_func,
                         }),
                     );
@@ -167,23 +176,8 @@ fn get_func_id_by_name(
 
     Ok(ConcreteFunctionWithBodyId::from_semantic(
         db,
-        db.intern_concrete_function_with_body(ConcreteFunctionWithBody {
-            generic_function: *func_id,
-            generic_args: vec![],
-        }),
+        ConcreteFunctionWithBody { generic_function: *func_id, generic_args: vec![] }.intern(db),
     ))
-}
-
-/// Given a function name and list of crates, returns a string representing the lowering phases of
-/// the function.
-fn format_phases_by_name(
-    db: &dyn LoweringGroup,
-    crate_ids: &[CrateId],
-    function_path: String,
-) -> anyhow::Result<String> {
-    let function_id = get_func_id_by_name(db, crate_ids, function_path)?;
-
-    Ok(format!("{:?}", PhasesFormatter { db, function_id }))
 }
 
 fn main() -> anyhow::Result<()> {
@@ -201,7 +195,16 @@ fn main() -> anyhow::Result<()> {
     let db = &db_val;
 
     let res = if let Some(function_path) = args.function_path {
-        format_phases_by_name(db, &main_crate_ids, function_path)?
+        let function_id = get_func_id_by_name(db, &main_crate_ids, function_path)?;
+
+        match args.all {
+            true => format!("{:?}", PhasesFormatter { db, function_id }),
+            false => {
+                let lowered = db.final_concrete_function_with_body_lowered(function_id).unwrap();
+                let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
+                format!("{:?}", lowered.debug(&lowered_formatter))
+            }
+        }
     } else {
         get_all_funcs(db, &main_crate_ids)?.keys().join("\n")
     };

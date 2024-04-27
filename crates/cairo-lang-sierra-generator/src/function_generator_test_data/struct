@@ -5,8 +5,8 @@ test_function_generator
 
 //! > function
 fn foo(a: Box::<u256>) -> u128 {
-  let val: u256 = a.unbox();
-  val.high
+    let val: u256 = a.unbox();
+    val.high
 }
 
 //! > function_name

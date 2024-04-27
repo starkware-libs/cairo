@@ -23,6 +23,7 @@ pub enum Pattern {
     Variable(PatternVariable),
     Struct(PatternStruct),
     Tuple(PatternTuple),
+    FixedSizeArray(PatternFixedSizeArray),
     EnumVariant(PatternEnumVariant),
     Otherwise(PatternOtherwise),
     Missing(PatternMissing),
@@ -35,6 +36,7 @@ impl Pattern {
             Pattern::Variable(variable) => variable.var.ty,
             Pattern::Struct(pattern_struct) => pattern_struct.ty,
             Pattern::Tuple(pattern_tuple) => pattern_tuple.ty,
+            Pattern::FixedSizeArray(pattern_fixed_size_array) => pattern_fixed_size_array.ty,
             Pattern::EnumVariant(pattern_enum_variant) => pattern_enum_variant.ty,
             Pattern::Otherwise(pattern_otherwise) => pattern_otherwise.ty,
             Pattern::Missing(pattern_missing) => pattern_missing.ty,
@@ -51,6 +53,11 @@ impl Pattern {
                 .collect(),
             Pattern::Tuple(pattern_tuple) => pattern_tuple
                 .field_patterns
+                .iter()
+                .flat_map(|pattern| arena[*pattern].variables(arena))
+                .collect(),
+            Pattern::FixedSizeArray(pattern_fixed_size_array) => pattern_fixed_size_array
+                .elements_patterns
                 .iter()
                 .flat_map(|pattern| arena[*pattern].variables(arena))
                 .collect(),
@@ -74,6 +81,7 @@ impl Pattern {
             Pattern::Variable(pattern) => pattern.stable_ptr,
             Pattern::Struct(pattern) => pattern.stable_ptr.into(),
             Pattern::Tuple(pattern) => pattern.stable_ptr.into(),
+            Pattern::FixedSizeArray(pattern) => pattern.stable_ptr.into(),
             Pattern::EnumVariant(pattern) => pattern.stable_ptr,
             Pattern::Otherwise(pattern) => pattern.stable_ptr.into(),
             Pattern::Missing(pattern) => pattern.stable_ptr,
@@ -138,6 +146,17 @@ pub struct PatternTuple {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::PatternTuplePtr,
+}
+
+/// A pattern that destructures a fixed size array into its elements.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct PatternFixedSizeArray {
+    pub elements_patterns: Vec<PatternId>,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::PatternFixedSizeArrayPtr,
 }
 
 /// A pattern that destructures a specific variant of an enum to its inner value.

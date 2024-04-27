@@ -67,6 +67,17 @@ mod ownable_balance {
         use super::OwnableBalanceImpl;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of
+            starknet::storage::StorageAsPointer<ContractMemberState, u128> {
+            fn as_ptr(self: @ContractMemberState) ->
+                starknet::storage::StoragePointer<u128> {
+                starknet::storage::StoragePointer{
+                    address: InternalContractMemberStateImpl::address(self)
+                }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
@@ -78,24 +89,13 @@ mod ownable_balance {
                 starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
             fn read(self: @ContractMemberState) -> u128 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<u128>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
+                starknet::storage::StoragePointerAccess::read(
+                    InternalPointerAccessContractMemberStateImpl::as_ptr(self)
                 )
             }
             fn write(ref self: ContractMemberState, value: u128) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<u128>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
+                starknet::storage::StoragePointerAccess::write(
+                    InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
                 )
             }
         }
@@ -104,7 +104,7 @@ impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 
 impl ContractStateTransfer of
@@ -325,6 +325,17 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         use super::OwnableBalanceImpl;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
+
+        impl InternalPointerAccessContractMemberStateImpl of
+            starknet::storage::StorageAsPointer<ContractMemberState, u128> {
+            fn as_ptr(self: @ContractMemberState) ->
+                starknet::storage::StoragePointer<u128> {
+                starknet::storage::StoragePointer{
+                    address: InternalContractMemberStateImpl::address(self)
+                }
+            }
+        }
+
         pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
@@ -336,24 +347,13 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
                 starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
             fn read(self: @ContractMemberState) -> u128 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<u128>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
+                starknet::storage::StoragePointerAccess::read(
+                    InternalPointerAccessContractMemberStateImpl::as_ptr(self)
                 )
             }
             fn write(ref self: ContractMemberState, value: u128) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<u128>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
+                starknet::storage::StoragePointerAccess::write(
+                    InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
                 )
             }
         }
@@ -362,7 +362,7 @@ impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 
 impl ContractStateTransfer of

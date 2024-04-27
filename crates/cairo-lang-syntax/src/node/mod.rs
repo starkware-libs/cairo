@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_utils::{require, Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
@@ -49,7 +50,7 @@ impl SyntaxNode {
             green,
             offset: TextOffset::default(),
             parent: None,
-            stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::Root(file_id, green)),
+            stable_ptr: SyntaxStablePtr::Root(file_id, green).intern(db),
         };
         Self(Arc::new(inner))
     }
@@ -76,7 +77,7 @@ impl SyntaxNode {
         }
     }
     pub fn green_node(&self, db: &dyn SyntaxGroup) -> Arc<GreenNode> {
-        db.lookup_intern_green(self.0.green)
+        self.0.green.lookup_intern(db)
     }
     pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
         let start = self.span_start_without_trivia(db);
@@ -86,6 +87,14 @@ impl SyntaxNode {
     pub fn parent(&self) -> Option<SyntaxNode> {
         self.0.parent.as_ref().cloned()
     }
+    /// Returns the position of a syntax node in its parent's children, or None if the node has no
+    /// parent.
+    pub fn position_in_parent(&self, db: &dyn SyntaxGroup) -> Option<usize> {
+        let parent_green = self.parent()?.green_node(db);
+        let parent_children = parent_green.children();
+        let self_green_id = self.0.green;
+        parent_children.iter().position(|child| child == &self_green_id)
+    }
     pub fn stable_ptr(&self) -> SyntaxStablePtrId {
         self.0.stable_ptr
     }
@@ -94,9 +103,7 @@ impl SyntaxNode {
     /// returns None.
     pub fn get_terminal_token(&self, db: &dyn SyntaxGroup) -> Option<SyntaxNode> {
         let green_node = self.green_node(db);
-        if !green_node.kind.is_terminal() {
-            return None;
-        }
+        require(green_node.kind.is_terminal())?;
         // At this point we know we should have a second child which is the token.
         let token_node = db.get_children(self.clone())[1].clone();
         Some(token_node)
@@ -211,7 +218,7 @@ impl SyntaxNode {
 pub trait TypedSyntaxNode {
     /// The relevant SyntaxKind. None for enums.
     const OPTIONAL_KIND: Option<SyntaxKind>;
-    type StablePtr;
+    type StablePtr: TypedStablePtr;
     type Green;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green;
     // TODO(spapini): Make this return an Option, if the kind is wrong.
@@ -236,6 +243,15 @@ pub trait Terminal: TypedSyntaxNode {
     ) -> <Self as TypedSyntaxNode>::Green;
     /// Returns the text of the token of this terminal (excluding the trivia).
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
+}
+
+/// Trait for stable pointers to syntax nodes.
+pub trait TypedStablePtr {
+    type SyntaxNode: TypedSyntaxNode;
+    /// Returns the syntax node pointed to by this stable pointer.
+    fn lookup(&self, db: &dyn SyntaxGroup) -> Self::SyntaxNode;
+    /// Returns the untyped stable pointer.
+    fn untyped(&self) -> SyntaxStablePtrId;
 }
 
 /// Wrapper for formatting the text of syntax nodes.

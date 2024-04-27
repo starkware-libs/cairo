@@ -6,6 +6,7 @@ use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::{require, LookupIntern};
 use smol_str::SmolStr;
 
 #[cfg(test)]
@@ -290,9 +291,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         sierra_statement_weights_iter: std::vec::IntoIter<(&StatementIdx, &usize)>,
         params: &ProfilingInfoProcessorParams,
     ) -> Option<OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)>> {
-        if !params.process_by_statement {
-            return None;
-        }
+        require(params.process_by_statement)?;
 
         Some(
             sierra_statement_weights_iter
@@ -432,9 +431,8 @@ impl<'a> ProfilingInfoProcessor<'a> {
             user_functions
                 .aggregate_by(
                     |idx| {
-                        let lowering_function_id = db.lookup_intern_sierra_function(
-                            self.sierra_program.funcs[*idx].id.clone(),
-                        );
+                        let lowering_function_id =
+                            self.sierra_program.funcs[*idx].id.clone().lookup_intern(db);
                         lowering_function_id.semantic_full_path(db.upcast())
                     },
                     |x, y| x + y,
@@ -472,9 +470,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         sierra_statement_weights: std::vec::IntoIter<(&StatementIdx, &usize)>,
         params: &ProfilingInfoProcessorParams,
     ) -> Option<OrderedHashMap<String, usize>> {
-        if !params.process_by_cairo_function {
-            return None;
-        }
+        require(params.process_by_cairo_function)?;
 
         let mut cairo_functions = UnorderedHashMap::<_, _>::default();
         for (statement_idx, weight) in sierra_statement_weights {
@@ -518,11 +514,10 @@ fn is_cairo_trace(
     sierra_program: &Program,
     sierra_trace: &[usize],
 ) -> bool {
-    let lowering_db = db.upcast();
     sierra_trace.iter().all(|sierra_function_idx| {
         let sierra_function = &sierra_program.funcs[*sierra_function_idx];
-        let lowering_function_id = db.lookup_intern_sierra_function(sierra_function.id.clone());
-        matches!(lowering_function_id.lookup(lowering_db), FunctionLongId::Semantic(_))
+        let lowering_function_id = sierra_function.id.lookup_intern(db);
+        matches!(lowering_function_id.lookup_intern(db), FunctionLongId::Semantic(_))
     })
 }
 

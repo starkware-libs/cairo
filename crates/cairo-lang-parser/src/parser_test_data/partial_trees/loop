@@ -7,7 +7,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 fn f() {
     let x = loop {
         break 5;
-};
+    };
 }
 
 //! > top_level_kind

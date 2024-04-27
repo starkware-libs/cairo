@@ -14,14 +14,12 @@ impl SomeImpl<T> of SomeTrait<T> {
     fn by_snap(self: @T) -> T {
         self
     }
-    fn by_ref(ref a: T) {
-    }
+    fn by_ref(ref a: T) {}
     fn with_mut(mut a: usize) {
         a += 1;
     }
     // With other doc.
-    fn multi_val(ref a: T, b: T, c: @T) {
-    }
+    fn multi_val(ref a: T, b: T, c: @T) {}
     fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>) -> Box<(T, V)> {
         box::into_box((box::unbox(b), box::unbox(c)))
     }
@@ -44,14 +42,12 @@ impl SomeImpl<T> of SomeTrait<T> {
     fn by_snap(self: @T) -> T {
         self
     }
-    fn by_ref(ref a: T) {
-    }
+    fn by_ref(ref a: T) {}
     fn with_mut(mut a: usize) {
         a += 1;
     }
     // With other doc.
-    fn multi_val(ref a: T, b: T, c: @T) {
-    }
+    fn multi_val(ref a: T, b: T, c: @T) {}
     fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>) -> Box<(T, V)> {
         box::into_box((box::unbox(b), box::unbox(c)))
     }
@@ -137,44 +133,36 @@ test_expand_plugin(expect_diagnostics: true)
 
 //! > cairo_code
 #[generate_trait]
-impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
-}
+impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {}
 
 #[generate_trait]
-impl ImplNotMatchingGenerics<T> of TraitNotMatchingGenerics<S> {
-}
+impl ImplNotMatchingGenerics<T> of TraitNotMatchingGenerics<S> {}
 
 #[generate_trait]
-impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {
-}
+impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {}
 
 //! > expected_diagnostics
 error: Generated trait must have a single element path.
  --> test_src/lib.cairo:2:29
-impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
+impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {}
                             ^**********************^
 
 error: Generated trait must have generic args matching the impl's generic params.
- --> test_src/lib.cairo:6:36
-impl ImplNotMatchingGenerics<T> of TraitNotMatchingGenerics<S> {
+ --> test_src/lib.cairo:5:36
+impl ImplNotMatchingGenerics<T> of TraitNotMatchingGenerics<S> {}
                                    ^*************************^
 
 //! > expanded_cairo_code
 #[generate_trait]
-impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
-}
+impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {}
 
 #[generate_trait]
-impl ImplNotMatchingGenerics<T> of TraitNotMatchingGenerics<S> {
-}
+impl ImplNotMatchingGenerics<T> of TraitNotMatchingGenerics<S> {}
 
 #[generate_trait]
-impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {
-}
-trait TraitNotMatchingGenerics<T> {
-}
-trait OtherTrait<T> {
-}
+impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {}
+trait TraitNotMatchingGenerics<T> {}
+trait OtherTrait<T> {}
 
 //! > ==========================================================================
 

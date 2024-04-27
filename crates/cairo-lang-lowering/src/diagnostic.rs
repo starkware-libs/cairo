@@ -1,9 +1,7 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, Diagnostics,
-    DiagnosticsBuilder,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, DiagnosticsBuilder,
 };
-use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::LiteralError;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -12,30 +10,28 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 
 use crate::Location;
 
-pub struct LoweringDiagnostics {
-    pub diagnostics: DiagnosticsBuilder<LoweringDiagnostic>,
-    pub file_id: FileId,
-}
-impl LoweringDiagnostics {
-    pub fn new(file_id: FileId) -> Self {
-        Self { file_id, diagnostics: DiagnosticsBuilder::default() }
-    }
-    pub fn build(self) -> Diagnostics<LoweringDiagnostic> {
-        self.diagnostics.build()
-    }
-    pub fn report(
+pub type LoweringDiagnostics = DiagnosticsBuilder<LoweringDiagnostic>;
+pub trait LoweringDiagnosticsBuilder {
+    fn report(
         &mut self,
         stable_ptr: SyntaxStablePtrId,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
         self.report_by_location(Location::new(StableLocation::new(stable_ptr)), kind)
     }
-    pub fn report_by_location(
+    fn report_by_location(
+        &mut self,
+        location: Location,
+        kind: LoweringDiagnosticKind,
+    ) -> DiagnosticAdded;
+}
+impl LoweringDiagnosticsBuilder for LoweringDiagnostics {
+    fn report_by_location(
         &mut self,
         location: Location,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(LoweringDiagnostic { location, kind })
+        self.add(LoweringDiagnostic { location, kind })
     }
 }
 
@@ -80,6 +76,14 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "Inner patterns are not in this context.".into()
             }
             LoweringDiagnosticKind::Unsupported => "Unsupported feature.".into(),
+            LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => {
+                "Fixed size array inner type must implement the `Copy` trait when the array size \
+                 is greater than 1."
+                    .into()
+            },
+            LoweringDiagnosticKind::EmptyRepeatedElementFixedSizeArray => {
+                "Fixed size array repeated element size must be greater than 0.".into()
+            },
         }
     }
 
@@ -199,6 +203,8 @@ pub enum LoweringDiagnosticKind {
     MemberPathLoop,
     NoPanicFunctionCycle,
     LiteralError(LiteralError),
+    FixedSizeArrayNonCopyableType,
+    EmptyRepeatedElementFixedSizeArray,
     UnsupportedPattern,
     Unsupported,
 }

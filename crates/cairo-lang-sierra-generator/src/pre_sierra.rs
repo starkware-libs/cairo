@@ -6,7 +6,7 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program;
-use cairo_lang_utils::{define_short_id, write_comma_separated};
+use cairo_lang_utils::{define_short_id, write_comma_separated, LookupIntern};
 
 use crate::db::SierraGenGroup;
 
@@ -19,7 +19,7 @@ pub struct LabelLongId {
     // A unique identifier inside the function
     pub id: usize,
 }
-define_short_id!(LabelId, LabelLongId, SierraGenGroup, lookup_intern_label_id);
+define_short_id!(LabelId, LabelLongId, SierraGenGroup, lookup_intern_label_id, intern_label_id);
 
 pub struct LabelIdWithDb<'db> {
     db: &'db dyn SierraGenGroup,
@@ -27,7 +27,7 @@ pub struct LabelIdWithDb<'db> {
 }
 impl<'db> std::fmt::Display for LabelIdWithDb<'db> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let LabelLongId { parent, id } = self.db.lookup_intern_label_id(self.label_id);
+        let LabelLongId { parent, id } = self.label_id.lookup_intern(self.db);
         let parent = parent.function_id(self.db.upcast()).unwrap();
         let dbg = format!("{:?}", parent.debug(self.db));
         write!(f, "label_{}::{}", dbg, id)
@@ -71,7 +71,7 @@ pub enum Statement {
 }
 impl Statement {
     pub fn into_statement_without_location(self) -> StatementWithLocation {
-        StatementWithLocation { statement: self, location: None }
+        StatementWithLocation { statement: self, location: vec![] }
     }
     pub fn to_string(&self, db: &dyn SierraGenGroup) -> String {
         StatementWithDb { db, statement: self.clone() }.to_string()
@@ -82,11 +82,11 @@ impl Statement {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StatementWithLocation {
     pub statement: Statement,
-    pub location: Option<StableLocation>,
+    pub location: Vec<StableLocation>,
 }
 
 impl StatementWithLocation {
-    pub fn set_location(&mut self, location: Option<StableLocation>) {
+    pub fn set_location(&mut self, location: Vec<StableLocation>) {
         self.location = location;
     }
 }

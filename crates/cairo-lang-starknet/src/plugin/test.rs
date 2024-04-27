@@ -10,6 +10,7 @@ use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::Intern;
 
 use crate::test_utils::{SHARED_DB, SHARED_DB_WITH_CONTRACTS};
 
@@ -74,6 +75,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         embedded_impl: "embedded_impl",
         raw_output: "raw_output",
         storage: "storage",
+        new_storage_interface: "new_storage_interface",
         dispatcher: "dispatcher",
         user_defined_types: "user_defined_types",
         l1_handler: "l1_handler",
@@ -111,7 +113,7 @@ impl TestFileRunner for ExpandContractFromCrateTestRunner {
     ) -> TestRunnerResult {
         let db = SHARED_DB_WITH_CONTRACTS.lock().unwrap().snapshot();
         let contract_file_id =
-            db.intern_file(FileLongId::OnDisk(PathBuf::from(inputs["contract_file_name"].clone())));
+            FileLongId::OnDisk(PathBuf::from(inputs["contract_file_name"].clone())).intern(&db);
         let contract_module_ids = db.file_modules(contract_file_id).unwrap();
         let mut diagnostic_items = vec![];
         let result = contract_module_ids

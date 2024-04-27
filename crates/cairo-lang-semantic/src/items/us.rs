@@ -10,7 +10,7 @@ use cairo_lang_utils::Upcast;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
 use crate::resolve::{ResolvedGenericItem, Resolver, ResolverData};
 use crate::SemanticDiagnostic;
@@ -26,7 +26,7 @@ pub struct UseData {
 /// Query implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<UseData> {
     let module_file_id = use_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): Add generic args when they are supported on structs.
     let inference_id =
         InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
@@ -100,7 +100,7 @@ pub fn priv_use_semantic_data_cycle(
     use_id: &UseId,
 ) -> Maybe<UseData> {
     let module_file_id = use_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let use_ast = db.module_use_by_id(*use_id)?.to_maybe()?;
     let err = Err(diagnostics.report(
         &use_ast,
@@ -131,6 +131,16 @@ pub fn use_semantic_diagnostics(
 /// Query implementation of [crate::db::SemanticGroup::use_resolver_data].
 pub fn use_resolver_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Arc<ResolverData>> {
     Ok(db.priv_use_semantic_data(use_id)?.resolver_data)
+}
+
+/// Trivial cycle handler for [crate::db::SemanticGroup::use_resolver_data].
+pub fn use_resolver_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    use_id: &UseId,
+) -> Maybe<Arc<ResolverData>> {
+    // Forwarding (not as a query) cycle handling to `priv_use_semantic_data` cycle handler.
+    use_resolver_data(db, *use_id)
 }
 
 pub trait SemanticUseEx<'a>: Upcast<dyn SemanticGroup + 'a> {

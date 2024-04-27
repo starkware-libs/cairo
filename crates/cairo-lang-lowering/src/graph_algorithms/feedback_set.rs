@@ -7,13 +7,14 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use super::concrete_function_node::ConcreteFunctionWithBodyNode;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::ConcreteFunctionWithBodyId;
+use crate::DependencyType;
 
 /// Query implementation of [crate::db::LoweringGroup::function_with_body_feedback_set].
 pub fn function_with_body_feedback_set(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId>> {
-    let r = db.concrete_function_with_body_scc_representative(function);
+    let r = db.concrete_function_with_body_scc_representative(function, DependencyType::Cost);
     db.priv_function_with_body_feedback_set_of_representative(r)
 }
 
@@ -39,5 +40,12 @@ pub fn priv_function_with_body_feedback_set_of_representative(
     db: &dyn LoweringGroup,
     function: ConcreteSCCRepresentative,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId>> {
-    Ok(calc_feedback_set(&ConcreteFunctionWithBodyNode { function_id: function.0, db }.into()))
+    Ok(calc_feedback_set(
+        &ConcreteFunctionWithBodyNode {
+            function_id: function.0,
+            db,
+            dependency_type: DependencyType::Cost,
+        }
+        .into(),
+    ))
 }

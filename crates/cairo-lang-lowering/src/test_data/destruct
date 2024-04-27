@@ -4,8 +4,8 @@
 test_function_lowering
 
 //! > function
-fn foo(flag: bool) -> Option<A>{
-    let a = A{};
+fn foo(flag: bool) -> Option<A> {
+    let a = A {};
     if flag {
         Option::Some(a)
     } else {
@@ -19,15 +19,16 @@ foo
 //! > module_code
 use integer::u128_overflowing_add;
 struct A {}
-impl ADestruct of Destruct::<A> {
-  #[inline(never)]
-  fn destruct(self: A) nopanic {
-    // Use RangeCheck, a previously unused implicit.
-    match u128_overflowing_add(1_u128, 2_u128) {
-      Result::Ok(v) => v,
-      Result::Err(v) => v,
-    };
-  }
+impl ADestruct of Destruct<A> {
+    #[inline(never)]
+    fn destruct(self: A) nopanic {
+        let A { } = self;
+        // Use RangeCheck, a previously unused implicit.
+        match u128_overflowing_add(1_u128, 2_u128) {
+            Result::Ok(v) => v,
+            Result::Err(v) => v,
+        };
+    }
 }
 
 //! > semantic_diagnostics
@@ -35,29 +36,30 @@ impl ADestruct of Destruct::<A> {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v10: core::RangeCheck, v0: core::bool
+Parameters: v0: core::RangeCheck, v1: core::bool
 blk0 (root):
 Statements:
-  (v1: test::A) <- struct_construct()
 End:
-  Match(match_enum(v0) {
-    bool::False(v4) => blk1,
-    bool::True(v2) => blk2,
+  Match(match_enum(v1) {
+    bool::False(v2) => blk1,
+    bool::True(v3) => blk2,
   })
 
 blk1:
 Statements:
-  (v11: core::RangeCheck, v9: ()) <- test::ADestruct::destruct(v10, v1)
-  (v5: ()) <- struct_construct()
-  (v6: core::option::Option::<test::A>) <- Option::None(v5)
+  (v4: test::A) <- struct_construct()
+  (v5: core::RangeCheck) <- test::ADestruct::destruct(v0, v4)
+  (v6: ()) <- struct_construct()
+  (v7: core::option::Option::<test::A>) <- Option::None(v6)
 End:
-  Return(v11, v6)
+  Return(v5, v7)
 
 blk2:
 Statements:
-  (v3: core::option::Option::<test::A>) <- Option::Some(v1)
+  (v8: test::A) <- struct_construct()
+  (v9: core::option::Option::<test::A>) <- Option::Some(v8)
 End:
-  Return(v10, v3)
+  Return(v0, v9)
 
 //! > ==========================================================================
 
@@ -67,28 +69,29 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(d: Felt252Dict<felt252>){
-  get_total_signed_weight(d);
+fn foo(d: Felt252Dict<felt252>) {
+    get_total_signed_weight(d);
 }
 
 //! > function_name
 foo
 
 //! > module_code
-fn get_total_signed_weight(used_keys: Felt252Dict<felt252>) -> u128 { 1_u128 }
+fn get_total_signed_weight(used_keys: Felt252Dict<felt252>) -> u128 {
+    1_u128
+}
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v7: core::RangeCheck, v8: core::SegmentArena, v9: core::gas::GasBuiltin, v0: core::dict::Felt252Dict::<core::felt252>
+Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: core::dict::Felt252Dict::<core::felt252>
 blk0 (root):
 Statements:
-  (v10: core::RangeCheck, v11: core::SegmentArena, v12: core::gas::GasBuiltin, v5: core::dict::SquashedFelt252Dict::<core::felt252>) <- core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash(v7, v8, v9, v0)
-  (v2: ()) <- struct_construct()
+  (v4: core::RangeCheck, v5: core::SegmentArena, v6: core::gas::GasBuiltin, v7: core::dict::SquashedFelt252Dict::<core::felt252>) <- core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash(v0, v1, v2, v3)
 End:
-  Return(v10, v11, v12, v2)
+  Return(v4, v5, v6)
 
 //! > ==========================================================================
 
@@ -98,10 +101,10 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: A, b: B){
-  may_panic();
-  may_panic();
-  panic_with_felt252('123');
+fn foo(a: A, b: B) {
+    may_panic();
+    may_panic();
+    panic_with_felt252('123');
 }
 
 //! > function_name
@@ -110,23 +113,23 @@ foo
 //! > module_code
 #[inline(never)]
 fn may_panic() {
-  panic_with_felt252('123');
+    panic_with_felt252('123');
 }
 
 struct A {}
 impl APanicDestruct of PanicDestruct<A> {
-  #[inline(never)]
-  fn panic_destruct(self: A, ref panic: Panic) nopanic {
-    let A {} = self;
-  }
+    #[inline(never)]
+    fn panic_destruct(self: A, ref panic: Panic) nopanic {
+        let A { } = self;
+    }
 }
 
 struct B {}
 impl BPanicDestruct of PanicDestruct<B> {
-  #[inline(never)]
-  fn panic_destruct(self: B, ref panic: Panic) nopanic {
-    let B {} = self;
-  }
+    #[inline(never)]
+    fn panic_destruct(self: B, ref panic: Panic) nopanic {
+        let B { } = self;
+    }
 }
 
 //! > semantic_diagnostics
@@ -137,54 +140,54 @@ impl BPanicDestruct of PanicDestruct<B> {
 Parameters: v0: test::A, v1: test::B
 blk0 (root):
 Statements:
-  (v6: core::panics::PanicResult::<((),)>) <- test::may_panic()
+  (v2: core::panics::PanicResult::<((),)>) <- test::may_panic()
 End:
-  Match(match_enum(v6) {
-    PanicResult::Ok(v7) => blk1,
-    PanicResult::Err(v42) => blk4,
+  Match(match_enum(v2) {
+    PanicResult::Ok(v3) => blk1,
+    PanicResult::Err(v4) => blk4,
   })
 
 blk1:
 Statements:
-  (v10: core::panics::PanicResult::<((),)>) <- test::may_panic()
+  (v5: core::panics::PanicResult::<((),)>) <- test::may_panic()
 End:
-  Match(match_enum(v10) {
-    PanicResult::Ok(v11) => blk2,
-    PanicResult::Err(v34) => blk3,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk2,
+    PanicResult::Err(v7) => blk3,
   })
 
 blk2:
 Statements:
-  (v51: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v4: core::felt252) <- 3224115u
-  (v52: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v51, v4)
-  (v54: core::panics::Panic) <- struct_construct()
-  (v23: core::panics::Panic, v22: ()) <- test::BPanicDestruct::panic_destruct(v54, v1)
-  (v27: core::panics::Panic, v24: ()) <- test::APanicDestruct::panic_destruct(v23, v0)
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v27, v52)
-  (v20: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v18)
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v9: core::felt252) <- 3224115
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v9)
+  (v11: core::panics::Panic) <- struct_construct()
+  (v12: core::panics::Panic) <- test::BPanicDestruct::panic_destruct(v11, v1)
+  (v13: core::panics::Panic) <- test::APanicDestruct::panic_destruct(v12, v0)
+  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v10)
+  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v14)
 End:
-  Return(v20)
+  Return(v15)
 
 blk3:
 Statements:
-  (v29: core::panics::Panic, v36: core::array::Array::<core::felt252>) <- struct_destructure(v34)
-  (v31: core::panics::Panic, v30: ()) <- test::BPanicDestruct::panic_destruct(v29, v1)
-  (v35: core::panics::Panic, v32: ()) <- test::APanicDestruct::panic_destruct(v31, v0)
-  (v13: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v35, v36)
-  (v19: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v13)
+  (v16: core::panics::Panic, v17: core::array::Array::<core::felt252>) <- struct_destructure(v7)
+  (v18: core::panics::Panic) <- test::BPanicDestruct::panic_destruct(v16, v1)
+  (v19: core::panics::Panic) <- test::APanicDestruct::panic_destruct(v18, v0)
+  (v20: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v19, v17)
+  (v21: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
 End:
-  Return(v19)
+  Return(v21)
 
 blk4:
 Statements:
-  (v37: core::panics::Panic, v44: core::array::Array::<core::felt252>) <- struct_destructure(v42)
-  (v39: core::panics::Panic, v38: ()) <- test::BPanicDestruct::panic_destruct(v37, v1)
-  (v43: core::panics::Panic, v40: ()) <- test::APanicDestruct::panic_destruct(v39, v0)
-  (v9: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v43, v44)
-  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v9)
+  (v22: core::panics::Panic, v23: core::array::Array::<core::felt252>) <- struct_destructure(v4)
+  (v24: core::panics::Panic) <- test::BPanicDestruct::panic_destruct(v22, v1)
+  (v25: core::panics::Panic) <- test::APanicDestruct::panic_destruct(v24, v0)
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v25, v23)
+  (v27: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v26)
 End:
-  Return(v14)
+  Return(v27)
 
 //! > ==========================================================================
 
@@ -195,10 +198,10 @@ test_function_lowering
 
 //! > function
 fn foo(a: bool, d: A) -> A {
-  if a {
-    may_panic();
-  }
-  return d;
+    if a {
+        may_panic();
+    }
+    return d;
 }
 
 //! > function_name
@@ -207,15 +210,15 @@ foo
 //! > module_code
 #[inline(never)]
 fn may_panic() {
-  panic_with_felt252('123');
+    panic_with_felt252('123');
 }
 
 struct A {}
 impl APanicDestruct of PanicDestruct<A> {
-  #[inline(never)]
-  fn panic_destruct(self: A, ref panic: Panic) nopanic {
-    let A {} = self;
-  }
+    #[inline(never)]
+    fn panic_destruct(self: A, ref panic: Panic) nopanic {
+        let A { } = self;
+    }
 }
 
 //! > semantic_diagnostics
@@ -228,8 +231,8 @@ blk0 (root):
 Statements:
 End:
   Match(match_enum(v0) {
-    bool::False(v4) => blk1,
-    bool::True(v2) => blk2,
+    bool::False(v2) => blk1,
+    bool::True(v3) => blk2,
   })
 
 blk1:
@@ -239,11 +242,11 @@ End:
 
 blk2:
 Statements:
-  (v5: core::panics::PanicResult::<((),)>) <- test::may_panic()
+  (v4: core::panics::PanicResult::<((),)>) <- test::may_panic()
 End:
-  Match(match_enum(v5) {
-    PanicResult::Ok(v6) => blk3,
-    PanicResult::Err(v15) => blk5,
+  Match(match_enum(v4) {
+    PanicResult::Ok(v5) => blk3,
+    PanicResult::Err(v6) => blk5,
   })
 
 blk3:
@@ -253,19 +256,19 @@ End:
 
 blk4:
 Statements:
-  (v9: (test::A,)) <- struct_construct(v1)
-  (v10: core::panics::PanicResult::<(test::A,)>) <- PanicResult::Ok(v9)
+  (v7: (test::A,)) <- struct_construct(v1)
+  (v8: core::panics::PanicResult::<(test::A,)>) <- PanicResult::Ok(v7)
 End:
-  Return(v10)
+  Return(v8)
 
 blk5:
 Statements:
-  (v12: core::panics::Panic, v17: core::array::Array::<core::felt252>) <- struct_destructure(v15)
-  (v16: core::panics::Panic, v13: ()) <- test::APanicDestruct::panic_destruct(v12, v1)
-  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v16, v17)
-  (v11: core::panics::PanicResult::<(test::A,)>) <- PanicResult::Err(v8)
+  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v6)
+  (v11: core::panics::Panic) <- test::APanicDestruct::panic_destruct(v9, v1)
+  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
+  (v13: core::panics::PanicResult::<(test::A,)>) <- PanicResult::Err(v12)
 End:
-  Return(v11)
+  Return(v13)
 
 //! > ==========================================================================
 
@@ -276,7 +279,7 @@ test_function_lowering
 
 //! > function
 fn foo(a: Option<()>) {
-  bar::<(), MyDestruct>(a.expect('Should be Some.'))
+    bar::<(), MyDestruct>(a.expect('Should be Some.'))
 }
 
 //! > function_name
@@ -284,8 +287,7 @@ foo
 
 //! > module_code
 #[inline]
-fn bar<T, +Destruct<T>>(a: T) {
-}
+fn bar<T, +Destruct<T>>(a: T) {}
 
 pub impl MyDestruct of Destruct<()> {
     #[inline(always)]
@@ -306,29 +308,29 @@ blk0 (root):
 Statements:
 End:
   Match(match_enum(v0) {
-    Option::Some(v11) => blk1,
-    Option::None(v12) => blk2,
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
   })
 
 blk1:
 Statements:
   () <- test::my_fn()
-  (v23: ()) <- struct_construct()
-  (v8: ((),)) <- struct_construct(v23)
-  (v9: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v8)
+  (v3: ()) <- struct_construct()
+  (v4: ((),)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v4)
 End:
-  Return(v9)
+  Return(v5)
 
 blk2:
 Statements:
-  (v31: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v1: core::felt252) <- 433078840523992521883553638820701486u
-  (v32: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v31, v1)
-  (v38: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v38, v32)
-  (v10: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
+  (v6: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v7: core::felt252) <- 433078840523992521883553638820701486
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v6, v7)
+  (v9: core::panics::Panic) <- struct_construct()
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v9, v8)
+  (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
 End:
-  Return(v10)
+  Return(v11)
 
 //! > ==========================================================================
 
@@ -338,8 +340,8 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(){
-    let _a = A{};
+fn foo() {
+    let _a = A {};
 }
 
 //! > function_name
@@ -347,22 +349,29 @@ foo
 
 //! > module_code
 struct A {}
-impl ADestruct of Destruct::<A> {
-  #[inline(always)]
-  fn destruct(self: A) nopanic {
-  }
+impl ADestruct of Destruct<A> {
+    #[inline(always)]
+    fn destruct(self: A) nopanic {}
 }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Call cycle of `nopanic` functions is not allowed.
+ --> lib.cairo:3:5
+    #[inline(always)]
+    ^***************^
+
+error: Cannot inline a function that might call itself.
+ --> lib.cairo:3:5
+    #[inline(always)]
+    ^***************^
 
 //! > lowering_flat
 Parameters:
 blk0 (root):
 Statements:
   (v0: test::A) <- struct_construct()
-  (v4: ()) <- test::ADestruct::destruct(v0)
-  (v1: ()) <- struct_construct()
+  () <- test::ADestruct::destruct(v0)
 End:
-  Return(v1)
+  Return()

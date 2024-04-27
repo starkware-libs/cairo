@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_lang_semantic::corelib;
+use cairo_lang_utils::Intern;
 
 use crate::db::LoweringGroup;
 use crate::ids::FunctionLongId;
@@ -34,9 +35,12 @@ pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         return;
     }
     let semantic_db = db.upcast();
-    let bool_not_func_id = db.intern_lowering_function(FunctionLongId::Semantic(
-        corelib::get_core_function_id(semantic_db, "bool_not_impl".into(), vec![]),
-    ));
+    let bool_not_func_id = FunctionLongId::Semantic(corelib::get_core_function_id(
+        semantic_db,
+        "bool_not_impl".into(),
+        vec![],
+    ))
+    .intern(db);
 
     for block in lowered.blocks.iter_mut() {
         if let FlatBlockEnd::Match { info: MatchInfo::Enum(ref mut info) } = &mut block.end {
@@ -45,9 +49,13 @@ pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                 .iter()
                 .rev()
                 .filter_map(|stmt| match stmt {
-                    Statement::Call(StatementCall { function, inputs, outputs, .. })
-                        if function == &bool_not_func_id && outputs[..] == [info.input.var_id] =>
-                    {
+                    Statement::Call(StatementCall {
+                        function,
+                        inputs,
+                        outputs,
+                        with_coupon: false,
+                        ..
+                    }) if function == &bool_not_func_id && outputs[..] == [info.input.var_id] => {
                         Some(inputs[0])
                     }
                     _ => None,

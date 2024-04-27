@@ -19,6 +19,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Unexpected expression type. Expected: "()", found: "core::bool".
+ --> lib.cairo:1:10
+fn foo() {
+         ^
+
 error: Condition has type "core::felt252", expected bool.
  --> lib.cairo:3:8
     if x {
@@ -28,11 +33,6 @@ error: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:10
 fn foo() {
          ^
-
-error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
- --> lib.cairo:6:9
-        0
-        ^
 
 //! > ==========================================================================
 

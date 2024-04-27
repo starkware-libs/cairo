@@ -22,7 +22,52 @@ const MY_CONST: felt252 = 0x1234;
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 4660u
-  (v3: core::felt252) <- core::felt252_add(v1, v0)
+  (v1: core::felt252) <- 4660
+  (v2: core::felt252) <- core::felt252_add(v1, v0)
 End:
-  Return(v3)
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Complex constant
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> MyStruct {
+    MY_CONST
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+    felt_val: felt252,
+    bool_val: bool,
+    my_enum_val1: MyEnum,
+    my_enum_val2: MyEnum,
+}
+
+enum MyEnum {
+    A: felt252,
+    B,
+}
+
+const MY_CONST: MyStruct =
+    MyStruct {
+        felt_val: 1234, bool_val: true, my_enum_val1: MyEnum::A(5678), my_enum_val2: MyEnum::B,
+    };
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::MyStruct) <- { 1234: core::felt252, bool::True({}): core::bool, MyEnum::A(5678): test::MyEnum, MyEnum::B({}): test::MyEnum }
+End:
+  Return(v0)

@@ -60,7 +60,9 @@ test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 fn test() {
-    a[{x + y}];
+    a[{
+        x + y
+    }];
 }
 
 //! > top_level_kind

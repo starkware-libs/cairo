@@ -17,21 +17,21 @@ mod contract_with_event {
         value: u128,
     }
 
-    #[derive(Copy, Drop, PartialEq, starknet::Event)]
+    #[derive(Copy, Drop, Debug, PartialEq, starknet::Event)]
     pub struct IncrementalEvent {
         pub value: u128,
     }
 
-    #[derive(Copy, Drop, PartialEq, starknet::Event)]
+    #[derive(Copy, Drop, Debug, PartialEq, starknet::Event)]
     pub struct StaticEvent {}
 
-    #[derive(Copy, Drop, PartialEq, starknet::Event)]
+    #[derive(Copy, Drop, Debug, PartialEq, starknet::Event)]
     pub enum FlatEvent {
         FlatEvent: StaticEvent,
     }
 
     #[event]
-    #[derive(Copy, Drop, PartialEq, starknet::Event)]
+    #[derive(Copy, Drop, Debug, PartialEq, starknet::Event)]
     pub enum Event {
         IncrementalEvent: IncrementalEvent,
         StaticEvent: StaticEvent,
@@ -67,10 +67,7 @@ fn test_events() {
     core::internal::revoke_ap_tracking();
     // Set up.
     let (contract_address, _) = deploy_syscall(
-        contract_with_event::TEST_CLASS_HASH.try_into().unwrap(),
-        0,
-        Default::default().span(),
-        false
+        contract_with_event::TEST_CLASS_HASH.try_into().unwrap(), 0, [].span(), false
     )
         .unwrap();
     let mut contract = IContractWithEventDispatcher { contract_address };
@@ -84,52 +81,42 @@ fn test_events() {
     contract.emit_flat_event();
     contract.emit_flat_event();
 
-    assert_eq(
-        @starknet::testing::pop_log(contract_address).unwrap(),
-        @Event::IncrementalEvent(IncrementalEvent { value: 0 }),
-        'event == IncrementalEvent(0)'
+    assert_eq!(
+        starknet::testing::pop_log(contract_address),
+        Option::Some(Event::IncrementalEvent(IncrementalEvent { value: 0 }))
     );
-
-    assert_eq(
-        @starknet::testing::pop_log(contract_address).unwrap(),
-        @Event::IncrementalEvent(IncrementalEvent { value: 1 }),
-        'event == IncrementalEvent(1)'
+    assert_eq!(
+        starknet::testing::pop_log(contract_address),
+        Option::Some(Event::IncrementalEvent(IncrementalEvent { value: 1 }))
     );
-    assert_eq(
-        @starknet::testing::pop_log(contract_address).unwrap(),
-        @Event::StaticEvent(StaticEvent {}),
-        'event == StaticEvent'
+    assert_eq!(
+        starknet::testing::pop_log(contract_address),
+        Option::Some(Event::StaticEvent(StaticEvent {}))
     );
-    assert_eq(
-        @starknet::testing::pop_log(contract_address).unwrap(),
-        @Event::StaticEvent(StaticEvent {}),
-        'event == StaticEvent'
+    assert_eq!(
+        starknet::testing::pop_log(contract_address),
+        Option::Some(Event::StaticEvent(StaticEvent {}))
     );
-    assert_eq(
-        @starknet::testing::pop_log(contract_address).unwrap(),
-        @Event::IncrementalEvent(IncrementalEvent { value: 2 }),
-        'event == IncrementalEvent(2)'
+    assert_eq!(
+        starknet::testing::pop_log(contract_address),
+        Option::Some(Event::IncrementalEvent(IncrementalEvent { value: 2 }))
     );
-    assert_eq(
-        @starknet::testing::pop_log(contract_address).unwrap(),
-        @Event::StaticEvent(StaticEvent {}),
-        'event == StaticEvent'
+    assert_eq!(
+        starknet::testing::pop_log(contract_address),
+        Option::Some(Event::StaticEvent(StaticEvent {}))
     );
-    assert_eq(
-        @starknet::testing::pop_log(contract_address).unwrap(),
-        @Event::IncrementalEvent(IncrementalEvent { value: 3 }),
-        'event == IncrementalEvent(3)'
+    assert_eq!(
+        starknet::testing::pop_log(contract_address),
+        Option::Some(Event::IncrementalEvent(IncrementalEvent { value: 3 }))
     );
-    assert_eq(
-        @starknet::testing::pop_log(contract_address).unwrap(),
-        @Event::FlatEvent(FlatEvent::FlatEvent(StaticEvent {})),
-        'event == FlatEvent'
+    assert_eq!(
+        starknet::testing::pop_log(contract_address),
+        Option::Some(Event::FlatEvent(FlatEvent::FlatEvent(StaticEvent {})))
     );
     // Check that `FlatEvent` is flattened and can be deserialized directly.
-    assert_eq(
-        @starknet::testing::pop_log(contract_address).unwrap(),
-        @FlatEvent::FlatEvent(StaticEvent {}),
-        'event == FlatEvent'
+    assert_eq!(
+        starknet::testing::pop_log(contract_address),
+        Option::Some(FlatEvent::FlatEvent(StaticEvent {}))
     );
     assert!(starknet::testing::pop_log_raw(contract_address).is_none());
 }
@@ -138,22 +125,10 @@ fn test_events() {
 fn test_pop_log() {
     let contract_address = starknet::contract_address_const::<0x1234>();
     starknet::testing::set_contract_address(contract_address);
-    let mut keys = array![];
-    let mut data = array![];
-    keys.append(1234);
-    data.append(2345);
-    starknet::emit_event_syscall(keys.span(), data.span()).unwrap_syscall();
-    starknet::emit_event_syscall(keys.span(), data.span()).unwrap_syscall();
+    let (keys, data) = ([1234].span(), [2345].span());
+    starknet::emit_event_syscall(keys, data).unwrap_syscall();
+    starknet::emit_event_syscall(keys, data).unwrap_syscall();
 
-    let (keys, data) = starknet::testing::pop_log_raw(contract_address).unwrap();
-    assert_eq!(keys.len(), 1);
-    assert_eq!(data.len(), 1);
-    assert_eq(keys.at(0), @1234, 'unexpected key');
-    assert_eq(data.at(0), @2345, 'unexpected data');
-
-    let (keys, data) = starknet::testing::pop_log_raw(contract_address).unwrap();
-    assert_eq!(keys.len(), 1);
-    assert_eq!(data.len(), 1);
-    assert_eq(keys.at(0), @1234, 'unexpected key');
-    assert_eq(data.at(0), @2345, 'unexpected data');
+    assert_eq!(starknet::testing::pop_log_raw(contract_address), Option::Some((keys, data)));
+    assert_eq!(starknet::testing::pop_log_raw(contract_address), Option::Some((keys, data)));
 }

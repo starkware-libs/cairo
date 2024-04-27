@@ -8,7 +8,7 @@ use cairo_lang_semantic::corelib::{get_core_trait, unit_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::ConcreteFunction;
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
 use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::{TypeId, TypeLongId};
@@ -100,7 +100,7 @@ impl<'a> DestructAdder<'a> {
         if let [err_var] = introduced_vars[..] {
             let var = &self.lowered.variables[err_var];
 
-            let long_ty = self.db.lookup_intern_type(var.ty);
+            let long_ty = var.ty.lookup_intern(self.db);
             let TypeLongId::Tuple(tys) = long_ty else {
                 return;
             };
@@ -206,9 +206,9 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         (block_id, statement_index): StatementLocation,
         stmt: &Statement,
     ) {
-        self.set_post_stmt_destruct(&stmt.outputs(), info, block_id, statement_index);
+        self.set_post_stmt_destruct(stmt.outputs(), info, block_id, statement_index);
         // Since we need to insert destructor call right after the statement.
-        info.variables_introduced(self, &stmt.outputs(), (block_id, statement_index + 1));
+        info.variables_introduced(self, stmt.outputs(), (block_id, statement_index + 1));
         info.variables_used(self, stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())));
     }
 
@@ -226,12 +226,11 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         &mut self,
         (block_id, _statement_index): StatementLocation,
         match_info: &MatchInfo,
-        infos: &[Self::Info],
+        infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .enumerate()
-            .map(|(arm_idx, (arm, demand))| {
-                let mut demand = demand.clone();
+            .map(|(arm_idx, (arm, mut demand))| {
                 let use_position = (arm.block_id, 0);
                 self.set_post_match_state(
                     &arm.var_ids,
@@ -277,8 +276,7 @@ pub fn add_destructs(
         return;
     }
     let checker = DestructAdder { db, lowered, destructions: vec![], panic_ty: panic_ty(db) };
-    let mut analysis =
-        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
+    let mut analysis = BackAnalysis::new(lowered, checker);
     let mut root_demand = analysis.get_root_info();
     root_demand.variables_introduced(
         &mut analysis.analyzer,
@@ -346,7 +344,7 @@ pub fn add_destructs(
 
             match destruction {
                 DestructionEntry::Plain(plain_destruct) => {
-                    let semantic_function = db.intern_function(semantic::FunctionLongId {
+                    let semantic_function = semantic::FunctionLongId {
                         function: ConcreteFunction {
                             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
                                 impl_id: plain_destruct.impl_id,
@@ -354,18 +352,20 @@ pub fn add_destructs(
                             }),
                             generic_args: vec![],
                         },
-                    });
+                    }
+                    .intern(db);
 
                     stmts.push(StatementCall {
                         function: semantic_function.lowered(db),
                         inputs: vec![VarUsage { var_id: plain_destruct.var_id, location }],
+                        with_coupon: false,
                         outputs: vec![output_var],
                         location: lowered.variables[plain_destruct.var_id].location,
                     })
                 }
 
                 DestructionEntry::Panic(panic_destruct) => {
-                    let semantic_function = db.intern_function(semantic::FunctionLongId {
+                    let semantic_function = semantic::FunctionLongId {
                         function: ConcreteFunction {
                             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
                                 impl_id: panic_destruct.impl_id,
@@ -373,7 +373,8 @@ pub fn add_destructs(
                             }),
                             generic_args: vec![],
                         },
-                    });
+                    }
+                    .intern(db);
 
                     let new_panic_var = variables.new_var(VarRequest { ty: panic_ty, location });
 
@@ -383,6 +384,7 @@ pub fn add_destructs(
                             VarUsage { var_id: last_panic_var, location },
                             VarUsage { var_id: panic_destruct.var_id, location },
                         ],
+                        with_coupon: false,
                         outputs: vec![new_panic_var, output_var],
                         location,
                     });
@@ -410,7 +412,7 @@ pub fn add_destructs(
                 let new_tuple_var = variables.new_var(VarRequest { ty: tuple_ty, location });
                 let orig_tuple_var = *tuple_var;
                 *tuple_var = new_tuple_var;
-                let long_ty = db.lookup_intern_type(tuple_ty);
+                let long_ty = tuple_ty.lookup_intern(db);
                 let TypeLongId::Tuple(tys) = long_ty else { unreachable!() };
 
                 let vars = tys

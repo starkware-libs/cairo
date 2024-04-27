@@ -15,7 +15,7 @@ use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_utils::{arc_unwrap_or_clone, Upcast, UpcastMut};
+use cairo_lang_utils::{Intern, Upcast, UpcastMut};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use lowering::optimizations::config::OptimizationConfig;
@@ -65,7 +65,9 @@ impl SierraGenDatabaseForTesting {
         res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
         res.set_analyzer_plugins(suite.analyzer_plugins);
 
-        res.set_optimization_config(Arc::new(OptimizationConfig::default()));
+        res.set_optimization_config(Arc::new(
+            OptimizationConfig::default().with_minimal_movable_functions(),
+        ));
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
@@ -125,7 +127,9 @@ pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::P
     let (db, crate_id) = setup_db_and_get_crate_id(content);
 
     let SierraProgramWithDebug { program, .. } =
-        arc_unwrap_or_clone(db.get_sierra_program(vec![crate_id]).unwrap());
+        Arc::unwrap_or_clone(db.get_sierra_program(vec![crate_id]).expect(
+            "`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics",
+        ));
     replace_sierra_ids_in_program(&db, &program)
 }
 
@@ -167,10 +171,11 @@ pub fn dummy_simple_statement(
 }
 
 fn dummy_concrete_lib_func_id(db: &dyn SierraGenGroup, name: &str) -> ConcreteLibfuncId {
-    db.intern_concrete_lib_func(program::ConcreteLibfuncLongId {
+    program::ConcreteLibfuncLongId {
         generic_id: GenericLibfuncId::from_string(name),
         generic_args: vec![],
-    })
+    }
+    .intern(db)
 }
 
 /// Returns a vector of variable ids based on the inputs mapped into variable ids.
@@ -205,7 +210,7 @@ pub fn dummy_simple_branch(
 
 /// Generates a dummy return statement.
 pub fn dummy_return_statement(args: &[&str]) -> pre_sierra::StatementWithLocation {
-    return_statement(as_var_id_vec(args))
+    return_statement(as_var_id_vec(args)).into_statement_without_location()
 }
 
 /// Generates a dummy label.
@@ -220,23 +225,21 @@ pub fn dummy_jump_statement(
     id: usize,
 ) -> pre_sierra::StatementWithLocation {
     jump_statement(dummy_concrete_lib_func_id(db, "jump"), label_id_from_usize(db, id))
+        .into_statement_without_location()
 }
 
 /// Returns the [pre_sierra::LabelId] for the given `id`.
 pub fn label_id_from_usize(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::LabelId {
     let free_function_id = get_dummy_function(db);
-    let semantic_function = db.intern_concrete_function_with_body(
-        semantic::items::functions::ConcreteFunctionWithBody {
-            generic_function: semantic::items::functions::GenericFunctionWithBodyId::Free(
-                free_function_id,
-            ),
-            generic_args: vec![],
-        },
-    );
-    let parent = db.intern_lowering_concrete_function_with_body(
-        ConcreteFunctionWithBodyLongId::Semantic(semantic_function),
-    );
-    db.intern_label_id(LabelLongId { parent, id })
+    let semantic_function = semantic::items::functions::ConcreteFunctionWithBody {
+        generic_function: semantic::items::functions::GenericFunctionWithBodyId::Free(
+            free_function_id,
+        ),
+        generic_args: vec![],
+    }
+    .intern(db);
+    let parent = ConcreteFunctionWithBodyLongId::Semantic(semantic_function).intern(db);
+    LabelLongId { parent, id }.intern(db)
 }
 
 /// Generates a dummy [PushValues](pre_sierra::Statement::PushValues) statement.

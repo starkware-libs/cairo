@@ -4,9 +4,10 @@ mod test;
 
 use std::cmp::Reverse;
 
-use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use itertools::Itertools;
+use itertools::{zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
@@ -30,8 +31,7 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         moveable_functions: &db.priv_movable_function_ids(),
         statement_to_move: vec![],
     };
-    let mut analysis =
-        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    let mut analysis = BackAnalysis::new(lowered, ctx);
     analysis.get_root_info();
     let ctx = analysis.analyzer;
 
@@ -70,7 +70,7 @@ pub struct ReorderStatementsInfo {
     // A mapping from var_id to a candidate location that it can be moved to.
     // If the variable is used in multiple match arms we define the next use to be
     // the match.
-    next_use: OrderedHashMap<VariableId, StatementLocation>,
+    next_use: UnorderedHashMap<VariableId, StatementLocation>,
 }
 
 pub struct ReorderStatementsContext<'a> {
@@ -96,7 +96,7 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         let mut immovable = matches!(stmt, Statement::Call(stmt) if !self.call_can_be_moved(stmt));
         let mut optional_target_location = None;
         for var_to_move in stmt.outputs() {
-            let Some((block_id, index)) = info.next_use.swap_remove(&var_to_move) else { continue };
+            let Some((block_id, index)) = info.next_use.remove(var_to_move) else { continue };
             if let Some((target_block_id, target_index)) = &mut optional_target_location {
                 *target_index = std::cmp::min(*target_index, index);
                 // If the output is used in multiple places we can't move their creation point.
@@ -124,14 +124,17 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
                     Entry::Vacant(e) => e.insert(target_location),
                 };
             }
-        }
 
-        let is_simple_move = optional_target_location.is_some();
-        // If a movable statement is unused, and all its inputs are droppable removing it is valid.
-        let is_removal_valid =
-            || stmt.inputs().iter().all(|v| self.lowered.variables[v.var_id].droppable.is_ok());
-        if is_simple_move || is_removal_valid() {
-            self.statement_to_move.push((statement_location, optional_target_location));
+            self.statement_to_move.push((statement_location, Some(target_location)))
+        } else if stmt.inputs().iter().all(|v| self.lowered.variables[v.var_id].droppable.is_ok()) {
+            // If a movable statement is unused, and all its inputs are droppable removing it is
+            // valid.
+            self.statement_to_move.push((statement_location, None))
+        } else {
+            // Statement is unused but can't be removed.
+            for var_usage in stmt.inputs() {
+                info.next_use.insert(var_usage.var_id, statement_location);
+            }
         }
     }
 
@@ -151,23 +154,19 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         &mut self,
         statement_location: StatementLocation,
         match_info: &MatchInfo,
-        infos: &[Self::Info],
+        infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
-        let mut info = Self::Info::default();
-
-        for arm_info in infos {
-            for (var_id, location) in arm_info.next_use.iter() {
-                match info.next_use.entry(*var_id) {
-                    Entry::Occupied(mut e) => {
-                        // A variable that is used in multiple arms can be moved to
-                        // before the match.
-                        e.insert(statement_location);
-                    }
-                    Entry::Vacant(e) => {
-                        e.insert(*location);
-                    }
-                }
+        let mut infos = zip_eq(infos, match_info.arms()).map(|(mut info, arm)| {
+            for var_id in &arm.var_ids {
+                info.next_use.remove(var_id);
             }
+            info
+        });
+        let mut info = infos.next().unwrap_or_default();
+        for arm_info in infos {
+            info.next_use.merge(&arm_info.next_use, |e, _| {
+                *e.into_mut() = statement_location;
+            });
         }
 
         for var_usage in match_info.inputs() {

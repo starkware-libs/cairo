@@ -15,6 +15,7 @@ pub fn get_type_size_map(
     let mut type_sizes = TypeSizeMap::default();
     for declaration in &program.type_declarations {
         let size = match registry.get_type(&declaration.id).ok()? {
+            CoreTypeConcrete::Coupon(_) => Some(0),
             CoreTypeConcrete::Felt252(_)
             | CoreTypeConcrete::GasBuiltin(_)
             | CoreTypeConcrete::Bitwise(_)
@@ -32,6 +33,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Sint64(_)
             | CoreTypeConcrete::Sint128(_)
             | CoreTypeConcrete::RangeCheck(_)
+            | CoreTypeConcrete::RangeCheck96(_)
             | CoreTypeConcrete::Box(_)
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::System(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageBaseAddress(_))
@@ -39,6 +41,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ClassHash(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::Secp256Point(_))
+            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::Sha256StateHandle(_))
             | CoreTypeConcrete::Pedersen(_)
             | CoreTypeConcrete::Poseidon(_)
             | CoreTypeConcrete::Felt252Dict(_)

@@ -18,11 +18,15 @@ use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Re
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
 use cairo_lang_syntax::node::ast::PathSegment;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
+use tracing::debug;
 
-use crate::{find_node_module, from_pos};
+use crate::find_node_module;
+use crate::lang::lsp::ToLsp;
 
+#[tracing::instrument(level = "trace", skip_all)]
 pub fn generic_completions(
     db: &(dyn SemanticGroup + 'static),
     module_file_id: ModuleFileId,
@@ -32,7 +36,7 @@ pub fn generic_completions(
 
     // Crates.
     completions.extend(db.crate_configs().keys().map(|crate_id| CompletionItem {
-        label: db.lookup_intern_crate(*crate_id).name().into(),
+        label: crate_id.lookup_intern(db).name().into(),
         kind: Some(CompletionItemKind::MODULE),
         ..CompletionItem::default()
     }));
@@ -108,6 +112,7 @@ fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> Completio
     }
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 pub fn colon_colon_completions(
     db: &(dyn SemanticGroup + 'static),
     module_file_id: ModuleFileId,
@@ -123,7 +128,7 @@ pub fn colon_colon_completions(
     };
     let mut resolver = Resolver::with_data(db, resolver_data);
 
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast()).ok()?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let item = resolver
         .resolve_concrete_path(&mut diagnostics, segments, NotFoundItemType::Identifier)
         .ok()?;
@@ -165,7 +170,7 @@ pub fn colon_colon_completions(
                     .collect()
             })
             .unwrap_or_default(),
-        ResolvedConcreteItem::Type(ty) => match db.lookup_intern_type(ty) {
+        ResolvedConcreteItem::Type(ty) => match ty.lookup_intern(db) {
             TypeLongId::Concrete(ConcreteTypeId::Enum(enum_id)) => db
                 .enum_variants(enum_id.enum_id(db))
                 .unwrap_or_default()
@@ -182,6 +187,7 @@ pub fn colon_colon_completions(
     })
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 pub fn dot_completions(
     db: &dyn SemanticGroup,
     file_id: FileId,
@@ -208,7 +214,7 @@ pub fn dot_completions(
     // Get the type.
     let ty = semantic_expr.ty();
     if ty.is_missing(db) {
-        eprintln!("Type is missing");
+        debug!("type is missing");
         return None;
     }
 
@@ -225,7 +231,7 @@ pub fn dot_completions(
     } else {
         TextOffset::default()
     };
-    let position = from_pos(offset.position_in_file(db.upcast(), file_id).unwrap());
+    let position = offset.position_in_file(db.upcast(), file_id).unwrap().to_lsp();
     let relevant_methods = find_methods_for_type(db, resolver, ty, stable_ptr);
 
     let mut completions = Vec::new();
@@ -256,6 +262,7 @@ pub fn dot_completions(
 }
 
 /// Returns a completion item for a method.
+#[tracing::instrument(level = "trace", skip_all)]
 fn completion_for_method(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
@@ -291,6 +298,7 @@ fn completion_for_method(
 }
 
 /// Checks if a module has a trait in scope.
+#[tracing::instrument(level = "trace", skip_all)]
 fn module_has_trait(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
@@ -308,6 +316,7 @@ fn module_has_trait(
 }
 
 /// Finds all methods that can be called on a type.
+#[tracing::instrument(level = "trace", skip_all)]
 fn find_methods_for_type(
     db: &dyn SemanticGroup,
     mut resolver: Resolver<'_>,
@@ -334,14 +343,17 @@ fn find_methods_for_type(
                 trait_function,
                 ty,
                 &lookup_context,
+                None,
                 Some(stable_ptr),
                 |_| {},
             ) else {
-                eprintln!("Can't fit");
+                debug!("can't fit");
                 continue;
             };
 
             // Find impls for it.
+
+            // ignore the result as nothing can be done with the error, if any.
             inference.solve().ok();
             if !matches!(
                 inference.trait_solution_set(concrete_trait_id, lookup_context),

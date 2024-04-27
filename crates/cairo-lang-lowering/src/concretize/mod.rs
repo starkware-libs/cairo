@@ -2,6 +2,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::substitution::{
     GenericSubstitution, SemanticRewriter, SubstitutionRewriter,
 };
+use cairo_lang_utils::{Intern, LookupIntern};
 
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId, GeneratedFunction};
@@ -13,7 +14,7 @@ fn concretize_function(
     rewriter: &mut SubstitutionRewriter<'_>,
     function: FunctionId,
 ) -> Maybe<FunctionId> {
-    let long_id = match db.lookup_intern_lowering_function(function) {
+    let long_id = match function.lookup_intern(db) {
         FunctionLongId::Semantic(id) => FunctionLongId::Semantic(rewriter.rewrite(id)?),
         FunctionLongId::Generated(GeneratedFunction { parent, element }) => {
             FunctionLongId::Generated(GeneratedFunction {
@@ -22,7 +23,7 @@ fn concretize_function(
             })
         }
     };
-    Ok(db.intern_lowering_function(long_id))
+    Ok(long_id.intern(db))
 }
 
 /// Concretizes a lowered generic function by applying a generic parameter substitution on its
@@ -50,9 +51,11 @@ pub fn concretize_lowered(
                 Statement::EnumConstruct(stmt) => {
                     stmt.variant = rewriter.rewrite(stmt.variant.clone())?;
                 }
+                Statement::Const(stmt) => {
+                    stmt.value = rewriter.rewrite(stmt.value.clone())?;
+                }
                 Statement::Snapshot(_)
                 | Statement::Desnap(_)
-                | Statement::Literal(_)
                 | Statement::StructConstruct(_)
                 | Statement::StructDestructure(_) => {}
             }
