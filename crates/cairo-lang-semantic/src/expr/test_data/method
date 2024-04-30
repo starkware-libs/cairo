@@ -358,6 +358,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
+    0.bar(1);
     0.bar(1, 2, 3);
 }
 
@@ -373,7 +374,12 @@ impl MyImpl of MyTrait<felt252> {
 }
 
 //! > expected_diagnostics
-error: Wrong number of arguments. Expected 3, found: 4
+error: Wrong number of arguments. Expected 3, found: 2
  --> lib.cairo:8:7
+    0.bar(1);
+      ^****^
+
+error: Wrong number of arguments. Expected 3, found: 4
+ --> lib.cairo:9:7
     0.bar(1, 2, 3);
       ^**********^

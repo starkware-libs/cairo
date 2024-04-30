@@ -15,6 +15,7 @@ pub mod boxing;
 pub mod branch_align;
 pub mod bytes31;
 pub mod casts;
+pub mod circuit;
 pub mod const_type;
 pub mod consts;
 pub mod coupon;

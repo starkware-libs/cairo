@@ -27,7 +27,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern, OptionHelper};
 use id_arena::Arena;
-use itertools::{chain, zip_eq, Itertools};
+use itertools::{zip_eq, Itertools};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use smol_str::SmolStr;
@@ -1008,25 +1008,24 @@ fn compute_expr_function_call_semantic(
 
             // Note there may be n+1 arguments for n parameters, if the last one is a coupon.
             let mut args_iter = args_syntax.elements(syntax_db).into_iter();
-            let function_parameter_types = function_parameter_types(ctx, function)?;
             // Normal parameters
-            let mut named_args: Vec<_> = function_parameter_types
-                .map(|param_type| {
-                    let arg_syntax = args_iter.next().expect("More parameters than arguments");
-                    let arg_stable_ptr = arg_syntax.stable_ptr().untyped();
-                    compute_named_argument_clause(
-                        ctx,
-                        arg_syntax,
-                        Some(ResultType { ty: param_type, stable_ptr: arg_stable_ptr }),
-                    )
-                })
-                .collect();
+            let mut named_args = vec![];
+            for param_type in function_parameter_types(ctx, function)? {
+                let Some(arg_syntax) = args_iter.next() else {
+                    continue;
+                };
+                let arg_stable_ptr = arg_syntax.stable_ptr().untyped();
+                named_args.push(compute_named_argument_clause(
+                    ctx,
+                    arg_syntax,
+                    Some(ResultType { ty: param_type, stable_ptr: arg_stable_ptr }),
+                ));
+            }
 
             // Maybe coupon
             if let Some(arg_syntax) = args_iter.next() {
                 named_args.push(compute_named_argument_clause(ctx, arg_syntax, None));
             }
-            assert!(args_iter.next().is_none(), "More arguments than parameters plus coupon");
 
             expr_function_call(ctx, function, named_args, syntax, syntax.stable_ptr().into())
         }
@@ -2607,28 +2606,25 @@ fn method_call_expr(
     // Note there may be n+1 arguments for n parameters, if the last one is a coupon.
     let mut args_iter =
         expr.arguments(syntax_db).arguments(syntax_db).elements(syntax_db).into_iter();
-    let function_parameter_types = function_parameter_types(ctx, function_id)?;
-    let mut named_args: Vec<_> = chain!(
-        // Self argument
-        [NamedArg(fixed_lexpr, None, mutability)],
-        // Other arguments
-        function_parameter_types.skip(1).map(|param_type| {
-            let arg_syntax = args_iter.next().expect("More parameters than arguments");
-            let arg_stable_ptr = arg_syntax.stable_ptr().untyped();
-            compute_named_argument_clause(
-                ctx,
-                arg_syntax,
-                Some(ResultType { ty: param_type, stable_ptr: arg_stable_ptr }),
-            )
-        }),
-    )
-    .collect();
+    // Self argument.
+    let mut named_args = vec![NamedArg(fixed_lexpr, None, mutability)];
+    // Other arguments.
+    for param_type in function_parameter_types(ctx, function_id)?.skip(1) {
+        let Some(arg_syntax) = args_iter.next() else {
+            break;
+        };
+        let arg_stable_ptr = arg_syntax.stable_ptr().untyped();
+        named_args.push(compute_named_argument_clause(
+            ctx,
+            arg_syntax,
+            Some(ResultType { ty: param_type, stable_ptr: arg_stable_ptr }),
+        ));
+    }
 
     // Maybe coupon
     if let Some(arg_syntax) = args_iter.next() {
         named_args.push(compute_named_argument_clause(ctx, arg_syntax, None));
     }
-    assert!(args_iter.next().is_none(), "More arguments than parameters plus coupon");
 
     expr_function_call(ctx, function_id, named_args, &expr, stable_ptr)
 }
