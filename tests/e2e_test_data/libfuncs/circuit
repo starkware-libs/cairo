@@ -1,0 +1,38 @@
+//! > init_circuit_data
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::circuit::{CircuitInput, CircuitInputAccumulator, init_circuit_data};
+type MyCircuit = (CircuitInput<0>,);
+
+fn foo() -> CircuitInputAccumulator<MyCircuit> {
+    init_circuit_data::<MyCircuit>()
+}
+
+//! > casm
+[ap + 0] = [fp + -3] + 2, ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [fp + -3] + 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
+type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: false];
+type (core::circuit::CircuitInput::<0>,) = Struct<ut@Tuple, core::circuit::CircuitInput::<0>> [storable: false, drop: false, dup: false, zero_sized: false];
+type CircuitInputAccumulator<(core::circuit::CircuitInput::<0>,)> = CircuitInputAccumulator<(core::circuit::CircuitInput::<0>,)> [storable: true, drop: true, dup: false, zero_sized: false];
+
+libfunc init_circuit_data<(core::circuit::CircuitInput::<0>,)> = init_circuit_data<(core::circuit::CircuitInput::<0>,)>;
+libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
+libfunc store_temp<CircuitInputAccumulator<(core::circuit::CircuitInput::<0>,)>> = store_temp<CircuitInputAccumulator<(core::circuit::CircuitInput::<0>,)>>;
+
+init_circuit_data<(core::circuit::CircuitInput::<0>,)>([0]) -> ([1], [2]); // 0
+store_temp<RangeCheck96>([1]) -> ([1]); // 1
+store_temp<CircuitInputAccumulator<(core::circuit::CircuitInput::<0>,)>>([2]) -> ([2]); // 2
+return([1], [2]); // 3
+
+test::foo@0([0]: RangeCheck96) -> (RangeCheck96, CircuitInputAccumulator<(core::circuit::CircuitInput::<0>,)>);
