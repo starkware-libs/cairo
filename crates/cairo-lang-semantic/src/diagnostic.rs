@@ -358,8 +358,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     enum_id.full_path(db.upcast())
                 )
             }
-            SemanticDiagnosticKind::RecursiveType { ty } => {
-                format!(r#"Direct recursive type "{}"."#, ty.format(db))
+            SemanticDiagnosticKind::InfiniteSizeType { ty } => {
+                format!(r#"Recursive type "{}" has infinite size."#, ty.format(db))
             }
             SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
                 format!(
@@ -959,7 +959,7 @@ pub enum SemanticDiagnosticKind {
         enum_id: EnumId,
         variant_name: SmolStr,
     },
-    RecursiveType {
+    InfiniteSizeType {
         ty: semantic::TypeId,
     },
     ParamNameRedefinition {
