@@ -32,12 +32,11 @@ pub fn compute_sha256_u32_array(
     let mut state = sha256_state_handle_init(BoxTrait::new(SHA256_INITIAL_STATE));
     let mut ind = 0;
 
-    while ind != arr
-        .len() {
-            let input: Span<u32> = arr.slice(ind, 16);
-            state = starknet::syscalls::sha256_process_block_syscall(state, input).unwrap_syscall();
-            ind = ind + 16;
-        };
+    while ind != arr.len() {
+        let input: Span<u32> = arr.slice(ind, 16);
+        state = starknet::syscalls::sha256_process_block_syscall(state, input).unwrap_syscall();
+        ind = ind + 16;
+    };
 
     sha256_state_handle_digest(state).unbox()
 }
