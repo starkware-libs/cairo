@@ -19,6 +19,7 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 define_type_hierarchy! {
     pub enum CircuitType {
+        AddModGate(AddModGate),
         CircuitInput(CircuitInput),
         CircuitInputAccumulator(CircuitInputAccumulator),
     }, CircuitTypeConcrete
@@ -41,7 +42,7 @@ fn is_circuit_component(
 
     let long_id = context.get_type_info(ty.clone())?.long_id;
     let generic_id = long_id.generic_id;
-    if generic_id == CircuitInput::ID {
+    if generic_id == CircuitInput::ID || generic_id == AddModGate::ID {
         return Ok(true);
     }
     Ok(false)
@@ -96,6 +97,63 @@ impl ConcreteCircuitInput {
 }
 
 impl ConcreteType for ConcreteCircuitInput {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
+}
+
+/// Add mod gate type.
+#[derive(Default)]
+pub struct AddModGate {}
+impl NamedType for AddModGate {
+    type Concrete = ConcreteAddModGate;
+    const ID: GenericTypeId = GenericTypeId::new_inline("AddModGate");
+
+    fn specialize(
+        &self,
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Self::Concrete::new(context, args)
+    }
+}
+
+pub struct ConcreteAddModGate {
+    pub info: TypeInfo,
+}
+
+impl ConcreteAddModGate {
+    fn new(
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self, SpecializationError> {
+        if args.len() != 2 {
+            return Err(SpecializationError::WrongNumberOfGenericArgs);
+        }
+
+        for garg in args {
+            // Note that its enough to check the topmost types as they validate their children.
+            if !is_circuit_component(context, garg)? {
+                return Err(SpecializationError::UnsupportedGenericArg);
+            }
+        }
+
+        Ok(Self {
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId {
+                    generic_id: "AddModGate".into(),
+                    generic_args: args.to_vec(),
+                },
+                duplicatable: false,
+                droppable: false,
+                storable: false,
+                zero_sized: false,
+            },
+        })
+    }
+}
+
+impl ConcreteType for ConcreteAddModGate {
     fn info(&self) -> &TypeInfo {
         &self.info
     }
