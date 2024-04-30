@@ -5,6 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_syntax::attribute::consts::PHANTOM_ATTR;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -12,6 +13,7 @@ use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::enumerate;
 use smol_str::SmolStr;
 
+use super::attribute::SemanticQueryAttrs;
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
@@ -246,9 +248,20 @@ pub fn enum_definition_diagnostics(
     let Ok(data) = db.priv_enum_definition_data(enum_id) else {
         return Default::default();
     };
+    // If the enum is a phantom type, no need to check if its variants are fully valid types, as
+    // they won't be used.
+    if enum_id.has_attr(db, PHANTOM_ATTR).unwrap_or_default() {
+        return data.diagnostics;
+    }
     let mut diagnostics = SemanticDiagnostics::from(data.diagnostics);
     for (_, variant) in data.variant_semantic.iter() {
         add_type_based_diagnostics(db, &mut diagnostics, variant.ty, &variant.id);
+        if variant.ty.is_phantom(db) {
+            diagnostics.report_by_ptr(
+                variant.id.stable_ptr(db.upcast()).untyped(),
+                NonPhantomTypeContainingPhantomType,
+            );
+        }
     }
     diagnostics.build()
 }
