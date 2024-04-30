@@ -188,13 +188,10 @@ fn parse_arguments(
 ) -> Option<(ast::TerminalShortString, ast::TerminalIdentifier)> {
     let [
         AttributeArg {
-            variant: AttributeArgVariant::Unnamed { value: ast::Expr::ShortString(err_value), .. },
+            variant: AttributeArgVariant::Unnamed(ast::Expr::ShortString(err_value)),
             ..
         },
-        AttributeArg {
-            variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(name), .. },
-            ..
-        },
+        AttributeArg { variant: AttributeArgVariant::Unnamed(ast::Expr::Path(name)), .. },
     ] = &attr.args[..]
     else {
         return None;

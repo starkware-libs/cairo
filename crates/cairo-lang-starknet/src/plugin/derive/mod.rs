@@ -23,8 +23,7 @@ fn has_derive<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup, derived_type:
         let attr = attr.structurize(db);
         for arg in &attr.args {
             let AttributeArg {
-                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
-                ..
+                variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
             } = arg
             else {
                 continue;

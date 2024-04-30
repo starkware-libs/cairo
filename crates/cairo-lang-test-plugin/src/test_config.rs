@@ -134,7 +134,7 @@ fn extract_available_gas(
         return Some(u32::MAX as usize);
     };
     match &attr.args[..] {
-        [AttributeArg { variant: AttributeArgVariant::Unnamed { value, .. }, .. }] => match value {
+        [AttributeArg { variant: AttributeArgVariant::Unnamed(value), .. }] => match value {
             ast::Expr::Path(path)
                 if path.as_syntax_node().get_text_without_trivia(db) == STATIC_GAS_ARG =>
             {
@@ -166,7 +166,7 @@ fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fel
     else {
         return None;
     };
-    require(name == "expected")?;
+    require(name.text == "expected")?;
 
     match value {
         ast::Expr::Tuple(panic_exprs) => {

@@ -10,7 +10,7 @@ use cairo_lang_syntax::attribute::structured::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 
 /// Plugin that enables ignoring modules not involved in the current config.
@@ -198,41 +198,35 @@ fn parse_predicate_item(
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<Cfg> {
     match arg.variant {
-        AttributeArgVariant::FieldInitShorthand { .. } => {
+        AttributeArgVariant::FieldInitShorthand(_) => {
             diagnostics.push(PluginDiagnostic::error(
-                arg.arg_stable_ptr.untyped(),
+                &arg.arg,
                 "This attribute does not support field initialization shorthands.".into(),
             ));
             None
         }
-        AttributeArgVariant::Named { name, value, value_stable_ptr, .. } => {
+        AttributeArgVariant::Named { name, value } => {
             let value = match value {
                 ast::Expr::ShortString(terminal) => terminal.string_value(db).unwrap_or_default(),
                 ast::Expr::String(terminal) => terminal.string_value(db).unwrap_or_default(),
                 _ => {
                     diagnostics.push(PluginDiagnostic::error(
-                        value_stable_ptr.untyped(),
+                        &value,
                         "Expected a string/short-string literal.".into(),
                     ));
                     return None;
                 }
             };
 
-            Some(Cfg::kv(name, value))
+            Some(Cfg::kv(name.text, value))
         }
-        AttributeArgVariant::Unnamed { value, value_stable_ptr, .. } => {
+        AttributeArgVariant::Unnamed(value) => {
             let ast::Expr::Path(path) = value else {
-                diagnostics.push(PluginDiagnostic::error(
-                    value_stable_ptr.untyped(),
-                    "Expected identifier.".into(),
-                ));
+                diagnostics.push(PluginDiagnostic::error(&value, "Expected identifier.".into()));
                 return None;
             };
             let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] else {
-                diagnostics.push(PluginDiagnostic::error(
-                    value_stable_ptr.untyped(),
-                    "Expected simple path.".into(),
-                ));
+                diagnostics.push(PluginDiagnostic::error(&path, "Expected simple path.".into()));
                 return None;
             };
             let key = segment.ident(db).text(db);
