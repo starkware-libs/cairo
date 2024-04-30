@@ -113,3 +113,27 @@ error: Non-phantom type containing phantom type.
  --> lib.cairo:5:5
     member: A,
     ^*******^
+
+//! > ==========================================================================
+
+//! > Test struct containing empty array.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    member: Array<((), ())>,
+}
+
+//! > expected_diagnostics
+error: Cannot have array of type "((), ())" that is zero sized.
+ --> lib.cairo:2:5
+    member: Array<((), ())>,
+    ^*********************^
