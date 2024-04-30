@@ -801,6 +801,19 @@ pub fn add_type_based_diagnostics(
     if db.type_size_info(ty) == Ok(TypeSizeInformation::Infinite) {
         diagnostics.report(node.untyped_stable_ptr(db.upcast()), InfiniteSizeType { ty });
     }
+    if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.lookup_intern(db) {
+        let long_id = extrn.lookup_intern(db);
+        if long_id.extern_type_id.name(db.upcast()).as_str() == "Array" {
+            if let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..] {
+                if db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized) {
+                    diagnostics.report(
+                        node.untyped_stable_ptr(db.upcast()),
+                        ArrayOfZeroSizedElements { ty: *arg_ty },
+                    );
+                }
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
