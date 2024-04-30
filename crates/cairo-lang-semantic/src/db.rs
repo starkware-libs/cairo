@@ -32,7 +32,7 @@ use crate::items::trt::{
 };
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
-use crate::types::ImplTypeId;
+use crate::types::{ImplTypeId, TypeSizeInformation};
 use crate::{
     corelib, items, lsp_helpers, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
 };
@@ -1140,9 +1140,9 @@ pub trait SemanticGroup:
 
     /// Returns true if the given type directly holds itself recursively, without any additional
     /// indirection, such as `Box` or `Array`.
-    #[salsa::invoke(types::direct_recursive_type)]
-    #[salsa::cycle(types::direct_recursive_type_cycle)]
-    fn direct_recursive_type(&self, ty: types::TypeId) -> bool;
+    #[salsa::invoke(types::type_size_info)]
+    #[salsa::cycle(types::type_size_info_cycle)]
+    fn type_size_info(&self, ty: types::TypeId) -> Maybe<TypeSizeInformation>;
 
     /// Returns the generic_type of a generic function. This include free types, extern
     /// types, etc...
