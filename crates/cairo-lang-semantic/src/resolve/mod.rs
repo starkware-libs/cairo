@@ -902,7 +902,7 @@ impl<'db> Resolver<'db> {
         let generic_params = self
             .db
             .trait_generic_params(trait_id)
-            .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownTrait))?;
+            .map_err(|_| diagnostics.report(stable_ptr, UnknownTrait))?;
 
         let generic_args =
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
@@ -922,7 +922,7 @@ impl<'db> Resolver<'db> {
         let generic_params = self
             .db
             .impl_def_generic_params(impl_def_id)
-            .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownImpl))?;
+            .map_err(|_| diagnostics.report(stable_ptr, UnknownImpl))?;
 
         let generic_args =
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
@@ -959,7 +959,7 @@ impl<'db> Resolver<'db> {
         let generic_params = self
             .db
             .generic_type_generic_params(generic_type)
-            .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownType))?;
+            .map_err(|_| diagnostics.report(stable_ptr, UnknownType))?;
 
         let generic_args =
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
@@ -1310,7 +1310,7 @@ impl<'db> Resolver<'db> {
         if ctx_impl_concrete_trait.generic_args(self.db)
             == current_segment_concrete_trait_id.generic_args(self.db)
         {
-            return Err(diagnostics.report_by_ptr(segment_stable_ptr, TraitItemForbiddenInItsImpl));
+            return Err(diagnostics.report(segment_stable_ptr, TraitItemForbiddenInItsImpl));
         }
         Ok(())
     }
@@ -1358,7 +1358,7 @@ impl<'db> Resolver<'db> {
         // This assumes the current segment item and the context items are equal. In this specific
         // case we disallow implicit arguments.
         if current_segment_generic_args.len() < generic_params.len() {
-            return Err(diagnostics.report_by_ptr(segment_stable_ptr, must_be_explicit_error));
+            return Err(diagnostics.report(segment_stable_ptr, must_be_explicit_error));
         }
 
         let resolved_args = self.resolve_generic_args(
@@ -1373,8 +1373,9 @@ impl<'db> Resolver<'db> {
             .zip_eq(resolved_args.iter())
             .all(|(gparam, garg)| gparam.as_arg(self.db) == *garg)
         {
-            return Err(diagnostics
-                .report_by_ptr(segment_stable_ptr, item_forbidden_in_itself_explicit_error));
+            return Err(
+                diagnostics.report(segment_stable_ptr, item_forbidden_in_itself_explicit_error)
+            );
         }
         Ok(())
     }

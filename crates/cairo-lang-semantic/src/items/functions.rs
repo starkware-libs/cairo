@@ -882,7 +882,7 @@ pub fn forbid_inline_always_with_impl_generic_param(
     let has_impl_generic_param = generic_params.iter().any(|p| matches!(p, GenericParam::Impl(_)));
     match &inline_config {
         InlineConfiguration::Always(attr) if has_impl_generic_param => {
-            diagnostics.report_by_ptr(
+            diagnostics.report(
                 attr.stable_ptr.untyped(),
                 SemanticDiagnosticKind::InlineAlwaysWithImplGenericArgNotAllowed,
             );

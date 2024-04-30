@@ -799,7 +799,7 @@ pub fn add_type_based_diagnostics(
     node: &impl LanguageElementId,
 ) {
     if db.direct_recursive_type(ty) {
-        diagnostics.report_by_ptr(node.untyped_stable_ptr(db.upcast()), RecursiveType { ty });
+        diagnostics.report(node.untyped_stable_ptr(db.upcast()), RecursiveType { ty });
     }
 }
 

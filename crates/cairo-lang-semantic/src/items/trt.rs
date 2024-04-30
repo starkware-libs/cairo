@@ -551,7 +551,7 @@ pub fn priv_trait_definition_data(
                         .insert(name.clone(), TraitItemId::Function(trait_func_id))
                         .is_some()
                     {
-                        diagnostics.report_by_ptr(
+                        diagnostics.report(
                             name_node.stable_ptr().untyped(),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
                         );
@@ -566,7 +566,7 @@ pub fn priv_trait_definition_data(
                         .insert(name.clone(), TraitItemId::Type(trait_type_id))
                         .is_some()
                     {
-                        diagnostics.report_by_ptr(
+                        diagnostics.report(
                             name_node.stable_ptr().untyped(),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
                         );
@@ -583,7 +583,7 @@ pub fn priv_trait_definition_data(
                         .insert(name.clone(), TraitItemId::Constant(trait_constant))
                         .is_some()
                     {
-                        diagnostics.report_by_ptr(
+                        diagnostics.report(
                             name_node.stable_ptr().untyped(),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
                         );

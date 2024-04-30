@@ -233,7 +233,7 @@ pub fn struct_definition_diagnostics(
     for (_, member) in data.members.iter() {
         add_type_based_diagnostics(db, &mut diagnostics, member.ty, &member.id);
         if member.ty.is_phantom(db) {
-            diagnostics.report_by_ptr(
+            diagnostics.report(
                 member.id.stable_ptr(db.upcast()).untyped(),
                 NonPhantomTypeContainingPhantomType,
             );

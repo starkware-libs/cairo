@@ -71,7 +71,7 @@ pub fn extern_type_declaration_generic_params_data(
         &extern_type_syntax.generic_params(db.upcast()),
     )?;
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
-        diagnostics.report_by_ptr(
+        diagnostics.report(
             param.stable_ptr(db.upcast()).untyped(),
             ExternTypeWithImplGenericsNotSupported,
         );

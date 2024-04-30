@@ -187,17 +187,14 @@ pub fn priv_extern_function_declaration_data(
         InlineConfiguration::Always(attr)
         | InlineConfiguration::Never(attr)
         | InlineConfiguration::Should(attr) => {
-            diagnostics
-                .report_by_ptr(attr.stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
+            diagnostics.report(attr.stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
         }
     }
 
     let (_, implicit_precedence_attr) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
     if let Some(attr) = implicit_precedence_attr {
-        diagnostics.report_by_ptr(
-            attr.stable_ptr.untyped(),
-            ImplicitPrecedenceAttrForExternFunctionNotAllowed,
-        );
+        diagnostics
+            .report(attr.stable_ptr.untyped(), ImplicitPrecedenceAttrForExternFunctionNotAllowed);
     }
 
     // Check fully resolved.
