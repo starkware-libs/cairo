@@ -56,17 +56,29 @@ impl HashStateImpl of HashStateTrait<HashState> {
     }
 }
 
-#[generate_trait]
-pub impl PoseidonHashValue of HashValueTrait {
-    fn hash_single_value(value: felt252) -> felt252 {
-        let (r, _, _) = hades_permutation(value, 0, 1);
-        r
-    }
+trait HashValueHelper<V> {
+    fn hash_value(v: V) -> felt252;
+}
 
-    fn hash_two_values(value1: felt252, value2: felt252) -> felt252 {
-        let (r, _, _) = hades_permutation(value1, value2, 2);
+impl SingleHashValueHelper<V, +Into<V, felt252>> of HashValueHelper<V> {
+    fn hash_value(v: V) -> felt252 {
+        let (r, _, _) = hades_permutation(v.into(), 0, 1);
         r
     }
+}
+
+impl PairHashValueHelper<
+    V0, V1, +Into<V0, felt252>, +Into<V1, felt252>
+> of HashValueHelper<(V0, V1)> {
+    fn hash_value(v0: (V0, V1)) -> felt252 {
+        let (hv0, hv1) = v0;
+        let (r, _, _) = hades_permutation(hv0.into(), hv1.into(), 2);
+        r
+    }
+}
+
+pub fn hash_value<V, +HashValueHelper<V>>(v: V) -> felt252 {
+    HashValueHelper::hash_value(v)
 }
 
 /// Computes the Poseidon hash on the given input.

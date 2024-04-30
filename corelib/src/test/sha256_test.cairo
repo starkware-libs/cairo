@@ -13,7 +13,9 @@ fn test_sha256_byte_array() {
     assert_eq!(a, 0x9834876d);
     let [a, _, _, _, _, _, _, _,] = compute_sha256_byte_array(@"aaaa");
     assert_eq!(a, 0x61be55a8);
-    let [a, _, _, _, _, _, _, _,] = compute_sha256_byte_array(
+    let [
+        a, _, _, _, _, _, _, _,
+    ] = compute_sha256_byte_array(
         @"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
     );
     assert_eq!(a, 0x06f9b1a7);
