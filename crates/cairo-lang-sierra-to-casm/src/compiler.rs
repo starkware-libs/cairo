@@ -26,6 +26,7 @@ use num_traits::{ToPrimitive, Zero};
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
+use crate::circuit::get_circuit_info;
 use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
     check_references_on_stack, compile_invocation, BranchChanges, InvocationError, ProgramInfo,
@@ -65,6 +66,8 @@ pub enum CompilationError {
     ConstDataMismatch,
     #[error("Unsupported const type.")]
     UnsupportedConstType,
+    #[error("Unsupported circuit type.")]
+    UnsupportedCircuitType,
     #[error("Const segments must appear in ascending order without holes.")]
     ConstSegmentsOutOfOrder,
     #[error("Code size limit exceeded.")]
@@ -490,6 +493,7 @@ pub fn compile(
                         const_data_values: &|ty| {
                             extract_const_value(&registry, &type_sizes, ty).unwrap()
                         },
+                        get_circuit_info: &|ty| get_circuit_info(&registry, ty).unwrap(),
                     },
                     invocation,
                     libfunc,
