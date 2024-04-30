@@ -68,15 +68,16 @@ impl SingleHashValueHelper<V, +Into<V, felt252>> of HashValueHelper<V> {
 }
 
 impl PairHashValueHelper<
-    V0, V1, +Into<V0, felt252>, +Into<V1, felt252>
+    V0, V1, +Drop<V0>, +Drop<V1>, +Into<V0, felt252>, +Into<V1, felt252>
 > of HashValueHelper<(V0, V1)> {
-    fn hash_value(v0: (V0, V1)) -> felt252 {
-        let (hv0, hv1) = v0;
-        let (r, _, _) = hades_permutation(hv0.into(), hv1.into(), 2);
+    fn hash_value(v: (V0, V1)) -> felt252 {
+        let (v0, v1) = v;
+        let (r, _, _) = hades_permutation(v0.into(), v1.into(), 2);
         r
     }
 }
 
+/// Computes the Poseidon hash of ether a single value or a pair of values.
 pub fn hash_value<V, +HashValueHelper<V>>(v: V) -> felt252 {
     HashValueHelper::hash_value(v)
 }
