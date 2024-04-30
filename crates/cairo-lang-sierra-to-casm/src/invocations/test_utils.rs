@@ -6,9 +6,7 @@ use cairo_lang_sierra::extensions::lib_func::{
 };
 use cairo_lang_sierra::extensions::type_specialization_context::TypeSpecializationContext;
 use cairo_lang_sierra::extensions::types::TypeInfo;
-use cairo_lang_sierra::extensions::{
-    ConcreteLibfunc, ConcreteType, GenericLibfuncEx, GenericTypeEx,
-};
+use cairo_lang_sierra::extensions::{ConcreteLibfunc, ConcreteType, GenericLibfuncEx, GenericType};
 use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
