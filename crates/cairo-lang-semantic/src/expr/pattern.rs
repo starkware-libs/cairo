@@ -2,6 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use id_arena::Arena;
 use smol_str::SmolStr;
 
@@ -86,6 +87,12 @@ impl Pattern {
             Pattern::Otherwise(pattern) => pattern.stable_ptr.into(),
             Pattern::Missing(pattern) => pattern.stable_ptr,
         }
+    }
+}
+
+impl From<&Pattern> for SyntaxStablePtrId {
+    fn from(pattern: &Pattern) -> Self {
+        pattern.stable_ptr().into()
     }
 }
 

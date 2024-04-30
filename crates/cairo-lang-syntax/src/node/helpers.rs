@@ -13,7 +13,7 @@ use super::ast::{
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
 use super::kind::SyntaxKind;
-use super::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
+use super::{SyntaxNode, Terminal, TypedSyntaxNode};
 use crate::node::ast::{Attribute, AttributeList};
 use crate::node::green::GreenNodeDetails;
 
@@ -528,10 +528,10 @@ impl WrappedArgListHelper for WrappedArgList {
 
     fn left_bracket_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
         match self {
-            WrappedArgList::ParenthesizedArgList(args) => args.lparen(db).stable_ptr().untyped(),
-            WrappedArgList::BracketedArgList(args) => args.lbrack(db).stable_ptr().untyped(),
-            WrappedArgList::BracedArgList(args) => args.lbrace(db).stable_ptr().untyped(),
-            WrappedArgList::Missing(_) => self.stable_ptr().untyped(),
+            WrappedArgList::ParenthesizedArgList(args) => (&args.lparen(db)).into(),
+            WrappedArgList::BracketedArgList(args) => (&args.lbrack(db)).into(),
+            WrappedArgList::BracedArgList(args) => (&args.lbrace(db)).into(),
+            WrappedArgList::Missing(_) => self.into(),
         }
     }
 }
