@@ -91,3 +91,27 @@ error: Non-phantom type containing phantom type.
  --> lib.cairo:5:5
     Variant: A,
     ^********^
+
+//! > ==========================================================================
+
+//! > Test enum with empty array.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    Variant: Array<()>,
+}
+
+//! > expected_diagnostics
+error: Cannot have array of type "()" that is zero sized.
+ --> lib.cairo:2:5
+    Variant: Array<()>,
+    ^****************^

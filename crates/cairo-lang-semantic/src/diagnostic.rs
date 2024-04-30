@@ -361,6 +361,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InfiniteSizeType { ty } => {
                 format!(r#"Recursive type "{}" has inifinite size."#, ty.format(db))
             }
+            SemanticDiagnosticKind::ArrayOfZeroSizedElements { ty } => {
+                format!(r#"Cannot have array of type "{}" that is zero sized."#, ty.format(db))
+            }
             SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
                 format!(
                     r#"Redefinition of parameter name "{param_name}" in function "{}"."#,
@@ -960,6 +963,9 @@ pub enum SemanticDiagnosticKind {
         variant_name: SmolStr,
     },
     InfiniteSizeType {
+        ty: semantic::TypeId,
+    },
+    ArrayOfZeroSizedElements {
         ty: semantic::TypeId,
     },
     ParamNameRedefinition {
