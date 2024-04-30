@@ -255,16 +255,14 @@ pub fn get_inline_config(
         match &attr.args[..] {
             [
                 AttributeArg {
-                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
-                    ..
+                    variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
             ] if &path.node.get_text(db.upcast()) == "always" => {
                 config = InlineConfiguration::Always(attr.clone());
             }
             [
                 AttributeArg {
-                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
-                    ..
+                    variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
             ] if &path.node.get_text(db.upcast()) == "never" => {
                 config = InlineConfiguration::Never(attr.clone());
@@ -323,7 +321,7 @@ pub fn get_implicit_precedence<'a>(
         .args
         .iter()
         .map(|arg| match &arg.variant {
-            AttributeArgVariant::Unnamed { value, .. } => {
+            AttributeArgVariant::Unnamed(value) => {
                 let ast::Expr::Path(path) = value else {
                     return Err(diagnostics.report(
                         value,
@@ -336,10 +334,8 @@ pub fn get_implicit_precedence<'a>(
                     .map_err(|kind| diagnostics.report(value, kind))
             }
 
-            _ => Err(diagnostics.report(
-                arg.arg_stable_ptr.untyped(),
-                SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments,
-            )),
+            _ => Err(diagnostics
+                .report(&arg.arg, SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments)),
         })
         .try_collect()?;
     let precedence = ImplicitPrecedence::from_iter(types);
