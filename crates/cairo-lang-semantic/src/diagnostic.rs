@@ -1162,6 +1162,8 @@ impl From<&ResolvedConcreteItem> for ElementKind {
             ResolvedConcreteItem::Variant(_) => ElementKind::Variant,
             ResolvedConcreteItem::Trait(_) => ElementKind::Trait,
             ResolvedConcreteItem::Impl(_) => ElementKind::Impl,
+            ResolvedConcreteItem::ImplConstant(_) => ElementKind::Constant,
+            ResolvedConcreteItem::TraitConstant(_) => ElementKind::Constant,
         }
     }
 }
