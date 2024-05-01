@@ -31,6 +31,9 @@ mod test_contract {
     fn good_l1_handler_ignored(ref self: ContractState, _from_address: felt252, arg: felt252) {}
 }
 
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 contract:
 
 #[event]
@@ -144,6 +147,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {

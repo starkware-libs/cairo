@@ -91,6 +91,9 @@ impl OuterTypeHash<
 }
 
 
+lib.cairo:1:16
+#[derive(Drop, starknet::Store, Hash)]
+               ^*************^
 starknet_derive:
 
 impl StoreOuterType of starknet::Store::<OuterType> {
@@ -126,6 +129,9 @@ impl StoreOuterType of starknet::Store::<OuterType> {
 }
 
 
+lib.cairo:7:1
+#[starknet::contract]
+^*******************^
 contract:
 
 #[event]
@@ -752,6 +758,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:7:1
+#[starknet::contract]
+^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {

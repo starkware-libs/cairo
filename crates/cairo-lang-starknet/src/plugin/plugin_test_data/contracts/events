@@ -91,6 +91,9 @@ impl ASerde of core::serde::Serde::<A> {
 }
 
 
+lib.cairo:1:1
+#[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
+^*****************************************************************^
 starknet_derive:
 
 impl AIsEvent of starknet::Event<A> {
@@ -180,6 +183,9 @@ impl BSerde of core::serde::Serde::<B> {
 }
 
 
+lib.cairo:8:10
+#[derive(starknet::Event, PartialEq, Drop, Serde)]
+         ^*************^
 starknet_derive:
 
 impl BIsEvent of starknet::Event<B> {
@@ -217,6 +223,9 @@ impl NestedEventEnumPartialEq of core::traits::PartialEq::<NestedEventEnum> {
 impl NestedEventEnumDrop of core::traits::Drop::<NestedEventEnum>;
 
 
+lib.cairo:14:10
+#[derive(starknet::Event, PartialEq, Drop)]
+         ^*************^
 starknet_derive:
 
 impl NestedEventEnumIsEvent of starknet::Event<NestedEventEnum> {
@@ -292,6 +301,9 @@ impl MyEventEnumPartialEq of core::traits::PartialEq::<MyEventEnum> {
 impl MyEventEnumDrop of core::traits::Drop::<MyEventEnum>;
 
 
+lib.cairo:20:10
+#[derive(starknet::Event, PartialEq, Drop)]
+         ^*************^
 starknet_derive:
 
 impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {

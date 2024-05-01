@@ -115,6 +115,9 @@ mod hello_starknet {
     }
 }
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 HelloStarknetTraitDispatcherTrait:
 
 trait HelloStarknetTraitDispatcherTrait<T> {
@@ -469,6 +472,9 @@ impl HelloStarknetTraitDispatcherSerde of core::serde::Serde::<HelloStarknetTrai
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDispatcher> {
@@ -520,6 +526,9 @@ impl HelloStarknetTraitLibraryDispatcherSerde of core::serde::Serde::<HelloStark
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknetTraitLibraryDispatcher> {
@@ -571,6 +580,9 @@ impl HelloStarknetTraitSafeLibraryDispatcherSerde of core::serde::Serde::<HelloS
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStarknetTraitSafeLibraryDispatcher> {
@@ -622,6 +634,9 @@ impl HelloStarknetTraitSafeDispatcherSerde of core::serde::Serde::<HelloStarknet
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTraitSafeDispatcher> {
@@ -657,6 +672,9 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
 }
 
 
+lib.cairo:15:1
+#[starknet::contract]
+^*******************^
 contract:
 
 #[event]
@@ -895,6 +913,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:15:1
+#[starknet::contract]
+^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
