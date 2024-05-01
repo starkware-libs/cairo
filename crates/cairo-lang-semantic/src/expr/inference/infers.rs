@@ -6,10 +6,13 @@ use itertools::Itertools;
 use super::canonic::ResultNoErrEx;
 use super::conform::InferenceConform;
 use super::{Inference, InferenceError, InferenceResult};
+use crate::items::constant::ImplConstantId;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::GenericParamConst;
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitTypeId};
+use crate::items::trt::{
+    ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitTypeId,
+};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::ImplTypeId;
 use crate::{
@@ -93,6 +96,12 @@ pub trait InferenceEmbeddings {
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<TypeId>;
+    fn infer_trait_constant(
+        &mut self,
+        concrete_trait_constant: ConcreteTraitConstantId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: Option<SyntaxStablePtrId>,
+    ) -> InferenceResult<ImplConstantId>;
 }
 
 impl<'db> InferenceEmbeddings for Inference<'db> {
@@ -417,5 +426,23 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             self.db,
         ))
         .intern(self.db))
+    }
+
+    /// Infers the impl to be substituted instead of a trait for a given trait constant.
+    /// Returns the resulting impl constant.
+    fn infer_trait_constant(
+        &mut self,
+        concrete_trait_constant: ConcreteTraitConstantId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: Option<SyntaxStablePtrId>,
+    ) -> InferenceResult<ImplConstantId> {
+        let impl_id = self.new_impl_var(
+            concrete_trait_constant.concrete_trait(self.db),
+            stable_ptr,
+            lookup_context.clone(),
+        )?;
+        println!("{:?} ---- {:?}", self.inference_id, impl_id);
+
+        Ok(ImplConstantId::new(impl_id, concrete_trait_constant.trait_constant(self.db), self.db))
     }
 }

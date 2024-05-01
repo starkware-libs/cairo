@@ -4,7 +4,7 @@ use itertools::zip_eq;
 use super::canonic::ResultNoErrEx;
 use super::{ErrorSet, Inference, InferenceError, InferenceResult, InferenceVar};
 use crate::corelib::never_ty;
-use crate::items::constant::{ConstValue, ConstValueId};
+use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::ImplId;
 use crate::substitution::SemanticRewriter;
@@ -218,6 +218,7 @@ impl<'db> InferenceConform for Inference<'db> {
     ) -> InferenceResult<ConstValueId> {
         let id0 = self.rewrite(id0).no_err();
         let id1 = self.rewrite(id1).no_err();
+        self.conform_ty(id0.ty(self.db).unwrap(), id1.ty(self.db).unwrap())?;
         if id0 == id1 {
             return Ok(id0);
         }
@@ -228,10 +229,25 @@ impl<'db> InferenceConform for Inference<'db> {
         match id1.lookup_intern(self.db) {
             ConstValue::Missing(_) => return Ok(id1),
             ConstValue::Var(var, _) => return self.assign_const(var, id0),
+            ConstValue::ImplConstant(impl_const_id) => {
+                if !impl_const_id.impl_id().is_var_free(self.db) {
+                    let constant = self.reduce_impl_constant(impl_const_id)?;
+                    return self.conform_const(id0, constant);
+                }
+            }
             _ => {}
         }
         match const_value0 {
             ConstValue::Var(var, _) => Ok(self.assign_const(var, id1)?),
+            ConstValue::ImplConstant(impl_const_id) => {
+                if !impl_const_id.impl_id().is_var_free(self.db) {
+                    let constant = self.reduce_impl_constant(impl_const_id)?;
+                    self.conform_const(constant, id1)
+                } else {
+                    Err(self
+                        .set_error(InferenceError::ConstKindMismatch { const0: id0, const1: id1 }))
+                }
+            }
             _ => {
                 Err(self.set_error(InferenceError::ConstKindMismatch { const0: id0, const1: id1 }))
             }
@@ -464,35 +480,55 @@ impl<'db> InferenceConform for Inference<'db> {
 impl Inference<'_> {
     /// Reduces an impl type to a concrete type.
     pub fn reduce_impl_ty(&mut self, impl_type_id: ImplTypeId) -> InferenceResult<TypeId> {
-        let impl_id = impl_type_id.impl_id();
-        let trait_ty = impl_type_id.ty();
-        if let ImplId::ImplVar(var) = impl_id {
-            let var_id = var.id(self.db);
-            if let Some(ty) = self
-                .data
-                .impl_vars_trait_types
-                .get(&var_id)
-                .and_then(|mapping| mapping.get(&trait_ty))
-            {
-                Ok(*ty)
-            } else {
-                let ty = self
-                    .new_type_var(self.data.stable_ptrs.get(&InferenceVar::Impl(var_id)).cloned());
-                self.data.impl_vars_trait_types.entry(var_id).or_default().insert(trait_ty, ty);
-                Ok(ty)
-            }
-        } else if let Ok(Some(ty)) =
-            self.db.impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_ty, self.db))
-        {
+        let reduced_impl = self.reduce_impl(impl_type_id.impl_id())?;
+        if let Ok(Some(ty)) = self.db.impl_type_concrete_implized(ImplTypeId::new(
+            reduced_impl,
+            impl_type_id.ty(),
+            self.db,
+        )) {
             Ok(ty)
         } else {
             Err(self.set_error(
-                impl_id
+                reduced_impl
                     .concrete_trait(self.db)
                     .map(InferenceError::NoImplsFound)
                     .unwrap_or_else(InferenceError::Reported),
             ))
         }
+    }
+
+    /// Reduces an impl constant to a concrete const.
+    fn reduce_impl_constant(
+        &mut self,
+        impl_const_id: ImplConstantId,
+    ) -> InferenceResult<ConstValueId> {
+        let reduced_impl = self.reduce_impl(impl_const_id.impl_id())?;
+
+        if let Ok(constant) = self.db.impl_constant_concrete_implized_value(ImplConstantId::new(
+            reduced_impl,
+            impl_const_id.trait_constant_id(),
+            self.db,
+        )) {
+            Ok(constant)
+        } else {
+            Err(self.set_error(
+                reduced_impl
+                    .concrete_trait(self.db)
+                    .map(InferenceError::NoImplsFound)
+                    .unwrap_or_else(InferenceError::Reported),
+            ))
+        }
+    }
+    /// Reduces an impl var to a concrete impl.
+    fn reduce_impl(&mut self, impl_id: ImplId) -> InferenceResult<ImplId> {
+        Ok(if let ImplId::ImplVar(var) = impl_id {
+            println!("reduce_impl");
+            println!("var: {:?}", var.lookup_intern(self.db));
+            self.solve_single_pending(var.id(self.db))?;
+            self.rewrite(impl_id).no_err()
+        } else {
+            impl_id
+        })
     }
 
     /// Conforms a type to a type. Returning the reduced types on failure.

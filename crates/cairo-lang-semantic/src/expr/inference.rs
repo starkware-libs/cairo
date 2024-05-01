@@ -9,7 +9,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
     ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, LookupItemId, MemberId,
-    ParamId, StructId, TraitFunctionId, TraitId, TraitTypeId, VarId, VariantId,
+    ParamId, StructId, TraitConstantId, TraitFunctionId, TraitId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -25,7 +25,7 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::objects::*;
 use crate::expr::pattern::*;
-use crate::items::constant::{ConstValue, ConstValueId};
+use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplFunctionBodyId, ImplGenericFunctionId,
@@ -435,6 +435,7 @@ impl<'db> Inference<'db> {
 
     /// Getter for an [ImplVar].
     fn impl_var(&self, var_id: LocalImplVarId) -> &ImplVar {
+        // println!("{:?}-{} !---{:?}", self.inference_id, self.impl_vars.len(), var_id);
         &self.impl_vars[var_id.0]
     }
 
@@ -519,6 +520,8 @@ impl<'db> Inference<'db> {
             .insert_module(concrete_trait_id.trait_id(self.db).module_file_id(self.db.upcast()).0);
 
         let id = LocalImplVarId(self.impl_vars.len());
+        println!("{:?}-{} @---{:?}", self.inference_id, self.impl_vars.len(), id);
+
         if let Some(stable_ptr) = stable_ptr {
             self.stable_ptrs.insert(InferenceVar::Impl(id), stable_ptr);
         }
@@ -687,6 +690,7 @@ impl<'db> Inference<'db> {
         var: LocalImplVarId,
         impl_id: ImplId,
     ) -> InferenceResult<ImplId> {
+        println!("!@#@!#!@#!@ {:?}", impl_id);
         let concrete_trait = impl_id
             .concrete_trait(self.db)
             .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
@@ -777,7 +781,8 @@ impl<'db> Inference<'db> {
         let concrete_trait_id = self.rewrite(impl_var.concrete_trait_id).no_err();
         self.impl_vars[impl_var.id.0].concrete_trait_id = concrete_trait_id;
 
-        let solution_set = self.trait_solution_set(concrete_trait_id, impl_var.lookup_context)?;
+        let solution_set: SolutionSet<(CanonicalImpl, CanonicalMapping)> =
+            self.trait_solution_set(concrete_trait_id, impl_var.lookup_context)?;
         Ok(match solution_set {
             SolutionSet::None => SolutionSet::None,
             SolutionSet::Unique((canonical_impl, canonicalizer)) => {
@@ -1055,16 +1060,36 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
 }
 impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, NoError> {
-        if let ConstValue::Var(var, _) = value {
-            if let Some(const_value_id) = self.const_assignment.get(&var.id) {
-                let mut const_value = const_value_id.lookup_intern(self.db);
-                if let RewriteResult::Modified = self.internal_rewrite(&mut const_value)? {
-                    *self.const_assignment.get_mut(&var.id).unwrap() =
-                        const_value.clone().intern(self.db);
-                }
-                *value = const_value;
-                return Ok(RewriteResult::Modified);
+        match value {
+            ConstValue::Var(var, _) => {
+                return Ok(if let Some(const_value_id) = self.const_assignment.get(&var.id) {
+                    let mut const_value = const_value_id.lookup_intern(self.db);
+                    if let RewriteResult::Modified = self.internal_rewrite(&mut const_value)? {
+                        *self.const_assignment.get_mut(&var.id).unwrap() =
+                            const_value.clone().intern(self.db);
+                    }
+                    *value = const_value;
+                    RewriteResult::Modified
+                } else {
+                    RewriteResult::NoChange
+                });
             }
+            ConstValue::ImplConstant(impl_constant_id) => {
+                println!("hi {:?}", impl_constant_id);
+                let impl_constant_id_rewrite_result = self.internal_rewrite(impl_constant_id)?;
+                println!("hi {:?}", impl_constant_id);
+                return Ok(
+                    if let Ok(constant) =
+                        self.db.impl_constant_concrete_implized_value(*impl_constant_id)
+                    {
+                        *value = constant.lookup_intern(self.db);
+                        RewriteResult::Modified
+                    } else {
+                        impl_constant_id_rewrite_result
+                    },
+                );
+            }
+            _ => {}
         }
         value.default_rewrite(self)
     }
@@ -1074,7 +1099,9 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
         if let ImplId::ImplVar(var) = value {
             // Relax the candidates.
             let impl_var_id = var.lookup_intern(self.db).id;
+            println!("bye {:?}", var);
             if let Some(mut impl_id) = self.impl_assignment(impl_var_id) {
+                println!("bye {:?}", var);
                 if let RewriteResult::Modified = self.internal_rewrite(&mut impl_id)? {
                     *self.impl_assignment.get_mut(&impl_var_id).unwrap() = impl_id;
                 }

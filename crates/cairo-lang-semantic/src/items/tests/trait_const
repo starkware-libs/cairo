@@ -1,0 +1,45 @@
+//! > Mismatch of resolved traits' items when there is a single impl in context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct S<const N: u32> {}
+
+trait AnotherTrait<T> {
+    const X: u32;
+    type F;
+}
+impl AnotherImpl<T> of AnotherTrait<T> {
+    const X: u32 = 32;
+    type F = felt252;
+}
+trait AnotherTrait2<T> {
+    const X: u32;
+    type F;
+}
+impl AnotherImpl2<T> of AnotherTrait2<T> {
+    const X: u32 = 32;
+    type F = felt252;
+}
+
+trait MyTrait<T> {
+    const Y: u32;
+    fn foo1() -> (S<32>, felt252);
+    fn foo2(x: S<32>);
+}
+impl MyImpl<T> of MyTrait<T> {
+    const Y: u32 = 32;
+    fn foo1() -> (S<AnotherTrait::<T>::X>, AnotherTrait2::<T>::F) {
+        (S {}, 4)
+    }
+    fn foo2(x: S<Self::Y>) {}
+}
+
+//! > expected_diagnostics

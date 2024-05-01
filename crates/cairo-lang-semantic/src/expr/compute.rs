@@ -2403,7 +2403,30 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
             ty: const_value_id.ty(db)?,
             stable_ptr: path.stable_ptr().into(),
         })),
-
+        // ResolvedConcreteItem::ConstGenericParameter(generic_param_id) => {
+        //     Ok(Expr::Constant(ExprConstant {
+        //         const_value_id: ConstValue::Generic(generic_param_id).intern(db),
+        //         ty: extract_matches!(
+        //             db.generic_param_semantic(generic_param_id)?,
+        //             GenericParam::Const
+        //         )
+        //         .ty,
+        //         stable_ptr: path.stable_ptr().into(),
+        //     }))
+        // }
+        // ResolvedConcreteItem::ImplConstant(impl_constant_id) => {
+        //     let const_value_id = ConstValue::ImplConstant(
+        //         ctx.resolver.inference().rewrite(impl_constant_id).no_err(),
+        //     )
+        //     .intern(db);
+        //     let ty = db.impl_constant_concrete_implized_type(impl_constant_id)?;
+        //     Ok(Expr::Constant(ExprConstant {
+        //         const_value_id,
+        //         ty,
+        //         stable_ptr: path.stable_ptr().into(),
+        //     }))
+        // }
+        // ResolvedConcreteItem::TraitConstant(_) => Err(ctx.diagnostics.report(path, Unsupported)),
         ResolvedConcreteItem::Variant(variant) if variant.ty == unit_ty(db) => {
             let stable_ptr = path.stable_ptr().into();
             let concrete_enum_id = variant.concrete_enum_id;
