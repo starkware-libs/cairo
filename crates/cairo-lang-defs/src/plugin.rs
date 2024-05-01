@@ -68,11 +68,11 @@ pub struct PluginDiagnostic {
     pub severity: Severity,
 }
 impl PluginDiagnostic {
-    pub fn error(stable_ptr: SyntaxStablePtrId, message: String) -> PluginDiagnostic {
-        PluginDiagnostic { stable_ptr, message, severity: Severity::Error }
+    pub fn error(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
+        PluginDiagnostic { stable_ptr: stable_ptr.into(), message, severity: Severity::Error }
     }
-    pub fn warning(stable_ptr: SyntaxStablePtrId, message: String) -> PluginDiagnostic {
-        PluginDiagnostic { stable_ptr, message, severity: Severity::Warning }
+    pub fn warning(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
+        PluginDiagnostic { stable_ptr: stable_ptr.into(), message, severity: Severity::Warning }
     }
 }
 

@@ -3,6 +3,7 @@ use cairo_lang_defs::ids::{ConstantId, MemberId, NamedLanguageElementId, VarId};
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use id_arena::Id;
 use num_bigint::BigInt;
 
@@ -64,6 +65,12 @@ impl Statement {
             Statement::Return(stmt) => stmt.stable_ptr,
             Statement::Break(stmt) => stmt.stable_ptr,
         }
+    }
+}
+
+impl From<&Statement> for SyntaxStablePtrId {
+    fn from(statement: &Statement) -> Self {
+        statement.stable_ptr().into()
     }
 }
 
@@ -199,6 +206,12 @@ impl Expr {
             Expr::MemberAccess(expr) => expr.member_path.clone(),
             _ => None,
         }
+    }
+}
+
+impl From<&Expr> for SyntaxStablePtrId {
+    fn from(expr: &Expr) -> Self {
+        expr.stable_ptr().into()
     }
 }
 

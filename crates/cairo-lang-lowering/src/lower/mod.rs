@@ -461,7 +461,7 @@ fn lower_expr_block(
                 // Emit diagnostic for the rest of the statements with unreachable.
                 ctx.diagnostics.report(
                     start_stmt.stable_ptr().untyped(),
-                    Unreachable { last_statement_ptr: end_stmt.stable_ptr().untyped() },
+                    Unreachable { last_statement_ptr: end_stmt.into() },
                 );
             }
         }
@@ -572,7 +572,7 @@ fn lower_single_pattern(
         | semantic::Pattern::StringLiteral(_)
         | semantic::Pattern::EnumVariant(_) => {
             return Err(LoweringFlowError::Failed(
-                ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedPattern),
+                ctx.diagnostics.report(&pattern, UnsupportedPattern),
             ));
         }
         semantic::Pattern::Variable(semantic::PatternVariable {

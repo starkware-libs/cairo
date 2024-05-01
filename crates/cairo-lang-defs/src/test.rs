@@ -10,7 +10,7 @@ use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern, Upcast};
@@ -234,10 +234,7 @@ impl MacroPlugin for DummyPlugin {
                     code_mappings: Default::default(),
                     aux_data: None,
                 }),
-                diagnostics: vec![PluginDiagnostic::error(
-                    free_function_ast.stable_ptr().untyped(),
-                    "bla".into(),
-                )],
+                diagnostics: vec![PluginDiagnostic::error(&free_function_ast, "bla".into())],
                 remove_original_item: false,
             },
             _ => PluginResult::default(),
