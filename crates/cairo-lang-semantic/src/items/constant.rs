@@ -3,21 +3,25 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
-    NamedLanguageElementId,
+    NamedLanguageElementId, TraitConstantId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, LookupIntern};
+use cairo_lang_utils::{
+    define_short_id, extract_matches, try_extract_matches, Intern, LookupIntern,
+};
 use id_arena::Arena;
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::{Num, ToPrimitive, Zero};
+use smol_str::SmolStr;
 
 use super::feature_kind::extract_allowed_features;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
+use super::imp::ImplId;
 use super::structure::SemanticStructEx;
 use crate::corelib::{
     core_felt252_ty, get_core_trait, get_core_ty_by_name, try_extract_nz_wrapped_type,
@@ -30,6 +34,7 @@ use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
+use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 use crate::{
     semantic_object_for_id, ConcreteVariant, Expr, ExprBlock, ExprConstant, ExprFunctionCall,
@@ -97,6 +102,7 @@ pub enum ConstValue {
     NonZero(TypeId, Box<ConstValue>),
     Boxed(TypeId, Box<ConstValue>),
     Generic(#[dont_rewrite] GenericParamId),
+    ImplConstant(ImplConstantId),
     Var(ConstVar),
     /// A missing value, used in cases where the value is not known due to diagnostics.
     Missing(#[dont_rewrite] DiagnosticAdded),
@@ -112,14 +118,20 @@ impl ConstValue {
             ConstValue::Enum(_, value)
             | ConstValue::NonZero(_, value)
             | ConstValue::Boxed(_, value) => value.is_fully_concrete(),
-            ConstValue::Generic(_) | ConstValue::Var(_) | ConstValue::Missing(_) => false,
+            ConstValue::Generic(_)
+            | ConstValue::Var(_)
+            | ConstValue::Missing(_)
+            | ConstValue::ImplConstant(_) => false,
         }
     }
 
     /// Returns true if the const does not contain any inference variables.
     pub fn is_var_free(&self) -> bool {
         match self {
-            ConstValue::Int(_) | ConstValue::Generic(_) | ConstValue::Missing(_) => true,
+            ConstValue::Int(_)
+            | ConstValue::Generic(_)
+            | ConstValue::ImplConstant(_)
+            | ConstValue::Missing(_) => true,
             ConstValue::Struct(members) => members.iter().all(|(_, member)| member.is_var_free()),
             ConstValue::Enum(_, value)
             | ConstValue::NonZero(_, value)
@@ -127,6 +139,78 @@ impl ConstValue {
             ConstValue::Var(_) => false,
         }
     }
+}
+
+/// An impl item of kind const.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct ImplConstantId {
+    /// The impl the item const is in.
+    impl_id: ImplId,
+    /// The trait const this impl const "implements".
+    trait_constant_id: TraitConstantId,
+}
+
+impl ImplConstantId {
+    /// Creates a new impl constand id. For an impl constamt of a concrete impl, asserts that the
+    /// trait constant belongs to the same trait that the impl implements (panics if not).
+    pub fn new(
+        impl_id: ImplId,
+        trait_constant_id: TraitConstantId,
+        db: &dyn SemanticGroup,
+    ) -> Self {
+        if let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_id {
+            let impl_def_id = concrete_impl.impl_def_id(db);
+            assert_eq!(Ok(trait_constant_id.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
+        }
+
+        ImplConstantId { impl_id, trait_constant_id }
+    }
+    pub fn impl_id(&self) -> ImplId {
+        self.impl_id
+    }
+    pub fn trait_constant_id(&self) -> TraitConstantId {
+        self.trait_constant_id
+    }
+
+    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("{}::{}", self.impl_id.name(db.upcast()), self.trait_constant_id.name(db.upcast()))
+            .into()
+    }
+}
+impl DebugWithDb<dyn SemanticGroup> for ImplConstantId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
+    }
+}
+
+pub fn reduce_impl_constant_id(
+    db: &dyn SemanticGroup,
+    impl_constant_id: ImplConstantId,
+    resolver: &mut Resolver,
+) -> Maybe<(ConstValueId, TypeId)> {
+    let impl_id = resolver.inference().rewrite(impl_constant_id.impl_id()).unwrap();
+    let impl_constant_id = ImplConstantId::new(impl_id, impl_constant_id.trait_constant_id, db);
+    // Try to implize the impl constant if its impl is concrete.
+    if let Some(constant) = db.impl_constant_concrete_implized(impl_constant_id)? {
+        return Ok(constant);
+    }
+
+    // Try to implize by the impl context, if given. E.g. for `Self::MyConst`
+    // inside an impl.
+    if let Some(impl_def_id) = resolver.trait_or_impl_ctx.impl_context() {
+        if let Some(constant) =
+            db.impl_constant_implized_by_context(impl_constant_id, impl_def_id)?
+        {
+            return Ok(constant);
+        }
+    }
+    let trait_constant = impl_constant_id.trait_constant_id();
+    let ty = db.trait_constant_type(trait_constant)?;
+    Ok((ConstValue::ImplConstant(impl_constant_id).intern(db), ty))
 }
 
 /// Query implementation of [SemanticGroup::priv_constant_semantic_data].
@@ -141,6 +225,22 @@ pub fn priv_constant_semantic_data(
         lookup_item_id,
         None,
         &const_id,
+    )
+}
+
+/// Cycle handling for [SemanticGroup::priv_constant_semantic_data].
+pub fn priv_constant_semantic_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    const_id: &ConstantId,
+) -> Maybe<ConstantData> {
+    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(*const_id));
+    constant_semantic_data_cycle_helper(
+        db,
+        &db.module_constant_by_id(*const_id)?.to_maybe()?,
+        lookup_item_id,
+        None,
+        const_id,
     )
 }
 
@@ -202,6 +302,37 @@ pub fn constant_semantic_data_helper(
     })
 }
 
+// cycle handling for constant_semantic_data_helper.
+pub fn constant_semantic_data_cycle_helper(
+    db: &dyn SemanticGroup,
+    constant_ast: &ItemConstant,
+    lookup_item_id: LookupItemId,
+    parent_resolver_data: Option<Arc<ResolverData>>,
+    element_id: &impl LanguageElementId,
+) -> Maybe<ConstantData> {
+    let mut diagnostics: SemanticDiagnostics = SemanticDiagnostics::default();
+
+    let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
+
+    let resolver = match parent_resolver_data {
+        Some(parent_resolver_data) => {
+            Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id))
+        }
+        None => Resolver::new(db, element_id.module_file_id(db.upcast()), inference_id),
+    };
+
+    let resolver_data = Arc::new(resolver.data);
+
+    let diagnostic_add = diagnostics.report(constant_ast, SemanticDiagnosticKind::ConstCycle);
+    Ok(ConstantData {
+        constant: Err(diagnostic_add),
+        const_value: ConstValue::Missing(diagnostic_add),
+        ty: TypeId::missing(db, diagnostic_add),
+        diagnostics: diagnostics.build(),
+        resolver_data,
+    })
+}
+
 /// Resolves the given const expression and evaluates its value.
 pub fn resolve_const_expr_and_evaluate(
     db: &dyn SemanticGroup,
@@ -225,27 +356,6 @@ pub fn resolve_const_expr_and_evaluate(
         // Check that the expression is a valid constant.
         _ => evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics),
     }
-}
-
-/// Cycle handling for [SemanticGroup::priv_constant_semantic_data].
-pub fn priv_constant_semantic_data_cycle(
-    db: &dyn SemanticGroup,
-    _cycle: &[String],
-    const_id: &ConstantId,
-) -> Maybe<ConstantData> {
-    let module_file_id = const_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::default();
-    let const_ast = db.module_constant_by_id(*const_id)?.to_maybe()?;
-    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(*const_id));
-    let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
-    let diagnostic_add = diagnostics.report(&const_ast, SemanticDiagnosticKind::ConstCycle);
-    Ok(ConstantData {
-        constant: Err(diagnostic_add),
-        const_value: ConstValue::Missing(diagnostic_add),
-        ty: TypeId::missing(db, diagnostic_add),
-        diagnostics: diagnostics.build(),
-        resolver_data: Arc::new(Resolver::new(db, module_file_id, inference_id).data),
-    })
 }
 
 /// creates a [ConstValue] from a [BigInt] value.
