@@ -62,7 +62,7 @@ fn generate_panicable_code(
     if attrs.len() > 1 {
         let extra_attr = attrs.swap_remove(1);
         diagnostics.push(PluginDiagnostic::error(
-            extra_attr.stable_ptr().untyped(),
+            &extra_attr,
             "`#[panic_with]` cannot be applied multiple times to the same item.".into(),
         ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
@@ -74,7 +74,7 @@ fn generate_panicable_code(
         extract_success_ty_and_variants(db, &signature)
     else {
         diagnostics.push(PluginDiagnostic::error(
-            signature.ret_ty(db).stable_ptr().untyped(),
+            &signature.ret_ty(db),
             "Currently only wrapping functions returning an Option<T> or Result<T, E>".into(),
         ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
@@ -188,13 +188,10 @@ fn parse_arguments(
 ) -> Option<(ast::TerminalShortString, ast::TerminalIdentifier)> {
     let [
         AttributeArg {
-            variant: AttributeArgVariant::Unnamed { value: ast::Expr::ShortString(err_value), .. },
+            variant: AttributeArgVariant::Unnamed(ast::Expr::ShortString(err_value)),
             ..
         },
-        AttributeArg {
-            variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(name), .. },
-            ..
-        },
+        AttributeArg { variant: AttributeArgVariant::Unnamed(ast::Expr::Path(name)), .. },
     ] = &attr.args[..]
     else {
         return None;

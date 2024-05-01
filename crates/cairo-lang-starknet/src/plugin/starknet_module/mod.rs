@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, require};
 
@@ -97,7 +97,7 @@ pub(super) fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                module_ast.stable_ptr().untyped(),
+                &module_ast,
                 format!(
                     "The '{DEPRECATED_CONTRACT_ATTR}' attribute was deprecated, please use \
                      `{CONTRACT_ATTR}` instead.",
@@ -123,7 +123,7 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                module_ast.stable_ptr().untyped(),
+                &module_ast,
                 format!("{module_kind_str}s without body are not supported."),
             )],
             remove_original_item: false,
@@ -135,7 +135,7 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                 module_ast.stable_ptr().untyped(),
+                 &module_ast,
                  format!("{module_kind_str}s must define a '{STORAGE_STRUCT_NAME}' struct."),
             )],
             remove_original_item: false,
@@ -146,7 +146,7 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                storage_struct_ast.stable_ptr().untyped(),
+                &storage_struct_ast,
                 format!("'{STORAGE_STRUCT_NAME}' struct must be annotated with #[{STORAGE_ATTR}]."),
             )],
             remove_original_item: false,

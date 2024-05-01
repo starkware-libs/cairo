@@ -8,7 +8,7 @@ use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStr
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -43,7 +43,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                trait_ast.stable_ptr().untyped(),
+                &trait_ast,
                 "Generated trait must have a single element path.".to_string(),
             )],
             remove_original_item: false,
@@ -64,7 +64,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     let extra_ident = leading_trivia.split('\n').last().unwrap_or_default();
     for attr_arg in attr.structurize(db).args {
         match attr_arg.variant {
-            AttributeArgVariant::Unnamed { value: ast::Expr::FunctionCall(attr_arg), .. }
+            AttributeArgVariant::Unnamed(ast::Expr::FunctionCall(attr_arg))
                 if attr_arg.path(db).as_syntax_node().get_text_without_trivia(db)
                     == "trait_attrs" =>
             {
@@ -78,7 +78,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
             }
             _ => {
                 diagnostics.push(PluginDiagnostic::error(
-                    attr_arg.arg_stable_ptr.untyped(),
+                    &attr_arg.arg,
                     "Expected an argument with the name `trait_attrs`.".to_string(),
                 ));
             }
@@ -134,7 +134,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     };
     if !generic_params_match {
         diagnostics.push(PluginDiagnostic::error(
-            trait_ast.stable_ptr().untyped(),
+            &trait_ast,
             "Generated trait must have generic args matching the impl's generic params."
                 .to_string(),
         ));

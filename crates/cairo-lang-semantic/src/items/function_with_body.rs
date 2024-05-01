@@ -255,16 +255,14 @@ pub fn get_inline_config(
         match &attr.args[..] {
             [
                 AttributeArg {
-                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
-                    ..
+                    variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
             ] if &path.node.get_text(db.upcast()) == "always" => {
                 config = InlineConfiguration::Always(attr.clone());
             }
             [
                 AttributeArg {
-                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
-                    ..
+                    variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
             ] if &path.node.get_text(db.upcast()) == "never" => {
                 config = InlineConfiguration::Never(attr.clone());
@@ -273,7 +271,7 @@ pub fn get_inline_config(
                 config = InlineConfiguration::Should(attr.clone());
             }
             _ => {
-                diagnostics.report_by_ptr(
+                diagnostics.report(
                     attr.args_stable_ptr.untyped(),
                     SemanticDiagnosticKind::UnsupportedInlineArguments,
                 );
@@ -281,7 +279,7 @@ pub fn get_inline_config(
         }
 
         if seen_inline_attr {
-            diagnostics.report_by_ptr(
+            diagnostics.report(
                 attr.id_stable_ptr.untyped(),
                 SemanticDiagnosticKind::RedundantInlineAttribute,
             );
@@ -313,7 +311,7 @@ pub fn get_implicit_precedence<'a>(
 
     // Report warnings for overridden attributes if any.
     for attr in attributes {
-        diagnostics.report_by_ptr(
+        diagnostics.report(
             attr.id_stable_ptr.untyped(),
             SemanticDiagnosticKind::RedundantImplicitPrecedenceAttribute,
         );
@@ -323,7 +321,7 @@ pub fn get_implicit_precedence<'a>(
         .args
         .iter()
         .map(|arg| match &arg.variant {
-            AttributeArgVariant::Unnamed { value, .. } => {
+            AttributeArgVariant::Unnamed(value) => {
                 let ast::Expr::Path(path) = value else {
                     return Err(diagnostics.report(
                         value,
@@ -336,10 +334,8 @@ pub fn get_implicit_precedence<'a>(
                     .map_err(|kind| diagnostics.report(value, kind))
             }
 
-            _ => Err(diagnostics.report_by_ptr(
-                arg.arg_stable_ptr.untyped(),
-                SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments,
-            )),
+            _ => Err(diagnostics
+                .report(&arg.arg, SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments)),
         })
         .try_collect()?;
     let precedence = ImplicitPrecedence::from_iter(types);

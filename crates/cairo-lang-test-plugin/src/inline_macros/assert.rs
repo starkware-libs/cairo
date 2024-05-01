@@ -7,7 +7,7 @@ use cairo_lang_defs::plugin_utils::{
 };
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
 
 /// A trait for compare assertion plugin.
@@ -27,7 +27,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    arguments_syntax.lparen(db).stable_ptr().untyped(),
+                    &arguments_syntax.lparen(db),
                     format!("Macro `{}` requires at least 2 arguments.", Self::NAME),
                 )],
             };
@@ -38,7 +38,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    lhs.stable_ptr().untyped(),
+                    lhs,
                     format!("Macro `{}` requires the first argument to be unnamed.", Self::NAME),
                 )],
             };
@@ -47,7 +47,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    rhs.stable_ptr().untyped(),
+                    rhs,
                     format!("Macro `{}` requires the second argument to be unnamed.", Self::NAME),
                 )],
             };

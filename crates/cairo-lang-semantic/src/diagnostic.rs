@@ -15,7 +15,6 @@ use cairo_lang_syntax as syntax;
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
-use syntax::node::TypedSyntaxNode;
 
 use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
@@ -31,45 +30,33 @@ mod test;
 
 pub type SemanticDiagnostics = DiagnosticsBuilder<SemanticDiagnostic>;
 pub trait SemanticDiagnosticsBuilder {
-    /// Report a diagnostic in the location of the given node.
-    fn report<TNode: TypedSyntaxNode>(
+    /// Report a diagnostic in the location of the given ptr.
+    fn report(
         &mut self,
-        node: &TNode,
+        stable_ptr: impl Into<SyntaxStablePtrId>,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded;
-    /// Report a diagnostic in the location after the given node (with width 0).
-    fn report_after<TNode: TypedSyntaxNode>(
+    /// Report a diagnostic in the location after the given ptr (with width 0).
+    fn report_after(
         &mut self,
-        node: &TNode,
-        kind: SemanticDiagnosticKind,
-    ) -> DiagnosticAdded;
-    fn report_by_ptr(
-        &mut self,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: impl Into<SyntaxStablePtrId>,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded;
 }
 impl SemanticDiagnosticsBuilder for SemanticDiagnostics {
-    fn report<TNode: TypedSyntaxNode>(
+    fn report(
         &mut self,
-        node: &TNode,
+        stable_ptr: impl Into<SyntaxStablePtrId>,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.add(SemanticDiagnostic::new(StableLocation::from_ast(node), kind))
+        self.add(SemanticDiagnostic::new(StableLocation::new(stable_ptr.into()), kind))
     }
-    fn report_after<TNode: TypedSyntaxNode>(
+    fn report_after(
         &mut self,
-        node: &TNode,
+        stable_ptr: impl Into<SyntaxStablePtrId>,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.add(SemanticDiagnostic::new_after(StableLocation::from_ast(node), kind))
-    }
-    fn report_by_ptr(
-        &mut self,
-        stable_ptr: SyntaxStablePtrId,
-        kind: SemanticDiagnosticKind,
-    ) -> DiagnosticAdded {
-        self.add(SemanticDiagnostic::new(StableLocation::new(stable_ptr), kind))
+        self.add(SemanticDiagnostic::new_after(StableLocation::new(stable_ptr.into()), kind))
     }
 }
 
@@ -371,8 +358,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     enum_id.full_path(db.upcast())
                 )
             }
-            SemanticDiagnosticKind::RecursiveType { ty } => {
-                format!(r#"Direct recursive type "{}"."#, ty.format(db))
+            SemanticDiagnosticKind::InfiniteSizeType { ty } => {
+                format!(r#"Recursive type "{}" has infinite size."#, ty.format(db))
             }
             SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
                 format!(
@@ -972,7 +959,7 @@ pub enum SemanticDiagnosticKind {
         enum_id: EnumId,
         variant_name: SmolStr,
     },
-    RecursiveType {
+    InfiniteSizeType {
         ty: semantic::TypeId,
     },
     ParamNameRedefinition {
@@ -1289,7 +1276,7 @@ pub fn report_unsupported_trait_item<Terminal: syntax::node::Terminal>(
     kw_terminal: Terminal,
     item_kind: &str,
 ) {
-    diagnostics.report_by_ptr(
+    diagnostics.report(
         kw_terminal.as_syntax_node().stable_ptr(),
         SemanticDiagnosticKind::UnsupportedTraitItem { kind: item_kind.into() },
     );
@@ -1301,7 +1288,7 @@ pub fn report_unsupported_impl_item<Terminal: syntax::node::Terminal>(
     kw_terminal: Terminal,
     item_kind: &str,
 ) {
-    diagnostics.report_by_ptr(
+    diagnostics.report(
         kw_terminal.as_syntax_node().stable_ptr(),
         SemanticDiagnosticKind::UnsupportedImplItem { kind: item_kind.into() },
     );

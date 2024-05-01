@@ -252,17 +252,10 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
 
         for arg in attr.args {
             let AttributeArg {
-                variant:
-                    AttributeArgVariant::Unnamed {
-                        value: ast::Expr::Path(path), value_stable_ptr, ..
-                    },
-                ..
+                variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
             } = arg
             else {
-                result.diagnostics.push(PluginDiagnostic::error(
-                    arg.arg_stable_ptr.untyped(),
-                    "Expected path.".into(),
-                ));
+                result.diagnostics.push(PluginDiagnostic::error(&arg.arg, "Expected path.".into()));
                 continue;
             };
 
@@ -271,7 +264,7 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
             };
 
             let derived = segment.ident(db).text(db);
-            let stable_ptr = value_stable_ptr.untyped();
+            let stable_ptr = path.stable_ptr().untyped();
             match derived.as_str() {
                 "Copy" | "Drop" => result.impls.push(get_empty_impl(&derived, &info)),
                 "Clone" => clone::handle_clone(&info, stable_ptr, &mut result),

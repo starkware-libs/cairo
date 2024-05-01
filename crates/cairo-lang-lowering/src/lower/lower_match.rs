@@ -149,7 +149,7 @@ fn get_underscore_pattern_path(
         if arm.patterns.is_empty() && arm.expr.is_some() {
             let expr = ctx.function_body.exprs[arm.expr.unwrap()].clone();
             ctx.diagnostics.report(
-                expr.stable_ptr().untyped(),
+                &expr,
                 MatchError(MatchError {
                     kind: match_type,
                     error: MatchDiagnostic::UnreachableMatchArm,
@@ -159,7 +159,7 @@ fn get_underscore_pattern_path(
         for pattern in arm.patterns.iter() {
             let pattern = ctx.function_body.patterns[*pattern].clone();
             ctx.diagnostics.report(
-                pattern.stable_ptr().untyped(),
+                &pattern,
                 MatchError(MatchError {
                     kind: match_type,
                     error: MatchDiagnostic::UnreachableMatchArm,
@@ -174,7 +174,7 @@ fn get_underscore_pattern_path(
     {
         let pattern = ctx.function_body.patterns[*pattern].clone();
         ctx.diagnostics.report(
-            pattern.stable_ptr().untyped(),
+            &pattern,
             MatchError(MatchError {
                 kind: match_type,
                 error: MatchDiagnostic::UnreachableMatchArm,
@@ -204,7 +204,7 @@ fn get_variant_to_arm_map<'a>(
             let enum_pattern = try_extract_matches!(&pattern, semantic::Pattern::EnumVariant)
                 .ok_or_else(|| {
                     LoweringFlowError::Failed(ctx.diagnostics.report(
-                        pattern.stable_ptr().untyped(),
+                        &pattern,
                         MatchError(MatchError {
                             kind: match_type,
                             error: MatchDiagnostic::UnsupportedMatchArmNotAVariant,
@@ -215,7 +215,7 @@ fn get_variant_to_arm_map<'a>(
 
             if enum_pattern.variant.concrete_enum_id != concrete_enum_id {
                 return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-                    pattern.stable_ptr().untyped(),
+                    &pattern,
                     MatchError(MatchError {
                         kind: match_type,
                         error: MatchDiagnostic::UnsupportedMatchArmNotAVariant,
@@ -226,7 +226,7 @@ fn get_variant_to_arm_map<'a>(
             match map.entry(enum_pattern.variant.clone()) {
                 Entry::Occupied(_) => {
                     ctx.diagnostics.report(
-                        pattern.stable_ptr().untyped(),
+                        &pattern,
                         MatchError(MatchError {
                             kind: match_type,
                             error: MatchDiagnostic::UnreachableMatchArm,
@@ -317,7 +317,7 @@ fn insert_tuple_path_patterns(
             })
         }
         _ => Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-            pattern.stable_ptr().untyped(),
+            &pattern,
             MatchError(MatchError {
                 kind: match_type,
                 error: MatchDiagnostic::UnsupportedMatchArmNotAVariant,
@@ -343,7 +343,7 @@ fn get_variants_to_arm_map_tuple<'a>(
             let patterns =
                 try_extract_matches!(&pattern, semantic::Pattern::Tuple).ok_or_else(|| {
                     LoweringFlowError::Failed(ctx.diagnostics.report(
-                        pattern.stable_ptr().untyped(),
+                        &pattern,
                         MatchError(MatchError {
                             kind: match_type,
                             error: MatchDiagnostic::UnsupportedMatchArmNotAVariant,
@@ -363,7 +363,7 @@ fn get_variants_to_arm_map_tuple<'a>(
             )?;
             if map.len() == map_size {
                 ctx.diagnostics.report(
-                    pattern.stable_ptr().untyped(),
+                    &pattern,
                     MatchError(MatchError {
                         kind: match_type,
                         error: MatchDiagnostic::UnreachableMatchArm,
@@ -461,7 +461,7 @@ fn lower_tuple_match_arm(
         Some(semantic::Pattern::Otherwise(_)) | None => Ok(()),
         _ => {
             return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-                pattern.unwrap().stable_ptr().untyped(),
+                &pattern.unwrap(),
                 MatchError(MatchError {
                     kind: match_type,
                     error: MatchDiagnostic::UnsupportedMatchArmNotATuple,
@@ -723,12 +723,7 @@ pub(crate) fn lower_concrete_enum_match(
     match_type: MatchKind,
 ) -> LoweringResult<LoweredExpr> {
     let ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots } =
-        extract_concrete_enum(
-            ctx,
-            matched_expr.stable_ptr().untyped(),
-            matched_expr.ty(),
-            match_type,
-        )?;
+        extract_concrete_enum(ctx, matched_expr.into(), matched_expr.ty(), match_type)?;
     let match_input = lowered_matched_expr.as_var_usage(ctx, builder)?;
 
     // Merge arm blocks.
@@ -798,7 +793,7 @@ pub(crate) fn lower_concrete_enum_match(
                 ) => {
                     let var_id = ctx.new_var(VarRequest {
                         ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
-                        location: ctx.get_location(pattern.unwrap().stable_ptr().untyped()),
+                        location: ctx.get_location(pattern.unwrap().into()),
                     });
                     arm_var_ids.push(vec![var_id]);
                     Ok(())

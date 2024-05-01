@@ -257,7 +257,7 @@ pub fn enum_definition_diagnostics(
     for (_, variant) in data.variant_semantic.iter() {
         add_type_based_diagnostics(db, &mut diagnostics, variant.ty, &variant.id);
         if variant.ty.is_phantom(db) {
-            diagnostics.report_by_ptr(
+            diagnostics.report(
                 variant.id.stable_ptr(db.upcast()).untyped(),
                 NonPhantomTypeContainingPhantomType,
             );

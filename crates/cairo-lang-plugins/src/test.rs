@@ -11,9 +11,9 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::ParserDatabase;
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -171,7 +171,7 @@ impl MacroPlugin for DoubleIndirectionPlugin {
                 } else {
                     PluginResult {
                         diagnostics: vec![PluginDiagnostic::error(
-                            struct_ast.stable_ptr().untyped(),
+                            &struct_ast,
                             "Double indirection diagnostic".to_string(),
                         )],
                         ..PluginResult::default()

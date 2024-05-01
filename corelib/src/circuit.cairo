@@ -14,3 +14,30 @@ extern fn init_circuit_data<C>() -> CircuitInputAccumulator<C> implicits(RangeCh
 extern type CircuitInputAccumulator<C>;
 
 impl CircuitInputAccumulatorDrop<C> of Drop<CircuitInputAccumulator<C>>;
+
+
+/// A wrapper for circuit elements, used to construct circuits..
+pub struct CircuitElement<T> {}
+pub impl CircuitElementDrop<T> of Drop<CircuitElement<T>>;
+pub impl CircuitElementCopy<T> of Copy<CircuitElement<T>>;
+
+
+/// A marker trait for keeping track of which types are circuit elements.
+pub trait CircuitElementTrait<T> {}
+impl InputCircuitElement<const N: usize> of CircuitElementTrait<CircuitInput<N>> {}
+
+
+/// A trait for initializtion instances of a circuit defined using CircuitElements.
+pub trait CircuitDefinition<CE> {
+    type CircuitType;
+    /// calls `init_circuit_data` for the given circuit.
+    fn init(self: CE) -> CircuitInputAccumulator<Self::CircuitType>;
+}
+
+impl SingleOutputCircuit<Out0> of CircuitDefinition<(CircuitElement<Out0>,)> {
+    type CircuitType = (Out0,);
+
+    fn init(self: (CircuitElement<Out0>,)) -> CircuitInputAccumulator<Self::CircuitType> {
+        init_circuit_data::<(Out0,)>()
+    }
+}

@@ -248,10 +248,8 @@ impl InferenceError {
     ) -> DiagnosticAdded {
         match self {
             InferenceError::Reported(diagnostic_added) => *diagnostic_added,
-            _ => diagnostics.report_by_ptr(
-                stable_ptr,
-                SemanticDiagnosticKind::InternalInferenceError(self.clone()),
-            ),
+            _ => diagnostics
+                .report(stable_ptr, SemanticDiagnosticKind::InternalInferenceError(self.clone())),
         }
     }
 }
