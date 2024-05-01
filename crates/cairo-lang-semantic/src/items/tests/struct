@@ -46,22 +46,22 @@ struct C {
 }
 
 //! > expected_diagnostics
-error: Direct recursive type "test::A".
+error: Recursive type "test::A" has infinite size.
  --> lib.cairo:2:5
     member: A,
     ^*******^
 
-error: Direct recursive type "test::C".
+error: Recursive type "test::C" has infinite size.
  --> lib.cairo:6:5
     member: C,
     ^*******^
 
-error: Direct recursive type "test::A".
+error: Recursive type "test::A" has infinite size.
  --> lib.cairo:7:5
     member2: A,
     ^********^
 
-error: Direct recursive type "test::B".
+error: Recursive type "test::B" has infinite size.
  --> lib.cairo:11:5
     member: B,
     ^*******^

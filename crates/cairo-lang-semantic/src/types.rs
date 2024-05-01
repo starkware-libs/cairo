@@ -798,59 +798,86 @@ pub fn add_type_based_diagnostics(
     ty: TypeId,
     node: &impl LanguageElementId,
 ) {
-    if db.direct_recursive_type(ty) {
-        diagnostics.report(node.untyped_stable_ptr(db.upcast()), RecursiveType { ty });
+    if db.type_size_info(ty) == Ok(TypeSizeInformation::Infinite) {
+        diagnostics.report(node.untyped_stable_ptr(db.upcast()), InfiniteSizeType { ty });
     }
 }
 
-/// Query implementation of [crate::db::SemanticGroup::direct_recursive_type].
-pub fn direct_recursive_type(db: &dyn SemanticGroup, ty: TypeId) -> bool {
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TypeSizeInformation {
+    /// The type has an infinite size - caused by a recursion in it.
+    /// If the type simply holds an infinite type, it would be considered `Other`, for diagnostics
+    /// reasons.
+    Infinite,
+    /// The type is zero size.
+    ZeroSized,
+    /// The typed has some none zero size.
+    Other,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::type_size_info].
+pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInformation> {
     match ty.lookup_intern(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(id) => {
-                for (_, member) in db.struct_members(id.struct_id(db)).into_iter().flatten() {
-                    db.direct_recursive_type(member.ty);
+                let mut zero_sized = true;
+                for (_, member) in db.struct_members(id.struct_id(db))? {
+                    if db.type_size_info(member.ty)? != TypeSizeInformation::ZeroSized {
+                        zero_sized = false;
+                    }
+                }
+                if zero_sized {
+                    return Ok(TypeSizeInformation::ZeroSized);
                 }
             }
             ConcreteTypeId::Enum(id) => {
-                for (_, variant) in db.enum_variants(id.enum_id(db)).into_iter().flatten() {
-                    if let Ok(variant) = db.variant_semantic(id.enum_id(db), variant) {
-                        db.direct_recursive_type(variant.ty);
-                    }
+                for (_, variant) in db.enum_variants(id.enum_id(db))? {
+                    // Recursive calling in order to find infinite sized types.
+                    db.type_size_info(db.variant_semantic(id.enum_id(db), variant)?.ty)?;
                 }
             }
             ConcreteTypeId::Extern(_) => {}
         },
         TypeLongId::Tuple(types) => {
+            let mut zero_sized = true;
             for ty in types {
-                db.direct_recursive_type(ty);
+                if db.type_size_info(ty)? != TypeSizeInformation::ZeroSized {
+                    zero_sized = false;
+                }
+            }
+            if zero_sized {
+                return Ok(TypeSizeInformation::ZeroSized);
             }
         }
         TypeLongId::Snapshot(ty) => {
-            db.direct_recursive_type(ty);
+            if db.type_size_info(ty)? == TypeSizeInformation::ZeroSized {
+                return Ok(TypeSizeInformation::ZeroSized);
+            }
         }
+        TypeLongId::Coupon(_) => return Ok(TypeSizeInformation::ZeroSized),
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
-        | TypeLongId::Coupon(_)
         | TypeLongId::TraitType(_)
         | TypeLongId::ImplType(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
-            if !matches!(size.lookup_intern(db), ConstValue::Int(value) if value.is_zero()) {
-                db.direct_recursive_type(type_id);
+            if matches!(size.lookup_intern(db), ConstValue::Int(value) if value.is_zero())
+                || db.type_size_info(type_id)? == TypeSizeInformation::ZeroSized
+            {
+                return Ok(TypeSizeInformation::ZeroSized);
             }
         }
     }
-    false
+    Ok(TypeSizeInformation::Other)
 }
 
-/// Cycle handling of [crate::db::SemanticGroup::direct_recursive_type].
-pub fn direct_recursive_type_cycle(
+/// Cycle handling of [crate::db::SemanticGroup::type_size_info].
+pub fn type_size_info_cycle(
     _db: &dyn SemanticGroup,
     _cycle: &[String],
     _ty: &TypeId,
-) -> bool {
-    true
+) -> Maybe<TypeSizeInformation> {
+    Ok(TypeSizeInformation::Infinite)
 }
 
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.
