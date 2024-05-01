@@ -1409,7 +1409,16 @@ pub fn impl_type_concrete_implized(
     };
 
     let impl_def_id = concrete_impl.impl_def_id(db);
-    db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id)
+    let ty = db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id);
+    let Ok(Some(ty)) = ty else {
+        return ty;
+    };
+
+    let generic_params = db.impl_def_generic_params(impl_def_id)?;
+    let generic_args = concrete_impl.lookup_intern(db).generic_args;
+    let substitution = GenericSubstitution::new(generic_params.as_slice(), generic_args.as_slice());
+    let ty = SubstitutionRewriter { db, substitution: &substitution }.rewrite(ty)?;
+    Ok(Some(ty))
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_type_concrete_implized].
