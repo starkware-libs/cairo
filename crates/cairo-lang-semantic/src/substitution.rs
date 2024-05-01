@@ -16,7 +16,7 @@ use crate::expr::inference::{
     ConstVar, ImplVar, ImplVarId, InferenceId, InferenceVar, LocalConstVarId, LocalImplVarId,
     LocalTypeVarId, TypeVar,
 };
-use crate::items::constant::{ConstValue, ConstValueId};
+use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -278,6 +278,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper, LocalConstVarId, $($exclude)*);
         $crate::prune_single!(__identity_helper, InferenceVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, ConstValue, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ImplConstantId, $($exclude)*);
+
 
         $crate::prune_single!(__regular_helper, Signature, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericFunctionId, $($exclude)*);

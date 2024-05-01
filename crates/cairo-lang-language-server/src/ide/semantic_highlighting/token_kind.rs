@@ -179,6 +179,8 @@ impl SemanticTokenKind {
                         ResolvedConcreteItem::Variant(_) => SemanticTokenKind::EnumMember,
                         ResolvedConcreteItem::Trait(_) => SemanticTokenKind::Interface,
                         ResolvedConcreteItem::Impl(_) => SemanticTokenKind::Class,
+                        ResolvedConcreteItem::ImplConstant(_) => SemanticTokenKind::EnumMember,
+                        ResolvedConcreteItem::TraitConstant(_) => SemanticTokenKind::EnumMember,
                     });
                 }
 

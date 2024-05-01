@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 use std::sync::Arc;
-use std::{panic, vec};
+use std::{mem, panic, vec};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
@@ -32,7 +32,8 @@ use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 
 use super::constant::{
-    constant_semantic_data_cycle_helper, constant_semantic_data_helper, ConstValue, ConstantData,
+    constant_semantic_data_cycle_helper, constant_semantic_data_helper, ConstValueId, ConstantData,
+    ImplConstantId,
 };
 use super::enm::SemanticEnumEx;
 use super::feature_kind::extract_allowed_features;
@@ -608,6 +609,24 @@ pub fn impl_constants(
     impl_def_id: ImplDefId,
 ) -> Maybe<Arc<OrderedHashMap<ImplConstantDefId, ast::ItemConstant>>> {
     Ok(db.priv_impl_definition_data(impl_def_id)?.item_constant_asts)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_by_trait_constant].
+pub fn impl_constant_by_trait_constant(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    trait_constant_id: TraitConstantId,
+) -> Maybe<Option<ImplConstantDefId>> {
+    if trait_constant_id.trait_id(db.upcast()) != db.impl_def_trait(impl_def_id)? {
+        // The trait constant belongs to a trait other than the one the impl implements.
+        return Ok(None);
+    }
+
+    let defs_db = db.upcast();
+    let name = trait_constant_id.name(defs_db);
+    db.impl_item_by_name(impl_def_id, name).map(|maybe_item_id| {
+        maybe_item_id.and_then(|item_id| try_extract_matches!(item_id, ImplItemId::Constant))
+    })
 }
 
 // --- Computation ---
@@ -1515,8 +1534,12 @@ pub fn impl_constant_def_semantic_diagnostics(
 pub fn impl_constant_def_value(
     db: &dyn SemanticGroup,
     impl_constant_def_id: ImplConstantDefId,
-) -> Maybe<ConstValue> {
-    Ok(db.priv_impl_constant_semantic_data(impl_constant_def_id)?.constant_data.const_value)
+) -> Maybe<ConstValueId> {
+    Ok(db
+        .priv_impl_constant_semantic_data(impl_constant_def_id)?
+        .constant_data
+        .const_value
+        .intern(db))
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_def_value].
@@ -1524,9 +1547,27 @@ pub fn impl_constant_def_value_cycle(
     db: &dyn SemanticGroup,
     _cycle: &[String],
     impl_constant_def_id: &ImplConstantDefId,
-) -> Maybe<ConstValue> {
+) -> Maybe<ConstValueId> {
     // Forwarding cycle handling to `priv_impl_constant_semantic_data` handler.
     impl_constant_def_value(db, *impl_constant_def_id)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_def_type].
+pub fn impl_constant_def_type(
+    db: &dyn SemanticGroup,
+    impl_constant_def_id: ImplConstantDefId,
+) -> Maybe<TypeId> {
+    Ok(db.priv_impl_constant_semantic_data(impl_constant_def_id)?.constant_data.ty)
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::impl_constant_def_type].
+pub fn impl_constant_def_type_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_constant_def_id: &ImplConstantDefId,
+) -> Maybe<TypeId> {
+    // Forwarding cycle handling to `priv_impl_constant_semantic_data` handler.
+    impl_constant_def_type(db, *impl_constant_def_id)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_constant_def_resolver_data].
@@ -1572,18 +1613,15 @@ pub fn priv_impl_constant_semantic_data(
         impl_constant_def_ast,
         &mut resolver,
     );
-
-    Ok(ImplItemConstantData {
-        constant_data: constant_semantic_data_helper(
-            db,
-            impl_constant_def_ast,
-            lookup_item_id,
-            Some(Arc::new(resolver.data)),
-            &impl_def_id,
-        )?,
-        trait_constant_id,
-        diagnostics: diagnostics.build(),
-    })
+    let mut constant_data = constant_semantic_data_helper(
+        db,
+        impl_constant_def_ast,
+        lookup_item_id,
+        Some(Arc::new(resolver.data)),
+        &impl_def_id,
+    )?;
+    diagnostics.extend(mem::take(&mut constant_data.diagnostics));
+    Ok(ImplItemConstantData { constant_data, trait_constant_id, diagnostics: diagnostics.build() })
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_constant_semantic_data].
@@ -1612,18 +1650,15 @@ pub fn priv_impl_constant_semantic_data_cycle(
         impl_constant_def_ast,
         &mut resolver,
     );
-
-    Ok(ImplItemConstantData {
-        constant_data: constant_semantic_data_cycle_helper(
-            db,
-            impl_constant_def_ast,
-            lookup_item_id,
-            Some(Arc::new(resolver.data)),
-            &impl_def_id,
-        )?,
-        trait_constant_id,
-        diagnostics: diagnostics.build(),
-    })
+    let mut constant_data = constant_semantic_data_cycle_helper(
+        db,
+        impl_constant_def_ast,
+        lookup_item_id,
+        Some(Arc::new(resolver.data)),
+        &impl_def_id,
+    )?;
+    diagnostics.extend(mem::take(&mut constant_data.diagnostics));
+    Ok(ImplItemConstantData { constant_data, trait_constant_id, diagnostics: diagnostics.build() })
 }
 
 /// Validates the impl item constant, and returns the matching trait constant id.
@@ -1671,6 +1706,60 @@ fn validate_impl_item_constant(
         diagnostics.report(&impl_constant_type_clause_ast, WrongType { expected_ty, actual_ty });
     }
     Ok(trait_constant_id)
+}
+
+// === Impl Constant ===
+
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_implized_by_context].
+pub fn impl_constant_implized_by_context(
+    db: &dyn SemanticGroup,
+    impl_constant_id: ImplConstantId,
+    impl_def_id: ImplDefId,
+) -> Maybe<Option<(ConstValueId, TypeId)>> {
+    let Some(impl_constant_def_id) =
+        db.impl_constant_by_trait_constant(impl_def_id, impl_constant_id.trait_constant_id())?
+    else {
+        return Ok(None);
+    };
+
+    Ok(Some((
+        db.impl_constant_def_value(impl_constant_def_id)?,
+        db.impl_constant_def_type(impl_constant_def_id)?,
+    )))
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::impl_constant_implized_by_context].
+pub fn impl_constant_implized_by_context_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_constant_id: &ImplConstantId,
+    impl_def_id: &ImplDefId,
+) -> Maybe<Option<(ConstValueId, TypeId)>> {
+    // Forwarding cycle handling to `priv_impl_constant_semantic_data` handler.
+    impl_constant_implized_by_context(db, *impl_constant_id, *impl_def_id)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_constant_concrete_implized].
+pub fn impl_constant_concrete_implized(
+    db: &dyn SemanticGroup,
+    impl_constant_id: ImplConstantId,
+) -> Maybe<Option<(ConstValueId, TypeId)>> {
+    let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_constant_id.impl_id() else {
+        return Ok(None);
+    };
+
+    let impl_def_id = concrete_impl.impl_def_id(db);
+    db.impl_constant_implized_by_context(impl_constant_id, impl_def_id)
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::impl_constant_concrete_implized].
+pub fn impl_constant_concrete_implized_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_constant_id: &ImplConstantId,
+) -> Maybe<Option<(ConstValueId, TypeId)>> {
+    // Forwarding cycle handling to `priv_impl_const_semantic_data` handler.
+    impl_constant_concrete_implized(db, *impl_constant_id)
 }
 
 // === Impl Function Declaration ===
