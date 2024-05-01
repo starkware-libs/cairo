@@ -371,7 +371,7 @@ warning: In an impl, paths of the same impl are not allowed. Did you mean to use
 //! > An impl can be used in a path in its own body, if the generics are different.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {}
@@ -395,6 +395,15 @@ impl MyImpl<T> of MyTrait<T> {
 }
 
 //! > expected_diagnostics
+error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `T`, actual: `core::integer::u32`.
+ --> lib.cairo:9:15
+    fn foo(x: MyImpl::<u32>::InputType, y: Self::InputType) -> MyImpl::<u32>::OutputType {
+              ^**********************^
+
+error: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `T`, actual: `core::integer::u32`.
+ --> lib.cairo:9:64
+    fn foo(x: MyImpl::<u32>::InputType, y: Self::InputType) -> MyImpl::<u32>::OutputType {
+                                                               ^***********************^
 
 //! > ==========================================================================
 
@@ -2087,5 +2096,48 @@ impl MyImpl of MyTrait {
         (3_u16.my_into(), 3_u16.my_into())
     }
 }
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Complex 222
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> u32 {
+    let x: MyImpl::<u32>::ty = 4;
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+
+impl MyImpl<K> of MyTrait {
+    type ty = K;
+}
+
+//! > semantic_diagnostics
+error: Unexpected expression type. Expected: "core::integer::u32", found: "K".
+--> lib.cairo:8:17
+fn foo() -> u32 {
+^
+
+error: Unexpected return type. Expected: "core::integer::u32", found: "K".
+--> lib.cairo:8:17
+fn foo() -> u32 {
+^
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > expected_diagnostics
