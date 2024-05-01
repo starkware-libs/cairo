@@ -1524,9 +1524,9 @@ error: Type not found.
                                                        ^*****^
 
 error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo[contract]:29:36
-                starknet::storage::StoragePointer{
-                                   ^************^
+ --> lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 
 error: Type not found.
  --> lib.cairo:14:56
@@ -1544,9 +1544,9 @@ error: Type not found.
                                                        ^*****^
 
 error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo[contract]:46:36
-                starknet::storage::StoragePointerAccess::read(
-                                   ^******************^
+ --> lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 
 error: Type not found.
  --> lib.cairo:14:56
@@ -1554,9 +1554,9 @@ error: Type not found.
                                                        ^*****^
 
 error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo[contract]:51:36
-                starknet::storage::StoragePointerAccess::write(
-                                   ^******************^
+ --> lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 
 //! > generated_cairo_code
 lib.cairo:

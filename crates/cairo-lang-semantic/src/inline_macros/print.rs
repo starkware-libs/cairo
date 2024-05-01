@@ -47,7 +47,7 @@ fn generate_code_inner(
     with_newline: bool,
 ) -> InlinePluginResult {
     let arguments = syntax.arguments(db);
-    let mut builder = PatchBuilder::new(db);
+    let mut builder = PatchBuilder::new(db, syntax);
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc! {
             "
@@ -80,11 +80,12 @@ fn generate_code_inner(
         ]
         .into(),
     ));
+    let (content, code_mappings) = builder.build();
     InlinePluginResult {
         code: Some(PluginGeneratedFile {
             name: format!("{}_macro", get_macro_name(with_newline)).into(),
-            content: builder.code,
-            code_mappings: builder.code_mappings,
+            content,
+            code_mappings,
             aux_data: None,
         }),
         diagnostics: vec![],

@@ -52,17 +52,18 @@ fn generate_code_inner(
         Ok(info) => info,
         Err(diagnostics) => return InlinePluginResult { code: None, diagnostics },
     };
-    let mut builder = PatchBuilder::new(db);
+    let mut builder = PatchBuilder::new(db, syntax);
     let mut diagnostics = vec![];
     info.add_to_formatter(&mut builder, &mut diagnostics, with_newline);
     if !diagnostics.is_empty() {
         return InlinePluginResult { code: None, diagnostics };
     }
+    let (content, code_mappings) = builder.build();
     InlinePluginResult {
         code: Some(PluginGeneratedFile {
             name: format!("{}_macro", get_macro_name(with_newline)).into(),
-            content: builder.code,
-            code_mappings: builder.code_mappings,
+            content,
+            code_mappings,
             aux_data: None,
         }),
         diagnostics: vec![],

@@ -29,9 +29,9 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             remove_original_item: false,
         };
     }
-    if !trait_ast.has_attr(db, INTERFACE_ATTR) {
+    let Some(interface_attr) = trait_ast.find_attr(db, INTERFACE_ATTR) else {
         return PluginResult::default();
-    }
+    };
     let body = match trait_ast.body(db) {
         MaybeTraitBody::Some(body) => body,
         MaybeTraitBody::None(empty_body) => {
@@ -268,7 +268,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
         }
     }
 
-    let mut builder = PatchBuilder::new(db);
+    let mut builder = PatchBuilder::new(db, &interface_attr);
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
             "$visibility$trait {dispatcher_trait_name}<T> {{$dispatcher_signatures$
@@ -347,11 +347,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
         .into(),
     ));
 
+    let (content, code_mappings) = builder.build();
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: dispatcher_trait_name.into(),
-            content: builder.code,
-            code_mappings: builder.code_mappings,
+            content,
+            code_mappings,
             aux_data: None,
         }),
         diagnostics,

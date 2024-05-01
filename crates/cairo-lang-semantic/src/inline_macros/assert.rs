@@ -46,7 +46,7 @@ impl InlineMacroExprPlugin for AssertMacro {
         };
         let f = "__formatter_for_assert_macro__";
         let value_escaped = escape_node(db, value.as_syntax_node());
-        let mut builder = PatchBuilder::new(db);
+        let mut builder = PatchBuilder::new(db, syntax);
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"
@@ -98,11 +98,12 @@ impl InlineMacroExprPlugin for AssertMacro {
                 }}
             ",
         });
+        let (content, code_mappings) = builder.build();
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
                 name: format!("{}_macro", Self::NAME).into(),
-                content: builder.code,
-                code_mappings: builder.code_mappings,
+                content,
+                code_mappings,
                 aux_data: None,
             }),
             diagnostics: vec![],

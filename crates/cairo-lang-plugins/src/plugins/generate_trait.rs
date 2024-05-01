@@ -51,7 +51,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     };
 
     let mut diagnostics = vec![];
-    let mut builder = PatchBuilder::new(db);
+    let mut builder = PatchBuilder::new(db, &impl_ast);
     let leading_trivia = impl_ast
         .attributes(db)
         .elements(db)
@@ -207,11 +207,12 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
             builder.add_node(body.rbrace(db).as_syntax_node());
         }
     }
+    let (content, code_mappings) = builder.build();
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "generate_trait".into(),
-            content: builder.code,
-            code_mappings: builder.code_mappings,
+            content,
+            code_mappings,
             aux_data: None,
         }),
         diagnostics,

@@ -23,7 +23,7 @@ impl InlineMacroExprPlugin for PanicMacro {
         let WrappedArgList::ParenthesizedArgList(arguments_syntax) = syntax.arguments(db) else {
             return unsupported_bracket_diagnostic(db, syntax);
         };
-        let mut builder = PatchBuilder::new(db);
+        let mut builder = PatchBuilder::new(db, syntax);
         let arguments = arguments_syntax.arguments(db).elements(db);
         if arguments.is_empty() {
             builder.add_str(r#"core::panics::panic_with_byte_array(@"")"#);
@@ -63,11 +63,12 @@ impl InlineMacroExprPlugin for PanicMacro {
                 .into(),
             ));
         }
+        let (content, code_mappings) = builder.build();
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
                 name: format!("{}_macro", Self::NAME).into(),
-                content: builder.code,
-                code_mappings: builder.code_mappings,
+                content,
+                code_mappings,
                 aux_data: None,
             }),
             diagnostics: vec![],
