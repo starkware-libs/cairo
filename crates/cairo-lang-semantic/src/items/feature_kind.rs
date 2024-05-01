@@ -79,23 +79,17 @@ fn parse_feature_attr<const EXTRA_ALLOWED: usize>(
     allowed_args: [&str; EXTRA_ALLOWED],
 ) -> [Option<SmolStr>; EXTRA_ALLOWED] {
     let mut arg_values = std::array::from_fn(|_| None);
-    for AttributeArg { variant, arg_stable_ptr, .. } in &attr.args {
-        let AttributeArgVariant::Named {
-            value: ast::Expr::String(value),
-            name,
-            name_stable_ptr,
-            ..
-        } = variant
-        else {
-            add_diag(diagnostics, arg_stable_ptr, FeatureMarkerDiagnostic::UnsupportedArgument);
+    for AttributeArg { variant, arg, .. } in &attr.args {
+        let AttributeArgVariant::Named { value: ast::Expr::String(value), name } = variant else {
+            add_diag(diagnostics, &arg.stable_ptr(), FeatureMarkerDiagnostic::UnsupportedArgument);
             continue;
         };
-        let Some(i) = allowed_args.iter().position(|x| x == &name.as_str()) else {
-            add_diag(diagnostics, name_stable_ptr, FeatureMarkerDiagnostic::UnsupportedArgument);
+        let Some(i) = allowed_args.iter().position(|x| x == &name.text.as_str()) else {
+            add_diag(diagnostics, &name.stable_ptr, FeatureMarkerDiagnostic::UnsupportedArgument);
             continue;
         };
         if arg_values[i].is_some() {
-            add_diag(diagnostics, name_stable_ptr, FeatureMarkerDiagnostic::DuplicatedArgument);
+            add_diag(diagnostics, &name.stable_ptr, FeatureMarkerDiagnostic::DuplicatedArgument);
         } else {
             arg_values[i] = Some(value.text(db));
         }
@@ -127,7 +121,7 @@ pub fn extract_item_allowed_features(
         let feature_name = match &attr.args[..] {
             [
                 AttributeArg {
-                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::String(value), .. },
+                    variant: AttributeArgVariant::Unnamed(ast::Expr::String(value)),
                     ..
                 },
             ] => value.text(db),
