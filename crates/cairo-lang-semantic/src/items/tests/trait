@@ -903,46 +903,17 @@ foo
 //! > module_code
 trait MyTrait {
     const X: u32;
-}
-
-impl MyImpl of MyTrait {
-    const X: u32 = 3;
-}
-
-//! > expected_diagnostics
-
-//! > ==========================================================================
-
-//! > Test unsupported const usage.
-
-//! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
-
-//! > function
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    const X: u32;
     fn foo() -> u32;
 }
 
 impl MyImpl of MyTrait {
     const X: u32 = 3;
     fn foo() -> u32 {
-        ///TODO(TomerStarkware): remove diagnostic when impl const are resolved.
         Self::X
     }
 }
 
 //! > expected_diagnostics
-error: Unsupported feature.
- --> lib.cairo:10:15
-        Self::X
-              ^
 
 //! > ==========================================================================
 
