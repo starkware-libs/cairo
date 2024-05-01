@@ -725,9 +725,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 error: Trait has no implementation in context: core::serde::Serde::<test::MyType>.
- --> lib.cairo[contract]:33:46
-        core::serde::Serde::<super::MyType>::deserialize(ref data),
-                                             ^*********^
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 
 //! > ==========================================================================
 
@@ -999,14 +999,14 @@ warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
 ^*******************^
 
 error: Type not found.
- --> lib.cairo[contract]:33:30
-        core::serde::Serde::<T>::deserialize(ref data),
-                             ^
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 
 error: Type annotations needed. Failed to infer ?2.
- --> lib.cairo[contract]:32:33
-    let __arg_x = core::option::OptionTraitImpl::expect(
-                                ^*************^
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 
 error: Variable not dropped.
  --> lib.cairo:6:40
@@ -5719,9 +5719,9 @@ error: Method `foo1` not found on type `@test::component2::ComponentState::<TCon
                                              ^**^
 
 error: Invalid path.
- --> lib.cairo[get_dep_component_inline_macro]:4:41
-                super::NotHasComponent::get_component(__get_dep_component_macro_temp_contract__)
-                                        ^***********^
+ --> lib.cairo:60:13
+            get_dep_component!(@self, super::NotHasComponent).foo1();
+            ^***********************************************^
 
 error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?18>", found: "core::felt252".
 It is possible that the type inference failed because the types differ in the number of snapshots.
@@ -6222,6 +6222,42 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+component:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
+
+
+    pub struct ComponentState<TContractState> {
+    }
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+    #[inline(always)]
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
+    }
+    
+
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
+pub trait HasComponent<TContractState> {
+    fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
+    fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
+    fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
+    fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
+    fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+}
+
+
+
 generate_trait:
 
     trait Comp1HelperTrait<
@@ -6229,6 +6265,30 @@ generate_trait:
     > {
         fn foo2(self: @ComponentState<TContractState>);
     }
+
+
+impls:
+
+impl EventDrop of core::traits::Drop::<Event>;
+
+
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
 
 
 component:
@@ -6928,6 +6988,42 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+component:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
+
+
+    pub struct ComponentState<TContractState> {
+    }
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+    #[inline(always)]
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
+    }
+    
+
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
+pub trait HasComponent<TContractState> {
+    fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
+    fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
+    fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
+    fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
+    fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+}
+
+
+
 generate_trait:
 
     trait Comp1HelperTrait<
@@ -6935,6 +7031,30 @@ generate_trait:
     > {
         fn foo2(self: @ComponentState<TContractState>);
     }
+
+
+impls:
+
+impl EventDrop of core::traits::Drop::<Event>;
+
+
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
 
 
 component:

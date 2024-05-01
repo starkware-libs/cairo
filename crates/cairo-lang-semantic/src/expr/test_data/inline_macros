@@ -602,9 +602,9 @@ error: Plugin diagnostic: Macro `write` does not support this bracket type.
            ^
 
 error: Wrong number of arguments. Expected 1, found: 2
- --> lib.cairo[format_macro]:3:5
-    core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
-    ^********************************************************^
+ --> lib.cairo:32:5
+    format!;
+    ^*****^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
@@ -720,9 +720,9 @@ error: Plugin diagnostic: Macro `write` does not support this bracket type.
           ^
 
 error: Wrong number of arguments. Expected 1, found: 2
- --> lib.cairo[print_macro]:3:5
-    core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
-    ^********************************************************^
+ --> lib.cairo:32:5
+    print!;
+    ^****^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
@@ -838,9 +838,9 @@ error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
             ^
 
 error: Wrong number of arguments. Expected 1, found: 2
- --> lib.cairo[println_macro]:3:5
-    core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
-    ^********************************************************^
+ --> lib.cairo:32:5
+    println!;
+    ^******^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9

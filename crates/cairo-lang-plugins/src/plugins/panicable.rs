@@ -67,7 +67,6 @@ fn generate_panicable_code(
         ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     }
-    let attr = attrs.swap_remove(0);
 
     let signature = declaration.signature(db);
     let Some((inner_ty, success_variant, failure_variant)) =
@@ -80,6 +79,8 @@ fn generate_panicable_code(
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
 
+    let attr = attrs.swap_remove(0);
+    let mut builder = PatchBuilder::new(db, &attr);
     let attr = attr.structurize(db);
 
     let Some((err_value, panicable_name)) = parse_arguments(db, &attr) else {
@@ -89,7 +90,6 @@ fn generate_panicable_code(
         ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
-    let mut builder = PatchBuilder::new(db);
     builder.add_node(visibility.as_syntax_node());
     builder.add_node(declaration.function_kw(db).as_syntax_node());
     builder.add_modified(RewriteNode::new_trimmed(panicable_name.as_syntax_node()));
@@ -137,11 +137,12 @@ fn generate_panicable_code(
         .into(),
     ));
 
+    let (content, code_mappings) = builder.build();
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "panicable".into(),
-            content: builder.code,
-            code_mappings: builder.code_mappings,
+            content,
+            code_mappings,
             aux_data: None,
         }),
         diagnostics,

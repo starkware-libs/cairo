@@ -608,7 +608,7 @@ pub fn remove_component_inline_macro(
     db: &dyn SyntaxGroup,
     component_macro_ast: &ast::ItemInlineMacro,
 ) -> PluginResult {
-    if let Some((_module_ast, module_kind)) =
+    if let Some((_module_ast, module_kind, _)) =
         grand_grand_parent_starknet_module(component_macro_ast.as_syntax_node(), db)
     {
         if module_kind == StarknetModuleKind::Contract {

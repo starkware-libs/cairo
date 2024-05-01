@@ -225,12 +225,32 @@ pub struct ModifiedNode {
 
 pub struct PatchBuilder<'a> {
     pub db: &'a dyn SyntaxGroup,
-    pub code: String,
-    pub code_mappings: Vec<CodeMapping>,
+    code: String,
+    code_mappings: Vec<CodeMapping>,
+    origin: CodeOrigin,
 }
 impl<'a> PatchBuilder<'a> {
-    pub fn new(db: &'a dyn SyntaxGroup) -> Self {
-        Self { db, code: String::default(), code_mappings: vec![] }
+    /// Creates a new patch builder, originating from `origin` node.
+    pub fn new(db: &'a dyn SyntaxGroup, origin: &impl TypedSyntaxNode) -> Self {
+        Self {
+            db,
+            code: String::default(),
+            code_mappings: vec![],
+            origin: CodeOrigin::Span(origin.as_syntax_node().span_without_trivia(db)),
+        }
+    }
+
+    /// Builds the resulting code and code mappings.
+    pub fn build(mut self) -> (String, Vec<CodeMapping>) {
+        // Adds the mapping to the original node from all code not previously mapped.
+        self.code_mappings.push(CodeMapping {
+            span: TextSpan {
+                start: TextOffset::default(),
+                end: TextOffset::default().add_width(TextWidth::from_str(&self.code)),
+            },
+            origin: self.origin,
+        });
+        (self.code, self.code_mappings)
     }
 
     pub fn add_char(&mut self, c: char) {
