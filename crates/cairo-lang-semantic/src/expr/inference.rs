@@ -9,7 +9,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
     ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, LookupItemId, MemberId,
-    ParamId, StructId, TraitFunctionId, TraitId, TraitTypeId, VarId, VariantId,
+    ParamId, StructId, TraitConstantId, TraitFunctionId, TraitId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -25,7 +25,7 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::objects::*;
 use crate::expr::pattern::*;
-use crate::items::constant::{ConstValue, ConstValueId};
+use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -1012,6 +1012,33 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
 }
 impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, NoError> {
+        match value {
+            ConstValue::Var(var) => {
+                if let Some(const_value_id) = self.const_assignment.get(&var.id) {
+                    let mut const_value = const_value_id.lookup_intern(self.db);
+                    if let RewriteResult::Modified = self.internal_rewrite(&mut const_value)? {
+                        *self.const_assignment.get_mut(&var.id).unwrap() =
+                            const_value.clone().intern(self.db);
+                    }
+                    *value = const_value;
+                    return Ok(RewriteResult::Modified);
+                }
+            }
+            ConstValue::ImplConstant(impl_constant_id) => {
+                let impl_constant_id_rewrite_result = self.internal_rewrite(impl_constant_id)?;
+                return Ok(
+                    if let Ok(constant) =
+                        self.db.impl_constant_concrete_implized_value(*impl_constant_id)
+                    {
+                        *value = constant.lookup_intern(self.db);
+                        RewriteResult::Modified
+                    } else {
+                        impl_constant_id_rewrite_result
+                    },
+                );
+            }
+            _ => {}
+        }
         if let ConstValue::Var(var) = value {
             if let Some(const_value_id) = self.const_assignment.get(&var.id) {
                 let mut const_value = const_value_id.lookup_intern(self.db);

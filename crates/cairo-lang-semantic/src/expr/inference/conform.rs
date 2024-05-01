@@ -4,7 +4,7 @@ use itertools::zip_eq;
 use super::canonic::ResultNoErrEx;
 use super::{Inference, InferenceError, InferenceResult, InferenceVar};
 use crate::corelib::never_ty;
-use crate::items::constant::{ConstValue, ConstValueId};
+use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::ImplId;
 use crate::substitution::SemanticRewriter;
@@ -228,10 +228,25 @@ impl<'db> InferenceConform for Inference<'db> {
         match id1.lookup_intern(self.db) {
             ConstValue::Missing(_) => return Ok(id1),
             ConstValue::Var(var) => return self.assign_const(var, id0),
+            ConstValue::ImplConstant(impl_const_id) => {
+                if !impl_const_id.impl_id().is_var_free(self.db) {
+                    let constant = self.reduce_impl_constant(impl_const_id)?;
+                    return self.conform_const(id0, constant);
+                }
+            }
             _ => {}
         }
         match const_value0 {
             ConstValue::Var(var) => Ok(self.assign_const(var, id1)?),
+            ConstValue::ImplConstant(impl_const_id) => {
+                if !impl_const_id.impl_id().is_var_free(self.db) {
+                    let constant = self.reduce_impl_constant(impl_const_id)?;
+                    self.conform_const(constant, id1)
+                } else {
+                    Err(self
+                        .set_error(InferenceError::ConstKindMismatch { const0: id0, const1: id1 }))
+                }
+            }
             _ => {
                 Err(self.set_error(InferenceError::ConstKindMismatch { const0: id0, const1: id1 }))
             }
@@ -472,6 +487,33 @@ impl Inference<'_> {
             self.db,
         )) {
             Ok(ty)
+        } else {
+            Err(self.set_error(
+                reduced_impl
+                    .concrete_trait(self.db)
+                    .map(InferenceError::NoImplsFound)
+                    .unwrap_or_else(InferenceError::Reported),
+            ))
+        }
+    }
+
+    /// Reduces an impl constant to a concrete const.
+    fn reduce_impl_constant(
+        &mut self,
+        impl_const_id: ImplConstantId,
+    ) -> InferenceResult<ConstValueId> {
+        let reduced_impl = if let ImplId::ImplVar(var) = impl_const_id.impl_id() {
+            self.solve_single_pending(var.id(self.db))?;
+            self.rewrite(impl_const_id.impl_id()).no_err()
+        } else {
+            impl_const_id.impl_id()
+        };
+        if let Ok(constant) = self.db.impl_constant_concrete_implized_value(ImplConstantId::new(
+            reduced_impl,
+            impl_const_id.trait_constant_id(),
+            self.db,
+        )) {
+            Ok(constant)
         } else {
             Err(self.set_error(
                 reduced_impl
