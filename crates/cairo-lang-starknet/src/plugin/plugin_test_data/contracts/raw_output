@@ -43,6 +43,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 contract:
 
 #[event]
@@ -134,6 +137,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {

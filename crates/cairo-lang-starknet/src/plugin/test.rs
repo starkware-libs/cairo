@@ -1,16 +1,19 @@
 use std::path::PathBuf;
 
 use cairo_lang_compiler::diagnostics::get_diagnostics_as_string;
+use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_diagnostics::DiagnosticLocation;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_plugins::test_utils::expand_module_text;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::Intern;
+use cairo_lang_utils::{Intern, Upcast};
 
 use crate::test_utils::{SHARED_DB, SHARED_DB_WITH_CONTRACTS};
 
@@ -47,9 +50,17 @@ impl TestFileRunner for ExpandContractTestRunner {
         }
         let mut file_contents = vec![];
 
-        for file in files {
-            file_contents.push(format!("{}:", file.file_name(&db)));
-            file_contents.push(db.file_content(file).unwrap().as_ref().clone());
+        for file_id in files {
+            let content = db.file_content(file_id).unwrap();
+            let start = TextOffset::default();
+            let end = start.add_width(TextWidth::from_str(&content));
+            let content_location = DiagnosticLocation { file_id, span: TextSpan { start, end } };
+            let original_location = content_location.user_location(db.upcast());
+            let origin = (content_location != original_location)
+                .then(|| format!("{:?}\n", original_location.debug(db.upcast())))
+                .unwrap_or_default();
+            let file_name = file_id.file_name(&db);
+            file_contents.push(format!("{origin}{file_name}:\n\n{content}"));
         }
 
         let diagnostics = get_diagnostics_as_string(&db, &[test_module.crate_id]);
