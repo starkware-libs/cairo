@@ -337,7 +337,7 @@ pub fn priv_generic_param_data_cycle(
     generic_param_id: &GenericParamId,
 ) -> Maybe<GenericParamData> {
     let mut diagnostics = SemanticDiagnostics::default();
-    Err(diagnostics.report_by_ptr(
+    Err(diagnostics.report(
         generic_param_id.stable_ptr(db.upcast()).untyped(),
         SemanticDiagnosticKind::ImplRequirementCycle,
     ))

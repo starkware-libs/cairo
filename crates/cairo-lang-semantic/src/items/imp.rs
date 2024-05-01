@@ -656,7 +656,7 @@ pub fn priv_impl_definition_data(
                         .insert(name.clone(), ImplItemId::Function(impl_function_id))
                         .is_some()
                     {
-                        diagnostics.report_by_ptr(
+                        diagnostics.report(
                             name_node.stable_ptr().untyped(),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
                         );
@@ -672,7 +672,7 @@ pub fn priv_impl_definition_data(
                         .insert(name.clone(), ImplItemId::Type(impl_type_id))
                         .is_some()
                     {
-                        diagnostics.report_by_ptr(
+                        diagnostics.report(
                             name_node.stable_ptr().untyped(),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
                         );
@@ -729,7 +729,7 @@ fn report_invalid_impl_item<Terminal: syntax::node::Terminal>(
     diagnostics: &mut SemanticDiagnostics,
     kw_terminal: Terminal,
 ) {
-    diagnostics.report_by_ptr(
+    diagnostics.report(
         kw_terminal.as_syntax_node().stable_ptr(),
         InvalidImplItem { item_kw: kw_terminal.text(syntax_db) },
     );
@@ -755,9 +755,7 @@ fn check_special_impls(
             .flat_map(|info| info.copyable.err())
             .next()
         {
-            return Err(
-                diagnostics.report_by_ptr(stable_ptr, InvalidCopyTraitImpl { inference_error })
-            );
+            return Err(diagnostics.report(stable_ptr, InvalidCopyTraitImpl { inference_error }));
         }
     }
     if trait_id == drop {
@@ -768,9 +766,7 @@ fn check_special_impls(
             .flat_map(|info| info.droppable.err())
             .next()
         {
-            return Err(
-                diagnostics.report_by_ptr(stable_ptr, InvalidDropTraitImpl { inference_error })
-            );
+            return Err(diagnostics.report(stable_ptr, InvalidDropTraitImpl { inference_error }));
         }
     }
 
@@ -1796,7 +1792,7 @@ fn validate_impl_function_signature(
             }
         }
         .stable_ptr();
-        diagnostics.report_by_ptr(
+        diagnostics.report(
             location_ptr,
             WrongReturnTypeForImpl {
                 impl_def_id,

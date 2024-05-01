@@ -14,10 +14,10 @@ pub type LoweringDiagnostics = DiagnosticsBuilder<LoweringDiagnostic>;
 pub trait LoweringDiagnosticsBuilder {
     fn report(
         &mut self,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: impl Into<SyntaxStablePtrId>,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.report_by_location(Location::new(StableLocation::new(stable_ptr)), kind)
+        self.report_by_location(Location::new(StableLocation::new(stable_ptr.into())), kind)
     }
     fn report_by_location(
         &mut self,

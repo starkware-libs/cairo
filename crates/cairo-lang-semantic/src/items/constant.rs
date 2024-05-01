@@ -275,7 +275,7 @@ pub fn evaluate_constant_expr(
                 .map(|value| {
                     value_as_const_value(db, expr.ty, &value)
                         .map_err(|err| {
-                            diagnostics.report_by_ptr(
+                            diagnostics.report(
                                 expr.stable_ptr.untyped(),
                                 SemanticDiagnosticKind::LiteralError(err),
                             )
@@ -285,7 +285,7 @@ pub fn evaluate_constant_expr(
                 .unwrap_or_else(ConstValue::Missing),
             Expr::Literal(expr) => value_as_const_value(db, expr.ty, &expr.value)
                 .map_err(|err| {
-                    diagnostics.report_by_ptr(
+                    diagnostics.report(
                         expr.stable_ptr.untyped(),
                         SemanticDiagnosticKind::LiteralError(err),
                     )
@@ -327,7 +327,7 @@ pub fn evaluate_constant_expr(
                             .map(|value| (expr.ty, value))
                             .collect()
                     } else {
-                        diagnostics.report_by_ptr(
+                        diagnostics.report(
                             expr.stable_ptr.untyped(),
                             SemanticDiagnosticKind::UnsupportedConstant,
                         );
@@ -335,10 +335,12 @@ pub fn evaluate_constant_expr(
                     }
                 }
             }),
-            _ if diagnostics.error_count == 0 => ConstValue::Missing(diagnostics.report_by_ptr(
-                expr.stable_ptr().untyped(),
-                SemanticDiagnosticKind::UnsupportedConstant,
-            )),
+            _ if diagnostics.error_count == 0 => {
+                ConstValue::Missing(diagnostics.report(
+                    expr.stable_ptr().untyped(),
+                    SemanticDiagnosticKind::UnsupportedConstant,
+                ))
+            }
             _ => ConstValue::Missing(skip_diagnostic()),
         },
     )
@@ -393,14 +395,14 @@ fn evaluate_const_function_call(
                     if let [(_, ConstValue::Int(low)), (_, ConstValue::Int(high))] = &v[..] {
                         Ok(low + (high << 128))
                     } else {
-                        Err(diagnostics.report_by_ptr(
+                        Err(diagnostics.report(
                             exprs[*arg].stable_ptr().untyped(),
                             SemanticDiagnosticKind::UnsupportedConstant,
                         ))
                     }
                 }
                 ConstValue::Missing(err) => Err(err),
-                _ => Err(diagnostics.report_by_ptr(
+                _ => Err(diagnostics.report(
                     exprs[*arg].stable_ptr().untyped(),
                     SemanticDiagnosticKind::UnsupportedConstant,
                 )),
@@ -411,10 +413,8 @@ fn evaluate_const_function_call(
         .collect::<Result<Vec<_>, _>>()?;
 
     if !is_function_const(db, expr.function) {
-        return Err(diagnostics.report_by_ptr(
-            expr.stable_ptr.untyped(),
-            SemanticDiagnosticKind::UnsupportedConstant,
-        ));
+        return Err(diagnostics
+            .report(expr.stable_ptr.untyped(), SemanticDiagnosticKind::UnsupportedConstant));
     }
 
     let imp = extract_matches!(
@@ -429,7 +429,7 @@ fn evaluate_const_function_call(
         "mul" => &args[0] * &args[1],
         "div" | "rem" if args[1].is_zero() => {
             return Err(diagnostics
-                .report_by_ptr(expr.stable_ptr.untyped(), SemanticDiagnosticKind::DivisionByZero));
+                .report(expr.stable_ptr.untyped(), SemanticDiagnosticKind::DivisionByZero));
         }
         "div" if !is_felt252_ty => &args[0] / &args[1],
         "rem" if !is_felt252_ty => &args[0] % &args[1],
@@ -458,14 +458,14 @@ fn extract_const_member_access(
 ) -> Maybe<ConstValue> {
     let full_struct = evaluate_constant_expr(db, exprs, expr.expr, diagnostics).1;
     let ConstValue::Struct(mut values) = full_struct else {
-        return Err(diagnostics.report_by_ptr(
+        return Err(diagnostics.report(
             exprs[expr.expr].stable_ptr().untyped(),
             SemanticDiagnosticKind::UnsupportedConstant,
         ));
     };
     let members = db.concrete_struct_members(expr.concrete_struct_id)?;
     let Some(member_idx) = members.iter().position(|(_, member)| member.id == expr.member) else {
-        return Err(diagnostics.report_by_ptr(
+        return Err(diagnostics.report(
             exprs[expr.expr].stable_ptr().untyped(),
             SemanticDiagnosticKind::UnsupportedConstant,
         ));

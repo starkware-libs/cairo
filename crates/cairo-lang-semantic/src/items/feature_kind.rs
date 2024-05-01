@@ -132,7 +132,7 @@ pub fn extract_item_allowed_features(
                 },
             ] => value.text(db),
             _ => {
-                diagnostics.report_by_ptr(
+                diagnostics.report(
                     attr.args_stable_ptr.untyped(),
                     SemanticDiagnosticKind::UnsupportedFeatureAttrArguments,
                 );
