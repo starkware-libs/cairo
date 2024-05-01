@@ -11,7 +11,7 @@ use super::{
     LocalImplVarId, LocalTypeVarId, TypeVar,
 };
 use crate::db::SemanticGroup;
-use crate::items::constant::{ConstValue, ConstValueId};
+use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
