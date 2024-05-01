@@ -3,8 +3,8 @@ use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, TraitTypeId,
-    VariantId,
+    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitConstantId, TraitFunctionId,
+    TraitId, TraitTypeId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -16,7 +16,7 @@ use crate::expr::inference::{
     ConstVar, ImplVar, ImplVarId, InferenceId, InferenceVar, LocalConstVarId, LocalImplVarId,
     LocalTypeVarId, TypeVar,
 };
-use crate::items::constant::{ConstValue, ConstValueId};
+use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -269,6 +269,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper, StructId, $($exclude)*);
         $crate::prune_single!(__identity_helper, GenericParamId, $($exclude)*);
         $crate::prune_single!(__identity_helper, TraitTypeId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, TraitConstantId, $($exclude)*);
         $crate::prune_single!(__identity_helper, TypeVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, ConstVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, VarId, $($exclude)*);
@@ -279,6 +280,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper, LocalConstVarId, $($exclude)*);
         $crate::prune_single!(__identity_helper, InferenceVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, ConstValue, $($exclude)*);
+
 
         $crate::prune_single!(__regular_helper, Signature, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericFunctionId, $($exclude)*);
@@ -320,6 +322,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplTypeId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ImplConstantId, $($exclude)*);
         $crate::prune_single!(__regular_helper, UninferredImpl, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVarMemberPath, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVar, $($exclude)*);
@@ -456,14 +459,27 @@ impl<'a> SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<
 }
 impl<'a> SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<'a> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Maybe<RewriteResult> {
-        if let ConstValue::Generic(param_id) = value {
-            if let Some(generic_arg) = self.substitution.get(param_id) {
-                let const_value_id = extract_matches!(generic_arg, GenericArgumentId::Constant);
+        match value {
+            ConstValue::Generic(param_id) => {
+                if let Some(generic_arg) = self.substitution.get(param_id) {
+                    let const_value_id = extract_matches!(generic_arg, GenericArgumentId::Constant);
 
-                *value = const_value_id.lookup_intern(self.db);
+                    *value = const_value_id.lookup_intern(self.db);
+                    return Ok(RewriteResult::Modified);
+                }
+            }
+            ConstValue::ImplConstant(impl_constant_id) => {
+                self.internal_rewrite(impl_constant_id)?;
+                *value = self
+                    .db
+                    .impl_constant_concrete_implized_value(*impl_constant_id)?
+                    .lookup_intern(self.db);
                 return Ok(RewriteResult::Modified);
             }
+            // TODO(TomerStarkWare): Add support for rewriting TraitConstant.
+            _ => {}
         }
+
         value.default_rewrite(self)
     }
 }

@@ -1,12 +1,13 @@
 use cairo_lang_defs::ids::{
     ConstantId, GenericParamId, GenericTypeId, ImplAliasId, ImplDefId, ModuleId, ModuleItemId,
-    ModuleTypeAliasId, TopLevelLanguageElementId, TraitFunctionId, TraitId, VarId,
+    ModuleTypeAliasId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_utils::LookupIntern;
 
 use crate::db::SemanticGroup;
+use crate::items::constant::ImplConstantId;
 use crate::items::functions::GenericFunctionId;
 use crate::items::imp::ImplId;
 use crate::items::trt::ConcreteTraitGenericFunctionId;
@@ -87,6 +88,8 @@ impl ResolvedGenericItem {
 pub enum ResolvedConcreteItem {
     Constant(ConstantId),
     ConstGenericParameter(GenericParamId),
+    ImplConstant(ImplConstantId),
+    TraitConstant(TraitConstantId),
     Module(ModuleId),
     Function(FunctionId),
     TraitFunction(ConcreteTraitGenericFunctionId),
@@ -100,7 +103,9 @@ impl ResolvedConcreteItem {
     pub fn generic(&self, db: &dyn SemanticGroup) -> Option<ResolvedGenericItem> {
         Some(match self {
             ResolvedConcreteItem::Constant(id) => ResolvedGenericItem::Constant(*id),
-            ResolvedConcreteItem::ConstGenericParameter(_) => return None,
+            ResolvedConcreteItem::ConstGenericParameter(_)
+            | ResolvedConcreteItem::ImplConstant(_)
+            | ResolvedConcreteItem::TraitConstant(_) => return None,
             ResolvedConcreteItem::Module(item) => ResolvedGenericItem::Module(*item),
             ResolvedConcreteItem::Function(function) => ResolvedGenericItem::GenericFunction(
                 function.lookup_intern(db).function.generic_function,

@@ -1,7 +1,7 @@
 use cairo_lang_defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, TraitTypeId,
-    VarId, VariantId,
+    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitConstantId, TraitFunctionId,
+    TraitId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::LookupIntern;
@@ -11,7 +11,7 @@ use super::{
     LocalImplVarId, LocalTypeVarId, TypeVar,
 };
 use crate::db::SemanticGroup;
-use crate::items::constant::{ConstValue, ConstValueId};
+use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -306,7 +306,7 @@ impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
         let new_id = self.from_canonic.impl_var_mapping.entry(var.id).or_insert_with(|| {
             self.inference.new_impl_var_raw(var.lookup_context.clone(), concrete_trait_id, None)
         });
-        *value = ImplId::ImplVar(self.inference.impl_vars[new_id.0].intern(self.get_db()));
+        ImplId::ImplVar(self.inference.impl_vars[new_id.0].intern(self.get_db()));
         Ok(RewriteResult::Modified)
     }
 }

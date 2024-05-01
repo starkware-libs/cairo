@@ -54,7 +54,7 @@ use crate::diagnostic::{
     ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics,
     SemanticDiagnosticsBuilder, TraitInferenceErrors, UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::items::constant::{ConstValue, ConstValueId};
+use crate::items::constant::{implize_constant, ConstValue, ConstValueId};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_allowed_features;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
@@ -2708,6 +2708,21 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
                 stable_ptr: path.stable_ptr().into(),
             }))
         }
+        ResolvedConcreteItem::ImplConstant(impl_constant_id) => {
+            let (const_value_id, ty) = implize_constant(
+                ctx.db,
+                impl_constant_id,
+                ctx.resolver.data.trait_or_impl_ctx,
+                &mut ctx.resolver.inference(),
+            )?;
+            Ok(Expr::Constant(ExprConstant {
+                const_value_id,
+                ty,
+                stable_ptr: path.stable_ptr().into(),
+            }))
+        }
+        ResolvedConcreteItem::TraitConstant(_) => Err(ctx.diagnostics.report(path, Unsupported)),
+
         ResolvedConcreteItem::Variant(variant) if variant.ty == unit_ty(db) => {
             let stable_ptr = path.stable_ptr().into();
             let concrete_enum_id = variant.concrete_enum_id;

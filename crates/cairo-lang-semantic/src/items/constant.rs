@@ -3,22 +3,27 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
-    NamedLanguageElementId,
+    NamedLanguageElementId, TraitConstantId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, LookupIntern};
+use cairo_lang_utils::{
+    define_short_id, extract_matches, try_extract_matches, Intern, LookupIntern,
+};
 use id_arena::Arena;
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::{Num, ToPrimitive, Zero};
+use smol_str::SmolStr;
 
 use super::feature_kind::extract_allowed_features;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
+use super::imp::ImplId;
 use super::structure::SemanticStructEx;
+use super::TraitOrImplContext;
 use crate::corelib::{
     core_felt252_ty, get_core_trait, get_core_ty_by_name, try_extract_nz_wrapped_type,
     validate_literal, CoreTraitContext, LiteralError,
@@ -26,10 +31,12 @@ use crate::corelib::{
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment, ExprAndId};
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
-use crate::expr::inference::{ConstVar, InferenceId};
+use crate::expr::inference::{ConstVar, Inference, InferenceId};
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
+use crate::substitution::{SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{
     semantic_object_for_id, ConcreteVariant, Expr, ExprBlock, ExprConstant, ExprFunctionCall,
@@ -97,6 +104,7 @@ pub enum ConstValue {
     NonZero(TypeId, Box<ConstValue>),
     Boxed(TypeId, Box<ConstValue>),
     Generic(#[dont_rewrite] GenericParamId),
+    ImplConstant(ImplConstantId),
     Var(ConstVar),
     /// A missing value, used in cases where the value is not known due to diagnostics.
     Missing(#[dont_rewrite] DiagnosticAdded),
@@ -112,7 +120,10 @@ impl ConstValue {
             ConstValue::Enum(_, value)
             | ConstValue::NonZero(_, value)
             | ConstValue::Boxed(_, value) => value.is_fully_concrete(),
-            ConstValue::Generic(_) | ConstValue::Var(_) | ConstValue::Missing(_) => false,
+            ConstValue::Generic(_)
+            | ConstValue::Var(_)
+            | ConstValue::Missing(_)
+            | ConstValue::ImplConstant(_) => false,
         }
     }
 
@@ -124,9 +135,83 @@ impl ConstValue {
             ConstValue::Enum(_, value)
             | ConstValue::NonZero(_, value)
             | ConstValue::Boxed(_, value) => value.is_var_free(),
-            ConstValue::Var(_) => false,
+            ConstValue::Var(_) | ConstValue::ImplConstant(_) => false,
         }
     }
+}
+
+/// An impl item of kind const.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct ImplConstantId {
+    /// The impl the item const is in.
+    impl_id: ImplId,
+    /// The trait const this impl const "implements".
+    trait_constant_id: TraitConstantId,
+}
+
+impl ImplConstantId {
+    /// Creates a new impl constant id. For an impl constamt of a concrete impl, asserts that the
+    /// trait constant belongs to the same trait that the impl implements (panics if not).
+    pub fn new(
+        impl_id: ImplId,
+        trait_constant_id: TraitConstantId,
+        db: &dyn SemanticGroup,
+    ) -> Self {
+        if let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_id {
+            let impl_def_id = concrete_impl.impl_def_id(db);
+            assert_eq!(Ok(trait_constant_id.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
+        }
+
+        ImplConstantId { impl_id, trait_constant_id }
+    }
+    pub fn impl_id(&self) -> ImplId {
+        self.impl_id
+    }
+    pub fn trait_constant_id(&self) -> TraitConstantId {
+        self.trait_constant_id
+    }
+
+    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("{}::{}", self.impl_id.name(db.upcast()), self.trait_constant_id.name(db.upcast()))
+            .into()
+    }
+}
+impl DebugWithDb<dyn SemanticGroup> for ImplConstantId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
+    }
+}
+
+/// Tries to implize a constant, according to known inference data.
+///
+/// "Implization" is reducing a trait constant, to the more concrete constant,
+/// according to the assignment of that trait constant in its impl, if the impl is known according
+/// to the context.
+///
+/// `impl_ctx` is the impl context we're at, if any. That is, if we're inside an impl function, the
+/// wrapping impl is the context here.
+pub fn implize_constant(
+    db: &dyn SemanticGroup,
+    impl_constant_id: ImplConstantId,
+    trait_or_impl_ctx: TraitOrImplContext,
+    inference: &mut Inference<'_>,
+) -> Maybe<(ConstValueId, TypeId)> {
+    // In the case of having an impl definition rewrites using it.
+    let impl_constant_id = if let TraitOrImplContext::Impl(impl_def_id) = trait_or_impl_ctx {
+        let substitution = db.impl_def_substitution(impl_def_id)?;
+        SubstitutionRewriter { db, substitution: substitution.as_ref() }
+            .rewrite(inference.rewrite(impl_constant_id).no_err())?
+    } else {
+        impl_constant_id
+    };
+    Ok((
+        ConstValue::ImplConstant(inference.rewrite(impl_constant_id).no_err()).intern(db),
+        db.impl_constant_concrete_implized_type(impl_constant_id)?,
+    ))
 }
 
 /// Query implementation of [SemanticGroup::priv_constant_semantic_data].
@@ -218,7 +303,7 @@ pub fn constant_semantic_data_helper(
     })
 }
 
-// Cycle handling for constant_semantic_data_helper.
+/// cycle handling for constant_semantic_data_helper.
 pub fn constant_semantic_data_cycle_helper(
     db: &dyn SemanticGroup,
     constant_ast: &ItemConstant,
