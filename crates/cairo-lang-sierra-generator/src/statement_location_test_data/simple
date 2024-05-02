@@ -129,13 +129,13 @@ Originating location:
 In function: lib.cairo::foo
 label_test::foo::1:
 Originating location:
-        MyEnum::A(a) => a,
-                        ^
+    match my_enum {
+    ^*************^
 In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-        MyEnum::A(a) => a,
-                        ^
+    match my_enum {
+    ^*************^
 In function: lib.cairo::foo
 store_temp<u8>([3]) -> ([5])
 Originating location:
@@ -174,13 +174,13 @@ fn foo(my_enum: MyEnum) -> u8 {
 In function: lib.cairo::foo
 label_test::foo::2:
 Originating location:
-fn foo(my_enum: MyEnum) -> u8 {
-                              ^
+    match my_enum {
+    ^*************^
 In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-fn foo(my_enum: MyEnum) -> u8 {
-                              ^
+    match my_enum {
+    ^*************^
 In function: lib.cairo::foo
 struct_deconstruct<Tuple<u8, u8>>([4]) -> ([8], [9])
 Originating location:
@@ -323,14 +323,30 @@ Originating location:
 In function: core::option::OptionTraitImpl::expect
 label_test::foo::7:
 Originating location:
-    fn expect(self: Option<T>, err: felt252) -> T {
-                                                  ^
-In function: core::option::OptionTraitImpl::expect
+        downcast(self)
+        ^************^
+In function: core::integer::DowncastableIntTryInto::try_into
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^******************************^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^*****^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-    fn expect(self: Option<T>, err: felt252) -> T {
-                                                  ^
-In function: core::option::OptionTraitImpl::expect
+        downcast(self)
+        ^************^
+In function: core::integer::DowncastableIntTryInto::try_into
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^******************************^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^*****^
+In function: lib.cairo::foo
 array_new<felt252>() -> ([22])
 Originating location:
         array_new()
@@ -492,19 +508,31 @@ Originating location:
 In function: core::option::OptionTraitImpl::expect
 label_test::foo::5:
 Originating location:
-            Option::None => core::panic_with_felt252(err),
-                            ^***************************^
-In function: core::option::OptionTraitImpl::expect
+        u8_overflowing_sub(rhs, lhs).into_is_err()
+        ^**************************^
+In function: core::integer::U8PartialOrd::gt
+Inlined at:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                                    ^*****^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-            Option::None => core::panic_with_felt252(err),
-                            ^***************************^
-In function: core::option::OptionTraitImpl::expect
+        u8_overflowing_sub(rhs, lhs).into_is_err()
+        ^**************************^
+In function: core::integer::U8PartialOrd::gt
+Inlined at:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                                    ^*****^
+In function: lib.cairo::foo
 drop<u8>([15]) -> ()
 Originating location:
-            Option::None => core::panic_with_felt252(err),
-                            ^***************************^
-In function: core::option::OptionTraitImpl::expect
+        u8_overflowing_sub(rhs, lhs).into_is_err()
+        ^**************************^
+In function: core::integer::U8PartialOrd::gt
+Inlined at:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                                    ^*****^
+In function: lib.cairo::foo
 u8_overflowing_add([14], [8], [9]) { fallthrough([28], [29]) label_test::foo::9([30], [31]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -562,19 +590,31 @@ Originating location:
 In function: core::result::ResultTraitImpl::expect
 label_test::foo::9:
 Originating location:
-    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                               ^
-In function: core::result::ResultTraitImpl::expect
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^*****^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                               ^
-In function: core::result::ResultTraitImpl::expect
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^*****^
+In function: lib.cairo::foo
 drop<u8>([31]) -> ()
 Originating location:
-    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                               ^
-In function: core::result::ResultTraitImpl::expect
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^*****^
+In function: lib.cairo::foo
 array_new<felt252>() -> ([34])
 Originating location:
         array_new()
@@ -1001,13 +1041,21 @@ fn main() {
 In function: lib.cairo::main
 label_test::main::2:
 Originating location:
-fn main() {
-^*********^
+    match a {
+    ^*******^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
+            ^****^
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-fn main() {
-^*********^
+    match a {
+    ^*******^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
+            ^****^
 In function: lib.cairo::main
 struct_deconstruct<Tuple<u8, u8, u8>>([21]) -> ([24], [25], [26])
 Originating location:
@@ -1047,11 +1095,19 @@ Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
 struct_deconstruct<test::P>([22]) -> ([29], [30], [31])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
@@ -1247,13 +1303,21 @@ fn main() {
 In function: lib.cairo::main
 label_test::main::11:
 Originating location:
-fn main() {
-^*********^
+    match a {
+    ^*******^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
+            ^****^
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-fn main() {
-^*********^
+    match a {
+    ^*******^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
+            ^****^
 In function: lib.cairo::main
 struct_deconstruct<Tuple<u8, u8, u8>>([39]) -> ([42], [43], [44])
 Originating location:
@@ -1293,11 +1357,19 @@ Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 struct_deconstruct<test::P>([40]) -> ([47], [48], [49])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
@@ -1493,13 +1565,21 @@ fn main() {
 In function: lib.cairo::main
 label_test::main::20:
 Originating location:
-fn main() {
-^*********^
+    match a {
+    ^*******^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
+            ^****^
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-fn main() {
-^*********^
+    match a {
+    ^*******^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
+            ^****^
 In function: lib.cairo::main
 struct_deconstruct<Tuple<u8, u8, u8>>([57]) -> ([60], [61], [62])
 Originating location:
@@ -1539,11 +1619,19 @@ Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 struct_deconstruct<test::P>([58]) -> ([65], [66], [67])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
@@ -1739,13 +1827,21 @@ fn main() {
 In function: lib.cairo::main
 label_test::main::29:
 Originating location:
-fn main() {
-^*********^
+    match a {
+    ^*******^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-fn main() {
-^*********^
+    match a {
+    ^*******^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
 In function: lib.cairo::main
 struct_deconstruct<Tuple<u8, u8, u8>>([75]) -> ([78], [79], [80])
 Originating location:
@@ -1785,11 +1881,19 @@ Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 struct_deconstruct<test::P>([76]) -> ([83], [84], [85])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
@@ -1944,18 +2048,42 @@ fn main() {
 In function: lib.cairo::main
 label_test::main::35:
 Originating location:
-fn main() {
-          ^
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-fn main() {
-          ^
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
 In function: lib.cairo::main
 drop<u8>([89]) -> ()
 Originating location:
-fn main() {
-          ^
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
 In function: lib.cairo::main
 array_new<felt252>() -> ([94])
 Originating location:
@@ -2139,22 +2267,54 @@ Originating location:
 In function: lib.cairo::main
 label_test::main::26:
 Originating location:
-    let _ = foo(d);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
             ^****^
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    let _ = foo(d);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
             ^****^
 In function: lib.cairo::main
 drop<u8>([71]) -> ()
 Originating location:
-    let _ = foo(d);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
             ^****^
 In function: lib.cairo::main
 drop<test::MyEnum>([18]) -> ()
 Originating location:
-    let _ = foo(d);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
             ^****^
 In function: lib.cairo::main
 array_new<felt252>() -> ([100])
@@ -2339,27 +2499,67 @@ Originating location:
 In function: lib.cairo::main
 label_test::main::17:
 Originating location:
-    let _ = foo(c);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
             ^****^
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    let _ = foo(c);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
             ^****^
 In function: lib.cairo::main
 drop<u8>([53]) -> ()
 Originating location:
-    let _ = foo(c);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
             ^****^
 In function: lib.cairo::main
 drop<test::MyEnum>([18]) -> ()
 Originating location:
-    let _ = foo(c);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
             ^****^
 In function: lib.cairo::main
 drop<test::MyEnum>([13]) -> ()
 Originating location:
-    let _ = foo(c);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
             ^****^
 In function: lib.cairo::main
 array_new<felt252>() -> ([106])
@@ -2544,32 +2744,80 @@ Originating location:
 In function: lib.cairo::main
 label_test::main::8:
 Originating location:
-    let _ = foo(b);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
             ^****^
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    let _ = foo(b);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
             ^****^
 In function: lib.cairo::main
 drop<u8>([35]) -> ()
 Originating location:
-    let _ = foo(b);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
             ^****^
 In function: lib.cairo::main
 drop<test::MyEnum>([18]) -> ()
 Originating location:
-    let _ = foo(b);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
             ^****^
 In function: lib.cairo::main
 drop<test::MyEnum>([13]) -> ()
 Originating location:
-    let _ = foo(b);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
             ^****^
 In function: lib.cairo::main
 drop<test::MyEnum>([8]) -> ()
 Originating location:
-    let _ = foo(b);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^**************************^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^***^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
             ^****^
 In function: lib.cairo::main
 array_new<felt252>() -> ([112])
@@ -3706,29 +3954,49 @@ Originating location:
 In function: writeln_macro::writeln_macro
 label_test::foo::1:
 Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^***********************************************************************************************************^
-In function: writeln_macro::writeln_macro
+        match *lhs - *rhs {
+        ^*****************^
+In function: core::Felt252PartialEq::eq
+Inlined at:
+    if x == y { // highlighted
+       ^****^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^***********************************************************************************************************^
-In function: writeln_macro::writeln_macro
+        match *lhs - *rhs {
+        ^*****************^
+In function: core::Felt252PartialEq::eq
+Inlined at:
+    if x == y { // highlighted
+       ^****^
+In function: lib.cairo::foo
 drop<NonZero<felt252>>([12]) -> ()
 Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^***********************************************************************************************************^
-In function: writeln_macro::writeln_macro
+        match *lhs - *rhs {
+        ^*****************^
+In function: core::Felt252PartialEq::eq
+Inlined at:
+    if x == y { // highlighted
+       ^****^
+In function: lib.cairo::foo
 drop<Uninitialized<core::byte_array::ByteArray>>([8]) -> ()
 Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^***********************************************************************************************************^
-In function: writeln_macro::writeln_macro
+        match *lhs - *rhs {
+        ^*****************^
+In function: core::Felt252PartialEq::eq
+Inlined at:
+    if x == y { // highlighted
+       ^****^
+In function: lib.cairo::foo
 drop<Uninitialized<RangeCheck>>([6]) -> ()
 Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^***********************************************************************************************************^
-In function: writeln_macro::writeln_macro
+        match *lhs - *rhs {
+        ^*****************^
+In function: core::Felt252PartialEq::eq
+Inlined at:
+    if x == y { // highlighted
+       ^****^
+In function: lib.cairo::foo
 array_new<bytes31>() -> ([52])
 Originating location:
         array_new()
@@ -4460,19 +4728,19 @@ fn foo() {
 In function: lib.cairo::foo
 label_test::foo::6:
 Originating location:
-fn foo() {
-         ^
-In function: lib.cairo::foo
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
+    ^***********************************************************************************************************^
+In function: writeln_macro::writeln_macro
 branch_align() -> ()
 Originating location:
-fn foo() {
-         ^
-In function: lib.cairo::foo
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
+    ^***********************************************************************************************************^
+In function: writeln_macro::writeln_macro
 drop<Uninitialized<core::byte_array::ByteArray>>([4]) -> ()
 Originating location:
-fn foo() {
-         ^
-In function: lib.cairo::foo
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
+    ^***********************************************************************************************************^
+In function: writeln_macro::writeln_macro
 enum_init<core::panics::PanicResult::<((),)>, 1>([60]) -> ([92])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
