@@ -45,7 +45,7 @@ use super::pattern::{
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_option_ty, core_result_ty, core_unary_operator,
     false_literal_expr, get_core_trait, never_ty, numeric_literal_trait, true_literal_expr,
-    try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type,
+    try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type, CoreTraitContext,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -1639,7 +1639,7 @@ fn compute_expr_indexed_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db), None);
     let candidate_traits: Vec<_> = ["Index", "IndexView"]
         .iter()
-        .map(|trait_name| get_core_trait(ctx.db, (*trait_name).into()))
+        .map(|trait_name| get_core_trait(ctx.db, CoreTraitContext::TopLevel, (*trait_name).into()))
         .collect();
     let (function_id, fixed_expr, mutability) = compute_method_function_call_data(
         ctx,
@@ -2435,7 +2435,7 @@ fn new_string_literal_expr(
     let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
 
     // String trait.
-    let trait_id = get_core_trait(ctx.db, "StringLiteral".into());
+    let trait_id = get_core_trait(ctx.db, CoreTraitContext::TopLevel, "StringLiteral".into());
     let generic_args = vec![GenericArgumentId::Type(ty)];
     let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();

@@ -4,13 +4,13 @@
 
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::corelib::{get_core_trait, unit_ty};
+use cairo_lang_semantic::corelib::unit_ty;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::ConcreteFunction;
 use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
-use semantic::corelib::{core_module, get_ty_by_name};
+use semantic::corelib::{core_module, destruct_trait_fn, get_ty_by_name, panic_destruct_trait_fn};
 use semantic::{TypeId, TypeLongId};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
@@ -292,14 +292,8 @@ pub fn add_destructs(
     )
     .unwrap();
 
-    let destruct_trait_id = get_core_trait(db.upcast(), "Destruct".into());
-    let plain_trait_function =
-        db.trait_function_by_name(destruct_trait_id, "destruct".into()).unwrap().unwrap();
-    let panic_destruct_trait_id = get_core_trait(db.upcast(), "PanicDestruct".into());
-    let panic_trait_function = db
-        .trait_function_by_name(panic_destruct_trait_id, "panic_destruct".into())
-        .unwrap()
-        .unwrap();
+    let plain_trait_function = destruct_trait_fn(db.upcast());
+    let panic_trait_function = panic_destruct_trait_fn(db.upcast());
 
     // Add destructions.
     let stable_ptr = function_id

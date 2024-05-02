@@ -20,7 +20,7 @@ use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::structure::SemanticStructEx;
 use crate::corelib::{
     core_felt252_ty, get_core_trait, get_core_ty_by_name, try_extract_nz_wrapped_type,
-    validate_literal, LiteralError,
+    validate_literal, CoreTraitContext, LiteralError,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -370,7 +370,7 @@ fn is_function_const(db: &dyn SemanticGroup, function_id: FunctionId) -> bool {
         "bitxor" => "BitXor",
         _ => return false,
     };
-    trait_id == get_core_trait(db, expected_trait_name.into())
+    trait_id == get_core_trait(db, CoreTraitContext::TopLevel, expected_trait_name.into())
 }
 
 /// Attempts to evaluate constants from a function call.
