@@ -206,7 +206,7 @@ impl<'ctx> ComputationContext<'ctx> {
             return Ok(signature);
         }
 
-        Err(self.diagnostics.report(stable_ptr, UnsupportedOutsideOfFunction { feature_name }))
+        Err(self.diagnostics.report(stable_ptr, UnsupportedOutsideOfFunction(feature_name)))
     }
 
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
@@ -393,9 +393,7 @@ fn compute_expr_inline_macro_semantic(
 
     let macro_name = syntax.path(syntax_db).as_syntax_node().get_text_without_trivia(syntax_db);
     let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() else {
-        return Err(ctx
-            .diagnostics
-            .report(syntax, InlineMacroNotFound { macro_name: macro_name.into() }));
+        return Err(ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into())));
     };
 
     let result = macro_plugin.generate_code(syntax_db, syntax);
@@ -407,7 +405,7 @@ fn compute_expr_inline_macro_semantic(
 
     let Some(code) = result.code else {
         return Err(diag_added.unwrap_or_else(|| {
-            ctx.diagnostics.report(syntax, InlineMacroFailed { macro_name: macro_name.into() })
+            ctx.diagnostics.report(syntax, InlineMacroFailed(macro_name.into()))
         }));
     };
 
@@ -1583,7 +1581,7 @@ fn compute_expr_error_propagate_semantic(
     inner_expr_ty.check_not_missing(ctx.db)?;
     let inner_expr_err_prop_ty =
         unwrap_error_propagation_type(ctx.db, inner_expr_ty).ok_or_else(|| {
-            ctx.diagnostics.report(syntax, ErrorPropagateOnNonErrorType { ty: inner_expr_ty })
+            ctx.diagnostics.report(syntax, ErrorPropagateOnNonErrorType(inner_expr_ty))
         })?;
     let inner_expr_err_variant = inner_expr_err_prop_ty.err_variant();
 
@@ -1907,7 +1905,7 @@ fn maybe_compute_pattern_semantic(
                     // Don't add a diagnostic if the type is missing.
                     // A diagnostic should've already been added.
                     ty.check_not_missing(ctx.db)?;
-                    Err(ctx.diagnostics.report(pattern_struct, UnexpectedStructPattern { ty }))
+                    Err(ctx.diagnostics.report(pattern_struct, UnexpectedStructPattern(ty)))
                 })?;
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
             let struct_id = concrete_struct_id.struct_id(ctx.db);
@@ -1975,7 +1973,7 @@ fn maybe_compute_pattern_semantic(
             }
             if !has_tail {
                 for (member_name, _) in members {
-                    ctx.diagnostics.report(pattern_struct, MissingMember { member_name });
+                    ctx.diagnostics.report(pattern_struct, MissingMember(member_name));
                 }
             }
             Pattern::Struct(PatternStruct {
@@ -1991,7 +1989,7 @@ fn maybe_compute_pattern_semantic(
             pattern_syntax,
             ty,
             or_pattern_variables_map,
-            |ty: TypeId| UnexpectedTuplePattern { ty },
+            |ty: TypeId| UnexpectedTuplePattern(ty),
             |expected, actual| WrongNumberOfTupleElements { expected, actual },
         )?,
         ast::Pattern::FixedSizeArray(_) => maybe_compute_tuple_like_pattern_semantic(
@@ -1999,7 +1997,7 @@ fn maybe_compute_pattern_semantic(
             pattern_syntax,
             ty,
             or_pattern_variables_map,
-            |ty: TypeId| UnexpectedFixedSizeArrayPattern { ty },
+            |ty: TypeId| UnexpectedFixedSizeArrayPattern(ty),
             |expected, actual| WrongNumberOfFixedSizeArrayElements { expected, actual },
         )?,
         ast::Pattern::False(pattern_false) => {
@@ -2130,7 +2128,7 @@ fn extract_concrete_enum_from_pattern_and_validate(
             // Don't add a diagnostic if the type is missing.
             // A diagnostic should've already been added.
             ty.check_not_missing(ctx.db)?;
-            Err(ctx.diagnostics.report(pattern, UnexpectedEnumPattern { ty }))
+            Err(ctx.diagnostics.report(pattern, UnexpectedEnumPattern(ty)))
         })?;
     // Check that these are the same enums.
     if enum_id != concrete_enum.enum_id(ctx.db) {
@@ -2325,8 +2323,7 @@ fn struct_ctor_expr(
                     member_name,
                 );
             } else {
-                ctx.diagnostics
-                    .report(ctor_syntax, MissingMember { member_name: member_name.clone() });
+                ctx.diagnostics.report(ctor_syntax, MissingMember(member_name.clone()));
             }
         }
     }
@@ -2654,7 +2651,7 @@ fn member_access_expr(
         TypeLongId::ImplType(_) => unreachable!("Impl type should've been reduced."),
         TypeLongId::Var(_) => Err(ctx
             .diagnostics
-            .report(&rhs_syntax, InternalInferenceError(InferenceError::TypeNotInferred { ty }))),
+            .report(&rhs_syntax, InternalInferenceError(InferenceError::TypeNotInferred(ty)))),
         TypeLongId::Coupon(_) => {
             Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name }))
         }
@@ -2740,9 +2737,8 @@ pub fn resolve_variable_by_name(
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
-    let res = get_variable_by_name(ctx, &variable_name, stable_ptr).ok_or_else(|| {
-        ctx.diagnostics.report(identifier, VariableNotFound { name: variable_name })
-    })?;
+    let res = get_variable_by_name(ctx, &variable_name, stable_ptr)
+        .ok_or_else(|| ctx.diagnostics.report(identifier, VariableNotFound(variable_name)))?;
     let var = extract_matches!(res.clone(), Expr::Var);
 
     ctx.resolver.data.resolved_items.generic.insert(
@@ -3040,7 +3036,7 @@ pub fn compute_statement_semantic(
             let ty: TypeId = expr.ty();
             if let TypeLongId::Concrete(concrete) = ty.lookup_intern(db) {
                 if concrete.is_must_use(db)? {
-                    ctx.diagnostics.report(&expr_syntax, UnhandledMustUseType { ty });
+                    ctx.diagnostics.report(&expr_syntax, UnhandledMustUseType(ty));
                 }
             }
             if let Expr::FunctionCall(expr_function_call) = &expr.expr {
@@ -3162,9 +3158,8 @@ fn compute_bool_condition_semantic(
     let condition = compute_expr_semantic(ctx, condition_syntax, None);
     let inference = &mut ctx.resolver.inference();
     if let Err(err_set) = inference.conform_ty(condition.ty(), core_bool_ty(ctx.db)) {
-        let diag_added = ctx
-            .diagnostics
-            .report(condition.deref(), ConditionNotBool { condition_ty: condition.ty() });
+        let diag_added =
+            ctx.diagnostics.report(condition.deref(), ConditionNotBool(condition.ty()));
         inference.consume_reported_error(err_set, diag_added);
     }
     condition
@@ -3184,7 +3179,7 @@ fn check_struct_member_is_visible(
     }
     let user_module_id = ctx.resolver.module_file_id.0;
     if !visibility::peek_visible_in(db, member.visibility, containing_module_id, user_module_id) {
-        ctx.diagnostics.report(stable_ptr, MemberNotVisible { member_name: member_name.clone() });
+        ctx.diagnostics.report(stable_ptr, MemberNotVisible(member_name.clone()));
     }
 }
 

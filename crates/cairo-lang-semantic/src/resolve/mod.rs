@@ -1030,13 +1030,11 @@ impl<'db> Resolver<'db> {
                 ast::GenericArg::Named(arg_syntax) => {
                     let name = arg_syntax.name(syntax_db).text(syntax_db);
                     let Some((index, generic_param_id)) = generic_param_by_name.get(&name) else {
-                        return Err(diagnostics.report(arg_syntax, UnknownGenericParam { name }));
+                        return Err(diagnostics.report(arg_syntax, UnknownGenericParam(name)));
                     };
                     if let Some(prev_index) = last_named_arg_index {
                         if prev_index > index {
-                            return Err(
-                                diagnostics.report(arg_syntax, GenericArgOutOfOrder { name })
-                            );
+                            return Err(diagnostics.report(arg_syntax, GenericArgOutOfOrder(name)));
                         }
                     }
                     last_named_arg_index = Some(index);
@@ -1044,7 +1042,7 @@ impl<'db> Resolver<'db> {
                         .insert(*generic_param_id, arg_syntax.value(syntax_db))
                         .is_some()
                     {
-                        return Err(diagnostics.report(arg_syntax, GenericArgDuplicate { name }));
+                        return Err(diagnostics.report(arg_syntax, GenericArgDuplicate(name)));
                     }
                 }
                 ast::GenericArg::Unnamed(arg_syntax) => {
@@ -1192,12 +1190,12 @@ impl<'db> Resolver<'db> {
                 containing_module_id,
                 user_module,
             ) {
-                diagnostics.report(identifier, ItemNotVisible { item_id: item_info.item_id });
+                diagnostics.report(identifier, ItemNotVisible(item_info.item_id));
             }
         }
         match &item_info.feature_kind {
             FeatureKind::Unstable(feature) if !self.data.allowed_features.contains(feature) => {
-                diagnostics.report(identifier, UnstableFeature { feature_name: feature.clone() });
+                diagnostics.report(identifier, UnstableFeature(feature.clone()));
             }
             FeatureKind::Deprecated { feature, note }
                 if !self.data.allowed_features.contains(feature) =>
