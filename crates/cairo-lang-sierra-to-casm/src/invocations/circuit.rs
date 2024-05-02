@@ -5,7 +5,10 @@ use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::circuit::CircuitInfo;
-use crate::invocations::add_input_variables;
+use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+
+// The number of limbs used to represent a single value in the circuit.
+const VALUE_SIZE: usize = 4;
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -13,6 +16,7 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
+        CircuitConcreteLibfunc::FillInput(_libfunc) => build_fill_input(builder),
         CircuitConcreteLibfunc::InitCircuitData(libfunc) => {
             build_init_circuit_data(&libfunc.ty, builder)
         }
@@ -35,15 +39,51 @@ fn build_init_circuit_data(
         buffer(1) rc96;
     };
     casm_build_extend! {casm_builder,
-        const n_inputs = n_inputs;
-        let inputs_end = rc96 + n_inputs;
-        const n_vals = n_values;
-        let vals_end = rc96 + n_vals;
+        const inputs_size = n_inputs * VALUE_SIZE;
+        const values_size = n_values * VALUE_SIZE;
+        let vals_end = rc96 + values_size;
     };
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[vals_end], &[rc96, inputs_end]], None)],
+        [("Fallthrough", &[&[vals_end], &[rc96, inputs_size]], None)],
+        Default::default(),
+    ))
+}
+
+/// Handles a Sierra statement for popping an element from the beginning of an array.
+fn build_fill_input(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_handle, elem] = builder.try_get_refs()?;
+    let [ptr, len] = expr_handle.try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref len;
+        buffer(elem.cells.len() as i16) ptr;
+    };
+    for cell in &elem.cells {
+        add_input_variables!(casm_builder, deref cell;);
+        casm_build_extend!(casm_builder, assert cell = *(ptr++););
+    }
+
+    casm_build_extend! {casm_builder,
+        const element_size = VALUE_SIZE;
+        tempvar new_ptr = ptr;
+        tempvar new_len = len - element_size;
+        jump More if new_len != 0;
+        jump Failure;
+        More:
+    };
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[new_ptr, new_len]], None),
+            ("Failure", &[&[new_ptr]], Some(failure_handle)),
+        ],
         Default::default(),
     ))
 }
