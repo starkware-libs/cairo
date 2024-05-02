@@ -860,6 +860,7 @@ fn foo(mut x: MyStruct) -> MyStruct {
     let _arr = array![{
         x.a = 17;
         x.a += 1;
+        5
     },];
     return x;
 }
@@ -894,13 +895,13 @@ note: Trait has no implementation in context: core::traits::PanicDestruct::<test
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: core::array::Array::<()>) <- core::array::ArrayImpl::<()>::new()
+  (v1: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
   (v2: core::felt252) <- 17
   (v3: core::felt252, v4: test::NonCopy) <- struct_destructure(v0{`x`})
   (v5: core::felt252) <- 1
   (v7: core::felt252, v6: ()) <- core::Felt252AddEq::add_eq(v2{`x.a`}, v5{`1`})
-  (v8: ()) <- struct_construct()
-  (v10: core::array::Array::<()>, v9: ()) <- core::array::ArrayImpl::<()>::append(v1{`__array_builder_macro_result__`}, v8{`{ x.a = 17; x.a += 1; }`})
+  (v8: core::felt252) <- 5
+  (v10: core::array::Array::<core::felt252>, v9: ()) <- core::array::ArrayImpl::<core::felt252>::append(v1{`__array_builder_macro_result__`}, v8{`5`})
   (v11: test::MyStruct) <- struct_construct(v7{`x`}, v4{`x`})
 End:
   Return(v11)

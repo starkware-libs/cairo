@@ -255,12 +255,10 @@ pub fn enum_definition_diagnostics(
     }
     let mut diagnostics = SemanticDiagnostics::from(data.diagnostics);
     for (_, variant) in data.variant_semantic.iter() {
-        add_type_based_diagnostics(db, &mut diagnostics, variant.ty, &variant.id);
+        let stable_ptr = variant.id.stable_ptr(db.upcast());
+        add_type_based_diagnostics(db, &mut diagnostics, variant.ty, stable_ptr);
         if variant.ty.is_phantom(db) {
-            diagnostics.report(
-                variant.id.stable_ptr(db.upcast()).untyped(),
-                NonPhantomTypeContainingPhantomType,
-            );
+            diagnostics.report(stable_ptr, NonPhantomTypeContainingPhantomType);
         }
     }
     diagnostics.build()

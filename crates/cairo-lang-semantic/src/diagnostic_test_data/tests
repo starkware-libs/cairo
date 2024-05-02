@@ -651,3 +651,25 @@ error: Multiple feature marker attributes.
  --> lib.cairo:32:1
 #[deprecated(feature: "testing1")]
 ^********************************^
+
+//! > ==========================================================================
+
+//! > Test bad type usage.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let _fail = array![()];
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Cannot have array of type "()" that is zero sized.
+ --> lib.cairo:3:15
+  let _fail = array![()];
+              ^********^
