@@ -16,11 +16,12 @@ use crate::extensions::lib_func::{
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
+use crate::extensions::utils::bounded_int_ty;
 use crate::extensions::{
     args_as_two_types, ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo,
     SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericTypeId};
+use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
 
 /// Type for BoundedInt.
@@ -353,13 +354,4 @@ fn specialize_helper(
         }],
         SierraApChange::Known { new_vars_only: false },
     ))
-}
-
-/// Returns the concrete type for a BoundedInt with the given range.
-fn bounded_int_ty(
-    context: &dyn SignatureSpecializationContext,
-    min: BigInt,
-    max: BigInt,
-) -> Result<ConcreteTypeId, SpecializationError> {
-    context.get_concrete_type(BoundedIntType::ID, &[GenericArg::Value(min), GenericArg::Value(max)])
 }

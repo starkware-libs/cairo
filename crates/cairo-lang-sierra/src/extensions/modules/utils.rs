@@ -109,3 +109,12 @@ impl Range {
         if lower < upper { Some(Self::half_open(lower, upper)) } else { None }
     }
 }
+
+/// Returns the concrete type for a BoundedInt<min, max>.
+pub fn bounded_int_ty(
+    context: &dyn SignatureSpecializationContext,
+    min: BigInt,
+    max: BigInt,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_concrete_type(BoundedIntType::ID, &[GenericArg::Value(min), GenericArg::Value(max)])
+}
