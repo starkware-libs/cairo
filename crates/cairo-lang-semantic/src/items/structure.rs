@@ -231,12 +231,10 @@ pub fn struct_definition_diagnostics(
     }
     let mut diagnostics = SemanticDiagnostics::from(data.diagnostics);
     for (_, member) in data.members.iter() {
-        add_type_based_diagnostics(db, &mut diagnostics, member.ty, &member.id);
+        let stable_ptr = member.id.stable_ptr(db.upcast());
+        add_type_based_diagnostics(db, &mut diagnostics, member.ty, stable_ptr);
         if member.ty.is_phantom(db) {
-            diagnostics.report(
-                member.id.stable_ptr(db.upcast()).untyped(),
-                NonPhantomTypeContainingPhantomType,
-            );
+            diagnostics.report(stable_ptr, NonPhantomTypeContainingPhantomType);
         }
     }
     diagnostics.build()
