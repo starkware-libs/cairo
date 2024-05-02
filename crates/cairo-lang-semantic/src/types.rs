@@ -799,7 +799,7 @@ pub fn add_type_based_diagnostics(
     node: &impl LanguageElementId,
 ) {
     if db.type_size_info(ty) == Ok(TypeSizeInformation::Infinite) {
-        diagnostics.report(node.untyped_stable_ptr(db.upcast()), InfiniteSizeType { ty });
+        diagnostics.report(node.untyped_stable_ptr(db.upcast()), InfiniteSizeType(ty));
     }
     if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.lookup_intern(db) {
         let long_id = extrn.lookup_intern(db);
@@ -808,7 +808,7 @@ pub fn add_type_based_diagnostics(
                 if db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized) {
                     diagnostics.report(
                         node.untyped_stable_ptr(db.upcast()),
-                        ArrayOfZeroSizedElements { ty: *arg_ty },
+                        ArrayOfZeroSizedElements(*arg_ty),
                     );
                 }
             }

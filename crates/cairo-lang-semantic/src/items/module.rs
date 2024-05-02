@@ -2,7 +2,6 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementId, TraitId,
 };
@@ -18,7 +17,7 @@ use super::feature_kind::FeatureKind;
 use super::us::SemanticUseEx;
 use super::visibility::Visibility;
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind;
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::resolve::ResolvedGenericItem;
 use crate::SemanticDiagnostic;
 
@@ -118,10 +117,10 @@ pub fn priv_module_semantic_data(
         {
             // `item` is extracted from `module_items` and thus `module_item_name_stable_ptr` is
             // guaranteed to succeed.
-            let stable_location =
-                StableLocation::new(db.module_item_name_stable_ptr(module_id, item_id).unwrap());
-            let kind = SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.clone() };
-            diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
+            diagnostics.report(
+                db.module_item_name_stable_ptr(module_id, item_id).unwrap(),
+                SemanticDiagnosticKind::NameDefinedMultipleTimes(name.clone()),
+            );
         }
     }
     Ok(Arc::new(ModuleSemanticData { items, diagnostics: diagnostics.build() }))

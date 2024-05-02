@@ -1306,7 +1306,7 @@ fn module_semantic_diagnostics(
                             StableLocation::new(submodule_id.stable_ptr(db.upcast()).untyped());
                         diagnostics.add(SemanticDiagnostic::new(
                             stable_location,
-                            SemanticDiagnosticKind::ModuleFileNotFound { path },
+                            SemanticDiagnosticKind::ModuleFileNotFound(path),
                         ));
                     }
                 }
