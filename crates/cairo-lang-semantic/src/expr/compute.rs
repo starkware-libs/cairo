@@ -65,8 +65,8 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
-    are_coupons_enabled, extract_fixed_size_array_size, implize_type, peel_snapshots, resolve_type,
-    verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
+    add_type_based_diagnostics, are_coupons_enabled, extract_fixed_size_array_size, implize_type,
+    peel_snapshots, resolve_type, verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
 };
 use crate::{
     ConcreteEnumId, GenericArgumentId, GenericParam, Member, Mutability, Parameter,
@@ -225,10 +225,16 @@ impl<'ctx> ComputationContext<'ctx> {
         )
     }
 
-    // Applies inference rewriter to all the expressions in the computation context.
+    /// Applies inference rewriter to all the expressions in the computation context, and adds
+    /// errors on types from the final expressions.
     pub fn apply_inference_rewriter_to_exprs(&mut self) {
+        let mut analyzed_types = UnorderedHashSet::<_>::default();
         for (_id, expr) in self.exprs.iter_mut() {
             self.resolver.inference().internal_rewrite(expr).no_err();
+            // Adding an error only once per type.
+            if analyzed_types.insert(expr.ty()) {
+                add_type_based_diagnostics(self.db, self.diagnostics, expr.ty(), &*expr);
+            }
         }
     }
 

@@ -484,7 +484,12 @@ pub fn impl_semantic_definition_diagnostics(
     for impl_item_type_id in data.item_type_asts.keys() {
         diagnostics.extend(db.impl_type_def_semantic_diagnostics(*impl_item_type_id));
         if let Ok(ty) = db.impl_type_def_resolved_type(*impl_item_type_id) {
-            add_type_based_diagnostics(db, &mut diagnostics, ty, impl_item_type_id);
+            add_type_based_diagnostics(
+                db,
+                &mut diagnostics,
+                ty,
+                impl_item_type_id.stable_ptr(db.upcast()),
+            );
         }
     }
     diagnostics.build()
