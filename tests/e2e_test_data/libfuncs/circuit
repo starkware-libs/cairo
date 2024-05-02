@@ -14,7 +14,7 @@ fn foo() -> CircuitInputAccumulator<MyCircuit> {
 //! > casm
 [ap + 0] = [fp + -3] + 3, ap++;
 [ap + 0] = [fp + -3], ap++;
-[ap + 0] = [fp + -3] + 2, ap++;
+[ap + 0] = 8, ap++;
 ret;
 
 //! > function_costs
@@ -39,3 +39,74 @@ store_temp<CircuitInputAccumulator<(core::circuit::AddModGate::<core::circuit::C
 return([1], [2]); // 3
 
 test::foo@0([0]: RangeCheck96) -> (RangeCheck96, CircuitInputAccumulator<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>);
+
+//! > ==========================================================================
+
+//! > fill_input
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::circuit::{
+    u96, AddModGate, fill_circuit_input, FillInputResult, CircuitInput, CircuitInputAccumulator,
+    init_circuit_data
+};
+type MyCircuit = (AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>,);
+
+fn foo(
+    accumulator: CircuitInputAccumulator<MyCircuit>, val: [u96; 4]
+) -> FillInputResult<MyCircuit> {
+    fill_circuit_input(accumulator, val)
+}
+
+//! > casm
+[fp + -6] = [[fp + -8] + 0];
+[fp + -5] = [[fp + -8] + 1];
+[fp + -4] = [[fp + -8] + 2];
+[fp + -3] = [[fp + -8] + 3];
+[ap + 0] = [fp + -8] + 4, ap++;
+[fp + -7] = [ap + 0] + 4, ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 7;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -3], ap++;
+ret;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -4], ap++;
+ret;
+
+//! > sierra_code
+type CircuitInputAccumulator<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> = CircuitInputAccumulator<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> [storable: true, drop: true, dup: false, zero_sized: false];
+type CircuitData<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> = CircuitData<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> = Enum<ut@core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>, CircuitInputAccumulator<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>, CircuitData<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> = AddModGate<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::circuit::CircuitInput::<2> = CircuitInput<2> [storable: false, drop: false, dup: false, zero_sized: false];
+type (core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>) = Struct<ut@Tuple, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::circuit::CircuitInput::<1> = CircuitInput<1> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: false];
+type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> = Struct<ut@Tuple, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc fill_circuit_input<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> = fill_circuit_input<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>, 0> = enum_init<core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>, 0>;
+libfunc store_temp<core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = store_temp<core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>;
+libfunc enum_init<core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>, 1> = enum_init<core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>, 1>;
+
+fill_circuit_input<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>([0], [1]) { fallthrough([2]) 5([3]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>, 0>([2]) -> ([4]); // 2
+store_temp<core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>([4]) -> ([4]); // 3
+return([4]); // 4
+branch_align() -> (); // 5
+enum_init<core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>, 1>([3]) -> ([5]); // 6
+store_temp<core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>([5]) -> ([5]); // 7
+return([5]); // 8
+
+test::foo@0([0]: CircuitInputAccumulator<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>, [1]: Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>) -> (core::circuit::FillInputResult::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1100})
