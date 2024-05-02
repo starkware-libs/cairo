@@ -18,12 +18,29 @@ pub extern type CircuitInput<const N: usize>;
 #[phantom]
 extern type AddModGate<Lhs, Rhs>;
 
-
 /// Initializes the input data for running an instance of the circuit.
 extern fn init_circuit_data<C>() -> CircuitInputAccumulator<C> implicits(RangeCheck96) nopanic;
 
+
+/// Fill an input in the circuit instance's data.
+// TODO(ilya): Condider using RangeCheck96Guarantee for the inputs.
+extern fn fill_circuit_input<C>(
+    accumulator: CircuitInputAccumulator<C>, value: [u96; 4]
+) -> FillInputResult<C> nopanic;
+
+/// The result of filling an input in the circuit instance's data.
+enum FillInputResult<C> {
+    /// More inputs are needed to fill the circuit instance's data.
+    More: CircuitInputAccumulator<C>,
+    /// All inputs have been filled.
+    Done: CircuitData<C>,
+}
+
 /// Type for accumulating inputs into the circuit instance's data.
 extern type CircuitInputAccumulator<C>;
+
+/// A type representing a circuit instance data with all the inputs filled.
+extern type CircuitData<C>;
 
 impl CircuitInputAccumulatorDrop<C> of Drop<CircuitInputAccumulator<C>>;
 

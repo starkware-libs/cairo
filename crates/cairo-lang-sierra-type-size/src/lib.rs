@@ -81,9 +81,12 @@ pub fn get_type_size_map(
             }
 
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitInputAccumulator(_)) => Some(2),
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitData(_)) => Some(1),
 
             // Const and circuit types are not moved around and should not have a size.
-            CoreTypeConcrete::Const(_) | CoreTypeConcrete::Circuit(_) => continue,
+            CoreTypeConcrete::Const(_)
+            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitInput(_))
+            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::AddModGate(_)) => continue,
         }?;
         type_sizes.insert(declaration.id.clone(), size);
     }

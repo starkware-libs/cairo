@@ -1,10 +1,14 @@
-use num_traits::ToPrimitive;
+use std::ops::Shl;
+
+use num_bigint::BigInt;
+use num_traits::{One, ToPrimitive, Zero};
 
 use super::range_check::RangeCheck96Type;
 use super::structure::StructType;
+use crate::extensions::bounded_int::bounded_int_ty;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureAndTypeGenericLibfunc, SignatureSpecializationContext,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureAndTypeGenericLibfunc, SignatureSpecializationContext,
     WrapSignatureAndTypeGenericLibfunc,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
@@ -20,6 +24,7 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 define_type_hierarchy! {
     pub enum CircuitType {
         AddModGate(AddModGate),
+        CircuitData(CircuitData),
         CircuitInput(CircuitInput),
         CircuitInputAccumulator(CircuitInputAccumulator),
     }, CircuitTypeConcrete
@@ -27,6 +32,7 @@ define_type_hierarchy! {
 
 define_libfunc_hierarchy! {
     pub enum CircuitLibFunc {
+         FillInput(FillCircuitInputLibFunc),
          InitCircuitData(InitCircuitDataLibFunc),
     }, CircuitConcreteLibfunc
 }
@@ -204,6 +210,54 @@ impl ConcreteType for ConcreteCircuitInputAccumulator {
     }
 }
 
+/// A type representing a circuit instance data with all the inputs filled.
+#[derive(Default)]
+pub struct CircuitData {}
+impl NamedType for CircuitData {
+    type Concrete = ConcreteCircuitData;
+    const ID: GenericTypeId = GenericTypeId::new_inline("CircuitData");
+
+    fn specialize(
+        &self,
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Self::Concrete::new(context, args)
+    }
+}
+
+pub struct ConcreteCircuitData {
+    pub info: TypeInfo,
+}
+
+impl ConcreteCircuitData {
+    fn new(
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self, SpecializationError> {
+        let circ_ty = args_as_single_type(args)?;
+        validate_is_circuit(context, circ_ty)?;
+        Ok(Self {
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId {
+                    generic_id: "CircuitData".into(),
+                    generic_args: args.to_vec(),
+                },
+                duplicatable: false,
+                droppable: true,
+                storable: true,
+                zero_sized: false,
+            },
+        })
+    }
+}
+
+impl ConcreteType for ConcreteCircuitData {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
+}
+
 /// Validate that `circ_ty` is a circuit type.
 fn validate_is_circuit(
     context: &dyn TypeSpecializationContext,
@@ -273,3 +327,63 @@ impl SignatureAndTypeGenericLibfunc for InitCircuitDataLibFuncWrapped {
 }
 
 pub type InitCircuitDataLibFunc = WrapSignatureAndTypeGenericLibfunc<InitCircuitDataLibFuncWrapped>;
+
+/// libfunc for filling an input in the circuit instance's data.
+#[derive(Default)]
+pub struct FillCircuitInputLibFuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
+    const STR_ID: &'static str = "fill_circuit_input";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let circuit_input_accumulator_ty = context
+            .get_concrete_type(CircuitInputAccumulator::id(), &[GenericArg::Type(ty.clone())])?;
+
+        let circuit_data_ty =
+            context.get_concrete_type(CircuitData::id(), &[GenericArg::Type(ty)])?;
+
+        let u96_ty = bounded_int_ty(context, BigInt::zero(), BigInt::one().shl(96) - 1)?;
+
+        let val_ty = context.get_concrete_type(
+            StructType::id(),
+            &[
+                GenericArg::UserType(UserTypeId::from_string("Tuple")),
+                GenericArg::Type(u96_ty.clone()),
+                GenericArg::Type(u96_ty.clone()),
+                GenericArg::Type(u96_ty.clone()),
+                GenericArg::Type(u96_ty),
+            ],
+        )?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(circuit_input_accumulator_ty.clone()),
+                ParamSignature::new(val_ty),
+            ],
+            branch_signatures: vec![
+                // More inputs to fill.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: circuit_input_accumulator_ty,
+                        ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // All inputs were filled.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: circuit_data_ty,
+                        ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+pub type FillCircuitInputLibFunc =
+    WrapSignatureAndTypeGenericLibfunc<FillCircuitInputLibFuncWrapped>;
