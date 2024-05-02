@@ -355,8 +355,8 @@ fn specialize_helper(
     ))
 }
 
-/// Returns the concrete type for a BoundedInt with the given range.
-fn bounded_int_ty(
+/// Returns the concrete type for a BoundedInt<min, max>.
+pub fn bounded_int_ty(
     context: &dyn SignatureSpecializationContext,
     min: BigInt,
     max: BigInt,
