@@ -21,6 +21,9 @@ trait IContract<T> {
     fn empty(self: @T);
 }
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -207,6 +210,9 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -258,6 +264,9 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -309,6 +318,9 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -360,6 +372,9 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -421,6 +436,9 @@ trait IContract<T> {
     fn bad_sig2(self: @T, __calldata__: felt252);
 }
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -483,6 +501,9 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -534,6 +555,9 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -585,6 +609,9 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -636,6 +663,9 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -724,6 +754,9 @@ trait IContract<T> {
     fn empty(self: @T);
 }
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -839,6 +872,9 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -890,6 +926,9 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -941,6 +980,9 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -992,6 +1034,9 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {

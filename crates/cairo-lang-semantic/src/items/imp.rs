@@ -49,9 +49,7 @@ use super::{resolve_trait_path, TraitOrImplContext};
 use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
-use crate::diagnostic::{
-    report_unsupported_impl_item, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
-};
+use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment, ResultType};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
@@ -486,7 +484,12 @@ pub fn impl_semantic_definition_diagnostics(
     for impl_item_type_id in data.item_type_asts.keys() {
         diagnostics.extend(db.impl_type_def_semantic_diagnostics(*impl_item_type_id));
         if let Ok(ty) = db.impl_type_def_resolved_type(*impl_item_type_id) {
-            add_type_based_diagnostics(db, &mut diagnostics, ty, impl_item_type_id);
+            add_type_based_diagnostics(
+                db,
+                &mut diagnostics,
+                ty,
+                impl_item_type_id.stable_ptr(db.upcast()),
+            );
         }
     }
     diagnostics.build()
@@ -656,10 +659,7 @@ pub fn priv_impl_definition_data(
                         .insert(name.clone(), ImplItemId::Function(impl_function_id))
                         .is_some()
                     {
-                        diagnostics.report(
-                            name_node.stable_ptr().untyped(),
-                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
-                        );
+                        diagnostics.report(&name_node, NameDefinedMultipleTimes(name));
                     }
                     function_asts.insert(impl_function_id, func);
                 }
@@ -672,20 +672,18 @@ pub fn priv_impl_definition_data(
                         .insert(name.clone(), ImplItemId::Type(impl_type_id))
                         .is_some()
                     {
-                        diagnostics.report(
-                            name_node.stable_ptr().untyped(),
-                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
-                        );
+                        diagnostics.report(&name_node, NameDefinedMultipleTimes(name));
                     }
                     item_type_asts.insert(impl_type_id, ty);
                 }
-                ImplItem::Constant(constant) => report_unsupported_impl_item(
-                    &mut diagnostics,
-                    constant.const_kw(syntax_db),
-                    "Constant",
-                ),
+                ImplItem::Constant(constant) => {
+                    diagnostics.report(
+                        &constant.const_kw(syntax_db),
+                        UnsupportedImplItem("Constant".into()),
+                    );
+                }
                 ImplItem::Impl(imp) => {
-                    report_unsupported_impl_item(&mut diagnostics, imp.impl_kw(syntax_db), "Impl")
+                    diagnostics.report(&imp.impl_kw(syntax_db), UnsupportedImplItem("Impl".into()));
                 }
                 // Report nothing, a parser diagnostic is reported.
                 ImplItem::Missing(_) => {}
@@ -710,7 +708,7 @@ pub fn priv_impl_definition_data(
             // TODO(TomerStarkware): make sure we do not report missing if the trait item is
             // unsupported in impl.
             &impl_ast.name(syntax_db),
-            SemanticDiagnosticKind::MissingItemsInImpl { item_names: missing_items_in_impl },
+            SemanticDiagnosticKind::MissingItemsInImpl(missing_items_in_impl),
         );
     }
 
@@ -731,7 +729,7 @@ fn report_invalid_impl_item<Terminal: syntax::node::Terminal>(
 ) {
     diagnostics.report(
         kw_terminal.as_syntax_node().stable_ptr(),
-        InvalidImplItem { item_kw: kw_terminal.text(syntax_db) },
+        InvalidImplItem(kw_terminal.text(syntax_db)),
     );
 }
 
@@ -755,7 +753,7 @@ fn check_special_impls(
             .flat_map(|info| info.copyable.err())
             .next()
         {
-            return Err(diagnostics.report(stable_ptr, InvalidCopyTraitImpl { inference_error }));
+            return Err(diagnostics.report(stable_ptr, InvalidCopyTraitImpl(inference_error)));
         }
     }
     if trait_id == drop {
@@ -766,7 +764,7 @@ fn check_special_impls(
             .flat_map(|info| info.droppable.err())
             .next()
         {
-            return Err(diagnostics.report(stable_ptr, InvalidDropTraitImpl { inference_error }));
+            return Err(diagnostics.report(stable_ptr, InvalidDropTraitImpl(inference_error)));
         }
     }
 
@@ -1104,7 +1102,7 @@ pub fn can_infer_impl_by_self(
         Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_)) => true,
         Ok(SolutionSet::None) => {
             inference_errors
-                .push((trait_function_id, InferenceError::NoImplsFound { concrete_trait_id }));
+                .push((trait_function_id, InferenceError::NoImplsFound(concrete_trait_id)));
             false
         }
         Err(err_set) => {
@@ -1409,7 +1407,16 @@ pub fn impl_type_concrete_implized(
     };
 
     let impl_def_id = concrete_impl.impl_def_id(db);
-    db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id)
+    let ty = db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id);
+    let Ok(Some(ty)) = ty else {
+        return ty;
+    };
+
+    let generic_params = db.impl_def_generic_params(impl_def_id)?;
+    let generic_args = concrete_impl.lookup_intern(db).generic_args;
+    let substitution = GenericSubstitution::new(generic_params.as_slice(), generic_args.as_slice());
+    let ty = SubstitutionRewriter { db, substitution: &substitution }.rewrite(ty)?;
+    Ok(Some(ty))
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_type_concrete_implized].

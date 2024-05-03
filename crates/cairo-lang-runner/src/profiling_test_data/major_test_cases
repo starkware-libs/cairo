@@ -799,11 +799,11 @@ Weight by Cairo function:
   function core::ec::EcStateImpl::add_mul: 15
   function lib.cairo::ecdsa_call: 14
   function core::ec::EcPointImpl::new_nz: 12
+  function core::Felt252PartialEq::eq: 10
   function core::ec::EcStateImpl::add: 10
   function core::ec::EcStateImpl::sub: 10
-  function core::Felt252PartialEq::eq: 9
   function core::ec::EcStateImpl::init: 7
-  function core::ecdsa::check_ecdsa_signature: 7
+  function core::ecdsa::check_ecdsa_signature: 6
   function core::ec::EcPointTryIntoNonZero::try_into: 3
 Weight by Sierra stack trace:
   test::ecdsa_call: 184

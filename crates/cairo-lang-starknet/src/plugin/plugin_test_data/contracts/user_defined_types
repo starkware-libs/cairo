@@ -91,6 +91,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 contract:
 
 #[event]
@@ -345,6 +348,9 @@ impl WrappedFelt252Hash<
 }
 
 
+lib.cairo:12:26
+    #[derive(Drop, Hash, starknet::Store)]
+                         ^*************^
 starknet_derive:
 
 impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
@@ -406,6 +412,9 @@ impl ZeroSizeSerde of core::serde::Serde::<ZeroSize> {
 }
 
 
+lib.cairo:16:33
+    #[derive(Drop, Hash, Serde, starknet::Store)]
+                                ^*************^
 starknet_derive:
 
 impl StoreZeroSize of starknet::Store::<ZeroSize> {
@@ -464,6 +473,9 @@ impl SimpleEnumSerde of core::serde::Serde::<SimpleEnum> {
 }
 
 
+lib.cairo:19:27
+    #[derive(Drop, Serde, starknet::Store)]
+                          ^*************^
 starknet_derive:
 
 impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
@@ -570,6 +582,9 @@ impl EnumWithDefaultSerde of core::serde::Serde::<EnumWithDefault> {
 }
 
 
+lib.cairo:25:27
+    #[derive(Drop, Serde, starknet::Store)]
+                          ^*************^
 starknet_derive:
 
 impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
@@ -703,6 +718,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {

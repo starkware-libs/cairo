@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplDefId, ImplTypeDefId,
-    LanguageElementId, ModuleFileId, NamedLanguageElementId, StructId, TraitTypeId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplDefId, ImplTypeDefId, ModuleFileId,
+    NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -796,20 +796,17 @@ pub fn add_type_based_diagnostics(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     ty: TypeId,
-    node: &impl LanguageElementId,
+    stable_ptr: impl Into<SyntaxStablePtrId> + Copy,
 ) {
     if db.type_size_info(ty) == Ok(TypeSizeInformation::Infinite) {
-        diagnostics.report(node.untyped_stable_ptr(db.upcast()), InfiniteSizeType { ty });
+        diagnostics.report(stable_ptr, InfiniteSizeType(ty));
     }
     if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.lookup_intern(db) {
         let long_id = extrn.lookup_intern(db);
         if long_id.extern_type_id.name(db.upcast()).as_str() == "Array" {
             if let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..] {
                 if db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized) {
-                    diagnostics.report(
-                        node.untyped_stable_ptr(db.upcast()),
-                        ArrayOfZeroSizedElements { ty: *arg_ty },
-                    );
+                    diagnostics.report(stable_ptr, ArrayOfZeroSizedElements(*arg_ty));
                 }
             }
         }

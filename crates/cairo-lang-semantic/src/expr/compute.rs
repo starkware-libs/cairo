@@ -45,7 +45,7 @@ use super::pattern::{
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_option_ty, core_result_ty, core_unary_operator,
     false_literal_expr, get_core_trait, never_ty, numeric_literal_trait, true_literal_expr,
-    try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type,
+    try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type, CoreTraitContext,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -65,8 +65,8 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
-    are_coupons_enabled, extract_fixed_size_array_size, implize_type, peel_snapshots, resolve_type,
-    verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
+    add_type_based_diagnostics, are_coupons_enabled, extract_fixed_size_array_size, implize_type,
+    peel_snapshots, resolve_type, verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
 };
 use crate::{
     ConcreteEnumId, GenericArgumentId, GenericParam, Member, Mutability, Parameter,
@@ -206,7 +206,7 @@ impl<'ctx> ComputationContext<'ctx> {
             return Ok(signature);
         }
 
-        Err(self.diagnostics.report(stable_ptr, UnsupportedOutsideOfFunction { feature_name }))
+        Err(self.diagnostics.report(stable_ptr, UnsupportedOutsideOfFunction(feature_name)))
     }
 
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
@@ -225,10 +225,16 @@ impl<'ctx> ComputationContext<'ctx> {
         )
     }
 
-    // Applies inference rewriter to all the expressions in the computation context.
+    /// Applies inference rewriter to all the expressions in the computation context, and adds
+    /// errors on types from the final expressions.
     pub fn apply_inference_rewriter_to_exprs(&mut self) {
+        let mut analyzed_types = UnorderedHashSet::<_>::default();
         for (_id, expr) in self.exprs.iter_mut() {
             self.resolver.inference().internal_rewrite(expr).no_err();
+            // Adding an error only once per type.
+            if analyzed_types.insert(expr.ty()) {
+                add_type_based_diagnostics(self.db, self.diagnostics, expr.ty(), &*expr);
+            }
         }
     }
 
@@ -393,9 +399,7 @@ fn compute_expr_inline_macro_semantic(
 
     let macro_name = syntax.path(syntax_db).as_syntax_node().get_text_without_trivia(syntax_db);
     let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() else {
-        return Err(ctx
-            .diagnostics
-            .report(syntax, InlineMacroNotFound { macro_name: macro_name.into() }));
+        return Err(ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into())));
     };
 
     let result = macro_plugin.generate_code(syntax_db, syntax);
@@ -407,7 +411,7 @@ fn compute_expr_inline_macro_semantic(
 
     let Some(code) = result.code else {
         return Err(diag_added.unwrap_or_else(|| {
-            ctx.diagnostics.report(syntax, InlineMacroFailed { macro_name: macro_name.into() })
+            ctx.diagnostics.report(syntax, InlineMacroFailed(macro_name.into()))
         }));
     };
 
@@ -1583,7 +1587,7 @@ fn compute_expr_error_propagate_semantic(
     inner_expr_ty.check_not_missing(ctx.db)?;
     let inner_expr_err_prop_ty =
         unwrap_error_propagation_type(ctx.db, inner_expr_ty).ok_or_else(|| {
-            ctx.diagnostics.report(syntax, ErrorPropagateOnNonErrorType { ty: inner_expr_ty })
+            ctx.diagnostics.report(syntax, ErrorPropagateOnNonErrorType(inner_expr_ty))
         })?;
     let inner_expr_err_variant = inner_expr_err_prop_ty.err_variant();
 
@@ -1635,7 +1639,7 @@ fn compute_expr_indexed_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db), None);
     let candidate_traits: Vec<_> = ["Index", "IndexView"]
         .iter()
-        .map(|trait_name| get_core_trait(ctx.db, (*trait_name).into()))
+        .map(|trait_name| get_core_trait(ctx.db, CoreTraitContext::TopLevel, (*trait_name).into()))
         .collect();
     let (function_id, fixed_expr, mutability) = compute_method_function_call_data(
         ctx,
@@ -1907,7 +1911,7 @@ fn maybe_compute_pattern_semantic(
                     // Don't add a diagnostic if the type is missing.
                     // A diagnostic should've already been added.
                     ty.check_not_missing(ctx.db)?;
-                    Err(ctx.diagnostics.report(pattern_struct, UnexpectedStructPattern { ty }))
+                    Err(ctx.diagnostics.report(pattern_struct, UnexpectedStructPattern(ty)))
                 })?;
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
             let struct_id = concrete_struct_id.struct_id(ctx.db);
@@ -1975,7 +1979,7 @@ fn maybe_compute_pattern_semantic(
             }
             if !has_tail {
                 for (member_name, _) in members {
-                    ctx.diagnostics.report(pattern_struct, MissingMember { member_name });
+                    ctx.diagnostics.report(pattern_struct, MissingMember(member_name));
                 }
             }
             Pattern::Struct(PatternStruct {
@@ -1991,7 +1995,7 @@ fn maybe_compute_pattern_semantic(
             pattern_syntax,
             ty,
             or_pattern_variables_map,
-            |ty: TypeId| UnexpectedTuplePattern { ty },
+            |ty: TypeId| UnexpectedTuplePattern(ty),
             |expected, actual| WrongNumberOfTupleElements { expected, actual },
         )?,
         ast::Pattern::FixedSizeArray(_) => maybe_compute_tuple_like_pattern_semantic(
@@ -1999,7 +2003,7 @@ fn maybe_compute_pattern_semantic(
             pattern_syntax,
             ty,
             or_pattern_variables_map,
-            |ty: TypeId| UnexpectedFixedSizeArrayPattern { ty },
+            |ty: TypeId| UnexpectedFixedSizeArrayPattern(ty),
             |expected, actual| WrongNumberOfFixedSizeArrayElements { expected, actual },
         )?,
         ast::Pattern::False(pattern_false) => {
@@ -2130,7 +2134,7 @@ fn extract_concrete_enum_from_pattern_and_validate(
             // Don't add a diagnostic if the type is missing.
             // A diagnostic should've already been added.
             ty.check_not_missing(ctx.db)?;
-            Err(ctx.diagnostics.report(pattern, UnexpectedEnumPattern { ty }))
+            Err(ctx.diagnostics.report(pattern, UnexpectedEnumPattern(ty)))
         })?;
     // Check that these are the same enums.
     if enum_id != concrete_enum.enum_id(ctx.db) {
@@ -2325,8 +2329,7 @@ fn struct_ctor_expr(
                     member_name,
                 );
             } else {
-                ctx.diagnostics
-                    .report(ctor_syntax, MissingMember { member_name: member_name.clone() });
+                ctx.diagnostics.report(ctor_syntax, MissingMember(member_name.clone()));
             }
         }
     }
@@ -2432,7 +2435,7 @@ fn new_string_literal_expr(
     let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
 
     // String trait.
-    let trait_id = get_core_trait(ctx.db, "StringLiteral".into());
+    let trait_id = get_core_trait(ctx.db, CoreTraitContext::TopLevel, "StringLiteral".into());
     let generic_args = vec![GenericArgumentId::Type(ty)];
     let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
@@ -2654,7 +2657,7 @@ fn member_access_expr(
         TypeLongId::ImplType(_) => unreachable!("Impl type should've been reduced."),
         TypeLongId::Var(_) => Err(ctx
             .diagnostics
-            .report(&rhs_syntax, InternalInferenceError(InferenceError::TypeNotInferred { ty }))),
+            .report(&rhs_syntax, InternalInferenceError(InferenceError::TypeNotInferred(ty)))),
         TypeLongId::Coupon(_) => {
             Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name }))
         }
@@ -2740,9 +2743,8 @@ pub fn resolve_variable_by_name(
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
-    let res = get_variable_by_name(ctx, &variable_name, stable_ptr).ok_or_else(|| {
-        ctx.diagnostics.report(identifier, VariableNotFound { name: variable_name })
-    })?;
+    let res = get_variable_by_name(ctx, &variable_name, stable_ptr)
+        .ok_or_else(|| ctx.diagnostics.report(identifier, VariableNotFound(variable_name)))?;
     let var = extract_matches!(res.clone(), Expr::Var);
 
     ctx.resolver.data.resolved_items.generic.insert(
@@ -3040,7 +3042,7 @@ pub fn compute_statement_semantic(
             let ty: TypeId = expr.ty();
             if let TypeLongId::Concrete(concrete) = ty.lookup_intern(db) {
                 if concrete.is_must_use(db)? {
-                    ctx.diagnostics.report(&expr_syntax, UnhandledMustUseType { ty });
+                    ctx.diagnostics.report(&expr_syntax, UnhandledMustUseType(ty));
                 }
             }
             if let Expr::FunctionCall(expr_function_call) = &expr.expr {
@@ -3162,9 +3164,8 @@ fn compute_bool_condition_semantic(
     let condition = compute_expr_semantic(ctx, condition_syntax, None);
     let inference = &mut ctx.resolver.inference();
     if let Err(err_set) = inference.conform_ty(condition.ty(), core_bool_ty(ctx.db)) {
-        let diag_added = ctx
-            .diagnostics
-            .report(condition.deref(), ConditionNotBool { condition_ty: condition.ty() });
+        let diag_added =
+            ctx.diagnostics.report(condition.deref(), ConditionNotBool(condition.ty()));
         inference.consume_reported_error(err_set, diag_added);
     }
     condition
@@ -3184,7 +3185,7 @@ fn check_struct_member_is_visible(
     }
     let user_module_id = ctx.resolver.module_file_id.0;
     if !visibility::peek_visible_in(db, member.visibility, containing_module_id, user_module_id) {
-        ctx.diagnostics.report(stable_ptr, MemberNotVisible { member_name: member_name.clone() });
+        ctx.diagnostics.report(stable_ptr, MemberNotVisible(member_name.clone()));
     }
 }
 

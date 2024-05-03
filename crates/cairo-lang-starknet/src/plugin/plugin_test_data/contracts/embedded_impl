@@ -61,6 +61,9 @@ mod empty_contract {
     impl WorkingUsage = super::OutsideImpl<ContractState>;
 }
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 OutsideTraitDispatcherTrait:
 
 trait OutsideTraitDispatcherTrait<T> {
@@ -241,6 +244,9 @@ impl OutsideTraitSafeDispatcherImpl of OutsideTraitSafeDispatcherTrait<OutsideTr
 }
 
 
+lib.cairo:7:1
+#[starknet::embeddable]
+^*********************^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImpl<
@@ -324,6 +330,9 @@ impl OutsideTraitDispatcherSerde of core::serde::Serde::<OutsideTraitDispatcher>
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitDispatcher of starknet::Store::<OutsideTraitDispatcher> {
@@ -375,6 +384,9 @@ impl OutsideTraitLibraryDispatcherSerde of core::serde::Serde::<OutsideTraitLibr
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitLibraryDispatcher of starknet::Store::<OutsideTraitLibraryDispatcher> {
@@ -426,6 +438,9 @@ impl OutsideTraitSafeLibraryDispatcherSerde of core::serde::Serde::<OutsideTrait
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitSafeLibraryDispatcher of starknet::Store::<OutsideTraitSafeLibraryDispatcher> {
@@ -477,6 +492,9 @@ impl OutsideTraitSafeDispatcherSerde of core::serde::Serde::<OutsideTraitSafeDis
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitSafeDispatcher of starknet::Store::<OutsideTraitSafeDispatcher> {
@@ -512,6 +530,9 @@ impl StoreOutsideTraitSafeDispatcher of starknet::Store::<OutsideTraitSafeDispat
 }
 
 
+lib.cairo:17:1
+#[starknet::contract]
+^*******************^
 contract:
 
 #[event]
@@ -618,6 +639,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:17:1
+#[starknet::contract]
+^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -728,6 +752,9 @@ mod empty_contract {
     impl Usage2 = super::OutsideImplWithPanicDestruct<ContractState>;
 }
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 OutsideTraitWithDestructDispatcherTrait:
 
 trait OutsideTraitWithDestructDispatcherTrait<T> {
@@ -837,6 +864,9 @@ impl OutsideTraitWithDestructSafeDispatcherImpl of OutsideTraitWithDestructSafeD
 }
 
 
+lib.cairo:6:1
+#[starknet::embeddable]
+^*********************^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImplWithDestruct<
@@ -877,6 +907,9 @@ mod __constructor_OutsideImplWithDestruct {
 }
 
 
+lib.cairo:15:1
+#[starknet::interface]
+^********************^
 OutsideTraitWithPanicDestructDispatcherTrait:
 
 trait OutsideTraitWithPanicDestructDispatcherTrait<T> {
@@ -986,6 +1019,9 @@ impl OutsideTraitWithPanicDestructSafeDispatcherImpl of OutsideTraitWithPanicDes
 }
 
 
+lib.cairo:20:1
+#[starknet::embeddable]
+^*********************^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<
@@ -1042,6 +1078,9 @@ impl OutsideTraitWithDestructDispatcherSerde of core::serde::Serde::<OutsideTrai
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitWithDestructDispatcher of starknet::Store::<OutsideTraitWithDestructDispatcher> {
@@ -1093,6 +1132,9 @@ impl OutsideTraitWithDestructLibraryDispatcherSerde of core::serde::Serde::<Outs
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitWithDestructLibraryDispatcher of starknet::Store::<OutsideTraitWithDestructLibraryDispatcher> {
@@ -1144,6 +1186,9 @@ impl OutsideTraitWithDestructSafeLibraryDispatcherSerde of core::serde::Serde::<
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitWithDestructSafeLibraryDispatcher of starknet::Store::<OutsideTraitWithDestructSafeLibraryDispatcher> {
@@ -1195,6 +1240,9 @@ impl OutsideTraitWithDestructSafeDispatcherSerde of core::serde::Serde::<Outside
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitWithDestructSafeDispatcher of starknet::Store::<OutsideTraitWithDestructSafeDispatcher> {
@@ -1246,6 +1294,9 @@ impl OutsideTraitWithPanicDestructDispatcherSerde of core::serde::Serde::<Outsid
 }
 
 
+lib.cairo:15:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitWithPanicDestructDispatcher of starknet::Store::<OutsideTraitWithPanicDestructDispatcher> {
@@ -1297,6 +1348,9 @@ impl OutsideTraitWithPanicDestructLibraryDispatcherSerde of core::serde::Serde::
 }
 
 
+lib.cairo:15:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitWithPanicDestructLibraryDispatcher of starknet::Store::<OutsideTraitWithPanicDestructLibraryDispatcher> {
@@ -1348,6 +1402,9 @@ impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSerde of core::serde::Ser
 }
 
 
+lib.cairo:15:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitWithPanicDestructSafeLibraryDispatcher of starknet::Store::<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
@@ -1399,6 +1456,9 @@ impl OutsideTraitWithPanicDestructSafeDispatcherSerde of core::serde::Serde::<Ou
 }
 
 
+lib.cairo:15:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitWithPanicDestructSafeDispatcher of starknet::Store::<OutsideTraitWithPanicDestructSafeDispatcher> {
@@ -1434,6 +1494,9 @@ impl StoreOutsideTraitWithPanicDestructSafeDispatcher of starknet::Store::<Outsi
 }
 
 
+lib.cairo:29:1
+#[starknet::contract]
+^*******************^
 contract:
 
 #[event]
@@ -1507,6 +1570,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:29:1
+#[starknet::contract]
+^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1592,6 +1658,9 @@ mod empty_contract {
     impl Usage1 = super::OutsideImplWithDrop<ContractState>;
 }
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 OutsideTraitWithDropDispatcherTrait:
 
 trait OutsideTraitWithDropDispatcherTrait<T> {
@@ -1701,6 +1770,9 @@ impl OutsideTraitWithDropSafeDispatcherImpl of OutsideTraitWithDropSafeDispatche
 }
 
 
+lib.cairo:6:1
+#[starknet::embeddable]
+^*********************^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImplWithDrop<
@@ -1757,6 +1829,9 @@ impl OutsideTraitWithDropDispatcherSerde of core::serde::Serde::<OutsideTraitWit
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitWithDropDispatcher of starknet::Store::<OutsideTraitWithDropDispatcher> {
@@ -1808,6 +1883,9 @@ impl OutsideTraitWithDropLibraryDispatcherSerde of core::serde::Serde::<OutsideT
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitWithDropLibraryDispatcher of starknet::Store::<OutsideTraitWithDropLibraryDispatcher> {
@@ -1859,6 +1937,9 @@ impl OutsideTraitWithDropSafeLibraryDispatcherSerde of core::serde::Serde::<Outs
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitWithDropSafeLibraryDispatcher of starknet::Store::<OutsideTraitWithDropSafeLibraryDispatcher> {
@@ -1910,6 +1991,9 @@ impl OutsideTraitWithDropSafeDispatcherSerde of core::serde::Serde::<OutsideTrai
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreOutsideTraitWithDropSafeDispatcher of starknet::Store::<OutsideTraitWithDropSafeDispatcher> {
@@ -1945,6 +2029,9 @@ impl StoreOutsideTraitWithDropSafeDispatcher of starknet::Store::<OutsideTraitWi
 }
 
 
+lib.cairo:15:1
+#[starknet::contract]
+^*******************^
 contract:
 
 #[event]
@@ -2012,6 +2099,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:15:1
+#[starknet::contract]
+^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {

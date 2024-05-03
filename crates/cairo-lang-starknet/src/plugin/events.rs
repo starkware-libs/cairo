@@ -1,9 +1,6 @@
 use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_starknet_classes::abi::EventFieldKind;
-use cairo_lang_syntax::attribute::structured::{
-    AttributeArg, AttributeArgVariant, AttributeStructurize,
-};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
@@ -18,25 +15,6 @@ use super::starknet_module::StarknetModuleKind;
 pub enum EventData {
     Struct { members: Vec<(SmolStr, EventFieldKind)> },
     Enum { variants: Vec<(SmolStr, EventFieldKind)> },
-}
-
-/// Returns true if the type should be derived as an event.
-pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) -> bool {
-    with_attrs.query_attr(db, "derive").into_iter().any(|attr| {
-        let attr = attr.structurize(db);
-        for arg in &attr.args {
-            let AttributeArg {
-                variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
-            } = arg
-            else {
-                continue;
-            };
-            if path.as_syntax_node().get_text_without_trivia(db) == EVENT_TRAIT {
-                return true;
-            }
-        }
-        false
-    })
 }
 
 /// The code for an empty event.

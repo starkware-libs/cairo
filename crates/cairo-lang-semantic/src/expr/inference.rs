@@ -18,7 +18,7 @@ use cairo_lang_utils::{define_short_id, extract_matches, Intern, LookupIntern};
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{enrich_lookup_context, Ambiguity, SolutionSet};
-use crate::corelib::{core_felt252_ty, get_core_trait, numeric_literal_trait};
+use crate::corelib::{core_felt252_ty, get_core_trait, numeric_literal_trait, CoreTraitContext};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -135,9 +135,7 @@ pub enum InferenceVar {
 pub enum InferenceError {
     /// An inference error wrapping a previously reported error.
     Reported(DiagnosticAdded),
-    Cycle {
-        var: InferenceVar,
-    },
+    Cycle(InferenceVar),
     TypeKindMismatch {
         ty0: TypeId,
         ty1: TypeId,
@@ -166,19 +164,15 @@ pub enum InferenceError {
 
     // TODO(spapini): These are only used for external interface. Separate them along with the
     // finalize() function to a wrapper.
-    NoImplsFound {
-        concrete_trait_id: ConcreteTraitId,
-    },
+    NoImplsFound(ConcreteTraitId),
     Ambiguity(Ambiguity),
-    TypeNotInferred {
-        ty: TypeId,
-    },
+    TypeNotInferred(TypeId),
 }
 impl InferenceError {
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
         match self {
             InferenceError::Reported(_) => "Inference error occurred.".into(),
-            InferenceError::Cycle { var: _ } => "Inference cycle detected".into(),
+            InferenceError::Cycle(_var) => "Inference cycle detected".into(),
             InferenceError::TypeKindMismatch { ty0, ty1 } => {
                 format!("Type mismatch: `{:?}` and `{:?}`.", ty0.debug(db), ty1.debug(db))
             }
@@ -201,7 +195,7 @@ impl InferenceError {
             InferenceError::ConstInferenceNotSupported => {
                 "Const generic inference not yet supported.".into()
             }
-            InferenceError::NoImplsFound { concrete_trait_id } => {
+            InferenceError::NoImplsFound(concrete_trait_id) => {
                 let trait_id = concrete_trait_id.trait_id(db);
                 if trait_id == numeric_literal_trait(db) {
                     let generic_type = extract_matches!(
@@ -213,7 +207,9 @@ impl InferenceError {
                          literal.",
                         generic_type.debug(db)
                     );
-                } else if trait_id == get_core_trait(db, "StringLiteral".into()) {
+                } else if trait_id
+                    == get_core_trait(db, CoreTraitContext::TopLevel, "StringLiteral".into())
+                {
                     let generic_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],
                         GenericArgumentId::Type
@@ -230,7 +226,7 @@ impl InferenceError {
                 )
             }
             InferenceError::Ambiguity(ambiguity) => ambiguity.format(db),
-            InferenceError::TypeNotInferred { ty } => {
+            InferenceError::TypeNotInferred(ty) => {
                 format!("Type annotations needed. Failed to infer {:?}.", ty.debug(db))
             }
             InferenceError::GenericFunctionMismatch { func0, func1 } => {
@@ -642,7 +638,7 @@ impl<'db> Inference<'db> {
         for (id, var) in self.type_vars.iter().enumerate() {
             if self.type_assignment(LocalTypeVarId(id)).is_none() {
                 let ty = TypeLongId::Var(*var).intern(self.db);
-                return Some((InferenceVar::Type(var.id), InferenceError::TypeNotInferred { ty }));
+                return Some((InferenceVar::Type(var.id), InferenceError::TypeNotInferred(ty)));
             }
         }
         if let Some(var) = self.refuted.first().copied() {
@@ -651,7 +647,7 @@ impl<'db> Inference<'db> {
             let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
             return Some((
                 InferenceVar::Impl(var),
-                InferenceError::NoImplsFound { concrete_trait_id },
+                InferenceError::NoImplsFound(concrete_trait_id),
             ));
         }
         if let Some((var, ambiguity)) = self.ambiguous.first() {
@@ -678,7 +674,7 @@ impl<'db> Inference<'db> {
         if !impl_id.is_var_free(self.db)
             && self.impl_contains_var(&impl_id, InferenceVar::Impl(var))
         {
-            return Err(self.set_error(InferenceError::Cycle { var: InferenceVar::Impl(var) }));
+            return Err(self.set_error(InferenceError::Cycle(InferenceVar::Impl(var))));
         }
         self.impl_assignment.insert(var, impl_id);
         Ok(impl_id)
@@ -708,7 +704,7 @@ impl<'db> Inference<'db> {
         assert!(!self.type_assignment.contains_key(&var.id), "Cannot reassign variable.");
         let inference_var = InferenceVar::Type(var.id);
         if !ty.is_var_free(self.db) && self.ty_contains_var(ty, inference_var) {
-            return Err(self.set_error(InferenceError::Cycle { var: inference_var }));
+            return Err(self.set_error(InferenceError::Cycle(inference_var)));
         }
         self.type_assignment.insert(var.id, ty);
         Ok(ty)
@@ -764,21 +760,17 @@ impl<'db> Inference<'db> {
             Some(GenericArgumentId::Type(ty)) => {
                 if let TypeLongId::Var(_) = ty.lookup_intern(self.db) {
                     // Don't try to infer such impls.
-                    return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer {
-                        concrete_trait_id,
-                    }));
+                    return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer(concrete_trait_id)));
                 }
             }
             Some(GenericArgumentId::Impl(ImplId::ImplVar(_))) => {
                 // Don't try to infer such impls.
-                return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer { concrete_trait_id }));
+                return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer(concrete_trait_id)));
             }
             Some(GenericArgumentId::Constant(const_value)) => {
                 if let ConstValue::Var(_) = const_value.lookup_intern(self.db) {
                     // Don't try to infer such impls.
-                    return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer {
-                        concrete_trait_id,
-                    }));
+                    return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer(concrete_trait_id)));
                 }
             }
             _ => {}

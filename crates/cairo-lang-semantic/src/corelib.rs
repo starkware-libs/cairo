@@ -1,5 +1,6 @@
 use cairo_lang_defs::ids::{
-    EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, NamedLanguageElementId, TraitId,
+    EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, NamedLanguageElementId,
+    TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
@@ -426,6 +427,7 @@ pub fn core_unary_operator(
     Ok(Ok(get_core_trait_function_infer(
         db,
         inference,
+        CoreTraitContext::TopLevel,
         trait_name.into(),
         function_name.into(),
         stable_ptr,
@@ -464,6 +466,7 @@ pub fn core_binary_operator(
         get_core_trait_function_infer(
             db,
             inference,
+            CoreTraitContext::TopLevel,
             trait_name.into(),
             function_name.into(),
             stable_ptr,
@@ -610,19 +613,28 @@ pub fn concrete_panic_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> Conc
 }
 
 pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, "Copy".into())
+    get_core_trait(db, CoreTraitContext::TopLevel, "Copy".into())
 }
 
 pub fn drop_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, "Drop".into())
+    get_core_trait(db, CoreTraitContext::TopLevel, "Drop".into())
 }
 
-pub fn destruct_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, "Destruct".into())
+pub fn destruct_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
+    get_core_trait_fn(db, CoreTraitContext::TopLevel, "Destruct".into(), "destruct".into())
+}
+
+pub fn panic_destruct_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
+    get_core_trait_fn(
+        db,
+        CoreTraitContext::TopLevel,
+        "PanicDestruct".into(),
+        "panic_destruct".into(),
+    )
 }
 
 pub fn numeric_literal_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, "NumericLiteral".into())
+    get_core_trait(db, CoreTraitContext::TopLevel, "NumericLiteral".into())
 }
 
 /// Given a core library trait name and its generic arguments, returns [ConcreteTraitId].
@@ -631,21 +643,37 @@ fn get_core_concrete_trait(
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
 ) -> ConcreteTraitId {
-    let trait_id = get_core_trait(db, name);
+    let trait_id = get_core_trait(db, CoreTraitContext::TopLevel, name);
     semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(db)
 }
 
-/// Given a core library trait name, returns [TraitId].
-pub fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
-    let core_module = db.core_module();
+/// The context for a core library trait.
+pub enum CoreTraitContext {
+    /// The top level core library context.
+    TopLevel,
+}
+
+/// Given a core library context and trait name, returns [TraitId].
+pub fn get_core_trait(db: &dyn SemanticGroup, context: CoreTraitContext, name: SmolStr) -> TraitId {
+    let base_module = match context {
+        CoreTraitContext::TopLevel => db.core_module(),
+    };
     // This should not fail if the corelib is present.
     let use_id = extract_matches!(
-        db.module_item_by_name(core_module, name).unwrap().unwrap(),
+        db.module_item_by_name(base_module, name).unwrap().unwrap(),
         ModuleItemId::Use
     );
-    let trait_id =
-        extract_matches!(db.use_resolved_item(use_id).unwrap(), ResolvedGenericItem::Trait);
-    trait_id
+    extract_matches!(db.use_resolved_item(use_id).unwrap(), ResolvedGenericItem::Trait)
+}
+
+/// Given a core library context, trait name and fn name, returns [TraitFunctionId].
+fn get_core_trait_fn(
+    db: &dyn SemanticGroup,
+    context: CoreTraitContext,
+    trait_name: SmolStr,
+    fn_name: SmolStr,
+) -> TraitFunctionId {
+    db.trait_function_by_name(get_core_trait(db, context, trait_name), fn_name).unwrap().unwrap()
 }
 
 /// Retrieves a trait function from the core library with type variables as generic arguments, to
@@ -653,11 +681,12 @@ pub fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
 fn get_core_trait_function_infer(
     db: &dyn SemanticGroup,
     inference: &mut Inference<'_>,
+    context: CoreTraitContext,
     trait_name: SmolStr,
     function_name: SmolStr,
     stable_ptr: SyntaxStablePtrId,
 ) -> ConcreteTraitGenericFunctionId {
-    let trait_id = get_core_trait(db, trait_name);
+    let trait_id = get_core_trait(db, context, trait_name);
     let generic_params = db.trait_generic_params(trait_id).unwrap();
     let generic_args = generic_params
         .iter()

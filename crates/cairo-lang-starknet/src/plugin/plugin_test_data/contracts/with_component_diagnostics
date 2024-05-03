@@ -55,6 +55,9 @@ mod test_contract {
     component!(super::test_component, test_component_storage, ABC);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -107,6 +110,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -126,6 +132,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -184,6 +193,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:15:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -304,6 +316,9 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage::<a>, event: ABC::<b>);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -356,6 +371,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -375,6 +393,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -433,6 +454,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:15:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -541,6 +565,9 @@ mod test_contract {
     component!(path: a + b, storage: c + d, event: e + f);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -593,6 +620,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -612,6 +642,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -670,6 +703,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:15:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -791,6 +827,9 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -843,6 +882,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -862,6 +904,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -920,6 +965,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:15:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1044,6 +1092,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -1096,6 +1147,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1115,6 +1169,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -1194,6 +1251,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:24:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1308,6 +1368,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -1360,6 +1423,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1379,6 +1445,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -1437,6 +1506,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:16:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1524,9 +1596,9 @@ error: Type not found.
                                                        ^*****^
 
 error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo[contract]:29:36
-                starknet::storage::StoragePointer{
-                                   ^************^
+ --> lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 
 error: Type not found.
  --> lib.cairo:14:56
@@ -1544,9 +1616,9 @@ error: Type not found.
                                                        ^*****^
 
 error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo[contract]:46:36
-                starknet::storage::StoragePointerAccess::read(
-                                   ^******************^
+ --> lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 
 error: Type not found.
  --> lib.cairo:14:56
@@ -1554,9 +1626,9 @@ error: Type not found.
                                                        ^*****^
 
 error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo[contract]:51:36
-                starknet::storage::StoragePointerAccess::write(
-                                   ^******************^
+ --> lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -1584,6 +1656,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -1636,6 +1711,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1655,6 +1733,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -1753,6 +1834,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:18:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1855,6 +1939,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -1907,6 +1994,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1926,6 +2016,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 #[event]
@@ -2009,6 +2102,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2115,6 +2211,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:9:16
+#[derive(Drop, starknet::Event)]
+               ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2151,6 +2250,9 @@ impl EventABCIntoEvent of Into<test_component::Event, Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -2203,6 +2305,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2222,6 +2327,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:14:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -2401,6 +2509,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -2453,6 +2564,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2472,6 +2586,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:8:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -2524,6 +2641,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:8:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2543,6 +2663,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:16:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -2644,6 +2767,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:31:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {

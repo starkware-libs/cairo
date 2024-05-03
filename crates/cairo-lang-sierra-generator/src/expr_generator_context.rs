@@ -35,7 +35,7 @@ pub struct ExprGeneratorContext<'a> {
     ap_tracking_configuration: ApTrackingConfiguration,
 
     /// The current location for adding statements.
-    curr_cairo_location: Vec<StableLocation>,
+    pub curr_cairo_location: Vec<StableLocation>,
     /// The accumulated statements for the expression.
     statements: Vec<pre_sierra::StatementWithLocation>,
 }

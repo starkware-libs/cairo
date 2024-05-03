@@ -36,11 +36,12 @@ impl MacroPlugin for ConfigPlugin {
         } else if let Some(builder) =
             handle_undropped_item(db, metadata.cfg_set, item_ast, &mut diagnostics)
         {
+            let (content, code_mappings) = builder.build();
             PluginResult {
                 code: Some(PluginGeneratedFile {
                     name: "config".into(),
-                    content: builder.code,
-                    code_mappings: builder.code_mappings,
+                    content,
+                    code_mappings,
                     aux_data: None,
                 }),
                 diagnostics,
@@ -104,7 +105,7 @@ fn handle_undropped_item<'a>(
         ast::ModuleItem::Trait(trait_item) => {
             let body = try_extract_matches!(trait_item.body(db), ast::MaybeTraitBody::Some)?;
             let items = get_kept_items_nodes(db, cfg_set, &body.items_vec(db), diagnostics)?;
-            let mut builder = PatchBuilder::new(db);
+            let mut builder = PatchBuilder::new(db, &trait_item);
             builder.add_node(trait_item.attributes(db).as_syntax_node());
             builder.add_node(trait_item.trait_kw(db).as_syntax_node());
             builder.add_node(trait_item.name(db).as_syntax_node());
@@ -119,7 +120,7 @@ fn handle_undropped_item<'a>(
         ast::ModuleItem::Impl(impl_item) => {
             let body = try_extract_matches!(impl_item.body(db), ast::MaybeImplBody::Some)?;
             let items = get_kept_items_nodes(db, cfg_set, &body.items_vec(db), diagnostics)?;
-            let mut builder = PatchBuilder::new(db);
+            let mut builder = PatchBuilder::new(db, &impl_item);
             builder.add_node(impl_item.attributes(db).as_syntax_node());
             builder.add_node(impl_item.impl_kw(db).as_syntax_node());
             builder.add_node(impl_item.name(db).as_syntax_node());

@@ -26,9 +26,7 @@ use super::imp::{GenericsHeadFilter, TraitFilter};
 use super::TraitOrImplContext;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
-use crate::diagnostic::{
-    report_unsupported_trait_item, SemanticDiagnostics, SemanticDiagnosticsBuilder,
-};
+use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
@@ -552,8 +550,8 @@ pub fn priv_trait_definition_data(
                         .is_some()
                     {
                         diagnostics.report(
-                            name_node.stable_ptr().untyped(),
-                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
+                            &name_node,
+                            SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
                         );
                     }
                     function_asts.insert(trait_func_id, func);
@@ -567,8 +565,8 @@ pub fn priv_trait_definition_data(
                         .is_some()
                     {
                         diagnostics.report(
-                            name_node.stable_ptr().untyped(),
-                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
+                            &name_node,
+                            SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
                         );
                     }
                     item_type_asts.insert(trait_type_id, ty);
@@ -584,14 +582,15 @@ pub fn priv_trait_definition_data(
                         .is_some()
                     {
                         diagnostics.report(
-                            name_node.stable_ptr().untyped(),
-                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
+                            &name_node,
+                            SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
                         );
                     }
                     item_constant_asts.insert(trait_constant, constant);
                 }
                 ast::TraitItem::Impl(imp) => {
-                    report_unsupported_trait_item(&mut diagnostics, imp.impl_kw(syntax_db), "Impl")
+                    diagnostics
+                        .report(&imp.impl_kw(syntax_db), UnsupportedTraitItem("Impl".into()));
                 }
                 ast::TraitItem::Missing(_) => {}
             }
