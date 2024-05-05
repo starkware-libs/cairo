@@ -31,7 +31,13 @@ fn build_init_circuit_data(
     let [expr_rc96] = builder.try_get_refs()?;
     let rc96 = expr_rc96.try_unpack_single()?;
 
-    let CircuitInfo { n_inputs, n_values } = (builder.program_info.get_circuit_info)(circuit_ty);
+    let CircuitInfo { mut n_inputs, values, one_needed, .. } =
+        (builder.program_info.get_circuit_info)(circuit_ty);
+
+    if one_needed {
+        n_inputs -= 1;
+    }
+    let n_values = values.len();
 
     let mut casm_builder = CasmBuilder::default();
 
