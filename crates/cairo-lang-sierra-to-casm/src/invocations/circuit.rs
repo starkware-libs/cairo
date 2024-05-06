@@ -32,9 +32,9 @@ fn build_init_circuit_data(
     let rc96 = expr_rc96.try_unpack_single()?;
 
     let CircuitInfo { mut n_inputs, values, one_needed, .. } =
-        (builder.program_info.get_circuit_info)(circuit_ty);
+        builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
 
-    if one_needed {
+    if *one_needed {
         n_inputs -= 1;
     }
     let n_values = values.len();
