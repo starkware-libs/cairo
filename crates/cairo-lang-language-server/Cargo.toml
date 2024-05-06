@@ -6,6 +6,9 @@ repository.workspace = true
 license-file.workspace = true
 description = "Cairo language server."
 
+[features]
+testing = []
+
 [dependencies]
 anyhow.workspace = true
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.6.3" }
@@ -32,4 +35,8 @@ tracing-chrome = "0.7.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
+cairo-lang-language-server = { path = ".", features = ["testing"] }
+
 assert_fs = "1.1"
+futures = "0.3"
+tower-service = "0.3"
