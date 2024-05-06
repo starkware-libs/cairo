@@ -26,14 +26,15 @@ use num_traits::{ToPrimitive, Zero};
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
-use crate::circuit::get_circuit_info;
+use crate::circuit::CircuitsInfo;
 use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
-    check_references_on_stack, compile_invocation, BranchChanges, InvocationError, ProgramInfo,
+    check_references_on_stack, compile_invocation, BranchChanges, InvocationError,
 };
 use crate::metadata::Metadata;
 use crate::references::{check_types_match, ReferenceValue, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
+use crate::ProgramInfo;
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -413,8 +414,10 @@ pub fn compile(
     )
     .map_err(|err| Box::new(err.into()))?;
 
-    let mut program_offset: usize = 0;
+    let circuits_info =
+        CircuitsInfo::new(&registry, program.libfunc_declarations.iter().map(|ld| &ld.id))?;
 
+    let mut program_offset: usize = 0;
     for (statement_id, statement) in program.statements.iter().enumerate() {
         let statement_idx = StatementIdx(statement_id);
 
@@ -490,10 +493,10 @@ pub fn compile(
                     ProgramInfo {
                         metadata,
                         type_sizes: &type_sizes,
+                        circuits_info: &circuits_info,
                         const_data_values: &|ty| {
                             extract_const_value(&registry, &type_sizes, ty).unwrap()
                         },
-                        get_circuit_info: &|ty| get_circuit_info(&registry, ty).unwrap(),
                     },
                     invocation,
                     libfunc,

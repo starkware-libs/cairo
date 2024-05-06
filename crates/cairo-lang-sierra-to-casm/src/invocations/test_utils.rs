@@ -16,12 +16,13 @@ use cairo_lang_sierra_gas::gas_info::GasInfo;
 use cairo_lang_sierra_type_size::TypeSizeMap;
 use itertools::{zip_eq, Itertools};
 
-use super::{compile_invocation, CompiledInvocation, ProgramInfo};
+use super::{compile_invocation, CompiledInvocation};
 use crate::environment::gas_wallet::GasWallet;
 use crate::environment::Environment;
 use crate::metadata::Metadata;
 use crate::references::{IntroductionPoint, ReferenceExpression, ReferenceValue};
 use crate::relocations::RelocationEntry;
+use crate::ProgramInfo;
 
 /// Creates a Felt252BinaryOperator from a token operator.
 #[macro_export]
@@ -259,9 +260,9 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
                 function_costs: Default::default(),
             },
         },
+        circuits_info: &Default::default(),
         type_sizes: &type_sizes,
         const_data_values: &|_| panic!("const_data_values not implemented for tests."),
-        get_circuit_info: &|_| panic!("get_circuit_info not implemented for tests."),
     };
 
     let args: Vec<ReferenceValue> = zip_eq(refs, libfunc.param_signatures())

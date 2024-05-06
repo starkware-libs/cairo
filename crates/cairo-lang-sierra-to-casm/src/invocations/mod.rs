@@ -16,22 +16,19 @@ use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
 };
 use cairo_lang_sierra_gas::core_libfunc_cost::{core_libfunc_cost, InvocationCostInfoProvider};
 use cairo_lang_sierra_gas::objects::ConstCost;
-use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, zip_eq, Itertools};
-use num_bigint::BigInt;
 use thiserror::Error;
 
-use crate::circuit::CircuitInfo;
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
-use crate::metadata::Metadata;
 use crate::references::{
     OutputReferenceValue, OutputReferenceValueIntroductionPoint, ReferenceExpression,
     ReferenceValue,
 };
 use crate::relocations::{InstructionsWithRelocations, Relocation, RelocationEntry};
+use crate::ProgramInfo;
 
 mod array;
 mod bitwise;
@@ -607,16 +604,6 @@ impl CompiledInvocationBuilder<'_> {
         });
         if let Some(err) = last_err { Err(err) } else { Ok(result) }
     }
-}
-
-/// Information in the program level required for compiling an invocation.
-pub struct ProgramInfo<'a> {
-    pub metadata: &'a Metadata,
-    pub type_sizes: &'a TypeSizeMap,
-    /// Returns the given a const type returns a vector of cells value representing it.
-    pub const_data_values: &'a dyn Fn(&ConcreteTypeId) -> Vec<BigInt>,
-    /// Return the circuit information for a given type.
-    pub get_circuit_info: &'a dyn Fn(&ConcreteTypeId) -> CircuitInfo,
 }
 
 /// Given a Sierra invocation statement and concrete libfunc, creates a compiled casm representation

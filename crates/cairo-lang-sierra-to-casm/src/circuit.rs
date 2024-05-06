@@ -1,12 +1,42 @@
-use cairo_lang_sierra::extensions::circuit::{CircuitTypeConcrete, ConcreteCircuitInput};
-use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType, CoreTypeConcrete};
+use cairo_lang_sierra::extensions::circuit::{
+    CircuitConcreteLibfunc, CircuitTypeConcrete, ConcreteCircuitInput,
+};
+use cairo_lang_sierra::extensions::core::{
+    CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
+};
 use cairo_lang_sierra::extensions::ConcreteType;
-use cairo_lang_sierra::ids::ConcreteTypeId;
+use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
 use cairo_lang_sierra::program::GenericArg;
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::compiler::CompilationError;
+
+/// The information about the circuits used in the program.
+#[derive(Default)]
+pub struct CircuitsInfo {
+    pub circuits: UnorderedHashMap<ConcreteTypeId, CircuitInfo>,
+}
+
+impl CircuitsInfo {
+    pub fn new<'a>(
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+        libfunc_ids: impl Iterator<Item = &'a ConcreteLibfuncId>,
+    ) -> Result<Self, CompilationError> {
+        let mut res = Self::default();
+        for libfunc_id in libfunc_ids {
+            if let CoreConcreteLibfunc::Circuit(CircuitConcreteLibfunc::InitCircuitData(libfunc)) =
+                registry.get_libfunc(libfunc_id).unwrap()
+            {
+                res.circuits
+                    .entry(libfunc.ty.clone())
+                    .or_insert_with(|| get_circuit_info(registry, &libfunc.ty).unwrap());
+            }
+        }
+        Ok(res)
+    }
+}
 
 pub struct CircuitInfo {
     /// The number of circuit inputs.
@@ -17,7 +47,7 @@ pub struct CircuitInfo {
 
 /// Gets a concrete type, if it is a const type returns a vector of the values to be stored in the
 /// const segment.
-pub fn get_circuit_info(
+fn get_circuit_info(
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
     ty: &ConcreteTypeId,
 ) -> Result<CircuitInfo, CompilationError> {
