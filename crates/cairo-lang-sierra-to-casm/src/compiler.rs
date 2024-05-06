@@ -26,7 +26,7 @@ use num_traits::{ToPrimitive, Zero};
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
-use crate::circuit::CircuitsInfo;
+use crate::circuit::{CircuitsInfo, GateOffsets, VALUE_SIZE};
 use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
     check_references_on_stack, compile_invocation, BranchChanges, InvocationError, ProgramInfo,
@@ -116,6 +116,24 @@ impl Display for CairoProgram {
                     writeln!(f, "dw {value}; // {bytecode_offset}")?;
                     bytecode_offset += 1;
                 }
+
+                for circuit in self.circuits_info.circuits.values() {
+                    writeln!(f, "ret; // {bytecode_offset}")?;
+                    bytecode_offset += 1;
+                    for GateOffsets { lhs, rhs, output } in &circuit.add_offsets {
+                        for offset in [lhs, rhs, output] {
+                            writeln!(f, "dw {}; // {bytecode_offset}", offset * VALUE_SIZE)?;
+                            bytecode_offset += 1;
+                        }
+                    }
+
+                    for GateOffsets { lhs, rhs, output } in &circuit.mul_offsets {
+                        for offset in [lhs, rhs, output] {
+                            writeln!(f, "dw {} // {bytecode_offset};", offset * VALUE_SIZE)?;
+                            bytecode_offset += 1;
+                        }
+                    }
+                }
             }
         } else {
             for instruction in &self.instructions {
@@ -125,6 +143,21 @@ impl Display for CairoProgram {
                 writeln!(f, "ret;")?;
                 for value in &segment.values {
                     writeln!(f, "dw {value};")?;
+                }
+            }
+
+            for circuit in self.circuits_info.circuits.values() {
+                writeln!(f, "ret;")?;
+                for GateOffsets { lhs, rhs, output } in &circuit.add_offsets {
+                    for offset in [lhs, rhs, output] {
+                        writeln!(f, "dw {};", offset * VALUE_SIZE)?;
+                    }
+                }
+
+                for GateOffsets { lhs, rhs, output } in &circuit.mul_offsets {
+                    for offset in [lhs, rhs, output] {
+                        writeln!(f, "dw {};", offset * VALUE_SIZE)?;
+                    }
                 }
             }
         }
