@@ -99,6 +99,7 @@ pub struct CairoProgram {
     pub instructions: Vec<Instruction>,
     pub debug_info: CairoProgramDebugInfo,
     pub consts_info: ConstsInfo,
+    pub circuits_info: CircuitsInfo,
 }
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -594,6 +595,7 @@ pub fn compile(
         instructions,
         consts_info,
         debug_info: CairoProgramDebugInfo { sierra_statement_info },
+        circuits_info,
     })
 }
 
