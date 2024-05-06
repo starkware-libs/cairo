@@ -33,3 +33,5 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
 assert_fs = "1.1"
+futures = "0.3"
+tower-service = "0.3"
