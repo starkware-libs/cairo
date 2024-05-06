@@ -16,6 +16,16 @@ fn foo() -> CircuitInputAccumulator<MyCircuit> {
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [fp + -3] + 8, ap++;
 ret;
+ret;
+dw 16;
+dw 20;
+dw 12;
+dw 12;
+dw 0;
+dw 16;
+dw 12;
+dw 4;
+dw 20;
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 300})
