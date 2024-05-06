@@ -993,6 +993,17 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
                 return Ok(RewriteResult::Modified);
             }
         }
+        if let TypeLongId::ImplType(impl_type_id) = value {
+            match self.internal_rewrite(impl_type_id)? {
+                RewriteResult::Modified => {
+                    if let Some(ty) = self.db.impl_type_concrete_implized(*impl_type_id).unwrap() {
+                        *value = ty.lookup_intern(self.db);
+                    }
+                }
+                RewriteResult::NoChange => {}
+            }
+            return Ok(RewriteResult::Modified);
+        }
         value.default_rewrite(self)
     }
 }

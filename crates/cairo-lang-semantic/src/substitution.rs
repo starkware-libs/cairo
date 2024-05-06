@@ -248,7 +248,6 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper, EnumId, $($exclude)*);
         $crate::prune_single!(__identity_helper, StructId, $($exclude)*);
         $crate::prune_single!(__identity_helper, GenericParamId, $($exclude)*);
-        $crate::prune_single!(__identity_helper, ImplTypeId, $($exclude)*);
         $crate::prune_single!(__identity_helper, TraitTypeId, $($exclude)*);
         $crate::prune_single!(__identity_helper, TypeVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, ConstVar, $($exclude)*);
@@ -261,6 +260,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper, InferenceVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, ConstValue, $($exclude)*);
 
+        $crate::prune_single!(__regular_helper, ImplTypeId, $($exclude)*);
         $crate::prune_single!(__regular_helper, Signature, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericFunctionId, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericFunctionWithBodyId, $($exclude)*);

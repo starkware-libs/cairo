@@ -1091,11 +1091,6 @@ pub trait SemanticGroup:
     fn concrete_function_signature(&self, function_id: FunctionId) -> Maybe<semantic::Signature>;
     /// Returns the given function's signature, after implization as needed (that is, if this is an
     /// impl function).
-    #[salsa::invoke(items::functions::concrete_function_implized_signature)]
-    fn concrete_function_implized_signature(
-        &self,
-        function_id: FunctionId,
-    ) -> Maybe<semantic::Signature>;
 
     // Generic type.
     // =============

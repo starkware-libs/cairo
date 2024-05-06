@@ -45,7 +45,9 @@ use crate::items::trt::{
 };
 use crate::items::{visibility, TraitOrImplContext};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{are_coupons_enabled, implize_type, resolve_type, ImplTypeId};
+use crate::types::{
+    are_coupons_enabled, implize_type, resolve_type, ImplTypeId, ImplizationImplContext,
+};
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
     TypeId, TypeLongId,
@@ -644,7 +646,12 @@ impl<'db> Resolver<'db> {
                         // Ignore the result of the `solve()` call - the error, if any, will be
                         // reported later.
                         self.inference().solve().ok();
-                        let ty = implize_type(self.db, ty, None, &mut self.inference())?;
+                        let ty = implize_type(
+                            self.db,
+                            ty,
+                            ImplizationImplContext::None,
+                            &mut self.inference(),
+                        )?;
 
                         Ok(ResolvedConcreteItem::Type(ty))
                     }

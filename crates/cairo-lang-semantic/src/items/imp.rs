@@ -60,7 +60,7 @@ use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{add_type_based_diagnostics, implize_type, ImplTypeId};
+use crate::types::{add_type_based_diagnostics, implize_type, ImplTypeId, ImplizationImplContext};
 use crate::{
     semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
     FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
@@ -1729,7 +1729,7 @@ fn validate_impl_function_signature(
             },
         );
     }
-    let impl_ctx = Some(impl_def_id);
+    let impl_ctx = ImplizationImplContext::ImplDef(impl_def_id);
     for (idx, (param, trait_param)) in
         izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {

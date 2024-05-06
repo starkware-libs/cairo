@@ -4,9 +4,9 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplDefId,
-    ImplFunctionId, LanguageElementId, ModuleFileId, ModuleItemId, NamedLanguageElementId,
-    ParamLongId, TopLevelLanguageElementId, TraitFunctionId,
+    ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplFunctionId,
+    LanguageElementId, ModuleFileId, ModuleItemId, NamedLanguageElementId, ParamLongId,
+    TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_filesystem::ids::UnstableSalsaId;
@@ -32,10 +32,9 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
 use crate::expr::inference::Inference;
-use crate::lookup_item::HasResolverData;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{implize_type, resolve_type};
+use crate::types::{implize_type, resolve_type, ImplizationImplContext};
 use crate::{
     semantic, semantic_object_for_id, ConcreteImplId, ConcreteImplLongId, GenericParam,
     SemanticDiagnostic, TypeId,
@@ -747,50 +746,59 @@ pub fn concrete_function_signature(
     SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_signature)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::concrete_function_implized_signature].
-pub fn concrete_function_implized_signature(
+/// Returns the Implizes signature of the given function  given its context.
+/// Note that `inference` might change. Consider passing a temporary clone if you want to
+/// avoid affecting the original inference.
+pub fn implize_signature(
     db: &dyn SemanticGroup,
     function_id: FunctionId,
+    inference: &mut Inference<'_>,
 ) -> Maybe<Signature> {
-    // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let mut signature = db.concrete_function_signature(function_id)?;
-    let generic_function = function_id.lookup_intern(db).function.generic_function;
 
-    // If the generic function is not an impl function, nothing to implize.
-    let crate::items::functions::GenericFunctionId::Impl(impl_generic_function) = generic_function
-    else {
-        return Ok(signature);
+    let impl_ctx = if let GenericFunctionId::Impl(impl_generic_function_id) =
+        function_id.lookup_intern(db).function.generic_function
+    {
+        match impl_generic_function_id.impl_id {
+            ImplId::Concrete(concrete_impl_id) => {
+                ImplizationImplContext::ImplDef(concrete_impl_id.impl_def_id(db))
+            }
+            ImplId::GenericParameter(_) => ImplizationImplContext::None,
+            ImplId::ImplVar(var) => ImplizationImplContext::ImplVar(var),
+        }
+    } else {
+        ImplizationImplContext::None
     };
 
-    // If the generic impl of the impl function is not concrete, nothing to implize.
-    let Some(impl_function) = impl_generic_function.impl_function(db)? else {
-        return Ok(signature);
-    };
-
-    let impl_def_id = impl_function.impl_def_id(db.upcast());
-
-    let mut tmp_inference_data = impl_def_id.resolver_data(db)?.inference_data.temporary_clone();
-    let mut tmp_inference = tmp_inference_data.inference(db);
-
-    implize_signature(db, &mut signature, &mut tmp_inference, impl_def_id)?;
-    Ok(signature)
-}
-
-/// Implizes the given signature given its context.
-/// Note that `tmp_inference` might change. Consider passing a temporary clone if you want to
-/// avoid affecting the original inference.
-fn implize_signature(
-    db: &dyn SemanticGroup,
-    signature: &mut Signature,
-    tmp_inference: &mut Inference<'_>,
-    impl_ctx: ImplDefId,
-) -> Maybe<()> {
+    let mut is_var_free = true;
     for param in signature.params.iter_mut() {
-        param.ty = implize_type(db, param.ty, Some(impl_ctx), tmp_inference)?;
+        param.ty = implize_type(db, param.ty, impl_ctx, inference)?;
+        is_var_free &= param.ty.is_var_free(db);
     }
-    signature.return_type = implize_type(db, signature.return_type, Some(impl_ctx), tmp_inference)?;
+    signature.return_type = implize_type(db, signature.return_type, impl_ctx, inference)?;
+    is_var_free &= signature.return_type.is_var_free(db);
 
-    Ok(())
+    if is_var_free {
+        if let GenericFunctionId::Impl(impl_generic_function_id) =
+            function_id.lookup_intern(db).function.generic_function
+        {
+            if let ImplId::Concrete(concrete_impl) = impl_generic_function_id.impl_id {
+                return SubstitutionRewriter { db, substitution: &concrete_impl.substitution(db)? }
+                    .rewrite(signature);
+            }
+        }
+
+        return Ok(signature);
+    };
+
+    match inference.solve() {
+        Ok(()) => {}
+        Err(_) => {
+            panic!();
+        }
+    }
+    let signature = inference.rewrite(signature).unwrap();
+    Ok(signature)
 }
 
 /// For a given list of AST parameters, returns the list of semantic parameters along with the

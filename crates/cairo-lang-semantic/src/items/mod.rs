@@ -8,6 +8,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::NotATrait;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::resolve::{ResolvedGenericItem, Resolver};
+use crate::types::ImplizationImplContext;
 
 pub mod attribute;
 pub mod constant;
@@ -71,8 +72,12 @@ impl TraitOrImplContext {
     }
     /// Returns the context as an impl context, if the context is indeed an impl context, or None
     /// otherwise.
-    pub fn impl_context(&self) -> Option<ImplDefId> {
-        try_extract_matches!(*self, TraitOrImplContext::Impl)
+    pub fn impl_context(&self) -> ImplizationImplContext {
+        match self {
+            TraitOrImplContext::None => ImplizationImplContext::None,
+            TraitOrImplContext::Trait(_) => ImplizationImplContext::None,
+            TraitOrImplContext::Impl(impl_ctx) => ImplizationImplContext::ImplDef(*impl_ctx),
+        }
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for TraitOrImplContext {

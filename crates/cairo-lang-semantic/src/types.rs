@@ -23,7 +23,9 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
-use crate::expr::inference::{Inference, InferenceData, InferenceError, InferenceId, TypeVar};
+use crate::expr::inference::{
+    ImplVarId, Inference, InferenceData, InferenceError, InferenceId, TypeVar,
+};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
@@ -193,6 +195,13 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
     }
 }
 
+#[derive(Clone, Debug, Copy)]
+pub enum ImplizationImplContext {
+    None,
+    ImplDef(ImplDefId),
+    ImplVar(ImplVarId),
+}
+
 /// Tries to implize a type, recursively, according to known inference data.
 ///
 /// "Implization" is reducing a trait type or a wrapped trait type, to the more concrete type,
@@ -207,7 +216,7 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
 pub fn implize_type(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
-    impl_ctx: Option<ImplDefId>,
+    impl_ctx: ImplizationImplContext,
     inference: &mut Inference<'_>,
 ) -> Maybe<TypeId> {
     // TODO(yuval): inline.
@@ -224,7 +233,7 @@ pub fn implize_type(
 fn implize_type_recursive(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
-    impl_ctx: Option<ImplDefId>,
+    impl_ctx: ImplizationImplContext,
     inference: &mut Inference<'_>,
 ) -> Maybe<TypeId> {
     // First, reduce if already inferred.
@@ -260,12 +269,20 @@ fn implize_type_recursive(
             *type_id = implize_type_recursive(db, *type_id, impl_ctx, inference)?
         }
         TypeLongId::TraitType(ty) => {
-            let Some(impl_ctx) = impl_ctx else {
-                // Nothing to implize. No need to report anything as it should be reported during
-                // resolution.
-                return Ok(type_to_reduce);
-            };
-            return Ok(db.trait_type_implized_by_context(*ty, impl_ctx)?.unwrap_or(type_to_reduce));
+            return Ok(match impl_ctx {
+                ImplizationImplContext::None => {
+                    // Nothing to implize. No need to report anything as it should be reported
+                    // during resolution.
+                    type_to_reduce
+                }
+                ImplizationImplContext::ImplDef(impl_def) => {
+                    db.trait_type_implized_by_context(*ty, impl_def)?.unwrap_or(type_to_reduce)
+                }
+                ImplizationImplContext::ImplVar(impl_var) => {
+                    TypeLongId::ImplType(ImplTypeId::new(ImplId::ImplVar(impl_var), *ty, db))
+                        .intern(db)
+                }
+            });
         }
     }
     let type_to_reduce = long_ty.intern(db);
@@ -286,7 +303,7 @@ fn implize_type_recursive(
     }
 
     // Try to implize by the impl context, if given. E.g. for `Self::MyType` inside an impl.
-    if let Some(impl_def_id) = impl_ctx {
+    if let ImplizationImplContext::ImplDef(impl_def_id) = impl_ctx {
         if let Some(ty) = db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id)? {
             return Ok(ty);
         }
@@ -932,8 +949,8 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_var_free(db),
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_var_free(db)),
         TypeLongId::Snapshot(ty) => ty.is_var_free(db),
-        TypeLongId::Var(_) => false,
-        TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) | TypeLongId::ImplType(_) => true,
+        TypeLongId::Var(_) | TypeLongId::ImplType(_) => false,
+        TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => true,
         TypeLongId::Coupon(function_id) => function_id.is_var_free(db),
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_var_free(db) && size.is_var_free(db)

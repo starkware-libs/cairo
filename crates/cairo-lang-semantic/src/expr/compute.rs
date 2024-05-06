@@ -56,6 +56,7 @@ use crate::diagnostic::{
 use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_allowed_features;
+use crate::items::functions::implize_signature;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
@@ -740,7 +741,7 @@ fn call_core_binary_op(
         rexpr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
     }
 
-    let sig = ctx.db.concrete_function_signature(function)?;
+    let sig = implize_signature(ctx.db, function, &mut ctx.resolver.inference())?;
     let first_param = sig.params.into_iter().next().unwrap();
 
     expr_function_call(
@@ -2781,8 +2782,7 @@ fn expr_function_call(
 ) -> Maybe<Expr> {
     let coupon_arg = maybe_pop_coupon_argument(ctx, &mut named_args, function_id);
 
-    let signature = ctx.db.concrete_function_implized_signature(function_id)?;
-    let signature = ctx.resolver.inference().rewrite(signature).unwrap();
+    let signature = implize_signature(ctx.db, function_id, &mut ctx.resolver.inference())?;
 
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     if named_args.len() != signature.params.len() {
@@ -3214,7 +3214,7 @@ fn function_parameter_types(
     ctx: &mut ComputationContext<'_>,
     function: FunctionId,
 ) -> Maybe<impl Iterator<Item = TypeId>> {
-    let signature = ctx.db.concrete_function_implized_signature(function)?;
+    let signature = implize_signature(ctx.db, function, &mut ctx.resolver.inference())?;
     let param_types = signature.params.into_iter().map(|param| param.ty);
     Ok(param_types)
 }
