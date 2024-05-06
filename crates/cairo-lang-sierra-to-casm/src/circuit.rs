@@ -10,15 +10,19 @@ use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
 use cairo_lang_sierra::program::GenericArg;
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::compiler::CompilationError;
+
+/// The number of limbs used to represent a single value in the circuit.
+pub const VALUE_SIZE: usize = 4;
 
 /// Describes a circuit in the program.
 /// The information about the circuits used in the program.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct CircuitsInfo {
-    pub circuits: UnorderedHashMap<ConcreteTypeId, CircuitInfo>,
+    pub circuits: OrderedHashMap<ConcreteTypeId, CircuitInfo>,
 }
 
 impl CircuitsInfo {
@@ -43,10 +47,19 @@ impl CircuitsInfo {
 /// Describes the offset that define a gate in a circuit.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct GateOffsets {
-    lhs: usize,
-    rhs: usize,
-    output: usize,
+    pub lhs: usize,
+    pub rhs: usize,
+    pub output: usize,
 }
+
+// impl GateOffsets {
+//     fn as_dws(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         writeln!(f, "dw {};", self.lhs * VALUE_SIZE)?;
+//         writeln!(f, "dw {};", self.rhs * VALUE_SIZE)?;
+//         writeln!(f, "dw {};", self.output * VALUE_SIZE)?;
+//         Ok(())
+//     }
+// }
 
 /// Describes a circuit in the program.
 #[derive(Clone, Debug, Eq, PartialEq)]
