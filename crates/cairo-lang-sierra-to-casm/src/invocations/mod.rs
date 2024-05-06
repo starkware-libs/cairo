@@ -23,7 +23,7 @@ use itertools::{chain, zip_eq, Itertools};
 use num_bigint::BigInt;
 use thiserror::Error;
 
-use crate::circuit::CircuitInfo;
+use crate::circuit::CircuitsInfo;
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
@@ -613,10 +613,10 @@ impl CompiledInvocationBuilder<'_> {
 pub struct ProgramInfo<'a> {
     pub metadata: &'a Metadata,
     pub type_sizes: &'a TypeSizeMap,
+    /// Information about the circuits in the program.
+    pub circuits_info: &'a CircuitsInfo,
     /// Returns the given a const type returns a vector of cells value representing it.
     pub const_data_values: &'a dyn Fn(&ConcreteTypeId) -> Vec<BigInt>,
-    /// Return the circuit information for a given type.
-    pub get_circuit_info: &'a dyn Fn(&ConcreteTypeId) -> CircuitInfo,
 }
 
 /// Given a Sierra invocation statement and concrete libfunc, creates a compiled casm representation
