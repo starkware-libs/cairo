@@ -4,11 +4,8 @@ use cairo_lang_sierra::extensions::circuit::CircuitConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::circuit::CircuitInfo;
+use crate::circuit::{CircuitInfo, VALUE_SIZE};
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
-
-/// The number of limbs used to represent a single value in the circuit.
-const VALUE_SIZE: usize = 4;
 
 /// Builds instructions for Sierra array operations.
 pub fn build(

@@ -26,7 +26,7 @@ use num_traits::{ToPrimitive, Zero};
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
-use crate::circuit::CircuitsInfo;
+use crate::circuit::{CircuitInfo, CircuitsInfo, VALUE_SIZE};
 use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
     check_references_on_stack, compile_invocation, BranchChanges, InvocationError, ProgramInfo,
@@ -99,7 +99,6 @@ pub struct CairoProgram {
     pub instructions: Vec<Instruction>,
     pub debug_info: CairoProgramDebugInfo,
     pub consts_info: ConstsInfo,
-    pub circuits_info: CircuitsInfo,
 }
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -231,25 +230,51 @@ impl ConstsInfo {
         registry: &ProgramRegistry<CoreType, CoreLibfunc>,
         type_sizes: &TypeSizeMap,
         libfunc_ids: impl Iterator<Item = &'a ConcreteLibfuncId>,
+        circuit_infos: impl Iterator<Item = (&'a ConcreteTypeId, &'a CircuitInfo)>,
         const_segments_max_size: usize,
     ) -> Result<Self, CompilationError> {
         let mut segments_data_size = 0;
         let mut segments = OrderedHashMap::default();
+
+        let mut add_const = |segment_id, ty, const_data: Vec<BigInt>| {
+            let segment: &mut ConstSegment = segments.entry(segment_id).or_default();
+
+            segments_data_size += const_data.len();
+            segment.const_offset.insert(ty, segment.values.len());
+            segment.values.extend(const_data);
+            if segments_data_size + segments.len() > const_segments_max_size {
+                return Err(CompilationError::CodeSizeLimitExceeded);
+            }
+            Ok(())
+        };
+
         for id in libfunc_ids {
             if let CoreConcreteLibfunc::Const(ConstConcreteLibfunc::AsBox(as_box)) =
                 registry.get_libfunc(id).unwrap()
             {
-                let segment: &mut ConstSegment = segments.entry(as_box.segment_id).or_default();
-                let const_data =
-                    extract_const_value(registry, type_sizes, &as_box.const_type).unwrap();
-                segments_data_size += const_data.len();
-                segment.const_offset.insert(as_box.const_type.clone(), segment.values.len());
-                segment.values.extend(const_data);
-                if segments_data_size + segments.len() > const_segments_max_size {
-                    return Err(CompilationError::CodeSizeLimitExceeded);
-                }
+                add_const(
+                    as_box.segment_id,
+                    as_box.const_type.clone(),
+                    extract_const_value(registry, type_sizes, &as_box.const_type).unwrap(),
+                )?;
             }
         }
+
+        for (circ_ty, info) in circuit_infos {
+            let mut const_value: Vec<BigInt> = vec![];
+            let mut push_offset = |offset: usize| const_value.push((offset * VALUE_SIZE).into());
+            for gate_offsets in chain!(info.add_offsets.iter(), info.mul_offsets.iter()) {
+                push_offset(gate_offsets.lhs);
+                push_offset(gate_offsets.rhs);
+                push_offset(gate_offsets.output);
+            }
+
+            // TODO(ilya): give the user the ability to control the segment id.
+            let segment_id = 0;
+
+            add_const(segment_id, circ_ty.clone(), const_value)?;
+        }
+
         // Check that the segments were declared in order and without holes.
         if segments
             .keys()
@@ -587,6 +612,7 @@ pub fn compile(
         &registry,
         &type_sizes,
         program.libfunc_declarations.iter().map(|ld| &ld.id),
+        circuits_info.circuits.iter(),
         const_segments_max_size,
     )?;
     relocate_instructions(&relocations, &statement_offsets, &consts_info, &mut instructions);
@@ -595,7 +621,6 @@ pub fn compile(
         instructions,
         consts_info,
         debug_info: CairoProgramDebugInfo { sierra_statement_info },
-        circuits_info,
     })
 }
 
