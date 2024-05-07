@@ -1003,7 +1003,7 @@ impl<'db> Resolver<'db> {
                 diagnostics,
             )?;
             resolved_args.push(generic_arg);
-            substitution.0.insert(generic_param.id(), generic_arg);
+            substitution.insert(generic_param.id(), generic_arg);
         }
 
         Ok(resolved_args)
