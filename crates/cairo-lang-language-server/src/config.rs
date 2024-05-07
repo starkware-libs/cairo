@@ -2,21 +2,22 @@ use std::collections::VecDeque;
 use std::path::PathBuf;
 
 use anyhow::Context;
-use tower_lsp::lsp_types::ConfigurationItem;
+use tower_lsp::lsp_types::{ClientCapabilities, ConfigurationItem};
 use tower_lsp::Client;
 use tracing::{debug, error, warn};
+
+use crate::lsp::client_capabilities::ClientCapabilitiesExt;
 
 // TODO(mkaput): Write a macro that will auto-generate this struct and the `reload` logic.
 // TODO(mkaput): Write a test that checks that fields in this struct are sorted alphabetically.
 // TODO(mkaput): Write a tool that syncs `configuration` in VSCode extension's `package.json`.
-// TODO(mkaput): Consider moving `SCARB` env var here. Env var must override client config,
-//  because env will be set in `scarb cairo-language-server` context.
 /// Runtime configuration for the language server.
 ///
 /// The properties stored in this struct **may** change during LS lifetime (through the
 /// [`Self::reload`] method).
-/// Therefore, it is **forbidden** to hold any references or copies of this struct or its values for
-/// longer periods of time.
+/// Therefore, holding any references or copies of this struct or its values for
+/// longer periods of time should be avoided, unless the copy will be reactively updated on
+/// `workspace/didChangeConfiguration` requests.
 #[derive(Debug, Default)]
 pub struct Config {
     /// A user-provided fallback path to the `core` crate source code for use in projects where
@@ -32,7 +33,15 @@ pub struct Config {
 impl Config {
     /// Reloads the configuration from the language client.
     #[tracing::instrument(name = "reload_config", level = "trace", skip_all)]
-    pub async fn reload(&mut self, client: &Client) {
+    pub async fn reload(&mut self, client: &Client, client_capabilities: &ClientCapabilities) {
+        if !client_capabilities.workspace_configuration_support() {
+            warn!(
+                "client does not support `workspace/configuration` requests, config will not be \
+                 reloaded"
+            );
+            return;
+        }
+
         let items = vec![ConfigurationItem {
             scope_uri: None,
             section: Some("cairo1.corelibPath".to_owned()),
