@@ -40,7 +40,10 @@ use super::generics::{
     generic_params_to_args, semantic_generic_params, GenericArgumentHead, GenericParamsData,
 };
 use super::structure::SemanticStructEx;
-use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use super::trt::{
+    concrete_trait_function_signature, ConcreteTraitGenericFunctionId,
+    ConcreteTraitGenericFunctionLongId,
+};
 use super::type_aliases::{
     type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
     type_alias_semantic_data_helper, TypeAliasData,
@@ -131,9 +134,11 @@ impl ConcreteImplId {
         self.impl_def_id(db).name(db.upcast())
     }
     pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
-        Ok(GenericSubstitution::new(
-            &db.impl_def_generic_params(self.impl_def_id(db))?,
-            &self.lookup_intern(db).generic_args,
+        Ok(GenericSubstitution::from_impl(ImplId::Concrete(*self)).concat(
+            GenericSubstitution::new(
+                &db.impl_def_generic_params(self.impl_def_id(db))?,
+                &self.lookup_intern(db).generic_args,
+            ),
         ))
     }
     /// Returns true if the `impl` does not depend on any generics.
@@ -718,6 +723,22 @@ pub fn priv_impl_definition_data(
         item_type_asts: item_type_asts.into(),
         item_id_by_name: item_id_by_name.into(),
     })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::concrete_impl_function_signature].
+pub fn concrete_impl_function_signature(
+    db: &dyn SemanticGroup,
+    concrete_impl_id: ConcreteImplId,
+    trait_function: TraitFunctionId,
+) -> Maybe<semantic::Signature> {
+    let impl_id = ImplId::Concrete(concrete_impl_id);
+    let concrete_trait_id = impl_id.concrete_trait(db)?;
+    let signature = concrete_trait_function_signature(
+        db,
+        ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, trait_function),
+    )?;
+    let substitution = GenericSubstitution::from_impl(impl_id);
+    SubstitutionRewriter { db, substitution: &substitution }.rewrite(signature)
 }
 
 /// An helper function to report diagnostics of items in an impl (used in

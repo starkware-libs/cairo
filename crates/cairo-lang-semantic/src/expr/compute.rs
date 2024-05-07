@@ -6,6 +6,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use ast::PathSegment;
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId,
@@ -210,8 +211,7 @@ impl<'ctx> ComputationContext<'ctx> {
     }
 
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
-        // TODO(spapini): Propagate error to diagnostics.
-        self.resolver.inference().rewrite(ty).unwrap()
+        self.resolver.inference().rewrite(ty).no_err()
     }
 
     /// Tries to implize a type, according to the computation context. See [implize_type] for more
@@ -2654,7 +2654,12 @@ fn member_access_expr(
         TypeLongId::GenericParameter(_) => {
             Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name }))
         }
-        TypeLongId::ImplType(_) => unreachable!("Impl type should've been reduced."),
+        TypeLongId::ImplType(impl_type_id) => {
+            unreachable!(
+                "Impl type should've been reduced {:?}.",
+                impl_type_id.debug(ctx.db.elongate())
+            )
+        }
         TypeLongId::Var(_) => Err(ctx
             .diagnostics
             .report(&rhs_syntax, InternalInferenceError(InferenceError::TypeNotInferred(ty)))),
@@ -2781,7 +2786,7 @@ fn expr_function_call(
 ) -> Maybe<Expr> {
     let coupon_arg = maybe_pop_coupon_argument(ctx, &mut named_args, function_id);
 
-    let signature = ctx.db.concrete_function_implized_signature(function_id)?;
+    let signature = ctx.db.concrete_function_signature(function_id)?;
     let signature = ctx.resolver.inference().rewrite(signature).unwrap();
 
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
@@ -3214,7 +3219,7 @@ fn function_parameter_types(
     ctx: &mut ComputationContext<'_>,
     function: FunctionId,
 ) -> Maybe<impl Iterator<Item = TypeId>> {
-    let signature = ctx.db.concrete_function_implized_signature(function)?;
+    let signature = ctx.db.concrete_function_signature(function)?;
     let param_types = signature.params.into_iter().map(|param| param.ty);
     Ok(param_types)
 }

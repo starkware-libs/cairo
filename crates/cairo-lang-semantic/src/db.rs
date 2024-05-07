@@ -683,6 +683,14 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
     ) -> Maybe<items::imp::ImplDefinitionData>;
 
+    /// Returns the signature of an impl function.
+    #[salsa::invoke(items::imp::concrete_impl_function_signature)]
+    fn concrete_impl_function_signature(
+        &self,
+        concrete_impl_id: items::imp::ConcreteImplId,
+        trait_function: TraitFunctionId,
+    ) -> Maybe<semantic::Signature>;
+
     /// Private query to check if an impl is fully concrete.
     #[salsa::invoke(items::imp::priv_impl_is_fully_concrete)]
     fn priv_impl_is_fully_concrete(&self, impl_id: ImplId) -> bool;
@@ -1089,13 +1097,6 @@ pub trait SemanticGroup:
     /// etc...
     #[salsa::invoke(items::functions::concrete_function_signature)]
     fn concrete_function_signature(&self, function_id: FunctionId) -> Maybe<semantic::Signature>;
-    /// Returns the given function's signature, after implization as needed (that is, if this is an
-    /// impl function).
-    #[salsa::invoke(items::functions::concrete_function_implized_signature)]
-    fn concrete_function_implized_signature(
-        &self,
-        function_id: FunctionId,
-    ) -> Maybe<semantic::Signature>;
 
     // Generic type.
     // =============
