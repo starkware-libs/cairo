@@ -40,7 +40,10 @@ use super::generics::{
     generic_params_to_args, semantic_generic_params, GenericArgumentHead, GenericParamsData,
 };
 use super::structure::SemanticStructEx;
-use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use super::trt::{
+    concrete_trait_function_signature, ConcreteTraitGenericFunctionId,
+    ConcreteTraitGenericFunctionLongId,
+};
 use super::type_aliases::{
     type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
     type_alias_semantic_data_helper, TypeAliasData,
@@ -131,9 +134,11 @@ impl ConcreteImplId {
         self.impl_def_id(db).name(db.upcast())
     }
     pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
-        Ok(GenericSubstitution::new(
-            &db.impl_def_generic_params(self.impl_def_id(db))?,
-            &self.lookup_intern(db).generic_args,
+        Ok(GenericSubstitution::from_impl(ImplId::Concrete(*self)).concat(
+            GenericSubstitution::new(
+                &db.impl_def_generic_params(self.impl_def_id(db))?,
+                &self.lookup_intern(db).generic_args,
+            ),
         ))
     }
     /// Returns true if the `impl` does not depend on any generics.
@@ -317,6 +322,18 @@ pub fn impl_def_concrete_trait_cycle(
     impl_def_concrete_trait(db, *impl_def_id)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_def_substitution].
+pub fn impl_def_substitution(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+) -> Maybe<Arc<GenericSubstitution>> {
+    let params = db.impl_def_generic_params(impl_def_id)?;
+    let generic_args = generic_params_to_args(&params, db);
+    let args_sub = GenericSubstitution::new(&params, &generic_args);
+    let self_impl = ImplId::Concrete(ConcreteImplLongId { impl_def_id, generic_args }.intern(db));
+    Ok(Arc::new(GenericSubstitution::from_impl(self_impl).concat(args_sub)))
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_def_attributes].
 pub fn impl_def_attributes(
     db: &dyn SemanticGroup,
@@ -340,7 +357,7 @@ pub fn impl_def_trait(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> Maybe<T
     resolve_trait_path(&mut diagnostics, &mut resolver, &trait_path_syntax)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_def_concrete_trait].
+/// Query implementation of [crate::db::SemanticGroup::impl_concrete_trait].
 pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<ConcreteTraitId> {
     match impl_id {
         ImplId::Concrete(concrete_impl_id) => {
@@ -718,6 +735,22 @@ pub fn priv_impl_definition_data(
         item_type_asts: item_type_asts.into(),
         item_id_by_name: item_id_by_name.into(),
     })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::concrete_impl_function_signature].
+pub fn concrete_impl_function_signature(
+    db: &dyn SemanticGroup,
+    concrete_impl_id: ConcreteImplId,
+    trait_function: TraitFunctionId,
+) -> Maybe<semantic::Signature> {
+    let impl_id = ImplId::Concrete(concrete_impl_id);
+    let concrete_trait_id = impl_id.concrete_trait(db)?;
+    let signature = concrete_trait_function_signature(
+        db,
+        ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, trait_function),
+    )?;
+    let substitution = GenericSubstitution::from_impl(impl_id);
+    SubstitutionRewriter { db, substitution: &substitution }.rewrite(signature)
 }
 
 /// An helper function to report diagnostics of items in an impl (used in

@@ -28,7 +28,7 @@ use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
-use crate::substitution::SemanticRewriter;
+use crate::substitution::{SemanticRewriter, SubstitutionRewriter};
 use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId, GenericArgumentId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
@@ -206,109 +206,19 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
 /// wrapping impl is the context here.
 pub fn implize_type(
     db: &dyn SemanticGroup,
-    type_to_reduce: TypeId,
+    ty: TypeId,
     impl_ctx: Option<ImplDefId>,
     inference: &mut Inference<'_>,
 ) -> Maybe<TypeId> {
-    // TODO(yuval): inline.
-    implize_type_recursive(db, type_to_reduce, impl_ctx, inference)
-}
-
-/// Tries to implize a type, recursively, according to known inference data.
-///
-/// Assumes `inference.solve()` was called and doesn't change the inference structure (although
-/// it's passed as &mut which is required per it's API).
-///
-/// `impl_ctx` is the impl context we're at, if any. That is, if we're inside an impl function, the
-/// wrapping impl is the context here.
-fn implize_type_recursive(
-    db: &dyn SemanticGroup,
-    type_to_reduce: TypeId,
-    impl_ctx: Option<ImplDefId>,
-    inference: &mut Inference<'_>,
-) -> Maybe<TypeId> {
-    // First, reduce if already inferred.
-    let type_to_reduce = inference.rewrite(type_to_reduce).unwrap();
-
-    // Then, reduce recursively.
-    let mut long_ty = type_to_reduce.lookup_intern(db);
-    match &mut long_ty {
-        TypeLongId::Concrete(concrete_type) => {
-            let mut generic_args = concrete_type.generic_args(db);
-            for generic_arg in generic_args.iter_mut() {
-                let GenericArgumentId::Type(generic_arg_type) = generic_arg else {
-                    continue;
-                };
-                *generic_arg_type =
-                    implize_type_recursive(db, *generic_arg_type, impl_ctx, inference)?;
-                *generic_arg = GenericArgumentId::Type(*generic_arg_type);
-            }
-            concrete_type.modify_generic_args(db, generic_args);
-        }
-        TypeLongId::Tuple(types) => {
-            for ty in types.iter_mut() {
-                *ty = implize_type_recursive(db, *ty, impl_ctx, inference)?;
-            }
-        }
-        TypeLongId::Snapshot(ty) => *ty = implize_type_recursive(db, *ty, impl_ctx, inference)?,
-        TypeLongId::GenericParameter(_)
-        | TypeLongId::Var(_)
-        | TypeLongId::ImplType(_)
-        | TypeLongId::Coupon(_)
-        | TypeLongId::Missing(_) => {}
-        TypeLongId::FixedSizeArray { type_id, .. } => {
-            *type_id = implize_type_recursive(db, *type_id, impl_ctx, inference)?
-        }
-        TypeLongId::TraitType(ty) => {
-            let Some(impl_ctx) = impl_ctx else {
-                // Nothing to implize. No need to report anything as it should be reported during
-                // resolution.
-                return Ok(type_to_reduce);
-            };
-            return Ok(db.trait_type_implized_by_context(*ty, impl_ctx)?.unwrap_or(type_to_reduce));
-        }
-    }
-    let type_to_reduce = long_ty.intern(db);
-
-    // Finally, reduce/implize the impl type itself, if possible.
-
-    let TypeLongId::ImplType(mut impl_type_id) = type_to_reduce.lookup_intern(db) else {
-        // Nothing to implize.
-        return Ok(type_to_reduce);
+    // In the case of having an impl definition rewrites using it.
+    let ty = if let Some(impl_def_id) = impl_ctx {
+        let substitution = db.impl_def_substitution(impl_def_id)?;
+        SubstitutionRewriter { db, substitution: substitution.as_ref() }
+            .rewrite(inference.rewrite(ty).no_err())?
+    } else {
+        ty
     };
-
-    // Try to reduce the impl type if its impl is an ImplVar (by reducing its impl).
-    impl_type_id = reduce_trait_impl_type(impl_type_id, inference);
-
-    // Try to implize the impl type if its impl is concrete.
-    if let Some(ty) = db.impl_type_concrete_implized(impl_type_id)? {
-        return Ok(ty);
-    }
-
-    // Try to implize by the impl context, if given. E.g. for `Self::MyType` inside an impl.
-    if let Some(impl_def_id) = impl_ctx {
-        if let Some(ty) = db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id)? {
-            return Ok(ty);
-        }
-    }
-
-    // Could not reduce.
-    Ok(type_to_reduce)
-}
-
-/// Reduces an impl type if its impl is an ImplVar. E.g. in the case of MyTrait::MyType when there
-/// is only a single impl for MyTrait in the context.
-///
-/// Assumes the given `inference.solve()` was called.
-fn reduce_trait_impl_type(impl_type_id: ImplTypeId, inference: &mut Inference<'_>) -> ImplTypeId {
-    let ImplTypeId { impl_id, ty } = impl_type_id;
-    if !matches!(impl_id, crate::items::imp::ImplId::ImplVar(_)) {
-        return impl_type_id;
-    };
-
-    let impl_id = inference.rewrite(impl_id).unwrap();
-
-    ImplTypeId { impl_id, ty }
+    Ok(inference.rewrite(ty).no_err())
 }
 
 /// Head of a type. A type that is not one of {generic param, type variable, impl type} has a head,
@@ -395,33 +305,6 @@ impl ConcreteTypeId {
     /// Returns true if the type does not contain any inference variables.
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
         self.generic_args(db).iter().all(|generic_argument_id| generic_argument_id.is_var_free(db))
-    }
-
-    /// Modifies the generic arguments of the type to the given `new_generic_args`.
-    fn modify_generic_args(
-        &mut self,
-        db: &dyn SemanticGroup,
-        new_generic_args: Vec<GenericArgumentId>,
-    ) {
-        match self {
-            ConcreteTypeId::Struct(id) => {
-                let long_id = id.lookup_intern(db);
-                let new_long_id =
-                    ConcreteStructLongId { generic_args: new_generic_args, ..long_id };
-                *self = ConcreteTypeId::Struct(new_long_id.intern(db));
-            }
-            ConcreteTypeId::Enum(id) => {
-                let long_id = id.lookup_intern(db);
-                let new_long_id = ConcreteEnumLongId { generic_args: new_generic_args, ..long_id };
-                *self = ConcreteTypeId::Enum(new_long_id.intern(db));
-            }
-            ConcreteTypeId::Extern(id) => {
-                let long_id = id.lookup_intern(db);
-                let new_long_id =
-                    ConcreteExternTypeLongId { generic_args: new_generic_args, ..long_id };
-                *self = ConcreteTypeId::Extern(new_long_id.intern(db));
-            }
-        }
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteTypeId {
@@ -933,12 +816,12 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_var_free(db)),
         TypeLongId::Snapshot(ty) => ty.is_var_free(db),
         TypeLongId::Var(_) => false,
-        TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) | TypeLongId::ImplType(_) => true,
+        TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) | TypeLongId::TraitType(_) => true,
         TypeLongId::Coupon(function_id) => function_id.is_var_free(db),
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_var_free(db) && size.is_var_free(db)
         }
-        TypeLongId::TraitType(_) => true,
+        TypeLongId::ImplType(_) => false,
     }
 }
 
