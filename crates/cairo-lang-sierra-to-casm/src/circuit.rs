@@ -16,7 +16,7 @@ use crate::compiler::CompilationError;
 
 /// Describes a circuit in the program.
 /// The information about the circuits used in the program.
-#[derive(Default)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct CircuitsInfo {
     pub circuits: UnorderedHashMap<ConcreteTypeId, CircuitInfo>,
 }
@@ -49,6 +49,7 @@ pub struct GateOffsets {
 }
 
 /// Describes a circuit in the program.
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CircuitInfo {
     /// The number of circuit inputs (including the input 1 if needed).
     pub n_inputs: usize,
