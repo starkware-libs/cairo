@@ -12,7 +12,7 @@ use crate::extensions::{
 use crate::ids::GenericTypeId;
 
 /// Type for bytes31.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Bytes31Type {}
 impl NoGenericArgsGenericType for Bytes31Type {
     const ID: GenericTypeId = GenericTypeId::new_inline("bytes31");
@@ -31,7 +31,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for creating a constant bytes31.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Bytes31ConstLibfuncWrapped {}
 impl ConstGenLibfunc for Bytes31ConstLibfuncWrapped {
     const STR_ID: &'static str = "bytes31_const";
@@ -44,7 +44,7 @@ impl ConstGenLibfunc for Bytes31ConstLibfuncWrapped {
 pub type Bytes31ConstLibfunc = WrapConstGenLibfunc<Bytes31ConstLibfuncWrapped>;
 
 /// Libfunc for converting a bytes31 into a felt252.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Bytes31ToFelt252Libfunc {}
 impl NoGenericArgsGenericLibfunc for Bytes31ToFelt252Libfunc {
     const STR_ID: &'static str = "bytes31_to_felt252";
@@ -61,7 +61,7 @@ impl NoGenericArgsGenericLibfunc for Bytes31ToFelt252Libfunc {
 }
 
 /// Libfunc for attempting to convert a felt252 into a bytes31.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Bytes31FromFelt252Trait;
 impl TryFromFelt252 for Bytes31FromFelt252Trait {
     const STR_ID: &'static str = "bytes31_try_from_felt252";

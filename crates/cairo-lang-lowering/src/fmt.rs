@@ -17,6 +17,7 @@ use crate::{
 
 /// Holds all the information needed for formatting lowered representations.
 /// Acts like a "db" for DebugWithDb.
+#[allow(missing_debug_implementations)]
 pub struct LoweredFormatter<'db> {
     pub db: &'db dyn LoweringGroup,
     pub variables: &'db Arena<Variable>,

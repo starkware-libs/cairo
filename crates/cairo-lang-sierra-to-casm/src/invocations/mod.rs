@@ -353,6 +353,7 @@ struct CostValidationInfo<const BRANCH_COUNT: usize> {
 }
 
 /// Helper for building compiled invocations.
+#[allow(missing_debug_implementations)]
 pub struct CompiledInvocationBuilder<'a> {
     pub program_info: ProgramInfo<'a>,
     pub invocation: &'a Invocation,
@@ -610,6 +611,7 @@ impl CompiledInvocationBuilder<'_> {
 }
 
 /// Information in the program level required for compiling an invocation.
+#[allow(missing_debug_implementations)]
 pub struct ProgramInfo<'a> {
     pub metadata: &'a Metadata,
     pub type_sizes: &'a TypeSizeMap,

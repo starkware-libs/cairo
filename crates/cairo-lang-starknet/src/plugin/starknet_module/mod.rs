@@ -30,7 +30,7 @@ pub mod contract;
 pub mod generation_data;
 
 /// The kind of the starknet module (contract/component).
-#[derive(PartialEq, Eq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum StarknetModuleKind {
     Contract,
     Component,

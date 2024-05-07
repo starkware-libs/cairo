@@ -38,6 +38,7 @@ enum AddDestructFlowType {
 }
 
 /// Context for the destructor call addition phase,
+#[allow(missing_debug_implementations)]
 pub struct DestructAdder<'a> {
     db: &'a dyn LoweringGroup,
     lowered: &'a FlatLowered,
@@ -160,7 +161,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for DestructAdder<'a> {
 
 /// A state saved for each position in the back analysis.
 /// Used to determine if a Panic object is guaranteed to exist or be created, an where.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub enum PanicState {
     /// The flow will end with a panic. The locations are all the possible places a Panic object
     /// can be created from this flow.
@@ -189,7 +190,7 @@ impl AuxCombine for PanicState {
 }
 
 /// Location where a `Panic` is first available.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum PanicLocation {
     /// The `Panic` value is at a variable created by a StructConstruct at `statement_location`.
     PanicVar { statement_location: StatementLocation },

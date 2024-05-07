@@ -8,6 +8,7 @@ use crate::DependencyType;
 
 /// A node to use in graph-algorithms.
 #[derive(Clone)]
+#[allow(missing_debug_implementations)]
 pub struct ConcreteFunctionWithBodyNode<'a> {
     pub function_id: ConcreteFunctionWithBodyId,
     pub db: &'a dyn LoweringGroup,
@@ -44,6 +45,7 @@ impl<'a> ComputeScc for ConcreteFunctionWithBodyNode<'a> {
 }
 
 #[derive(Clone)]
+#[allow(missing_debug_implementations)]
 pub struct ConcreteFunctionWithBodyPostPanicNode<'a> {
     pub function_id: ConcreteFunctionWithBodyId,
     pub db: &'a dyn LoweringGroup,

@@ -48,6 +48,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for integer operations.
+#[derive(Debug)]
 pub struct SintOperationLibfunc<TSintTraits: SintTraits> {
     pub operator: IntOperator,
     _phantom: PhantomData<TSintTraits>,
@@ -137,7 +138,7 @@ impl<TSintTraits: SintTraits> GenericLibfunc for SintOperationLibfunc<TSintTrait
 }
 
 /// Libfunc for integer difference calculation.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SintDiffLibfunc<TSintTraits: SintTraits> {
     _phantom: PhantomData<TSintTraits>,
 }
@@ -191,7 +192,7 @@ impl<TSintTraits: SintTraits> NoGenericArgsGenericLibfunc for SintDiffLibfunc<TS
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Sint8Traits;
 
 impl SintTraits for Sint8Traits {
@@ -226,7 +227,7 @@ pub type Sint8Type = IntType<Sint8Traits>;
 pub type Sint8Libfunc = SintLibfunc<Sint8Traits>;
 pub type Sint8Concrete = <Sint8Libfunc as GenericLibfunc>::Concrete;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Sint16Traits;
 
 impl SintTraits for Sint16Traits {
@@ -261,7 +262,7 @@ pub type Sint16Type = IntType<Sint16Traits>;
 pub type Sint16Libfunc = SintLibfunc<Sint16Traits>;
 pub type Sint16Concrete = <Sint16Libfunc as GenericLibfunc>::Concrete;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Sint32Traits;
 
 impl SintTraits for Sint32Traits {
@@ -296,7 +297,7 @@ pub type Sint32Type = IntType<Sint32Traits>;
 pub type Sint32Libfunc = SintLibfunc<Sint32Traits>;
 pub type Sint32Concrete = <Sint32Libfunc as GenericLibfunc>::Concrete;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Sint64Traits;
 
 impl SintTraits for Sint64Traits {

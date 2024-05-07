@@ -13,7 +13,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for debug printing.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct PrintLibfunc {}
 impl NoGenericArgsGenericLibfunc for PrintLibfunc {
     const STR_ID: &'static str = "print";

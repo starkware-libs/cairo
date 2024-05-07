@@ -11,7 +11,7 @@ use crate::extensions::{
 use crate::ids::GenericTypeId;
 
 /// Type representing the Pedersen hash builtin.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct PedersenType {}
 impl NoGenericArgsGenericType for PedersenType {
     const ID: GenericTypeId = GenericTypeId::new_inline("Pedersen");
@@ -29,7 +29,7 @@ define_libfunc_hierarchy! {
 
 /// Libfunc for computing the Pedersen hash of two felt252s.
 /// Returns a felt252 (and the updated builtin pointer).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct PedersenHashLibfunc {}
 impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
     const STR_ID: &'static str = "pedersen";

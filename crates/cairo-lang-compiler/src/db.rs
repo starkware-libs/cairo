@@ -33,6 +33,7 @@ use crate::project::{update_crate_root, update_crate_roots_from_project_config};
     SierraGenDatabase,
     SyntaxDatabase
 )]
+#[allow(missing_debug_implementations)]
 pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
 }

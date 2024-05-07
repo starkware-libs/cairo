@@ -34,6 +34,7 @@ impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
 }
 
 /// Collects compilation diagnostics and presents them in preconfigured way.
+#[allow(missing_debug_implementations)]
 pub struct DiagnosticsReporter<'a> {
     callback: Option<Box<dyn DiagnosticCallback + 'a>>,
     crate_ids: Vec<CrateId>,

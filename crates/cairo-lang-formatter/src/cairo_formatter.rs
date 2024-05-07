@@ -131,6 +131,7 @@ impl Display for ParsingError {
 
 /// A struct used to indicate that the formatter input should be read from stdin.
 /// Implements the [`FormattableInput`] trait.
+#[derive(Debug)]
 pub struct StdinFmt;
 
 /// A trait for types that can be used as input for the cairo formatter.

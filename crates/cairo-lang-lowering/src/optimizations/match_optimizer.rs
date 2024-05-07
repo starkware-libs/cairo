@@ -89,6 +89,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     }
 }
 
+#[derive(Debug)]
 pub struct MatchOptimizerContext {
     fixes: Vec<FixInfo>,
 }
@@ -153,6 +154,7 @@ impl DemandReporter<VariableId> for MatchOptimizerContext {
     type UsePosition = ();
 }
 
+#[derive(Debug)]
 pub struct FixInfo {
     /// The location that needs to be fixed,
     statement_location: (BlockId, usize),
@@ -166,7 +168,7 @@ pub struct FixInfo {
     remapping: VarRemapping,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct OptimizationCandidate<'a> {
     /// The variable that is match.
     match_variable: VariableId,
@@ -181,7 +183,7 @@ struct OptimizationCandidate<'a> {
     arm_demands: Vec<MatchOptimizerDemand>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AnalysisInfo<'a> {
     candidate: Option<OptimizationCandidate<'a>>,
     demand: MatchOptimizerDemand,

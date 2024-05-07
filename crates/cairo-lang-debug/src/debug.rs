@@ -226,6 +226,7 @@ pub mod helper {
         }
     }
 
+    #[derive(Debug)]
     pub struct HelperDebug<T, Db: ?Sized>(PhantomData<T>, PhantomData<Db>);
 
     impl<T: DebugWithDb<Db>, Db: ?Sized> HelperDebug<T, Db> {

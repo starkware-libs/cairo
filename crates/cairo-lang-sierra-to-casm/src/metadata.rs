@@ -13,7 +13,7 @@ use cairo_lang_sierra_gas::{
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use thiserror::Error;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 /// Metadata provided with a Sierra program to simplify the compilation to casm.
 pub struct Metadata {
     /// AP changes information for Sierra user functions.
@@ -32,7 +32,7 @@ pub enum MetadataError {
 }
 
 /// Configuration for metadata computation.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MetadataComputationConfig {
     /// Functions to enforce costs for, as well as the costs to enforce.
     pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,

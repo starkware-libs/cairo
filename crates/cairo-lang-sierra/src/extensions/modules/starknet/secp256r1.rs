@@ -2,7 +2,7 @@ use super::secp256::Secp256Trait;
 use crate::extensions::NoGenericArgsGenericType;
 use crate::ids::GenericTypeId;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Secp256r1PointType {}
 impl NoGenericArgsGenericType for Secp256r1PointType {
     const ID: GenericTypeId = GenericTypeId::new_inline("Secp256r1Point");
@@ -12,7 +12,7 @@ impl NoGenericArgsGenericType for Secp256r1PointType {
     const ZERO_SIZED: bool = false;
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Secp256r1;
 impl Secp256Trait for Secp256r1 {
     const STR_ID_NEW: &'static str = "secp256r1_new_syscall";

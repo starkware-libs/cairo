@@ -44,7 +44,7 @@ pub(crate) fn visit_remappings<F: FnMut(&VarRemapping)>(
 }
 
 /// Context for the optimize remappings optimization.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub(crate) struct Context {
     /// Maps a destination variable to the source variables that are remapped to it.
     pub dest_to_srcs: HashMap<VariableId, Vec<VariableId>>,

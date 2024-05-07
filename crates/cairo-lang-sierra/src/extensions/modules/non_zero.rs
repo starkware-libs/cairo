@@ -13,7 +13,7 @@ use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type wrapping a value as non zero.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct NonZeroTypeWrapped {}
 impl GenericTypeArgGenericType for NonZeroTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("NonZero");
@@ -42,7 +42,7 @@ pub fn nonzero_ty(
 }
 
 /// Libfunc for unwrapping a `NonZero<T>` back into a T.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct UnwrapNonZeroLibfunc {}
 impl SignatureOnlyGenericLibfunc for UnwrapNonZeroLibfunc {
     const STR_ID: &'static str = "unwrap_non_zero";

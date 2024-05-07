@@ -23,7 +23,7 @@ use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Type representing a constant value, hardcoded in the program segment.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ConstType {}
 impl NamedType for ConstType {
     type Concrete = ConstConcreteType;
@@ -47,6 +47,7 @@ impl NamedType for ConstType {
     }
 }
 
+#[derive(Debug)]
 pub struct ConstConcreteType {
     pub info: TypeInfo,
     pub inner_ty: ConcreteTypeId,
@@ -238,6 +239,7 @@ define_libfunc_hierarchy! {
 
 /// A zero-input function that returns a box of the const value according to the generic arg type
 /// of the function.
+#[derive(Debug)]
 pub struct ConstAsBoxConcreteLibfunc {
     /// The type of the actual saved constant.
     pub const_type: ConcreteTypeId,
@@ -252,7 +254,7 @@ impl SignatureBasedConcreteLibfunc for ConstAsBoxConcreteLibfunc {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ConstAsBoxLibfunc {}
 impl ConstAsBoxLibfunc {
     fn specialize_concrete_lib_func(
@@ -307,6 +309,7 @@ impl NamedLibfunc for ConstAsBoxLibfunc {
 }
 
 /// Libfunc for returning a compilation time constant as an immediate.
+#[derive(Debug)]
 pub struct ConstAsImmediateConcreteLibfunc {
     /// The type of the returned constant.
     pub const_type: ConcreteTypeId,
@@ -319,7 +322,7 @@ impl SignatureBasedConcreteLibfunc for ConstAsImmediateConcreteLibfunc {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ConstAsImmediateLibfunc {}
 impl ConstAsImmediateLibfunc {
     fn specialize_concrete_lib_func(

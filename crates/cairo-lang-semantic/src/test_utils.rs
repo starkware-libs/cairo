@@ -27,6 +27,7 @@ use crate::items::functions::GenericFunctionId;
 use crate::{semantic, ConcreteFunctionWithBodyId, SemanticDiagnostic};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
+#[allow(missing_debug_implementations)]
 pub struct SemanticDatabaseForTesting {
     storage: salsa::Storage<SemanticDatabaseForTesting>,
 }
@@ -86,6 +87,7 @@ impl Upcast<dyn SemanticGroup> for SemanticDatabaseForTesting {
     }
 }
 
+#[derive(Debug)]
 pub struct WithStringDiagnostics<T> {
     value: T,
     diagnostics: String,
@@ -109,6 +111,7 @@ impl<T> WithStringDiagnostics<T> {
 }
 
 /// Helper struct for the return value of [setup_test_module].
+#[derive(Debug)]
 pub struct TestModule {
     pub crate_id: CrateId,
     pub module_id: ModuleId,
@@ -188,6 +191,7 @@ pub fn setup_test_module(
 }
 
 /// Helper struct for the return value of [setup_test_function].
+#[derive(Debug)]
 pub struct TestFunction {
     pub module_id: ModuleId,
     pub function_id: FunctionWithBodyId,
@@ -246,6 +250,7 @@ pub fn setup_test_function(
 }
 
 /// Helper struct for the return value of [setup_test_expr] and [setup_test_block].
+#[derive(Debug)]
 pub struct TestExpr {
     pub module_id: ModuleId,
     pub function_id: FunctionWithBodyId,

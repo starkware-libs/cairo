@@ -6,6 +6,7 @@ use crate::db::SemanticGroup;
 
 /// Holds all the information needed for formatting expressions.
 /// Acts like a "db" for DebugWithDb.
+#[allow(missing_debug_implementations)]
 pub struct ExprFormatter<'a> {
     pub db: &'a (dyn SemanticGroup + 'static),
     pub function_id: FunctionWithBodyId,

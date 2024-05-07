@@ -683,6 +683,7 @@ fn compute_topological_order(
     )
 }
 
+#[derive(Debug)]
 pub struct PreCostContext {}
 
 impl SpecificCostContextTrait<PreCost> for PreCostContext {
@@ -774,6 +775,7 @@ impl PostCostTypeEx for ConstCost {
     }
 }
 
+#[allow(missing_debug_implementations)]
 pub struct PostcostContext<'a> {
     pub get_ap_change_fn: &'a dyn Fn(&StatementIdx) -> usize,
     pub precost_gas_info: &'a GasInfo,

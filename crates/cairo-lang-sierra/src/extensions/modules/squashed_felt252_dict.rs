@@ -6,7 +6,7 @@ use crate::extensions::SpecializationError;
 use crate::ids::GenericTypeId;
 
 /// Type representing a static squashed dictionary from a felt252 to any type of size one.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SquashedFelt252DictTypeWrapped {}
 impl GenericTypeArgGenericType for SquashedFelt252DictTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("SquashedFelt252Dict");

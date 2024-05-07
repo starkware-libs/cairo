@@ -76,6 +76,7 @@ pub struct InstructionRepr {
 }
 
 /// An assembled representation of a cairo program.
+#[derive(Debug)]
 pub struct AssembledCairoProgram {
     /// The bytecode of the program.
     pub bytecode: Vec<BigInt>,

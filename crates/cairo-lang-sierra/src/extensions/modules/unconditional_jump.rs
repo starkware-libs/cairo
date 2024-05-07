@@ -3,7 +3,7 @@ use crate::extensions::lib_func::{
 };
 use crate::extensions::{NoGenericArgsGenericLibfunc, SpecializationError};
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct UnconditionalJumpLibfunc {}
 impl NoGenericArgsGenericLibfunc for UnconditionalJumpLibfunc {
     const STR_ID: &'static str = "jump";

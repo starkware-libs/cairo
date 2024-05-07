@@ -44,7 +44,7 @@ define_libfunc_hierarchy! {
 }
 
 /// System call libfunc for creating a point on the secp256 elliptic curve.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Secp256NewLibfunc<T: Secp256Trait> {
     _phantom: PhantomData<T>,
 }
@@ -67,7 +67,7 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256NewLibfunc<T> {
 }
 
 /// Libfunc for a secp256 elliptic curve addition system call.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Secp256AddLibfunc<T: Secp256Trait> {
     _phantom: PhantomData<T>,
 }
@@ -91,7 +91,7 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256AddLibfunc<T> {
 }
 
 /// Libfunc for a secp256 elliptic curve multiplication system call.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Secp256MulLibfunc<T: Secp256Trait> {
     _phantom: PhantomData<T>,
 }
@@ -118,7 +118,7 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256MulLibfunc<T> {
 
 /// System call libfunc for getting a point on the secp256 elliptic curve, according to the given
 /// `x` coordinate and the parity of the relevant y coordinate.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Secp256GetPointFromXLibfunc<T: Secp256Trait> {
     _phantom: PhantomData<T>,
 }
@@ -144,8 +144,7 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256GetPointFromXLibfunc<T> {
 }
 
 /// System call libfunc for getting the coordinates of a point on the secp256 elliptic curve.
-#[derive(Default)]
-
+#[derive(Default, Debug)]
 pub struct Secp256GetXyLibfunc<T: Secp256Trait> {
     _phantom: PhantomData<T>,
 }

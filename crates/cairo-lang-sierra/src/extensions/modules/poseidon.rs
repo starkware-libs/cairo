@@ -11,7 +11,7 @@ use crate::extensions::{
 use crate::ids::GenericTypeId;
 
 /// Type representing the Poseidon hash builtin.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct PoseidonType {}
 impl NoGenericArgsGenericType for PoseidonType {
     const ID: GenericTypeId = GenericTypeId::new_inline("Poseidon");
@@ -29,7 +29,7 @@ define_libfunc_hierarchy! {
 
 /// Libfunc for computing the Poseidon permutation over 3 felt252s.
 /// Returns the 3 element state after the permutation (and the updated builtin pointer).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct HadesPermutationLibfunc {}
 impl NoGenericArgsGenericLibfunc for HadesPermutationLibfunc {
     const STR_ID: &'static str = "hades_permutation";

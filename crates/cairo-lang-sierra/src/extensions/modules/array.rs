@@ -21,7 +21,7 @@ use crate::program::GenericArg;
 type ArrayIndexType = super::int::unsigned::Uint32Type;
 
 /// Type representing an array.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ArrayTypeWrapped {}
 impl GenericTypeArgGenericType for ArrayTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("Array");
@@ -63,7 +63,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for creating a new array.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ArrayNewLibfunc {}
 impl SignatureOnlyGenericLibfunc for ArrayNewLibfunc {
     const STR_ID: &'static str = "array_new";
@@ -86,7 +86,7 @@ impl SignatureOnlyGenericLibfunc for ArrayNewLibfunc {
 }
 
 /// Libfunc for creating a span from a box of struct of members of the same type.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SpanFromTupleLibfuncWrapped;
 impl SignatureAndTypeGenericLibfunc for SpanFromTupleLibfuncWrapped {
     const STR_ID: &'static str = "span_from_tuple";
@@ -131,7 +131,7 @@ impl SignatureAndTypeGenericLibfunc for SpanFromTupleLibfuncWrapped {
 pub type SpanFromTupleLibfunc = WrapSignatureAndTypeGenericLibfunc<SpanFromTupleLibfuncWrapped>;
 
 /// Libfunc for getting the length of the array.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ArrayLenLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
     const STR_ID: &'static str = "array_len";
@@ -155,7 +155,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
 pub type ArrayLenLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayLenLibfuncWrapped>;
 
 /// Libfunc for pushing a value into the end of an array.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ArrayAppendLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArrayAppendLibfuncWrapped {
     const STR_ID: &'static str = "array_append";
@@ -184,7 +184,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayAppendLibfuncWrapped {
 pub type ArrayAppendLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayAppendLibfuncWrapped>;
 
 /// Libfunc for popping the first value from the beginning of an array.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ArrayPopFrontLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
     const STR_ID: &'static str = "array_pop_front";
@@ -230,7 +230,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
 pub type ArrayPopFrontLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayPopFrontLibfuncWrapped>;
 
 /// Libfunc for popping the first value from the beginning of an array.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ArrayPopFrontConsumeLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArrayPopFrontConsumeLibfuncWrapped {
     const STR_ID: &'static str = "array_pop_front_consume";
@@ -274,7 +274,7 @@ pub type ArrayPopFrontConsumeLibfunc =
     WrapSignatureAndTypeGenericLibfunc<ArrayPopFrontConsumeLibfuncWrapped>;
 
 /// Libfunc for fetching a value from a specific array index.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ArrayGetLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
     const STR_ID: &'static str = "array_get";
@@ -317,7 +317,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
 pub type ArrayGetLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayGetLibfuncWrapped>;
 
 /// Libfunc for getting a slice of an array snapshot.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ArraySliceLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
     const STR_ID: &'static str = "array_slice";
@@ -366,7 +366,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
 pub type ArraySliceLibfunc = WrapSignatureAndTypeGenericLibfunc<ArraySliceLibfuncWrapped>;
 
 /// Libfunc for popping the first value from the beginning of an array snapshot.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ArraySnapshotPopFrontLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopFrontLibfuncWrapped {
     const STR_ID: &'static str = "array_snapshot_pop_front";
@@ -412,7 +412,7 @@ pub type ArraySnapshotPopFrontLibfunc =
     WrapSignatureAndTypeGenericLibfunc<ArraySnapshotPopFrontLibfuncWrapped>;
 
 /// Libfunc for popping the last value from the end of an array snapshot.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ArraySnapshotPopBackLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopBackLibfuncWrapped {
     const STR_ID: &'static str = "array_snapshot_pop_back";

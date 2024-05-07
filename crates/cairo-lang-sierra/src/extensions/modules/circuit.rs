@@ -51,7 +51,7 @@ fn is_circuit_component(
 }
 
 /// Circuit input type.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CircuitInput {}
 impl NamedType for CircuitInput {
     type Concrete = ConcreteCircuitInput;
@@ -67,6 +67,7 @@ impl NamedType for CircuitInput {
 }
 
 /// Defines an input for a circuit.
+#[derive(Debug)]
 pub struct ConcreteCircuitInput {
     // The type info of the concrete type.
     pub info: TypeInfo,
@@ -116,7 +117,7 @@ fn validate_gate_generic_args(
 }
 
 /// Represents the action of adding two fields elements in the circuits builtin.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct AddModGate {}
 impl NamedType for AddModGate {
     type Concrete = ConcreteAddModGate;
@@ -131,6 +132,7 @@ impl NamedType for AddModGate {
     }
 }
 
+#[derive(Debug)]
 pub struct ConcreteAddModGate {
     pub info: TypeInfo,
 }
@@ -163,7 +165,7 @@ impl ConcreteType for ConcreteAddModGate {
 }
 
 /// Type for accumulating inputs into the circuit instance's data.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CircuitInputAccumulator {}
 impl NamedType for CircuitInputAccumulator {
     type Concrete = ConcreteCircuitInputAccumulator;
@@ -178,6 +180,7 @@ impl NamedType for CircuitInputAccumulator {
     }
 }
 
+#[derive(Debug)]
 pub struct ConcreteCircuitInputAccumulator {
     pub info: TypeInfo,
 }
@@ -211,7 +214,7 @@ impl ConcreteType for ConcreteCircuitInputAccumulator {
 }
 
 /// A type representing a circuit instance data with all the inputs filled.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CircuitData {}
 impl NamedType for CircuitData {
     type Concrete = ConcreteCircuitData;
@@ -226,6 +229,7 @@ impl NamedType for CircuitData {
     }
 }
 
+#[derive(Debug)]
 pub struct ConcreteCircuitData {
     pub info: TypeInfo,
 }
@@ -294,7 +298,7 @@ fn validate_args_are_circuit_components<'a>(
 }
 
 /// Libfunc for initializing the input data for running an instance of the circuit.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct InitCircuitDataLibFuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for InitCircuitDataLibFuncWrapped {
     const STR_ID: &'static str = "init_circuit_data";
@@ -329,7 +333,7 @@ impl SignatureAndTypeGenericLibfunc for InitCircuitDataLibFuncWrapped {
 pub type InitCircuitDataLibFunc = WrapSignatureAndTypeGenericLibfunc<InitCircuitDataLibFuncWrapped>;
 
 /// libfunc for filling an input in the circuit instance's data.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FillCircuitInputLibFuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
     const STR_ID: &'static str = "fill_circuit_input";

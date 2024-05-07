@@ -14,7 +14,7 @@ use crate::extensions::{NamedType, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 
 /// Type wrapping a value.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoxTypeWrapped {}
 impl GenericTypeArgGenericType for BoxTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("Box");
@@ -51,7 +51,7 @@ pub fn box_ty(
 }
 
 /// Libfunc for wrapping an object of type T into a box.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct IntoBoxLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for IntoBoxLibfuncWrapped {
     const STR_ID: &'static str = "into_box";
@@ -74,7 +74,7 @@ impl SignatureAndTypeGenericLibfunc for IntoBoxLibfuncWrapped {
 pub type IntoBoxLibfunc = WrapSignatureAndTypeGenericLibfunc<IntoBoxLibfuncWrapped>;
 
 /// Libfunc for unboxing a `Box<T>` back into a T.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct UnboxLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for UnboxLibfuncWrapped {
     const STR_ID: &'static str = "unbox";
@@ -101,7 +101,7 @@ impl SignatureAndTypeGenericLibfunc for UnboxLibfuncWrapped {
 pub type UnboxLibfunc = WrapSignatureAndTypeGenericLibfunc<UnboxLibfuncWrapped>;
 
 /// Libfunc for converting `@Box<T>` into `Box<@T>`.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoxForwardSnapshotLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for BoxForwardSnapshotLibfuncWrapped {
     const STR_ID: &'static str = "box_forward_snapshot";

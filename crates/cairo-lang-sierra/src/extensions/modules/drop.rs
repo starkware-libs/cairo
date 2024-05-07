@@ -6,7 +6,7 @@ use crate::extensions::{args_as_single_type, SpecializationError};
 use crate::program::GenericArg;
 
 /// Libfunc for ignoring a plain old data object.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct DropLibfunc {}
 impl SignatureOnlyGenericLibfunc for DropLibfunc {
     const STR_ID: &'static str = "drop";

@@ -248,7 +248,7 @@ pub trait SignatureAndTypeGenericLibfunc: Default {
 }
 
 /// Wrapper to prevent implementation collisions for [NamedLibfunc].
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct WrapSignatureAndTypeGenericLibfunc<T: SignatureAndTypeGenericLibfunc>(T);
 
 impl<T: SignatureAndTypeGenericLibfunc> NamedLibfunc for WrapSignatureAndTypeGenericLibfunc<T> {
@@ -302,7 +302,7 @@ impl<T: NoGenericArgsGenericLibfunc> SignatureOnlyGenericLibfunc for T {
 }
 
 /// Information regarding a parameter of the libfunc.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ParamSignature {
     /// The type of the parameter.
     pub ty: ConcreteTypeId,
@@ -461,6 +461,7 @@ pub trait ConcreteLibfunc {
 }
 
 /// Represents the signature of a library function.
+#[derive(Debug)]
 pub struct LibfuncSignature {
     /// The parameter types and other information for the parameters for calling a library
     /// function.
@@ -521,6 +522,7 @@ impl<TSignatureBasedConcreteLibfunc: SignatureBasedConcreteLibfunc> ConcreteLibf
 }
 
 /// Struct providing a [ConcreteLibfunc] only with a signature and a type.
+#[derive(Debug)]
 pub struct SignatureAndTypeConcreteLibfunc {
     pub ty: ConcreteTypeId,
     pub signature: LibfuncSignature,
@@ -533,6 +535,7 @@ impl SignatureBasedConcreteLibfunc for SignatureAndTypeConcreteLibfunc {
 
 /// Struct providing a [ConcreteLibfunc] only with a signature - should not be implemented for
 /// concrete libfuncs that require any extra data.
+#[derive(Debug)]
 pub struct SignatureOnlyConcreteLibfunc {
     pub signature: LibfuncSignature,
 }
@@ -562,6 +565,7 @@ macro_rules! define_concrete_libfunc_hierarchy {
         $($variant_name:ident ($variant:ty),)*
     }) => {
         #[allow(clippy::enum_variant_names)]
+        #[derive(Debug)]
         pub enum $name $(< $generic_arg : $generic_arg_first_req $(+ $generic_arg_other_reqs)* >)? {
             $($variant_name ($variant),)*
         }
@@ -622,6 +626,7 @@ macro_rules! define_libfunc_hierarchy {
     },
     $concrete_name:ident) => {
         #[allow(clippy::enum_variant_names)]
+        #[derive(Debug)]
         pub enum $name $(< $generic_arg : $generic_arg_first_req $(+ $generic_arg_other_reqs)* >)? {
             $($variant_name ($variant)),*
         }

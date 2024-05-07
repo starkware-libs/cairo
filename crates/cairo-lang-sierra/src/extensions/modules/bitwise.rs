@@ -2,7 +2,7 @@ use crate::extensions::NoGenericArgsGenericType;
 use crate::ids::GenericTypeId;
 
 /// Type representing the Bitwise builtin.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BitwiseType {}
 impl NoGenericArgsGenericType for BitwiseType {
     const ID: GenericTypeId = GenericTypeId::new_inline("Bitwise");

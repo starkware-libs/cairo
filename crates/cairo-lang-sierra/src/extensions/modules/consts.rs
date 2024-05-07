@@ -23,7 +23,7 @@ pub trait ConstGenLibfunc: Default {
 }
 
 /// Wrapper to prevent implementation collisions for `NamedLibfunc`.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct WrapConstGenLibfunc<T: ConstGenLibfunc>(T);
 
 impl<T: ConstGenLibfunc> NamedLibfunc for WrapConstGenLibfunc<T> {
@@ -62,6 +62,7 @@ impl<T: ConstGenLibfunc> NamedLibfunc for WrapConstGenLibfunc<T> {
 }
 
 /// Struct providing a ConcreteLibfunc signature and a const.
+#[derive(Debug)]
 pub struct SignatureAndConstConcreteLibfunc {
     pub c: BigInt,
     pub signature: LibfuncSignature,

@@ -39,6 +39,7 @@ pub trait UintTraits: IntTraits {
 }
 
 /// Libfunc for integer operations.
+#[derive(Debug)]
 pub struct UintOperationLibfunc<TUintTraits: UintTraits> {
     pub operator: IntOperator,
     _phantom: PhantomData<TUintTraits>,
@@ -132,7 +133,7 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
 }
 
 /// Libfunc for calculating uint's square root.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct UintSquareRootLibfunc<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
 }
@@ -164,7 +165,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
 }
 
 /// Libfunc for uint divmod.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct UintDivmodLibfunc<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
 }
@@ -198,7 +199,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintDivmodLibfunc<
 
 /// Libfunc for computing the Bitwise (and,or,xor) of two uints.
 /// Returns 3 uints (and the updated builtin pointer).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct UintBitwiseLibfunc<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
 }
@@ -248,7 +249,7 @@ define_libfunc_hierarchy! {
     }, UintConcrete
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Uint8Traits;
 
 impl IntTraits for Uint8Traits {
@@ -285,7 +286,7 @@ pub type Uint8Type = IntType<Uint8Traits>;
 pub type Uint8Libfunc = UintLibfunc<Uint8Traits>;
 pub type Uint8Concrete = <Uint8Libfunc as GenericLibfunc>::Concrete;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Uint16Traits;
 
 impl IntTraits for Uint16Traits {
@@ -322,7 +323,7 @@ pub type Uint16Type = IntType<Uint16Traits>;
 pub type Uint16Libfunc = UintLibfunc<Uint16Traits>;
 pub type Uint16Concrete = <Uint16Libfunc as GenericLibfunc>::Concrete;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Uint32Traits;
 
 impl IntTraits for Uint32Traits {
@@ -359,7 +360,7 @@ pub type Uint32Type = IntType<Uint32Traits>;
 pub type Uint32Libfunc = UintLibfunc<Uint32Traits>;
 pub type Uint32Concrete = <Uint32Libfunc as GenericLibfunc>::Concrete;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Uint64Traits;
 
 impl IntTraits for Uint64Traits {

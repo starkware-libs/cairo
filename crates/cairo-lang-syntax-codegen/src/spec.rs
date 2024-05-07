@@ -1,9 +1,10 @@
 // Representation of the AST specifications.
+#[derive(Debug)]
 pub struct Node {
     pub name: String,
     pub kind: NodeKind,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum NodeKind {
     Enum { variants: Vec<Variant>, missing_variant: Option<Variant> },
     Struct { members: Vec<Member> },
@@ -12,7 +13,7 @@ pub enum NodeKind {
     SeparatedList { element_type: String, separator_type: String },
     Token { is_keyword: bool },
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Member {
     pub name: String,
     pub kind: String,
@@ -20,7 +21,7 @@ pub struct Member {
     /// See `syntax::node::stable_ptr`.
     pub key: bool,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Variant {
     pub name: String,
     pub kind: String,
@@ -29,6 +30,7 @@ pub struct Variant {
 // Helpers to build AST specifications.
 
 /// Builds spec for a struct node.
+#[derive(Debug)]
 pub struct StructBuilder {
     name: String,
     members: Vec<Member>,
@@ -62,6 +64,7 @@ impl StructBuilder {
     }
 }
 /// Builds spec for an enum node.
+#[derive(Debug)]
 pub struct EnumBuilder {
     name: String,
     variants: Vec<Variant>,
@@ -96,7 +99,7 @@ impl EnumBuilder {
 }
 
 /// A tool to aggregate/gather nodes in various forms and eventually emit them as a vector.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct NodesAggregator {
     nodes: Vec<Node>,
 }

@@ -117,6 +117,7 @@ mod vfs;
 /// [lib]: crate#running-with-customizations
 #[non_exhaustive]
 #[derive(Default)]
+#[allow(missing_debug_implementations)]
 pub struct Tricks {
     /// A function that returns a list of additional compiler plugin suites to be loaded in the
     /// language server database.

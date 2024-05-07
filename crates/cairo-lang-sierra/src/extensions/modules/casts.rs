@@ -23,7 +23,7 @@ define_libfunc_hierarchy! {
 }
 
 /// The type of casting between two integer types.
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct CastType {
     /// Does the source type have values above the destination type possible values.
     pub overflow_above: bool,
@@ -33,7 +33,7 @@ pub struct CastType {
 
 /// Libfunc for casting from one type to another where any input value can fit into the destination
 /// type. For example, from u8 to u64.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct UpcastLibfunc {}
 impl SignatureOnlyGenericLibfunc for UpcastLibfunc {
     const STR_ID: &'static str = "upcast";
@@ -55,6 +55,7 @@ impl SignatureOnlyGenericLibfunc for UpcastLibfunc {
 }
 
 /// A concrete version of the `downcast` libfunc. See [DowncastLibfunc].
+#[derive(Debug)]
 pub struct DowncastConcreteLibfunc {
     pub signature: LibfuncSignature,
     pub from_ty: ConcreteTypeId,
@@ -85,7 +86,7 @@ impl SignatureBasedConcreteLibfunc for DowncastConcreteLibfunc {
 
 /// Libfunc for casting from one type to another where the input value may not fit into the
 /// destination type. For example, from u64 to u8.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct DowncastLibfunc {}
 impl NamedLibfunc for DowncastLibfunc {
     type Concrete = DowncastConcreteLibfunc;

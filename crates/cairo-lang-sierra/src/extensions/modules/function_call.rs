@@ -39,7 +39,7 @@ fn get_output_var_infos(
 }
 
 /// Libfunc used to call user functions.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FunctionCallLibfunc {}
 impl NamedLibfunc for FunctionCallLibfunc {
     type Concrete = SignatureAndFunctionConcreteLibfunc;
@@ -75,6 +75,7 @@ impl NamedLibfunc for FunctionCallLibfunc {
     }
 }
 
+#[derive(Debug)]
 pub struct SignatureAndFunctionConcreteLibfunc {
     pub function: Function,
     pub signature: LibfuncSignature,
@@ -86,7 +87,7 @@ impl SignatureBasedConcreteLibfunc for SignatureAndFunctionConcreteLibfunc {
 }
 
 /// Libfunc used to call user functions.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CouponCallLibfunc {}
 impl NamedLibfunc for CouponCallLibfunc {
     type Concrete = SignatureAndFunctionConcreteLibfunc;

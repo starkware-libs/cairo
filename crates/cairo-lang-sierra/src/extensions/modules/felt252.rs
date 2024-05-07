@@ -17,7 +17,7 @@ use crate::program::GenericArg;
 
 /// Type for felt252.
 /// The native type of the Cairo architecture.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Felt252Type {}
 impl NoGenericArgsGenericType for Felt252Type {
     const ID: GenericTypeId = GenericTypeId::new_inline("felt252");
@@ -42,7 +42,7 @@ define_libfunc_hierarchy! {
     }, Felt252BinaryOperationConcrete
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Felt252Traits {}
 impl IsZeroTraits for Felt252Traits {
     const IS_ZERO: &'static str = "felt252_is_zero";
@@ -60,6 +60,7 @@ pub enum Felt252BinaryOperator {
 }
 
 /// Libfunc for felt252 binary operations.
+#[derive(Debug)]
 pub struct Felt252BinaryOperationWithVarLibfunc {
     pub operator: Felt252BinaryOperator,
 }
@@ -137,6 +138,7 @@ impl GenericLibfunc for Felt252BinaryOperationWithVarLibfunc {
 }
 
 /// Libfunc for felt252 binary operations with const.
+#[derive(Debug)]
 pub struct Felt252BinaryOperationWithConstLibfunc {
     pub operator: Felt252BinaryOperator,
 }
@@ -220,6 +222,7 @@ impl GenericLibfunc for Felt252BinaryOperationWithConstLibfunc {
     }
 }
 
+#[derive(Debug)]
 pub struct Felt252BinaryOpConcreteLibfunc {
     pub operator: Felt252BinaryOperator,
     pub signature: LibfuncSignature,
@@ -231,6 +234,7 @@ impl SignatureBasedConcreteLibfunc for Felt252BinaryOpConcreteLibfunc {
 }
 
 /// Felt252 operations with a const.
+#[derive(Debug)]
 pub struct Felt252OperationWithConstConcreteLibfunc {
     pub operator: Felt252BinaryOperator,
     pub c: BigInt,
@@ -244,7 +248,7 @@ impl SignatureBasedConcreteLibfunc for Felt252OperationWithConstConcreteLibfunc 
 }
 
 /// Libfunc for creating a constant felt252.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Felt252ConstLibfunc {}
 impl NamedLibfunc for Felt252ConstLibfunc {
     type Concrete = Felt252ConstConcreteLibfunc;
@@ -284,6 +288,7 @@ impl NamedLibfunc for Felt252ConstLibfunc {
     }
 }
 
+#[derive(Debug)]
 pub struct Felt252ConstConcreteLibfunc {
     pub c: BigInt,
     pub signature: LibfuncSignature,

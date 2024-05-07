@@ -127,7 +127,7 @@ pub trait GenericTypeArgGenericType: Default {
 }
 
 /// Wrapper for a specialization generator with a single type arg.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct GenericTypeArgGenericTypeWrapper<T: GenericTypeArgGenericType>(T);
 impl<T: GenericTypeArgGenericType> NamedType for GenericTypeArgGenericTypeWrapper<T> {
     type Concrete = InfoAndTypeConcreteType;
@@ -167,6 +167,7 @@ pub trait ConcreteType {
 
 /// Struct providing a ConcreteType only with the type info - should not be implemented for
 /// concrete types that require any extra data.
+#[derive(Debug)]
 pub struct InfoOnlyConcreteType {
     pub info: TypeInfo,
 }
@@ -178,6 +179,7 @@ impl ConcreteType for InfoOnlyConcreteType {
 }
 
 /// Struct providing a ConcreteType with the type info and a wrapped type.
+#[derive(Debug)]
 pub struct InfoAndTypeConcreteType {
     pub info: TypeInfo,
     pub ty: ConcreteTypeId,
@@ -206,6 +208,7 @@ macro_rules! define_type_hierarchy {
     (pub enum $name:ident { $($variant_name:ident ($variant:ty),)* },
     $concrete_name:ident) => {
         #[allow(clippy::enum_variant_names)]
+        #[derive(Debug)]
         pub enum $name {
             $($variant_name ($variant)),*
         }
@@ -240,6 +243,7 @@ macro_rules! define_type_hierarchy {
             }
         }
 
+        #[derive(Debug)]
         pub enum $concrete_name {
             $($variant_name (<$variant as $crate::extensions::GenericType> ::Concrete),)*
         }

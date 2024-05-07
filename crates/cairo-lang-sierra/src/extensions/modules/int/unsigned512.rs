@@ -20,7 +20,7 @@ define_libfunc_hierarchy! {
 }
 
 // Divmod.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Uint512DivmodU256Libfunc;
 impl NoGenericArgsGenericLibfunc for Uint512DivmodU256Libfunc {
     const STR_ID: &'static str = "u512_safe_divmod_by_u256";

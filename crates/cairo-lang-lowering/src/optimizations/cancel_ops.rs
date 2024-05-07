@@ -54,6 +54,7 @@ pub fn cancel_ops(lowered: &mut FlatLowered) {
     }
 }
 
+#[derive(Debug)]
 pub struct CancelOpsContext<'a> {
     lowered: &'a FlatLowered,
 

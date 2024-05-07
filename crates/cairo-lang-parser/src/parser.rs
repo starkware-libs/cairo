@@ -23,6 +23,7 @@ use crate::ParserDiagnostic;
 #[path = "parser_test.rs"]
 mod test;
 
+#[allow(missing_debug_implementations)]
 pub struct Parser<'a> {
     db: &'a dyn SyntaxGroup,
     file_id: FileId,
@@ -43,7 +44,7 @@ pub struct Parser<'a> {
 }
 
 /// The possible results of a try_parse_* function failing to parse.
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum TryParseFailure {
     /// The parsing failed, and no token was consumed, the current token is the token which caused
     /// the failure and thus should be skipped by the caller.
@@ -2814,6 +2815,7 @@ enum ImplItemOrAlias {
 
 /// A parser diagnostic that is not yet reported as it is accumulated with similar consecutive
 /// diagnostics.
+#[derive(Debug)]
 pub struct PendingParserDiagnostic {
     pub span: TextSpan,
     pub kind: ParserDiagnosticKind,

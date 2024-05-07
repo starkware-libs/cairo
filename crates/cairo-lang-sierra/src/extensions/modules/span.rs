@@ -6,7 +6,7 @@ use crate::extensions::SpecializationError;
 use crate::ids::GenericTypeId;
 
 /// Type representing a span.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SpanTypeWrapped {}
 impl GenericTypeArgGenericType for SpanTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("Span");

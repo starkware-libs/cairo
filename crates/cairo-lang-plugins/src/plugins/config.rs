@@ -59,6 +59,7 @@ impl MacroPlugin for ConfigPlugin {
 
 /// Iterator over the items that are included in the given config set, among the given items in
 /// `iterator`.
+#[allow(missing_debug_implementations)]
 pub struct ItemsInCfg<'a, Item: QueryAttrs> {
     db: &'a dyn SyntaxGroup,
     cfg_set: &'a CfgSet,

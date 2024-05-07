@@ -25,7 +25,7 @@ pub mod simulation;
 mod test_utils;
 
 lalrpop_mod!(
-    #[allow(clippy::all, unused_extern_crates)]
+    #[allow(clippy::all, unused_extern_crates, missing_debug_implementations)]
     parser
 );
 

@@ -66,6 +66,7 @@ pub struct BuilderConfig {
     pub account_contract_validations: bool,
 }
 
+#[allow(missing_debug_implementations)]
 pub struct AbiBuilder<'a> {
     /// The db.
     db: &'a dyn SemanticGroup,

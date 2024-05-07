@@ -4,6 +4,7 @@ use crate::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 
 // Test salsa database.
 #[salsa::database(FilesDatabase)]
+#[allow(missing_debug_implementations)]
 pub struct FilesDatabaseForTesting {
     storage: salsa::Storage<FilesDatabaseForTesting>,
 }

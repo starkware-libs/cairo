@@ -142,6 +142,7 @@ impl ResolverData {
 }
 
 /// Resolves paths semantically.
+#[allow(missing_debug_implementations)]
 pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
     pub data: ResolverData,

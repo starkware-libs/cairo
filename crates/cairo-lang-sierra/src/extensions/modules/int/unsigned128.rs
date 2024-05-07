@@ -25,7 +25,7 @@ pub type Uint128Type = IntType<Uint128Traits>;
 ///
 /// The guarantee is verified by `u128_mul_guarantee_verify`, which is the only way to destruct this
 /// type. This way, one can trust that the guarantee holds although it has not yet been verified.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct U128MulGuaranteeType;
 impl NoGenericArgsGenericType for U128MulGuaranteeType {
     const ID: GenericTypeId = GenericTypeId::new_inline("U128MulGuarantee");
@@ -52,7 +52,7 @@ define_libfunc_hierarchy! {
     }, Uint128Concrete
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Uint128Traits;
 
 impl IntTraits for Uint128Traits {
@@ -80,7 +80,7 @@ impl IsZeroTraits for Uint128Traits {
 }
 
 /// Libfunc for u128_guarantee_mul.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct U128GuaranteeMulLibfunc {}
 impl NoGenericArgsGenericLibfunc for U128GuaranteeMulLibfunc {
     const STR_ID: &'static str = "u128_guarantee_mul";
@@ -115,7 +115,7 @@ impl NoGenericArgsGenericLibfunc for U128GuaranteeMulLibfunc {
 }
 
 /// Libfunc for u128_mul_guarantee_verify.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct U128MulGuaranteeVerifyLibfunc {}
 impl NoGenericArgsGenericLibfunc for U128MulGuaranteeVerifyLibfunc {
     const STR_ID: &'static str = "u128_mul_guarantee_verify";
@@ -138,7 +138,7 @@ impl NoGenericArgsGenericLibfunc for U128MulGuaranteeVerifyLibfunc {
 
 /// Libfunc for converting a felt252 into a u128, or the number and the overflow in the case of
 /// failure.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Uint128sFromFelt252Libfunc {}
 impl NoGenericArgsGenericLibfunc for Uint128sFromFelt252Libfunc {
     const STR_ID: &'static str = "u128s_from_felt252";
@@ -187,7 +187,7 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFelt252Libfunc {
 
 /// Libfunc for reversing the byte order of a u128.
 /// Returns a u128 (and the updated builtin pointer).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct U128ByteReverseLibfunc {}
 impl NoGenericArgsGenericLibfunc for U128ByteReverseLibfunc {
     const STR_ID: &'static str = "u128_byte_reverse";

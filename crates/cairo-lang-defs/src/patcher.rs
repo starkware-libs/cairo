@@ -223,6 +223,7 @@ pub struct ModifiedNode {
     pub children: Option<Vec<RewriteNode>>,
 }
 
+#[allow(missing_debug_implementations)]
 pub struct PatchBuilder<'a> {
     pub db: &'a dyn SyntaxGroup,
     code: String,
