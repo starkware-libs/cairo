@@ -276,6 +276,7 @@ impl std::panic::UnwindSafe for State {}
 
 struct Backend {
     client: Client,
+    client_capabilities: tokio::sync::RwLock<Box<ClientCapabilities>>,
     tricks: Tricks,
     // TODO(spapini): Remove this once we support ParallelDatabase.
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
@@ -294,6 +295,7 @@ impl Backend {
         let scarb_toolchain = ScarbToolchain::new(&notifier);
         Self {
             client,
+            client_capabilities: Default::default(),
             tricks,
             db_mutex: db.into(),
             state_mutex: State::default().into(),
@@ -590,7 +592,7 @@ impl Backend {
     /// Reload crate detection for all open files.
     #[tracing::instrument(level = "trace", skip_all)]
     async fn reload(&self) -> LSPResult<()> {
-        self.config.write().await.reload(&self.client).await;
+        self.reload_config().await;
 
         let mut db = self.db_mut().await;
         for uri in self.state_mutex.lock().await.open_files.iter() {
@@ -601,6 +603,15 @@ impl Backend {
         }
         drop(db);
         self.refresh_diagnostics().await
+    }
+
+    /// Reload the [`Config`] and all its dependencies.
+    async fn reload_config(&self) {
+        let mut config = self.config.write().await;
+        {
+            let client_capabilities = self.client_capabilities.read().await;
+            config.reload(&self.client, &client_capabilities).await;
+        }
     }
 }
 
@@ -622,7 +633,12 @@ impl TryFrom<String> for ServerCommands {
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all)]
-    async fn initialize(&self, _: InitializeParams) -> LSPResult<InitializeResult> {
+    async fn initialize(&self, params: InitializeParams) -> LSPResult<InitializeResult> {
+        {
+            let mut client_capabilities = self.client_capabilities.write().await;
+            *client_capabilities = Box::new(params.capabilities);
+        }
+
         Ok(InitializeResult {
             server_info: None,
             capabilities: ServerCapabilities {
@@ -670,7 +686,7 @@ impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all)]
     async fn initialized(&self, _: InitializedParams) {
         // Initialize the configuration.
-        self.config.write().await.reload(&self.client).await;
+        self.reload_config().await;
 
         // Register patterns for client file watcher.
         // This is used to detect changes to Scarb.toml and invalidate .cairo files.
@@ -703,7 +719,7 @@ impl LanguageServer for Backend {
 
     #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {
-        self.config.write().await.reload(&self.client).await;
+        self.reload_config().await;
     }
 
     #[tracing::instrument(level = "debug", skip_all)]

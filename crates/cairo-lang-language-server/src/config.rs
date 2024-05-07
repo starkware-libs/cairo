@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::path::PathBuf;
 
 use anyhow::Context;
-use tower_lsp::lsp_types::ConfigurationItem;
+use tower_lsp::lsp_types::{ClientCapabilities, ConfigurationItem};
 use tower_lsp::Client;
 use tracing::{debug, error, warn};
 
@@ -32,7 +32,11 @@ pub struct Config {
 impl Config {
     /// Reloads the configuration from the language client.
     #[tracing::instrument(name = "reload_config", level = "trace", skip_all)]
-    pub async fn reload(&mut self, client: &Client) {
+    pub async fn reload(&mut self, client: &Client, client_capabilities: &ClientCapabilities) {
+        if !can_reload(client_capabilities) {
+            return;
+        }
+
         let items = vec![ConfigurationItem {
             scope_uri: None,
             section: Some("cairo1.corelibPath".to_owned()),
@@ -62,4 +66,9 @@ impl Config {
             debug!("reloaded configuration: {self:#?}");
         }
     }
+}
+
+/// Check if client capabilities allow sending `workspace/configuration` requests.
+fn can_reload(client_capabilities: &ClientCapabilities) -> bool {
+    client_capabilities.workspace.as_ref().is_some_and(|it| it.configuration.is_some_and(|it| it))
 }
