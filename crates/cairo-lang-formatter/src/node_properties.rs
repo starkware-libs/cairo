@@ -655,10 +655,12 @@ impl SyntaxNodeFormat for SyntaxNode {
 
 /// For statement lists, returns if we want these as a single line.
 fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNode) -> bool {
-    // Currently, we only want single line blocks for match arms, with a single statements, with no
-    // single line comments.
-    grandparent_kind(db, node) == Some(SyntaxKind::MatchArm)
-        && db.get_children(node.clone()).len() == 1
+    // Currently, we only want single line blocks for match arms or generic args, with a single
+    // statement, with no single line comments.
+    matches!(
+        grandparent_kind(db, node),
+        Some(SyntaxKind::MatchArm | SyntaxKind::GenericArgValueExpr)
+    ) && db.get_children(node.clone()).len() == 1
         && node.descendants(db).all(|d| {
             d.kind(db) != SyntaxKind::Trivia
                 || ast::Trivia::from_syntax_node(db, d)
