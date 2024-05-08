@@ -120,3 +120,53 @@ test::foo@0([0]: CircuitInputAccumulator<(core::circuit::AddModGate::<core::circ
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 1100})
+
+//! > ==========================================================================
+
+//! > get_circuit_descriptor
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::circuit::{
+    AddModGate, get_circuit_descriptor, CircuitInput, CircuitDescriptor
+};
+type MyCircuit = (AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>,);
+
+fn foo() -> CircuitDescriptor<MyCircuit> {
+    get_circuit_descriptor::<MyCircuit>()
+}
+
+//! > casm
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 16;
+dw 20;
+dw 12;
+dw 12;
+dw 0;
+dw 16;
+dw 12;
+dw 4;
+dw 20;
+
+//! > sierra_code
+type CircuitDescriptor<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> = CircuitDescriptor<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> = AddModGate<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::circuit::CircuitInput::<2> = CircuitInput<2> [storable: false, drop: false, dup: false, zero_sized: false];
+type (core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>) = Struct<ut@Tuple, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::circuit::CircuitInput::<1> = CircuitInput<1> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc get_circuit_descriptor<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> = get_circuit_descriptor<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>;
+
+get_circuit_descriptor<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>() -> ([0]); // 0
+return([0]); // 1
+
+test::foo@0() -> (CircuitDescriptor<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})

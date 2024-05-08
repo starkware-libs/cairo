@@ -20,6 +20,8 @@ pub enum Relocation {
     SegmentStart(u32),
     /// Adds the offset of the constant value in the const segments.
     ConstStart(u32, ConcreteTypeId),
+    /// Adds the offset of the circuit with the given type.
+    CircuitStart(ConcreteTypeId),
     /// Adds the offset between the current statement index and the end of the program code
     /// segment (which includes the const segment at its end).
     EndOfProgram,
@@ -47,6 +49,19 @@ impl Relocation {
             }
             Relocation::EndOfProgram => {
                 *statement_offsets.last().unwrap() + consts_info.total_segments_size
+            }
+            Relocation::CircuitStart(circ_ty) => {
+                let segment_index =
+                    consts_info.circuit_segments.get(circ_ty).expect("Circuit not found");
+
+                let segment = consts_info.segments.get(segment_index).expect("Segment not found.");
+
+                *statement_offsets.last().unwrap()
+                    + segment.segment_offset
+                    + segment
+                        .const_offset
+                        .get(circ_ty)
+                        .expect("Const type not found in const segments.")
             }
         };
         match instruction {
