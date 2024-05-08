@@ -32,7 +32,8 @@ impl CircuitsInfo {
     ) -> Result<Self, CompilationError> {
         let mut res = Self::default();
         for libfunc_id in libfunc_ids {
-            if let CoreConcreteLibfunc::Circuit(CircuitConcreteLibfunc::InitCircuitData(libfunc)) =
+            if let CoreConcreteLibfunc::Circuit(CircuitConcreteLibfunc::InitCircuitData(libfunc))
+            | CoreConcreteLibfunc::Circuit(CircuitConcreteLibfunc::GetDescriptor(libfunc)) =
                 registry.get_libfunc(libfunc_id).unwrap()
             {
                 res.circuits

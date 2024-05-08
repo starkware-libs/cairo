@@ -21,6 +21,8 @@ extern type AddModGate<Lhs, Rhs>;
 /// Initializes the input data for running an instance of the circuit.
 extern fn init_circuit_data<C>() -> CircuitInputAccumulator<C> implicits(RangeCheck96) nopanic;
 
+/// Returns the descriptor for the circuit.
+extern fn get_circuit_descriptor<C>() -> CircuitDescriptor<C> nopanic;
 
 /// Fill an input in the circuit instance's data.
 // TODO(ilya): Consider using RangeCheck96Guarantee for the inputs.
@@ -41,6 +43,10 @@ extern type CircuitInputAccumulator<C>;
 
 /// A type representing a circuit instance data with all the inputs filled.
 extern type CircuitData<C>;
+
+
+/// A type representing a circuit descriptor.
+extern type CircuitDescriptor<C>;
 
 impl CircuitInputAccumulatorDrop<C> of Drop<CircuitInputAccumulator<C>>;
 

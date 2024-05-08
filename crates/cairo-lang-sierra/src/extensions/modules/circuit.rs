@@ -25,6 +25,7 @@ define_type_hierarchy! {
     pub enum CircuitType {
         AddModGate(AddModGate),
         CircuitData(CircuitData),
+        CircuitDescriptor(CircuitDescriptor),
         CircuitInput(CircuitInput),
         CircuitInputAccumulator(CircuitInputAccumulator),
     }, CircuitTypeConcrete
@@ -33,6 +34,7 @@ define_type_hierarchy! {
 define_libfunc_hierarchy! {
     pub enum CircuitLibFunc {
          FillInput(FillCircuitInputLibFunc),
+         GetDescriptor(GetCircuitDescriptorLibFunc),
          InitCircuitData(InitCircuitDataLibFunc),
     }, CircuitConcreteLibfunc
 }
@@ -258,6 +260,54 @@ impl ConcreteType for ConcreteCircuitData {
     }
 }
 
+/// A type representing a circuit instance data with all the inputs filled.
+#[derive(Default)]
+pub struct CircuitDescriptor {}
+impl NamedType for CircuitDescriptor {
+    type Concrete = ConcreteCircuitDescriptor;
+    const ID: GenericTypeId = GenericTypeId::new_inline("CircuitDescriptor");
+
+    fn specialize(
+        &self,
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Self::Concrete::new(context, args)
+    }
+}
+
+pub struct ConcreteCircuitDescriptor {
+    pub info: TypeInfo,
+}
+
+impl ConcreteCircuitDescriptor {
+    fn new(
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self, SpecializationError> {
+        let circ_ty = args_as_single_type(args)?;
+        validate_is_circuit(context, circ_ty)?;
+        Ok(Self {
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId {
+                    generic_id: "CircuitDescriptor".into(),
+                    generic_args: args.to_vec(),
+                },
+                duplicatable: true,
+                droppable: true,
+                storable: true,
+                zero_sized: false,
+            },
+        })
+    }
+}
+
+impl ConcreteType for ConcreteCircuitDescriptor {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
+}
+
 /// Validate that `circ_ty` is a circuit type.
 fn validate_is_circuit(
     context: &dyn TypeSpecializationContext,
@@ -387,3 +437,31 @@ impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
 
 pub type FillCircuitInputLibFunc =
     WrapSignatureAndTypeGenericLibfunc<FillCircuitInputLibFuncWrapped>;
+
+/// A zero-input function that returns an handle to the offsets of a circuit.
+#[derive(Default)]
+pub struct GetCircuitDescriptorLibFuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for GetCircuitDescriptorLibFuncWrapped {
+    const STR_ID: &'static str = "get_circuit_descriptor";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let circuit_descriptor_ty =
+            context.get_concrete_type(CircuitDescriptor::id(), &[GenericArg::Type(ty.clone())])?;
+
+        Ok(LibfuncSignature::new_non_branch(
+            vec![],
+            vec![OutputVarInfo {
+                ty: circuit_descriptor_ty,
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+pub type GetCircuitDescriptorLibFunc =
+    WrapSignatureAndTypeGenericLibfunc<GetCircuitDescriptorLibFuncWrapped>;
