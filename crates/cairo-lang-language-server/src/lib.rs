@@ -94,6 +94,7 @@ use crate::config::Config;
 use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
+use crate::lsp::client_capabilities::ClientCapabilitiesExt;
 use crate::project::scarb::db::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
@@ -689,25 +690,27 @@ impl LanguageServer for Backend {
         // Initialize the configuration.
         self.reload_config().await;
 
-        // Register patterns for client file watcher.
-        // This is used to detect changes to Scarb.toml and invalidate .cairo files.
-        let registration_options = DidChangeWatchedFilesRegistrationOptions {
-            watchers: vec!["/**/*.cairo", "/**/Scarb.toml"]
-                .into_iter()
-                .map(|glob_pattern| FileSystemWatcher {
-                    glob_pattern: GlobPattern::String(glob_pattern.to_string()),
-                    kind: None,
-                })
-                .collect(),
-        };
-        let registration = Registration {
-            id: "workspace/didChangeWatchedFiles".to_string(),
-            method: "workspace/didChangeWatchedFiles".to_string(),
-            register_options: Some(serde_json::to_value(registration_options).unwrap()),
-        };
-        let result = self.client.register_capability(vec![registration]).await;
-        if let Err(err) = result {
-            warn!("Failed to register workspace/didChangeWatchedFiles event: {:#?}", err);
+        if self.client_capabilities.read().await.did_change_watched_files_dynamic_registration() {
+            // Register patterns for client file watcher.
+            // This is used to detect changes to Scarb.toml and invalidate .cairo files.
+            let registration_options = DidChangeWatchedFilesRegistrationOptions {
+                watchers: vec!["/**/*.cairo", "/**/Scarb.toml"]
+                    .into_iter()
+                    .map(|glob_pattern| FileSystemWatcher {
+                        glob_pattern: GlobPattern::String(glob_pattern.to_string()),
+                        kind: None,
+                    })
+                    .collect(),
+            };
+            let registration = Registration {
+                id: "workspace/didChangeWatchedFiles".to_string(),
+                method: "workspace/didChangeWatchedFiles".to_string(),
+                register_options: Some(serde_json::to_value(registration_options).unwrap()),
+            };
+            let result = self.client.register_capability(vec![registration]).await;
+            if let Err(err) = result {
+                warn!("Failed to register workspace/didChangeWatchedFiles event: {:#?}", err);
+            }
         }
     }
 
