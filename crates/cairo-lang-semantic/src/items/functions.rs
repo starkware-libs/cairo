@@ -148,8 +148,16 @@ impl GenericFunctionId {
                     ImplId::ImplVar(var) => var.lookup_intern(db).concrete_trait_id,
                 };
                 // When not having a concrete impl, falling back to the concrete trait signature.
-                let id = ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function);
-                db.concrete_trait_function_signature(id)
+                let signature = db.concrete_trait_function_signature(
+                    ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function),
+                )?;
+
+                GenericSubstitution::from_impl(id.impl_id);
+                SubstitutionRewriter {
+                    db,
+                    substitution: &GenericSubstitution::from_impl(id.impl_id),
+                }
+                .rewrite(signature)
             }
         }
     }

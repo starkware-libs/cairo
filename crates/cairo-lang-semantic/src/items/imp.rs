@@ -1433,8 +1433,12 @@ pub fn impl_type_concrete_implized(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
 ) -> Maybe<Option<TypeId>> {
-    let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_type_id.impl_id() else {
-        return Ok(None);
+    let concrete_impl = match impl_type_id.impl_id() {
+        ImplId::Concrete(concrete_impl) => concrete_impl,
+        ImplId::GenericParameter(_) => {
+            return Ok(Some(TypeLongId::ImplType(impl_type_id).intern(db)));
+        }
+        ImplId::ImplVar(_) => return Ok(None),
     };
 
     let impl_def_id = concrete_impl.impl_def_id(db);
@@ -1443,10 +1447,8 @@ pub fn impl_type_concrete_implized(
         return ty;
     };
 
-    let generic_params = db.impl_def_generic_params(impl_def_id)?;
-    let generic_args = concrete_impl.lookup_intern(db).generic_args;
-    let substitution = GenericSubstitution::new(generic_params.as_slice(), generic_args.as_slice());
-    let ty = SubstitutionRewriter { db, substitution: &substitution }.rewrite(ty)?;
+    let substitution = &concrete_impl.substitution(db)?;
+    let ty = SubstitutionRewriter { db, substitution }.rewrite(ty)?;
     Ok(Some(ty))
 }
 

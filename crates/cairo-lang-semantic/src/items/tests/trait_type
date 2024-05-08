@@ -2101,7 +2101,7 @@ impl MyImpl of MyTrait {
 
 //! > ==========================================================================
 
-//! > Complex 222
+//! > using an impl's associated type in a concrete impl with generic args.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
@@ -2124,20 +2124,136 @@ impl MyImpl<K> of MyTrait {
     type ty = K;
 }
 
-//! > semantic_diagnostics
-error: Unexpected expression type. Expected: "core::integer::u32", found: "K".
---> lib.cairo:8:17
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using a trait's associated type in a concrete impl with generic args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
 fn foo() -> u32 {
-^
+    let x: MyTrait::ty = 4_u32;
+    x
+}
 
-error: Unexpected return type. Expected: "core::integer::u32", found: "K".
---> lib.cairo:8:17
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+
+impl MyImpl<K> of MyTrait {
+    type ty = K;
+}
+///TODO(TomerStarkware): infer impl types from trait types.
+
+//! > expected_diagnostics
+error: Unexpected expression type. Expected: "ImplVar(test::MyTrait)::ty", found: "core::integer::u32".
+ --> lib.cairo:10:26
+    let x: MyTrait::ty = 4_u32;
+                         ^***^
+
+error: Unexpected argument type. Expected: "ImplVar(test::MyTrait)::ty", found: "core::integer::u32".
+ --> lib.cairo:10:26
+    let x: MyTrait::ty = 4_u32;
+                         ^***^
+
+error: Unexpected return type. Expected: "core::integer::u32", found: "ImplVar(test::MyTrait)::ty".
+ --> lib.cairo:9:17
 fn foo() -> u32 {
-^
+                ^
 
-//! > lowering_diagnostics
+//! > ==========================================================================
 
-//! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+//! > using an impl's function with an associated type in it's signature of a concrete impl with generic args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo(x: felt252, y: felt252, z: felt252, w: felt252) -> felt252 {
+    DepAdd::<felt252>::other_add(x, y)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherAdd<Lhs, Rhs> {
+    type Output;
+    fn other_add(lhs: Lhs, rhs: Rhs) -> Self::Output;
+}
+impl DepAdd<T> of OtherAdd<T, T> {
+    type Output = T;
+    fn other_add(lhs: T, rhs: T) -> T {
+        lhs
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using a trait's function with an associated type in it's signature of a concrete impl with generic args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo(x: felt252, y: felt252, z: felt252, w: felt252) -> felt252 {
+    OtherAdd::<felt252>::other_add(x, y)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherAdd<Lhs, Rhs> {
+    type Output;
+    fn other_add(lhs: Lhs, rhs: Rhs) -> Self::Output;
+}
+impl DepAdd<T> of OtherAdd<T, T> {
+    type Output = T;
+    fn other_add(lhs: T, rhs: T) -> T {
+        lhs
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using a trait's function with an associated type in it's signature of a generic concrete impl with generic args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    bar::<_, DepAdd>(3_felt252, 4)
+}
+pub fn bar<T, +OtherAdd<T, T>>(x: T, y: T) -> OtherAdd::<T, T>::Output {
+    OtherAdd::other_add(x, y)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherAdd<Lhs, Rhs> {
+    type Output;
+    fn other_add(lhs: Lhs, rhs: Rhs) -> Self::Output;
+}
+impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
+    type Output = T;
+    fn other_add(lhs: T, rhs: T) -> T {
+        lhs
+    }
+}
 
 //! > expected_diagnostics
