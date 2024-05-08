@@ -1,11 +1,15 @@
 use cairo_lang_casm::builder::CasmBuilder;
-use cairo_lang_casm::casm_build_extend;
+use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_casm::operand::{CellRef, Register};
+use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::circuit::CircuitConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::circuit::{CircuitInfo, VALUE_SIZE};
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::references::ReferenceExpression;
+use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -14,6 +18,9 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         CircuitConcreteLibfunc::FillInput(_libfunc) => build_fill_input(builder),
+        CircuitConcreteLibfunc::GetDescriptor(libfunc) => {
+            build_get_descriptor(&libfunc.ty, builder)
+        }
         CircuitConcreteLibfunc::InitCircuitData(libfunc) => {
             build_init_circuit_data(&libfunc.ty, builder)
         }
@@ -85,5 +92,41 @@ fn build_fill_input(
         casm_builder,
         [("Fallthrough", &[&[new_start, end]], None), ("Failure", &[&[end]], Some(failure_handle))],
         Default::default(),
+    ))
+}
+
+/// Builds instructions for `get_circuit_descriptor` libfunc.
+fn build_get_descriptor(
+    circuit_ty: &ConcreteTypeId,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let ctx = casm! {
+        // The relocation will point the `call` to the `ret;` instruction that precedes the
+        // relevant const.
+        call rel 0;
+        // The relocation table will add const offset to the `1` below, making it point to the
+        // constant value (the `1` is to skip the `ret` instruction).
+        // TODO(Gil): Support relocatable CellExpression and return an unstored "[ap - 1] + 1".
+        [ap] = [ap - 1] + 1, ap++;
+    };
+    let relocations = vec![
+        RelocationEntry {
+            instruction_idx: 0,
+            relocation: Relocation::CircuitStart(circuit_ty.clone()),
+        },
+        RelocationEntry {
+            instruction_idx: 1,
+            relocation: Relocation::CircuitStart(circuit_ty.clone()),
+        },
+    ];
+    Ok(builder.build(
+        ctx.instructions,
+        relocations,
+        [vec![ReferenceExpression::from_cell(CellExpression::Deref(CellRef {
+            register: Register::AP,
+            offset: -1,
+        }))]
+        .into_iter()]
+        .into_iter(),
     ))
 }
