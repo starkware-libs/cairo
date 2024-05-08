@@ -1976,14 +1976,8 @@ mod bounded_int {
     }
 
     extern fn bounded_int_mul<T1, T2, +IgnoreNext, R>(a: T1, b: T2) -> R nopanic;
-    type U8MulRes = BoundedInt<0, {
-        255 * 255
-    }>;
-    type I8MulRes = BoundedInt<{
-        127 * -128
-    }, {
-        128 * 128
-    }>;
+    type U8MulRes = BoundedInt<0, { 255 * 255 }>;
+    type I8MulRes = BoundedInt<{ 127 * -128 }, { 128 * 128 }>;
 
     #[test]
     fn test_mul() {
@@ -2077,9 +2071,7 @@ mod bounded_int {
         );
         assert!(
             div_rem_small_quotient_helper::<
-                POW_2_251, U128_MAX, POW_2_123, {
-                    U128_MAX - 1
-                }
+                POW_2_251, U128_MAX, POW_2_123, { U128_MAX - 1 }
             >(bi_const::<POW_2_251>()) == (POW_2_123, POW_2_123)
         );
     }
