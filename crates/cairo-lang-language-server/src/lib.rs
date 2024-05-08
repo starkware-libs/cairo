@@ -87,7 +87,7 @@ use serde_json::Value;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::*;
-use tower_lsp::{Client, LanguageServer, LspService, Server};
+use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
 
 use crate::config::Config;
@@ -140,7 +140,6 @@ pub fn start() {
 /// See [the top-level documentation][lib] documentation for usage examples.
 ///
 /// [lib]: crate#running-with-customizations
-
 #[tokio::main]
 pub async fn start_with_tricks(tricks: Tricks) {
     let _log_guard = init_logging();
@@ -150,12 +149,16 @@ pub async fn start_with_tricks(tricks: Tricks) {
 
     let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
 
-    let (service, socket) = LspService::build(|client| Backend::new(client, tricks))
-        .custom_method("vfs/provide", Backend::vfs_provide)
-        .finish();
+    let (service, socket) = Backend::build_service(tricks);
     Server::new(stdin, stdout, socket).serve(service).await;
 
     info!("language server stopped");
+}
+
+/// Special function to run the language server in end-to-end tests.
+#[cfg(feature = "testing")]
+pub fn build_service_for_e2e_tests() -> (LspService<impl LanguageServer>, ClientSocket) {
+    Backend::build_service(Tricks::default())
 }
 
 /// Initialize logging infrastructure for the language server.
@@ -291,6 +294,12 @@ struct Backend {
 }
 
 impl Backend {
+    fn build_service(tricks: Tricks) -> (LspService<Self>, ClientSocket) {
+        LspService::build(|client| Self::new(client, tricks))
+            .custom_method("vfs/provide", Self::vfs_provide)
+            .finish()
+    }
+
     fn new(client: Client, tricks: Tricks) -> Self {
         let db = configured_db(&tricks);
         let notifier = Notifier::new(&client);
