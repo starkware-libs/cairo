@@ -17,10 +17,12 @@ macro_rules! sandbox {
     ) => {{
         use $crate::support::{
             client_capabilities,
+            init_tracing,
             fixture::Fixture,
             mock_client::MockClient
         };
 
+        init_tracing();
         let mut fixture = Fixture::new();
 
         $($(fixture.add_file($file, $content);)*)?
@@ -35,3 +37,28 @@ macro_rules! sandbox {
 }
 
 pub(crate) use sandbox;
+
+/// Try to initialize [`tracing`] with settings useful when debugging failing tests.
+///
+/// This function is intended to be called at the beginning of a test, and may be a no-op if
+/// another test (that calls this function) has already been run in the testing process.
+/// This is caused by the fact that [`tracing_subscriber`] is a global write-once resource.
+pub fn init_tracing() {
+    use std::io;
+    use std::io::IsTerminal;
+
+    use tracing_subscriber::filter::EnvFilter;
+    use tracing_subscriber::fmt::format::FmtSpan;
+    use tracing_subscriber::fmt::time::Uptime;
+
+    let _ = tracing_subscriber::fmt()
+        .with_writer(io::stderr)
+        .with_timer(Uptime::default())
+        .with_ansi(io::stderr().is_terminal())
+        .with_span_events(FmtSpan::CLOSE)
+        .with_env_filter(
+            EnvFilter::from_default_env()
+                .add_directive("cairo_lang_language_server=trace".parse().unwrap()),
+        )
+        .try_init();
+}
