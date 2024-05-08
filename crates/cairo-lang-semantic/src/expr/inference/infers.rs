@@ -245,7 +245,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             let generic_arg =
                 self.infer_generic_arg(&generic_param, lookup_context.clone(), stable_ptr)?;
             generic_args.push(generic_arg);
-            substitution.0.insert(generic_param.id(), generic_arg);
+            substitution.insert(generic_param.id(), generic_arg);
         }
         Ok(generic_args)
     }

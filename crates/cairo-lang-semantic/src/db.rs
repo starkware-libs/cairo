@@ -32,6 +32,7 @@ use crate::items::trt::{
 };
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
+use crate::substitution::GenericSubstitution;
 use crate::types::{ImplTypeId, TypeSizeInformation};
 use crate::{
     corelib, items, lsp_helpers, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
@@ -613,6 +614,9 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::imp::impl_def_concrete_trait)]
     #[salsa::cycle(items::imp::impl_def_concrete_trait_cycle)]
     fn impl_def_concrete_trait(&self, impl_def_id: ImplDefId) -> Maybe<ConcreteTraitId>;
+    /// Returns the substitution for generics for the impl.
+    #[salsa::invoke(items::imp::impl_def_substitution)]
+    fn impl_def_substitution(&self, impl_def_id: ImplDefId) -> Maybe<Arc<GenericSubstitution>>;
     /// Returns the attributes attached to the impl.
     #[salsa::invoke(items::imp::impl_def_attributes)]
     fn impl_def_attributes(&self, impl_def_id: ImplDefId) -> Maybe<Vec<Attribute>>;
@@ -682,6 +686,14 @@ pub trait SemanticGroup:
         &self,
         impl_def_id: ImplDefId,
     ) -> Maybe<items::imp::ImplDefinitionData>;
+
+    /// Returns the signature of an impl function.
+    #[salsa::invoke(items::imp::concrete_impl_function_signature)]
+    fn concrete_impl_function_signature(
+        &self,
+        concrete_impl_id: items::imp::ConcreteImplId,
+        trait_function: TraitFunctionId,
+    ) -> Maybe<semantic::Signature>;
 
     /// Private query to check if an impl is fully concrete.
     #[salsa::invoke(items::imp::priv_impl_is_fully_concrete)]
@@ -1089,13 +1101,6 @@ pub trait SemanticGroup:
     /// etc...
     #[salsa::invoke(items::functions::concrete_function_signature)]
     fn concrete_function_signature(&self, function_id: FunctionId) -> Maybe<semantic::Signature>;
-    /// Returns the given function's signature, after implization as needed (that is, if this is an
-    /// impl function).
-    #[salsa::invoke(items::functions::concrete_function_implized_signature)]
-    fn concrete_function_implized_signature(
-        &self,
-        function_id: FunctionId,
-    ) -> Maybe<semantic::Signature>;
 
     // Generic type.
     // =============

@@ -8,7 +8,7 @@ use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::ImplId;
 use crate::substitution::SemanticRewriter;
-use crate::types::peel_snapshots;
+use crate::types::{peel_snapshots, ImplTypeId};
 use crate::{
     ConcreteFunction, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
     FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
@@ -100,6 +100,10 @@ impl<'db> InferenceConform for Inference<'db> {
                     }
                 }
             }
+            TypeLongId::ImplType(impl_type_id) => {
+                let ty = self.reduce_impl_ty(impl_type_id)?;
+                return self.conform_ty_ex(ty0, ty, ty0_is_self);
+            }
             _ => {}
         }
         let n_snapshots = 0;
@@ -153,7 +157,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 let (ty, n_snapshots) = self.conform_ty_ex(ty0, ty1, ty0_is_self)?;
                 Ok((TypeLongId::Snapshot(ty).intern(self.db), n_snapshots))
             }
-            TypeLongId::GenericParameter(_) | TypeLongId::ImplType(_) => {
+            TypeLongId::GenericParameter(_) => {
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
             TypeLongId::TraitType(_) => {
@@ -162,6 +166,10 @@ impl<'db> InferenceConform for Inference<'db> {
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
             TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, n_snapshots)),
+            TypeLongId::ImplType(impl_type_id) => {
+                let ty = self.reduce_impl_ty(impl_type_id)?;
+                self.conform_ty_ex(ty, ty1, ty0_is_self)
+            }
             TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),
             TypeLongId::Coupon(function_id0) => {
                 let TypeLongId::Coupon(function_id1) = long_ty1 else {
@@ -444,6 +452,30 @@ impl<'db> InferenceConform for Inference<'db> {
 }
 
 impl Inference<'_> {
+    /// Reduces an impl type to a concrete type.
+    fn reduce_impl_ty(&mut self, impl_type_id: ImplTypeId) -> InferenceResult<TypeId> {
+        let reduced_impl = if let ImplId::ImplVar(var) = impl_type_id.impl_id() {
+            self.solve_single_pending(var.id(self.db))?;
+            self.rewrite(impl_type_id.impl_id()).no_err()
+        } else {
+            impl_type_id.impl_id()
+        };
+        if let Ok(Some(ty)) = self.db.impl_type_concrete_implized(ImplTypeId::new(
+            reduced_impl,
+            impl_type_id.ty(),
+            self.db,
+        )) {
+            Ok(ty)
+        } else {
+            Err(self.set_error(
+                reduced_impl
+                    .concrete_trait(self.db)
+                    .map(InferenceError::NoImplsFound)
+                    .unwrap_or_else(InferenceError::Reported),
+            ))
+        }
+    }
+
     /// helper function for ty_contains_var
     /// Assumes ty was already rewritten.
     #[doc(hidden)]
