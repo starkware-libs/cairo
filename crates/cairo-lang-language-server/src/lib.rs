@@ -78,9 +78,10 @@ use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use serde_json::Value;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
+use tower_lsp::lsp_types::request::Request;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
-use tracing::{debug, error, info, trace_span, warn, Instrument};
+use tracing::{debug, error, info, trace, trace_span, warn, Instrument};
 
 use crate::config::Config;
 use crate::ide::semantic_highlighting::SemanticTokenKind;
@@ -98,7 +99,7 @@ mod config;
 mod env_config;
 mod ide;
 mod lang;
-mod lsp;
+pub mod lsp;
 mod project;
 mod server;
 mod toolchain;
@@ -287,9 +288,14 @@ struct Backend {
 
 impl Backend {
     fn build_service(tricks: Tricks) -> (LspService<Self>, ClientSocket) {
-        LspService::build(|client| Self::new(client, tricks))
-            .custom_method("vfs/provide", Self::vfs_provide)
-            .finish()
+        let service = LspService::build(|client| Self::new(client, tricks))
+            .custom_method("vfs/provide", Self::vfs_provide);
+
+        #[cfg(feature = "testing")]
+        let service = service
+            .custom_method(lsp::methods::test::DebugProjects::METHOD, Self::test_debug_projects);
+
+        service.finish()
     }
 
     fn new(client: Client, tricks: Tricks) -> Self {
@@ -591,6 +597,15 @@ impl Backend {
         }
 
         self.projects.lock().await.on_config_changed(&config);
+    }
+}
+
+#[cfg(feature = "testing")]
+impl Backend {
+    async fn test_debug_projects(&self) -> LSPResult<String> {
+        let projects = self.projects.lock().await;
+        trace!("debugging projects: {projects:?}");
+        Ok(format!("{projects:#?}"))
     }
 }
 

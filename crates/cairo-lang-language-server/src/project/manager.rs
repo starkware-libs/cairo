@@ -1,4 +1,5 @@
 use std::cmp::Reverse;
+use std::fmt;
 use std::path::Path;
 
 use cairo_lang_compiler::db::RootDatabase;
@@ -128,6 +129,12 @@ impl ProjectManager {
     /// Checks if a project under given manifest path is already loaded.
     fn already_loaded(&self, manifest_path: &Path) -> bool {
         self.projects.iter().any(|project| project.manifest_files().contains(&manifest_path))
+    }
+}
+
+impl fmt::Debug for ProjectManager {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list().entries(&self.projects).finish()
     }
 }
 

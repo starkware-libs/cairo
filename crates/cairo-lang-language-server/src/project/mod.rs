@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::path::Path;
 
 use cairo_lang_compiler::db::RootDatabase;
@@ -14,7 +15,7 @@ mod unmanaged_core_crate;
 
 // TODO(mkaput): Remove `Send` bound when migrating to new threading architecture.
 /// A single Cairo project manager.
-trait Project: Send {
+trait Project: Debug + Send {
     /// Gets a list of files that, when changed, should trigger a project reload.
     ///
     /// This list may also include lockfiles.

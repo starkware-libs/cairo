@@ -1,3 +1,4 @@
+use std::fmt;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
@@ -60,5 +61,11 @@ impl Project for CairoProject {
         if let Some(project_config) = self.project_config.as_ref() {
             update_crate_roots_from_project_config(db, project_config);
         }
+    }
+}
+
+impl fmt::Debug for CairoProject {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CairoProject").field("project_path", &self.project_path).finish()
     }
 }
