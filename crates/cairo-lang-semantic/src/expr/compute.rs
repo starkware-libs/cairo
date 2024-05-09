@@ -2592,7 +2592,16 @@ fn member_access_expr(
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
     let ty = ctx.implize_type(lexpr.ty())?;
-    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+    let (n_snapshots, mut long_ty) = peel_snapshots(ctx.db, ty);
+    if let TypeLongId::ImplType(impl_type_id) = long_ty {
+        let inference = &mut ctx.resolver.inference();
+        let Ok(ty) = inference.reduce_impl_ty(impl_type_id) else {
+            return Err(ctx
+                .diagnostics
+                .report(&rhs_syntax, InternalInferenceError(InferenceError::TypeNotInferred(ty))));
+        };
+        long_ty = ty.lookup_intern(ctx.db);
+    }
 
     match long_ty {
         TypeLongId::Concrete(concrete) => match concrete {

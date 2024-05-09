@@ -459,7 +459,7 @@ impl<'db> InferenceConform for Inference<'db> {
 
 impl Inference<'_> {
     /// Reduces an impl type to a concrete type.
-    fn reduce_impl_ty(&mut self, impl_type_id: ImplTypeId) -> InferenceResult<TypeId> {
+    pub fn reduce_impl_ty(&mut self, impl_type_id: ImplTypeId) -> InferenceResult<TypeId> {
         let reduced_impl = if let ImplId::ImplVar(var) = impl_type_id.impl_id() {
             self.solve_single_pending(var.id(self.db))?;
             self.rewrite(impl_type_id.impl_id()).no_err()
