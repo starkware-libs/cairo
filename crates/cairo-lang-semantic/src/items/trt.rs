@@ -1089,15 +1089,15 @@ pub fn priv_trait_function_body_data(
     let inference_id = InferenceId::LookupItemDefinition(LookupItemId::TraitItem(
         TraitItemId::Function(trait_function_id),
     ));
-    let resolver =
+    let mut resolver =
         Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
+    resolver.trait_or_impl_ctx = TraitOrImplContext::Trait(trait_id);
     let environment = trait_function_declaration_data.environment;
 
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(
         db,
         &mut diagnostics,
-        None,
         resolver,
         Some(&trait_function_declaration_data.signature),
         environment,

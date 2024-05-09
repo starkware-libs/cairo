@@ -163,7 +163,7 @@ impl SemanticTokenKind {
                         ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_) => {
                             SemanticTokenKind::Class
                         }
-                        ResolvedGenericItem::Variable(_, _) => SemanticTokenKind::Variable,
+                        ResolvedGenericItem::Variable(_) => SemanticTokenKind::Variable,
                     });
                 }
                 if let Some(item) =

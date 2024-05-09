@@ -547,8 +547,7 @@ pub fn extract_fixed_size_array_size(
                 db,
                 (resolver.data).clone_with_inference_id(db, resolver.inference_data.inference_id),
             );
-            let mut ctx =
-                ComputationContext::new(db, diagnostics, None, resolver, None, environment);
+            let mut ctx = ComputationContext::new(db, diagnostics, resolver, None, environment);
             let size_expr_syntax = size_clause.size(syntax_db);
             let size = compute_expr_semantic(&mut ctx, &size_expr_syntax, None);
             let (_, const_value) = resolve_const_expr_and_evaluate(

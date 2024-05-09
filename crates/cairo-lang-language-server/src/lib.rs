@@ -969,7 +969,7 @@ fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> S
         ResolvedGenericItem::TraitFunction(trait_function) => {
             trait_function.stable_ptr(db).untyped()
         }
-        ResolvedGenericItem::Variable(_item, var) => var.untyped_stable_ptr(db),
+        ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(db),
     }
 }
 

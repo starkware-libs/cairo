@@ -788,7 +788,7 @@ impl<'db> Resolver<'db> {
             }
             ResolvedGenericItem::Variant(_) => panic!("Variant is not a module item."),
             ResolvedGenericItem::TraitFunction(_) => panic!("TraitFunction is not a module item."),
-            ResolvedGenericItem::Variable(_, _) => panic!("Variable is not a module item."),
+            ResolvedGenericItem::Variable(_) => panic!("Variable is not a module item."),
         })
     }
 
@@ -1104,14 +1104,8 @@ impl<'db> Resolver<'db> {
                     resolver.add_generic_param(*param);
                 }
 
-                let mut ctx = ComputationContext::new(
-                    self.db,
-                    diagnostics,
-                    None,
-                    resolver,
-                    None,
-                    environment,
-                );
+                let mut ctx =
+                    ComputationContext::new(self.db, diagnostics, resolver, None, environment);
                 let value = compute_expr_semantic(&mut ctx, generic_arg_syntax, None);
 
                 let (_, const_value) = resolve_const_expr_and_evaluate(
