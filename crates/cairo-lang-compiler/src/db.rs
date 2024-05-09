@@ -91,7 +91,8 @@ impl RootDatabaseBuilder {
         Self {
             plugin_suite: get_default_plugin_suite(),
             auto_withdraw_gas: true,
-            ..Default::default()
+            project_config: None,
+            cfg_set: None,
         }
     }
 
