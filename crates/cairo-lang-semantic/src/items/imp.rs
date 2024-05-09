@@ -63,7 +63,7 @@ use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{add_type_based_diagnostics, implize_type, ImplTypeId};
+use crate::types::{add_type_based_diagnostics, ImplTypeId};
 use crate::{
     semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
     FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
@@ -1637,6 +1637,8 @@ pub fn priv_impl_function_declaration_data(
     );
 
     let inference = &mut resolver.inference();
+    // Check fully resolved.
+    inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
     let trait_function_id = validate_impl_function_signature(
         db,
         &mut diagnostics,
@@ -1657,10 +1659,6 @@ pub fn priv_impl_function_declaration_data(
     forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
 
     let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
-
-    // Check fully resolved.
-    let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
 
     let signature = inference.rewrite(signature).no_err();
     let generic_params = inference.rewrite(generic_params).no_err();
@@ -1761,12 +1759,15 @@ fn validate_impl_function_signature(
             },
         );
     }
-    let impl_ctx = Some(impl_def_id);
+    let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
+    let concrete_trait_signature =
+        SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
+            .rewrite(concrete_trait_signature)?;
     for (idx, (param, trait_param)) in
         izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {
-        let expected_ty = implize_type(db, trait_param.ty, impl_ctx, inference)?;
-        let actual_ty = implize_type(db, param.ty, impl_ctx, inference)?;
+        let expected_ty = inference.rewrite(trait_param.ty).no_err();
+        let actual_ty = inference.rewrite(param.ty).no_err();
 
         if expected_ty != actual_ty {
             diagnostics.report(
@@ -1818,8 +1819,8 @@ fn validate_impl_function_signature(
         diagnostics.report(signature_syntax, PassPanicAsNopanic { impl_function_id, trait_id });
     }
 
-    let expected_ty = implize_type(db, concrete_trait_signature.return_type, impl_ctx, inference)?;
-    let actual_ty = implize_type(db, signature.return_type, impl_ctx, inference)?;
+    let expected_ty = inference.rewrite(concrete_trait_signature.return_type).no_err();
+    let actual_ty = inference.rewrite(signature.return_type).no_err();
 
     if expected_ty != actual_ty {
         let location_ptr = match signature_syntax.ret_ty(syntax_db) {

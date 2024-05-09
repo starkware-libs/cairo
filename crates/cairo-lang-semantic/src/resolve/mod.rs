@@ -29,6 +29,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
@@ -40,12 +41,11 @@ use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
-    ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId,
-    ConcreteTraitTypeLongId,
+    ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
 use crate::items::{visibility, TraitOrImplContext};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{are_coupons_enabled, implize_type, resolve_type, ImplTypeId};
+use crate::types::{are_coupons_enabled, resolve_type, ImplTypeId};
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
     TypeId, TypeLongId,
@@ -620,13 +620,6 @@ impl<'db> Resolver<'db> {
                         )?))
                     }
                     TraitItemId::Type(trait_type_id) => {
-                        let concrete_trait_type = ConcreteTraitTypeLongId::new(
-                            self.db,
-                            *concrete_trait_id,
-                            trait_type_id,
-                        )
-                        .intern(self.db);
-
                         if let TraitOrImplContext::Trait(ctx_trait_id) = &self.trait_or_impl_ctx {
                             if trait_id == *ctx_trait_id {
                                 return Ok(ResolvedConcreteItem::Type(
@@ -634,6 +627,8 @@ impl<'db> Resolver<'db> {
                                 ));
                             }
                         }
+                        let concrete_trait_type =
+                            ConcreteTraitTypeId::new(self.db, *concrete_trait_id, trait_type_id);
 
                         let impl_lookup_context = self.impl_lookup_context();
                         let identifier_stable_ptr = identifier.stable_ptr().untyped();
@@ -651,14 +646,7 @@ impl<'db> Resolver<'db> {
                                     identifier_stable_ptr,
                                 )
                             })?;
-                        // Make sure the inference is solved for successful impl lookup in
-                        // `implize_type`.
-                        // Ignore the result of the `solve()` call - the error, if any, will be
-                        // reported later.
-                        self.inference().solve().ok();
-                        let ty = implize_type(self.db, ty, None, &mut self.inference())?;
-
-                        Ok(ResolvedConcreteItem::Type(ty))
+                        Ok(ResolvedConcreteItem::Type(self.inference().rewrite(ty).no_err()))
                     }
                     TraitItemId::Constant(_trait_constant_id) => {
                         // TODO(TomerStarkware): resolve trait constants when impl constants are
@@ -689,15 +677,11 @@ impl<'db> Resolver<'db> {
                         )?))
                     }
                     TraitItemId::Type(trait_type_id) => {
-                        let type_long_id =
-                            TypeLongId::ImplType(ImplTypeId::new(*impl_id, trait_type_id, self.db));
-
-                        let ty = implize_type(
-                            self.db,
-                            type_long_id.intern(self.db),
-                            self.trait_or_impl_ctx.impl_context(),
-                            &mut self.inference(),
-                        )?;
+                        let impl_type_id = ImplTypeId::new(*impl_id, trait_type_id, self.db);
+                        let ty = self
+                            .inference()
+                            .reduce_impl_ty(impl_type_id)
+                            .unwrap_or_else(|_| TypeLongId::ImplType(impl_type_id).intern(self.db));
                         Ok(ResolvedConcreteItem::Type(ty))
                     }
                     TraitItemId::Constant(_trait_constant_id) => {
