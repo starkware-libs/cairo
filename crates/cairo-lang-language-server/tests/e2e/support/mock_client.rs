@@ -165,11 +165,11 @@ impl MockClient {
                 self.output.recv().await.unwrap_or_else(|_| panic!("timeout: {message:?}"))
             {
                 match response_message {
+                    Message::Request(res) if res.id().is_none() => {
+                        // This looks like a notification, skip it.
+                    }
                     Message::Request(req) => {
                         panic!("unexpected request: {:?}", req)
-                    }
-                    Message::Response(res) if res.id() == &Id::Null => {
-                        // This looks like a notification, skip it.
                     }
                     Message::Response(res) => {
                         let (res_id, result) = res.into_parts();
