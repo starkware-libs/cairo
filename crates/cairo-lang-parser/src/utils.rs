@@ -1,12 +1,14 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::SyntaxFile;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Intern, Upcast};
+use smol_str::ToSmolStr;
 
 use crate::db::ParserDatabase;
 use crate::parser::Parser;
@@ -66,4 +68,21 @@ pub fn get_syntax_file_and_diagnostics(
     let mut diagnostics = DiagnosticsBuilder::default();
     let syntax_file = Parser::parse_file(db, &mut diagnostics, file_id, contents);
     (syntax_file, diagnostics.build())
+}
+
+pub trait ParsableInput {
+    fn as_file_id(&self, name: impl ToSmolStr, db: &dyn FilesGroup) -> FileId;
+}
+
+impl ParsableInput for String {
+    fn as_file_id(&self, name: impl ToSmolStr, db: &dyn FilesGroup) -> FileId {
+        FileLongId::Virtual(VirtualFile {
+            parent: None,
+            name: name.to_smolstr(),
+            content: Arc::new(self.clone()),
+            code_mappings: Default::default(),
+            kind: FileKind::Module,
+        })
+        .intern(db)
+    }
 }
