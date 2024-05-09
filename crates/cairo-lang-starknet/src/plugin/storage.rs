@@ -438,13 +438,14 @@ fn handle_nonlegacy_mapping_storage_member(
     pub mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
-        impl Storage{member_state_name}AsPathImpl of {STORAGE_AS_PATH_TRAIT}<{member_state_name}, \
-         $type_path$> {{
+        impl Storage{member_state_name}AsPathImpl of {STORAGE_AS_PATH_TRAIT}<{member_state_name}> \
+         {{
+            type Value = $type_path$;
             fn as_path(self: @{member_state_name}) -> starknet::storage::StoragePath<$type_path$> \
          {{
                     starknet::storage::StoragePath::<$type_path$> {{ hash_state:
-                        \
-         core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), {address})
+                        core::hash::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), \
+         {address})
                      }}
 
                 }}

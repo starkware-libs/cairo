@@ -57,6 +57,12 @@ impl StorageAddressSerde of Serde<StorageAddress> {
     }
 }
 
+impl StorageBaseAddressIntoFelt252 of Into<StorageBaseAddress, felt252> {
+    fn into(self: StorageBaseAddress) -> felt252 {
+        storage_address_to_felt252(storage_address_from_base(self))
+    }
+}
+
 impl DebugStorageAddress = core::fmt::into_felt252_based::DebugImpl<StorageAddress>;
 impl DebugStorageBaseAddress of core::fmt::Debug<StorageBaseAddress> {
     fn fmt(self: @StorageBaseAddress, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
