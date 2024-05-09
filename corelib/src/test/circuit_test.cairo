@@ -1,5 +1,6 @@
 use core::circuit::{
-    RangeCheck96, u96, CircuitElement, CircuitInput, CircuitDefinition, circuit_add
+    RangeCheck96, AddModBuiltin, MulModBuiltin, u96, CircuitElement, CircuitInput,
+    CircuitDefinition, circuit_add
 };
 
 #[test]
@@ -9,8 +10,10 @@ fn test_u96() {
 
 
 #[test]
-fn test_rc96() {
+fn test_builtins() {
     core::internal::require_implicit::<RangeCheck96>();
+    core::internal::require_implicit::<AddModBuiltin>();
+    core::internal::require_implicit::<MulModBuiltin>();
 }
 
 #[test]

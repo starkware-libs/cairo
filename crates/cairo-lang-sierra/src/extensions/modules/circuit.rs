@@ -15,7 +15,7 @@ use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
     args_as_single_type, args_as_single_value, extract_type_generic_args, ConcreteType, NamedType,
-    OutputVarReferenceInfo, SpecializationError,
+    NoGenericArgsGenericType, OutputVarReferenceInfo, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -23,6 +23,8 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 define_type_hierarchy! {
     pub enum CircuitType {
+        AddModBuiltin(AddModBuiltinType),
+        MulModBuiltin(MulModBuiltinType),
         AddModGate(AddModGate),
         CircuitData(CircuitData),
         CircuitDescriptor(CircuitDescriptor),
@@ -465,3 +467,24 @@ impl SignatureAndTypeGenericLibfunc for GetCircuitDescriptorLibFuncWrapped {
 
 pub type GetCircuitDescriptorLibFunc =
     WrapSignatureAndTypeGenericLibfunc<GetCircuitDescriptorLibFuncWrapped>;
+/// Type for add mod builtin.
+#[derive(Default)]
+pub struct AddModBuiltinType {}
+impl NoGenericArgsGenericType for AddModBuiltinType {
+    const ID: GenericTypeId = GenericTypeId::new_inline("AddModBuiltin");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = false;
+    const DROPPABLE: bool = false;
+    const ZERO_SIZED: bool = false;
+}
+
+/// Type for mul mod builtin.
+#[derive(Default)]
+pub struct MulModBuiltinType {}
+impl NoGenericArgsGenericType for MulModBuiltinType {
+    const ID: GenericTypeId = GenericTypeId::new_inline("MulModBuiltin");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = false;
+    const DROPPABLE: bool = false;
+    const ZERO_SIZED: bool = false;
+}

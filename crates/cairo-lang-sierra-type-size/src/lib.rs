@@ -82,7 +82,9 @@ pub fn get_type_size_map(
 
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitInputAccumulator(_)) => Some(2),
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitData(_))
-            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitDescriptor(_)) => Some(1),
+            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitDescriptor(_))
+            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::AddModBuiltin(_))
+            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::MulModBuiltin(_)) => Some(1),
 
             // Const and circuit types are not moved around and should not have a size.
             CoreTypeConcrete::Const(_)
