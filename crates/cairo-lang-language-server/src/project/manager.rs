@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt;
 use std::path::Path;
 
@@ -34,13 +35,11 @@ use crate::toolchain::scarb::ScarbToolchain;
 /// As an output of processing these events, the manager updates the analysis database inputs with
 /// the new state of projects, via the [`ProjectManager::apply_db_changes`] method.
 pub struct ProjectManager {
-    // FIXME(mkaput): Projects must be sorted from the most specific to the least specific,
-    //   so that linear scanning for project related to a file would be correct.
     // FIXME(mkaput): Scarb workspace have an ability to self-modify their root path, and thus
     //   it is possible, that duplicate projects could happen during the lifetime of the server.
     //   These need to be deduplicated.
     /// List of loaded projects.
-    projects: Vec<Box<dyn Project>>,
+    projects: ProjectsCollection,
 
     /// The unmanaged `core` crate manager.
     unmanaged_core_crate: UnmanagedCoreCrate,
@@ -70,7 +69,7 @@ impl ProjectManager {
             Some(manifest_path) => {
                 debug!("loading project: {}", manifest_path.as_path().display());
                 let project = self.initialize_project(manifest_path);
-                self.projects.push(project);
+                self.projects.insert(project);
             }
             None if is_cairo_file(path) => {
                 // TODO(mkaput): Implement detached files.
@@ -141,4 +140,59 @@ impl fmt::Debug for ProjectManager {
 
 fn is_cairo_file(path: &Path) -> bool {
     path.extension().map_or(false, |ext| ext == CAIRO_FILE_EXTENSION)
+}
+
+/// A list of loaded projects, sorted by project specificity.
+///
+/// Project specificity is determined by its main manifest file path.
+/// Projects that are nested in another project directory are considered more specific.
+#[derive(Default)]
+struct ProjectsCollection(Vec<Box<dyn Project>>);
+
+impl ProjectsCollection {
+    /// Inserts an element to the collection, ensuring the sorting invariant is preserved.
+    fn insert(&mut self, project: Box<dyn Project>) {
+        self.0.push(project);
+        self.0.sort_unstable_by(|a, b| {
+            let a = a.main_manifest_file();
+            let a_dir = a.parent().unwrap_or(a);
+            let b = b.main_manifest_file();
+            let b_dir = b.parent().unwrap_or(b);
+            if a_dir.starts_with(b_dir) {
+                Ordering::Less
+            } else if b_dir.starts_with(a_dir) {
+                Ordering::Greater
+            } else {
+                a.cmp(b)
+            }
+        })
+    }
+
+    /// Returns an iterator over the list.
+    fn iter(&self) -> std::slice::Iter<'_, Box<dyn Project>> {
+        self.0.iter()
+    }
+
+    /// Returns an iterator that allows modifying each value.
+    fn iter_mut(&mut self) -> std::slice::IterMut<'_, Box<dyn Project>> {
+        self.0.iter_mut()
+    }
+}
+
+impl<'a> IntoIterator for &'a ProjectsCollection {
+    type Item = &'a Box<dyn Project>;
+    type IntoIter = std::slice::Iter<'a, Box<dyn Project>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut ProjectsCollection {
+    type Item = &'a mut Box<dyn Project>;
+    type IntoIter = std::slice::IterMut<'a, Box<dyn Project>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
 }

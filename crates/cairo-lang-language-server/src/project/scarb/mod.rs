@@ -96,6 +96,13 @@ impl Project for ScarbWorkspace {
             .collect()
     }
 
+    fn main_manifest_file(&self) -> &Path {
+        match &self.metadata {
+            Some(metadata) => metadata.workspace.manifest_path.as_std_path(),
+            None => &self.manifest_path,
+        }
+    }
+
     fn reload(&mut self) {
         self.do_reload();
     }

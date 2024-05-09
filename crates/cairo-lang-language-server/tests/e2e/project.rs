@@ -6,7 +6,7 @@ use crate::support::normalize::normalize;
 use crate::support::sandbox;
 
 cairo_lang_test_utils::test_file_test!(
-    hover,
+    project,
     "tests/test_data/project",
     {
         cairo_projects: "cairo_projects.txt",
