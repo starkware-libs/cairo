@@ -19,11 +19,7 @@ use crate::plugin::PluginSuite;
 
 /// Gets the default plugin suite to load into the Cairo compiler.
 pub fn get_default_plugin_suite() -> PluginSuite {
-    let mut suite = PluginSuite {
-        plugins: get_base_plugins(),
-        inline_macro_plugins: Default::default(),
-        analyzer_plugins: Default::default(),
-    };
+    let mut suite = PluginSuite { plugins: get_base_plugins(), ..Default::default() };
     suite
         .add_inline_macro_plugin::<ArrayMacro>()
         .add_inline_macro_plugin::<AssertMacro>()

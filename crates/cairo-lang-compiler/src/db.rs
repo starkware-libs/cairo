@@ -77,7 +77,7 @@ impl Default for RootDatabase {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct RootDatabaseBuilder {
     plugin_suite: PluginSuite,
     detect_corelib: bool,
@@ -90,10 +90,8 @@ impl RootDatabaseBuilder {
     fn new() -> Self {
         Self {
             plugin_suite: get_default_plugin_suite(),
-            detect_corelib: false,
             auto_withdraw_gas: true,
-            project_config: None,
-            cfg_set: None,
+            ..Default::default()
         }
     }
 
