@@ -713,9 +713,9 @@ pub fn priv_impl_definition_data(
     // functions out.
     let impl_item_names: OrderedHashSet<SmolStr> = item_id_by_name.keys().cloned().collect();
     let trait_id = concrete_trait.lookup_intern(db).trait_id;
-    let trait_item_names = db.trait_item_names(trait_id)?;
+    let trait_required_item_names = db.trait_required_item_names(trait_id)?;
     let missing_items_in_impl =
-        trait_item_names.difference(&impl_item_names).cloned().collect::<Vec<_>>();
+        trait_required_item_names.difference(&impl_item_names).cloned().collect::<Vec<_>>();
     if !missing_items_in_impl.is_empty() {
         diagnostics.report(
             // TODO(yuval): change this to point to impl declaration (need to add ImplDeclaration

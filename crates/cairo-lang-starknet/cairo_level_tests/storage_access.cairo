@@ -12,9 +12,6 @@ impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
         storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs)
     }
-    fn ne(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
-        !(storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs))
-    }
 }
 
 #[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]

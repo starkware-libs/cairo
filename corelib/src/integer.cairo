@@ -206,10 +206,6 @@ impl U128PartialEq of PartialEq<u128> {
     fn eq(lhs: @u128, rhs: @u128) -> bool {
         u128_eq(*lhs, *rhs)
     }
-    #[inline(always)]
-    fn ne(lhs: @u128, rhs: @u128) -> bool {
-        !(*lhs == *rhs)
-    }
 }
 
 impl U128PartialOrd of PartialOrd<u128> {
@@ -287,10 +283,6 @@ impl U8PartialEq of PartialEq<u8> {
     #[inline(always)]
     fn eq(lhs: @u8, rhs: @u8) -> bool {
         u8_eq(*lhs, *rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: @u8, rhs: @u8) -> bool {
-        !(*lhs == *rhs)
     }
 }
 
@@ -482,10 +474,6 @@ impl U16PartialEq of PartialEq<u16> {
     #[inline(always)]
     fn eq(lhs: @u16, rhs: @u16) -> bool {
         u16_eq(*lhs, *rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: @u16, rhs: @u16) -> bool {
-        !(*lhs == *rhs)
     }
 }
 
@@ -684,10 +672,6 @@ impl U32PartialEq of PartialEq<u32> {
     fn eq(lhs: @u32, rhs: @u32) -> bool {
         u32_eq(*lhs, *rhs)
     }
-    #[inline(always)]
-    fn ne(lhs: @u32, rhs: @u32) -> bool {
-        !(*lhs == *rhs)
-    }
 }
 
 impl U32PartialOrd of PartialOrd<u32> {
@@ -884,10 +868,6 @@ impl U64PartialEq of PartialEq<u64> {
     #[inline(always)]
     fn eq(lhs: @u64, rhs: @u64) -> bool {
         u64_eq(*lhs, *rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: @u64, rhs: @u64) -> bool {
-        !(*lhs == *rhs)
     }
 }
 
@@ -1937,10 +1917,6 @@ impl I8PartialEq of PartialEq<i8> {
     fn eq(lhs: @i8, rhs: @i8) -> bool {
         i8_eq(*lhs, *rhs)
     }
-    #[inline(always)]
-    fn ne(lhs: @i8, rhs: @i8) -> bool {
-        !(*lhs == *rhs)
-    }
 }
 
 extern fn i8_overflowing_add_impl(
@@ -2042,10 +2018,6 @@ impl I16PartialEq of PartialEq<i16> {
     #[inline(always)]
     fn eq(lhs: @i16, rhs: @i16) -> bool {
         i16_eq(*lhs, *rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: @i16, rhs: @i16) -> bool {
-        !(*lhs == *rhs)
     }
 }
 
@@ -2149,10 +2121,6 @@ impl I32PartialEq of PartialEq<i32> {
     fn eq(lhs: @i32, rhs: @i32) -> bool {
         i32_eq(*lhs, *rhs)
     }
-    #[inline(always)]
-    fn ne(lhs: @i32, rhs: @i32) -> bool {
-        !(*lhs == *rhs)
-    }
 }
 
 extern fn i32_overflowing_add_impl(
@@ -2254,10 +2222,6 @@ impl I64PartialEq of PartialEq<i64> {
     #[inline(always)]
     fn eq(lhs: @i64, rhs: @i64) -> bool {
         i64_eq(*lhs, *rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: @i64, rhs: @i64) -> bool {
-        !(*lhs == *rhs)
     }
 }
 
