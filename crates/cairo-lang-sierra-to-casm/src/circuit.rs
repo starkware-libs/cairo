@@ -22,6 +22,7 @@ impl CircuitsInfo {
         type_ids: impl Iterator<Item = &'a ConcreteTypeId>,
     ) -> Result<Self, CompilationError> {
         let mut res = Self::default();
+
         for ty in type_ids {
             if let CoreTypeConcrete::Circuit(CircuitTypeConcrete::Circuit(ConcreteCircuit {
                 circuit_info,

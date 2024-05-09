@@ -9,7 +9,9 @@ use cairo_lang_sierra::extensions::bounded_int::{
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
-use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo};
+use cairo_lang_sierra::extensions::circuit::{
+    CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE,
+};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
@@ -479,6 +481,26 @@ pub fn core_libfunc_cost(
         },
         Circuit(CircuitConcreteLibfunc::FillInput(_)) => {
             vec![ConstCost::steps(7).into(), ConstCost::steps(8).into()]
+        }
+        Circuit(CircuitConcreteLibfunc::Eval(libfunc)) => {
+            let info = info_provider.circuit_info(&libfunc.ty);
+
+            let mut steps: i32 = 1;
+            let instance_size: i32 = BUILTIN_INSTANCE_SIZE.try_into().unwrap();
+
+            if !info.add_offsets.is_empty() {
+                steps += instance_size;
+            }
+
+            if !info.mul_offsets.is_empty() {
+                steps += instance_size;
+            }
+
+            if info.one_needed {
+                steps += 4;
+            }
+
+            vec![ConstCost::steps(steps).into()]
         }
         Circuit(CircuitConcreteLibfunc::GetDescriptor(_)) => {
             vec![ConstCost::steps(6).into()]
