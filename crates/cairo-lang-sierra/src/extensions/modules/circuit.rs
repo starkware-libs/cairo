@@ -5,6 +5,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use num_bigint::BigInt;
 use num_traits::{One, ToPrimitive, Zero};
 
+use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheck96Type;
 use super::structure::StructType;
 use crate::extensions::bounded_int::bounded_int_ty;
@@ -23,6 +24,9 @@ use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
+/// The size of a builtin instance.
+pub const BUILTIN_INSTANCE_SIZE: usize = 7;
+
 define_type_hierarchy! {
     pub enum CircuitType {
         AddMod(AddModType),
@@ -40,6 +44,7 @@ define_type_hierarchy! {
 define_libfunc_hierarchy! {
     pub enum CircuitLibFunc {
          FillInput(FillCircuitInputLibFunc),
+         Eval(EvalCircuitLibFunc),
          GetDescriptor(GetCircuitDescriptorLibFunc),
          InitCircuitData(InitCircuitDataLibFunc),
     }, CircuitConcreteLibfunc
@@ -578,8 +583,83 @@ impl SignatureAndTypeGenericLibfunc for GetCircuitDescriptorLibFuncWrapped {
     }
 }
 
+/// Helper for u384 type def.
+fn get_u384_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let u96_ty = bounded_int_ty(context, BigInt::zero(), BigInt::one().shl(96) - 1)?;
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::circuit::u384")),
+            GenericArg::Type(u96_ty.clone()),
+            GenericArg::Type(u96_ty.clone()),
+            GenericArg::Type(u96_ty.clone()),
+            GenericArg::Type(u96_ty),
+        ],
+    )
+}
+
 pub type GetCircuitDescriptorLibFunc =
     WrapSignatureAndTypeGenericLibfunc<GetCircuitDescriptorLibFuncWrapped>;
+
+/// A zero-input function that returns an handle to the offsets of a circuit.
+#[derive(Default)]
+pub struct EvalCircuitLibFuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
+    const STR_ID: &'static str = "eval_circuit";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let add_mod_builtin_ty = context.get_concrete_type(AddModType::id(), &[])?;
+        let mul_mod_builtin_ty = context.get_concrete_type(MulModType::id(), &[])?;
+
+        let circuit_descriptor_ty =
+            context.get_concrete_type(CircuitDescriptor::id(), &[GenericArg::Type(ty.clone())])?;
+        let circuit_data_ty =
+            context.get_concrete_type(CircuitData::id(), &[GenericArg::Type(ty.clone())])?;
+
+        let zero = bounded_int_ty(context, BigInt::zero(), BigInt::zero())?;
+        let one = bounded_int_ty(context, BigInt::one(), BigInt::one())?;
+
+        Ok(LibfuncSignature::new_non_branch(
+            vec![
+                add_mod_builtin_ty.clone(),
+                mul_mod_builtin_ty.clone(),
+                circuit_descriptor_ty,
+                circuit_data_ty,
+                nonzero_ty(context, &get_u384_type(context)?)?,
+                zero,
+                one,
+            ],
+            vec![
+                OutputVarInfo {
+                    ty: add_mod_builtin_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: mul_mod_builtin_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 1,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: context.get_concrete_type(CircuitOutput::id(), &[GenericArg::Type(ty)])?,
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+pub type EvalCircuitLibFunc = WrapSignatureAndTypeGenericLibfunc<EvalCircuitLibFuncWrapped>;
+
 /// Type for add mod builtin.
 #[derive(Default)]
 pub struct AddModType {}

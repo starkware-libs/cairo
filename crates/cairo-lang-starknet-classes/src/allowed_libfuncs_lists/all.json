@@ -59,6 +59,7 @@
         "enum_from_bounded_int",
         "enum_match",
         "enum_snapshot_match",
+        "eval_circuit",
         "felt252_add",
         "felt252_add_const",
         "felt252_const",
