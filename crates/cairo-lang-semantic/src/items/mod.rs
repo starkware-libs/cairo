@@ -63,18 +63,7 @@ pub enum TraitOrImplContext {
     /// The context is of an impl.
     Impl(ImplDefId),
 }
-impl TraitOrImplContext {
-    /// Returns the context as a trait context, if the context is indeed a trait context, or None
-    /// otherwise.
-    pub fn trait_context(&self) -> Option<TraitId> {
-        try_extract_matches!(*self, TraitOrImplContext::Trait)
-    }
-    /// Returns the context as an impl context, if the context is indeed an impl context, or None
-    /// otherwise.
-    pub fn impl_context(&self) -> Option<ImplDefId> {
-        try_extract_matches!(*self, TraitOrImplContext::Impl)
-    }
-}
+
 impl DebugWithDb<dyn SemanticGroup> for TraitOrImplContext {
     fn fmt(
         &self,

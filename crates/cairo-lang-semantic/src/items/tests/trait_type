@@ -1207,30 +1207,30 @@ fn bar3() {
 }
 
 //! > expected_diagnostics
-error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVar(test::AnotherTrait)::AnotherType`.
- --> lib.cairo:9:18
-    fn foo1() -> AnotherTrait::AnotherType {
-                 ^***********************^
-
 error: Trait has no implementation in context: test::AnotherTrait.
  --> lib.cairo:9:32
     fn foo1() -> AnotherTrait::AnotherType {
                                ^*********^
+
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVar(test::AnotherTrait)::AnotherType`.
+ --> lib.cairo:9:18
+    fn foo1() -> AnotherTrait::AnotherType {
+                 ^***********************^
 
 error: Unexpected return type. Expected: "ImplVar(test::AnotherTrait)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:9:44
     fn foo1() -> AnotherTrait::AnotherType {
                                            ^
 
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVar(test::AnotherTrait)::AnotherType`.
- --> lib.cairo:12:16
-    fn foo2(x: AnotherTrait::AnotherType) {}
-               ^***********************^
-
 error: Trait has no implementation in context: test::AnotherTrait.
  --> lib.cairo:12:30
     fn foo2(x: AnotherTrait::AnotherType) {}
                              ^*********^
+
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVar(test::AnotherTrait)::AnotherType`.
+ --> lib.cairo:12:16
+    fn foo2(x: AnotherTrait::AnotherType) {}
+               ^***********************^
 
 error: Trait has no implementation in context: test::AnotherTrait.
  --> lib.cairo:14:28
@@ -1301,30 +1301,30 @@ fn bar3() {
 }
 
 //! > expected_diagnostics
-error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVar(test::AnotherTrait)::AnotherType`.
- --> lib.cairo:15:18
-    fn foo1() -> AnotherTrait::AnotherType {
-                 ^***********************^
-
 error: Trait `test::AnotherTrait` has multiple implementations, in: `test::AnotherImpl1`, `test::AnotherImpl2`
  --> lib.cairo:15:32
     fn foo1() -> AnotherTrait::AnotherType {
                                ^*********^
+
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVar(test::AnotherTrait)::AnotherType`.
+ --> lib.cairo:15:18
+    fn foo1() -> AnotherTrait::AnotherType {
+                 ^***********************^
 
 error: Unexpected return type. Expected: "ImplVar(test::AnotherTrait)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:15:44
     fn foo1() -> AnotherTrait::AnotherType {
                                            ^
 
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVar(test::AnotherTrait)::AnotherType`.
- --> lib.cairo:18:16
-    fn foo2(x: AnotherTrait::AnotherType) {}
-               ^***********************^
-
 error: Trait `test::AnotherTrait` has multiple implementations, in: `test::AnotherImpl1`, `test::AnotherImpl2`
  --> lib.cairo:18:30
     fn foo2(x: AnotherTrait::AnotherType) {}
                              ^*********^
+
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVar(test::AnotherTrait)::AnotherType`.
+ --> lib.cairo:18:16
+    fn foo2(x: AnotherTrait::AnotherType) {}
+               ^***********************^
 
 error: Trait `test::AnotherTrait` has multiple implementations, in: `test::AnotherImpl1`, `test::AnotherImpl2`
  --> lib.cairo:20:28
