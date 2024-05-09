@@ -412,6 +412,7 @@ pub fn trait_semantic_definition_diagnostics(
     diagnostics.extend(data.diagnostics);
     for trait_function_id in data.function_asts.keys() {
         diagnostics.extend(db.trait_function_declaration_diagnostics(*trait_function_id));
+        diagnostics.extend(db.trait_function_body_diagnostics(*trait_function_id));
     }
     for trait_type_id in data.item_type_asts.keys() {
         diagnostics.extend(db.trait_type_diagnostics(*trait_type_id));
@@ -423,12 +424,24 @@ pub fn trait_semantic_definition_diagnostics(
     diagnostics.build()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_item_names].
-pub fn trait_item_names(
+/// Query implementation of [crate::db::SemanticGroup::trait_required_item_names].
+pub fn trait_required_item_names(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
 ) -> Maybe<OrderedHashSet<SmolStr>> {
-    Ok(db.priv_trait_definition_data(trait_id)?.item_id_by_name.keys().cloned().collect())
+    let mut required_items = OrderedHashSet::<_>::default();
+    for (item_name, item_id) in db.priv_trait_definition_data(trait_id)?.item_id_by_name.iter() {
+        if match item_id {
+            TraitItemId::Function(id) => {
+                let body = id.stable_ptr(db.upcast()).lookup(db.upcast()).body(db.upcast());
+                matches!(body, ast::MaybeTraitFunctionBody::None(_))
+            }
+            TraitItemId::Type(_) | TraitItemId::Constant(_) => true,
+        } {
+            required_items.insert(item_name.clone());
+        }
+    }
+    Ok(required_items)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_item_by_name].
@@ -961,13 +974,6 @@ pub fn priv_trait_function_declaration_data(
         &signature,
         &signature_syntax,
     );
-    // Validate trait function body is empty.
-    if matches!(function_syntax.body(syntax_db), ast::MaybeTraitFunctionBody::Some(_)) {
-        diagnostics.report(
-            &function_syntax.body(syntax_db),
-            TraitFunctionWithBody { trait_id, function_id: trait_function_id },
-        );
-    }
 
     let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);

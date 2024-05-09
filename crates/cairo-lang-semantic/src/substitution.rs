@@ -20,6 +20,7 @@ use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
+    TraitDefaultGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{ImplId, UninferredImpl};
@@ -287,6 +288,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteFunctionWithBodyId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplGenericFunctionId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplGenericFunctionWithBodyId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, TraitDefaultGenericFunctionWithBodyId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplVar, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplVarId, $($exclude)*);
         $crate::prune_single!(__regular_helper, Parameter, $($exclude)*);
@@ -402,7 +404,7 @@ add_basic_rewrites!(
     <'a>,
     SubstitutionRewriter<'a>,
     DiagnosticAdded,
-    @exclude TypeId TypeLongId ImplId ConstValue
+    @exclude TypeId TypeLongId ImplId ConstValue GenericFunctionId
 );
 
 impl<'a> SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'a> {
@@ -477,6 +479,24 @@ impl<'a> SemanticRewriter<ImplId, DiagnosticAdded> for SubstitutionRewriter<'a> 
             }
         } else if value.is_fully_concrete(self.db) {
             return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
+impl<'a> SemanticRewriter<GenericFunctionId, DiagnosticAdded> for SubstitutionRewriter<'a> {
+    fn internal_rewrite(&mut self, value: &mut GenericFunctionId) -> Maybe<RewriteResult> {
+        if let GenericFunctionId::Trait(id) = value {
+            if let Some(self_impl) = &self.substitution.self_impl {
+                let id_rewritten = self.internal_rewrite(id)?;
+                if id.concrete_trait(self.db.upcast()) == self_impl.concrete_trait(self.db)? {
+                    *value = GenericFunctionId::Impl(ImplGenericFunctionId {
+                        impl_id: *self_impl,
+                        function: id.trait_function(self.db),
+                    });
+                    return Ok(RewriteResult::Modified);
+                }
+                return Ok(id_rewritten);
+            }
         }
         value.default_rewrite(self)
     }

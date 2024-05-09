@@ -54,14 +54,13 @@ pub trait DivRem<T> {
 
 pub trait PartialEq<T> {
     fn eq(lhs: @T, rhs: @T) -> bool;
-    fn ne(lhs: @T, rhs: @T) -> bool;
+    fn ne(lhs: @T, rhs: @T) -> bool {
+        !Self::eq(lhs, rhs)
+    }
 }
 impl PartialEqSnap<T, +PartialEq<T>> of PartialEq<@T> {
     fn eq(lhs: @@T, rhs: @@T) -> bool {
         PartialEq::<T>::eq(*lhs, *rhs)
-    }
-    fn ne(lhs: @@T, rhs: @@T) -> bool {
-        PartialEq::<T>::ne(*lhs, *rhs)
     }
 }
 
@@ -217,10 +216,6 @@ impl TupleSize1PartialEq<E0, +PartialEq<E0>> of PartialEq<(E0,)> {
         let (rhs,) = rhs;
         lhs == rhs
     }
-    #[inline(always)]
-    fn ne(lhs: @(E0,), rhs: @(E0,)) -> bool {
-        !(rhs == lhs)
-    }
 }
 
 impl TupleSize2PartialEq<E0, E1, +PartialEq<E0>, +PartialEq<E1>> of PartialEq<(E0, E1)> {
@@ -229,10 +224,6 @@ impl TupleSize2PartialEq<E0, E1, +PartialEq<E0>, +PartialEq<E1>> of PartialEq<(E
         let (lhs0, lhs1) = lhs;
         let (rhs0, rhs1) = rhs;
         lhs0 == rhs0 && lhs1 == rhs1
-    }
-    #[inline(always)]
-    fn ne(lhs: @(E0, E1), rhs: @(E0, E1)) -> bool {
-        !(rhs == lhs)
     }
 }
 
@@ -245,10 +236,6 @@ impl TupleSize3PartialEq<
         let (rhs0, rhs1, rhs2) = rhs;
         lhs0 == rhs0 && lhs1 == rhs1 && lhs2 == rhs2
     }
-    #[inline(always)]
-    fn ne(lhs: @(E0, E1, E2), rhs: @(E0, E1, E2)) -> bool {
-        !(rhs == lhs)
-    }
 }
 
 impl TupleSize4PartialEq<
@@ -259,10 +246,6 @@ impl TupleSize4PartialEq<
         let (lhs0, lhs1, lhs2, lhs3) = lhs;
         let (rhs0, rhs1, rhs2, rhs3) = rhs;
         lhs0 == rhs0 && lhs1 == rhs1 && lhs2 == rhs2 && lhs3 == rhs3
-    }
-    #[inline(always)]
-    fn ne(lhs: @(E0, E1, E2, E3), rhs: @(E0, E1, E2, E3)) -> bool {
-        !(rhs == lhs)
     }
 }
 

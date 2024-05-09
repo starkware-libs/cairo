@@ -892,7 +892,7 @@ fn find_definition(
             )
             .intern(db);
             return Some(resolved_generic_item_def(
-                db.upcast(),
+                db,
                 ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id)),
             ));
         }
@@ -901,7 +901,7 @@ fn find_definition(
         if let Some(item) =
             db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
-            return Some(resolved_generic_item_def(db.upcast(), item));
+            return Some(resolved_generic_item_def(db, item));
         } else if let Some(item) =
             db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
@@ -932,14 +932,18 @@ fn resolved_concrete_item_def(
 }
 
 #[tracing::instrument(level = "trace", skip_all)]
-fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> SyntaxStablePtrId {
+fn resolved_generic_item_def(
+    db: &dyn SemanticGroup,
+    item: ResolvedGenericItem,
+) -> SyntaxStablePtrId {
+    let defs_db = db.upcast();
     match item {
-        ResolvedGenericItem::Constant(item) => item.untyped_stable_ptr(db),
+        ResolvedGenericItem::Constant(item) => item.untyped_stable_ptr(defs_db),
         ResolvedGenericItem::Module(module_id) => {
             // Check if the module is an inline submodule.
             if let ModuleId::Submodule(submodule_id) = module_id {
                 if let ast::MaybeModuleBody::Some(submodule_id) =
-                    submodule_id.stable_ptr(db.upcast()).lookup(db.upcast()).body(db.upcast())
+                    submodule_id.stable_ptr(defs_db).lookup(db.upcast()).body(db.upcast())
                 {
                     // Inline module.
                     return submodule_id.stable_ptr().untyped();
@@ -957,19 +961,20 @@ fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> S
                     // Note: Only the trait title is returned.
                     FunctionTitleId::Trait(id.function)
                 }
+                GenericFunctionId::Trait(id) => FunctionTitleId::Trait(id.trait_function(db)),
             };
-            title.untyped_stable_ptr(db)
+            title.untyped_stable_ptr(defs_db)
         }
-        ResolvedGenericItem::GenericType(generic_type) => generic_type.untyped_stable_ptr(db),
-        ResolvedGenericItem::GenericTypeAlias(type_alias) => type_alias.untyped_stable_ptr(db),
-        ResolvedGenericItem::GenericImplAlias(impl_alias) => impl_alias.untyped_stable_ptr(db),
-        ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(db).untyped(),
-        ResolvedGenericItem::Trait(trt) => trt.stable_ptr(db).untyped(),
-        ResolvedGenericItem::Impl(imp) => imp.stable_ptr(db).untyped(),
+        ResolvedGenericItem::GenericType(generic_type) => generic_type.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::GenericTypeAlias(type_alias) => type_alias.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::GenericImplAlias(impl_alias) => impl_alias.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(defs_db).untyped(),
+        ResolvedGenericItem::Trait(trt) => trt.stable_ptr(defs_db).untyped(),
+        ResolvedGenericItem::Impl(imp) => imp.stable_ptr(defs_db).untyped(),
         ResolvedGenericItem::TraitFunction(trait_function) => {
-            trait_function.stable_ptr(db).untyped()
+            trait_function.stable_ptr(defs_db).untyped()
         }
-        ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(db),
+        ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(defs_db),
     }
 }
 
