@@ -1,3 +1,4 @@
+use std::fmt;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
@@ -109,5 +110,12 @@ impl Project for ScarbWorkspace {
         } else {
             trace!("metadata has not been yet loaded, skipping");
         }
+    }
+}
+
+impl fmt::Debug for ScarbWorkspace {
+    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // TODO(mkaput): Implement this.
+        todo!();
     }
 }
