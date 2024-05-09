@@ -66,8 +66,8 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
-    add_type_based_diagnostics, are_coupons_enabled, extract_fixed_size_array_size, implize_type,
-    peel_snapshots, resolve_type, verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
+    add_type_based_diagnostics, are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots,
+    resolve_type, verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
 };
 use crate::{
     ConcreteEnumId, GenericArgumentId, GenericParam, Member, Mutability, Parameter,
@@ -209,17 +209,6 @@ impl<'ctx> ComputationContext<'ctx> {
 
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
         self.resolver.inference().rewrite(ty).no_err()
-    }
-
-    /// Tries to implize a type, according to the computation context. See [implize_type] for more
-    /// details.
-    fn implize_type(&mut self, type_to_reduce: TypeId) -> Maybe<TypeId> {
-        implize_type(
-            self.db,
-            type_to_reduce,
-            self.resolver.data.trait_or_impl_ctx.impl_context(),
-            &mut self.resolver.inference(),
-        )
     }
 
     /// Applies inference rewriter to all the expressions in the computation context, and adds
@@ -372,15 +361,13 @@ pub fn maybe_compute_expr_semantic(
         }
     }?;
     if let Some(ResultType { ty: result_type, stable_ptr: result_type_stable_ptr }) = result_type {
-        let actual_ty = ctx.reduce_ty(expr.ty());
-        let result_type = ctx.implize_type(result_type)?;
         let inference = &mut ctx.resolver.inference();
-        if let Err(err_set) = inference.conform_ty(actual_ty, result_type) {
+        if let Err((err_set, actual_ty, expected_ty)) =
+            inference.conform_ty_for_diag(expr.ty(), result_type)
+        {
             inference.report_modified_if_pending(err_set, || {
-                ctx.diagnostics.report(
-                    result_type_stable_ptr,
-                    WrongExprType { expected_ty: result_type, actual_ty },
-                )
+                ctx.diagnostics
+                    .report(result_type_stable_ptr, WrongExprType { expected_ty, actual_ty })
             });
         }
     };
@@ -450,10 +437,12 @@ fn compute_expr_unary_semantic(
                     // compute_expr_semantic (by rewriting the diagnostic or by delaying the
                     // reporting here). The same happens in other wrapping
                     // expressions like tuples and more.
-                    if let Err(err_set) = inference.conform_ty(actual_ty, result_type) {
+                    if let Err((err_set, actual_ty, expected_ty)) =
+                        inference.conform_ty_for_diag(actual_ty, result_type)
+                    {
                         let diag_added = ctx.diagnostics.report(
                             result_type_stable_ptr,
-                            WrongExprType { expected_ty: result_type, actual_ty },
+                            WrongExprType { expected_ty, actual_ty },
                         );
                         inference.consume_reported_error(err_set, diag_added);
                     }
@@ -481,15 +470,12 @@ fn compute_expr_unary_semantic(
                     let inner_result_type =
                         inference.new_type_var(Some(syntax.expr(syntax_db).stable_ptr().untyped()));
                     let snapped_result_type = TypeLongId::Snapshot(result_type).intern(ctx.db);
-                    if let Err(err_set) =
-                        inference.conform_ty(inner_result_type, snapped_result_type)
+                    if let Err((err_set, actual_ty, expected_ty)) =
+                        inference.conform_ty_for_diag(inner_result_type, snapped_result_type)
                     {
                         let diag_added = ctx.diagnostics.report(
                             result_type_stable_ptr,
-                            WrongExprType {
-                                expected_ty: snapped_result_type,
-                                actual_ty: inner_result_type,
-                            },
+                            WrongExprType { expected_ty, actual_ty },
                         );
                         inference.consume_reported_error(err_set, diag_added);
                         return Err(diag_added);
@@ -517,16 +503,12 @@ fn compute_expr_unary_semantic(
                                 .new_type_var(Some(syntax.expr(syntax_db).stable_ptr().untyped()));
                             let desnapped_expr_type_var =
                                 TypeLongId::Snapshot(desnap_expr_type).intern(ctx.db);
-                            if let Err(err_set) =
-                                inference.conform_ty(desnapped_expr_type_var, desnapped_expr_type)
+                            if let Err((err_set, actual_ty, expected_ty)) = inference
+                                .conform_ty_for_diag(desnapped_expr_type_var, desnapped_expr_type)
                             {
-                                let diag_added = ctx.diagnostics.report(
-                                    syntax,
-                                    WrongArgumentType {
-                                        expected_ty: desnapped_expr_type_var,
-                                        actual_ty: desnapped_expr_type,
-                                    },
-                                );
+                                let diag_added = ctx
+                                    .diagnostics
+                                    .report(syntax, WrongArgumentType { expected_ty, actual_ty });
                                 inference.consume_reported_error(err_set, diag_added);
                                 return Err(diag_added);
                             };
@@ -617,11 +599,10 @@ fn compute_expr_binary_semantic(
                 _ => return Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
             };
 
-            let expected_ty = ctx.reduce_ty(member_path.ty());
-            let actual_ty = ctx.reduce_ty(rexpr.ty());
-
             let inference = &mut ctx.resolver.inference();
-            if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
+            if let Err((err_set, actual_ty, expected_ty)) =
+                inference.conform_ty_for_diag(rexpr.ty(), member_path.ty())
+            {
                 let diag_added = ctx
                     .diagnostics
                     .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty });
@@ -651,19 +632,19 @@ fn compute_expr_binary_semantic(
 
             let inference = &mut ctx.resolver.inference();
             let bool_ty = core_bool_ty(db);
-            if let Err(err_set) = inference.conform_ty(lexpr.expr.ty(), bool_ty) {
-                let diag_added = ctx.diagnostics.report(
-                    lhs_syntax,
-                    WrongType { expected_ty: bool_ty, actual_ty: lexpr.expr.ty() },
-                );
+            if let Err((err_set, actual_ty, expected_ty)) =
+                inference.conform_ty_for_diag(lexpr.expr.ty(), bool_ty)
+            {
+                let diag_added =
+                    ctx.diagnostics.report(lhs_syntax, WrongType { expected_ty, actual_ty });
                 inference.consume_reported_error(err_set, diag_added);
             }
 
-            if let Err(err_set) = inference.conform_ty(rexpr.expr.ty(), bool_ty) {
-                let diag_added = ctx.diagnostics.report(
-                    &rhs_syntax,
-                    WrongType { expected_ty: bool_ty, actual_ty: rexpr.expr.ty() },
-                );
+            if let Err((err_set, actual_ty, expected_ty)) =
+                inference.conform_ty_for_diag(rexpr.expr.ty(), bool_ty)
+            {
+                let diag_added =
+                    ctx.diagnostics.report(&rhs_syntax, WrongType { expected_ty, actual_ty });
                 inference.consume_reported_error(err_set, diag_added);
             }
 
@@ -773,11 +754,12 @@ fn compute_expr_tuple_semantic(
                 .map(|expr_syntax| inference.new_type_var(Some(expr_syntax.into())))
                 .collect();
             let actual_ty = TypeLongId::Tuple(inner_result_types.clone()).intern(db);
-            if let Err(err_set) = inference.conform_ty(actual_ty, result_type) {
-                let diag_added = ctx.diagnostics.report(
-                    result_type_stable_ptr,
-                    WrongExprType { expected_ty: result_type, actual_ty },
-                );
+            if let Err((err_set, actual_ty, expected_ty)) =
+                inference.conform_ty_for_diag(actual_ty, result_type)
+            {
+                let diag_added = ctx
+                    .diagnostics
+                    .report(result_type_stable_ptr, WrongExprType { expected_ty, actual_ty });
                 inference.consume_reported_error(err_set, diag_added);
             }
             inner_result_types.into_iter()
@@ -811,31 +793,33 @@ fn compute_expr_fixed_size_array_semantic(
     let exprs = syntax.exprs(syntax_db).elements(syntax_db);
     let fixed_size_array_ty =
         |type_id, size: ConstValueId| TypeLongId::FixedSizeArray { type_id, size }.intern(db);
-    let first_expr_semantic =
-        |ctx: &mut ComputationContext<'_>, first_expr: &ast::Expr, size: ConstValueId| {
-            if let Some(ResultType { ty: result_type, stable_ptr: result_type_stable_ptr }) =
-                result_type
+    let first_expr_semantic = |ctx: &mut ComputationContext<'_>,
+                               first_expr: &ast::Expr,
+                               size: ConstValueId| {
+        if let Some(ResultType { ty: result_type, stable_ptr: result_type_stable_ptr }) =
+            result_type
+        {
+            let inference = &mut ctx.resolver.inference();
+            let inner_result_type = inference.new_type_var(Some(first_expr.into()));
+            let actual_ty = fixed_size_array_ty(inner_result_type, size);
+            if let Err((err_set, actual_ty, expected_ty)) =
+                inference.conform_ty_for_diag(actual_ty, result_type)
             {
-                let inference = &mut ctx.resolver.inference();
-                let inner_result_type = inference.new_type_var(Some(first_expr.into()));
-                let actual_ty = fixed_size_array_ty(inner_result_type, size);
-                if let Err(err_set) = inference.conform_ty(actual_ty, result_type) {
-                    let diag_added = ctx.diagnostics.report(
-                        result_type_stable_ptr,
-                        WrongArgumentType { expected_ty: result_type, actual_ty },
-                    );
-                    inference.consume_reported_error(err_set, diag_added);
-                }
-                let inner_result_type = ctx.reduce_ty(inner_result_type);
-                compute_expr_semantic(
-                    ctx,
-                    first_expr,
-                    Some(ResultType { ty: inner_result_type, stable_ptr: first_expr.into() }),
-                )
-            } else {
-                compute_expr_semantic(ctx, first_expr, None)
+                let diag_added = ctx
+                    .diagnostics
+                    .report(result_type_stable_ptr, WrongArgumentType { expected_ty, actual_ty });
+                inference.consume_reported_error(err_set, diag_added);
             }
-        };
+            let inner_result_type = ctx.reduce_ty(inner_result_type);
+            compute_expr_semantic(
+                ctx,
+                first_expr,
+                Some(ResultType { ty: inner_result_type, stable_ptr: first_expr.into() }),
+            )
+        } else {
+            compute_expr_semantic(ctx, first_expr, None)
+        }
+    };
     let (items, type_id, size) = if let Some(size_const_id) =
         extract_fixed_size_array_size(db, ctx.diagnostics, syntax, &ctx.resolver)?
     {
@@ -865,13 +849,13 @@ fn compute_expr_fixed_size_array_semantic(
             let result_type_arg =
                 Some(ResultType { ty: first_expr_ty, stable_ptr: expr_syntax.into() });
             let expr_semantic = compute_expr_semantic(ctx, expr_syntax, result_type_arg);
-            let expr_ty = ctx.reduce_ty(expr_semantic.ty());
             let inference = &mut ctx.resolver.inference();
-            if let Err(err_set) = inference.conform_ty(expr_ty, first_expr_ty) {
-                let diag_added = ctx.diagnostics.report(
-                    expr_syntax,
-                    WrongArgumentType { expected_ty: first_expr_ty, actual_ty: expr_ty },
-                );
+            if let Err((err_set, actual_ty, expected_ty)) =
+                inference.conform_ty_for_diag(expr_semantic.ty(), first_expr_ty)
+            {
+                let diag_added = ctx
+                    .diagnostics
+                    .report(expr_syntax, WrongArgumentType { expected_ty, actual_ty });
                 inference.consume_reported_error(err_set, diag_added);
                 return Err(diag_added);
             }
@@ -917,13 +901,12 @@ fn compute_expr_function_call_semantic(
             if let Some(ResultType { ty: result_type, stable_ptr: result_type_stable_ptr }) =
                 result_type
             {
-                if let Err(err_set) = inference.conform_ty(concrete_enum_type, result_type) {
+                if let Err((err_set, actual_ty, expected_ty)) =
+                    inference.conform_ty_for_diag(concrete_enum_type, result_type)
+                {
                     let diag_added = ctx.diagnostics.report(
                         result_type_stable_ptr,
-                        WrongArgumentType {
-                            expected_ty: result_type,
-                            actual_ty: concrete_enum_type,
-                        },
+                        WrongArgumentType { expected_ty, actual_ty },
                     );
                     inference.consume_reported_error(err_set, diag_added);
                 }
@@ -956,10 +939,10 @@ fn compute_expr_function_call_semantic(
             if mutability != Mutability::Immutable {
                 return Err(ctx.diagnostics.report(&args_syntax, VariantCtorNotImmutable));
             }
-            let expected_ty = ctx.reduce_ty(variant.ty);
-            let actual_ty = ctx.reduce_ty(arg.ty());
             let inference = &mut ctx.resolver.inference();
-            if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
+            if let Err((err_set, actual_ty, expected_ty)) =
+                inference.conform_ty_for_diag(arg.ty(), variant.ty)
+            {
                 let diag_added = ctx
                     .diagnostics
                     .report(&args_syntax, WrongArgumentType { expected_ty, actual_ty });
@@ -1055,13 +1038,13 @@ pub fn compute_root_expr(
     let result_type = Some(ResultType { ty: return_type, stable_ptr: syntax.into() });
     ctx.return_result_type = result_type;
     let res = compute_expr_block_semantic(ctx, syntax, result_type)?;
-    let res_ty = ctx.reduce_ty(res.ty());
-    let res = ctx.exprs.alloc(res);
+    let res_ty = res.ty();
+    let res: id_arena::Id<Expr> = ctx.exprs.alloc(res);
     let inference = &mut ctx.resolver.inference();
-    if let Err(err_set) = inference.conform_ty(res_ty, return_type) {
-        let diag_added = ctx
-            .diagnostics
-            .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res_ty });
+    if let Err((err_set, actual_ty, expected_ty)) =
+        inference.conform_ty_for_diag(res_ty, return_type)
+    {
+        let diag_added = ctx.diagnostics.report(syntax, WrongReturnType { expected_ty, actual_ty });
         inference.consume_reported_error(err_set, diag_added);
     }
 
@@ -1238,10 +1221,12 @@ fn compute_arm_semantic(
                             let mut has_inference_error = false;
                             if !variable.var.ty.is_missing(new_ctx.db) {
                                 let inference = &mut new_ctx.resolver.inference();
-                                if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
+                                if let Err((err_set, actual_ty, expected_ty)) =
+                                    inference.conform_ty_for_diag(actual_ty, expected_ty)
+                                {
                                     let diag_added = new_ctx.diagnostics.report(
                                         &get_location(),
-                                        WrongType { expected_ty, actual_ty: variable.var.ty },
+                                        WrongType { expected_ty, actual_ty },
                                     );
                                     inference.consume_reported_error(err_set, diag_added);
                                     has_inference_error = true;
@@ -1322,7 +1307,7 @@ fn compute_expr_match_semantic(
     let mut helper =
         FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::Match, result_type.map(|x| x.ty));
     for (_, expr) in patterns_and_exprs.iter() {
-        let expr_ty = ctx.implize_type(expr.ty())?;
+        let expr_ty = ctx.reduce_ty(expr.ty());
         if !helper.try_merge_types(
             ctx.db,
             ctx.diagnostics,
@@ -1402,8 +1387,8 @@ fn compute_expr_if_semantic(
 
     let mut helper =
         FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::If, result_type.map(|x| x.ty));
-    let if_block_ty = ctx.implize_type(if_block.ty())?;
-    let else_block_ty = ctx.implize_type(else_block_ty)?;
+    let if_block_ty = ctx.reduce_ty(if_block.ty());
+    let else_block_ty = ctx.reduce_ty(else_block_ty);
     let inference = &mut ctx.resolver.inference();
     let _ = helper.try_merge_types(ctx.db, ctx.diagnostics, inference, if_block_ty, syntax.into())
         && helper.try_merge_types(ctx.db, ctx.diagnostics, inference, else_block_ty, syntax.into());
@@ -1695,7 +1680,7 @@ fn compute_method_function_call_data(
         TraitFunctionId,
     ) -> SemanticDiagnosticKind,
 ) -> Maybe<(FunctionId, ExprAndId, Mutability)> {
-    let self_ty = ctx.implize_type(self_expr.ty())?;
+    let self_ty = ctx.reduce_ty(self_expr.ty());
     // Inference errors found when looking for candidates. Only relevant in the case of 0 candidates
     // found. If >0 candidates are found these are ignored as they may describe, e.g., "errors"
     // indicating certain traits/impls/functions don't match, which is OK as we only look for one.
@@ -2188,11 +2173,12 @@ fn struct_ctor_expr(
     ty.check_not_missing(db)?;
     let inference = &mut ctx.resolver.inference();
     if let Some(ResultType { ty: result_type, stable_ptr: result_type_stable_ptr }) = result_type {
-        if let Err(err_set) = inference.conform_ty(ty, result_type) {
-            let diag_added = ctx.diagnostics.report(
-                result_type_stable_ptr,
-                WrongArgumentType { expected_ty: result_type, actual_ty: ty },
-            );
+        if let Err((err_set, actual_ty, expected_ty)) =
+            inference.conform_ty_for_diag(ty, result_type)
+        {
+            let diag_added = ctx
+                .diagnostics
+                .report(result_type_stable_ptr, WrongArgumentType { expected_ty, actual_ty });
             inference.consume_reported_error(err_set, diag_added);
         }
     }
@@ -2267,11 +2253,11 @@ fn struct_ctor_expr(
                 }
 
                 // Check types.
-                let expected_ty = ctx.reduce_ty(member.ty);
-                let actual_ty = ctx.reduce_ty(arg_expr.ty());
                 let inference = &mut ctx.resolver.inference();
-                if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
-                    if !member.ty.is_missing(db) {
+                if let Err((err_set, actual_ty, expected_ty)) =
+                    inference.conform_ty_for_diag(arg_expr.ty(), member.ty)
+                {
+                    if !expected_ty.is_missing(db) {
                         let diag_added = ctx
                             .diagnostics
                             .report(&arg_identifier, WrongArgumentType { expected_ty, actual_ty });
@@ -2298,13 +2284,13 @@ fn struct_ctor_expr(
                     &base_struct_syntax.expression(syntax_db),
                     result_type,
                 );
-                let base_struct_ty = ctx.reduce_ty(base_struct_expr.ty());
-                let ty = ctx.reduce_ty(ty);
                 let inference = &mut ctx.resolver.inference();
-                if let Err(err_set) = inference.conform_ty(base_struct_ty, ty) {
+                if let Err((err_set, actual_ty, expected_ty)) =
+                    inference.conform_ty_for_diag(base_struct_expr.ty(), ty)
+                {
                     let diag_added = ctx.diagnostics.report(
                         &base_struct_syntax.expression(syntax_db),
-                        WrongArgumentType { expected_ty: ty, actual_ty: base_struct_ty },
+                        WrongArgumentType { expected_ty, actual_ty },
                     );
                     inference.consume_reported_error(err_set, diag_added);
                     continue;
@@ -2591,7 +2577,7 @@ fn member_access_expr(
 
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
-    let ty = ctx.implize_type(lexpr.ty())?;
+    let ty = ctx.reduce_ty(lexpr.ty());
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
 
     match long_ty {
@@ -2799,11 +2785,11 @@ fn expr_function_call(
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
         // added).
         // TODO(lior): Add a test to missing type once possible.
-        let expected_ty = ctx.reduce_ty(param_typ);
-        let actual_ty = ctx.implize_type(arg_typ)?;
         if !arg_typ.is_missing(ctx.db) {
             let inference = &mut ctx.resolver.inference();
-            if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
+            if let Err((err_set, actual_ty, expected_ty)) =
+                inference.conform_ty_for_diag(arg_typ, param_typ)
+            {
                 let diag_added = ctx
                     .diagnostics
                     .report(arg.deref(), WrongArgumentType { expected_ty, actual_ty });
@@ -2864,10 +2850,11 @@ fn maybe_pop_coupon_argument(
             // Check that the argument type is correct.
             let expected_ty = TypeLongId::Coupon(function_id).intern(ctx.db);
             let arg_typ = arg.ty();
-            let actual_ty = ctx.reduce_ty(arg_typ);
             if !arg_typ.is_missing(ctx.db) {
                 let inference = &mut ctx.resolver.inference();
-                if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
+                if let Err((err_set, actual_ty, expected_ty)) =
+                    inference.conform_ty_for_diag(arg_typ, expected_ty)
+                {
                     let diag_added = ctx
                         .diagnostics
                         .report(arg.deref(), WrongArgumentType { expected_ty, actual_ty });
@@ -2971,24 +2958,21 @@ pub fn compute_statement_semantic(
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
                         resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &var_type_path);
-                    let explicit_type = ctx.implize_type(explicit_type)?;
 
                     let rhs_expr = compute_expr_semantic(
                         ctx,
                         rhs_syntax,
                         Some(ResultType { ty: explicit_type, stable_ptr: rhs_syntax.into() }),
                     );
-                    let inferred_type = ctx.implize_type(rhs_expr.ty())?;
+                    let inferred_type = ctx.reduce_ty(rhs_expr.ty());
                     if !inferred_type.is_missing(db) {
                         let inference = &mut ctx.resolver.inference();
-                        if let Err(err_set) = inference.conform_ty(inferred_type, explicit_type) {
-                            let diag_added = ctx.diagnostics.report(
-                                rhs_syntax,
-                                WrongArgumentType {
-                                    expected_ty: explicit_type,
-                                    actual_ty: inferred_type,
-                                },
-                            );
+                        if let Err((err_set, actual_ty, expected_ty)) =
+                            inference.conform_ty_for_diag(inferred_type, explicit_type)
+                        {
+                            let diag_added = ctx
+                                .diagnostics
+                                .report(rhs_syntax, WrongArgumentType { expected_ty, actual_ty });
                             inference.consume_reported_error(err_set, diag_added);
                         }
                     }
@@ -3084,14 +3068,16 @@ pub fn compute_statement_semantic(
                 )?
                 .return_type;
 
-            let expected_ty = ctx.implize_type(expected_ty)?;
-            let expr_ty = ctx.implize_type(expr_ty)?;
+            let expected_ty = ctx.reduce_ty(expected_ty);
+            let expr_ty = ctx.reduce_ty(expr_ty);
             if !expected_ty.is_missing(db) && !expr_ty.is_missing(db) {
                 let inference = &mut ctx.resolver.inference();
-                if let Err(err_set) = inference.conform_ty(expr_ty, expected_ty) {
+                if let Err((err_set, actual_ty, expected_ty)) =
+                    inference.conform_ty_for_diag(expr_ty, expected_ty)
+                {
                     let diag_added = ctx
                         .diagnostics
-                        .report(stable_ptr, WrongReturnType { expected_ty, actual_ty: expr_ty });
+                        .report(stable_ptr, WrongReturnType { expected_ty, actual_ty });
                     inference.consume_reported_error(err_set, diag_added);
                 }
             }
@@ -3117,7 +3103,7 @@ pub fn compute_statement_semantic(
                     (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
                 }
             };
-            let ty = ctx.implize_type(ty)?;
+            let ty = ctx.reduce_ty(ty);
             match &mut ctx.loop_ctx {
                 None => {
                     return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
@@ -3158,9 +3144,10 @@ fn compute_bool_condition_semantic(
 ) -> ExprAndId {
     let condition = compute_expr_semantic(ctx, condition_syntax, None);
     let inference = &mut ctx.resolver.inference();
-    if let Err(err_set) = inference.conform_ty(condition.ty(), core_bool_ty(ctx.db)) {
-        let diag_added =
-            ctx.diagnostics.report(condition.deref(), ConditionNotBool(condition.ty()));
+    if let Err((err_set, condition_ty, _)) =
+        inference.conform_ty_for_diag(condition.ty(), core_bool_ty(ctx.db))
+    {
+        let diag_added = ctx.diagnostics.report(condition.deref(), ConditionNotBool(condition_ty));
         inference.consume_reported_error(err_set, diag_added);
     }
     condition

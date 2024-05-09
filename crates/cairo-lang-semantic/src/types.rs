@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplDefId, ImplTypeDefId, ModuleFileId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplTypeDefId, ModuleFileId,
     NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
@@ -23,12 +23,12 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
-use crate::expr::inference::{Inference, InferenceData, InferenceError, InferenceId, TypeVar};
+use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
-use crate::substitution::{SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::SemanticRewriter;
 use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId, GenericArgumentId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
@@ -191,34 +191,6 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
     ) -> std::fmt::Result {
         write!(f, "{}", self.format(db))
     }
-}
-
-/// Tries to implize a type, recursively, according to known inference data.
-///
-/// "Implization" is reducing a trait type or a wrapped trait type, to the more concrete type,
-/// according to the assignment of that trait type in its impl, if the impl is known according to
-/// the context.
-///
-/// This function uses the given `inference` as "read-only". That is, it doesn't add new inference
-/// data, only uses the existing data.
-///
-/// `impl_ctx` is the impl context we're at, if any. That is, if we're inside an impl function, the
-/// wrapping impl is the context here.
-pub fn implize_type(
-    db: &dyn SemanticGroup,
-    ty: TypeId,
-    impl_ctx: Option<ImplDefId>,
-    inference: &mut Inference<'_>,
-) -> Maybe<TypeId> {
-    // In the case of having an impl definition rewrites using it.
-    let ty = if let Some(impl_def_id) = impl_ctx {
-        let substitution = db.impl_def_substitution(impl_def_id)?;
-        SubstitutionRewriter { db, substitution: substitution.as_ref() }
-            .rewrite(inference.rewrite(ty).no_err())?
-    } else {
-        ty
-    };
-    Ok(inference.rewrite(ty).no_err())
 }
 
 /// Head of a type. A type that is not one of {generic param, type variable, impl type} has a head,
