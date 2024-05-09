@@ -20,6 +20,9 @@ trait Project: Send {
     /// This list may also include lockfiles.
     fn manifest_files(&self) -> Vec<&Path>;
 
+    /// Gets the main manifest file of this project.
+    fn main_manifest_file(&self) -> &Path;
+
     /// Forces the project to reload its state.
     fn reload(&mut self);
 

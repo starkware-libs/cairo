@@ -32,6 +32,10 @@ impl Project for CairoProject {
         vec![&self.project_path]
     }
 
+    fn main_manifest_file(&self) -> &Path {
+        &self.project_path
+    }
+
     fn reload(&mut self) {
         let project_config = ProjectConfig::from_file(&self.project_path)
             .with_context(|| {
