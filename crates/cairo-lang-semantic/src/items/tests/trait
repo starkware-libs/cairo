@@ -345,10 +345,6 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
-error: Trait function `MyTrait::foo` has a body. Trait functions with body are not supported.
- --> lib.cairo:2:14
-    fn foo() {}
-             ^^
 
 //! > ==========================================================================
 
@@ -452,12 +448,13 @@ trait MyTrait {
     fn foo1();
     fn foo2();
     type X;
+    const C: u32;
 }
 impl MyImpl of MyTrait;
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X'.
- --> lib.cairo:6:6
+error: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X', 'C'.
+ --> lib.cairo:7:6
 impl MyImpl of MyTrait;
      ^****^
 
@@ -481,15 +478,18 @@ trait MyTrait {
     fn foo3();
     type X;
     type Y;
+    const C: u32;
+    const D: u32;
 }
 impl MyImpl of MyTrait {
     fn foo2() {}
     type X = u32;
+    const C: u32 = 3;
 }
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y'.
- --> lib.cairo:8:6
+error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D'.
+ --> lib.cairo:10:6
 impl MyImpl of MyTrait {
      ^****^
 
@@ -511,6 +511,7 @@ trait MyTrait {}
 impl MyImpl of MyTrait {
     fn bar() {}
     type X = u32;
+    const C: u32 = 3;
 }
 
 //! > expected_diagnostics
@@ -523,6 +524,11 @@ error: Impl item type `MyImpl::X` is not a member of trait `MyTrait`.
  --> lib.cairo:4:5
     type X = u32;
     ^***********^
+
+error: Impl item const `MyImpl::C` is not a member of trait `MyTrait`.
+ --> lib.cairo:5:5
+    const C: u32 = 3;
+    ^***************^
 
 //! > ==========================================================================
 
@@ -827,7 +833,6 @@ impl MyImpl of MyTrait {
     type X = u32;
     type XX<T> = Array<T>;
     impl Z = OtherImpl;
-    const Y: u32 = 3;
 }
 
 trait OtherTrait {}
@@ -848,11 +853,6 @@ error: Impl items are not yet supported in impls.
  --> lib.cairo:9:5
     impl Z = OtherImpl;
     ^**^
-
-error: Constant items are not yet supported in impls.
- --> lib.cairo:10:5
-    const Y: u32 = 3;
-    ^***^
 
 error: Not all trait items are implemented. Missing: 'Y'.
  --> lib.cairo:6:6
@@ -905,7 +905,44 @@ trait MyTrait {
     const X: u32;
 }
 
+impl MyImpl of MyTrait {
+    const X: u32 = 3;
+}
+
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test unsupported const usage.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
+    fn foo() -> u32;
+}
+
+impl MyImpl of MyTrait {
+    const X: u32 = 3;
+    fn foo() -> u32 {
+        ///TODO(TomerStarkware): remove diagnostic when impl const are resolved.
+        Self::X
+    }
+}
+
+//! > expected_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:10:15
+        Self::X
+              ^
 
 //! > ==========================================================================
 

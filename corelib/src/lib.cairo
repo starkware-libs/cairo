@@ -192,10 +192,6 @@ impl Felt252PartialEq of PartialEq<felt252> {
             _ => false,
         }
     }
-    #[inline(always)]
-    fn ne(lhs: @felt252, rhs: @felt252) -> bool {
-        !(*lhs == *rhs)
-    }
 }
 
 extern fn felt252_is_zero(lhs: felt252) -> zeroable::IsZeroResult<felt252> nopanic;

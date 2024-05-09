@@ -275,9 +275,6 @@ impl ArrayPartialEq<T, +PartialEq<T>> of PartialEq<Array<T>> {
     fn eq(lhs: @Array<T>, rhs: @Array<T>) -> bool {
         lhs.span() == rhs.span()
     }
-    fn ne(lhs: @Array<T>, rhs: @Array<T>) -> bool {
-        !(lhs == rhs)
-    }
 }
 
 impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
@@ -297,8 +294,5 @@ impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
                 Option::None => { break true; },
             };
         }
-    }
-    fn ne(lhs: @Span<T>, rhs: @Span<T>) -> bool {
-        !(lhs == rhs)
     }
 }
