@@ -20,6 +20,9 @@ pub extern type RangeCheck96;
 pub extern type AddMod;
 pub extern type MulMod;
 
+/// Expose the const required by the libfunc to allow the compiler const reusage.
+pub type ConstZero = core::internal::BoundedInt<0, 0>;
+pub type ConstOne = core::internal::BoundedInt<1, 1>;
 
 /// A type that creates a circuit from a tuple of outputs.
 pub extern type Circuit<Outputs>;
@@ -37,6 +40,14 @@ extern fn init_circuit_data<C>() -> CircuitInputAccumulator<C> implicits(RangeCh
 
 /// Returns the descriptor for the circuit.
 extern fn get_circuit_descriptor<C>() -> CircuitDescriptor<C> nopanic;
+
+extern fn eval_circuit<C>(
+    descriptor: CircuitDescriptor<C>,
+    data: CircuitData<C>,
+    modulus: NonZero<u384>,
+    zero: ConstZero,
+    one: ConstOne,
+) -> CircuitOutput<C> implicits(AddMod, MulMod) nopanic;
 
 /// Fill an input in the circuit instance's data.
 // TODO(ilya): Consider using RangeCheck96Guarantee for the inputs.
