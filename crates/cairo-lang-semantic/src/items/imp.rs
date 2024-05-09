@@ -4,10 +4,10 @@ use std::{panic, vec};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, ImplFunctionLongId, ImplItemId, ImplTypeDefId, ImplTypeDefLongId,
-    LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
-    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitTypeId,
+    FunctionTitleId, GenericKind, GenericParamId, ImplAliasId, ImplDefId, ImplFunctionId,
+    ImplFunctionLongId, ImplItemId, ImplTypeDefId, ImplTypeDefLongId, LanguageElementId,
+    LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId, NamedLanguageElementLongId,
+    TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -1901,7 +1901,6 @@ pub fn priv_impl_function_body_data(
     let mut ctx = ComputationContext::new(
         db,
         &mut diagnostics,
-        Some(FunctionWithBodyId::Impl(impl_function_id)),
         resolver,
         Some(&declaration.function_declaration_data.signature),
         environment,
