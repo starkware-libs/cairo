@@ -166,3 +166,10 @@ impl StoragePathEntryMap<
         }
     }
 }
+
+/// A trait that binds a storage path to a struct, and the struct storage node (a storage node is a
+/// struct that all its fields are storage paths, one for each member of the original struct).
+trait StructNodeTrait<T> {
+    type NodeType;
+    fn storage_node(self: StoragePath<T>) -> Self::NodeType;
+}
