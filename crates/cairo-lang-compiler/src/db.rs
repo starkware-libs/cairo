@@ -90,6 +90,7 @@ impl RootDatabaseBuilder {
     fn new() -> Self {
         Self {
             plugin_suite: get_default_plugin_suite(),
+            detect_corelib: false,
             auto_withdraw_gas: true,
             project_config: None,
             cfg_set: None,
