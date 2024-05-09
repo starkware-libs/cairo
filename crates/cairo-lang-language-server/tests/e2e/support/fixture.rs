@@ -30,6 +30,10 @@ impl Fixture {
 
 /// Introspection methods.
 impl Fixture {
+    pub fn root_path(&self) -> &Path {
+        self.t.path()
+    }
+
     pub fn root_url(&self) -> Url {
         Url::from_directory_path(self.t.path()).unwrap()
     }
