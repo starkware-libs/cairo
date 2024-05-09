@@ -7,6 +7,7 @@ use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
+use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::enm::EnumType;
@@ -549,6 +550,9 @@ impl SierraCasmRunner {
                     && *generic_ty != PoseidonType::ID
                     && *generic_ty != SystemType::ID
                     && *generic_ty != SegmentArenaType::ID
+                    && *generic_ty != RangeCheck96Type::ID
+                    && *generic_ty != AddModType::ID
+                    && *generic_ty != MulModType::ID
             }
         });
 
@@ -615,8 +619,10 @@ impl SierraCasmRunner {
 
         let emulated_builtins = HashSet::from([
             SystemType::ID,
-            // TODO(ilya): Move to `builtin_offsets` when supported by cairo-vm.
+            // TODO(ilya): Move to following when supported by cairo-vm.
             RangeCheck96Type::ID,
+            AddModType::ID,
+            MulModType::ID,
         ]);
 
         let mut ap_offset: i16 = 0;
