@@ -2,7 +2,7 @@ use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::zip_eq;
 
 use super::canonic::ResultNoErrEx;
-use super::{Inference, InferenceError, InferenceResult, InferenceVar};
+use super::{ErrorSet, Inference, InferenceError, InferenceResult, InferenceVar};
 use crate::corelib::never_ty;
 use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
@@ -479,6 +479,18 @@ impl Inference<'_> {
                     .map(InferenceError::NoImplsFound)
                     .unwrap_or_else(InferenceError::Reported),
             ))
+        }
+    }
+
+    /// Conforms a type to a type. Returning the reduced types on failure.
+    pub fn conform_ty_for_diag(
+        &mut self,
+        ty0: TypeId,
+        ty1: TypeId,
+    ) -> Result<(), (ErrorSet, TypeId, TypeId)> {
+        match self.conform_ty(ty0, ty1) {
+            Ok(_ty) => Ok(()),
+            Err(err) => Err((err, self.rewrite(ty0).no_err(), self.rewrite(ty1).no_err())),
         }
     }
 
