@@ -27,6 +27,7 @@ define_type_hierarchy! {
         MulMod(MulModType),
         AddModGate(AddModGate),
         CircuitData(CircuitData),
+        CircuitOutput(CircuitOutput),
         CircuitDescriptor(CircuitDescriptor),
         CircuitInput(CircuitInput),
         CircuitInputAccumulator(CircuitInputAccumulator),
@@ -257,6 +258,54 @@ impl ConcreteCircuitData {
 }
 
 impl ConcreteType for ConcreteCircuitData {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
+}
+
+/// A type representing a circuit instance where the outputs is filled.
+#[derive(Default)]
+pub struct CircuitOutput {}
+impl NamedType for CircuitOutput {
+    type Concrete = ConcreteCircuitOutput;
+    const ID: GenericTypeId = GenericTypeId::new_inline("CircuitOutput");
+
+    fn specialize(
+        &self,
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Self::Concrete::new(context, args)
+    }
+}
+
+pub struct ConcreteCircuitOutput {
+    pub info: TypeInfo,
+}
+
+impl ConcreteCircuitOutput {
+    fn new(
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self, SpecializationError> {
+        let circ_ty = args_as_single_type(args)?;
+        validate_is_circuit(context, circ_ty)?;
+        Ok(Self {
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId {
+                    generic_id: "CircuitOutput".into(),
+                    generic_args: args.to_vec(),
+                },
+                duplicatable: false,
+                droppable: true,
+                storable: true,
+                zero_sized: false,
+            },
+        })
+    }
+}
+
+impl ConcreteType for ConcreteCircuitOutput {
     fn info(&self) -> &TypeInfo {
         &self.info
     }
