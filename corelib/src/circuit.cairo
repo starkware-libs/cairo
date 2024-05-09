@@ -12,6 +12,13 @@ pub extern type RangeCheck96;
 pub extern type AddMod;
 pub extern type MulMod;
 
+#[derive(Copy, Drop)]
+struct u384 {
+    limb0: u96,
+    limb1: u96,
+    limb2: u96,
+    limb3: u96,
+}
 
 /// Defines an input for a circuit.
 #[phantom]
@@ -25,6 +32,10 @@ extern fn init_circuit_data<C>() -> CircuitInputAccumulator<C> implicits(RangeCh
 
 /// Returns the descriptor for the circuit.
 extern fn get_circuit_descriptor<C>() -> CircuitDescriptor<C> nopanic;
+
+extern fn eval_circuit<C>(
+    descriptor: CircuitDescriptor<C>, data: CircuitData<C>, modulus: NonZero<u384>,
+) -> CircuitOutput<C> implicits(AddMod, MulMod) nopanic;
 
 /// Fill an input in the circuit instance's data.
 // TODO(ilya): Consider using RangeCheck96Guarantee for the inputs.

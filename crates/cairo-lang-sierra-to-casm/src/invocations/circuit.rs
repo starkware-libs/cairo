@@ -11,6 +11,8 @@ use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 use crate::relocations::{Relocation, RelocationEntry};
 
+const BUILTIN_INSTANCE_SIZE: usize = 7;
+
 /// Builds instructions for Sierra array operations.
 pub fn build(
     libfunc: &CircuitConcreteLibfunc,
@@ -18,6 +20,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         CircuitConcreteLibfunc::FillInput(_libfunc) => build_fill_input(builder),
+        CircuitConcreteLibfunc::Eval(libfunc) => build_circuit_eval(&libfunc.ty, builder),
         CircuitConcreteLibfunc::GetDescriptor(libfunc) => {
             build_get_descriptor(&libfunc.ty, builder)
         }
@@ -135,5 +138,76 @@ fn build_get_descriptor(
         }]
         .into_iter()]
         .into_iter(),
+    ))
+}
+
+/// Builds instructions for `circuit_eval` libfunc.
+fn build_circuit_eval(
+    circuit_ty: &ConcreteTypeId,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_add_mod, expr_mul_mod, expr_desc, expr_data, modulus_expr] =
+        builder.try_get_refs()?;
+    let add_mod = expr_add_mod.try_unpack_single()?;
+    let mul_mod = expr_mul_mod.try_unpack_single()?;
+    let [add_mod_offsets, mul_mod_offsets] = expr_desc.try_unpack()?;
+    let [modulus0, modulus1, modulus2, modulus3] = modulus_expr.try_unpack()?;
+    let values_end = expr_data.try_unpack_single()?;
+    let mut casm_builder = CasmBuilder::default();
+
+    add_input_variables! {casm_builder,
+        buffer(7) add_mod;
+        buffer(7) mul_mod;
+        deref values_end;
+        deref add_mod_offsets;
+        deref mul_mod_offsets;
+
+        deref modulus0;
+        deref modulus1;
+        deref modulus2;
+        deref modulus3;
+    };
+
+    let CircuitInfo { add_offsets, mul_offsets, values, .. } =
+        builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
+
+    casm_build_extend! {casm_builder,
+        const valus_size = values.len() * VALUE_SIZE;
+        tempvar values = values_end - valus_size;
+    }
+    if !add_offsets.is_empty() {
+        casm_build_extend! {casm_builder,
+            assert modulus0 = add_mod[0];
+            assert modulus1 = add_mod[1];
+            assert modulus2 = add_mod[2];
+            assert modulus3 = add_mod[3];
+            assert values = add_mod[4];
+            assert add_mod_offsets = add_mod[5];
+        };
+    }
+
+    if !mul_offsets.is_empty() {
+        casm_build_extend! {casm_builder,
+            assert modulus0 = mul_mod[0];
+            assert modulus1 = mul_mod[1];
+            assert modulus2 = mul_mod[2];
+            assert modulus3 = mul_mod[3];
+            assert values = mul_mod[4];
+            assert mul_mod_offsets = mul_mod[5];
+        };
+    }
+
+    casm_build_extend! {casm_builder,
+        const add_mod_usage = (BUILTIN_INSTANCE_SIZE * add_offsets.len());
+        let new_add_mod = add_mod + add_mod_usage;
+        const mul_mod_usage = (BUILTIN_INSTANCE_SIZE * mul_offsets.len());
+        let new_mul_mod = mul_mod + mul_mod_usage;
+        let new_data = values;
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[new_add_mod], &[new_mul_mod], &[new_data]], None)],
+        Default::default(),
     ))
 }

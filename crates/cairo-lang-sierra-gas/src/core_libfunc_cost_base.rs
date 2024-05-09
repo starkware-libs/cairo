@@ -474,6 +474,9 @@ pub fn core_libfunc_cost(
         Circuit(CircuitConcreteLibfunc::FillInput(_)) => {
             vec![ConstCost::steps(7).into(), ConstCost::steps(8).into()]
         }
+        Circuit(CircuitConcreteLibfunc::Eval(_)) => {
+            vec![ConstCost::steps(13).into()]
+        }
         Circuit(CircuitConcreteLibfunc::GetDescriptor(_)) => {
             vec![ConstCost::steps(3).into()]
         }
