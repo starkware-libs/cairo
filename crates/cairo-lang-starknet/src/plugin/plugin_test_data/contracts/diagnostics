@@ -330,10 +330,11 @@ pub enum Event {}
     pub mod __member_module_mapping {
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
-        impl StorageContractMemberStateAsPathImpl of starknet::storage::StorageAsPath<ContractMemberState, Map::<felt252, felt252>> {
+        impl StorageContractMemberStateAsPathImpl of starknet::storage::StorageAsPath<ContractMemberState> {
+            type Value = Map::<felt252, felt252>;
             fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<Map::<felt252, felt252>> {
                     starknet::storage::StoragePath::<Map::<felt252, felt252>> { hash_state:
-                        core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4)
+                        core::hash::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4)
                      }
 
                 }

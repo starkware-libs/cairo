@@ -16,18 +16,29 @@ trait HelloStarknetTrait<TContractState> {
     fn get_user_balance_subbalance(
         self: @TContractState, user_id: usize, subbalance_id: usize
     ) -> usize;
+    fn get_balance_pair_balance1(self: @TContractState) -> u256;
+    fn get_balance_pair_balance2(self: @TContractState) -> felt252;
+}
+
+#[starknet::storage_node]
+struct BalancePair {
+    balance1: u256,
+    balance2: felt252,
 }
 
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
-        StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map
+        StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map,
+        StructNodeTrait
     };
+    use super::BalancePair;
     #[storage]
     struct Storage {
         balance: usize,
         user_balance: Map<usize, usize>,
         user_balance_subbalance: Map<usize, Map<usize, usize>>,
+        balance_pair: BalancePair,
     }
 
     #[abi(embed_v0)]
@@ -53,6 +64,12 @@ mod hello_starknet {
                 .entry(subbalance_id)
                 .as_ptr()
                 .read()
+        }
+        fn get_balance_pair_balance1(self: @ContractState) -> u256 {
+            self.balance_pair.as_path().storage_node().balance1.as_ptr().read()
+        }
+        fn get_balance_pair_balance2(self: @ContractState) -> felt252 {
+            self.balance_pair.as_path().storage_node().balance2.as_ptr().read()
         }
     }
 }
@@ -72,18 +89,29 @@ trait HelloStarknetTrait<TContractState> {
     fn get_user_balance_subbalance(
         self: @TContractState, user_id: usize, subbalance_id: usize
     ) -> usize;
+    fn get_balance_pair_balance1(self: @TContractState) -> u256;
+    fn get_balance_pair_balance2(self: @TContractState) -> felt252;
+}
+
+#[starknet::storage_node]
+struct BalancePair {
+    balance1: u256,
+    balance2: felt252,
 }
 
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
-        StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map
+        StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map,
+        StructNodeTrait
     };
+    use super::BalancePair;
     #[storage]
     struct Storage {
         balance: usize,
         user_balance: Map<usize, usize>,
         user_balance_subbalance: Map<usize, Map<usize, usize>>,
+        balance_pair: BalancePair,
     }
 
     #[abi(embed_v0)]
@@ -109,6 +137,12 @@ mod hello_starknet {
                 .entry(subbalance_id)
                 .as_ptr()
                 .read()
+        }
+        fn get_balance_pair_balance1(self: @ContractState) -> u256 {
+            self.balance_pair.as_path().storage_node().balance1.as_ptr().read()
+        }
+        fn get_balance_pair_balance2(self: @ContractState) -> felt252 {
+            self.balance_pair.as_path().storage_node().balance2.as_ptr().read()
         }
     }
 }
@@ -129,6 +163,8 @@ trait HelloStarknetTraitDispatcherTrait<T> {
     fn get_user_balance_subbalance(
 self: T, user_id: usize, subbalance_id: usize
     ) -> usize;
+    fn get_balance_pair_balance1(self: T) -> u256;
+    fn get_balance_pair_balance2(self: T) -> felt252;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -198,6 +234,34 @@ self: HelloStarknetTraitDispatcher, user_id: usize, subbalance_id: usize
         let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         core::option::OptionTrait::expect(
             core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn get_balance_pair_balance1(self: HelloStarknetTraitDispatcher) -> u256 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_balance_pair_balance1"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn get_balance_pair_balance2(self: HelloStarknetTraitDispatcher) -> felt252 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_balance_pair_balance2"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
             'Returned data too short',
         )
     }
@@ -274,6 +338,34 @@ self: HelloStarknetTraitLibraryDispatcher, user_id: usize, subbalance_id: usize
             'Returned data too short',
         )
     }
+    fn get_balance_pair_balance1(self: HelloStarknetTraitLibraryDispatcher) -> u256 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_balance_pair_balance1"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn get_balance_pair_balance2(self: HelloStarknetTraitLibraryDispatcher) -> felt252 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_balance_pair_balance2"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
 
 }
 
@@ -292,6 +384,10 @@ trait HelloStarknetTraitSafeDispatcherTrait<T> {
     fn get_user_balance_subbalance(
 self: T, user_id: usize, subbalance_id: usize
     ) -> starknet::SyscallResult<usize>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn get_balance_pair_balance1(self: T) -> starknet::SyscallResult<u256>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn get_balance_pair_balance2(self: T) -> starknet::SyscallResult<felt252>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -366,6 +462,38 @@ self: HelloStarknetTraitSafeLibraryDispatcher, user_id: usize, subbalance_id: us
         Result::Ok(
             core::option::OptionTrait::expect(
                 core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn get_balance_pair_balance1(self: HelloStarknetTraitSafeLibraryDispatcher) -> starknet::SyscallResult<u256> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_balance_pair_balance1"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn get_balance_pair_balance2(self: HelloStarknetTraitSafeLibraryDispatcher) -> starknet::SyscallResult<felt252> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_balance_pair_balance2"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
                 'Returned data too short',
             )
         )
@@ -450,7 +578,59 @@ self: HelloStarknetTraitSafeDispatcher, user_id: usize, subbalance_id: usize
             )
         )
     }
+    fn get_balance_pair_balance1(self: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<u256> {
+        let mut __calldata__ = core::traits::Default::default();
 
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_balance_pair_balance1"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn get_balance_pair_balance2(self: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<felt252> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_balance_pair_balance2"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+
+}
+
+
+lib.cairo:17:1
+#[starknet::storage_node]
+^***********************^
+storage_node:
+
+struct BalancePairStorageNode {
+    balance1: starknet::storage::StoragePath<u256>,
+    balance2: starknet::storage::StoragePath<felt252>,
+}
+impl BalancePairStorageNodeTrait of starknet::storage::StructNodeTrait<BalancePair> {
+    type NodeType = BalancePairStorageNode;
+    fn storage_node(self: starknet::storage::StoragePath<BalancePair>) -> BalancePairStorageNode {
+        BalancePairStorageNode {
+           balance1: starknet::storage::StoragePath{ hash_state: core::hash::HashStateTrait::update(self.hash_state, selector!("balance1")) },
+           balance2: starknet::storage::StoragePath{ hash_state: core::hash::HashStateTrait::update(self.hash_state, selector!("balance2")) },
+        }
+    }
 }
 
 
@@ -670,7 +850,7 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
 }
 
 
-lib.cairo:15:1
+lib.cairo:23:1
 #[starknet::contract]
 ^*******************^
 contract:
@@ -684,6 +864,7 @@ pub enum Event {}
         pub balance: __member_module_balance::ContractMemberState,
         pub user_balance: __member_module_user_balance::ContractMemberState,
         pub user_balance_subbalance: __member_module_user_balance_subbalance::ContractMemberState,
+        pub balance_pair: __member_module_balance_pair::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
@@ -692,6 +873,7 @@ pub enum Event {}
             balance: __member_module_balance::ContractMemberState {},
             user_balance: __member_module_user_balance::ContractMemberState {},
             user_balance_subbalance: __member_module_user_balance_subbalance::ContractMemberState {},
+            balance_pair: __member_module_balance_pair::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -707,6 +889,8 @@ pub enum Event {}
         use super::StorageAsPath;
         use super::StoragePathEntry;
         use super::Map;
+        use super::StructNodeTrait;
+        use super::BalancePair;
         use super::HelloStarknetImpl;
             #[derive(Copy, Drop)]
             pub struct ContractMemberState {}
@@ -723,13 +907,16 @@ pub enum Event {}
         use super::StorageAsPath;
         use super::StoragePathEntry;
         use super::Map;
+        use super::StructNodeTrait;
+        use super::BalancePair;
         use super::HelloStarknetImpl;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
-        impl StorageContractMemberStateAsPathImpl of starknet::storage::StorageAsPath<ContractMemberState, Map<usize, usize>> {
+        impl StorageContractMemberStateAsPathImpl of starknet::storage::StorageAsPath<ContractMemberState> {
+            type Value = Map<usize, usize>;
             fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<Map<usize, usize>> {
                     starknet::storage::StoragePath::<Map<usize, usize>> { hash_state:
-                        core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0xc5a566230e3a7722a65829b4868470051f6f82a8a0bc97d1b254e9876ef5b3)
+                        core::hash::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0xc5a566230e3a7722a65829b4868470051f6f82a8a0bc97d1b254e9876ef5b3)
                      }
 
                 }
@@ -741,24 +928,46 @@ pub enum Event {}
         use super::StorageAsPath;
         use super::StoragePathEntry;
         use super::Map;
+        use super::StructNodeTrait;
+        use super::BalancePair;
         use super::HelloStarknetImpl;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
-        impl StorageContractMemberStateAsPathImpl of starknet::storage::StorageAsPath<ContractMemberState, Map<usize, Map<usize, usize>>> {
+        impl StorageContractMemberStateAsPathImpl of starknet::storage::StorageAsPath<ContractMemberState> {
+            type Value = Map<usize, Map<usize, usize>>;
             fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<Map<usize, Map<usize, usize>>> {
                     starknet::storage::StoragePath::<Map<usize, Map<usize, usize>>> { hash_state:
-                        core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x1279e804763fd83118748d323345bc6af6f8237e6e55bfb0642e54f439c2262)
+                        core::hash::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x1279e804763fd83118748d323345bc6af6f8237e6e55bfb0642e54f439c2262)
                      }
 
                 }
         }
     }
+
+        pub mod __member_module_balance_pair {
+        use super::StorageAsPointer;
+        use super::StoragePointerAccess;
+        use super::StorageAsPath;
+        use super::StoragePathEntry;
+        use super::Map;
+        use super::StructNodeTrait;
+        use super::BalancePair;
+        use super::HelloStarknetImpl;
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = BalancePair;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x27ef4b1fa737d3be32f556f58263a305e651a9db1e8965baae26640c39727f1>()
+                }
+            }
+        }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x12e6d439f6d64bc4ab6807577f0ee1ebe85e352eb133efa91cee3d3b2689f3f;
+pub const TEST_CLASS_HASH: felt252 = 0x1016f9be4080f277471ec8cec29f1c8f8738b5fc1286689d2f58517f3e68dc4;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -848,12 +1057,52 @@ fn __wrapper__HelloStarknetImpl__get_user_balance_subbalance(mut data: Span::<fe
     core::array::ArrayTrait::span(@arr)
 }
 
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__HelloStarknetImpl__get_balance_pair_balance1(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = HelloStarknetImpl::get_balance_pair_balance1(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<u256>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__HelloStarknetImpl__get_balance_pair_balance2(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = HelloStarknetImpl::get_balance_pair_balance2(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<felt252>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
 
 pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
     pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
     pub use super::__wrapper__HelloStarknetImpl__get_user_balance as get_user_balance;
     pub use super::__wrapper__HelloStarknetImpl__get_user_balance_subbalance as get_user_balance_subbalance;
+    pub use super::__wrapper__HelloStarknetImpl__get_balance_pair_balance1 as get_balance_pair_balance1;
+    pub use super::__wrapper__HelloStarknetImpl__get_balance_pair_balance2 as get_balance_pair_balance2;
 }
 pub mod __l1_handler {
 }
@@ -885,7 +1134,7 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:15:1
+lib.cairo:23:1
 #[starknet::contract]
 ^*******************^
 starknet_derive:

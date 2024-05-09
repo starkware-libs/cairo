@@ -1057,7 +1057,7 @@ mod test_contract {
         #[substorage(v0)]
         non_component: usize,
         // non-v0 substorage member.
-        #[substorage]
+        #[substorage(v1)]
         test_component_storage: super::test_component::Storage,
     }
 
@@ -1089,7 +1089,7 @@ mod test_contract {
         #[substorage(v0)]
         non_component: usize,
         // non-v0 substorage member.
-        #[substorage]
+        #[substorage(v1)]
         test_component_storage: super::test_component::Storage,
     }
 
@@ -1207,7 +1207,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x13a81b6876baa1445c90fd69add3e928a4f6c6807e5227544ac6f6698c463b2;
+pub const TEST_CLASS_HASH: felt252 = 0x2a86280dccead3bc0046f9f8176ec9c7855c2795cd824d1319ba20897e7b608;
 
 
 pub mod __external {
@@ -1311,8 +1311,8 @@ error: Plugin diagnostic: `substorage` attribute is only allowed for members of 
 
 error: Plugin diagnostic: Only #[substorage(v0)] is supported.
  --> lib.cairo:19:9
-        #[substorage]
-        ^***********^
+        #[substorage(v1)]
+        ^***************^
 
 //! > ==========================================================================
 

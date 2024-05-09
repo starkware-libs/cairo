@@ -133,8 +133,9 @@ pub struct GenericStoragePath<T, THashState> {
 type StoragePath<T> = GenericStoragePath<T, core::poseidon::HashState>;
 
 /// Trait for creating a new `StoragePath` from a storage member.
-pub trait StorageAsPath<TMemberState, T> {
-    fn as_path(self: @TMemberState) -> StoragePath<T>;
+pub trait StorageAsPath<TMemberState> {
+    type Value;
+    fn as_path(self: @TMemberState) -> StoragePath<Self::Value>;
 }
 
 /// An implementation of `StorageAsPointer` for any `StoragePath` with inner type that implements
@@ -188,6 +189,35 @@ impl StoragePathEntryMap<
             hash_state: core::hash::Hash::<
                 K, core::poseidon::HashState
             >::update_state(self.hash_state, key)
+        }
+    }
+}
+
+/// A trait that binds a storage path to a struct, and the struct storage node (a storage node is a
+/// struct that all its fields are storage paths, one for each member of the original struct).
+trait StructNodeTrait<T> {
+    type NodeType;
+    fn storage_node(self: StoragePath<T>) -> Self::NodeType;
+}
+
+
+/// An implementation of `StorageAsPath` for any type that implements StructNodeTrait.
+impl StructNodeAsPath<
+    TMemberState,
+    +StorageMemberAddressTrait<TMemberState>,
+    +StructNodeTrait<StorageMemberAddressTrait::<TMemberState>::Value>,
+> of StorageAsPath<TMemberState> {
+    type Value = StorageMemberAddressTrait::<TMemberState>::Value;
+    fn as_path(self: @TMemberState) -> StoragePath<Self::Value> {
+        let address: felt252 = starknet::storage_access::storage_base_address_to_felt252(
+            self.address()
+        );
+        StoragePath::<
+            Self::Value
+        > {
+            hash_state: core::hash::HashStateTrait::update(
+                core::poseidon::PoseidonTrait::new(), address
+            )
         }
     }
 }
