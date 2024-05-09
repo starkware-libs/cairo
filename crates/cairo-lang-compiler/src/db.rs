@@ -77,7 +77,7 @@ impl Default for RootDatabase {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct RootDatabaseBuilder {
     plugin_suite: PluginSuite,
     detect_corelib: bool,
