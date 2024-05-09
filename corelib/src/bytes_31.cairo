@@ -180,7 +180,4 @@ impl Bytes31PartialEq of PartialEq<bytes31> {
         let rhs_as_felt252: felt252 = (*rhs).into();
         lhs_as_felt252 == rhs_as_felt252
     }
-    fn ne(lhs: @bytes31, rhs: @bytes31) -> bool {
-        !(lhs == rhs)
-    }
 }

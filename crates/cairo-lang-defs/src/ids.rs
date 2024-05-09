@@ -422,6 +422,7 @@ define_language_element_id_as_enum! {
     pub enum FunctionWithBodyId {
         Free(FreeFunctionId),
         Impl(ImplFunctionId),
+        Trait(TraitFunctionId),
     }
 }
 

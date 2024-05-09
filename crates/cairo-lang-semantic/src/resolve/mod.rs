@@ -583,8 +583,20 @@ impl<'db> Resolver<'db> {
                             trait_function_id,
                         )
                         .intern(self.db);
-                        let impl_lookup_context = self.impl_lookup_context();
                         let identifier_stable_ptr = identifier.stable_ptr().untyped();
+                        if let TraitOrImplContext::Trait(ctx_trait_id) = &self.trait_or_impl_ctx {
+                            if trait_id == *ctx_trait_id {
+                                return Ok(ResolvedConcreteItem::Function(
+                                    self.specialize_function(
+                                        diagnostics,
+                                        identifier_stable_ptr,
+                                        GenericFunctionId::Trait(concrete_trait_function),
+                                        &generic_args_syntax.unwrap_or_default(),
+                                    )?,
+                                ));
+                            }
+                        }
+                        let impl_lookup_context = self.impl_lookup_context();
                         let generic_function = self
                             .inference()
                             .infer_trait_generic_function(

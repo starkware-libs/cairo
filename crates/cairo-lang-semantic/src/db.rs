@@ -381,9 +381,9 @@ pub trait SemanticGroup:
         &self,
         trait_id: TraitId,
     ) -> Diagnostics<SemanticDiagnostic>;
-    /// Returns the names of all the items of a trait.
-    #[salsa::invoke(items::trt::trait_item_names)]
-    fn trait_item_names(&self, trait_id: TraitId) -> Maybe<OrderedHashSet<SmolStr>>;
+    /// Returns the names of all the non default implemented items of a trait.
+    #[salsa::invoke(items::trt::trait_required_item_names)]
+    fn trait_required_item_names(&self, trait_id: TraitId) -> Maybe<OrderedHashSet<SmolStr>>;
     /// Returns the item of the trait, by the given `name`, if exists.
     #[salsa::invoke(items::trt::trait_item_by_name)]
     fn trait_item_by_name(&self, trait_id: TraitId, name: SmolStr) -> Maybe<Option<TraitItemId>>;

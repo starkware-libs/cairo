@@ -36,8 +36,8 @@ use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{
-    semantic, semantic_object_for_id, ConcreteImplId, ConcreteImplLongId, GenericParam,
-    SemanticDiagnostic, TypeId,
+    semantic, semantic_object_for_id, ConcreteImplId, ConcreteImplLongId, ConcreteTraitLongId,
+    GenericParam, SemanticDiagnostic, TypeId,
 };
 
 /// A generic function of an impl.
@@ -107,6 +107,7 @@ pub enum GenericFunctionId {
     Extern(ExternFunctionId),
     /// A generic function of an impl.
     Impl(ImplGenericFunctionId),
+    Trait(ConcreteTraitGenericFunctionId),
 }
 impl GenericFunctionId {
     pub fn from_generic_with_body(
@@ -115,10 +116,16 @@ impl GenericFunctionId {
     ) -> Maybe<Self> {
         Ok(match val {
             GenericFunctionWithBodyId::Free(id) => GenericFunctionId::Free(id),
-            GenericFunctionWithBodyId::Impl(id) => GenericFunctionId::Impl(ImplGenericFunctionId {
-                impl_id: ImplId::Concrete(id.concrete_impl_id),
-                function: db.impl_function_trait_function(id.function)?,
-            }),
+            GenericFunctionWithBodyId::Impl(id) => {
+                let impl_id = ImplId::Concrete(id.concrete_impl_id);
+                let function = db.impl_function_trait_function(id.function)?;
+                GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function })
+            }
+            GenericFunctionWithBodyId::TraitDefault(id) => {
+                let impl_id = ImplId::Concrete(id.concrete_impl_id);
+                GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function: id.function })
+            }
+            GenericFunctionWithBodyId::Trait(id) => GenericFunctionId::Trait(id),
         })
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -128,6 +135,13 @@ impl GenericFunctionId {
             GenericFunctionId::Extern(id) => id.full_path(defs_db),
             GenericFunctionId::Impl(id) => {
                 format!("{:?}::{}", id.impl_id.debug(db.elongate()), id.function.name(defs_db))
+            }
+            GenericFunctionId::Trait(id) => {
+                format!(
+                    "{}::{}",
+                    id.concrete_trait(db).full_path(db),
+                    id.trait_function(db).name(defs_db)
+                )
             }
         }
     }
@@ -155,6 +169,7 @@ impl GenericFunctionId {
                 let substitution = &GenericSubstitution::from_impl(id.impl_id);
                 SubstitutionRewriter { db, substitution }.rewrite(signature)
             }
+            GenericFunctionId::Trait(id) => db.concrete_trait_function_signature(id),
         }
     }
     pub fn generic_params(&self, db: &dyn SemanticGroup) -> Maybe<Vec<GenericParam>> {
@@ -166,6 +181,7 @@ impl GenericFunctionId {
                 let id = ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function);
                 db.concrete_trait_function_generic_params(id)
             }
+            GenericFunctionId::Trait(id) => db.concrete_trait_function_generic_params(id),
         }
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
@@ -173,6 +189,9 @@ impl GenericFunctionId {
             GenericFunctionId::Free(free_function) => free_function.name(db.upcast()),
             GenericFunctionId::Extern(extern_function) => extern_function.name(db.upcast()),
             GenericFunctionId::Impl(impl_function) => impl_function.format(db.upcast()),
+            GenericFunctionId::Trait(trait_function) => {
+                trait_function.trait_function(db).name(db.upcast())
+            }
         }
     }
     /// Returns the ModuleFileId of the function's definition if possible.
@@ -192,6 +211,9 @@ impl GenericFunctionId {
                     None
                 }
             }
+            GenericFunctionId::Trait(trait_function) => Some(
+                trait_function.trait_function(db).trait_id(db.upcast()).module_file_id(db.upcast()),
+            ),
         }
     }
     /// Returns whether the function has the `#[must_use]` attribute.
@@ -199,6 +221,7 @@ impl GenericFunctionId {
         match self {
             GenericFunctionId::Free(id) => id.has_attr(db, MUST_USE_ATTR),
             GenericFunctionId::Impl(id) => id.function.has_attr(db, MUST_USE_ATTR),
+            GenericFunctionId::Trait(id) => id.trait_function(db).has_attr(db, MUST_USE_ATTR),
             GenericFunctionId::Extern(_) => Ok(false),
         }
     }
@@ -209,6 +232,7 @@ impl GenericFunctionId {
             GenericFunctionId::Impl(impl_generic_function) => {
                 impl_generic_function.impl_id.is_fully_concrete(db)
             }
+            GenericFunctionId::Trait(_) => false,
         }
     }
     /// Returns true if the function does not depend on impl or type variables.
@@ -218,6 +242,7 @@ impl GenericFunctionId {
             GenericFunctionId::Impl(impl_generic_function) => {
                 impl_generic_function.impl_id.is_var_free(db)
             }
+            GenericFunctionId::Trait(_) => false,
         }
     }
 }
@@ -250,6 +275,7 @@ impl DebugWithDb<dyn SemanticGroup> for GenericFunctionId {
             GenericFunctionId::Free(func) => write!(f, "{:?}", func.debug(db)),
             GenericFunctionId::Extern(func) => write!(f, "{:?}", func.debug(db)),
             GenericFunctionId::Impl(func) => write!(f, "{:?}", func.debug(db)),
+            GenericFunctionId::Trait(func) => write!(f, "{:?}", func.debug(db)),
         }
     }
 }
@@ -324,11 +350,20 @@ pub struct ImplGenericFunctionWithBodyId {
     pub function: ImplFunctionId,
 }
 
+/// A generic function of a concrete impl.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct TraitDefaultGenericFunctionWithBodyId {
+    pub concrete_impl_id: ConcreteImplId,
+    pub function: TraitFunctionId,
+}
+
 /// The ID of a generic function with body that can be concretized.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum GenericFunctionWithBodyId {
     Free(FreeFunctionId),
     Impl(ImplGenericFunctionWithBodyId),
+    TraitDefault(TraitDefaultGenericFunctionWithBodyId),
+    Trait(ConcreteTraitGenericFunctionId),
 }
 impl GenericFunctionWithBodyId {
     pub fn from_generic(db: &dyn SemanticGroup, other: GenericFunctionId) -> Maybe<Option<Self>> {
@@ -338,16 +373,19 @@ impl GenericFunctionWithBodyId {
                 impl_id: ImplId::Concrete(concrete_impl_id),
                 function,
             }) => {
-                let Some(impl_function) =
-                    db.impl_function_by_trait_function(concrete_impl_id.impl_def_id(db), function)?
-                else {
-                    return Ok(None);
-                };
-                GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
-                    concrete_impl_id,
-                    function: impl_function,
-                })
+                if let Some(impl_function) = concrete_impl_id.get_impl_function(db, function)? {
+                    GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
+                        concrete_impl_id,
+                        function: impl_function,
+                    })
+                } else {
+                    GenericFunctionWithBodyId::TraitDefault(TraitDefaultGenericFunctionWithBodyId {
+                        concrete_impl_id,
+                        function,
+                    })
+                }
             }
+            GenericFunctionId::Trait(id) => GenericFunctionWithBodyId::Trait(id),
             _ => return Ok(None),
         }))
     }
@@ -358,6 +396,16 @@ impl GenericFunctionWithBodyId {
                 format!("{}::{}", imp.concrete_impl_id.name(db), imp.function.name(db.upcast()))
                     .into()
             }
+            GenericFunctionWithBodyId::TraitDefault(trt) => {
+                format!("{}::{}", trt.concrete_impl_id.name(db), trt.function.name(db.upcast()))
+                    .into()
+            }
+            GenericFunctionWithBodyId::Trait(trt) => format!(
+                "{}::{}",
+                trt.concrete_trait(db).name(db),
+                trt.trait_function(db).name(db.upcast())
+            )
+            .into(),
         }
     }
 
@@ -370,6 +418,16 @@ impl GenericFunctionWithBodyId {
                 imp.concrete_impl_id.impl_def_id(db).full_path(defs_db),
                 imp.function.name(defs_db)
             ),
+            GenericFunctionWithBodyId::TraitDefault(trt) => format!(
+                "{}::{}",
+                trt.concrete_impl_id.impl_def_id(db).full_path(defs_db),
+                trt.function.name(defs_db)
+            ),
+            GenericFunctionWithBodyId::Trait(trt) => format!(
+                "{}::{}",
+                trt.concrete_trait(db).full_path(db),
+                trt.trait_function(db).name(defs_db)
+            ),
         }
     }
     pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
@@ -379,6 +437,12 @@ impl GenericFunctionWithBodyId {
             }
             GenericFunctionWithBodyId::Impl(impl_function) => {
                 impl_function.function.stable_location(db.upcast())
+            }
+            GenericFunctionWithBodyId::TraitDefault(trait_function) => {
+                trait_function.function.stable_location(db.upcast())
+            }
+            GenericFunctionWithBodyId::Trait(trait_function) => {
+                trait_function.trait_function(db).stable_location(db.upcast())
             }
         }
     }
@@ -391,10 +455,14 @@ pub struct ConcreteFunctionWithBody {
     pub generic_args: Vec<semantic::GenericArgumentId>,
 }
 impl ConcreteFunctionWithBody {
-    pub fn function_with_body_id(&self) -> FunctionWithBodyId {
+    pub fn function_with_body_id(&self, db: &dyn SemanticGroup) -> FunctionWithBodyId {
         match self.generic_function {
             GenericFunctionWithBodyId::Free(id) => FunctionWithBodyId::Free(id),
             GenericFunctionWithBodyId::Impl(id) => FunctionWithBodyId::Impl(id.function),
+            GenericFunctionWithBodyId::TraitDefault(id) => FunctionWithBodyId::Trait(id.function),
+            GenericFunctionWithBodyId::Trait(id) => {
+                FunctionWithBodyId::Trait(id.trait_function(db))
+            }
         }
     }
     pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
@@ -417,6 +485,39 @@ impl ConcreteFunctionWithBody {
                         )
                         .collect_vec(),
                     ),
+                )
+            }
+            GenericFunctionWithBodyId::TraitDefault(f) => {
+                let concrete_trait =
+                    ImplId::Concrete(f.concrete_impl_id).concrete_trait(db)?.lookup_intern(db);
+                GenericSubstitution::from_impl(ImplId::Concrete(f.concrete_impl_id)).concat(
+                    GenericSubstitution::new(
+                        &chain!(
+                            db.trait_function_generic_params(f.function)?,
+                            db.trait_generic_params(concrete_trait.trait_id)?
+                        )
+                        .collect_vec(),
+                        &chain!(
+                            self.generic_args.iter().copied(),
+                            concrete_trait.generic_args.iter().copied()
+                        )
+                        .collect_vec(),
+                    ),
+                )
+            }
+            GenericFunctionWithBodyId::Trait(f) => {
+                let concrete_trait = f.concrete_trait(db).lookup_intern(db);
+                GenericSubstitution::new(
+                    &chain!(
+                        db.trait_function_generic_params(f.trait_function(db))?,
+                        db.trait_generic_params(concrete_trait.trait_id)?
+                    )
+                    .collect_vec(),
+                    &chain!(
+                        self.generic_args.iter().copied(),
+                        concrete_trait.generic_args.iter().copied()
+                    )
+                    .collect_vec(),
                 )
             }
         })
@@ -460,6 +561,24 @@ impl ConcreteFunctionWithBody {
                     generic_args,
                 }
             }
+            FunctionWithBodyId::Trait(trait_function_id) => {
+                let params = db.trait_function_generic_params(trait_function_id)?;
+                let generic_args = generic_params_to_args(&params, db);
+                let trait_id = trait_function_id.trait_id(db.upcast());
+                let trait_generic_params = db.trait_generic_params(trait_id)?;
+                let trait_generic_args = generic_params_to_args(&trait_generic_params, db);
+                let concrete_trait_id = ConcreteTraitLongId {
+                    generic_args: trait_generic_args,
+                    trait_id: trait_function_id.trait_id(db.upcast()),
+                }
+                .intern(db);
+                let trait_generic_function =
+                    ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, trait_function_id);
+                ConcreteFunctionWithBody {
+                    generic_function: GenericFunctionWithBodyId::Trait(trait_generic_function),
+                    generic_args,
+                }
+            }
         })
     }
     pub fn concrete(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteFunction> {
@@ -472,7 +591,7 @@ impl ConcreteFunctionWithBody {
         Ok(FunctionLongId { function: self.concrete(db)? }.intern(db))
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
-        self.function_with_body_id().name(db.upcast())
+        self.function_with_body_id(db).name(db.upcast())
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
         self.generic_function.full_path(db)
@@ -515,7 +634,7 @@ semantic_object_for_id!(
 );
 impl ConcreteFunctionWithBodyId {
     pub fn function_with_body_id(&self, db: &dyn SemanticGroup) -> FunctionWithBodyId {
-        self.lookup_intern(db).function_with_body_id()
+        self.lookup_intern(db).function_with_body_id(db)
     }
     pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
         self.lookup_intern(db).substitution(db)
