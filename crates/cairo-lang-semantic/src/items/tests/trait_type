@@ -2257,3 +2257,36 @@ impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Accessing a member of a type that is a trait's associated type. 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> felt252 {
+    let x = Trt::foo();
+    x.t
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Trt {
+    type T;
+    fn foo() -> Self::T;
+}
+
+//! > expected_diagnostics
+error: Type annotations needed. Failed to infer ImplVar(test::Trt)::T.
+ --> lib.cairo:7:7
+    x.t
+      ^
+
+error: Trait has no implementation in context: test::Trt.
+ --> lib.cairo:5:21
+fn foo() -> felt252 {
+                    ^
