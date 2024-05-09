@@ -2,6 +2,7 @@ use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
@@ -102,15 +103,31 @@ fn get_storage_member_code(
     member: ast::Member,
     extra_uses_node: RewriteNode,
 ) -> StorageMemberCodePieces {
-    if starknet_module_kind == StarknetModuleKind::Contract
-        && has_v0_attribute(db, diagnostics, &member, SUBSTORAGE_ATTR)
+    if starknet_module_kind == StarknetModuleKind::Contract && member.has_attr(db, SUBSTORAGE_ATTR)
     {
-        if let Some((member_code, member_init_code)) = get_substorage_member_code(db, &member) {
-            return StorageMemberCodePieces {
-                member_code: Some(member_code),
-                init_code: Some(member_init_code),
-                module_code: None,
-            };
+        if let ast::OptionArgListParenthesized::Empty(_) =
+            member.find_attr(db, SUBSTORAGE_ATTR).unwrap().arguments(db)
+        {
+            return get_substorage_member_code(db, &member, starknet_module_kind, extra_uses_node);
+        } else if has_v0_attribute(db, diagnostics, &member, SUBSTORAGE_ATTR) {
+            if let Some((member_code, member_init_code)) =
+                get_substorage_v0_member_code(db, &member)
+            {
+                return StorageMemberCodePieces {
+                    member_code: Some(member_code),
+                    init_code: Some(member_init_code),
+                    module_code: None,
+                };
+            } else {
+                diagnostics.push(PluginDiagnostic::error(
+                    member.stable_ptr().untyped(),
+                    format!(
+                        "`{SUBSTORAGE_ATTR}` attribute is only allowed for members of type \
+                         [some_path::]{STORAGE_STRUCT_NAME}`"
+                    ),
+                ));
+                return Default::default();
+            }
         } else {
             diagnostics.push(PluginDiagnostic::error(
                 member.stable_ptr().untyped(),
@@ -122,7 +139,6 @@ fn get_storage_member_code(
             return Default::default();
         }
     }
-
     get_simple_storage_member_code(db, diagnostics, member, starknet_module_kind, extra_uses_node)
 }
 
@@ -289,8 +305,8 @@ fn get_full_path_type(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> RewriteNode
     }
 }
 
-/// Returns the relevant code for a substorage storage member.
-fn get_substorage_member_code(
+/// Returns the relevant code for a legacy (`substorage(v0)`) storage member.
+fn get_substorage_v0_member_code(
     db: &dyn SyntaxGroup,
     member: &ast::Member,
 ) -> Option<(RewriteNode, RewriteNode)> {
@@ -341,6 +357,86 @@ fn get_substorage_member_code(
             }
         }
         _ => None,
+    }
+}
+
+/// Returns the relevant code for a substorage storage member.
+fn get_substorage_member_code(
+    db: &dyn SyntaxGroup,
+    member: &ast::Member,
+    starknet_module_kind: StarknetModuleKind,
+    extra_uses_node: RewriteNode,
+) -> StorageMemberCodePieces {
+    // TODO(Gil): This code has a lot of duplication with the simple storage member code. Extract
+    // the common parts to a function.
+    let name_node = member.name(db).as_syntax_node();
+    let name = member.name(db).text(db);
+    let member_module_path = RewriteNode::mapped_text(
+        &format!("__member_module_{name}"),
+        name_node.span_without_trivia(db),
+    );
+    let member_node = RewriteNode::interpolate_patched(
+        &format!("$name$: $member_module_path$::{}", starknet_module_kind.get_member_state_name()),
+        &[
+            ("name".to_string(), RewriteNode::new_trimmed(name_node.clone())),
+            ("member_module_path".to_string(), member_module_path.clone()),
+        ]
+        .into(),
+    );
+    let member_code = RewriteNode::interpolate_patched(
+        "\n        pub $member$,",
+        &[("member".to_string(), member_node.clone())].into(),
+    );
+    let member_init_code = RewriteNode::interpolate_patched(
+        "\n            $member$ {},",
+        &[("member".to_string(), member_node)].into(),
+    );
+    let type_ast = member.type_clause(db).ty(db);
+    let contract_level_type_path =
+        RewriteNode::Text(type_ast.as_syntax_node().get_text_without_trivia(db));
+    let type_path = get_full_path_type(db, &type_ast);
+
+    let member_state_name = starknet_module_kind.get_member_state_name();
+    let name = member.name(db).text(db);
+    let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
+
+    let module_code = RewriteNode::interpolate_patched(
+        &format!(
+            "
+    pub mod $member_module_path$ {{$extra_uses$
+        #[derive(Copy, Drop)]
+        pub struct {member_state_name} {{}}
+        impl Storage{member_state_name}AsPathImpl of {STORAGE_AS_PATH_TRAIT}<{member_state_name}, \
+             $type_path$> {{
+            fn as_path(self: @{member_state_name}) -> starknet::storage::StoragePath<$type_path$> \
+             {{
+                    starknet::storage::StoragePath::<$type_path$> {{ hash_state:
+                        \
+             core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), \
+             {address})
+                     }}
+    
+                }}
+        }}
+    }}"
+        ),
+        &[
+            (
+                "storage_member_name".to_string(),
+                RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
+            ),
+            ("member_module_path".to_string(), member_module_path),
+            ("extra_uses".to_string(), extra_uses_node),
+            ("type_path".to_string(), type_path),
+            ("contract_level_type_path".to_string(), contract_level_type_path),
+        ]
+        .into(),
+    );
+
+    StorageMemberCodePieces {
+        member_code: Some(member_code),
+        init_code: Some(member_init_code),
+        module_code: Some(module_code),
     }
 }
 
