@@ -41,7 +41,7 @@ pub fn priv_function_with_body_feedback_set_of_representative(
     function: ConcreteSCCRepresentative,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId>> {
     Ok(calc_feedback_set(
-        &ConcreteFunctionWithBodyNode {
+        ConcreteFunctionWithBodyNode {
             function_id: function.0,
             db,
             dependency_type: DependencyType::Cost,
