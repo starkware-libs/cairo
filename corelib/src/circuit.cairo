@@ -46,6 +46,9 @@ extern type CircuitInputAccumulator<C>;
 /// A type representing a circuit instance data with all the inputs filled.
 extern type CircuitData<C>;
 
+/// A type representing a circuit instance where the outputs are filled.
+extern type CircuitOutput<C>;
+
 /// A type representing a circuit descriptor.
 extern type CircuitDescriptor<C>;
 
