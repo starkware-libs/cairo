@@ -327,18 +327,17 @@ pub enum Event {}
         unsafe_new_contract_state()
     }
     
-    pub mod __member_module_mapping {
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-        impl StorageContractMemberStateAsPathImpl of starknet::storage::StorageAsPath<ContractMemberState, Map::<felt252, felt252>> {
-            fn as_path(self: @ContractMemberState) -> starknet::storage::StoragePath<Map::<felt252, felt252>> {
-                    starknet::storage::StoragePath::<Map::<felt252, felt252>> { hash_state:
-                        core::poseidon::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), 0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4)
-                     }
 
+        pub mod __member_module_mapping {
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = Map::<felt252, felt252>;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4>()
                 }
+            }
         }
-    }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
@@ -400,16 +399,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Type not found.
- --> lib.cairo:5:18
-        mapping: Map::<felt252, felt252>,
-                 ^*^
-
-error: Type not found.
- --> lib.cairo:5:18
-        mapping: Map::<felt252, felt252>,
-                 ^*^
-
 error: Type not found.
  --> lib.cairo:5:18
         mapping: Map::<felt252, felt252>,

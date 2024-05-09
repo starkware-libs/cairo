@@ -20,6 +20,7 @@ pub fn starknet_plugin_suite() -> PluginSuite {
     let mut suite = PluginSuite::default();
     suite
         .add_plugin::<plugin::StarkNetPlugin>()
+        .add_plugin::<plugin::storage_node::StorageNodePlugin>()
         .add_inline_macro_plugin::<inline_macros::selector::SelectorMacro>()
         .add_inline_macro_plugin::<inline_macros::get_dep_component::GetDepComponentMacro>()
         .add_inline_macro_plugin::<inline_macros::get_dep_component::GetDepComponentMutMacro>()
