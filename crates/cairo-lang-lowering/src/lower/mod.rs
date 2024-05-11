@@ -1170,10 +1170,7 @@ fn perform_function_call(
 
             return Err(LoweringFlowError::Match(MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id: extract_matches!(
-                    extract_matches!(
-                        ret_ty.lookup_intern(ctx.db),
-                        semantic::TypeLongId::Concrete
-                    ),
+                    extract_matches!(ret_ty.lookup_intern(ctx.db), semantic::TypeLongId::Concrete),
                     semantic::ConcreteTypeId::Enum
                 ),
                 input: VarUsage { var_id: call_result.returns[0].var_id, location },
