@@ -358,7 +358,7 @@ fn is_function_const(db: &dyn SemanticGroup, function_id: FunctionId) -> bool {
     let Ok(trait_id) = db.impl_def_trait(impl_def) else {
         return false;
     };
-    let expected_trait_name = match imp.function.name(db.upcast()).as_str() {
+    let expected_trait_name = match imp.function_body.name(db.upcast()).as_str() {
         "neg" => "Neg",
         "add" => "Add",
         "sub" => "Sub",
