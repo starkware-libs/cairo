@@ -20,7 +20,8 @@ use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
 use cairo_lang_lowering::FlatLowered;
 use cairo_lang_semantic::items::functions::{
-    ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplGenericFunctionWithBodyId,
+    ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplFunctionBodyId,
+    ImplGenericFunctionWithBodyId,
 };
 use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_starknet::starknet_plugin_suite;
@@ -158,7 +159,7 @@ fn get_all_funcs(
                                 generic_args: vec![],
                             }
                             .intern(db),
-                            function: *impl_func,
+                            function_body: ImplFunctionBodyId::Impl(*impl_func),
                         }),
                     );
                 }
