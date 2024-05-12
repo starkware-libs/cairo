@@ -624,8 +624,6 @@ pub fn priv_impl_definition_data(
     // Ignore the result.
     .ok();
 
-    // TODO(yuval): verify that all functions and types of `concrete_trait` appear in this impl.
-
     let mut function_asts = OrderedHashMap::default();
     let mut item_type_asts = OrderedHashMap::default();
     let mut item_id_by_name = OrderedHashMap::default();
@@ -709,8 +707,6 @@ pub fn priv_impl_definition_data(
     // It is later verified that all items in this impl match items from `concrete_trait`.
     // To ensure exact match (up to trait functions with default implementation), it is sufficient
     // to verify here that all items in `concrete_trait` appear in this impl.
-    // TODO(yuval): Once default implementation of trait functions is supported, filter such
-    // functions out.
     let impl_item_names: OrderedHashSet<SmolStr> = item_id_by_name.keys().cloned().collect();
     let trait_id = concrete_trait.lookup_intern(db).trait_id;
     let trait_required_item_names = db.trait_required_item_names(trait_id)?;
