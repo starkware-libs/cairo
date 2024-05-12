@@ -171,3 +171,39 @@ test::foo@0() -> (CircuitDescriptor<(core::circuit::AddModGate::<core::circuit::
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > NonZero<u384>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::circuit::u384;
+
+fn foo(a: NonZero<u384>) -> NonZero<u384> {
+    a
+}
+
+//! > casm
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::circuit::u384 = Struct<ut@core::circuit::u384, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<core::circuit::u384> = NonZero<core::circuit::u384> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc store_temp<NonZero<core::circuit::u384>> = store_temp<NonZero<core::circuit::u384>>;
+
+store_temp<NonZero<core::circuit::u384>>([0]) -> ([0]); // 0
+return([0]); // 1
+
+test::foo@0([0]: NonZero<core::circuit::u384>) -> (NonZero<core::circuit::u384>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 400})

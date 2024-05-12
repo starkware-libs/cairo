@@ -6,6 +6,14 @@ pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs
     CircuitElement::<AddModGate<Lhs, Rhs>> {}
 }
 
+/// A 384-bit unsigned integer, used for circuit values.
+#[derive(Copy, Drop)]
+struct u384 {
+    limb0: u96,
+    limb1: u96,
+    limb2: u96,
+    limb3: u96,
+}
 
 pub type u96 = core::internal::BoundedInt<0, 79228162514264337593543950335>;
 pub extern type RangeCheck96;
