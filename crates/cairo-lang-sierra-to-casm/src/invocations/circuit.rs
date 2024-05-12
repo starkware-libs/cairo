@@ -100,6 +100,9 @@ fn build_get_descriptor(
     circuit_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
+    let CircuitInfo { add_offsets, .. } =
+        builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
+
     let ctx = casm! {
         // The relocation will point the `call` to the `ret;` instruction that precedes the
         // relevant const.
@@ -108,7 +111,9 @@ fn build_get_descriptor(
         // constant value (the `1` is to skip the `ret` instruction).
         // TODO(Gil): Support relocatable CellExpression and return an unstored "[ap - 1] + 1".
         [ap] = [ap - 1] + 1, ap++;
+        [ap] = [ap - 1] + (add_offsets.len() * VALUE_SIZE), ap++;
     };
+
     let relocations = vec![
         RelocationEntry {
             instruction_idx: 0,
@@ -122,10 +127,12 @@ fn build_get_descriptor(
     Ok(builder.build(
         ctx.instructions,
         relocations,
-        [vec![ReferenceExpression::from_cell(CellExpression::Deref(CellRef {
-            register: Register::AP,
-            offset: -1,
-        }))]
+        [vec![ReferenceExpression {
+            cells: vec![
+                CellExpression::Deref(CellRef { register: Register::AP, offset: -2 }),
+                CellExpression::Deref(CellRef { register: Register::AP, offset: -1 }),
+            ],
+        }]
         .into_iter()]
         .into_iter(),
     ))
