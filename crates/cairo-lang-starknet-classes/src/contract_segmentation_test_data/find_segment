@@ -352,29 +352,27 @@ Casm compilation failed.
 BytecodeSegmentLengthTest
 
 //! > sierra
-type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
+type CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> = Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> = AddModGate<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<2> = CircuitInput<2> [storable: false, drop: false, dup: false, zero_sized: false];
 type (core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>) = Struct<ut@Tuple, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>> [storable: false, drop: false, dup: false, zero_sized: false];
-type CircuitInputAccumulator<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> = CircuitInputAccumulator<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> [storable: true, drop: true, dup: false, zero_sized: false];
-type core::circuit::CircuitInput::<1> = CircuitInput<1> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::circuit::CircuitInput::<1> = CircuitInput<1> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc init_circuit_data<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> = init_circuit_data<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>;
-libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
-libfunc store_temp<CircuitInputAccumulator<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = store_temp<CircuitInputAccumulator<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>;
+libfunc get_circuit_descriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = get_circuit_descriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>;
 
-init_circuit_data<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>([0]) -> ([1], [2]); // 0
-store_temp<RangeCheck96>([1]) -> ([1]); // 1
-store_temp<CircuitInputAccumulator<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>([2]) -> ([2]); // 2
-return([1], [2]); // 3
+get_circuit_descriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>() -> ([0]); // 0
+return([0]); // 1
 
-test::foo@0([0]: RangeCheck96) -> (RangeCheck96, CircuitInputAccumulator<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>);
+test::foo@0() -> (CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>);
 
 //! > cairo_program
-[ap + 0] = [fp + -3] + 16, ap++;
-[ap + 0] = [fp + -3], ap++;
-[ap + 0] = [fp + -3] + 8, ap++;
+call rel 11;
+[ap + 0] = [ap + -1] + 10, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -1] + 4, ap++;
+[ap + 0] = 2, ap++;
 ret;
 ret;
 dw 16;
@@ -391,4 +389,4 @@ dw 20;
 Ok([0])
 
 //! > bytecode_lengths
-Ok(Node([Leaf(6), Leaf(10)]))
+Ok(Node([Leaf(11), Leaf(10)]))
