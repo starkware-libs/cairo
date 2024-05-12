@@ -80,8 +80,8 @@ pub fn get_type_size_map(
                 Some(size)
             }
 
-            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitInputAccumulator(_))
-            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitDescriptor(_)) => Some(2),
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitInputAccumulator(_)) => Some(2),
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitDescriptor(_)) => Some(4),
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitData(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitOutput(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::AddMod(_))

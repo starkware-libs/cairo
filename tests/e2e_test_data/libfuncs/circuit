@@ -139,9 +139,11 @@ fn foo() -> CircuitDescriptor<MyCircuit> {
 }
 
 //! > casm
-call rel 7;
-[ap + 0] = [ap + -1] + 6, ap++;
+call rel 11;
+[ap + 0] = [ap + -1] + 10, ap++;
+[ap + 0] = 1, ap++;
 [ap + 0] = [ap + -1] + 4, ap++;
+[ap + 0] = 2, ap++;
 ret;
 ret;
 dw 16;
@@ -170,7 +172,7 @@ return([0]); // 1
 test::foo@0() -> (CircuitDescriptor<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 600})
 
 //! > ==========================================================================
 
