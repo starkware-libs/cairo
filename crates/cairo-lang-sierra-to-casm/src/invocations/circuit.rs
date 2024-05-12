@@ -2,11 +2,11 @@ use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_casm::{casm, casm_build_extend};
-use cairo_lang_sierra::extensions::circuit::CircuitConcreteLibfunc;
+use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::circuit::{CircuitInfo, VALUE_SIZE};
+use crate::circuit::VALUE_SIZE;
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 use crate::relocations::{Relocation, RelocationEntry};
