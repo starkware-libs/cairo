@@ -139,9 +139,11 @@ fn foo() -> CircuitDescriptor<MyCircuit> {
 }
 
 //! > casm
-call rel 7;
-[ap + 0] = [ap + -1] + 6, ap++;
+call rel 11;
+[ap + 0] = [ap + -1] + 10, ap++;
+[ap + 0] = 1, ap++;
 [ap + 0] = [ap + -1] + 4, ap++;
+[ap + 0] = 2, ap++;
 ret;
 ret;
 dw 16;
