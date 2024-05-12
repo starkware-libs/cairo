@@ -1,12 +1,10 @@
 use cairo_lang_sierra::extensions::circuit::{
-    CircuitConcreteLibfunc, CircuitTypeConcrete, ConcreteCircuitInput,
+    CircuitTypeConcrete, ConcreteCircuit, ConcreteCircuitInput,
 };
-use cairo_lang_sierra::extensions::core::{
-    CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
-};
+use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType, CoreTypeConcrete};
 use cairo_lang_sierra::extensions::structure::StructConcreteType;
-use cairo_lang_sierra::extensions::ConcreteType;
-use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
+use cairo_lang_sierra::extensions::{args_as_single_type, ConcreteType};
+use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::GenericArg;
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_utils::extract_matches;
@@ -28,17 +26,16 @@ pub struct CircuitsInfo {
 impl CircuitsInfo {
     pub fn new<'a>(
         registry: &ProgramRegistry<CoreType, CoreLibfunc>,
-        libfunc_ids: impl Iterator<Item = &'a ConcreteLibfuncId>,
+        type_ids: impl Iterator<Item = &'a ConcreteTypeId>,
     ) -> Result<Self, CompilationError> {
         let mut res = Self::default();
-        for libfunc_id in libfunc_ids {
-            if let CoreConcreteLibfunc::Circuit(CircuitConcreteLibfunc::InitCircuitData(libfunc))
-            | CoreConcreteLibfunc::Circuit(CircuitConcreteLibfunc::GetDescriptor(libfunc)) =
-                registry.get_libfunc(libfunc_id).unwrap()
+        for ty in type_ids {
+            if let CoreTypeConcrete::Circuit(CircuitTypeConcrete::Circuit { .. }) =
+                registry.get_type(ty).unwrap()
             {
                 res.circuits
-                    .entry(libfunc.ty.clone())
-                    .or_insert_with(|| get_circuit_info(registry, &libfunc.ty).unwrap());
+                    .entry(ty.clone())
+                    .or_insert_with(|| get_circuit_info(registry, ty).unwrap());
             }
         }
         Ok(res)
@@ -143,8 +140,15 @@ fn get_circuit_info(
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
     ty: &ConcreteTypeId,
 ) -> Result<CircuitInfo, CompilationError> {
-    let CoreTypeConcrete::Struct(outputs_tuple) =
+    let CoreTypeConcrete::Circuit(CircuitTypeConcrete::Circuit(ConcreteCircuit { info })) =
         registry.get_type(ty).map_err(CompilationError::ProgramRegistryError)?
+    else {
+        return Err(CompilationError::UnsupportedCircuitType);
+    };
+
+    let output_ty = args_as_single_type(&info.long_id.generic_args).unwrap();
+    let CoreTypeConcrete::Struct(outputs_tuple) =
+        registry.get_type(&output_ty).map_err(CompilationError::ProgramRegistryError)?
     else {
         return Err(CompilationError::UnsupportedCircuitType);
     };

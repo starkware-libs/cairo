@@ -452,7 +452,7 @@ pub fn compile(
     .map_err(|err| Box::new(err.into()))?;
 
     let circuits_info =
-        CircuitsInfo::new(&registry, program.libfunc_declarations.iter().map(|ld| &ld.id))?;
+        CircuitsInfo::new(&registry, program.type_declarations.iter().map(|td| &td.id))?;
 
     let mut program_offset: usize = 0;
     for (statement_id, statement) in program.statements.iter().enumerate() {

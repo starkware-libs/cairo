@@ -26,6 +26,7 @@ define_type_hierarchy! {
         AddMod(AddModType),
         MulMod(MulModType),
         AddModGate(AddModGate),
+        Circuit(Circuit),
         CircuitData(CircuitData),
         CircuitOutput(CircuitOutput),
         CircuitDescriptor(CircuitDescriptor),
@@ -359,12 +360,71 @@ impl ConcreteType for ConcreteCircuitDescriptor {
     }
 }
 
+/// A type that creates a circuit from a tuple of outputs.
+#[derive(Default)]
+pub struct Circuit {}
+impl NamedType for Circuit {
+    type Concrete = ConcreteCircuit;
+    const ID: GenericTypeId = GenericTypeId::new_inline("Circuit");
+
+    fn specialize(
+        &self,
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Self::Concrete::new(context, args)
+    }
+}
+
+pub struct ConcreteCircuit {
+    pub info: TypeInfo,
+}
+
+impl ConcreteCircuit {
+    fn new(
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self, SpecializationError> {
+        let outputs_tuple = args_as_single_type(args)?;
+        validate_outputs_tuple(context, outputs_tuple)?;
+        Ok(Self {
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId {
+                    generic_id: "Circuit".into(),
+                    generic_args: args.to_vec(),
+                },
+                duplicatable: true,
+                droppable: true,
+                storable: true,
+                zero_sized: false,
+            },
+        })
+    }
+}
+
+impl ConcreteType for ConcreteCircuit {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
+}
+
 /// Validate that `circ_ty` is a circuit type.
 fn validate_is_circuit(
     context: &dyn TypeSpecializationContext,
     circ_ty: ConcreteTypeId,
 ) -> Result<(), SpecializationError> {
-    let struct_generic_args = extract_type_generic_args::<StructType>(context, &circ_ty)?;
+    if context.get_type_info(circ_ty.clone())?.long_id.generic_id != Circuit::ID {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
+    Ok(())
+}
+
+/// Validate that `outputs_tuple_ty` is a tuple of circuit components.
+fn validate_outputs_tuple(
+    context: &dyn TypeSpecializationContext,
+    outputs_tuple_ty: ConcreteTypeId,
+) -> Result<(), SpecializationError> {
+    let struct_generic_args = extract_type_generic_args::<StructType>(context, &outputs_tuple_ty)?;
 
     let mut gargs = struct_generic_args.iter();
     if !matches!(

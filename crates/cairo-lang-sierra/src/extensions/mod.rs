@@ -32,7 +32,7 @@ fn args_as_single_value(args: &[GenericArg]) -> Result<BigInt, SpecializationErr
 }
 
 /// Helper for extracting the type from the template arguments.
-fn args_as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
+pub fn args_as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
     match args {
         [GenericArg::Type(ty)] => Ok(ty.clone()),
         [_] => Err(SpecializationError::UnsupportedGenericArg),
