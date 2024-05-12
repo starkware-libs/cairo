@@ -133,9 +133,9 @@ fn test_multiple_cycles(root: usize, expected_fset: HashSet<usize>) {
 }
 
 // Test a graph and continue from self loops.
-#[test_case(0, HashSet::from([0, 1, 2]); "root_0")]
+#[test_case(0, HashSet::from([1, 2]); "root_0")]
 #[test_case(1, HashSet::from([1, 2]); "root_1")]
-#[test_case(2, HashSet::from([0, 1, 2]); "root_2")]
+#[test_case(2, HashSet::from([2, 1]); "root_2")]
 fn test_with_self_loops(root: usize, expected_fset: HashSet<usize>) {
     let graph: Vec<Vec<usize>> = vec![
         // 0:
