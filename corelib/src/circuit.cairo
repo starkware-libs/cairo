@@ -21,6 +21,10 @@ pub extern type AddMod;
 pub extern type MulMod;
 
 
+// A wrapper to crate circuit.
+pub extern type Circuit<Outputs>;
+
+
 /// Defines an input for a circuit.
 #[phantom]
 pub extern type CircuitInput<const N: usize>;
@@ -85,9 +89,9 @@ pub trait CircuitDefinition<CE> {
 }
 
 impl SingleOutputCircuit<Out0> of CircuitDefinition<(CircuitElement<Out0>,)> {
-    type CircuitType = (Out0,);
+    type CircuitType = Circuit<(Out0,)>;
 
     fn init(self: (CircuitElement<Out0>,)) -> CircuitInputAccumulator<Self::CircuitType> {
-        init_circuit_data::<(Out0,)>()
+        init_circuit_data::<Self::CircuitType>()
     }
 }
