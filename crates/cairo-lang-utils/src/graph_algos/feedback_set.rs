@@ -23,6 +23,9 @@ mod feedback_set_test;
 struct FeedbackSetAlgoContext<Node: ComputeScc> {
     /// Nodes that were discovered as reachable from the current run, but possibly were not yet
     /// visited.
+    /// Note that nodes added here may be visited otherwise, as they could be a part of a cycle, as
+    /// well as appear more than once in this queue, so we keep a separate account of visited
+    /// nodes.
     pending: VecDeque<SccGraphNode<Node>>,
     /// The accumulated feedback set so far in the process of the algorithm. In the end of the
     /// algorithm, this is also the result.
