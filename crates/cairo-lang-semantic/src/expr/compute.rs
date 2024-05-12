@@ -2997,8 +2997,6 @@ pub fn compute_statement_semantic(
                 &mut UnorderedHashMap::default(),
             );
             let variables = pattern.variables(&ctx.patterns);
-            // TODO(yuval): allow unnamed variables. Add them here to
-            // ctx.environment.unnamed_variables
             for v in variables {
                 let var_def = Variable::Local(v.var.clone());
                 if let Some(old_var) =
