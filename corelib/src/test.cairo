@@ -30,5 +30,6 @@ mod to_byte_array_test;
 mod language_features {
     mod const_test;
     mod panics_test;
+    mod trait_test;
     mod while_test;
 }
