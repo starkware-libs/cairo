@@ -133,9 +133,9 @@ fn test_multiple_cycles(root: usize, expected_fset: HashSet<usize>) {
 }
 
 // Test a graph and continue from self loops.
-#[test_case(0, HashSet::from([0, 1, 2]); "root_0")]
+#[test_case(0, HashSet::from([1, 2]); "root_0")]
 #[test_case(1, HashSet::from([1, 2]); "root_1")]
-#[test_case(2, HashSet::from([0, 1, 2]); "root_2")]
+#[test_case(2, HashSet::from([2, 1]); "root_2")]
 fn test_with_self_loops(root: usize, expected_fset: HashSet<usize>) {
     let graph: Vec<Vec<usize>> = vec![
         // 0:
@@ -144,6 +144,29 @@ fn test_with_self_loops(root: usize, expected_fset: HashSet<usize>) {
         vec![0, 1],
         // 2:
         vec![2, 0],
+    ];
+
+    let fset =
+        HashSet::<usize>::from_iter(calc_feedback_set(IntegerNode { id: root, graph }.into()));
+    assert_eq!(fset, expected_fset);
+}
+
+// Test a graph and continue from size-2 loops.
+#[test_case(0, HashSet::from([0, 1, 3]); "root_0")]
+#[test_case(1, HashSet::from([1, 3]); "root_1")]
+#[test_case(2, HashSet::from([3, 1]); "root_2")]
+fn test_with_size2_loops(root: usize, expected_fset: HashSet<usize>) {
+    let graph: Vec<Vec<usize>> = vec![
+        // 0:
+        vec![1, 3],
+        // 1:
+        vec![0, 2],
+        // 2:
+        vec![1],
+        // 3:
+        vec![4, 0],
+        // 4:
+        vec![3],
     ];
 
     let fset =

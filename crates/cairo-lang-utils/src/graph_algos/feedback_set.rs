@@ -59,28 +59,35 @@ fn calc_feedback_set_recursive<Node: ComputeScc>(
     ctx: &mut FeedbackSetAlgoContext<Node>,
 ) {
     let cur_node_id = node.get_id();
-    if ctx.visited.contains(&cur_node_id) {
+    if !ctx.visited.insert(cur_node_id.clone()) {
         return;
-    }
-    ctx.visited.insert(cur_node_id.clone());
-    ctx.in_flight.insert(cur_node_id.clone());
-    let mut neighbors = node.get_neighbors().into_iter();
-    for neighbor in neighbors.by_ref() {
-        let neighbor_id = neighbor.get_id();
-        if ctx.feedback_set.contains(&neighbor_id) {
-            continue;
-        } else if ctx.in_flight.contains(&neighbor_id) {
-            ctx.feedback_set.insert(neighbor_id);
-        } else {
-            calc_feedback_set_recursive(neighbor, ctx);
-        }
+    };
+    let neighbors = node.get_neighbors();
+    let has_self_loop = neighbors.iter().any(|neighbor| neighbor.get_id() == cur_node_id);
+    let mut remaining_neighbors = neighbors.into_iter();
+    if has_self_loop {
+        // If there is a self-loop, we prefer to add the current node to the feedback set as it must
+        // be there eventually. This may result in smaller feedback sets in many cases.
+        ctx.feedback_set.insert(cur_node_id.clone());
+    } else {
+        ctx.in_flight.insert(cur_node_id.clone());
+        for neighbor in remaining_neighbors.by_ref() {
+            let neighbor_id = neighbor.get_id();
+            if ctx.feedback_set.contains(&neighbor_id) {
+                continue;
+            } else if ctx.in_flight.contains(&neighbor_id) {
+                ctx.feedback_set.insert(neighbor_id);
+            } else {
+                calc_feedback_set_recursive(neighbor, ctx);
+            }
 
-        // `node` might have been added to the fset during this iteration of the loop. If so, no
-        // need to continue this loop.
-        if ctx.feedback_set.contains(&cur_node_id) {
-            break;
+            // `node` might have been added to the fset during this iteration of the loop. If so, no
+            // need to continue this loop.
+            if ctx.feedback_set.contains(&cur_node_id) {
+                break;
+            }
         }
-    }
-    ctx.pending.extend(neighbors.filter(|node| !ctx.visited.contains(&node.get_id())));
-    ctx.in_flight.remove(&cur_node_id);
+        ctx.in_flight.remove(&cur_node_id);
+    };
+    ctx.pending.extend(remaining_neighbors.filter(|node| !ctx.visited.contains(&node.get_id())));
 }
