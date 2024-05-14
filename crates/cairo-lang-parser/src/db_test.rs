@@ -45,3 +45,11 @@ fn test_parser() {
 
     assert_eq!(syntax_file, expected_syntax_file);
 }
+
+#[test]
+fn test_parser_shorthand() {
+    let db = SimpleParserDatabase::default();
+    let (_node, diagnostics) = db.parse_virtual_with_diagnostics("");
+    assert_eq!(diagnostics.format(&db), "");
+    let _node = db.parse_virtual("").unwrap();
+}
