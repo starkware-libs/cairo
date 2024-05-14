@@ -62,7 +62,7 @@ use cairo_lang_filesystem::db::{
     get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
-use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::{TextPosition, TextSpan};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
@@ -1114,28 +1114,13 @@ fn lookup_item_from_ast(
 fn get_node_and_lookup_items(
     db: &(dyn SemanticGroup + 'static),
     file: FileId,
-    position: Position,
+    position: TextPosition,
 ) -> Option<(SyntaxNode, Vec<LookupItemId>)> {
-    let mut res = Vec::new();
-    let syntax_db = db.upcast();
-    let filename = file.file_name(db.upcast());
-
-    // Get syntax for file.
-    let syntax = db.file_syntax(file).to_option().on_none(|| {
-        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
-    })?;
-
-    // Get file summary and content.
-    let file_summary = db.file_summary(file).on_none(|| {
-        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
-    })?;
-    let content = db.file_content(file).on_none(|| {
-        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
-    })?;
-
     // Find offset for position.
-    let offset = position_to_offset(file_summary, position, &content)?;
-    let node = syntax.lookup_offset(syntax_db, offset);
+    let offset = position.offset_in_file(db.upcast(), file)?;
+
+    // Find the most specific syntax node at the offset.
+    let node = db.file_syntax(file).to_option()?.lookup_offset(db.upcast(), offset);
 
     // Find module.
     let module_id = find_node_module(db, file, node.clone()).on_none(|| {
@@ -1145,6 +1130,7 @@ fn get_node_and_lookup_items(
     let module_file_id = ModuleFileId(module_id, file_index);
 
     // Find containing function.
+    let mut res = Vec::new();
     let mut item_node = node.clone();
     loop {
         for item in lookup_item_from_ast(db, module_file_id, item_node.clone()) {
@@ -1157,25 +1143,6 @@ fn get_node_and_lookup_items(
             None => return Some((node, res)),
         }
     }
-}
-
-#[tracing::instrument(level = "trace", skip_all)]
-fn position_to_offset(
-    file_summary: Arc<FileSummary>,
-    position: Position,
-    content: &str,
-) -> Option<TextOffset> {
-    let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
-        error!("hover failed: position out of bounds");
-    })?;
-    let mut chars_it = offset.take_from(content).chars();
-    for _ in 0..position.character {
-        let c = chars_it.next().on_none(|| {
-            error!("position does not exist");
-        })?;
-        offset = offset.add_width(TextWidth::from_char(c));
-    }
-    Some(offset)
 }
 
 #[tracing::instrument(level = "trace", skip_all)]
@@ -1227,7 +1194,7 @@ fn is_cairo_file_path(file_path: &Url) -> bool {
 fn get_definition_location(
     db: &RootDatabase,
     file: FileId,
-    position: Position,
+    position: TextPosition,
 ) -> Option<(FileId, TextSpan)> {
     let syntax_db = db.upcast();
     let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
