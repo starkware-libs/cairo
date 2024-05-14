@@ -1,12 +1,15 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::SyntaxFile;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Intern, Upcast};
+use smol_str::ToSmolStr;
+use thiserror::Error;
 
 use crate::db::ParserDatabase;
 use crate::parser::Parser;
@@ -35,6 +38,41 @@ impl Upcast<dyn FilesGroup> for SimpleParserDatabase {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
         self
     }
+}
+
+impl SimpleParserDatabase {
+    pub fn parse_virtual(
+        &self,
+        content: impl ToString,
+    ) -> Result<SyntaxNode, ParsingDiagnosticsAddedError> {
+        let (node, diagnostics) = self.parse_virtual_with_diagnostics(content);
+        if diagnostics.check_error_free().is_ok() {
+            Ok(node)
+        } else {
+            Err(ParsingDiagnosticsAddedError { diagnostics })
+        }
+    }
+
+    pub fn parse_virtual_with_diagnostics(
+        &self,
+        content: impl ToString,
+    ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+        let file = FileLongId::Virtual(VirtualFile {
+            parent: None,
+            name: "parser_input".to_smolstr(),
+            content: Arc::new(content.to_string()),
+            code_mappings: Default::default(),
+            kind: FileKind::Module,
+        })
+        .intern(self);
+        get_syntax_root_and_diagnostics(self, file, content.to_string().as_str())
+    }
+}
+
+#[derive(Debug, Error)]
+#[error("Diagnostics added")]
+pub struct ParsingDiagnosticsAddedError {
+    pub diagnostics: Diagnostics<ParserDiagnostic>,
 }
 
 /// Reads a cairo file to the db and return the syntax_root and diagnostic of its parsing.
