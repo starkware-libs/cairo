@@ -1,12 +1,16 @@
+use std::error::Error;
+use std::fmt::Display;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::SyntaxFile;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Intern, Upcast};
+use smol_str::ToSmolStr;
 
 use crate::db::ParserDatabase;
 use crate::parser::Parser;
@@ -34,6 +38,63 @@ impl Upcast<dyn SyntaxGroup> for SimpleParserDatabase {
 impl Upcast<dyn FilesGroup> for SimpleParserDatabase {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
         self
+    }
+}
+
+impl SimpleParserDatabase {
+    /// Parse new file and return its syntax root.
+    ///
+    /// This is similar to `parse_virtual_with_diagnostics`, but it does not return diagnostics.
+    /// If the parser has emitted error diagnostics, this function will return an error.
+    /// If no error diagnostics has been emitted, the syntax root will be returned.
+    pub fn parse_virtual(
+        &self,
+        content: impl ToString,
+    ) -> Result<SyntaxNode, ParserErrorDiagnosticAdded> {
+        let (node, diagnostics) = self.parse_virtual_with_diagnostics(content);
+        if diagnostics.check_error_free().is_ok() {
+            Ok(node)
+        } else {
+            Err(ParserErrorDiagnosticAdded::new(diagnostics))
+        }
+    }
+
+    /// Parse new file and return its syntax root with diagnostics.
+    ///
+    /// This function creates new virtual file with the given content and parses it.
+    /// Diagnostics gathered by the parser are returned alongside the result.
+    pub fn parse_virtual_with_diagnostics(
+        &self,
+        content: impl ToString,
+    ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+        let file = FileLongId::Virtual(VirtualFile {
+            parent: None,
+            name: "parser_input".to_smolstr(),
+            content: Arc::new(content.to_string()),
+            code_mappings: Default::default(),
+            kind: FileKind::Module,
+        })
+        .intern(self);
+        get_syntax_root_and_diagnostics(self, file, content.to_string().as_str())
+    }
+}
+
+#[derive(Debug)]
+pub struct ParserErrorDiagnosticAdded {
+    pub diagnostics: Diagnostics<ParserDiagnostic>,
+}
+
+impl ParserErrorDiagnosticAdded {
+    pub fn new(diagnostics: Diagnostics<ParserDiagnostic>) -> Self {
+        Self { diagnostics }
+    }
+}
+
+impl Error for ParserErrorDiagnosticAdded {}
+
+impl Display for ParserErrorDiagnosticAdded {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Diagnostics added")
     }
 }
 
