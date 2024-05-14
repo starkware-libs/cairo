@@ -1,6 +1,6 @@
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_utils::Upcast;
-use tower_lsp::lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location, Range};
+use tower_lsp::lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location};
 
 use crate::get_definition_location;
 use crate::lang::lsp::{LsProtoGroup, ToCairo, ToLsp};
@@ -20,7 +20,6 @@ pub fn goto_definition(
     let (found_file, span) = get_definition_location(db, file, position)?;
     let found_uri = db.url_for_file(found_file);
 
-    let start = span.start.position_in_file(db.upcast(), found_file).unwrap().to_lsp();
-    let end = span.end.position_in_file(db.upcast(), found_file).unwrap().to_lsp();
-    Some(GotoDefinitionResponse::Scalar(Location { uri: found_uri, range: Range { start, end } }))
+    let range = span.position_in_file(db.upcast(), found_file)?.to_lsp();
+    Some(GotoDefinitionResponse::Scalar(Location { uri: found_uri, range }))
 }
