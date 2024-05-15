@@ -1333,6 +1333,26 @@ pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
     u512 { limb0, limb1, limb2, limb3 }
 }
 
+pub fn u256_wide_sqr(a: u256) -> u512 nopanic {
+    let (limb1, limb0) = u128_wide_mul(a.low, a.low);
+    let (limb2, limb1_part) = u128_wide_mul(a.low, a.high);
+    let (limb1, limb1_overflow0) = u128_add_with_carry(limb1, limb1_part);
+    let (limb1, limb1_overflow1) = u128_add_with_carry(limb1, limb1_part);
+    let (limb2, limb2_overflow) = u128_add_with_carry(limb2, limb2);
+    let (limb3, limb2_part) = u128_wide_mul(a.high, a.high);
+    // No overflow since no limb4.
+    let limb3 = u128_wrapping_add(limb3, limb2_overflow);
+    let (limb2, limb2_overflow) = u128_add_with_carry(limb2, limb2_part);
+    // No overflow since no limb4.
+    let limb3 = u128_wrapping_add(limb3, limb2_overflow);
+    // No overflow possible in this addition since both operands are 0/1.
+    let limb1_overflow = u128_wrapping_add(limb1_overflow0, limb1_overflow1);
+    let (limb2, limb2_overflow) = u128_add_with_carry(limb2, limb1_overflow);
+    // No overflow since no limb4.
+    let limb3 = u128_wrapping_add(limb3, limb2_overflow);
+    u512 { limb0, limb1, limb2, limb3 }
+}
+
 /// Calculates division with remainder of a u512 by a non-zero u256.
 #[inline(always)]
 pub fn u512_safe_div_rem_by_u256(
