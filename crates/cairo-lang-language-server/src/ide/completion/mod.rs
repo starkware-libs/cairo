@@ -11,7 +11,7 @@ use tower_lsp::lsp_types::{CompletionParams, CompletionResponse, CompletionTrigg
 use tracing::{debug, error};
 
 use self::completions::{colon_colon_completions, dot_completions, generic_completions};
-use crate::lang::lsp::LsProtoGroup;
+use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::{find_node_module, get_node_and_lookup_items};
 
 mod completions;
@@ -28,7 +28,7 @@ pub fn complete(params: CompletionParams, db: &RootDatabase) -> Option<Completio
     let mut position = text_document_position.position;
     position.character = position.character.saturating_sub(1);
 
-    let (mut node, lookup_items) = get_node_and_lookup_items(db, file_id, position)?;
+    let (mut node, lookup_items) = get_node_and_lookup_items(db, file_id, position.to_cairo())?;
 
     // Find module.
     let Some(module_id) = find_node_module(db, file_id, node.clone()) else {
