@@ -81,4 +81,46 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
             Result::Err(_) => false,
         }
     }
+
+    /// Converts from `Result<T, E>` to `Option<T>`.
+    ///
+    /// Converts `self` into an `Option<T>`, consuming `self`,
+    /// and discarding the error, if any.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x: Result<u32, ByteArray> = Result::Ok(2);
+    /// assert_eq!(x.ok(), Option::Some(2));
+    ///
+    /// let x: Result<u32, ByteArray> = Result::Err("Nothing here");
+    /// assert!(x.ok().is_none());
+    /// ```
+    fn ok<+Drop<T>, +Drop<E>>(self: Result<T, E>) -> Option<T> {
+        match self {
+            Result::Ok(x) => Option::Some(x),
+            Result::Err(_) => Option::None,
+        }
+    }
+
+    /// Converts from `Result<T, E>` to `Option<E>`.
+    ///
+    /// Converts `self` into an `Option<E>`, consuming `self`,
+    /// and discarding the success value, if any.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x: Result<u32, ByteArray> = Result::Err("Nothing here");
+    /// assert_eq!(x.err(), Option::Some("Nothing here"));
+    ///
+    /// let x: Result<u32, ByteArray> = Result::Ok(2);
+    /// assert!(x.err().is_none());
+    /// ```
+    fn err<+Drop<T>, +Drop<E>>(self: Result<T, E>) -> Option<E> {
+        match self {
+            Result::Ok(_) => Option::None,
+            Result::Err(x) => Option::Some(x),
+        }
+    }
 }
