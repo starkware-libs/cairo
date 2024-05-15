@@ -82,10 +82,15 @@ impl<'a, TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usiz
     }
 }
 
-/// Implementation of [CostInfoProvider] for [TypeSizeMap].
-impl CostInfoProvider for TypeSizeMap {
+/// Info provider used for the computation of libfunc costs.
+struct LibFuncCostInfoProvider {
+    type_sizes: TypeSizeMap,
+}
+
+/// Implementation of [CostInfoProvider] for [LibFuncCostInfoProvider].
+impl CostInfoProvider for LibFuncCostInfoProvider {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self[ty].into_or_panic()
+        self.type_sizes[ty].into_or_panic()
     }
 }
 
@@ -132,7 +137,8 @@ pub fn calc_gas_precost_info(
 /// Calculates gas pre-cost information for a given program - the gas costs of non-step tokens.
 pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let type_sizes = get_type_size_map(program, &registry).unwrap();
+    let cost_provider =
+        LibFuncCostInfoProvider { type_sizes: get_type_size_map(program, &registry).unwrap() };
 
     compute_costs::compute_costs(
         program,
@@ -140,7 +146,7 @@ pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
             let core_libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
-            core_libfunc_cost_base::core_libfunc_cost(core_libfunc, &type_sizes)
+            core_libfunc_cost_base::core_libfunc_cost(core_libfunc, &cost_provider)
         }),
         &compute_costs::PreCostContext {},
         &Default::default(),
@@ -319,7 +325,10 @@ pub fn compute_postcost_info<CostType: PostCostTypeEx>(
     enforced_function_costs: &OrderedHashMap<FunctionId, CostType>,
 ) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let type_size_map = get_type_size_map(program, &registry).unwrap();
+
+    let cost_provider =
+        LibFuncCostInfoProvider { type_sizes: get_type_size_map(program, &registry).unwrap() };
+
     let specific_cost_context =
         compute_costs::PostcostContext { get_ap_change_fn, precost_gas_info };
     compute_costs::compute_costs(
@@ -328,7 +337,7 @@ pub fn compute_postcost_info<CostType: PostCostTypeEx>(
             let core_libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
-            core_libfunc_cost_base::core_libfunc_cost(core_libfunc, &type_size_map)
+            core_libfunc_cost_base::core_libfunc_cost(core_libfunc, &cost_provider)
         }),
         &specific_cost_context,
         &enforced_function_costs
