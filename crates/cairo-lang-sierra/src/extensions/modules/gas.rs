@@ -147,7 +147,7 @@ pub enum CostTokenType {
     Step,
     /// The number of memory holes (untouched memory addresses).
     Hole,
-    /// The number of range check builtins.
+    /// The number of 128-bit range check builtins.
     RangeCheck,
 
     // Pre-cost token types (builtins):
@@ -159,6 +159,8 @@ pub enum CostTokenType {
     Bitwise,
     /// One invocation of the EC op builtin.
     EcOp,
+    /// The number of 96-bit range check builtins.
+    RangeCheck96,
 }
 impl CostTokenType {
     /// Iterates over the pre-cost token types.
@@ -186,6 +188,7 @@ impl CostTokenType {
             CostTokenType::Step => "step",
             CostTokenType::Hole => "hole",
             CostTokenType::RangeCheck => "range_check",
+            CostTokenType::RangeCheck96 => "range_check96",
             CostTokenType::Pedersen => "pedersen",
             CostTokenType::Bitwise => "bitwise",
             CostTokenType::EcOp => "ec_op",
@@ -206,10 +209,13 @@ impl CostTokenType {
             | CostTokenType::RangeCheck => {
                 panic!("offset_in_builtin_costs is not supported for '{}'.", self.camel_case_name())
             }
+
             CostTokenType::Pedersen => 0,
             CostTokenType::Bitwise => 1,
             CostTokenType::EcOp => 2,
             CostTokenType::Poseidon => 3,
+            // TODO(ilya): Update the actual table.
+            CostTokenType::RangeCheck96 => 4,
         }
     }
 }
