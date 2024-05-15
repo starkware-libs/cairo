@@ -3,7 +3,10 @@
 //! This crate provides the gas computation for the Cairo programs.
 
 use cairo_lang_eq_solver::Expr;
-use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::circuit::{CircuitInfo, CircuitTypeConcrete, ConcreteCircuit};
+use cairo_lang_sierra::extensions::core::{
+    CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
+};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
@@ -140,6 +143,17 @@ impl ComputeCostInfoProvider {
 impl CostInfoProvider for ComputeCostInfoProvider {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
         self.type_sizes[ty].into_or_panic()
+    }
+
+    fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo {
+        let CoreTypeConcrete::Circuit(CircuitTypeConcrete::Circuit(ConcreteCircuit {
+            circuit_info,
+            ..
+        })) = self.registry.get_type(ty).unwrap()
+        else {
+            panic!("Expected a circuit type, got {ty:?}.")
+        };
+        circuit_info
     }
 }
 
