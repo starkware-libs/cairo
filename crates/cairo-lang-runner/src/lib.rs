@@ -142,6 +142,7 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
         CostTokenType::Poseidon => 500,
         CostTokenType::Bitwise => 594,
         CostTokenType::EcOp => 4166,
+        CostTokenType::RangeCheck96 => 70,
     }
 }
 
