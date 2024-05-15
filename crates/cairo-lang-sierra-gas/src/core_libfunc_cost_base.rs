@@ -9,7 +9,7 @@ use cairo_lang_sierra::extensions::bounded_int::{
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
-use cairo_lang_sierra::extensions::circuit::CircuitConcreteLibfunc;
+use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
@@ -115,6 +115,10 @@ pub trait InvocationCostInfoProvider {
 impl<InfoProvider: InvocationCostInfoProvider> CostInfoProvider for InfoProvider {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
         self.type_size(ty)
+    }
+
+    fn circuit_info(&self, _ty: &ConcreteTypeId) -> &CircuitInfo {
+        unimplemented!("circuits are not supported");
     }
 }
 
@@ -552,6 +556,10 @@ struct DummyCostInfoProvider {}
 impl CostInfoProvider for DummyCostInfoProvider {
     fn type_size(&self, _ty: &ConcreteTypeId) -> usize {
         0
+    }
+
+    fn circuit_info(&self, _ty: &ConcreteTypeId) -> &CircuitInfo {
+        unimplemented!("circuits are not supported for old gas solver");
     }
 }
 
