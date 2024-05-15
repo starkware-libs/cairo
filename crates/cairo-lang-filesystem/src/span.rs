@@ -93,6 +93,13 @@ impl TextSpan {
     pub fn start_only(self) -> Self {
         Self { start: self.start, end: self.start }
     }
+
+    /// Convert this span to a [`TextPositionSpan`] in the file.
+    pub fn position_in_file(self, db: &dyn FilesGroup, file: FileId) -> Option<TextPositionSpan> {
+        let start = self.start.position_in_file(db, file)?;
+        let end = self.end.position_in_file(db, file)?;
+        Some(TextPositionSpan { start, end })
+    }
 }
 
 /// Human-readable position inside a file, in lines and characters.
@@ -157,5 +164,21 @@ impl FileSummary {
     /// Gets the number of lines
     pub fn line_count(&self) -> usize {
         self.line_offsets.len()
+    }
+}
+
+/// A range of text positions that form a span (like text selection).
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct TextPositionSpan {
+    pub start: TextPosition,
+    pub end: TextPosition,
+}
+
+impl TextPositionSpan {
+    /// Convert this span to a [`TextSpan`] in the file.
+    pub fn offset_in_file(self, db: &dyn FilesGroup, file: FileId) -> Option<TextSpan> {
+        let start = self.start.offset_in_file(db, file)?;
+        let end = self.end.offset_in_file(db, file)?;
+        Some(TextSpan { start, end })
     }
 }
