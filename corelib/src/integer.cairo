@@ -1232,7 +1232,7 @@ extern fn u256_safe_divmod(
 
 /// Calculates division with remainder of a u256 by a non-zero u256.
 #[inline(always)]
-fn u256_safe_div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) implicits(RangeCheck) nopanic {
+pub fn u256_safe_div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) implicits(RangeCheck) nopanic {
     let (q, r, _) = u256_safe_divmod(lhs, rhs);
     (q, r)
 }
