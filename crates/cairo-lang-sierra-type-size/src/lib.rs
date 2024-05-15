@@ -89,6 +89,7 @@ pub fn get_type_size_map(
 
             // Const and circuit types are not moved around and should not have a size.
             CoreTypeConcrete::Const(_)
+            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::Circuit(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitInput(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::AddModGate(_)) => continue,
         }?;
