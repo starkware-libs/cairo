@@ -1190,7 +1190,7 @@ Weight by original user function (exc. generated):
   function test::erc20_transfer: 28
   function test::erc_20::EventIsEvent::append_keys_and_data: 12
 Weight by Cairo function:
-  function contract::__member_module_balances::InternalContractMemberStateImpl::address: 44
+  function contract::__member_module_balances::StorageMapContractMemberStateImpl::address: 44
   function contract::ContractStateEventEmitter::emit: 28
   function core::integer::u128_try_from_felt252: 27
   function core::starknet::storage_access::StoreFelt252::write: 22

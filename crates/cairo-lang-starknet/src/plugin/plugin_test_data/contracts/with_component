@@ -95,15 +95,17 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
@@ -173,82 +175,30 @@ contract:
         unsafe_new_contract_state()
     }
     
-    pub use __member_module_normal_member1::InternalContractMemberStateTrait as normal_member1ContractMemberStateTrait;
-    pub mod __member_module_normal_member1 {
-        use super::Event;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
 
-        impl InternalPointerAccessContractMemberStateImpl of
-            starknet::storage::StorageAsPointer<ContractMemberState, usize> {
-            fn as_ptr(self: @ContractMemberState) ->
-                starknet::storage::StoragePointer<usize> {
-                starknet::storage::StoragePointer{
-                    address: InternalContractMemberStateImpl::address(self)
+        pub mod __member_module_normal_member1 {
+        use super::Event;
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = usize;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x321b8b6c46d61f377b5487aafeb261d3f4db1eb5e3e1fa6a8fc43dc2cee1160>()
                 }
             }
         }
 
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> usize;
-            fn write(ref self: ContractMemberState, value: usize);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x321b8b6c46d61f377b5487aafeb261d3f4db1eb5e3e1fa6a8fc43dc2cee1160>()
-            }
-            fn read(self: @ContractMemberState) -> usize {
-                starknet::storage::StoragePointerAccess::read(
-                    InternalPointerAccessContractMemberStateImpl::as_ptr(self)
-                )
-            }
-            fn write(ref self: ContractMemberState, value: usize) {
-                starknet::storage::StoragePointerAccess::write(
-                    InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
-                )
-            }
-        }
-    }
-    pub use __member_module_normal_member2::InternalContractMemberStateTrait as normal_member2ContractMemberStateTrait;
-    pub mod __member_module_normal_member2 {
+        pub mod __member_module_normal_member2 {
         use super::Event;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-
-        impl InternalPointerAccessContractMemberStateImpl of
-            starknet::storage::StorageAsPointer<ContractMemberState, usize> {
-            fn as_ptr(self: @ContractMemberState) ->
-                starknet::storage::StoragePointer<usize> {
-                starknet::storage::StoragePointer{
-                    address: InternalContractMemberStateImpl::address(self)
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = usize;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x9285aae608615f0823cb202c5e4edd4e399dad89e9459bcdace1a2b91e0997>()
                 }
             }
         }
-
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> usize;
-            fn write(ref self: ContractMemberState, value: usize);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x9285aae608615f0823cb202c5e4edd4e399dad89e9459bcdace1a2b91e0997>()
-            }
-            fn read(self: @ContractMemberState) -> usize {
-                starknet::storage::StoragePointerAccess::read(
-                    InternalPointerAccessContractMemberStateImpl::as_ptr(self)
-                )
-            }
-            fn write(ref self: ContractMemberState, value: usize) {
-                starknet::storage::StoragePointerAccess::write(
-                    InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
-                )
-            }
-        }
-    }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
@@ -486,15 +436,17 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
@@ -563,15 +515,17 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
@@ -914,15 +868,17 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
@@ -991,15 +947,17 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
