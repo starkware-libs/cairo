@@ -1,3 +1,4 @@
+use cairo_lang_sierra::extensions::circuit::CircuitInfo;
 use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
@@ -158,4 +159,7 @@ impl From<ConstCost> for BranchCost {
 pub trait CostInfoProvider {
     /// Provides the sizes of types.
     fn type_size(&self, ty: &ConcreteTypeId) -> usize;
+
+    /// Provides the info for the circuit.
+    fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo;
 }
