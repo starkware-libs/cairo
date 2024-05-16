@@ -40,11 +40,6 @@ error: Cannot assign to an immutable variable.
     let _c: felt252 = (b = 5);
                        ^***^
 
-error: Unexpected expression type. Expected: "core::felt252", found: "()".
- --> lib.cairo:6:23
-    let _c: felt252 = (b = 5);
-                      ^*****^
-
 error: Unexpected argument type. Expected: "core::felt252", found: "()".
  --> lib.cairo:6:23
     let _c: felt252 = (b = 5);
