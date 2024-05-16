@@ -1,10 +1,10 @@
 use std::ops::Shl;
 
-use cairo_felt::Felt252;
 use cairo_lang_utils::require;
 use itertools::Itertools;
 use num_bigint::{BigInt, ToBigInt};
 use num_traits::{One, Signed};
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::range_check::RangeCheckType;
 use super::utils::Range;

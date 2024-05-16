@@ -1,6 +1,7 @@
-use cairo_felt::{felt_str, Felt252};
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
+use cairo_lang_utils::felt_str;
 use itertools::Itertools;
+use starknet_types_core::felt::Felt as Felt252;
 
 use crate::{format_for_panic, TestCompilation, TestCompiler};
 

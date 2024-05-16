@@ -1,5 +1,5 @@
-use cairo_felt::Felt252;
 use num_traits::Zero;
+use starknet_types_core::felt::Felt as Felt252;
 
 /// Converts a bigint representing a felt252 to a Cairo short-string.
 pub fn as_cairo_short_string(value: &Felt252) -> Option<String> {
