@@ -5,7 +5,7 @@ use indoc::indoc;
 use tower_lsp::lsp_types;
 use tower_lsp::lsp_types::lsp_request;
 
-use crate::support::{sandbox, MockClient};
+use crate::support::{cursors, sandbox};
 
 fn caps(base: lsp_types::ClientCapabilities) -> lsp_types::ClientCapabilities {
     use lsp_types::*;
@@ -25,6 +25,28 @@ fn caps(base: lsp_types::ClientCapabilities) -> lsp_types::ClientCapabilities {
 
 #[test]
 fn basic() {
+    check(
+        "tests/test_data/hover/basic.txt",
+        indoc! {r#"
+            fn main() {
+                f<caret>oo();
+            }
+
+            /// Foo documentation.
+            fn f<caret>oo() {}
+        "#},
+    );
+}
+
+/// Perform hover test.
+///
+/// This function spawns a sandbox language server with the given code in the `src/lib.cairo` file.
+/// The Cairo source code is expected to contain caret markers.
+/// The function then requests hover information at each caret position and compares the result with
+/// the expected hover information from the snapshot file.
+fn check(test_data: &str, cairo: &str) {
+    let (cairo, cursors) = cursors(cairo);
+
     let mut ls = sandbox! {
         files {
             "cairo_project.toml" => indoc! {r#"
@@ -34,49 +56,46 @@ fn basic() {
                 [config.global]
                 edition = "2023_11"
             "#},
-            "src/lib.cairo" => indoc! {r#"
-                fn main() {
-                    foo();
-                }
-
-                /// Foo documentation.
-                fn foo() {}
-            "#},
+            "src/lib.cairo" => cairo.clone(),
         }
         client_capabilities = caps;
     };
 
     ls.open("src/lib.cairo");
 
-    check(
-        &mut ls,
-        "src/lib.cairo",
-        vec![lsp_types::Position::new(1, 5), lsp_types::Position::new(5, 4)],
-        "tests/test_data/hover/basic.txt",
-    );
-}
-
-/// Perform hover test.
-///
-/// This function sends a hover request to the language server for each position in the `positions`
-/// vector and compares the result with the expected output in the snapshot file at `test_data`.
-fn check(ls: &mut MockClient, file: &str, positions: Vec<lsp_types::Position>, test_data: &str) {
     let mut expected = String::new();
 
-    for position in positions {
-        writeln!(&mut expected, "//! > {position:?}").unwrap();
+    for position in cursors.carets() {
+        writeln!(&mut expected, "//! > hover at {position:?}").unwrap();
+
+        writeln!(&mut expected).unwrap();
+        writeln!(&mut expected, "//! > source context").unwrap();
+        let source_line = cairo.lines().nth(position.line as usize).unwrap();
+        writeln!(&mut expected, "{source_line}").unwrap();
+        writeln!(
+            &mut expected,
+            "{caret:>width$}",
+            caret = "↑",
+            width = position.character as usize
+        )
+        .unwrap();
+
         let hover = ls.send_request::<lsp_request!("textDocument/hover")>(lsp_types::HoverParams {
             text_document_position_params: lsp_types::TextDocumentPositionParams {
-                text_document: ls.doc_id(file),
+                text_document: ls.doc_id("src/lib.cairo"),
                 position,
             },
             work_done_progress_params: Default::default(),
         });
+
+        writeln!(&mut expected).unwrap();
+        writeln!(&mut expected, "//! > popover").unwrap();
         match hover {
             Some(hover) => expected.push_str(&render(hover)),
             None => expected.push_str("No hover information.\n"),
         }
-        expected.push_str("=========\n");
+
+        writeln!(&mut expected, "\n=========\n").unwrap();
     }
 
     cairo_lang_test_utils::compare_contents_or_fix_with_path(Path::new(test_data), expected);

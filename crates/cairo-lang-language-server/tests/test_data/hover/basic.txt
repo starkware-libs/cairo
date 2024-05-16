@@ -1,10 +1,26 @@
-//! > Position { line: 1, character: 5 }
+//! > hover at Position { line: 1, character: 5 }
+
+//! > source context
+    foo();
+    ↑
+
+//! > popover
 ```cairo
 fn foo()
 ```
 ---
  Foo documentation.
+
 =========
-//! > Position { line: 5, character: 4 }
+
+//! > hover at Position { line: 5, character: 4 }
+
+//! > source context
+fn foo() {}
+   ↑
+
+//! > popover
 No hover information.
+
 =========
+
