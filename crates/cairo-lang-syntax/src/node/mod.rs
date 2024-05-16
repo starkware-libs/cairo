@@ -3,7 +3,7 @@ use std::fmt::Display;
 use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_utils::{require, Intern, LookupIntern};
 use smol_str::SmolStr;
 
@@ -156,6 +156,14 @@ impl SyntaxNode {
             }
         }
         self.clone()
+    }
+
+    /// Lookups a syntax node using a position.
+    pub fn lookup_position(&self, db: &dyn SyntaxGroup, position: TextPosition) -> SyntaxNode {
+        match position.offset_in_file(db.upcast(), self.stable_ptr().file_id(db)) {
+            Some(offset) => self.lookup_offset(db, offset),
+            None => self.clone(),
+        }
     }
 
     /// Returns all the text under the syntax node.

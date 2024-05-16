@@ -1116,11 +1116,8 @@ fn get_node_and_lookup_items(
     file: FileId,
     position: TextPosition,
 ) -> Option<(SyntaxNode, Vec<LookupItemId>)> {
-    // Find offset for position.
-    let offset = position.offset_in_file(db.upcast(), file)?;
-
     // Find the most specific syntax node at the offset.
-    let node = db.file_syntax(file).to_option()?.lookup_offset(db.upcast(), offset);
+    let node = db.file_syntax(file).to_option()?.lookup_position(db.upcast(), position);
 
     // Find module.
     let module_id = find_node_module(db, file, node.clone()).on_none(|| {
