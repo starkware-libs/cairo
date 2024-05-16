@@ -1,17 +1,15 @@
 use std::sync::Arc;
 
 use cairo_lang_utils::Intern;
-use test_log::test;
 
 use super::TextOffset;
-use crate::ids::{FileKind, FileLongId, VirtualFile};
+use crate::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use crate::span::{TextPosition, TextWidth};
 use crate::test_utils::FilesDatabaseForTesting;
 
 const TEST_STRING: &str = "01\n23\u{1230}\r\n456\n\n\r\n789";
 
-#[test]
-fn test_span() {
+fn test_db() -> (FilesDatabaseForTesting, FileId) {
     let db = FilesDatabaseForTesting::default();
     let file = FileLongId::Virtual(VirtualFile {
         parent: None,
@@ -21,6 +19,12 @@ fn test_span() {
         kind: FileKind::Module,
     })
     .intern(&db);
+    (db, file)
+}
+
+#[test]
+fn test_span() {
+    let (db, file) = test_db();
     assert_eq!(
         TextOffset(TextWidth(0)).position_in_file(&db, file),
         Some(TextPosition { line: 0, col: 0 })
@@ -79,14 +83,46 @@ fn test_span() {
 #[test]
 #[should_panic(expected = "TextOffset out of range. TextWidth(21) > TextWidth(20).")]
 fn should_panic_test_span_out_of_range() {
-    let db = FilesDatabaseForTesting::default();
-    let file = FileLongId::Virtual(VirtualFile {
-        parent: None,
-        name: "name".into(),
-        content: Arc::new(TEST_STRING.into()),
-        code_mappings: Default::default(),
-        kind: FileKind::Module,
-    })
-    .intern(&db);
+    let (db, file) = test_db();
     TextOffset(TextWidth(TEST_STRING.len() as u32 + 1)).position_in_file(&db, file);
+}
+
+#[test]
+fn test_position_offset_in_file() {
+    let (db, file) = test_db();
+    // Happy cases.
+    assert_eq!(
+        TextPosition { line: 0, col: 0 }.offset_in_file(&db, file),
+        Some(TextOffset(TextWidth(0)))
+    );
+    assert_eq!(
+        TextPosition { line: 0, col: 1 }.offset_in_file(&db, file),
+        Some(TextOffset(TextWidth(1)))
+    );
+    assert_eq!(
+        TextPosition { line: 0, col: 2 }.offset_in_file(&db, file),
+        Some(TextOffset(TextWidth(2)))
+    );
+    assert_eq!(
+        TextPosition { line: 1, col: 0 }.offset_in_file(&db, file),
+        Some(TextOffset(TextWidth(3)))
+    );
+    // `col` larger than the line length should clamp.
+    assert_eq!(
+        TextPosition { line: 0, col: 3 }.offset_in_file(&db, file),
+        Some(TextOffset(TextWidth(2)))
+    );
+    assert_eq!(
+        TextPosition { line: 3, col: usize::MAX }.offset_in_file(&db, file),
+        Some(TextOffset(TextWidth(14)))
+    );
+    // `line` larger than the line count should clamp.
+    assert_eq!(
+        TextPosition { line: 6, col: 0 }.offset_in_file(&db, file),
+        Some(TextOffset(TextWidth(TEST_STRING.len() as u32)))
+    );
+    assert_eq!(
+        TextPosition { line: usize::MAX, col: 0 }.offset_in_file(&db, file),
+        Some(TextOffset(TextWidth(TEST_STRING.len() as u32)))
+    );
 }
