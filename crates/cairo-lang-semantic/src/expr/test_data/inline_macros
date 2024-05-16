@@ -96,11 +96,6 @@ error: Plugin diagnostic: Macro `array` does not support this bracket type.
     let _x = array!(0);
                    ^
 
-error: Unexpected expression type. Expected: "core::felt252", found: "core::integer::u8".
- --> lib.cairo:3:32
-    let _x = array![0_felt252, 1_u8];
-                               ^**^
-
 error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
  --> lib.cairo:3:32
     let _x = array![0_felt252, 1_u8];
@@ -297,10 +292,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?3.
- --> lib.cairo:21:17
+error: Type annotations needed. Failed to infer ?2.
+ --> lib.cairo:21:5
     write!(f, "{non_existing}").unwrap();
-                ^**********^
+    ^*************************^
 
 //! > ==========================================================================
 
@@ -493,10 +488,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?3.
- --> lib.cairo:21:19
+error: Type annotations needed. Failed to infer ?2.
+ --> lib.cairo:21:5
     writeln!(f, "{non_existing}").unwrap();
-                  ^**********^
+    ^***************************^
 
 //! > ==========================================================================
 
@@ -611,10 +606,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?6.
- --> lib.cairo:14:15
+error: Type annotations needed. Failed to infer ?5.
+ --> lib.cairo:14:5
     format!("{non_existing}");
-              ^**********^
+    ^***********************^
 
 //! > ==========================================================================
 
@@ -729,10 +724,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?9.
- --> lib.cairo:14:14
+error: Type annotations needed. Failed to infer ?5.
+ --> lib.cairo:14:5
     print!("{non_existing}");
-             ^**********^
+    ^**********************^
 
 //! > ==========================================================================
 
@@ -847,10 +842,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?9.
- --> lib.cairo:14:16
+error: Type annotations needed. Failed to infer ?5.
+ --> lib.cairo:14:5
     println!("{non_existing}");
-               ^**********^
+    ^************************^
 
 //! > ==========================================================================
 
@@ -942,10 +937,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?7.
- --> lib.cairo:14:14
+error: Type annotations needed. Failed to infer ?4.
+ --> lib.cairo:14:5
     panic!("{non_existing}");
-             ^**********^
+    ^**********************^
 
 //! > ==========================================================================
 

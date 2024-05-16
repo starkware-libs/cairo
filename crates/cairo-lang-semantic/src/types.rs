@@ -521,7 +521,7 @@ pub fn extract_fixed_size_array_size(
             );
             let mut ctx = ComputationContext::new(db, diagnostics, resolver, None, environment);
             let size_expr_syntax = size_clause.size(syntax_db);
-            let size = compute_expr_semantic(&mut ctx, &size_expr_syntax, None);
+            let size = compute_expr_semantic(&mut ctx, &size_expr_syntax);
             let (_, const_value) = resolve_const_expr_and_evaluate(
                 db,
                 &mut ctx,
