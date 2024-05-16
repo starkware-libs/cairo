@@ -12,6 +12,7 @@ itertools = { workspace = true, features = ["use_alloc"] }
 num-bigint.workspace = true
 num-traits.workspace = true
 hashbrown = { workspace = true, features = ["serde"] }
+starknet-types-core.workspace = true
 
 # Optional
 serde = { workspace = true, features = ["alloc"], optional = true }

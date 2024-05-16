@@ -1,10 +1,8 @@
-use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::vec::IntoIter;
 
 use anyhow::{bail, Context, Result};
-use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
@@ -37,6 +35,7 @@ use colored::Colorize;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use starknet_types_core::felt::Felt as Felt252;
 
 #[cfg(test)]
 mod test;
@@ -433,6 +432,15 @@ fn run_single_test(
     ))
 }
 
+fn print_resource_map(m: impl ExactSizeIterator<Item = (String, usize)>, name: &str) {
+    if m.len() != 0 {
+        println!(
+            "    {name}: ({})",
+            m.into_iter().sorted().map(|(k, v)| format!(r#""{k}": {v}"#)).join(", ")
+        );
+    }
+}
+
 /// Updates the test summary with the given test result.
 fn update_summary(
     wrapped_summary: &Mutex<std::prelude::v1::Result<TestsSummary, anyhow::Error>>,
@@ -496,16 +504,12 @@ fn update_summary(
         // ```
         println!("    steps: {}", filtered.n_steps);
         println!("    memory holes: {}", filtered.n_memory_holes);
-        let print_resource_map = |m: HashMap<_, _>, name| {
-            if !m.is_empty() {
-                println!(
-                    "    {name}: ({})",
-                    m.into_iter().sorted().map(|(k, v)| format!(r#""{k}": {v}"#)).join(", ")
-                );
-            }
-        };
-        print_resource_map(filtered.builtin_instance_counter, "builtins");
-        print_resource_map(used_resources.syscalls, "syscalls");
+
+        print_resource_map(
+            filtered.builtin_instance_counter.into_iter().map(|(k, v)| (k.to_string(), v)),
+            "builtins",
+        );
+        print_resource_map(used_resources.syscalls.into_iter(), "syscalls");
     }
     if let Some(profiling_info) = profiling_info {
         let profiling_processor =
