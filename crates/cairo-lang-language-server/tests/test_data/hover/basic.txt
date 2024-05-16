@@ -1,10 +1,10 @@
-//! > Position { line: 1, character: 5 }
+//! > <caret=FooCall> at Position { line: 1, character: 5 }
 ```cairo
 fn foo()
 ```
 ---
  Foo documentation.
 =========
-//! > Position { line: 5, character: 4 }
+//! > <caret=FooDefinition> at Position { line: 5, character: 4 }
 No hover information.
 =========
