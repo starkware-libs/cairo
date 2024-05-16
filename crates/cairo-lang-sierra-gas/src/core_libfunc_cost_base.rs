@@ -110,6 +110,8 @@ pub trait InvocationCostInfoProvider {
     fn token_usages(&self, token_type: CostTokenType) -> usize;
     /// Provides the ap change variable value of the current statement.
     fn ap_change_var_value(&self) -> usize;
+    /// Provides the info for the circuit.
+    fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo;
 }
 
 impl<InfoProvider: InvocationCostInfoProvider> CostInfoProvider for InfoProvider {
@@ -117,8 +119,8 @@ impl<InfoProvider: InvocationCostInfoProvider> CostInfoProvider for InfoProvider
         self.type_size(ty)
     }
 
-    fn circuit_info(&self, _ty: &ConcreteTypeId) -> &CircuitInfo {
-        unimplemented!("circuits are not supported for old gas solver");
+    fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo {
+        self.circuit_info(ty)
     }
 }
 
@@ -566,11 +568,12 @@ impl CostInfoProvider for DummyCostInfoProvider {
 /// Returns a precost value for a libfunc - the cost of non-step tokens.
 /// This is a helper function to implement costing both for creating
 /// gas equations and getting actual gas cost after having a solution.
-pub fn core_libfunc_precost<Ops: CostOperations>(
+pub fn core_libfunc_precost<Ops: CostOperations, InfoProvider: CostInfoProvider>(
     ops: &mut Ops,
     libfunc: &CoreConcreteLibfunc,
+    info_provider: &InfoProvider,
 ) -> Vec<Ops::CostType> {
-    let res = core_libfunc_cost(libfunc, &DummyCostInfoProvider {});
+    let res = core_libfunc_cost(libfunc, info_provider);
 
     res.into_iter()
         .map(|cost| match cost {
