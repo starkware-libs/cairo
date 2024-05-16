@@ -84,3 +84,20 @@ pub fn get_direct_or_file_content(input: &str) -> (String, String) {
         ("dummy_file.cairo".to_string(), input.to_string())
     }
 }
+
+// TODO(ilya): Remove the following macro.
+#[macro_export]
+macro_rules! felt_str {
+    ($val:expr) => {
+        Felt252::from(
+            <num_bigint::BigInt as num_traits::Num>::from_str_radix($val, 10)
+                .expect("Couldn't parse bytes"),
+        )
+    };
+    ($val:expr, $opt:expr) => {
+        Felt252::from(
+            <num_bigint::BigInt as num_traits::Num>::from_str_radix($val, $opt as u32)
+                .expect("Couldn't parse bytes"),
+        )
+    };
+}

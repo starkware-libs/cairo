@@ -1,5 +1,5 @@
-use cairo_felt::Felt252;
 use starknet_crypto::{pedersen_hash, FieldElement};
+use starknet_types_core::felt::Felt as Felt252;
 
 /// Computes Pedersen hash using STARK curve on an array of elements, as defined
 /// in <https://docs.starknet.io/documentation/architecture_and_concepts/Hashing/hash-functions/#array_hashing.>
@@ -30,7 +30,7 @@ const CONTRACT_ADDRESS_PREFIX: FieldElement = FieldElement::from_mont([
 
 /// Converts a Felt252 to the FieldElement type used in starknet-crypto.
 fn felt252_to_field_element(input: &Felt252) -> FieldElement {
-    FieldElement::from_bytes_be(&input.to_be_bytes()).unwrap()
+    FieldElement::from_bytes_be(&input.to_bytes_be()).unwrap()
 }
 
 /// Calculates the address of a starknet contract, as defined in

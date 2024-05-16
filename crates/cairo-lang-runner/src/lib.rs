@@ -1,7 +1,7 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::{HashMap, HashSet};
+use std::ops::{Add, Sub};
 
-use cairo_felt::Felt252;
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::instructions::Instruction;
@@ -33,17 +33,18 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, require};
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
-use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
+use cairo_vm::serde::deserialize_program::HintParams;
+use cairo_vm::types::builtin_name::BuiltinName;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::runners::cairo_runner::{ExecutionResources, RunResources};
-use cairo_vm::vm::trace::trace_entry::TraceEntry;
-use cairo_vm::vm::vm_core::VirtualMachine;
+use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
-use itertools::chain;
+use itertools::{chain, Itertools};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use profiling::{user_function_idx_by_sierra_statement_idx, ProfilingInfo};
+use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
 use crate::casm_run::{RunFunctionContext, RunFunctionResult};
@@ -182,6 +183,7 @@ pub fn build_hints_dict<'b>(
         }
         hint_offset += instruction.body.op_size();
     }
+    eprintln!("Hints dict: {:?}", hints_dict.keys().sorted().collect::<Vec<_>>());
     (hints_dict, string_to_hint)
 }
 
@@ -275,57 +277,10 @@ impl SierraCasmRunner {
         })
     }
 
-    /// Runs the vm starting from a function with custom hint processor. Function may have
-    /// implicits, but no other ref params. The cost of the function is deducted from
-    /// `available_gas` before the execution begins.
-    ///
-    /// Allows injecting Cairo `VirtualMachine`
-    pub fn run_function_with_vm<'a, Bytecode>(
-        &self,
-        func: &Function,
-        vm: &mut VirtualMachine,
-        hint_processor: &mut dyn HintProcessor,
-        hints_dict: HashMap<usize, Vec<HintParams>>,
-        bytecode: Bytecode,
-        builtins: Vec<BuiltinName>,
-    ) -> Result<RunResult, RunnerError>
-    where
-        Bytecode: Iterator<Item = &'a BigInt> + Clone,
-    {
-        let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
-
-        let RunFunctionResult { memory, ap, used_resources } = casm_run::run_function(
-            vm,
-            bytecode,
-            builtins,
-            initialize_vm,
-            hint_processor,
-            hints_dict,
-        )?;
-        let (results_data, gas_counter) = Self::get_results_data(&return_types, &memory, ap);
-        assert!(results_data.len() <= 1);
-
-        let value = if results_data.is_empty() {
-            // No result type - no panic.
-            RunResultValue::Success(vec![])
-        } else {
-            let (ty, values) = results_data[0].clone();
-            let inner_ty =
-                self.inner_type_from_panic_wrapper(&ty, func).map(|it| self.type_sizes[&it]);
-            Self::handle_main_return_value(inner_ty, values, &memory)
-        };
-
-        let profiling_info = self.run_profiler.as_ref().map(|config| {
-            self.collect_profiling_info(vm.get_relocated_trace().unwrap(), config.clone())
-        });
-
-        Ok(RunResult { gas_counter, memory, value, used_resources, profiling_info })
-    }
-
     /// Collects profiling info of the current run using the trace.
     fn collect_profiling_info(
         &self,
-        trace: &[TraceEntry],
+        trace: &[RelocatedTraceEntry],
         profiling_config: ProfilingInfoCollectionConfig,
     ) -> ProfilingInfo {
         let sierra_len = self.casm_program.debug_info.sierra_statement_info.len();
@@ -339,7 +294,8 @@ impl SierraCasmRunner {
         // This is the same as the PC of the last trace entry plus 1, as the header is built to have
         // a `ret` last instruction, which must be the last in the trace of any execution.
         // The first instruction after that is the first instruction in the original CASM program.
-        let real_pc_0 = trace.last().unwrap().pc + 1;
+
+        let real_pc_0 = trace.last().unwrap().pc.add(1);
 
         // The function stack trace of the current function, excluding the current function (that
         // is, the stack of the caller). Represented as a vector of indices of the functions
@@ -368,7 +324,7 @@ impl SierraCasmRunner {
             if step.pc < real_pc_0 {
                 continue;
             }
-            let real_pc = step.pc - real_pc_0;
+            let real_pc: usize = step.pc.sub(real_pc_0);
             // Skip the footer.
             if real_pc == bytecode_len {
                 continue;
@@ -488,8 +444,30 @@ impl SierraCasmRunner {
     where
         Bytecode: Iterator<Item = &'a BigInt> + Clone,
     {
-        let mut vm = VirtualMachine::new(true);
-        self.run_function_with_vm(func, &mut vm, hint_processor, hints_dict, bytecode, builtins)
+        let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
+
+        let RunFunctionResult { ap, used_resources, runner } =
+            casm_run::run_function(bytecode, builtins, initialize_vm, hint_processor, hints_dict)?;
+
+        let memory = runner.relocated_memory;
+        let (results_data, gas_counter) = Self::get_results_data(&return_types, &memory, ap);
+        assert!(results_data.len() <= 1);
+
+        let value = if results_data.is_empty() {
+            // No result type - no panic.
+            RunResultValue::Success(vec![])
+        } else {
+            let (ty, values) = results_data[0].clone();
+            let inner_ty =
+                self.inner_type_from_panic_wrapper(&ty, func).map(|it| self.type_sizes[&it]);
+            Self::handle_main_return_value(inner_ty, values, &memory)
+        };
+
+        let profiling_info = self.run_profiler.as_ref().map(|config| {
+            self.collect_profiling_info(&runner.relocated_trace.unwrap(), config.clone())
+        });
+
+        Ok(RunResult { gas_counter, memory, value, used_resources, profiling_info })
     }
 
     /// Handling the main return value to create a `RunResultValue`.
@@ -533,7 +511,7 @@ impl SierraCasmRunner {
         for (ty, ty_size) in return_types.iter().rev() {
             let size = *ty_size as usize;
             let values: Vec<Felt252> =
-                ((ap - size)..ap).map(|index| cells[index].clone().unwrap()).collect();
+                ((ap - size)..ap).map(|index| cells[index].unwrap()).collect();
             ap -= size;
             results_data.push((ty.clone(), values));
         }
@@ -818,12 +796,16 @@ pub fn initialize_vm(context: RunFunctionContext<'_>) -> Result<(), Box<CairoRun
     // Create the builtin cost segment, with dummy values.
     let builtin_cost_segment = vm.add_memory_segment();
     for token_type in CostTokenType::iter_precost() {
+        eprintln!("offset: {}", token_type.offset_in_builtin_costs());
         vm.insert_value(
             (builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize)).unwrap(),
             Felt252::from(token_gas_cost(*token_type)),
         )
         .map_err(|e| Box::new(e.into()))?;
     }
+
+    eprintln!("pc: {}", vm.get_pc());
+    eprintln!("data_len: {}", context.data_len);
     // Put a pointer to the builtin cost segment at the end of the program (after the
     // additional `ret` statement).
     vm.insert_value((vm.get_pc() + context.data_len).unwrap(), builtin_cost_segment)

@@ -1,5 +1,4 @@
 use anyhow::{bail, Context};
-use cairo_felt::Felt252;
 use cairo_lang_defs::ids::{
     FreeFunctionId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
     NamedLanguageElementId, SubmoduleId,
@@ -29,6 +28,7 @@ use cairo_lang_utils::ordered_hash_map::{
 use cairo_lang_utils::{extract_matches, Intern};
 use itertools::chain;
 use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::Felt as Felt252;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::aliased::Aliased;
@@ -310,7 +310,7 @@ fn analyze_contract<T: SierraIdReplacer>(
     db: &dyn SierraGenGroup,
     contract: &ContractDeclaration,
     replacer: &T,
-) -> anyhow::Result<(cairo_felt::Felt252, ContractInfo)> {
+) -> anyhow::Result<(Felt252, ContractInfo)> {
     // Extract class hash.
     let item =
         db.module_item_by_name(contract.module_id(), "TEST_CLASS_HASH".into()).unwrap().unwrap();
