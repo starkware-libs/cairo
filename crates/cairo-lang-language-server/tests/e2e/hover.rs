@@ -5,7 +5,7 @@ use indoc::indoc;
 use tower_lsp::lsp_types;
 use tower_lsp::lsp_types::lsp_request;
 
-use crate::support::{sandbox, MockClient};
+use crate::support::{cursors, sandbox, MockClient};
 
 fn caps(base: lsp_types::ClientCapabilities) -> lsp_types::ClientCapabilities {
     use lsp_types::*;
@@ -25,6 +25,15 @@ fn caps(base: lsp_types::ClientCapabilities) -> lsp_types::ClientCapabilities {
 
 #[test]
 fn basic() {
+    let (cairo, cursors) = cursors(indoc! {r#"
+        fn main() {
+            f<caret=FooCall>oo();
+        }
+
+        /// Foo documentation.
+        fn f<caret=FooDefinition>oo() {}
+    "#});
+
     let mut ls = sandbox! {
         files {
             "cairo_project.toml" => indoc! {r#"
@@ -34,37 +43,30 @@ fn basic() {
                 [config.global]
                 edition = "2023_11"
             "#},
-            "src/lib.cairo" => indoc! {r#"
-                fn main() {
-                    foo();
-                }
-
-                /// Foo documentation.
-                fn foo() {}
-            "#},
+            "src/lib.cairo" => cairo,
         }
         client_capabilities = caps;
     };
 
     ls.open("src/lib.cairo");
 
-    check(
-        &mut ls,
-        "src/lib.cairo",
-        vec![lsp_types::Position::new(1, 5), lsp_types::Position::new(5, 4)],
-        "tests/test_data/hover/basic.txt",
-    );
+    check(&mut ls, "src/lib.cairo", cursors.named_carets(), "tests/test_data/hover/basic.txt");
 }
 
 /// Perform hover test.
 ///
 /// This function sends a hover request to the language server for each position in the `positions`
 /// vector and compares the result with the expected output in the snapshot file at `test_data`.
-fn check(ls: &mut MockClient, file: &str, positions: Vec<lsp_types::Position>, test_data: &str) {
+fn check(
+    ls: &mut MockClient,
+    file: &str,
+    positions: Vec<(String, lsp_types::Position)>,
+    test_data: &str,
+) {
     let mut expected = String::new();
 
-    for position in positions {
-        writeln!(&mut expected, "//! > {position:?}").unwrap();
+    for (caret_name, position) in positions {
+        writeln!(&mut expected, "//! > <caret={caret_name}> at {position:?}").unwrap();
         let hover = ls.send_request::<lsp_request!("textDocument/hover")>(lsp_types::HoverParams {
             text_document_position_params: lsp_types::TextDocumentPositionParams {
                 text_document: ls.doc_id(file),

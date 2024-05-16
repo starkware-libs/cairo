@@ -38,6 +38,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 cairo-lang-language-server = { path = ".", features = ["testing"] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 indoc.workspace = true
+itertools.workspace = true
 
 assert_fs = "1.1"
 futures = "0.3"
