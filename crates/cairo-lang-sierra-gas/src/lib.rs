@@ -83,6 +83,10 @@ impl<'a, TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usiz
     fn ap_change_var_value(&self) -> usize {
         (self.ap_change_var_value)()
     }
+
+    fn circuit_info(&self, _ty: &ConcreteTypeId) -> &CircuitInfo {
+        unimplemented!("circuits are not supported for old gas solver");
+    }
 }
 
 /// Calculates gas pre-cost information for a given program - the gas costs of non-step tokens.
@@ -91,6 +95,7 @@ pub fn calc_gas_precost_info(
     program: &Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
 ) -> Result<GasInfo, CostError> {
+    let cost_provider = ComputeCostInfoProvider::new(program)?;
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     let mut info = calc_gas_info_inner(
         program,
@@ -98,7 +103,12 @@ pub fn calc_gas_precost_info(
             let libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
-            core_libfunc_cost_expr::core_libfunc_precost_expr(statement_future_cost, idx, libfunc)
+            core_libfunc_cost_expr::core_libfunc_precost_expr(
+                statement_future_cost,
+                idx,
+                libfunc,
+                &cost_provider,
+            )
         },
         function_set_costs,
         &registry,
