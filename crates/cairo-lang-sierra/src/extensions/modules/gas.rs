@@ -170,6 +170,7 @@ impl CostTokenType {
             CostTokenType::Poseidon,
             CostTokenType::Bitwise,
             CostTokenType::EcOp,
+            CostTokenType::RangeCheck96,
         ]
         .iter()
     }
