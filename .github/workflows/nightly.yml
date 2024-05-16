@@ -5,6 +5,9 @@ on:
     # Runs the end of every day.
     - cron: "0 0 * * *"
 
+env:
+  RUSTUP_TOOLCHAIN: nightly
+
 jobs:
   rustfmt:
     runs-on: ubuntu-latest
