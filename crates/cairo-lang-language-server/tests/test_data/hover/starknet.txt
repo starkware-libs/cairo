@@ -1,0 +1,94 @@
+//! > hover at Position { line: 0, character: 18 }
+
+//! > source context
+use Balance::contract_state_for_testing;
+                  ↑
+
+//! > popover
+No hover information.
+
+=========
+
+//! > hover at Position { line: 23, character: 25 }
+
+//! > source context
+    fn constructor(ref self: ContractState, value_: u128) {
+                         ↑
+
+//! > popover
+No hover information.
+
+=========
+
+//! > hover at Position { line: 23, character: 33 }
+
+//! > source context
+    fn constructor(ref self: ContractState, value_: u128) {
+                                 ↑
+
+//! > popover
+No hover information.
+
+=========
+
+//! > hover at Position { line: 24, character: 15 }
+
+//! > source context
+        self.value.write(value_);
+               ↑
+
+//! > popover
+No hover information.
+
+=========
+
+//! > hover at Position { line: 28, character: 30 }
+
+//! > source context
+    impl Balance of super::IBalance<ContractState> {
+                              ↑
+
+//! > popover
+```cairo
+ trait IBalance<T>
+```
+---
+ The balance contract interface.
+
+=========
+
+//! > hover at Position { line: 28, character: 39 }
+
+//! > source context
+    impl Balance of super::IBalance<ContractState> {
+                                       ↑
+
+//! > popover
+No hover information.
+
+=========
+
+//! > hover at Position { line: 30, character: 24 }
+
+//! > source context
+            self.value.read()
+                        ↑
+
+//! > popover
+```cairo
+fn read(self: @TMemberState) -> Self::Value;
+```
+=========
+
+//! > hover at Position { line: 33, character: 25 }
+
+//! > source context
+            self.value.write( self.value.read() + a );
+                         ↑
+
+//! > popover
+```cairo
+fn write(ref self: TMemberState, value: Self::Value);
+```
+=========
+

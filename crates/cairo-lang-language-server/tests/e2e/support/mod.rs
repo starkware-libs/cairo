@@ -1,9 +1,11 @@
 pub mod client_capabilities;
+pub mod cursor;
 pub mod fixture;
 mod jsonrpc;
 mod mock_client;
 mod runtime;
 
+pub use self::cursor::cursors;
 pub use self::mock_client::MockClient;
 
 /// Create a sandboxed environment for testing language server features.

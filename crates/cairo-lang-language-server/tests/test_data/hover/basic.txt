@@ -1,10 +1,228 @@
-//! > Position { line: 1, character: 5 }
+//! > hover at Position { line: 2, character: 5 }
+
+//! > source context
+    println!("The value of x is: {}", x);
+     ↑
+
+//! > popover
+No hover information.
+
+=========
+
+//! > hover at Position { line: 3, character: 5 }
+
+//! > source context
+    x = add_two(x);
+     ↑
+
+//! > popover
+No hover information.
+
+=========
+
+//! > hover at Position { line: 3, character: 8 }
+
+//! > source context
+    x = add_two(x);
+        ↑
+
+//! > popover
 ```cairo
-fn foo()
+fn add_two(x: u32) -> u32
 ```
 ---
- Foo documentation.
+ `add_two` documentation.
+
 =========
-//! > Position { line: 5, character: 4 }
+
+//! > hover at Position { line: 3, character: 9 }
+
+//! > source context
+    x = add_two(x);
+         ↑
+
+//! > popover
+```cairo
+fn add_two(x: u32) -> u32
+```
+---
+ `add_two` documentation.
+
+=========
+
+//! > hover at Position { line: 3, character: 15 }
+
+//! > source context
+    x = add_two(x);
+               ↑
+
+//! > popover
 No hover information.
+
 =========
+
+//! > hover at Position { line: 5, character: 9 }
+
+//! > source context
+    front_of_house::hosting::add_to_waitlist();
+         ↑
+
+//! > popover
+No hover information.
+
+=========
+
+//! > hover at Position { line: 5, character: 22 }
+
+//! > source context
+    front_of_house::hosting::add_to_waitlist();
+                      ↑
+
+//! > popover
+No hover information.
+
+=========
+
+//! > hover at Position { line: 5, character: 32 }
+
+//! > source context
+    front_of_house::hosting::add_to_waitlist();
+                                ↑
+
+//! > popover
+```cairo
+pub fn add_to_waitlist()
+```
+---
+ Add to waitlist function.
+
+=========
+
+//! > hover at Position { line: 9, character: 8 }
+
+//! > source context
+fn add_two(x: u32) -> u32 { x + 2 }
+        ↑
+
+//! > popover
+No hover information.
+
+=========
+
+//! > hover at Position { line: 23, character: 22 }
+
+//! > source context
+    fn area(self: @Rectangle) -> u64;
+                      ↑
+
+//! > popover
+```cairo
+struct Rectangle {
+    /// Width of the rectangle.
+    width: u64,
+    /// Height of the rectangle.
+    height: u64,
+}
+
+```
+---
+ Rectangle struct.
+
+=========
+
+//! > hover at Position { line: 28, character: 22 }
+
+//! > source context
+    fn area(self: @Rectangle) -> u64 {
+                      ↑
+
+//! > popover
+```cairo
+struct Rectangle {
+    /// Width of the rectangle.
+    width: u64,
+    /// Height of the rectangle.
+    height: u64,
+}
+
+```
+---
+ Rectangle struct.
+
+=========
+
+//! > hover at Position { line: 29, character: 17 }
+
+//! > source context
+        (*self.width) * (*self.height)
+                 ↑
+
+//! > popover
+No hover information.
+
+=========
+
+//! > hover at Position { line: 37, character: 22 }
+
+//! > source context
+    fn area(self: @Rectangle) -> u64 {
+                      ↑
+
+//! > popover
+```cairo
+struct Rectangle {
+    /// Width of the rectangle.
+    width: u64,
+    /// Height of the rectangle.
+    height: u64,
+}
+
+```
+---
+ Rectangle struct.
+
+=========
+
+//! > hover at Position { line: 38, character: 17 }
+
+//! > source context
+        (*self.width) * (*self.height)
+                 ↑
+
+//! > popover
+No hover information.
+
+=========
+
+//! > hover at Position { line: 46, character: 25 }
+
+//! > source context
+fn value_in_cents(coin: Coin) -> felt252 {
+                         ↑
+
+//! > popover
+```cairo
+
+enum Coin {
+    Penny,
+}
+
+```
+=========
+
+//! > hover at Position { line: 48, character: 15 }
+
+//! > source context
+        Coin::Penny => 1,
+               ↑
+
+//! > popover
+```cairo
+
+enum Coin {
+    Penny,
+}
+
+```
+=========
+
