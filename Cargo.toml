@@ -16,8 +16,7 @@ opt-level = 1
 [profile.ci-dev.package."tokio"]
 opt-level = 3
 [profile.ci-dev.package."bimap"]
-opt-level = 3
-[profile.ci-dev.package."cairo-felt"]
+
 opt-level = 3
 [profile.ci-dev.package."salsa"]
 opt-level = 3
@@ -85,8 +84,7 @@ ark-secp256r1 = "0.4.0"
 ark-std = "0.4.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
-cairo-felt = "0.9.1"
-cairo-vm = "0.9.2"
+cairo-vm = { version = "1.0.0-rc3"}
 clap = { version = "4.5.4", features = ["derive"] }
 colored = "2.1.0"
 const-fnv1a-hash = "1.1.0"
@@ -127,6 +125,7 @@ sha2 = "0.10.8"
 sha3 = "0.10.8"
 smol_str = { version = "0.2.0", features = ["serde"] }
 starknet-crypto = "0.6.2"
+starknet-types-core = { version = "0.1.0", features = ["prime-bigint", "serde"] }
 syn = { version = "2.0.61", features = ["full", "extra-traits"] }
 test-case = "3.3.1"
 test-case-macros = "3.3.1"
