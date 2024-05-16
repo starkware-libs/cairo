@@ -18,7 +18,7 @@ fn foo() -> CircuitInputAccumulator<MyCircuit> {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({RangeCheck96: 16, Const: 300})
 
 //! > sierra_code
 type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
