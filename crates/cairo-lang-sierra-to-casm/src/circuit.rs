@@ -6,9 +6,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::compiler::CompilationError;
 
-/// The number of limbs used to represent a single value in the circuit.
-pub const VALUE_SIZE: usize = 4;
-
 /// Describes a circuit in the program.
 /// The information about the circuits used in the program.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]

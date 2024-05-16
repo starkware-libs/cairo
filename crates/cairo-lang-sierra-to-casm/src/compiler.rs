@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
-use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo};
+use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::{
     CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
@@ -27,7 +27,7 @@ use num_traits::{ToPrimitive, Zero};
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
-use crate::circuit::{CircuitsInfo, VALUE_SIZE};
+use crate::circuit::CircuitsInfo;
 use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
     check_references_on_stack, compile_invocation, BranchChanges, InvocationError, ProgramInfo,

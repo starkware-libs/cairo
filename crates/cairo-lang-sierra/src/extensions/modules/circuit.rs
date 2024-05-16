@@ -23,6 +23,9 @@ use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
+/// The number of limbs used to represent a single value in the circuit.
+pub const VALUE_SIZE: usize = 4;
+
 define_type_hierarchy! {
     pub enum CircuitType {
         AddMod(AddModType),

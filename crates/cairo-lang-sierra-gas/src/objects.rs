@@ -68,6 +68,10 @@ impl PreCost {
     pub fn builtin(token_type: CostTokenType) -> Self {
         Self(OrderedHashMap::from_iter([(token_type, 1)]))
     }
+
+    pub fn n_builtins(token_type: CostTokenType, n: i32) -> Self {
+        Self(OrderedHashMap::from_iter([(token_type, n)]))
+    }
 }
 
 /// Adds two [PreCost] instances.
