@@ -144,6 +144,8 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
         CostTokenType::EcOp => 4166,
         // TODO(ilya): Validate the costs.
         CostTokenType::RangeCheck96 => 65,
+        CostTokenType::AddMod => 274,
+        CostTokenType::MulMod => 616,
     }
 }
 
