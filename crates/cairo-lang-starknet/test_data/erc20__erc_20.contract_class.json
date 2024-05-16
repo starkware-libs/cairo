@@ -2768,7 +2768,7 @@
       ],
       [
         100,
-        "function_call<user@cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::ContractMemberState, cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::StorageMapContractMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
       ],
       [
         101,
@@ -3170,7 +3170,7 @@
       ],
       [
         12,
-        "cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::ContractMemberState, cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::StorageMapContractMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
       ],
       [
         13,

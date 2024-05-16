@@ -4,73 +4,82 @@ use starknet::SyscallResult;
 use starknet::storage_access::storage_base_address_from_felt252;
 
 /// Trait for getting the address of any contract/component storage member.
-pub trait StorageMemberAddressTrait<TMemberState, TValue> {
+pub trait StorageMemberAddressTrait<TMemberState> {
+    /// the type of the underlying storage member.
+    type Value;
     fn address(self: @TMemberState) -> starknet::StorageBaseAddress nopanic;
 }
 
 /// Trait for accessing any contract/component storage member.
-pub trait StorageMemberAccessTrait<TMemberState, TValue> {
-    fn read(self: @TMemberState) -> TValue;
-    fn write(ref self: TMemberState, value: TValue);
+pub trait StorageMemberAccessTrait<TMemberState> {
+    type Value;
+    fn read(self: @TMemberState) -> Self::Value;
+    fn write(ref self: TMemberState, value: Self::Value);
 }
 
 /// Implementation of StorageMemberAccessTrait for types that implement StorageMemberAddressTrait.
 pub impl StorageMemberAccessImpl<
     TMemberState,
-    TValue,
-    +StorageMemberAddressTrait<TMemberState, TValue>,
-    +starknet::Store<TValue>,
+    +StorageMemberAddressTrait<TMemberState>,
+    +starknet::Store<StorageMemberAddressTrait::<TMemberState>::Value>,
     +Drop<TMemberState>,
-> of StorageMemberAccessTrait<TMemberState, TValue> {
-    fn read(self: @TMemberState) -> TValue {
+> of StorageMemberAccessTrait<TMemberState> {
+    type Value = StorageMemberAddressTrait::<TMemberState>::Value;
+    fn read(self: @TMemberState) -> Self::Value {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<TValue>::read(address_domain, self.address())
+            starknet::Store::<Self::Value>::read(address_domain, self.address())
         )
     }
-    fn write(ref self: TMemberState, value: TValue) {
+    fn write(ref self: TMemberState, value: Self::Value) {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
-        let write_result = starknet::Store::<TValue>::write(address_domain, self.address(), value);
+        let write_result = starknet::Store::<
+            Self::Value
+        >::write(address_domain, self.address(), value);
         starknet::SyscallResultTrait::unwrap_syscall(write_result)
     }
 }
 
 /// Trait for getting the address of any contract/component mapping storage member.
-pub trait StorageMapMemberAddressTrait<TMemberState, TKey, TValue> {
-    fn address(self: @TMemberState, key: TKey) -> starknet::StorageBaseAddress;
+pub trait StorageMapMemberAddressTrait<TMemberState> {
+    type Key;
+    type Value;
+    fn address(self: @TMemberState, key: Self::Key) -> starknet::StorageBaseAddress;
 }
 
 /// Trait for accessing any contract/component storage member.
-pub trait StorageMapMemberAccessTrait<TMemberState, TKey, TValue> {
-    fn read(self: @TMemberState, key: TKey) -> TValue;
-    fn write(ref self: TMemberState, key: TKey, value: TValue);
+pub trait StorageMapMemberAccessTrait<TMemberState> {
+    type Key;
+    type Value;
+    fn read(self: @TMemberState, key: Self::Key) -> Self::Value;
+    fn write(ref self: TMemberState, key: Self::Key, value: Self::Value);
 }
 
 /// Implementation of StorageMapMemberAccessTrait for types that implement
 /// StorageMapMemberAddressTrait.
 pub impl StorageMapMemberAccessImpl<
     TMemberState,
-    TKey,
-    TValue,
-    +StorageMapMemberAddressTrait<TMemberState, TKey, TValue>,
-    +starknet::Store<TValue>,
+    +StorageMapMemberAddressTrait<TMemberState>,
+    +starknet::Store<StorageMapMemberAddressTrait::<TMemberState>::Value>,
     +Drop<TMemberState>,
-    +PanicDestruct<TValue>,
-> of StorageMapMemberAccessTrait<TMemberState, TKey, TValue> {
-    fn read(self: @TMemberState, key: TKey) -> TValue {
+    +PanicDestruct<StorageMapMemberAddressTrait::<TMemberState>::Value>,
+> of StorageMapMemberAccessTrait<TMemberState> {
+    type Key = StorageMapMemberAddressTrait::<TMemberState>::Key;
+    type Value = StorageMapMemberAddressTrait::<TMemberState>::Value;
+    fn read(self: @TMemberState, key: Self::Key) -> Self::Value {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<TValue>::read(address_domain, self.address(key))
+            starknet::Store::<Self::Value>::read(address_domain, self.address(key))
         )
     }
-    fn write(ref self: TMemberState, key: TKey, value: TValue) {
+    fn write(ref self: TMemberState, key: Self::Key, value: Self::Value) {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<TValue>::write(address_domain, self.address(key), value)
+            starknet::Store::<Self::Value>::write(address_domain, self.address(key), value)
         )
     }
 }
@@ -139,6 +148,22 @@ impl StorableStoragePathAsPointer<T, +starknet::Store<T>> of StorageAsPointer<St
                 core::hash::HashStateTrait::<core::poseidon::HashState>::finalize(*self.hash_state)
             )
         }
+    }
+}
+
+/// An implementation of `StorageAsPointer` for any type that implements `StorageMemberAccessTrait`
+/// and `Store`.
+impl StorageMemberStateAsPointer<
+    TMemberState,
+    +StorageMemberAddressTrait<TMemberState>,
+    +starknet::Store<StorageMemberAddressTrait::<TMemberState>::Value>,
+> of StorageAsPointer<TMemberState, StorageMemberAddressTrait::<TMemberState>::Value> {
+    fn as_ptr(
+        self: @TMemberState
+    ) -> StoragePointer<StorageMemberAddressTrait::<TMemberState>::Value> {
+        StoragePointer::<
+            StorageMemberAddressTrait::<TMemberState>::Value
+        > { address: self.address() }
     }
 }
 

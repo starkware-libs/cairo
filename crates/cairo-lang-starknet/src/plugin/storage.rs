@@ -8,12 +8,12 @@ use indoc::formatdoc;
 
 use super::consts::{
     CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, LEGACY_STORAGE_MAPPING, STORAGE_MAPPING,
-    STORAGE_STRUCT_NAME, STORE_TRAIT, SUBSTORAGE_ATTR,
+    STORAGE_STRUCT_NAME, SUBSTORAGE_ATTR,
 };
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
 use super::utils::has_v0_attribute;
-use super::{STORAGE_AS_PATH_TRAIT, STORAGE_AS_POINTER_TRAIT};
+use super::STORAGE_AS_PATH_TRAIT;
 
 /// Generate getters and setters for the members of the storage struct.
 pub fn handle_storage_struct(
@@ -383,66 +383,22 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
     let member_state_name = starknet_module_kind.get_member_state_name();
     // TODO(v3): remove this divergence. Contracts should be as components. It's currently different
     // to not break existing code.
-    match starknet_module_kind {
-        StarknetModuleKind::Contract => {
-            format!(
-                "
-    pub use $member_module_path$::Internal{member_state_name}Trait as \
-                 $storage_member_name${member_state_name}Trait;
-    pub mod $member_module_path$ {{$extra_uses$
-        #[derive(Copy, Drop)]
-        pub struct {member_state_name} {{}}
+    format!(
+        "
 
-        impl InternalPointerAccess{member_state_name}Impl of
-            {STORAGE_AS_POINTER_TRAIT}<{member_state_name}, $type_path$> {{
-            fn as_ptr(self: @{member_state_name}) ->
-                starknet::storage::StoragePointer<$type_path$> {{
-                starknet::storage::StoragePointer{{
-                    address: Internal{member_state_name}Impl::address(self)
+        pub mod $member_module_path$ {{$extra_uses$
+            #[derive(Copy, Drop)]
+            pub struct {member_state_name} {{}}
+            impl Storage{member_state_name}Impl of \
+         starknet::storage::StorageMemberAddressTrait<{member_state_name}> {{
+                type Value = $type_path$;
+                fn address(self: @{member_state_name}) -> \
+         starknet::storage_access::StorageBaseAddress nopanic {{
+                    starknet::storage_access::storage_base_address_const::<{address}>()
                 }}
             }}
-        }}
-
-        pub trait Internal{member_state_name}Trait {{
-            fn address(self: @{member_state_name}) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @{member_state_name}) -> $type_path$;
-            fn write(ref self: {member_state_name}, value: $type_path$);
-        }}
-
-        impl Internal{member_state_name}Impl of Internal{member_state_name}Trait {{
-            fn address(self: @{member_state_name}) -> starknet::storage_access::StorageBaseAddress \
-                 {{
-                starknet::storage_access::storage_base_address_const::<{address}>()
-            }}
-            fn read(self: @{member_state_name}) -> $type_path$ {{
-                starknet::storage::StoragePointerAccess::read(
-                    InternalPointerAccess{member_state_name}Impl::as_ptr(self)
-                )
-            }}
-            fn write(ref self: {member_state_name}, value: $type_path$) {{
-                starknet::storage::StoragePointerAccess::write(
-                    InternalPointerAccess{member_state_name}Impl::as_ptr(@self), value
-                )
-            }}
-        }}
-    }}"
-            )
-        }
-        StarknetModuleKind::Component => format!(
-            "
-    pub mod $member_module_path$ {{$extra_uses$
-        #[derive(Copy, Drop)]
-        pub struct {member_state_name} {{}}
-        impl Storage{member_state_name}Impl of \
-             starknet::storage::StorageMemberAddressTrait<{member_state_name}, $type_path$> {{
-            fn address(self: @{member_state_name}) -> starknet::storage_access::StorageBaseAddress \
-             nopanic {{
-                starknet::storage_access::storage_base_address_const::<{address}>()
-            }}
-        }}
-    }}"
-        ),
-    }
+        }}"
+    )
 }
 
 /// Generate getters and setters skeleton for a mapping member in the storage struct.
@@ -451,73 +407,24 @@ fn handle_legacy_mapping_storage_member(
     starknet_module_kind: StarknetModuleKind,
 ) -> String {
     let member_state_name = starknet_module_kind.get_member_state_name();
-    // TODO(v3): remove this divergence. Contracts should be as components. It's currently different
-    // to not break existing code.
-    match starknet_module_kind {
-        StarknetModuleKind::Contract => {
-            format!(
-                "
-    pub use $member_module_path$::Internal{member_state_name}Trait as \
-                 $storage_member_name${member_state_name}Trait;
-    pub mod $member_module_path$ {{$extra_uses$
-        #[derive(Copy, Drop)]
-        pub struct {member_state_name} {{}}
-        pub trait Internal{member_state_name}Trait {{
-            fn address(self: @{member_state_name}, key: $key_type$) -> \
-                 starknet::storage_access::StorageBaseAddress;
-            fn read(self: @{member_state_name}, key: $key_type$) -> $value_type$;
-            fn write(ref self: {member_state_name}, key: $key_type$, value: $value_type$);
-        }}
-
-        impl Internal{member_state_name}Impl of Internal{member_state_name}Trait {{
-            fn address(self: @{member_state_name}, key: $key_type$) -> \
-                 starknet::storage_access::StorageBaseAddress {{
-                starknet::storage_access::storage_base_address_from_felt252(
-                    core::hash::LegacyHash::<$key_type$>::hash({address}, key))
-            }}
-            fn read(self: @{member_state_name}, key: $key_type$) -> $value_type$ {{
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    {STORE_TRAIT}::<$value_type$>::read(
-                        address_domain,
-                        Self::address(self, key),
-                    )
-                )
-            }}
-            fn write(ref self: {member_state_name}, key: $key_type$, value: $value_type$) {{
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    {STORE_TRAIT}::<$value_type$>::write(
-                        address_domain,
-                        Self::address(@self, key),
-                        value,
-                    )
-                )
-            }}
-        }}
-    }}"
-            )
-        }
-        StarknetModuleKind::Component => format!(
-            "
+    format!(
+        "
     pub mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
 
         impl StorageMap{member_state_name}Impl of \
-             starknet::storage::StorageMapMemberAddressTrait<{member_state_name}, $key_type$, \
-             $value_type$> {{
+         starknet::storage::StorageMapMemberAddressTrait<{member_state_name}> {{
+            type Key = $key_type$;
+            type Value = $value_type$;
             fn address(self: @{member_state_name}, key: $key_type$) -> \
-             starknet::storage_access::StorageBaseAddress {{
+         starknet::storage_access::StorageBaseAddress {{
                 starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<$key_type$>::hash({address}, key))
             }}
         }}
     }}"
-        ),
-    }
+    )
 }
 
 /// Generate getters and setters skeleton for a non-legacy mapping member in the storage struct.
