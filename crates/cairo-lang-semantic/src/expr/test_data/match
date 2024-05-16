@@ -111,11 +111,6 @@ enum A {
 }
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "core::felt252", found: "core::bool".
- --> lib.cairo:5:40
-fn foo(a: felt252, b: bool) -> felt252 {
-                                       ^
-
 error: Match arms have incompatible types: "core::felt252" and "core::bool"
  --> lib.cairo:8:14
         _ => b,
@@ -177,11 +172,6 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "()", found: "core::bool".
- --> lib.cairo:1:23
-fn foo(x: Option<()>) {
-                      ^
-
 error: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:23
 fn foo(x: Option<()>) {
@@ -257,11 +247,6 @@ enum MyEnum<T> {
 fn bar(a: MyEnum<u32>) {}
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "test::MyEnum::<core::integer::u32>", found: "test::MyEnum::<core::felt252>".
- --> lib.cairo:11:9
-    bar(a);
-        ^
-
 error: Unexpected argument type. Expected: "test::MyEnum::<core::integer::u32>", found: "test::MyEnum::<core::felt252>".
  --> lib.cairo:11:9
     bar(a);
