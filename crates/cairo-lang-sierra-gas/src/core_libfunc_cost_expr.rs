@@ -10,6 +10,7 @@ use crate::core_libfunc_cost_base::{
 };
 use crate::cost_expr::{CostExpr, Var};
 use crate::generate_equations::StatementFutureCost;
+use crate::objects::CostInfoProvider;
 
 pub type CostExprMap = OrderedHashMap<CostTokenType, CostExpr>;
 
@@ -53,10 +54,11 @@ impl CostOperations for Ops<'_> {
 }
 
 /// Returns an expression for the gas cost for core libfuncs.
-pub fn core_libfunc_precost_expr(
+pub fn core_libfunc_precost_expr<InfoProvider: CostInfoProvider>(
     statement_future_cost: &mut dyn StatementFutureCost,
     idx: &StatementIdx,
     libfunc: &CoreConcreteLibfunc,
+    info_provider: &InfoProvider,
 ) -> Vec<CostExprMap> {
     if matches!(libfunc, CoreConcreteLibfunc::Gas(GasConcreteLibfunc::WithdrawGas(_))) {
         // Keeping the old calculation as is - `withdraw_gas` should only supply gas for consts.
@@ -65,7 +67,7 @@ pub fn core_libfunc_precost_expr(
         // Coupon refund is not supported (zero refund).
         vec![Default::default()]
     } else {
-        core_libfunc_precost(&mut Ops { statement_future_cost, idx: *idx }, libfunc)
+        core_libfunc_precost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
     }
 }
 
