@@ -1,8 +1,10 @@
 pub mod client_capabilities;
 pub mod fixture;
 mod jsonrpc;
-pub mod mock_client;
+mod mock_client;
 mod runtime;
+
+pub use self::mock_client::MockClient;
 
 /// Create a sandboxed environment for testing language server features.
 ///
@@ -18,7 +20,7 @@ macro_rules! sandbox {
         use $crate::support::{
             client_capabilities,
             fixture::Fixture,
-            mock_client::MockClient
+            MockClient
         };
 
         let mut fixture = Fixture::new();
