@@ -583,6 +583,7 @@ dependencies = [
  "cairo-lang-starknet",
  "cairo-lang-syntax",
  "cairo-lang-test-plugin",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "futures",
  "salsa",
