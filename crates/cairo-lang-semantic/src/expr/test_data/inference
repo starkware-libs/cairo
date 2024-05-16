@@ -109,11 +109,6 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "core::felt252", found: "core::array::Array::<core::felt252>".
- --> lib.cairo:2:29
-    let mut _arr: felt252 = array::array_new::<felt252>();
-                            ^***************************^
-
 error: Unexpected argument type. Expected: "core::felt252", found: "core::array::Array::<core::felt252>".
  --> lib.cairo:2:29
     let mut _arr: felt252 = array::array_new::<felt252>();
@@ -156,11 +151,6 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "core::never", found: "core::felt252".
- --> lib.cairo:1:19
-fn foo() -> never {
-                  ^
-
 error: Unexpected return type. Expected: "core::never", found: "core::felt252".
  --> lib.cairo:1:19
 fn foo() -> never {
@@ -736,11 +726,6 @@ foo
 fn takes_snapshots<T>(x: @T, y: @T) {}
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "@?2", found: "core::integer::u32".
- --> lib.cairo:5:24
-    takes_snapshots(x, y);
-                       ^
-
 error: Unexpected argument type. Expected: "@?2", found: "core::integer::u32".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.

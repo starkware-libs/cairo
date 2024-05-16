@@ -53,7 +53,7 @@ use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::compute::{compute_root_expr, ComputationContext, Environment, ResultType};
+use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::solver::SolutionSet;
@@ -1101,7 +1101,6 @@ pub fn can_infer_impl_by_self(
     inference_errors: &mut Vec<(TraitFunctionId, InferenceError)>,
     trait_function_id: TraitFunctionId,
     self_ty: TypeId,
-    result_type: Option<ResultType>,
     stable_ptr: SyntaxStablePtrId,
 ) -> bool {
     let mut temp_inference_data = ctx.resolver.data.inference_data.temporary_clone();
@@ -1112,7 +1111,6 @@ pub fn can_infer_impl_by_self(
         trait_function_id,
         self_ty,
         &lookup_context,
-        result_type,
         Some(stable_ptr),
         |err| inference_errors.push((trait_function_id, err)),
     ) else {
@@ -1150,14 +1148,12 @@ pub fn infer_impl_by_self(
     self_ty: TypeId,
     stable_ptr: SyntaxStablePtrId,
     generic_args_syntax: Option<Vec<GenericArg>>,
-    result_type: Option<ResultType>,
 ) -> Option<(FunctionId, usize)> {
     let lookup_context = ctx.resolver.impl_lookup_context();
     let (concrete_trait_id, n_snapshots) = ctx.resolver.inference().infer_concrete_trait_by_self(
         trait_function_id,
         self_ty,
         &lookup_context,
-        result_type,
         Some(stable_ptr),
         |_| {},
     )?;
@@ -1206,7 +1202,6 @@ pub fn filter_candidate_traits(
     self_ty: TypeId,
     candidate_traits: &[TraitId],
     function_name: SmolStr,
-    result_type: Option<ResultType>,
     stable_ptr: SyntaxStablePtrId,
 ) -> Vec<TraitFunctionId> {
     let mut candidates = Vec::new();
@@ -1221,7 +1216,6 @@ pub fn filter_candidate_traits(
                     inference_errors,
                     trait_function,
                     self_ty,
-                    result_type,
                     stable_ptr,
                 )
             {
