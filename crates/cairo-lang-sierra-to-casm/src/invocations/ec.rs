@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
-use cairo_felt::Felt252;
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use num_bigint::{BigInt, ToBigInt};
+use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::misc::validate_under_limit;
@@ -218,7 +218,7 @@ fn build_ec_point_from_x_nz(
         &mut casm_builder,
         // Note that `1/2 (mod PRIME) = (PRIME + 1) / 2 = ceil(PRIME / 2)`.
         // Thus, `y < 1/2 (mod PRIME)` if and only if `y < PRIME / 2`.
-        &(Felt252::from(1) / Felt252::from(2)).to_biguint().to_bigint().unwrap(),
+        &(Felt252::from(1).field_div(&NonZeroFelt::TWO)).to_biguint().to_bigint().unwrap(),
         y,
         range_check,
         &auxiliary_vars,

@@ -1,13 +1,13 @@
-use cairo_felt::{felt_str, Felt252};
 use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::{casm, deref};
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
+use cairo_lang_utils::felt_str;
 use cairo_vm::vm::runners::cairo_runner::RunResources;
-use cairo_vm::vm::vm_core::VirtualMachine;
 use indoc::indoc;
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
+use starknet_types_core::felt::Felt as Felt252;
 use test_case::test_case;
 
 use super::format_for_debug;
@@ -124,16 +124,10 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         .flat_map(|instruction| instruction.assemble().encode())
         .collect();
 
-    let RunFunctionResult { memory, ap, .. } = run_function(
-        &mut VirtualMachine::new(true),
-        bytecode.iter(),
-        vec![],
-        |_| Ok(()),
-        &mut hint_processor,
-        hints_dict,
-    )
-    .expect("Running code failed.");
-    let ret_memory = memory.into_iter().skip(ap - n_returns);
+    let RunFunctionResult { ap, runner, .. } =
+        run_function(bytecode.iter(), vec![], |_| Ok(()), &mut hint_processor, hints_dict)
+            .expect("Running code failed.");
+    let ret_memory = runner.relocated_memory.into_iter().skip(ap - n_returns);
     assert_eq!(
         ret_memory.take(n_returns).map(|cell| cell.unwrap()).collect_vec(),
         expected.iter().copied().map(Felt252::from).collect_vec()
@@ -160,21 +154,15 @@ fn test_allocate_segment() {
     let bytecode: Vec<BigInt> =
         casm.instructions.iter().flat_map(|instruction| instruction.assemble().encode()).collect();
 
-    let RunFunctionResult { memory, ap, .. } = run_function(
-        &mut VirtualMachine::new(true),
-        bytecode.iter(),
-        vec![],
-        |_| Ok(()),
-        &mut hint_processor,
-        hints_dict,
-    )
-    .expect("Running code failed.");
-    let ptr = memory[ap]
+    let RunFunctionResult { ap, runner, .. } =
+        run_function(bytecode.iter(), vec![], |_| Ok(()), &mut hint_processor, hints_dict)
+            .expect("Running code failed.");
+    let ptr = runner.relocated_memory[ap]
         .as_ref()
         .expect("Uninitialized value.")
         .to_usize()
         .expect("Number not in index range.");
-    assert_eq!(memory[ptr], Some(Felt252::from(1337)));
+    assert_eq!(runner.relocated_memory[ptr], Some(Felt252::from(1337)));
 }
 
 #[test]
@@ -457,7 +445,7 @@ fn test_calculate_contract_address() {
     let deployer_address = Felt252::from(0x01);
     let class_hash =
         felt_str!("1779576919126046589190499439779938629977579841313883525093195577363779864274");
-    let calldata = vec![deployer_address.clone(), salt.clone()];
+    let calldata = vec![deployer_address, salt];
     let deployed_contract_address =
         calculate_contract_address(&salt, &class_hash, &calldata, &deployer_address);
 
