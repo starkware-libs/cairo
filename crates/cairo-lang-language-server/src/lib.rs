@@ -56,7 +56,7 @@ use cairo_lang_defs::ids::{
     ModuleTypeAliasLongId, StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitItemId,
     TraitLongId, UseLongId,
 };
-use cairo_lang_diagnostics::{Diagnostics, ToOption};
+use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
@@ -94,6 +94,7 @@ use crate::config::Config;
 use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
+use crate::lang::syntax::LsSyntaxGroup;
 use crate::lsp::client_capabilities::ClientCapabilitiesExt;
 use crate::project::scarb::db::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
@@ -1116,8 +1117,7 @@ fn get_node_and_lookup_items(
     file: FileId,
     position: TextPosition,
 ) -> Option<(SyntaxNode, Vec<LookupItemId>)> {
-    // Find the most specific syntax node at the offset.
-    let node = db.file_syntax(file).to_option()?.lookup_position(db.upcast(), position);
+    let node = db.find_syntax_node_at_position(file, position)?;
 
     // Find module.
     let module_id = find_node_module(db, file, node.clone()).on_none(|| {
@@ -1193,12 +1193,10 @@ fn get_definition_location(
     file: FileId,
     position: TextPosition,
 ) -> Option<(FileId, TextSpan)> {
+    let identifier = db.find_identifier_at_position(file, position)?;
+
     let syntax_db = db.upcast();
-    let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
-    if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
-        return None;
-    }
-    let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
+    let (_, lookup_items) = get_node_and_lookup_items(db, file, position)?;
     let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
     let node = stable_ptr.lookup(syntax_db);
     let found_file = stable_ptr.file_id(syntax_db);

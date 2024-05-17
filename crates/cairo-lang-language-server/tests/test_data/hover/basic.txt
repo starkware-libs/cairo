@@ -16,8 +16,9 @@ No hover information.
      ↑
 
 //! > popover
-No hover information.
-
+```cairo
+fn main()
+```
 =========
 
 //! > hover at Position { line: 3, character: 8 }
@@ -57,7 +58,11 @@ fn add_two(x: u32) -> u32
                ↑
 
 //! > popover
-No hover information.
+```cairo
+fn add_two(x: u32) -> u32
+```
+---
+ `add_two` documentation.
 
 =========
 
