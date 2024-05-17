@@ -57,8 +57,9 @@ fn add_two(x: u32) -> u32
                ↑
 
 //! > popover
-No hover information.
-
+```cairo
+fn main()
+```
 =========
 
 //! > hover at Position { line: 5, character: 9 }
