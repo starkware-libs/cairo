@@ -1,6 +1,6 @@
 use std::fmt::Write;
-use std::fs;
-use std::sync::Mutex;
+use std::io::{BufReader, Read, Seek};
+use std::sync::Arc;
 
 use anyhow::Context;
 use cairo_lang_starknet_classes::allowed_libfuncs::{AllowedLibfuncsError, ListSelector};
@@ -11,16 +11,16 @@ use cairo_lang_starknet_classes::compiler_version::VersionId;
 use cairo_lang_starknet_classes::contract_class::{ContractClass, ContractEntryPoints};
 use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
-use indicatif::{ProgressBar, ProgressState, ProgressStyle};
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use serde::Deserialize;
+use tokio::task::JoinSet;
 
 /// Runs validation on existing contract classes to make sure they are still valid and compilable.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
-    /// The file to compile
-    file: String,
+    /// The input files with declared classes info.
+    input_files: Vec<String>,
     /// The allowed libfuncs list to use (default: most recent audited list).
     #[arg(long)]
     allowed_libfuncs_list_name: Option<String>,
@@ -88,7 +88,8 @@ struct CompilationMismatch {
     new: BigUintAsHex,
 }
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let args: Args = Args::parse();
     let list_selector =
         ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file)
@@ -97,82 +98,140 @@ fn main() -> anyhow::Result<()> {
         Some(version) => Some(parse_version_id(&version)?),
         None => None,
     };
+
+    // Setting up the progress bars.
+    let multi_bar = MultiProgress::new();
+    let reader_bar = multi_bar.add(ProgressBar::new(0));
+    reader_bar.set_style(get_style("Read input"));
+    let class_bar = multi_bar.add(ProgressBar::new(0));
+    class_bar.set_style(get_style("Process classes"));
+
+    // Setting up results of class recompilation.
+    let (results_tx, results_rx) = async_channel::bounded(128);
+    let results_handler = {
+        let class_bar = class_bar.clone();
+        tokio::spawn(async move { collect_result(results_rx, class_bar).await })
+    };
+
+    let config: Arc<RunConfig> = Arc::new(RunConfig {
+        list_selector,
+        override_version,
+        max_bytecode_size: args.max_bytecode_size,
+    });
+    let (classes_tx, classes_rx) = async_channel::bounded(256);
+    let mut input_readers =
+        spawn_input_file_readers(args.input_files, classes_tx, reader_bar.clone());
+    spawn_class_processors(classes_rx, results_tx, class_bar.clone(), config);
+    let mut num_of_classes = 0;
+    while let Some(file_num_of_classes) = input_readers.join_next().await {
+        num_of_classes += file_num_of_classes.with_context(|| "Failed to join file reader.")??;
+    }
+    reader_bar.finish_and_clear();
+    let report = results_handler.await.with_context(|| "Failed to collect results.")?;
+    class_bar.finish_and_clear();
+    analyze_report(report, num_of_classes)
+}
+
+/// Returns a progress style with the given name.
+fn get_style(name: &str) -> ProgressStyle {
+    ProgressStyle::with_template(&format!(
+        "{name}: {}",
+        "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos:>6}/{len:6} ({eta})"
+    ))
+    .unwrap()
+    .with_key("eta", |state: &ProgressState, w: &mut dyn Write| {
+        write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap()
+    })
+    .progress_chars("#>-")
+}
+
+/// Spawns tasks that read the input files and send the classes to the classes channel.
+fn spawn_input_file_readers(
+    input_files: Vec<String>,
+    classes_tx: async_channel::Sender<ContractClassInfo>,
+    reader_bar: ProgressBar,
+) -> JoinSet<anyhow::Result<usize>> {
+    let mut readers_set = JoinSet::new();
+    for input_file in input_files {
+        let classes_tx = classes_tx.clone();
+        let reader_bar = reader_bar.clone();
+        readers_set.spawn(async move {
+            handle_classes_input_file(&input_file, classes_tx, reader_bar).await
+        });
+    }
+    readers_set
+}
+
+/// Reads the classes from an input file and sends them to the classes channel.
+async fn handle_classes_input_file(
+    input_path: &str,
+    classes_tx: async_channel::Sender<ContractClassInfo>,
+    reader_bar: ProgressBar,
+) -> anyhow::Result<usize> {
     // Reading the contract classes from the file.
-    let tested_classes: Vec<ContractClassInfo> = serde_json::from_str(
-        &fs::read_to_string(&args.file)
-            .with_context(|| format!("Failed to read {}.", &args.file))?,
-    )
-    .with_context(|| "deserialization Failed.")?;
-    let num_of_classes = tested_classes.len();
-    let report = Mutex::new(Report {
-        validation_failures: Vec::new(),
-        compilation_failures: Vec::new(),
-        compilation_mismatch: Vec::new(),
-    });
-    // Setting up a progress bar.
-    let bar = ProgressBar::new(num_of_classes as u64);
-    bar.set_style(
-        ProgressStyle::with_template(
-            "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos:>6}/{len:6} ({eta})",
-        )
-        .unwrap()
-        .with_key("eta", |state: &ProgressState, w: &mut dyn Write| {
-            write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap()
-        })
-        .progress_chars("#>-"),
+    let mut reader = BufReader::new(
+        std::fs::File::open(input_path).with_context(|| format!("Failed to open {input_path}."))?,
     );
-    let config =
-        RunConfig { list_selector, override_version, max_bytecode_size: args.max_bytecode_size };
-    tested_classes.into_par_iter().for_each(|sierra_class| {
-        bar.inc(1);
-        match run_single(sierra_class, &config) {
-            RunResult::ValidationFailure(failure) => {
-                report.lock().unwrap().validation_failures.push(failure);
-            }
-            RunResult::CompilationFailure(failure) => {
-                report.lock().unwrap().compilation_failures.push(failure);
-            }
-            RunResult::CompilationMismatch(mismatch) => {
-                report.lock().unwrap().compilation_mismatch.push(mismatch);
-            }
-            RunResult::Success => {}
-        };
-    });
-    bar.finish_and_clear();
-    let report = report.into_inner().unwrap();
-    if !report.validation_failures.is_empty() {
-        println!(
-            "Validation failures: (Printing first 10 out of {})",
-            report.validation_failures.len()
-        );
-        for ValidationFailure { class_hash, err } in report.validation_failures.iter().take(10) {
-            println!("Validation failure for {:#x}: {err}", class_hash.value);
+    reader_bar.inc_length(reader.get_ref().metadata().unwrap().len());
+    let mut prev_position = 0;
+    let mut num_of_classes = 0;
+    loop {
+        // Handling the encompassing characters of the array holding the classes infos, as the
+        // `serde_json::Deserializer` can only consume a full json object.
+        // This allows us to not read the entire json file into memory.
+        let mut next_byte: u8 = b'\0';
+        reader
+            .read_exact(std::slice::from_mut(&mut next_byte))
+            .with_context(|| "Failed to read next byte.")?;
+        match next_byte {
+            // This is the start, or the separator between classes, so we can just handle the
+            // following class.
+            b'[' | b',' => {}
+            // This is a whitespace, so we can see what happens in the next byte and decide what to
+            // do.
+            b' ' | b'\n' => continue,
+            // Handling of the array is done.
+            b']' => break,
+            _ => return Err(anyhow::anyhow!("Invalid header")),
         }
+        let sierra_class = serde_json::Deserializer::from_reader(&mut reader)
+            .into_iter::<ContractClassInfo>()
+            .next()
+            .unwrap()
+            .with_context(|| "deserialization Failed.")?;
+        num_of_classes += 1;
+        classes_tx.send(sierra_class).await?;
+        let new_position = reader.stream_position().unwrap();
+        reader_bar.inc(new_position - prev_position);
+        prev_position = new_position;
     }
-    if !report.compilation_failures.is_empty() {
-        println!(
-            "Compilation failures: (Printing first 10 out of {})",
-            report.compilation_failures.len()
-        );
-        for CompilationFailure { class_hash, err } in report.compilation_failures.iter().take(10) {
-            println!("Compilation failure for {:#x}: {err}", class_hash.value);
-        }
+    Ok(num_of_classes)
+}
+
+/// Spawns tasks that process the classes and send the results to the results channel.
+fn spawn_class_processors(
+    classes_rx: async_channel::Receiver<ContractClassInfo>,
+    results_tx: async_channel::Sender<RunResult>,
+    class_bar: ProgressBar,
+    config: Arc<RunConfig>,
+) {
+    const NUM_OF_PROCESSORS: usize = 32;
+    for _ in 0..NUM_OF_PROCESSORS {
+        let class_bar = class_bar.clone();
+        let classes_rx = classes_rx.clone();
+        let results_tx = results_tx.clone();
+        let config = config.clone();
+        tokio::spawn(async move {
+            while let Ok(sierra_class) = classes_rx.recv().await {
+                class_bar.inc_length(1);
+                if let Err(err) = results_tx.send(run_single(sierra_class, config.as_ref())).await {
+                    eprintln!("Failed to send result: {:#?}", err);
+                }
+                // Additional yield to prevent starvation of the inputs handling stage.
+                tokio::task::yield_now().await;
+            }
+        });
     }
-    if !report.compilation_mismatch.is_empty() {
-        println!(
-            "Compilation mismatch {} out of {num_of_classes}: (Printing first 10)",
-            report.compilation_mismatch.len()
-        );
-        for CompilationMismatch { class_hash, old, new } in
-            report.compilation_mismatch.iter().take(10)
-        {
-            println!(
-                "Compilation mismatch for {:#x}: old={:#x}, new={:#x}",
-                class_hash.value, old.value, new.value
-            );
-        }
-    }
-    Ok(())
 }
 
 /// The configuration for a Sierra compilation run.
@@ -224,5 +283,79 @@ fn run_single(mut sierra_class: ContractClassInfo, config: &RunConfig) -> RunRes
         RunResult::CompilationMismatch(CompilationMismatch { class_hash, old, new })
     } else {
         RunResult::Success
+    }
+}
+
+/// Spawns a task that collects the results from the results channel and returns the report.
+async fn collect_result(
+    results_rx: async_channel::Receiver<RunResult>,
+    class_bar: ProgressBar,
+) -> Report {
+    let mut report = Report {
+        validation_failures: Vec::new(),
+        compilation_failures: Vec::new(),
+        compilation_mismatch: Vec::new(),
+    };
+    while let Ok(result) = results_rx.recv().await {
+        class_bar.inc(1);
+        match result {
+            RunResult::ValidationFailure(failure) => {
+                report.validation_failures.push(failure);
+            }
+            RunResult::CompilationFailure(failure) => {
+                report.compilation_failures.push(failure);
+            }
+            RunResult::CompilationMismatch(mismatch) => {
+                report.compilation_mismatch.push(mismatch);
+            }
+            RunResult::Success => {}
+        };
+    }
+    class_bar.finish_and_clear();
+    report
+}
+
+/// Analyzes the report and prints the results.
+fn analyze_report(report: Report, num_of_classes: usize) -> anyhow::Result<()> {
+    if !report.validation_failures.is_empty() {
+        println!(
+            "Validation failures: (Printing first 10 out of {})",
+            report.validation_failures.len()
+        );
+        for ValidationFailure { class_hash, err } in report.validation_failures.iter().take(10) {
+            println!("Validation failure for {:#x}: {err}", class_hash.value);
+        }
+    }
+    if !report.compilation_failures.is_empty() {
+        println!(
+            "Compilation failures: (Printing first 10 out of {})",
+            report.compilation_failures.len()
+        );
+        for CompilationFailure { class_hash, err } in report.compilation_failures.iter().take(10) {
+            println!("Compilation failure for {:#x}: {err}", class_hash.value);
+        }
+    }
+    if !report.compilation_mismatch.is_empty() {
+        println!(
+            "Compilation mismatch {} out of {num_of_classes}: (Printing first 10)",
+            report.compilation_mismatch.len()
+        );
+        for CompilationMismatch { class_hash, old, new } in
+            report.compilation_mismatch.iter().take(10)
+        {
+            println!(
+                "Compilation mismatch for {:#x}: old={:#x}, new={:#x}",
+                class_hash.value, old.value, new.value
+            );
+        }
+    }
+    if report.validation_failures.is_empty()
+        && report.compilation_failures.is_empty()
+        && report.compilation_mismatch.is_empty()
+    {
+        println!("All {} classes passed validation and compilation.", num_of_classes);
+        Ok(())
+    } else {
+        Err(anyhow::anyhow!("Failed."))
     }
 }
