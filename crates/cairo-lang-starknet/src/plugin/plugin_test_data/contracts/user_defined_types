@@ -167,7 +167,7 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl StorageMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
+        impl StorageLegacyMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
             type Key = WrappedFelt252;
             type Value = WrappedFelt252;
             fn address(self: @ContractMemberState, key: WrappedFelt252) -> starknet::storage_access::StorageBaseAddress {
@@ -186,7 +186,7 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl StorageMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
+        impl StorageLegacyMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
             type Key = ZeroSize;
             type Value = ZeroSize;
             fn address(self: @ContractMemberState, key: ZeroSize) -> starknet::storage_access::StorageBaseAddress {

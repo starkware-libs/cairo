@@ -7,8 +7,8 @@ use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 
 use super::consts::{
-    CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, LEGACY_STORAGE_MAPPING,
-    STORAGE_AS_PATH_TRAIT, STORAGE_MAPPING, STORAGE_STRUCT_NAME, SUBSTORAGE_ATTR,
+    CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, LEGACY_STORAGE_MAPPING, STORAGE_MAPPING,
+    STORAGE_STRUCT_NAME, SUBSTORAGE_ATTR,
 };
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
@@ -412,7 +412,7 @@ fn handle_legacy_mapping_storage_member(
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
 
-        impl StorageMap{member_state_name}Impl of \
+        impl StorageLegacyMap{member_state_name}Impl of \
          starknet::storage::StorageLegacyMapMemberAddressTrait<{member_state_name}> {{
             type Key = $key_type$;
             type Value = $value_type$;
@@ -434,21 +434,19 @@ fn handle_nonlegacy_mapping_storage_member(
     let member_state_name = starknet_module_kind.get_member_state_name();
     format!(
         "
-    pub mod $member_module_path$ {{$extra_uses$
-        #[derive(Copy, Drop)]
-        pub struct {member_state_name} {{}}
-        impl Storage{member_state_name}AsPathImpl of {STORAGE_AS_PATH_TRAIT}<{member_state_name}> \
-         {{
-            type Value = $type_path$;
-            fn as_path(self: @{member_state_name}) -> starknet::storage::StoragePath<$type_path$> \
-         {{
-                    starknet::storage::StoragePath::<$type_path$> {{ hash_state:
-                        core::hash::HashStateTrait::update(core::poseidon::PoseidonTrait::new(), \
-         {address})
-                     }}
-
+        pub mod $member_module_path$ {{$extra_uses$
+            #[derive(Copy, Drop)]
+            pub struct {member_state_name} {{}}
+    
+            impl StorageMap{member_state_name}Impl of \
+         starknet::storage::StorageMapMemberAddressTrait<{member_state_name}> {{
+                type Key = $key_type$;
+                type Value = $value_type$;
+                fn address(self: @{member_state_name}) -> \
+         starknet::storage_access::StorageBaseAddress nopanic {{
+                    starknet::storage_access::storage_base_address_const::<{address}>()
                 }}
-        }}
-    }}"
+            }}
+        }}"
     )
 }
