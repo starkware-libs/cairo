@@ -16,6 +16,7 @@ pub fn build(
     match libfunc {
         ArrayConcreteLibfunc::New(_) => build_array_new(builder),
         ArrayConcreteLibfunc::SpanFromTuple(libfunc) => build_span_from_tuple(builder, &libfunc.ty),
+        ArrayConcreteLibfunc::TupleFromSpan(libfunc) => build_tuple_from_span(builder, &libfunc.ty),
         ArrayConcreteLibfunc::Append(_) => build_array_append(builder),
         ArrayConcreteLibfunc::PopFront(libfunc)
         | ArrayConcreteLibfunc::SnapshotPopFront(libfunc) => {
@@ -51,8 +52,8 @@ fn build_array_new(
     ))
 }
 
-// Builds instructions for converting a box of a struct containing only the same type as members
-// into a span of that type.
+/// Builds instructions for converting a box of a struct containing only the same type as members
+/// into a span of that type.
 fn build_span_from_tuple(
     builder: CompiledInvocationBuilder<'_>,
     ty: &ConcreteTypeId,
@@ -74,6 +75,35 @@ fn build_span_from_tuple(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[arr_start, arr_end]], None)],
+        Default::default(),
+    ))
+}
+
+/// Builds instructions for converting a span of a type into a box of a struct containing only
+/// members of that same type.
+fn build_tuple_from_span(
+    builder: CompiledInvocationBuilder<'_>,
+    ty: &ConcreteTypeId,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
+    let full_struct_size = builder.program_info.type_sizes[ty];
+
+    let mut casm_builder = CasmBuilder::default();
+
+    add_input_variables! {casm_builder,
+        deref arr_start;
+        deref arr_end;
+    };
+    casm_build_extend! {casm_builder,
+        const success_span_size = full_struct_size;
+        tempvar actual_length = arr_end - arr_start;
+        tempvar diff = actual_length - success_span_size;
+        jump Failure if diff != 0;
+    };
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[arr_start]], None), ("Failure", &[], Some(failure_handle))],
         Default::default(),
     ))
 }

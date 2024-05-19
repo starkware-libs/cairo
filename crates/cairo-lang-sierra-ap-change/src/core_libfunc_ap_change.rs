@@ -71,6 +71,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         Array(libfunc) => match libfunc {
             ArrayConcreteLibfunc::New(_) => vec![ApChange::Known(1)],
             ArrayConcreteLibfunc::SpanFromTuple(_) => vec![ApChange::Known(0)],
+            ArrayConcreteLibfunc::TupleFromSpan(_) => vec![ApChange::Known(2), ApChange::Known(2)],
             ArrayConcreteLibfunc::Append(_) => vec![ApChange::Known(0)],
             ArrayConcreteLibfunc::PopFront(_)
             | ArrayConcreteLibfunc::PopFrontConsume(_)
