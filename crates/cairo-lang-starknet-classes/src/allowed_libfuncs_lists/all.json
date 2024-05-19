@@ -169,6 +169,7 @@
         "struct_construct",
         "struct_deconstruct",
         "struct_snapshot_deconstruct",
+        "tuple_from_span",
         "u128_byte_reverse",
         "u128_const",
         "u128_eq",

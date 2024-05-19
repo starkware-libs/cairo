@@ -147,6 +147,7 @@ pub fn simulate<
             }
         }
         Array(ArrayConcreteLibfunc::SpanFromTuple(_)) => todo!(),
+        Array(ArrayConcreteLibfunc::TupleFromSpan(_)) => todo!(),
         Array(ArrayConcreteLibfunc::Append(_)) => match &inputs[..] {
             [CoreValue::Array(_), _] => {
                 let mut iter = inputs.into_iter();
