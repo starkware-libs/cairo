@@ -581,7 +581,7 @@ component:
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
 
-        impl StorageMapComponentMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ComponentMemberState> {
+        impl StorageMapComponentMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ComponentMemberState> {
             type Key = u32;
             type Value = u32;
             fn address(self: @ComponentMemberState, key: u32) -> starknet::storage_access::StorageBaseAddress {
@@ -608,8 +608,8 @@ component:
         }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;

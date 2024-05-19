@@ -77,8 +77,8 @@ impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
 impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
         }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 
 impl ContractStateTransfer of
@@ -309,8 +309,8 @@ impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
 impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
         }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 
 impl ContractStateTransfer of

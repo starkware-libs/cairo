@@ -33,8 +33,8 @@ impl ComponentSpecificGenerationData {
         RewriteNode::interpolate_patched(
             indoc! {"
             use starknet::storage::{
-                StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-                StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+                StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+                StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
             };
             $has_component_trait$
 

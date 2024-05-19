@@ -44,31 +44,31 @@ pub impl StorageMemberAccessImpl<
 }
 
 /// Trait for getting the address of any contract/component mapping storage member.
-pub trait StorageMapMemberAddressTrait<TMemberState> {
+pub trait StorageLegacyMapMemberAddressTrait<TMemberState> {
     type Key;
     type Value;
     fn address(self: @TMemberState, key: Self::Key) -> starknet::StorageBaseAddress;
 }
 
 /// Trait for accessing any contract/component storage member.
-pub trait StorageMapMemberAccessTrait<TMemberState> {
+pub trait StorageLegacyMapMemberAccessTrait<TMemberState> {
     type Key;
     type Value;
     fn read(self: @TMemberState, key: Self::Key) -> Self::Value;
     fn write(ref self: TMemberState, key: Self::Key, value: Self::Value);
 }
 
-/// Implementation of StorageMapMemberAccessTrait for types that implement
-/// StorageMapMemberAddressTrait.
+/// Implementation of StorageLegacyMapMemberAccessTrait for types that implement
+/// StorageLegacyMapMemberAddressTrait.
 pub impl StorageMapMemberAccessImpl<
     TMemberState,
-    +StorageMapMemberAddressTrait<TMemberState>,
-    +starknet::Store<StorageMapMemberAddressTrait::<TMemberState>::Value>,
+    +StorageLegacyMapMemberAddressTrait<TMemberState>,
+    +starknet::Store<StorageLegacyMapMemberAddressTrait::<TMemberState>::Value>,
     +Drop<TMemberState>,
-    +PanicDestruct<StorageMapMemberAddressTrait::<TMemberState>::Value>,
-> of StorageMapMemberAccessTrait<TMemberState> {
-    type Key = StorageMapMemberAddressTrait::<TMemberState>::Key;
-    type Value = StorageMapMemberAddressTrait::<TMemberState>::Value;
+    +PanicDestruct<StorageLegacyMapMemberAddressTrait::<TMemberState>::Value>,
+> of StorageLegacyMapMemberAccessTrait<TMemberState> {
+    type Key = StorageLegacyMapMemberAddressTrait::<TMemberState>::Key;
+    type Value = StorageLegacyMapMemberAddressTrait::<TMemberState>::Value;
     fn read(self: @TMemberState, key: Self::Key) -> Self::Value {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;

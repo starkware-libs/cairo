@@ -167,7 +167,7 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl StorageMapContractMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ContractMemberState> {
+        impl StorageMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
             type Key = WrappedFelt252;
             type Value = WrappedFelt252;
             fn address(self: @ContractMemberState, key: WrappedFelt252) -> starknet::storage_access::StorageBaseAddress {
@@ -186,7 +186,7 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl StorageMapContractMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ContractMemberState> {
+        impl StorageMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
             type Key = ZeroSize;
             type Value = ZeroSize;
             fn address(self: @ContractMemberState, key: ZeroSize) -> starknet::storage_access::StorageBaseAddress {
@@ -196,8 +196,8 @@ pub enum Event {}
         }
     }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x22a6a9ef9e77b4a6859543ea1095bf317324bd00f9420953f068bcafc59b605;

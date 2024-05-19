@@ -270,7 +270,7 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl StorageMapContractMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ContractMemberState> {
+        impl StorageMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
             type Key = felt252;
             type Value = u128;
             fn address(self: @ContractMemberState, key: felt252) -> starknet::storage_access::StorageBaseAddress {
@@ -284,7 +284,7 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl StorageMapContractMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ContractMemberState> {
+        impl StorageMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
             type Key = u128;
             type Value = bool;
             fn address(self: @ContractMemberState, key: u128) -> starknet::storage_access::StorageBaseAddress {
@@ -298,7 +298,7 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl StorageMapContractMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ContractMemberState> {
+        impl StorageMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
             type Key = bool;
             type Value = felt252;
             fn address(self: @ContractMemberState, key: bool) -> starknet::storage_access::StorageBaseAddress {
@@ -324,7 +324,7 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl StorageMapContractMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ContractMemberState> {
+        impl StorageMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
             type Key = super::super::OuterType;
             type Value = super::super::OuterType;
             fn address(self: @ContractMemberState, key: super::super::OuterType) -> starknet::storage_access::StorageBaseAddress {
@@ -350,7 +350,7 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
 
-        impl StorageMapContractMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ContractMemberState> {
+        impl StorageMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
             type Key = inner::InnerType;
             type Value = inner::InnerType;
             fn address(self: @ContractMemberState, key: inner::InnerType) -> starknet::storage_access::StorageBaseAddress {
@@ -360,8 +360,8 @@ pub enum Event {}
         }
     }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21bc80a6e513ea8e536;
