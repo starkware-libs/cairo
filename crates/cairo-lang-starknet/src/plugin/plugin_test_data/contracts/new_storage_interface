@@ -25,7 +25,6 @@ mod hello_starknet {
     };
     #[storage]
     struct Storage {
-        // TODO(Gil): Add map type members.
         balance: usize,
         user_balance: Map<usize, usize>,
         user_balance_subbalance: Map<usize, Map<usize, usize>>,
@@ -82,7 +81,6 @@ mod hello_starknet {
     };
     #[storage]
     struct Storage {
-        // TODO(Gil): Add map type members.
         balance: usize,
         user_balance: Map<usize, usize>,
         user_balance_subbalance: Map<usize, Map<usize, usize>>,
@@ -702,49 +700,23 @@ pub enum Event {}
         unsafe_new_contract_state()
     }
     
-    pub use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
-    pub mod __member_module_balance {
+
+        pub mod __member_module_balance {
         use super::StorageAsPointer;
         use super::StoragePointerAccess;
         use super::StorageAsPath;
         use super::StoragePathEntry;
         use super::Map;
         use super::HelloStarknetImpl;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-
-        impl InternalPointerAccessContractMemberStateImpl of
-            starknet::storage::StorageAsPointer<ContractMemberState, usize> {
-            fn as_ptr(self: @ContractMemberState) ->
-                starknet::storage::StoragePointer<usize> {
-                starknet::storage::StoragePointer{
-                    address: InternalContractMemberStateImpl::address(self)
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = usize;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
                 }
             }
         }
-
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> usize;
-            fn write(ref self: ContractMemberState, value: usize);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
-            }
-            fn read(self: @ContractMemberState) -> usize {
-                starknet::storage::StoragePointerAccess::read(
-                    InternalPointerAccessContractMemberStateImpl::as_ptr(self)
-                )
-            }
-            fn write(ref self: ContractMemberState, value: usize) {
-                starknet::storage::StoragePointerAccess::write(
-                    InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
-                )
-            }
-        }
-    }
     pub mod __member_module_user_balance {
         use super::StorageAsPointer;
         use super::StoragePointerAccess;
@@ -786,7 +758,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x28e9cbd81143af88f07d448d5c1818cb08cd6b5cfb28e7b1a0689e0aaee2ec6;
+pub const TEST_CLASS_HASH: felt252 = 0x12e6d439f6d64bc4ab6807577f0ee1ebe85e352eb133efa91cee3d3b2689f3f;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {

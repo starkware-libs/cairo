@@ -4,6 +4,7 @@ use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
+use cairo_lang_sierra::extensions::circuit::CircuitInfo;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
@@ -338,6 +339,10 @@ impl<'a> InvocationCostInfoProvider for CompiledInvocationBuilder<'a> {
 
     fn token_usages(&self, token_type: CostTokenType) -> usize {
         InvocationApChangeInfoProvider::token_usages(self, token_type)
+    }
+
+    fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo {
+        self.program_info.circuits_info.circuits.get(ty).unwrap()
     }
 }
 

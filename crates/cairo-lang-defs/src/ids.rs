@@ -388,6 +388,29 @@ impl TopLevelLanguageElementId for ImplTypeDefId {
     }
 }
 
+// --- Impl constant items ---
+define_named_language_element_id!(
+    ImplConstantDefId,
+    ImplConstantDefLongId,
+    ast::ItemConstant,
+    lookup_intern_impl_constant_def,
+    intern_impl_constant_def
+);
+impl ImplConstantDefId {
+    pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
+        let ImplConstantDefLongId(module_file_id, ptr) = self.lookup_intern(db);
+
+        // Impl constant ast lies 3 levels below the impl ast.
+        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        ImplDefLongId(module_file_id, impl_ptr).intern(db)
+    }
+}
+impl TopLevelLanguageElementId for ImplConstantDefId {
+    fn full_path(&self, db: &dyn DefsGroup) -> String {
+        format!("{}::{}", self.impl_def_id(db).name(db), self.name(db))
+    }
+}
+
 // --- Impl functions ---
 define_named_language_element_id!(
     ImplFunctionId,
@@ -990,6 +1013,7 @@ define_language_element_id_as_enum! {
     pub enum ImplItemId {
         Function(ImplFunctionId),
         Type(ImplTypeDefId),
+        Constant(ImplConstantDefId),
     }
 }
 impl ImplItemId {
@@ -997,12 +1021,14 @@ impl ImplItemId {
         match self {
             ImplItemId::Function(id) => id.name(db),
             ImplItemId::Type(id) => id.name(db),
+            ImplItemId::Constant(id) => id.name(db),
         }
     }
     pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
         match self {
             ImplItemId::Function(id) => id.impl_def_id(db),
             ImplItemId::Type(id) => id.impl_def_id(db),
+            ImplItemId::Constant(id) => id.impl_def_id(db),
         }
     }
 }

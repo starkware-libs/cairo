@@ -1102,7 +1102,7 @@ impl<'db> Resolver<'db> {
 
                 let mut ctx =
                     ComputationContext::new(self.db, diagnostics, resolver, None, environment);
-                let value = compute_expr_semantic(&mut ctx, generic_arg_syntax, None);
+                let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
 
                 let (_, const_value) = resolve_const_expr_and_evaluate(
                     self.db,

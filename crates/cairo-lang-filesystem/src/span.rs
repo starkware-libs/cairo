@@ -136,17 +136,29 @@ impl TextOffset {
 
 impl TextPosition {
     /// Convert this position to an equivalent [`TextOffset`] in the file.
+    ///
+    /// If `line` or `col` are out of range, the offset will be clamped to the end of file, or end
+    /// of line respectively.
+    ///
+    /// Returns `None` if file is not found in `db`.
     pub fn offset_in_file(self, db: &dyn FilesGroup, file: FileId) -> Option<TextOffset> {
         let file_summary = db.file_summary(file)?;
         let content = db.file_content(file)?;
 
-        let mut offset = *file_summary.line_offsets.get(self.line)?;
+        // Get the offset of the first character in line, or clamp to the last offset in the file.
+        let mut offset =
+            file_summary.line_offsets.get(self.line).copied().unwrap_or(file_summary.last_offset);
 
-        let mut chars_it = offset.take_from(&content).chars();
-        for _ in 0..self.col {
-            let c = chars_it.next()?;
-            offset = offset.add_width(TextWidth::from_char(c));
-        }
+        // Add the column offset, or clamp to the last character in line.
+        offset = offset.add_width(
+            offset
+                .take_from(&content)
+                .chars()
+                .take_while(|c| *c != '\n')
+                .take(self.col)
+                .map(TextWidth::from_char)
+                .sum(),
+        );
 
         Some(offset)
     }

@@ -9,7 +9,7 @@ use cairo_lang_sierra::extensions::bounded_int::{
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
-use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo};
+use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
@@ -110,6 +110,8 @@ pub trait InvocationCostInfoProvider {
     fn token_usages(&self, token_type: CostTokenType) -> usize;
     /// Provides the ap change variable value of the current statement.
     fn ap_change_var_value(&self) -> usize;
+    /// Provides the info for the circuit.
+    fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo;
 }
 
 impl<InfoProvider: InvocationCostInfoProvider> CostInfoProvider for InfoProvider {
@@ -117,8 +119,8 @@ impl<InfoProvider: InvocationCostInfoProvider> CostInfoProvider for InfoProvider
         self.type_size(ty)
     }
 
-    fn circuit_info(&self, _ty: &ConcreteTypeId) -> &CircuitInfo {
-        unimplemented!("circuits are not supported for old gas solver");
+    fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo {
+        self.circuit_info(ty)
     }
 }
 
@@ -481,7 +483,15 @@ pub fn core_libfunc_cost(
         Circuit(CircuitConcreteLibfunc::GetDescriptor(_)) => {
             vec![ConstCost::steps(6).into()]
         }
-        Circuit(CircuitConcreteLibfunc::InitCircuitData(_)) => vec![ConstCost::steps(0).into()],
+        Circuit(CircuitConcreteLibfunc::InitCircuitData(libfunc)) => {
+            let info = info_provider.circuit_info(&libfunc.ty);
+            let rc_usage: i32 = (info.values.len() * VALUE_SIZE).try_into().unwrap();
+
+            vec![BranchCost::Regular {
+                const_cost: ConstCost::steps(0),
+                pre_cost: PreCost::n_builtins(CostTokenType::RangeCheck96, rc_usage),
+            }]
+        }
     }
 }
 
@@ -550,27 +560,15 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         .collect()
 }
 
-// TODO(lior): Remove this struct once it is not needed.
-struct DummyCostInfoProvider {}
-
-impl CostInfoProvider for DummyCostInfoProvider {
-    fn type_size(&self, _ty: &ConcreteTypeId) -> usize {
-        0
-    }
-
-    fn circuit_info(&self, _ty: &ConcreteTypeId) -> &CircuitInfo {
-        unimplemented!("circuits are not supported for old gas solver");
-    }
-}
-
 /// Returns a precost value for a libfunc - the cost of non-step tokens.
 /// This is a helper function to implement costing both for creating
 /// gas equations and getting actual gas cost after having a solution.
-pub fn core_libfunc_precost<Ops: CostOperations>(
+pub fn core_libfunc_precost<Ops: CostOperations, InfoProvider: CostInfoProvider>(
     ops: &mut Ops,
     libfunc: &CoreConcreteLibfunc,
+    info_provider: &InfoProvider,
 ) -> Vec<Ops::CostType> {
-    let res = core_libfunc_cost(libfunc, &DummyCostInfoProvider {});
+    let res = core_libfunc_cost(libfunc, info_provider);
 
     res.into_iter()
         .map(|cost| match cost {

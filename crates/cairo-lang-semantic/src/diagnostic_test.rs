@@ -155,20 +155,10 @@ fn test_inline_module_diagnostics() {
     assert_eq!(
         get_crate_semantic_diagnostics(db, crate_id).format(db),
         indoc! {r#"
-            error: Unexpected expression type. Expected: "core::integer::u128", found: "core::felt252".
-             --> lib.cairo:3:22
-                fn bad() -> u128 {
-                                 ^
-
             error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:4:16
                     return 5_felt252;
                            ^*******^
-
-            error: Unexpected expression type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
-             --> lib.cairo:3:22
-                fn bad() -> u128 {
-                                 ^
 
             error: Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
              --> lib.cairo:4:16
@@ -210,20 +200,10 @@ fn test_inline_inline_module_diagnostics() {
 
     assert_eq!(
         get_crate_semantic_diagnostics(db, crate_id).format(db),
-        indoc! {r#"error: Unexpected expression type. Expected: "core::integer::u128", found: "core::felt252".
-             --> lib.cairo:2:24
-                fn bad_a() -> u128 {
-                                   ^
-
-            error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
+        indoc! {r#"error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:3:16
                     return 1_felt252;
                            ^*******^
-
-            error: Unexpected expression type. Expected: "core::integer::u128", found: "core::felt252".
-             --> lib.cairo:8:28
-                    fn bad_c() -> u128 {
-                                       ^
 
             error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:9:20
