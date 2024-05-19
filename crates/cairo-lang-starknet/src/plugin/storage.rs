@@ -413,7 +413,7 @@ fn handle_legacy_mapping_storage_member(
         pub struct {member_state_name} {{}}
 
         impl StorageMap{member_state_name}Impl of \
-         starknet::storage::StorageMapMemberAddressTrait<{member_state_name}> {{
+         starknet::storage::StorageLegacyMapMemberAddressTrait<{member_state_name}> {{
             type Key = $key_type$;
             type Value = $value_type$;
             fn address(self: @{member_state_name}, key: $key_type$) -> \
