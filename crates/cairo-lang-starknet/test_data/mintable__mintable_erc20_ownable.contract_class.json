@@ -3524,7 +3524,7 @@
       ],
       [
         110,
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, cairo_level_tests::components::erc20::erc20::__member_module_allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
+        "function_call<user@core::starknet::storage::StorageLegacyMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, cairo_level_tests::components::erc20::erc20::__member_module_allowances::StorageLegacyMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
       ],
       [
         111,
@@ -4058,7 +4058,7 @@
       ],
       [
         17,
-        "core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, cairo_level_tests::components::erc20::erc20::__member_module_allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
+        "core::starknet::storage::StorageLegacyMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, cairo_level_tests::components::erc20::erc20::__member_module_allowances::StorageLegacyMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
       ],
       [
         18,

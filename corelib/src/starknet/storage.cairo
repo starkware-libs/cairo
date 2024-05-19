@@ -43,7 +43,7 @@ pub impl StorageMemberAccessImpl<
     }
 }
 
-/// Trait for getting the address of any contract/component mapping storage member.
+/// Trait for getting the address of a contract/component legacy map storage member.
 pub trait StorageLegacyMapMemberAddressTrait<TMemberState> {
     type Key;
     type Value;
@@ -58,9 +58,16 @@ pub trait StorageLegacyMapMemberAccessTrait<TMemberState> {
     fn write(ref self: TMemberState, key: Self::Key, value: Self::Value);
 }
 
+/// Trait for getting the address of a contract/component map storage member.
+pub trait StorageMapMemberAddressTrait<TMemberState> {
+    type Key;
+    type Value;
+    fn address(self: @TMemberState) -> starknet::StorageBaseAddress;
+}
+
 /// Implementation of StorageLegacyMapMemberAccessTrait for types that implement
 /// StorageLegacyMapMemberAddressTrait.
-pub impl StorageMapMemberAccessImpl<
+pub impl StorageLegacyMapMemberAccessImpl<
     TMemberState,
     +StorageLegacyMapMemberAddressTrait<TMemberState>,
     +starknet::Store<StorageLegacyMapMemberAddressTrait::<TMemberState>::Value>,
@@ -220,3 +227,24 @@ impl StructNodeAsPath<
         }
     }
 }
+
+/// An implementation of `StorageAsPath` for `Map<K, V>`.
+impl MapAsPath<
+    TMemberState, +StorageMapMemberAddressTrait<TMemberState>
+> of StorageAsPath<TMemberState> {
+    type Value =
+        Map<
+            StorageMapMemberAddressTrait::<TMemberState>::Key,
+            StorageMapMemberAddressTrait::<TMemberState>::Value
+        >;
+    fn as_path(self: @TMemberState) -> StoragePath<Self::Value> {
+        StoragePath::<
+            Self::Value
+        > {
+            hash_state: core::hash::HashStateTrait::update(
+                core::poseidon::PoseidonTrait::new(), self.address().into()
+            )
+        }
+    }
+}
+

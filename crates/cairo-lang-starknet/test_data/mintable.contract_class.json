@@ -4794,7 +4794,7 @@
       ],
       [
         219,
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<test::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, test::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
+        "function_call<user@core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, test::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
       ],
       [
         220,
@@ -4810,7 +4810,7 @@
       ],
       [
         223,
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<test::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, test::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
+        "function_call<user@core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, test::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
       ],
       [
         224,
@@ -5010,7 +5010,7 @@
       ],
       [
         273,
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<test::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, test::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
+        "function_call<user@core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, test::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
       ],
       [
         274,
@@ -5274,7 +5274,7 @@
       ],
       [
         339,
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<test::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, test::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
+        "function_call<user@core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, test::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
       ],
       [
         340,
@@ -6192,11 +6192,11 @@
       ],
       [
         64,
-        "core::starknet::storage::StorageMapMemberAccessImpl::<test::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, test::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
+        "core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, test::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
       ],
       [
         65,
-        "core::starknet::storage::StorageMapMemberAccessImpl::<test::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, test::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
+        "core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, test::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
       ],
       [
         66,
@@ -6240,7 +6240,7 @@
       ],
       [
         76,
-        "core::starknet::storage::StorageMapMemberAccessImpl::<test::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, test::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write"
+        "core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, test::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write"
       ],
       [
         77,
@@ -6300,7 +6300,7 @@
       ],
       [
         91,
-        "core::starknet::storage::StorageMapMemberAccessImpl::<test::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, test::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write"
+        "core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, test::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, test::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write"
       ],
       [
         92,
