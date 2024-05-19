@@ -145,3 +145,19 @@ fn test_fixed_size_array_copy() {
     consume(arr);
     consume(arr);
 }
+
+fn debox<T, const SIZE: usize>(value: Option<@Box<[T; SIZE]>>) -> Option<@[T; SIZE]> {
+    Option::Some(value?.as_snapshot().unbox())
+}
+
+#[test]
+fn test_span_into_fixed_size_array() {
+    assert!(debox::<felt252, 2>([10, 11, 12].span().try_into()).is_none());
+    assert!(debox::<felt252, 3>([10, 11, 12].span().try_into()) == Option::Some(@[10, 11, 12]));
+    assert!(debox::<felt252, 4>([10, 11, 12].span().try_into()).is_none());
+    assert!(debox::<u256, 2>([10, 11, 12].span().try_into()).is_none());
+    assert!(debox::<u256, 3>([10, 11, 12].span().try_into()) == Option::Some(@[10, 11, 12]));
+    assert!(debox::<u256, 4>([10, 11, 12].span().try_into()).is_none());
+    assert!(debox::<felt252, 1>([].span().try_into()).is_none());
+    assert!(debox::<felt252, 0>([].span().try_into()) == Option::Some(@[]));
+}
