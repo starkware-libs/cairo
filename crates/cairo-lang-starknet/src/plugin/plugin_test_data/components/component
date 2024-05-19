@@ -581,7 +581,7 @@ component:
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
 
-        impl StorageMapComponentMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ComponentMemberState> {
+        impl StorageLegacyMapComponentMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ComponentMemberState> {
             type Key = u32;
             type Value = u32;
             fn address(self: @ComponentMemberState, key: u32) -> starknet::storage_access::StorageBaseAddress {
