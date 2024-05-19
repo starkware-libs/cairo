@@ -256,6 +256,32 @@ impl EmptyFixedSizeArrayImpl<T, +Drop<T>> of ToSpanTrait<[T; 0], T> {
     }
 }
 
+/// Returns a box of struct of members of the same type from a span.
+/// The additional `+Copy<@T>` arg is to prevent later stages from propagating the `S` type Sierra
+/// level, where it is deduced by the `T` type.
+extern fn tuple_from_span<T, +Copy<@T>, S>(span: @Array<S>) -> Option<Box<@T>> nopanic;
+
+/// Implements `TryInto` for only copyable types
+impl SpanTryIntoFixedSizedArray<
+    T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
+> of TryInto<Span<T>, Box<@[T; SIZE]>> {
+    #[inline(always)]
+    fn try_into(self: Span<T>) -> Option<Box<@[T; SIZE]>> {
+        tuple_from_span(self.snapshot)
+    }
+}
+
+impl SpanTryIntoEmptyFixedSizedArray<T, +Drop<T>> of TryInto<Span<T>, Box<@[T; 0]>> {
+    #[inline(always)]
+    fn try_into(self: Span<T>) -> Option<Box<@[T; 0]>> {
+        if self.is_empty() {
+            Option::Some(BoxTrait::new(@[]))
+        } else {
+            Option::None
+        }
+    }
+}
+
 // TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
 impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
     fn clone(self: @Array<T>) -> Array<T> {
