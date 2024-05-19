@@ -145,3 +145,21 @@ fn test_fixed_size_array_copy() {
     consume(arr);
     consume(arr);
 }
+
+fn span_as_fixed_sized<T, const SIZE: usize, impl TryIntoImpl: TryInto<Span<T>, @Box<[T; SIZE]>>>(
+    span: Span<T>
+) -> Option<@[T; SIZE]> {
+    Option::Some(TryIntoImpl::try_into(span)?.as_snapshot().unbox())
+}
+
+#[test]
+fn test_span_into_fixed_size_array() {
+    assert!(span_as_fixed_sized::<felt252, 2>([10, 11, 12].span()) == Option::None);
+    assert!(span_as_fixed_sized::<felt252>([10, 11, 12].span()) == Option::Some(@[10, 11, 12]));
+    assert!(span_as_fixed_sized::<felt252, 4>([10, 11, 12].span()) == Option::None);
+    assert!(span_as_fixed_sized::<u256, 2>([10, 11, 12].span()) == Option::None);
+    assert!(span_as_fixed_sized::<u256>([10, 11, 12].span()) == Option::Some(@[10, 11, 12]));
+    assert!(span_as_fixed_sized::<u256, 4>([10, 11, 12].span()) == Option::None);
+    assert!(span_as_fixed_sized::<felt252, 1>([].span()) == Option::None);
+    assert!(span_as_fixed_sized::<felt252>([].span()) == Option::Some(@[]));
+}
