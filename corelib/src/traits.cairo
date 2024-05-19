@@ -296,3 +296,41 @@ impl TupleSize4Default<
 
 impl FixedSizedArrayDrop<T, +Drop<T>, const N: u32> of Drop<[T; N]>;
 impl FixedSizedArrayCopy<T, +Copy<T>, const N: u32> of Copy<[T; N]>;
+
+impl FixedSizedArraySize0PartialEq<T, +PartialEq<T>> of PartialEq<[T; 0]> {
+    fn eq(lhs: @[T; 0], rhs: @[T; 0]) -> bool {
+        true
+    }
+}
+
+impl FixedSizedArraySize1PartialEq<T, +PartialEq<T>> of PartialEq<[T; 1]> {
+    fn eq(lhs: @[T; 1], rhs: @[T; 1]) -> bool {
+        let [lhs] = lhs;
+        let [rhs] = rhs;
+        rhs == lhs
+    }
+}
+
+impl FixedSizedArraySize2PartialEq<T, +PartialEq<T>> of PartialEq<[T; 2]> {
+    fn eq(lhs: @[T; 2], rhs: @[T; 2]) -> bool {
+        let [lhs0, lhs1] = lhs;
+        let [rhs0, rhs1] = rhs;
+        (lhs0, lhs1) == (rhs0, rhs1)
+    }
+}
+
+impl FixedSizedArraySize3PartialEq<T, +PartialEq<T>> of PartialEq<[T; 3]> {
+    fn eq(lhs: @[T; 3], rhs: @[T; 3]) -> bool {
+        let [lhs0, lhs1, lhs2] = lhs;
+        let [rhs0, rhs1, rhs2] = rhs;
+        (lhs0, lhs1, lhs2) == (rhs0, rhs1, rhs2)
+    }
+}
+
+impl FixedSizedArraySize4PartialEq<T, +PartialEq<T>> of PartialEq<[T; 4]> {
+    fn eq(lhs: @[T; 4], rhs: @[T; 4]) -> bool {
+        let [lhs0, lhs1, lhs2, lhs3] = lhs;
+        let [rhs0, rhs1, rhs2, rhs3] = rhs;
+        (lhs0, lhs1, lhs2, lhs3) == (rhs0, rhs1, rhs2, rhs3)
+    }
+}
