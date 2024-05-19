@@ -124,6 +124,9 @@ pub enum CoreHint {
     TestLessThan { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
     TestLessThanOrEqual { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
+    /// Variant of TestLessThanOrEqual that compares addresses.
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 28))]
+    TestLessThanOrEqualAddress { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
     /// Multiplies two 128-bit integers and returns two 128-bit integers: the high and low parts of
     /// the product.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 3))]
@@ -451,6 +454,11 @@ impl PythonicHint for CoreHint {
                 "memory{dst} = {} <= {}",
                 ResOperandAsIntegerFormatter(lhs),
                 ResOperandAsIntegerFormatter(rhs)
+            ),
+            CoreHint::TestLessThanOrEqualAddress { lhs, rhs, dst } => format!(
+                "memory{dst} = {} <= {}",
+                ResOperandAsAddressFormatter(lhs),
+                ResOperandAsAddressFormatter(rhs)
             ),
             CoreHint::WideMul128 { lhs, rhs, high, low } => format!(
                 "(memory{high}, memory{low}) = divmod({} * {}, 2**128)",

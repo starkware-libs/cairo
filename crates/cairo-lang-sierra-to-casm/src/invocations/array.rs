@@ -481,7 +481,9 @@ fn extend_multi_pop_failure_checks(
         const popped_size = popped_size;
         let arr_start_popped = arr_start + popped_size;
         tempvar has_enough_elements;
-        hint TestLessThanOrEqual {lhs: arr_start_popped, rhs: arr_end} into {dst: has_enough_elements};
+        hint TestLessThanOrEqualAddress {
+            lhs: arr_start_popped, rhs: arr_end
+        } into { dst: has_enough_elements };
         jump HasEnoughElements if has_enough_elements != 0;
         // Proving that `arr_start - arr_end + popped_size + 1 >= 0` and therefore
         // `popped_size + 1 >= arr_end - arr_start == arr.len()` ==> `arr.len() < popopped_size`.
