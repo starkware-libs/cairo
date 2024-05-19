@@ -1,4 +1,4 @@
-use itertools::{chain, repeat_n};
+use itertools::chain;
 
 use super::interoperability::ClassHashType;
 use super::u64_span_ty;
@@ -12,14 +12,12 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::modules::get_u256_type;
-use crate::extensions::structure::StructType;
-use crate::extensions::utils::reinterpret_cast_signature;
+use crate::extensions::utils::{fixed_array_ty, reinterpret_cast_signature};
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
-use crate::program::GenericArg;
+use crate::ids::{ConcreteTypeId, GenericTypeId};
 
 /// Type for Starknet system object.
 /// Used to make system calls.
@@ -245,10 +243,6 @@ fn boxed_u32_fixed_array_ty(
     context: &dyn SignatureSpecializationContext,
     size: usize,
 ) -> Result<ConcreteTypeId, SpecializationError> {
-    let args: Vec<GenericArg> = chain!(
-        [GenericArg::UserType(UserTypeId::from_string("Tuple"))],
-        repeat_n(GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?), size)
-    )
-    .collect();
-    box_ty(context, context.get_concrete_type(StructType::id(), &args)?)
+    let ty = context.get_concrete_type(Uint32Type::id(), &[])?;
+    box_ty(context, fixed_array_ty(context, ty, size)?)
 }

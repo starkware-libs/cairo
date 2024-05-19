@@ -1,6 +1,6 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
+use cairo_lang_sierra::extensions::array::{ArrayConcreteLibfunc, ConcreteMultiPopLibfunc};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -27,6 +27,12 @@ pub fn build(
         }
         ArrayConcreteLibfunc::SnapshotPopBack(libfunc) => {
             build_pop_back(&libfunc.ty, builder, false)
+        }
+        ArrayConcreteLibfunc::SnapshotMultiPopFront(libfunc) => {
+            build_multi_pop_front(libfunc, builder)
+        }
+        ArrayConcreteLibfunc::SnapshotMultiPopBack(libfunc) => {
+            build_multi_pop_back(libfunc, builder)
         }
         ArrayConcreteLibfunc::Get(libfunc) => build_array_get(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Slice(libfunc) => build_array_slice(&libfunc.ty, builder),
@@ -364,4 +370,121 @@ fn build_array_len(
         [("Fallthrough", &[&[length]], None)],
         Default::default(),
     ))
+}
+
+/// Handles a Sierra statement for popping elements from the beginning of an array.
+fn build_multi_pop_front(
+    libfunc: &ConcreteMultiPopLibfunc,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_range_check, expr_arr] = builder.try_get_refs()?;
+    let range_check = expr_range_check.try_unpack_single()?;
+    let [arr_start, arr_end] = expr_arr.try_unpack()?;
+    let element_size = builder.program_info.type_sizes[&libfunc.ty];
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(1) range_check;
+        deref arr_start;
+        deref arr_end;
+    };
+    let popped_size: i16 = libfunc.popped_values * element_size;
+    casm_build_extend!(casm_builder, let orig_range_check = range_check;);
+    extend_multi_pop_failure_checks(
+        &mut casm_builder,
+        range_check,
+        arr_start,
+        arr_end,
+        popped_size,
+    );
+    casm_build_extend! {casm_builder,
+        const popped_size = popped_size;
+        tempvar rc;
+        // Calculating the new start, as it is required for calculating the range checked value.
+        tempvar new_start = arr_start + popped_size;
+        assert rc = arr_end - new_start;
+        assert rc = *(range_check++);
+    };
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[range_check], &[new_start, arr_end], &[arr_start]], None),
+            ("Failure", &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
+        ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
+}
+
+/// Handles a Sierra statement for popping elements from the end of an array.
+fn build_multi_pop_back(
+    libfunc: &ConcreteMultiPopLibfunc,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_range_check, expr_arr] = builder.try_get_refs()?;
+    let range_check = expr_range_check.try_unpack_single()?;
+    let [arr_start, arr_end] = expr_arr.try_unpack()?;
+    let element_size = builder.program_info.type_sizes[&libfunc.ty];
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(1) range_check;
+        deref arr_start;
+        deref arr_end;
+    };
+    let popped_size: i16 = libfunc.popped_values * element_size;
+    casm_build_extend!(casm_builder, let orig_range_check = range_check;);
+    extend_multi_pop_failure_checks(
+        &mut casm_builder,
+        range_check,
+        arr_start,
+        arr_end,
+        popped_size,
+    );
+    casm_build_extend! {casm_builder,
+        const popped_size = popped_size;
+        tempvar rc;
+        // Calculating the new end, as it is required for calculating the range checked value.
+        tempvar new_end = arr_end - popped_size;
+        assert rc = new_end - arr_start;
+        assert rc = *(range_check++);
+    };
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[range_check], &[arr_start, new_end], &[new_end]], None),
+            ("Failure", &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
+        ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
+}
+
+/// Extends the casm builder with the common part of the multi-pop front and multi-pop back.
+fn extend_multi_pop_failure_checks(
+    casm_builder: &mut CasmBuilder,
+    range_check: Var,
+    arr_start: Var,
+    arr_end: Var,
+    popped_size: i16,
+) {
+    casm_build_extend! {casm_builder,
+        const popped_size_plus_1 = popped_size + 1;
+        const popped_size = popped_size;
+        let arr_start_popped = arr_start + popped_size;
+        tempvar has_enough_elements;
+        hint TestLessThanOrEqual {lhs: arr_start_popped, rhs: arr_end} into {dst: has_enough_elements};
+        jump HasEnoughElements if has_enough_elements != 0;
+        tempvar minus_length = arr_start - arr_end;
+        tempvar rc = minus_length + popped_size_plus_1;
+        assert rc = *(range_check++);
+        jump Failure;
+        HasEnoughElements:
+    };
 }

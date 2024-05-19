@@ -1,6 +1,7 @@
 use std::ops::Shl;
 
 use cairo_felt::Felt252;
+use itertools::{chain, repeat_n};
 use num_bigint::BigInt;
 use num_traits::One;
 
@@ -11,12 +12,13 @@ use super::int::signed::{Sint16Type, Sint32Type, Sint64Type, Sint8Type};
 use super::int::signed128::Sint128Type;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::int::unsigned128::Uint128Type;
+use super::structure::StructType;
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{NamedType, OutputVarReferenceInfo, SpecializationError};
-use crate::ids::ConcreteTypeId;
+use crate::ids::{ConcreteTypeId, UserTypeId};
 use crate::program::GenericArg;
 
 /// Returns a libfunc signature that casts from one type to another, without changing the internal
@@ -108,4 +110,18 @@ impl Range {
         let upper = std::cmp::min(&self.upper, &other.upper).clone();
         if lower < upper { Some(Self::half_open(lower, upper)) } else { None }
     }
+}
+
+/// Returns a fixed type array of the given type and size.
+pub fn fixed_array_ty(
+    context: &dyn SignatureSpecializationContext,
+    ty: ConcreteTypeId,
+    size: usize,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let args: Vec<GenericArg> = chain!(
+        [GenericArg::UserType(UserTypeId::from_string("Tuple"))],
+        repeat_n(GenericArg::Type(ty), size)
+    )
+    .collect();
+    context.get_concrete_type(StructType::id(), &args)
 }

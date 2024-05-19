@@ -258,6 +258,13 @@ pub fn core_libfunc_cost(
             | ArrayConcreteLibfunc::SnapshotPopBack(_) => {
                 vec![ConstCost::steps(2).into(), ConstCost::steps(3).into()]
             }
+            ArrayConcreteLibfunc::SnapshotMultiPopFront(_)
+            | ArrayConcreteLibfunc::SnapshotMultiPopBack(_) => {
+                vec![
+                    (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
+                    (ConstCost::steps(5) + ConstCost::range_checks(1)).into(),
+                ]
+            }
             ArrayConcreteLibfunc::Get(libfunc) => {
                 if info_provider.type_size(&libfunc.ty) == 1 {
                     vec![
