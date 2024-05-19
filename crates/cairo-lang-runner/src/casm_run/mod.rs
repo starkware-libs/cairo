@@ -1653,8 +1653,8 @@ pub fn execute_core_hint(
             insert_value_to_cellref!(vm, dst, segment)?;
         }
         CoreHint::TestLessThan { lhs, rhs, dst } => {
-            let lhs_val = get_val(vm, lhs)?;
-            let rhs_val = get_val(vm, rhs)?;
+            let lhs_val = get_maybe(vm, lhs)?;
+            let rhs_val = get_maybe(vm, rhs)?;
             insert_value_to_cellref!(
                 vm,
                 dst,
@@ -1662,8 +1662,8 @@ pub fn execute_core_hint(
             )?;
         }
         CoreHint::TestLessThanOrEqual { lhs, rhs, dst } => {
-            let lhs_val = get_val(vm, lhs)?;
-            let rhs_val = get_val(vm, rhs)?;
+            let lhs_val = get_maybe(vm, lhs)?;
+            let rhs_val = get_maybe(vm, rhs)?;
             insert_value_to_cellref!(
                 vm,
                 dst,
