@@ -33,7 +33,7 @@ pub fn compute_sha256_u32_array(
     let mut ind = 0;
 
     while ind != arr.len() {
-        let input: Span<u32> = arr.slice(ind, 16);
+        let input: Box<[u32; 16]> = *arr.slice(ind, 16).try_into().unwrap();
         state = starknet::syscalls::sha256_process_block_syscall(state, input).unwrap_syscall();
         ind = ind + 16;
     };
