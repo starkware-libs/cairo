@@ -27,7 +27,7 @@ use super::STORAGE_NODE_ATTR;
 ///     balance2: PendingStoragePath<felt252>,
 /// }
 ///
-/// impl BalancePairStorageNodeTrait of StructNodeTrait<BalancePair> {
+/// impl BalancePairStorageNodeTrait of StorageNodeTrait<BalancePair> {
 ///     type NodeType = BalancePairStorageNode;
 ///     fn storage_node(self: StoragePath<BalancePair>) -> BalancePairStorageNode {
 ///         BalancePairStorageNode {
@@ -90,7 +90,7 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
 
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "impl $name$StorageNodeTrait of starknet::storage::StructNodeTrait<$name$> {{
+            "impl $name$StorageNodeTrait of starknet::storage::StorageNodeTrait<$name$> {{
                  type NodeType = $name$StorageNode;
                  fn storage_node(self: starknet::storage::StoragePath<$name$>) -> \
              $name$StorageNode {{
