@@ -1,5 +1,6 @@
 use std::fmt::Write;
 use std::io::{BufReader, Read, Seek};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -12,10 +13,19 @@ use cairo_lang_starknet_classes::contract_class::{ContractClass, ContractEntryPo
 use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tokio::task::JoinSet;
 
+const NUM_OF_PROCESSORS: usize = 32;
 /// Runs validation on existing contract classes to make sure they are still valid and compilable.
+/// Gets one of two different inputs:
+/// 1. If fullnode_url is provided, it reads the contract classes from the fullnode.
+/// 2. If fullnode_url is not provided, it reads the contract classes from the input files.
+/// Outputs one of two different outputs:
+/// 1. If class_info_output_file is provided, it writes the classes to the file.
+/// 2. If class_info_output_file is not provided, it returns the report of the runs over the
+///    processes of the classes.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
@@ -33,6 +43,19 @@ struct Args {
     /// The max bytecode size.
     #[arg(long, default_value_t = 180000)]
     max_bytecode_size: usize,
+    /// The url of the rpc server, if provided - Sierra classes would be read from it, and no input
+    /// files should be provided.
+    #[arg(long)]
+    fullnode_url: Option<String>,
+    /// The start block of the declared Sierra classes to test.
+    #[arg(long)]
+    start_block: Option<u64>,
+    /// The end block of the declared Sierra classes to test.
+    #[arg(long)]
+    end_block: Option<u64>,
+    /// The output file to write the Sierra classes into.
+    #[arg(long)]
+    class_info_output_file: Option<String>,
 }
 
 /// Parses version id from string.
@@ -48,7 +71,7 @@ fn parse_version_id(major_minor_patch: &str) -> anyhow::Result<VersionId> {
 }
 
 /// The contract class from db.
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ContractClassInfo {
     /// The previous compiled class hash.
     pub compiled_class_hash: BigUintAsHex,
@@ -67,6 +90,8 @@ struct Report {
     compilation_failures: Vec<CompilationFailure>,
     /// The classes that had a non matching class hash after compilation.
     compilation_mismatch: Vec<CompilationMismatch>,
+    /// The number of processed classes.
+    num_of_classes: usize,
 }
 
 /// Validation failure information.
@@ -102,34 +127,62 @@ async fn main() -> anyhow::Result<()> {
     // Setting up the progress bars.
     let multi_bar = MultiProgress::new();
     let reader_bar = multi_bar.add(ProgressBar::new(0));
-    reader_bar.set_style(get_style("Read input"));
+    reader_bar.set_style(get_style(if args.fullnode_url.is_none() {
+        "Read input"
+    } else {
+        "Process blocks"
+    }));
     let class_bar = multi_bar.add(ProgressBar::new(0));
     class_bar.set_style(get_style("Process classes"));
 
-    // Setting up results of class recompilation.
-    let (results_tx, results_rx) = async_channel::bounded(128);
-    let results_handler = {
-        let class_bar = class_bar.clone();
-        tokio::spawn(async move { collect_result(results_rx, class_bar).await })
-    };
-
+    let (classes_tx, classes_rx) = async_channel::bounded(256);
     let config: Arc<RunConfig> = Arc::new(RunConfig {
         list_selector,
         override_version,
         max_bytecode_size: args.max_bytecode_size,
     });
-    let (classes_tx, classes_rx) = async_channel::bounded(256);
-    let mut input_readers =
-        spawn_input_file_readers(args.input_files, classes_tx, reader_bar.clone());
-    spawn_class_processors(classes_rx, results_tx, class_bar.clone(), config);
-    let mut num_of_classes = 0;
-    while let Some(file_num_of_classes) = input_readers.join_next().await {
-        num_of_classes += file_num_of_classes.with_context(|| "Failed to join file reader.")??;
+
+    // If fullnode_url is provided, we spawn the contract class info from the fullnode.
+    // Otherwise, we spawn the contract class info from the input files.
+    if let Some(fullnode_url) = args.fullnode_url {
+        assert!(args.input_files.is_empty(), "two different sources of classes provided.");
+        let (class_hashes_tx, class_hashes_rx) = async_channel::bounded(128);
+        spawn_block_class_hashes_retrievers(
+            args.start_block.with_context(|| "no start block provided")?,
+            args.end_block.with_context(|| "no end block provided")?,
+            class_hashes_tx,
+            fullnode_url.clone(),
+            reader_bar.clone(),
+            class_bar.clone(),
+        );
+        spawn_classes_from_class_hashes(class_hashes_rx, classes_tx, fullnode_url);
+    } else {
+        // Setting up results of class recompilation.
+        let mut input_readers =
+            spawn_input_file_readers(args.input_files, classes_tx, reader_bar.clone());
+        while let Some(result) = input_readers.join_next().await {
+            result.with_context(|| "Failed to join file reader.")??;
+        }
     }
-    reader_bar.finish_and_clear();
-    let report = results_handler.await.with_context(|| "Failed to collect results.")?;
-    class_bar.finish_and_clear();
-    analyze_report(report, num_of_classes)
+
+    // If class_info_output_file is provided, dump all contract class infos into the file.
+    // Otherwise, generate a report for the classes analysis.
+    if let Some(class_info_output_file) = args.class_info_output_file {
+        dump_class_infos_into_json(classes_rx, class_bar, &class_info_output_file).await
+    } else {
+        let (results_tx, results_rx) = async_channel::bounded(128);
+        let results_handler = {
+            let class_bar = class_bar.clone();
+            tokio::spawn(async move { collect_result(results_rx, class_bar).await })
+        };
+
+        spawn_class_processors(classes_rx, results_tx, class_bar.clone(), config);
+
+        let report = results_handler.await.with_context(|| "Failed to collect results.")?;
+        reader_bar.finish_and_clear();
+        class_bar.finish_and_clear();
+        analyze_report(report)
+    }
 }
 
 /// Returns a progress style with the given name.
@@ -150,7 +203,7 @@ fn spawn_input_file_readers(
     input_files: Vec<String>,
     classes_tx: async_channel::Sender<ContractClassInfo>,
     reader_bar: ProgressBar,
-) -> JoinSet<anyhow::Result<usize>> {
+) -> JoinSet<anyhow::Result<()>> {
     let mut readers_set = JoinSet::new();
     for input_file in input_files {
         let classes_tx = classes_tx.clone();
@@ -167,14 +220,13 @@ async fn handle_classes_input_file(
     input_path: &str,
     classes_tx: async_channel::Sender<ContractClassInfo>,
     reader_bar: ProgressBar,
-) -> anyhow::Result<usize> {
+) -> anyhow::Result<()> {
     // Reading the contract classes from the file.
     let mut reader = BufReader::new(
         std::fs::File::open(input_path).with_context(|| format!("Failed to open {input_path}."))?,
     );
     reader_bar.inc_length(reader.get_ref().metadata().unwrap().len());
     let mut prev_position = 0;
-    let mut num_of_classes = 0;
     loop {
         // Handling the encompassing characters of the array holding the classes infos, as the
         // `serde_json::Deserializer` can only consume a full json object.
@@ -199,13 +251,12 @@ async fn handle_classes_input_file(
             .next()
             .unwrap()
             .with_context(|| "deserialization Failed.")?;
-        num_of_classes += 1;
         classes_tx.send(sierra_class).await?;
         let new_position = reader.stream_position().unwrap();
         reader_bar.inc(new_position - prev_position);
         prev_position = new_position;
     }
-    Ok(num_of_classes)
+    Ok(())
 }
 
 /// Spawns tasks that process the classes and send the results to the results channel.
@@ -215,7 +266,6 @@ fn spawn_class_processors(
     class_bar: ProgressBar,
     config: Arc<RunConfig>,
 ) {
-    const NUM_OF_PROCESSORS: usize = 32;
     for _ in 0..NUM_OF_PROCESSORS {
         let class_bar = class_bar.clone();
         let classes_rx = classes_rx.clone();
@@ -295,9 +345,11 @@ async fn collect_result(
         validation_failures: Vec::new(),
         compilation_failures: Vec::new(),
         compilation_mismatch: Vec::new(),
+        num_of_classes: 0,
     };
     while let Ok(result) = results_rx.recv().await {
         class_bar.inc(1);
+        report.num_of_classes += 1;
         match result {
             RunResult::ValidationFailure(failure) => {
                 report.validation_failures.push(failure);
@@ -316,46 +368,218 @@ async fn collect_result(
 }
 
 /// Analyzes the report and prints the results.
-fn analyze_report(report: Report, num_of_classes: usize) -> anyhow::Result<()> {
-    if !report.validation_failures.is_empty() {
-        println!(
-            "Validation failures: (Printing first 10 out of {})",
-            report.validation_failures.len()
-        );
-        for ValidationFailure { class_hash, err } in report.validation_failures.iter().take(10) {
+fn analyze_report(
+    Report { validation_failures, compilation_failures, compilation_mismatch, num_of_classes }: Report,
+) -> anyhow::Result<()> {
+    if !validation_failures.is_empty() {
+        println!("Validation failures: (Printing first 10 out of {})", validation_failures.len());
+        for ValidationFailure { class_hash, err } in validation_failures.iter().take(10) {
             println!("Validation failure for {:#x}: {err}", class_hash.value);
         }
     }
-    if !report.compilation_failures.is_empty() {
-        println!(
-            "Compilation failures: (Printing first 10 out of {})",
-            report.compilation_failures.len()
-        );
-        for CompilationFailure { class_hash, err } in report.compilation_failures.iter().take(10) {
+    if !compilation_failures.is_empty() {
+        println!("Compilation failures: (Printing first 10 out of {})", compilation_failures.len());
+        for CompilationFailure { class_hash, err } in compilation_failures.iter().take(10) {
             println!("Compilation failure for {:#x}: {err}", class_hash.value);
         }
     }
-    if !report.compilation_mismatch.is_empty() {
+    if !compilation_mismatch.is_empty() {
         println!(
             "Compilation mismatch {} out of {num_of_classes}: (Printing first 10)",
-            report.compilation_mismatch.len()
+            compilation_mismatch.len()
         );
-        for CompilationMismatch { class_hash, old, new } in
-            report.compilation_mismatch.iter().take(10)
-        {
+        for CompilationMismatch { class_hash, old, new } in compilation_mismatch.iter().take(10) {
             println!(
                 "Compilation mismatch for {:#x}: old={:#x}, new={:#x}",
                 class_hash.value, old.value, new.value
             );
         }
     }
-    if report.validation_failures.is_empty()
-        && report.compilation_failures.is_empty()
-        && report.compilation_mismatch.is_empty()
+    if validation_failures.is_empty()
+        && compilation_failures.is_empty()
+        && compilation_mismatch.is_empty()
     {
         println!("All {} classes passed validation and compilation.", num_of_classes);
         Ok(())
     } else {
         Err(anyhow::anyhow!("Failed."))
     }
+}
+
+#[derive(Serialize)]
+struct BlockId {
+    pub block_number: u64,
+}
+#[derive(Serialize)]
+struct GetStateUpdateRequest {
+    pub block_id: BlockId,
+}
+#[derive(Serialize)]
+struct GetStateClassRequest {
+    pub block_id: String,
+    pub class_hash: BigUintAsHex,
+}
+#[derive(Deserialize, Debug)]
+pub struct GetStateUpdateResponse {
+    pub state_diff: StateDiff,
+}
+#[derive(Deserialize, Debug)]
+pub struct GetStateClassResponse {
+    pub entry_points_by_type: ContractEntryPoints,
+    pub sierra_program: Vec<BigUintAsHex>,
+}
+#[derive(Deserialize, Debug)]
+pub struct StateDiff {
+    pub declared_classes: Vec<ClassHashes>,
+}
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
+pub struct ClassHashes {
+    pub class_hash: BigUintAsHex,
+    pub compiled_class_hash: BigUintAsHex,
+}
+#[derive(Deserialize, Debug)]
+struct RpcResponse<T> {
+    pub result: T,
+}
+
+/// Given a block number, retrieves the class hashes and compiled class hashes from the state
+/// update.
+async fn retrieve_block_class_hashes(
+    block_number: u64,
+    id: i32,
+    class_hashes_tx: &async_channel::Sender<ClassHashes>,
+    url: &str,
+    class_hashes_bar: &ProgressBar,
+) {
+    let method = "starknet_getStateUpdate";
+    let params =
+        serde_json::to_value(GetStateUpdateRequest { block_id: BlockId { block_number } }).unwrap();
+    let client = reqwest::Client::new();
+    let res = client
+        .post(url)
+        .json(&json!({
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params,
+            "id": id,
+        }))
+        .send()
+        .await;
+    if let Ok(res_response) = res {
+        let obj: RpcResponse<GetStateUpdateResponse> = res_response.json().await.unwrap();
+        class_hashes_bar.inc_length(obj.result.state_diff.declared_classes.len() as u64);
+        for class_hash in obj.result.state_diff.declared_classes {
+            class_hashes_tx.send(class_hash).await.unwrap();
+        }
+    }
+}
+
+/// Spawns tasks that retrieve the class hashes and compiled class hashes from the state update.
+fn spawn_block_class_hashes_retrievers(
+    start_block: u64,
+    end_block: u64,
+    class_hashes_tx: async_channel::Sender<ClassHashes>,
+    url: String,
+    blocks_bar: ProgressBar,
+    class_hashes_bar: ProgressBar,
+) {
+    blocks_bar.set_length(end_block - start_block);
+    let block_number_global = Arc::new(AtomicU64::new(start_block));
+    for _ in 0..NUM_OF_PROCESSORS {
+        let class_hashes_tx = class_hashes_tx.clone();
+        let block_number_global = block_number_global.clone();
+        let url = url.clone();
+        let blocks_bar = blocks_bar.clone();
+        let class_hashes_bar = class_hashes_bar.clone();
+        tokio::spawn(async move {
+            loop {
+                let block_number = block_number_global.fetch_add(1, Ordering::SeqCst);
+                if block_number >= end_block {
+                    break;
+                }
+                retrieve_block_class_hashes(
+                    block_number,
+                    1,
+                    &class_hashes_tx,
+                    &url,
+                    &class_hashes_bar,
+                )
+                .await;
+                blocks_bar.inc(1);
+            }
+            blocks_bar.finish_and_clear();
+        });
+    }
+}
+
+/// Given a class hash, retrieves the matching ContractClassInfo.
+async fn retrieve_class_from_class_hash(
+    class_hashes: ClassHashes,
+    classes_tx: &async_channel::Sender<ContractClassInfo>,
+    url: &str,
+) {
+    let method = "starknet_getClass";
+    let client = reqwest::Client::new();
+    let params = serde_json::to_value(GetStateClassRequest {
+        block_id: "latest".to_string(),
+        class_hash: class_hashes.class_hash.clone(),
+    })
+    .unwrap();
+    let res = client
+        .post(url)
+        .json(&json!({
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params,
+            "id": 1,
+        }))
+        .send()
+        .await;
+    if let Ok(res_response) = res {
+        let obj: RpcResponse<GetStateClassResponse> = res_response.json().await.unwrap();
+        classes_tx
+            .send(ContractClassInfo {
+                compiled_class_hash: class_hashes.compiled_class_hash,
+                class_hash: class_hashes.class_hash,
+                sierra_program: obj.result.sierra_program,
+                entry_points_by_type: obj.result.entry_points_by_type,
+            })
+            .await
+            .unwrap();
+    }
+}
+
+/// Spawns tasks that retrieve ContractClassInfos from a class hash.
+fn spawn_classes_from_class_hashes(
+    class_hashes_rx: async_channel::Receiver<ClassHashes>,
+    classes_tx: async_channel::Sender<ContractClassInfo>,
+    url: String,
+) {
+    for _ in 0..NUM_OF_PROCESSORS {
+        let class_hashes_rx = class_hashes_rx.clone();
+        let classes_tx = classes_tx.clone();
+        let url = url.clone();
+        tokio::spawn(async move {
+            while let Ok(class_hashes) = class_hashes_rx.recv().await {
+                retrieve_class_from_class_hash(class_hashes, &classes_tx, &url).await;
+            }
+        });
+    }
+}
+
+/// Dumps the classes info from `classes_rx` to the provided file in json format.
+async fn dump_class_infos_into_json(
+    classes_rx: async_channel::Receiver<ContractClassInfo>,
+    classes_bar: ProgressBar,
+    class_info_output_file: &str,
+) -> anyhow::Result<()> {
+    let mut classes_info_data: Vec<ContractClassInfo> = vec![];
+    while let Ok(class) = classes_rx.recv().await {
+        classes_bar.inc(1);
+        classes_info_data.push(class);
+    }
+    let res_string = serde_json::to_string(&classes_info_data).unwrap();
+    std::fs::write(class_info_output_file, res_string).unwrap();
+    classes_bar.finish_and_clear();
+    Ok(())
 }
