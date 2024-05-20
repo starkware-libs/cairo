@@ -1,5 +1,6 @@
 use std::fmt::Write;
 use std::io::{BufReader, Read, Seek};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -12,8 +13,11 @@ use cairo_lang_starknet_classes::contract_class::{ContractClass, ContractEntryPo
 use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::{json, to_string};
 use tokio::task::JoinSet;
+
+const NUM_OF_PROCESSORS: u64 = 16;
 
 /// Runs validation on existing contract classes to make sure they are still valid and compilable.
 #[derive(Parser, Debug)]
@@ -33,6 +37,21 @@ struct Args {
     /// The max bytecode size.
     #[arg(long, default_value_t = 180000)]
     max_bytecode_size: usize,
+    /// Flag indicating whether to fetch the data from the block updates.
+    #[arg(short, default_value_t = false)]
+    data_from_block_updates_indicator: bool,
+    /// The start block to fetch the data from.
+    #[arg(long, default_value_t = 0)]
+    start_block: u64,
+    /// The end block to fetch the data from.
+    #[arg(long, default_value_t = 0)]
+    end_block: u64,
+    /// The output file name for the Contract Class Info of the blocks.
+    #[arg(long)]
+    class_info_output_file: Option<String>,
+    /// The url of the rpc server.
+    #[arg(long)]
+    url: Option<String>,
 }
 
 /// Parses version id from string.
@@ -48,7 +67,7 @@ fn parse_version_id(major_minor_patch: &str) -> anyhow::Result<VersionId> {
 }
 
 /// The contract class from db.
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ContractClassInfo {
     /// The previous compiled class hash.
     pub compiled_class_hash: BigUintAsHex,
@@ -105,6 +124,26 @@ async fn main() -> anyhow::Result<()> {
     reader_bar.set_style(get_style("Read input"));
     let class_bar = multi_bar.add(ProgressBar::new(0));
     class_bar.set_style(get_style("Process classes"));
+    let block_reader_bar = multi_bar.add(ProgressBar::new(0));
+    block_reader_bar.set_style(get_style("Process blocks"));
+
+    if args.data_from_block_updates_indicator {
+        match (args.url, args.class_info_output_file) {
+            (Some(url), Some(class_info_output_file)) => {
+                fetch_classes_info_to_file(
+                    class_info_output_file,
+                    args.start_block,
+                    args.end_block,
+                    url,
+                    block_reader_bar,
+                )
+                .await;
+            }
+            _ => {
+                return Err(anyhow::anyhow!("No url or result file provided."));
+            }
+        }
+    }
 
     // Setting up results of class recompilation.
     let (results_tx, results_rx) = async_channel::bounded(128);
@@ -358,4 +397,180 @@ fn analyze_report(report: Report, num_of_classes: usize) -> anyhow::Result<()> {
     } else {
         Err(anyhow::anyhow!("Failed."))
     }
+}
+
+#[derive(Serialize)]
+struct BlockId {
+    pub block_number: u64,
+}
+#[derive(Serialize)]
+struct GetStateUpdateRequest {
+    pub block_id: BlockId,
+}
+#[derive(Serialize)]
+struct GetStateClassRequest {
+    pub block_id: String,
+    pub class_hash: BigUintAsHex,
+}
+#[derive(Deserialize, Debug)]
+pub struct GetStateUpdateResponse {
+    pub state_diff: StateDiff,
+}
+#[derive(Deserialize, Debug)]
+pub struct GetStateClassResponse {
+    pub entry_points_by_type: ContractEntryPoints,
+    pub sierra_program: Vec<BigUintAsHex>,
+}
+#[derive(Deserialize, Debug)]
+pub struct StateDiff {
+    pub declared_classes: Vec<ClassHash>,
+}
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
+pub struct ClassHash {
+    pub class_hash: BigUintAsHex,
+    pub compiled_class_hash: BigUintAsHex,
+}
+#[derive(Deserialize, Debug)]
+struct RpcResponse<T> {
+    pub result: T,
+}
+
+/// Given a block number, retrieves the class hashes and compiled class hashes from the state
+/// update.
+async fn retrieve_block_class_hashes(
+    block_number: u64,
+    id: i32,
+    results_tx: &async_channel::Sender<ClassHash>,
+    url: String,
+) {
+    let method = "starknet_getStateUpdate";
+    let params =
+        serde_json::to_value(GetStateUpdateRequest { block_id: BlockId { block_number } }).unwrap();
+    let client = reqwest::Client::new();
+    let res = client
+        .post(url)
+        .json(&json!({
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params,
+            "id": id,
+        }))
+        .send()
+        .await;
+    if let Ok(res_response) = res {
+        let obj: RpcResponse<GetStateUpdateResponse> = res_response.json().await.unwrap();
+        for class_hash in obj.result.state_diff.declared_classes {
+            results_tx.send(class_hash).await.unwrap();
+        }
+    }
+}
+
+/// Spawns tasks that retrieve the class hashes and compiled class hashes from the state update.
+fn spawn_block_class_hashes_retriever(
+    start_block: u64,
+    end_block: u64,
+    class_hashes_tx: async_channel::Sender<ClassHash>,
+    url: String,
+    block_reader_bar: ProgressBar,
+) {
+    let block_number_global = Arc::new(AtomicU64::new(start_block));
+    for _ in 0..NUM_OF_PROCESSORS {
+        let class_hashes_tx = class_hashes_tx.clone();
+        let block_number_global = block_number_global.clone();
+        let url = url.clone();
+        let block_reader_bar = block_reader_bar.clone();
+        tokio::spawn(async move {
+            loop {
+                let block_number = block_number_global.fetch_add(1, Ordering::SeqCst);
+                if block_number >= end_block {
+                    break;
+                }
+                retrieve_block_class_hashes(block_number, 1, &class_hashes_tx, url.clone()).await;
+                block_reader_bar.inc(1);
+            }
+        });
+    }
+}
+
+/// Given a class hash, retrieves the ContractClassInfo from the state.
+async fn retrieve_class_from_class_hash(
+    class_hash: ClassHash,
+    classes_tx: &async_channel::Sender<ContractClassInfo>,
+    url: String,
+) {
+    let method = "starknet_getClass";
+    let client = reqwest::Client::new();
+    let params = serde_json::to_value(GetStateClassRequest {
+        block_id: "latest".to_string(),
+        class_hash: class_hash.class_hash.clone(),
+    })
+    .unwrap();
+    let res = client
+        .post(url)
+        .json(&json!({
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params,
+            "id": 1,
+        }))
+        .send()
+        .await;
+    if let Ok(res_response) = res {
+        let obj: RpcResponse<GetStateClassResponse> = res_response.json().await.unwrap();
+        classes_tx
+            .send(ContractClassInfo {
+                compiled_class_hash: class_hash.compiled_class_hash,
+                class_hash: class_hash.class_hash,
+                sierra_program: obj.result.sierra_program,
+                entry_points_by_type: obj.result.entry_points_by_type,
+            })
+            .await
+            .unwrap();
+    }
+}
+
+/// Spawns tasks that retrieve the ContractClassInfo from the state.
+fn spawn_classes_from_class_hashes(
+    class_hashes_rx: async_channel::Receiver<ClassHash>,
+    classes_tx: async_channel::Sender<ContractClassInfo>,
+    url: String,
+) {
+    for _ in 0..NUM_OF_PROCESSORS {
+        let class_hashes_rx = class_hashes_rx.clone();
+        let classes_tx = classes_tx.clone();
+        let url = url.clone();
+        tokio::spawn(async move {
+            while let Ok(class_hash) = class_hashes_rx.recv().await {
+                retrieve_class_from_class_hash(class_hash, &classes_tx, url.clone()).await;
+            }
+        });
+    }
+}
+
+/// Auxiliary function that Fetches the classes info from the blockchain or given data, and writes
+/// it to a file.
+async fn fetch_classes_info_to_file(
+    path: String,
+    start_block: u64,
+    end_block: u64,
+    url: String,
+    block_reader_bar: ProgressBar,
+) {
+    block_reader_bar.inc_length(end_block - start_block);
+    let (class_hashes_tx, class_hashes_rx) = async_channel::bounded(128);
+    spawn_block_class_hashes_retriever(
+        start_block,
+        end_block,
+        class_hashes_tx,
+        url.clone(),
+        block_reader_bar.clone(),
+    );
+    block_reader_bar.finish_and_clear();
+    let (classes_tx, classes_rx) = async_channel::bounded(128);
+    spawn_classes_from_class_hashes(class_hashes_rx, classes_tx, url);
+    let mut classes_info_data: String = String::new();
+    while let Ok(class) = classes_rx.recv().await {
+        classes_info_data.push_str(&to_string(&class).unwrap());
+    }
+    std::fs::write(path, classes_info_data).unwrap();
 }
