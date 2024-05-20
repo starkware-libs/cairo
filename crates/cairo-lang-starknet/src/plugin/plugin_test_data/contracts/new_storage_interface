@@ -66,10 +66,10 @@ mod hello_starknet {
                 .read()
         }
         fn get_balance_pair_balance1(self: @ContractState) -> u256 {
-            self.balance_pair.as_path().storage_node().balance1.as_ptr().read()
+            self.balance_pair.as_path().storage_node().balance1.as_path().as_ptr().read()
         }
         fn get_balance_pair_balance2(self: @ContractState) -> felt252 {
-            self.balance_pair.as_path().storage_node().balance2.as_ptr().read()
+            self.balance_pair.as_path().storage_node().balance2.as_path().as_ptr().read()
         }
     }
 }
@@ -139,10 +139,10 @@ mod hello_starknet {
                 .read()
         }
         fn get_balance_pair_balance1(self: @ContractState) -> u256 {
-            self.balance_pair.as_path().storage_node().balance1.as_ptr().read()
+            self.balance_pair.as_path().storage_node().balance1.as_path().as_ptr().read()
         }
         fn get_balance_pair_balance2(self: @ContractState) -> felt252 {
-            self.balance_pair.as_path().storage_node().balance2.as_ptr().read()
+            self.balance_pair.as_path().storage_node().balance2.as_path().as_ptr().read()
         }
     }
 }
@@ -620,15 +620,15 @@ lib.cairo:17:1
 storage_node:
 
 struct BalancePairStorageNode {
-    balance1: starknet::storage::StoragePath<u256>,
-    balance2: starknet::storage::StoragePath<felt252>,
+    balance1: starknet::storage::PendingStoragePath<u256>,
+    balance2: starknet::storage::PendingStoragePath<felt252>,
 }
 impl BalancePairStorageNodeTrait of starknet::storage::StructNodeTrait<BalancePair> {
     type NodeType = BalancePairStorageNode;
     fn storage_node(self: starknet::storage::StoragePath<BalancePair>) -> BalancePairStorageNode {
         BalancePairStorageNode {
-           balance1: starknet::storage::StoragePath{ hash_state: core::hash::HashStateTrait::update(self.hash_state, selector!("balance1")) },
-           balance2: starknet::storage::StoragePath{ hash_state: core::hash::HashStateTrait::update(self.hash_state, selector!("balance2")) },
+           balance1: starknet::storage::PendingStoragePath{ hash_state: self.hash_state, pending_key: selector!("balance1") },
+           balance2: starknet::storage::PendingStoragePath{ hash_state: self.hash_state, pending_key: selector!("balance2") },
         }
     }
 }
@@ -965,7 +965,7 @@ use starknet::storage::{
     StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x1016f9be4080f277471ec8cec29f1c8f8738b5fc1286689d2f58517f3e68dc4;
+pub const TEST_CLASS_HASH: felt252 = 0x301410eeb4dd7e9dce9b61be0d822ae62e10c660cc616ea4aff036fd00a460d;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
