@@ -600,6 +600,7 @@ dependencies = [
  "cairo-lang-utils",
  "futures",
  "indoc",
+ "itertools 0.12.1",
  "salsa",
  "scarb-metadata",
  "serde",
