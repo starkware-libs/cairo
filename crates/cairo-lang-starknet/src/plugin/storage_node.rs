@@ -23,16 +23,16 @@ use super::STORAGE_NODE_ATTR;
 /// The following trait and impl will be generated:
 /// ```cairo
 /// struct BalancePairStorageNode {
-///     balance1: StoragePath<u256>,
-///     balance2: StoragePath<felt252>,
+///     balance1: PendingStoragePath<u256>,
+///     balance2: PendingStoragePath<felt252>,
 /// }
 ///
 /// impl BalancePairStorageNodeTrait of StructNodeTrait<BalancePair> {
 ///     type NodeType = BalancePairStorageNode;
 ///     fn storage_node(self: StoragePath<BalancePair>) -> BalancePairStorageNode {
 ///         BalancePairStorageNode {
-///             balance1: storage_path.hash_state.update(selector!('balance1')),
-///             balance2: storage_path.hash_state.update(selector!('balance2')),
+///             balance1: PendingStoragePath{ hash_state: self.hash_state, pending_key: selector!('balance1') },
+///             balance2: PendingStoragePath{ hash_state: self.hash_state, pending_key: selector!('balance2') },
 ///         }
 ///     }
 /// }
@@ -77,7 +77,7 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
         let field_type = field.type_clause(db).ty(db).as_syntax_node();
 
         builder.add_modified(RewriteNode::interpolate_patched(
-            "    $field_name$: starknet::storage::StoragePath<$field_type$>,\n",
+            "    $field_name$: starknet::storage::PendingStoragePath<$field_type$>,\n",
             &[
                 ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
                 ("field_type".to_string(), RewriteNode::new_trimmed(field_type)),
@@ -104,8 +104,8 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
         let field_name = field.name(db).as_syntax_node();
 
         builder.add_modified(RewriteNode::interpolate_patched(
-            "           $field_name$: starknet::storage::StoragePath{ hash_state: \
-             core::hash::HashStateTrait::update(self.hash_state, selector!(\"$field_name$\")) },\n",
+            "           $field_name$: starknet::storage::PendingStoragePath{ hash_state: \
+             self.hash_state, pending_key: selector!(\"$field_name$\") },\n",
             &[("field_name".to_string(), RewriteNode::new_trimmed(field_name))].into(),
         ));
     }

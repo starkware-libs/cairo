@@ -209,6 +209,24 @@ trait StructNodeTrait<T> {
 }
 
 
+/// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
+#[derive(Copy, Drop)]
+struct PendingStoragePath<T> {
+    hash_state: core::poseidon::HashState,
+    pending_key: felt252
+}
+
+/// An implementation of 'StorageAsPath' for `PendingStoragePath`.
+impl PendingStoragePathAsPath<T> of StorageAsPath<PendingStoragePath<T>> {
+    type Value = T;
+    fn as_path(self: @PendingStoragePath<T>) -> StoragePath<T> {
+        StoragePath::<
+            T
+        > { hash_state: core::hash::HashStateTrait::update(*self.hash_state, *self.pending_key) }
+    }
+}
+
+
 /// An implementation of `StorageAsPath` for any type that implements StructNodeTrait.
 impl StructNodeAsPath<
     TMemberState,
