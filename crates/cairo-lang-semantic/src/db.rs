@@ -55,7 +55,7 @@ pub trait Elongate {
 pub trait SemanticGroup:
     DefsGroup
     + Upcast<dyn DefsGroup>
-    + ParserGroup
+    + Upcast<dyn ParserGroup>
     + Upcast<dyn FilesGroup>
     + AsFilesGroupMut
     + Elongate

@@ -12,7 +12,7 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{
     CrateId, CrateLongId, Directory, FileKind, FileLongId, VirtualFile,
 };
-use cairo_lang_parser::db::ParserDatabase;
+use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -82,6 +82,11 @@ impl Upcast<dyn DefsGroup> for SemanticDatabaseForTesting {
 }
 impl Upcast<dyn SemanticGroup> for SemanticDatabaseForTesting {
     fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
+        self
+    }
+}
+impl Upcast<dyn ParserGroup> for SemanticDatabaseForTesting {
+    fn upcast(&self) -> &(dyn ParserGroup + 'static) {
         self
     }
 }

@@ -9,7 +9,7 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
-use cairo_lang_parser::db::ParserDatabase;
+use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
@@ -107,17 +107,22 @@ impl Upcast<dyn SyntaxGroup> for SierraGenDatabaseForTesting {
     }
 }
 impl Upcast<dyn DefsGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn defs::db::DefsGroup + 'static) {
+    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
         self
     }
 }
 impl Upcast<dyn SemanticGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn semantic::db::SemanticGroup + 'static) {
+    fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
         self
     }
 }
 impl Upcast<dyn LoweringGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn lowering::db::LoweringGroup + 'static) {
+    fn upcast(&self) -> &(dyn LoweringGroup + 'static) {
+        self
+    }
+}
+impl Upcast<dyn ParserGroup> for SierraGenDatabaseForTesting {
+    fn upcast(&self) -> &(dyn ParserGroup + 'static) {
         self
     }
 }
