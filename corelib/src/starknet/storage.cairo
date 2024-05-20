@@ -203,7 +203,7 @@ impl StoragePathEntryMap<
 
 /// A trait that binds a storage path to a struct, and the struct storage node (a storage node is a
 /// struct that all its fields are storage paths, one for each member of the original struct).
-trait StructNodeTrait<T> {
+trait StorageNodeTrait<T> {
     type NodeType;
     fn storage_node(self: StoragePath<T>) -> Self::NodeType;
 }
@@ -227,11 +227,11 @@ impl PendingStoragePathAsPath<T> of StorageAsPath<PendingStoragePath<T>> {
 }
 
 
-/// An implementation of `StorageAsPath` for any type that implements StructNodeTrait.
-impl StructNodeAsPath<
+/// An implementation of `StorageAsPath` for any type that implements StorageNodeTrait.
+impl StorageNodeAsPath<
     TMemberState,
     +StorageMemberAddressTrait<TMemberState>,
-    +StructNodeTrait<StorageMemberAddressTrait::<TMemberState>::Value>,
+    +StorageNodeTrait<StorageMemberAddressTrait::<TMemberState>::Value>,
 > of StorageAsPath<TMemberState> {
     type Value = StorageMemberAddressTrait::<TMemberState>::Value;
     fn as_path(self: @TMemberState) -> StoragePath<Self::Value> {

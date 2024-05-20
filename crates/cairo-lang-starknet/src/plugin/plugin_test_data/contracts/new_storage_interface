@@ -30,7 +30,7 @@ struct BalancePair {
 mod hello_starknet {
     use starknet::storage::{
         StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map,
-        StructNodeTrait
+        StorageNodeTrait
     };
     use super::BalancePair;
     #[storage]
@@ -103,7 +103,7 @@ struct BalancePair {
 mod hello_starknet {
     use starknet::storage::{
         StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map,
-        StructNodeTrait
+        StorageNodeTrait
     };
     use super::BalancePair;
     #[storage]
@@ -623,7 +623,7 @@ struct BalancePairStorageNode {
     balance1: starknet::storage::PendingStoragePath<u256>,
     balance2: starknet::storage::PendingStoragePath<felt252>,
 }
-impl BalancePairStorageNodeTrait of starknet::storage::StructNodeTrait<BalancePair> {
+impl BalancePairStorageNodeTrait of starknet::storage::StorageNodeTrait<BalancePair> {
     type NodeType = BalancePairStorageNode;
     fn storage_node(self: starknet::storage::StoragePath<BalancePair>) -> BalancePairStorageNode {
         BalancePairStorageNode {
@@ -889,7 +889,7 @@ pub enum Event {}
         use super::StorageAsPath;
         use super::StoragePathEntry;
         use super::Map;
-        use super::StructNodeTrait;
+        use super::StorageNodeTrait;
         use super::BalancePair;
         use super::HelloStarknetImpl;
             #[derive(Copy, Drop)]
@@ -907,7 +907,7 @@ pub enum Event {}
         use super::StorageAsPath;
         use super::StoragePathEntry;
         use super::Map;
-        use super::StructNodeTrait;
+        use super::StorageNodeTrait;
         use super::BalancePair;
         use super::HelloStarknetImpl;
             #[derive(Copy, Drop)]
@@ -927,7 +927,7 @@ pub enum Event {}
         use super::StorageAsPath;
         use super::StoragePathEntry;
         use super::Map;
-        use super::StructNodeTrait;
+        use super::StorageNodeTrait;
         use super::BalancePair;
         use super::HelloStarknetImpl;
             #[derive(Copy, Drop)]
@@ -948,7 +948,7 @@ pub enum Event {}
         use super::StorageAsPath;
         use super::StoragePathEntry;
         use super::Map;
-        use super::StructNodeTrait;
+        use super::StorageNodeTrait;
         use super::BalancePair;
         use super::HelloStarknetImpl;
             #[derive(Copy, Drop)]
@@ -965,7 +965,7 @@ use starknet::storage::{
     StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x301410eeb4dd7e9dce9b61be0d822ae62e10c660cc616ea4aff036fd00a460d;
+pub const TEST_CLASS_HASH: felt252 = 0x33d804d2d34b3a3b1cad31ad6a6cb1e50a0d3e8e1bf3f344dbeafa8db462c05;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
