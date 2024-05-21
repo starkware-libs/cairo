@@ -689,7 +689,7 @@ impl<'a> CairoHintProcessor<'a> {
                 sha_256_process_block(
                     gas_counter,
                     system_buffer.next_fixed_size_arr_pointer(8)?,
-                    system_buffer.next_arr()?,
+                    system_buffer.next_fixed_size_arr_pointer(16)?,
                     exec_scopes,
                     system_buffer,
                 )
@@ -1295,10 +1295,6 @@ fn sha_256_process_block(
     vm: &mut dyn VMWrapper,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SHA256_PROCESS_BLOCK);
-    if data.len() != 16 {
-        fail_syscall!(b"Invalid sha256_chunk input size");
-    }
-
     let data_as_bytes = sha2::digest::generic_array::GenericArray::from_exact_iter(
         data.iter().flat_map(|felt| felt.to_bigint().to_u32().unwrap().to_be_bytes()),
     )

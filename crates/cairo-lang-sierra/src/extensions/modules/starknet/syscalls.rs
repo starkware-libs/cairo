@@ -1,7 +1,7 @@
-use itertools::chain;
+use itertools::{chain, repeat_n};
 
 use super::interoperability::ClassHashType;
-use super::{u32_span_ty, u64_span_ty};
+use super::u64_span_ty;
 use crate::extensions::array::ArrayType;
 use crate::extensions::boxing::box_ty;
 use crate::extensions::felt252::Felt252Type;
@@ -188,7 +188,7 @@ impl SyscallGenericLibfunc for Sha256ProcessBlockLibfunc {
             // Previous state of the hash.
             context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
             // The current block to process.
-            u32_span_ty(context)?,
+            boxed_u32_fixed_array_ty(context, 16)?,
         ])
     }
 
@@ -237,21 +237,18 @@ impl NoGenericArgsGenericLibfunc for Sha256StateHandleDigestLibfunc {
 pub fn sha256_state_handle_unwrapped_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
-    box_ty(
-        context,
-        context.get_concrete_type(
-            StructType::id(),
-            &[
-                GenericArg::UserType(UserTypeId::from_string("Tuple")),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-            ],
-        )?,
+    boxed_u32_fixed_array_ty(context, 8)
+}
+
+/// Returns a fixed type array of the given type and size.
+fn boxed_u32_fixed_array_ty(
+    context: &dyn SignatureSpecializationContext,
+    size: usize,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let args: Vec<GenericArg> = chain!(
+        [GenericArg::UserType(UserTypeId::from_string("Tuple"))],
+        repeat_n(GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?), size)
     )
+    .collect();
+    box_ty(context, context.get_concrete_type(StructType::id(), &args)?)
 }
