@@ -175,10 +175,13 @@ impl StatementsLocations {
             statements_to_functions_map: self
                 .locations
                 .iter_sorted()
-                .map(|(statement_idx, stable_location)| {
+                .map(|(statement_idx, stable_locations)| {
                     (
                         *statement_idx,
-                        containing_function_identifier(db, *stable_location.first().unwrap()),
+                        stable_locations
+                            .iter()
+                            .map(|s| containing_function_identifier(db, *s))
+                            .collect(),
                     )
                 })
                 .collect(),
