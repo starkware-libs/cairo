@@ -24,7 +24,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for storing a value into temporary memory.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StoreTempLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for StoreTempLibfuncWrapped {
     const STR_ID: &'static str = "store_temp";
@@ -60,7 +60,7 @@ impl SignatureAndTypeGenericLibfunc for StoreTempLibfuncWrapped {
 pub type StoreTempLibfunc = WrapSignatureAndTypeGenericLibfunc<StoreTempLibfuncWrapped>;
 
 /// Libfunc for storing a value into local memory.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StoreLocalLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for StoreLocalLibfuncWrapped {
     const STR_ID: &'static str = "store_local";
@@ -101,7 +101,7 @@ impl SignatureAndTypeGenericLibfunc for StoreLocalLibfuncWrapped {
 pub type StoreLocalLibfunc = WrapSignatureAndTypeGenericLibfunc<StoreLocalLibfuncWrapped>;
 
 /// Libfunc for finalizing the locals for current function.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FinalizeLocalsLibfunc {}
 impl NoGenericArgsGenericLibfunc for FinalizeLocalsLibfunc {
     const STR_ID: &'static str = "finalize_locals";
@@ -119,7 +119,7 @@ impl NoGenericArgsGenericLibfunc for FinalizeLocalsLibfunc {
 }
 
 /// Libfunc for allocating locals for later stores.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct AllocLocalLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for AllocLocalLibfuncWrapped {
     const STR_ID: &'static str = "alloc_local";
@@ -147,7 +147,7 @@ impl SignatureAndTypeGenericLibfunc for AllocLocalLibfuncWrapped {
 pub type AllocLocalLibfunc = WrapSignatureAndTypeGenericLibfunc<AllocLocalLibfuncWrapped>;
 
 /// Libfunc for renaming an identifier - used to align identities for flow control merge.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct RenameLibfunc {}
 impl SignatureOnlyGenericLibfunc for RenameLibfunc {
     const STR_ID: &'static str = "rename";

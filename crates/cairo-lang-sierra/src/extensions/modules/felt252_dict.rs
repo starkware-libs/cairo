@@ -27,7 +27,7 @@ use crate::program::{ConcreteTypeLongId, GenericArg};
 /// This is currently only bounded for all numeric types, Nullable, and Enum types with 2 or less
 /// variants, as this are the types that has proper default as 0, and therefore can be properly used
 /// as a value in the dictionary.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Felt252DictTypeWrapped {}
 impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("Felt252Dict");
@@ -109,7 +109,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for creating a new felt252_dict.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Felt252DictNewLibfunc {}
 impl SignatureOnlyGenericLibfunc for Felt252DictNewLibfunc {
     const STR_ID: &'static str = "felt252_dict_new";
@@ -136,7 +136,7 @@ impl SignatureOnlyGenericLibfunc for Felt252DictNewLibfunc {
 }
 
 /// Libfunc for performing a `squash` operation on a dict. Returns a pointer to the squashed dict.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Felt252DictSquashLibfunc {}
 impl SignatureOnlyGenericLibfunc for Felt252DictSquashLibfunc {
     const STR_ID: &'static str = "felt252_dict_squash";
@@ -185,7 +185,7 @@ impl SignatureOnlyGenericLibfunc for Felt252DictSquashLibfunc {
 }
 
 /// Type representing an entry access to a felt252_dict.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Felt252DictEntryTypeWrapped {}
 impl GenericTypeArgGenericType for Felt252DictEntryTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("Felt252DictEntry");
@@ -209,7 +209,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for creating a new felt252_dict_entry, it owns the dictionary until finalized.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Felt252DictEntryGetLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for Felt252DictEntryGetLibfuncWrapped {
     const STR_ID: &'static str = "felt252_dict_entry_get";
@@ -250,7 +250,7 @@ pub type Felt252DictEntryGetLibfunc =
     WrapSignatureAndTypeGenericLibfunc<Felt252DictEntryGetLibfuncWrapped>;
 
 /// Libfunc for finalizing a felt252_dict_entry, returns the owned dict.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Felt252DictEntryFinalizeLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for Felt252DictEntryFinalizeLibfuncWrapped {
     const STR_ID: &'static str = "felt252_dict_entry_finalize";

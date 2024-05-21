@@ -13,6 +13,7 @@ use cairo_lang_syntax::node::Token;
 use cairo_lang_utils::require;
 use smol_str::SmolStr;
 
+#[allow(missing_debug_implementations)]
 pub struct Lexer<'a> {
     db: &'a dyn SyntaxGroup,
     text: &'a str,

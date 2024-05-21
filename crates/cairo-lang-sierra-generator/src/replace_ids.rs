@@ -84,6 +84,7 @@ pub trait SierraIdReplacer {
 ///  - For libfuncs: `felt252_const<2>` or `unbox<Box<Box<felt252>>>`.
 ///  - For types: `felt252` or `Box<Box<felt252>>`.
 ///  - For user functions: `test::foo`.
+#[allow(missing_debug_implementations)]
 pub struct DebugReplacer<'a> {
     pub db: &'a dyn SierraGenGroup,
 }

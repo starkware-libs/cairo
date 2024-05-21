@@ -81,6 +81,7 @@ pub enum RunnerError {
 }
 
 /// The full result of a run with Starknet state.
+#[derive(Debug)]
 pub struct RunResultStarknet {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
@@ -186,6 +187,7 @@ pub fn build_hints_dict<'b>(
 }
 
 /// Runner enabling running a Sierra program on the vm.
+#[derive(Debug)]
 pub struct SierraCasmRunner {
     /// The sierra program.
     sierra_program: cairo_lang_sierra::program::Program,

@@ -18,7 +18,7 @@ use crate::extensions::{
 use crate::ids::GenericTypeId;
 
 /// Type for Starknet storage base address, a value in the range [0, 2 ** 251 - 256).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StorageBaseAddressType {}
 impl NoGenericArgsGenericType for StorageBaseAddressType {
     const ID: GenericTypeId = GenericTypeId::new_inline("StorageBaseAddress");
@@ -29,7 +29,7 @@ impl NoGenericArgsGenericType for StorageBaseAddressType {
 }
 
 /// Libfunc for creating a constant storage base address.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StorageBaseAddressConstLibfuncWrapped {}
 impl ConstGenLibfunc for StorageBaseAddressConstLibfuncWrapped {
     const STR_ID: &'static str = ("storage_base_address_const");
@@ -44,7 +44,7 @@ pub type StorageBaseAddressConstLibfunc =
     WrapConstGenLibfunc<StorageBaseAddressConstLibfuncWrapped>;
 
 /// Type for Starknet storage base address, a value in the range [0, 2 ** 251).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StorageAddressType {}
 impl NoGenericArgsGenericType for StorageAddressType {
     const ID: GenericTypeId = GenericTypeId::new_inline("StorageAddress");
@@ -55,7 +55,7 @@ impl NoGenericArgsGenericType for StorageAddressType {
 }
 
 /// Libfunc for converting a StorageAddress into a felt252.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StorageAddressToFelt252Libfunc {}
 impl NoGenericArgsGenericLibfunc for StorageAddressToFelt252Libfunc {
     const STR_ID: &'static str = "storage_address_to_felt252";
@@ -72,7 +72,7 @@ impl NoGenericArgsGenericLibfunc for StorageAddressToFelt252Libfunc {
 }
 
 /// Libfunc for attempting to convert a felt252 into a storage address.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StorageAddressTryFromFelt252Trait;
 impl TryFromFelt252 for StorageAddressTryFromFelt252Trait {
     const STR_ID: &'static str = "storage_address_try_from_felt252";
@@ -80,7 +80,7 @@ impl TryFromFelt252 for StorageAddressTryFromFelt252Trait {
 }
 
 /// Libfunc for converting a base address into a storage address.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StorageAddressFromBaseLibfunc {}
 impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseLibfunc {
     const STR_ID: &'static str = "storage_address_from_base";
@@ -97,7 +97,7 @@ impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseLibfunc {
 }
 
 /// Libfunc for converting a base address and offset into a storage address.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StorageAddressFromBaseAndOffsetLibfunc {}
 impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseAndOffsetLibfunc {
     const STR_ID: &'static str = "storage_address_from_base_and_offset";
@@ -122,7 +122,7 @@ impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseAndOffsetLibfunc {
 }
 
 /// Libfunc for converting a felt252 into a storage base address.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StorageBaseAddressFromFelt252Libfunc {}
 impl NoGenericArgsGenericLibfunc for StorageBaseAddressFromFelt252Libfunc {
     const STR_ID: &'static str = "storage_base_address_from_felt252";
@@ -150,7 +150,7 @@ impl NoGenericArgsGenericLibfunc for StorageBaseAddressFromFelt252Libfunc {
 }
 
 /// Libfunc for a storage read system call.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StorageReadLibfunc {}
 impl SyscallGenericLibfunc for StorageReadLibfunc {
     const STR_ID: &'static str = "storage_read_syscall";
@@ -174,7 +174,7 @@ impl SyscallGenericLibfunc for StorageReadLibfunc {
 }
 
 /// Libfunc for a storage write system call.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StorageWriteLibfunc {}
 impl SyscallGenericLibfunc for StorageWriteLibfunc {
     const STR_ID: &'static str = "storage_write_syscall";
@@ -200,7 +200,7 @@ impl SyscallGenericLibfunc for StorageWriteLibfunc {
 }
 
 /// Libfunc for a get block hash system call.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct GetBlockHashLibfunc {}
 impl SyscallGenericLibfunc for GetBlockHashLibfunc {
     const STR_ID: &'static str = "get_block_hash_syscall";

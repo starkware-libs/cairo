@@ -65,7 +65,7 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct ReorderStatementsInfo {
     // A mapping from var_id to a candidate location that it can be moved to.
     // If the variable is used in multiple match arms we define the next use to be
@@ -73,6 +73,7 @@ pub struct ReorderStatementsInfo {
     next_use: UnorderedHashMap<VariableId, StatementLocation>,
 }
 
+#[derive(Debug)]
 pub struct ReorderStatementsContext<'a> {
     lowered: &'a FlatLowered,
     // A list of function that can be moved.

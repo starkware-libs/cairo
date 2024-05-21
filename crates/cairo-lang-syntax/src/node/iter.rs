@@ -24,6 +24,7 @@ impl<T> WalkEvent<T> {
 
 /// Traverse the subtree rooted at the current node (including the current node) in preorder,
 /// excluding tokens.
+#[allow(missing_debug_implementations)]
 pub struct Preorder<'a> {
     db: &'a dyn SyntaxGroup,
     // FIXME(mkaput): Is it possible to avoid allocating iterators in layers here?
@@ -32,6 +33,7 @@ pub struct Preorder<'a> {
     layers: Vec<PreorderLayer>,
 }
 
+#[derive(Debug)]
 struct PreorderLayer {
     start: SyntaxNode,
     children: Option<vec::IntoIter<SyntaxNode>>,

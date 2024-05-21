@@ -133,7 +133,7 @@ pub fn compile_test_prepared_db(
 }
 
 /// Compiled test cases.
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct TestCompilation {
     #[serde(
         serialize_with = "serialize_ordered_hashmap_vec",

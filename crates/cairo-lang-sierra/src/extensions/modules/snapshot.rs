@@ -13,7 +13,7 @@ use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type for a type's snapshot.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SnapshotTypeWrapped {}
 impl GenericTypeArgGenericType for SnapshotTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("Snapshot");
@@ -55,7 +55,7 @@ pub fn snapshot_ty(
 }
 
 /// Libfunc for taking a snapshot `Snapshot<T>` from a T.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SnapshotTakeLibfunc {}
 impl SignatureOnlyGenericLibfunc for SnapshotTakeLibfunc {
     const STR_ID: &'static str = "snapshot_take";

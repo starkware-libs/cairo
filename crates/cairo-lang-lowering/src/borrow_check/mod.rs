@@ -25,6 +25,7 @@ pub mod analysis;
 pub mod demand;
 
 pub type BorrowCheckerDemand = Demand<VariableId, LocationId, PanicState>;
+#[allow(missing_debug_implementations)]
 pub struct BorrowChecker<'a> {
     db: &'a dyn LoweringGroup,
     diagnostics: &'a mut LoweringDiagnostics,
@@ -37,7 +38,7 @@ pub struct BorrowChecker<'a> {
 
 /// A state saved for each position in the back analysis.
 /// Used to determine if this flow is guaranteed to end in a panic.
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub enum PanicState {
     EndsWithPanic,
     #[default]

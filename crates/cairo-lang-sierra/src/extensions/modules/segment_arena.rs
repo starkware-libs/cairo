@@ -13,7 +13,7 @@ use crate::ids::GenericTypeId;
 /// The start of the segment (written on allocation).
 /// The end of the segment (written on finalization).
 /// A sequential number of the segment when destructed (written on finalize).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SegmentArenaType {}
 impl NoGenericArgsGenericType for SegmentArenaType {
     const ID: GenericTypeId = GenericTypeId::new_inline("SegmentArena");

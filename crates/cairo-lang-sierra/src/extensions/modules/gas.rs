@@ -17,7 +17,7 @@ use crate::extensions::{
 use crate::ids::GenericTypeId;
 
 /// Type for gas actions.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct GasBuiltinType {}
 impl NoGenericArgsGenericType for GasBuiltinType {
     const ID: GenericTypeId = GenericTypeId::new_inline("GasBuiltin");
@@ -38,7 +38,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for withdrawing gas.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct WithdrawGasLibfunc {}
 impl NoGenericArgsGenericLibfunc for WithdrawGasLibfunc {
     const STR_ID: &'static str = "withdraw_gas";
@@ -85,7 +85,7 @@ impl NoGenericArgsGenericLibfunc for WithdrawGasLibfunc {
 }
 
 /// Libfunc for returning unused gas.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct RedepositGasLibfunc {}
 impl NoGenericArgsGenericLibfunc for RedepositGasLibfunc {
     const STR_ID: &'static str = "redeposit_gas";
@@ -107,7 +107,7 @@ impl NoGenericArgsGenericLibfunc for RedepositGasLibfunc {
 }
 
 /// Libfunc for returning the amount of available gas.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct GetAvailableGasLibfunc {}
 impl NoGenericArgsGenericLibfunc for GetAvailableGasLibfunc {
     const STR_ID: &'static str = "get_available_gas";
@@ -235,7 +235,7 @@ impl CostTokenType {
 /// Every element in the array is the cost of a single invocation of a builtin.
 ///
 /// Offsets to the array are given by [CostTokenType::offset_in_builtin_costs].
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BuiltinCostsType {}
 impl NoGenericArgsGenericType for BuiltinCostsType {
     const ID: GenericTypeId = GenericTypeId::new_inline("BuiltinCosts");
@@ -269,7 +269,7 @@ impl BuiltinCostsType {
 }
 
 /// Libfunc for withdrawing gas to be used by a builtin.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BuiltinCostWithdrawGasLibfunc;
 impl NoGenericArgsGenericLibfunc for BuiltinCostWithdrawGasLibfunc {
     const STR_ID: &'static str = "withdraw_gas_all";
@@ -319,7 +319,7 @@ impl NoGenericArgsGenericLibfunc for BuiltinCostWithdrawGasLibfunc {
 
 /// Libfunc for getting the pointer to the gas cost array.
 /// See [BuiltinCostsType].
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BuiltinCostGetBuiltinCostsLibfunc {}
 
 impl NoGenericArgsGenericLibfunc for BuiltinCostGetBuiltinCostsLibfunc {

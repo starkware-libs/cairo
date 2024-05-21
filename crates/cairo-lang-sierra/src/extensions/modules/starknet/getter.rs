@@ -41,7 +41,7 @@ impl<TGetterTraits: GetterTraits> GetterTraitsEx for TGetterTraits {
 }
 
 /// Libfunc for a getter system call.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct GetterLibfunc<TGetterTraitsEx: GetterTraitsEx> {
     _phantom: PhantomData<TGetterTraitsEx>,
 }
@@ -234,7 +234,7 @@ fn get_tx_info_v2_type(
     )
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct GetExecutionInfoTrait {}
 impl GetterTraitsEx for GetExecutionInfoTrait {
     const STR_ID: &'static str = "get_execution_info_syscall";
@@ -246,7 +246,7 @@ impl GetterTraitsEx for GetExecutionInfoTrait {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct GetExecutionInfoV2Trait {}
 impl GetterTraitsEx for GetExecutionInfoV2Trait {
     const STR_ID: &'static str = "get_execution_info_v2_syscall";

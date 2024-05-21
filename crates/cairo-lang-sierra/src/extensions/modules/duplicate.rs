@@ -6,7 +6,7 @@ use crate::extensions::{args_as_single_type, OutputVarReferenceInfo, Specializat
 use crate::program::GenericArg;
 
 /// Libfunc for duplicating an object.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct DupLibfunc {}
 impl SignatureOnlyGenericLibfunc for DupLibfunc {
     const STR_ID: &'static str = "dup";

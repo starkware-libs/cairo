@@ -30,6 +30,7 @@ pub enum IntOperator {
     OverflowingSub,
 }
 
+#[derive(Debug)]
 pub struct IntOperationConcreteLibfunc {
     pub operator: IntOperator,
     pub signature: LibfuncSignature,
@@ -43,7 +44,7 @@ impl SignatureBasedConcreteLibfunc for IntOperationConcreteLibfunc {
 /// Trait for implementing integers.
 pub trait IntTraits: Default {
     /// The rust matching type to this type.
-    type IntType: TryFrom<BigInt> + Into<BigInt> + Copy;
+    type IntType: TryFrom<BigInt> + Into<BigInt> + Copy + std::fmt::Debug;
     /// Is the type smaller than 128 bits.
     /// Relevant since some implementations are different due to range check being 128 bits based.
     const IS_SMALL: bool;
@@ -67,7 +68,7 @@ pub trait IntMulTraits: IntTraits {
     const WIDE_MUL_RES_TYPE_ID: GenericTypeId;
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct IntType<TIntTraits: IntTraits> {
     _phantom: PhantomData<TIntTraits>,
 }
@@ -80,7 +81,7 @@ impl<TIntTraits: IntTraits> NoGenericArgsGenericType for IntType<TIntTraits> {
 }
 
 /// Libfunc for creating a constant integer.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct IntConstLibfunc<TIntTraits: IntTraits> {
     _phantom: PhantomData<TIntTraits>,
 }
@@ -123,6 +124,7 @@ impl<TIntTraits: IntTraits> NamedLibfunc for IntConstLibfunc<TIntTraits> {
     }
 }
 
+#[derive(Debug)]
 pub struct IntConstConcreteLibfunc<TIntTraits: IntTraits> {
     pub c: TIntTraits::IntType,
     pub signature: LibfuncSignature,
@@ -134,7 +136,7 @@ impl<TIntTraits: IntTraits> SignatureBasedConcreteLibfunc for IntConstConcreteLi
 }
 
 /// Libfunc for comparing integers` equality.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct IntEqualLibfunc<TIntTraits: IntTraits> {
     _phantom: PhantomData<TIntTraits>,
 }
@@ -159,7 +161,7 @@ impl<TIntTraits: IntTraits> NoGenericArgsGenericLibfunc for IntEqualLibfunc<TInt
 }
 
 /// Libfunc for converting an integer into a felt252.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct IntToFelt252Libfunc<TIntTraits: IntTraits> {
     _phantom: PhantomData<TIntTraits>,
 }
@@ -178,7 +180,7 @@ impl<TIntTraits: IntTraits> NoGenericArgsGenericLibfunc for IntToFelt252Libfunc<
 }
 
 /// Libfunc for attempting to convert a felt252 into an integer.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct IntFromFelt252Trait<TIntTraits: IntTraits> {
     _phantom: PhantomData<TIntTraits>,
 }
@@ -189,7 +191,7 @@ impl<TIntTraits: IntTraits> TryFromFelt252 for IntFromFelt252Trait<TIntTraits> {
 
 pub type IntFromFelt252Libfunc<T> = TryFromFelt252Libfunc<IntFromFelt252Trait<T>>;
 /// Libfunc for integer wide multiplication.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct IntWideMulLibfunc<TIntMulTraits: IntMulTraits> {
     _phantom: PhantomData<TIntMulTraits>,
 }

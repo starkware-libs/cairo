@@ -71,6 +71,7 @@ impl MacroPlugin for DerivePlugin {
 }
 
 /// Information on struct members or enum variants.
+#[derive(Debug)]
 struct MemberInfo {
     name: SmolStr,
     _ty: String,
@@ -78,6 +79,7 @@ struct MemberInfo {
 }
 
 /// Information on the type being derived.
+#[derive(Debug)]
 enum TypeVariantInfo {
     Enum(Vec<MemberInfo>),
     Struct(Vec<MemberInfo>),
@@ -85,6 +87,7 @@ enum TypeVariantInfo {
 }
 
 /// Information on generic params.
+#[derive(Debug)]
 struct GenericParamsInfo {
     /// All the generic params name, at the original order.
     ordered: Vec<SmolStr>,
@@ -151,6 +154,7 @@ impl GenericParamsInfo {
 }
 
 /// Information for the type being derived.
+#[derive(Debug)]
 pub struct DeriveInfo {
     name: SmolStr,
     attributes: AttributeList,
@@ -230,7 +234,7 @@ fn extract_variants(db: &dyn SyntaxGroup, variants: VariantList) -> Vec<MemberIn
         .collect()
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct DeriveResult {
     impls: Vec<String>,
     diagnostics: Vec<PluginDiagnostic>,

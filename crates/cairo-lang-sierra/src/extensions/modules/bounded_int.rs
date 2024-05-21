@@ -25,7 +25,7 @@ use crate::program::GenericArg;
 
 /// Type for BoundedInt.
 /// The native type of the Cairo architecture.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoundedIntType {}
 impl NamedType for BoundedIntType {
     type Concrete = BoundedIntConcreteType;
@@ -60,6 +60,7 @@ impl NamedType for BoundedIntType {
     }
 }
 
+#[derive(Debug)]
 pub struct BoundedIntConcreteType {
     pub info: TypeInfo,
     /// The range bounds for a value of this type.
@@ -83,7 +84,7 @@ define_libfunc_hierarchy! {
 
 /// Libfunc for adding two BoundedInts.
 /// The result is a BoundedInt.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoundedIntAddLibfunc {}
 impl SignatureOnlyGenericLibfunc for BoundedIntAddLibfunc {
     const STR_ID: &'static str = "bounded_int_add";
@@ -101,7 +102,7 @@ impl SignatureOnlyGenericLibfunc for BoundedIntAddLibfunc {
 
 /// Libfunc for subtracting two BoundedInts.
 /// The result is a BoundedInt.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoundedIntSubLibfunc {}
 impl SignatureOnlyGenericLibfunc for BoundedIntSubLibfunc {
     const STR_ID: &'static str = "bounded_int_sub";
@@ -119,7 +120,7 @@ impl SignatureOnlyGenericLibfunc for BoundedIntSubLibfunc {
 
 /// Libfunc for multiplying two BoundedInts.
 /// The result is a BoundedInt.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoundedIntMulLibfunc {}
 impl SignatureOnlyGenericLibfunc for BoundedIntMulLibfunc {
     const STR_ID: &'static str = "bounded_int_mul";
@@ -145,7 +146,7 @@ impl SignatureOnlyGenericLibfunc for BoundedIntMulLibfunc {
 
 /// Libfunc for multiplying two BoundedInts.
 /// The result is a BoundedInt.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoundedIntDivRemLibfunc {}
 impl NamedLibfunc for BoundedIntDivRemLibfunc {
     type Concrete = BoundedIntDivRemConcreteLibfunc;
@@ -208,6 +209,7 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
     }
 }
 
+#[derive(Debug)]
 pub struct BoundedIntDivRemConcreteLibfunc {
     pub lhs: Range,
     pub rhs: Range,
@@ -220,6 +222,7 @@ impl SignatureBasedConcreteLibfunc for BoundedIntDivRemConcreteLibfunc {
 }
 
 /// The algorithm to use for division and remainder of bounded integers.
+#[derive(Debug)]
 pub enum BoundedIntDivRemAlgorithm {
     /// The rhs is small enough to be multiplied by `2**128` without wraparound.
     KnownSmallRhs,
@@ -258,7 +261,7 @@ impl BoundedIntDivRemAlgorithm {
 
 /// Libfunc for constraining a BoundedInt<Min, Max> to one of two non-empty ranges: [Min, boundary)
 /// or [Boundary, max]. The libfunc is also applicable for standard types such as u* and i*.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoundedIntConstrainLibfunc {}
 impl NamedLibfunc for BoundedIntConstrainLibfunc {
     type Concrete = BoundedIntConstrainConcreteLibfunc;
@@ -323,6 +326,7 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
     }
 }
 
+#[derive(Debug)]
 pub struct BoundedIntConstrainConcreteLibfunc {
     pub boundary: BigInt,
     signature: LibfuncSignature,

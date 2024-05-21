@@ -263,6 +263,7 @@ pub trait TypedStablePtr {
 }
 
 /// Wrapper for formatting the text of syntax nodes.
+#[allow(missing_debug_implementations)]
 pub struct NodeTextFormatter<'a> {
     /// The node to format.
     pub node: &'a SyntaxNode,

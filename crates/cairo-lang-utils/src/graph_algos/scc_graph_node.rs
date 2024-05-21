@@ -6,7 +6,7 @@ use super::strongly_connected_components::ComputeScc;
 
 /// A node whose neighbors are only the subset of its neighbors in the full graph, which are also in
 /// the same SCC (strongly-connected-component) with it.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SccGraphNode<Node: ComputeScc>(Node);
 impl<Node: ComputeScc> GraphNode for SccGraphNode<Node> {
     type NodeId = Node::NodeId;

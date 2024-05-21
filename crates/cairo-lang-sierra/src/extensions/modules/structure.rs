@@ -28,7 +28,7 @@ use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Type representing a struct.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StructType {}
 impl NamedType for StructType {
     type Concrete = StructConcreteType;
@@ -43,6 +43,7 @@ impl NamedType for StructType {
     }
 }
 
+#[derive(Debug)]
 pub struct StructConcreteType {
     pub info: TypeInfo,
     pub members: Vec<ConcreteTypeId>,
@@ -130,7 +131,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for constructing a struct.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StructConstructLibfunc {}
 impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
     const STR_ID: &'static str = "struct_construct";
@@ -183,7 +184,7 @@ impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
 }
 
 /// Libfunc for deconstructing a struct.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StructDeconstructLibfunc {}
 impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
     const STR_ID: &'static str = "struct_deconstruct";
@@ -224,7 +225,7 @@ impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
 }
 
 /// Libfunc for deconstructing a struct snapshot.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StructSnapshotDeconstructLibfunc {}
 impl SignatureOnlyGenericLibfunc for StructSnapshotDeconstructLibfunc {
     const STR_ID: &'static str = "struct_snapshot_deconstruct";

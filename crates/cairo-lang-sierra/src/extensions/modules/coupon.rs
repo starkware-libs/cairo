@@ -15,7 +15,7 @@ use crate::program::GenericArg;
 /// Coupon type `Coupon<function>` (`function::Coupon`) which represents that the cost of a
 /// function was paid, without calling the function yet.
 /// Using the coupon the function can be called without paying the cost.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CouponType {}
 
 impl NamedType for CouponType {
@@ -51,6 +51,7 @@ pub fn coupon_ty(
 }
 
 /// Concrete type information for `Coupon<function>`.
+#[derive(Debug)]
 pub struct CouponConcreteType {
     pub info: TypeInfo,
     pub function_id: FunctionId,
@@ -72,7 +73,7 @@ define_libfunc_hierarchy! {
 /// function (not including the `call` and `ret` instructions).
 /// The coupon can be used to pay in advance for running the function, and run it later for
 /// free (paying only for the `call` and `ret` instructions) using `coupon_call`.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CouponBuyLibfunc {}
 impl NamedLibfunc for CouponBuyLibfunc {
     type Concrete = SignatureAndFunctionConcreteLibfunc;
@@ -117,7 +118,7 @@ impl NamedLibfunc for CouponBuyLibfunc {
 
 /// Libfunc for getting a refund for an unused coupon. The refund is the cost of the function
 /// and it is added back to the gas wallet.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CouponRefundLibfunc {}
 impl NamedLibfunc for CouponRefundLibfunc {
     type Concrete = SignatureAndFunctionConcreteLibfunc;

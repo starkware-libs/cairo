@@ -125,6 +125,7 @@ pub struct StatementAnnotations {
 
 /// Annotations of the program statements.
 /// See StatementAnnotations.
+#[derive(Debug)]
 pub struct ProgramAnnotations {
     /// Optional per statement annotation.
     per_statement_annotations: Vec<Option<StatementAnnotations>>,

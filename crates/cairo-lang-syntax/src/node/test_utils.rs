@@ -1,3 +1,5 @@
+#![allow(missing_debug_implementations)]
+
 use cairo_lang_filesystem::db::{FilesDatabase, FilesGroup};
 use cairo_lang_utils::Upcast;
 

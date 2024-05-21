@@ -48,7 +48,7 @@ fn parse_version_id(major_minor_patch: &str) -> anyhow::Result<VersionId> {
 }
 
 /// The contract class from db.
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct ContractClassInfo {
     /// The previous compiled class hash.
     pub compiled_class_hash: BigUintAsHex,

@@ -6,7 +6,7 @@ use crate::{BlockId, VariableId};
 /// Utility for renaming variables.
 /// Support recursive renaming, e.g. if A is renamed to B, and B is renamed to C, then A is renamed
 /// to C.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct VarRenamer {
     pub renamed_vars: UnorderedHashMap<VariableId, VariableId>,
 }

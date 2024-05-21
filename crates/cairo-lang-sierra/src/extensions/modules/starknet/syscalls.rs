@@ -21,7 +21,7 @@ use crate::ids::{ConcreteTypeId, GenericTypeId};
 
 /// Type for Starknet system object.
 /// Used to make system calls.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SystemType {}
 impl NoGenericArgsGenericType for SystemType {
     const ID: GenericTypeId = GenericTypeId::new_inline("System");
@@ -113,7 +113,7 @@ impl<T: SyscallGenericLibfunc> NoGenericArgsGenericLibfunc for T {
 }
 
 /// Libfunc for the replace_class system call.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ReplaceClassLibfunc {}
 impl SyscallGenericLibfunc for ReplaceClassLibfunc {
     const STR_ID: &'static str = "replace_class_syscall";
@@ -138,7 +138,7 @@ impl SyscallGenericLibfunc for ReplaceClassLibfunc {
 /// Libfunc for the keccak system call.
 /// The libfunc does not add any padding and the input needs to be a multiple of 1088 bits
 /// (== 17 u64 word).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct KeccakLibfunc {}
 impl SyscallGenericLibfunc for KeccakLibfunc {
     const STR_ID: &'static str = "keccak_syscall";
@@ -160,7 +160,7 @@ impl SyscallGenericLibfunc for KeccakLibfunc {
 }
 
 /// Type representing the sha256 state handle.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Sha256StateHandleType {}
 
 impl NoGenericArgsGenericType for Sha256StateHandleType {
@@ -174,7 +174,7 @@ impl NoGenericArgsGenericType for Sha256StateHandleType {
 /// Libfunc for the sha256_process_block system call.
 /// The input needs a Sha256StateHandleType for the previous state and a span of 16 words
 /// (each word is 32 bits).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Sha256ProcessBlockLibfunc {}
 impl SyscallGenericLibfunc for Sha256ProcessBlockLibfunc {
     const STR_ID: &'static str = "sha256_process_block_syscall";
@@ -198,7 +198,7 @@ impl SyscallGenericLibfunc for Sha256ProcessBlockLibfunc {
 }
 
 /// Libfunc for converting a ContractAddress into a felt252.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Sha256StateHandleInitLibfunc {}
 impl NoGenericArgsGenericLibfunc for Sha256StateHandleInitLibfunc {
     const STR_ID: &'static str = "sha256_state_handle_init";
@@ -215,7 +215,7 @@ impl NoGenericArgsGenericLibfunc for Sha256StateHandleInitLibfunc {
 }
 
 /// Libfunc for converting a ContractAddress into a felt252.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Sha256StateHandleDigestLibfunc {}
 impl NoGenericArgsGenericLibfunc for Sha256StateHandleDigestLibfunc {
     const STR_ID: &'static str = "sha256_state_handle_digest";

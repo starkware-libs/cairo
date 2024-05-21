@@ -29,7 +29,7 @@ pub struct ProfilingInfo {
 }
 
 /// Weights per libfunc.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LibfuncWeights {
     /// Weight (in steps in the relevant run) of each concrete libfunc.
     pub concrete_libfunc_weights: Option<OrderedHashMap<SmolStr, usize>>,
@@ -71,7 +71,7 @@ impl Display for LibfuncWeights {
 }
 
 /// Weights per user function.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct UserFunctionWeights {
     /// Weight (in steps in the relevant run) of each user function (including generated
     /// functions).
@@ -98,7 +98,7 @@ impl Display for UserFunctionWeights {
 }
 
 /// Weights per stack trace.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StackTraceWeights {
     /// A map of weights of each Sierra stack trace.
     /// The key is a function stack trace of an executed function. The stack trace is represented
@@ -133,6 +133,7 @@ impl Display for StackTraceWeights {
 
 /// Full profiling info of a single run. This is the processed info which went through additional
 /// processing after collecting the raw data during the run itself.
+#[derive(Debug)]
 pub struct ProcessedProfilingInfo {
     /// For each sierra statement: the number of steps in the trace that originated from it, and
     /// the relevant GenStatement.
@@ -181,6 +182,7 @@ impl Display for ProcessedProfilingInfo {
 
 /// Parameters controlling what profiling info is processed and how, by the
 /// `ProfilingInfoProcessor`.
+#[derive(Debug)]
 pub struct ProfilingInfoProcessorParams {
     /// The minimal weight to include in the output. Used for all collected stats. That is - the
     /// sum of the weights per statement may be smaller than the sum of the weights per concrete
@@ -223,6 +225,7 @@ impl Default for ProfilingInfoProcessorParams {
 }
 /// A processor for profiling info. Used to process the raw profiling info (basic info collected
 /// during the run) into a more detailed profiling info that can also be formatted.
+#[allow(missing_debug_implementations)]
 pub struct ProfilingInfoProcessor<'a> {
     db: Option<&'a dyn SierraGenGroup>,
     sierra_program: Program,

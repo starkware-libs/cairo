@@ -21,6 +21,7 @@ pub struct LabelLongId {
 }
 define_short_id!(LabelId, LabelLongId, SierraGenGroup, lookup_intern_label_id, intern_label_id);
 
+#[allow(missing_debug_implementations)]
 pub struct LabelIdWithDb<'db> {
     db: &'db dyn SierraGenGroup,
     label_id: LabelId,

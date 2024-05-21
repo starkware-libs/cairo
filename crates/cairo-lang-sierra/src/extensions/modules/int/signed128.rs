@@ -24,7 +24,7 @@ define_libfunc_hierarchy! {
     }, Sint128Concrete
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Sint128Traits;
 
 impl SintTraits for Sint128Traits {

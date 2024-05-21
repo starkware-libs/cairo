@@ -22,7 +22,7 @@ use crate::{
 };
 
 /// FlatBlock builder, describing its current state.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct BlockBuilder {
     /// A store for semantic variables, owning their OwnedVariable instances.
     pub semantics: SemanticLoweringMapping,
@@ -309,6 +309,7 @@ pub struct SemanticRemapping {
 
 /// A sealed BlockBuilder, ready to be merged with sibling blocks to end the block.
 #[allow(clippy::large_enum_variant)]
+#[derive(Debug)]
 pub enum SealedBlockBuilder {
     /// Block should end by goto callsite. `expr` may be None for blocks that return the unit type.
     GotoCallsite { builder: BlockBuilder, expr: Option<VarUsage> },

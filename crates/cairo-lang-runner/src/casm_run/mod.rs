@@ -80,6 +80,7 @@ struct Secp256r1ExecutionScope {
 }
 
 /// HintProcessor for Cairo compiler hints.
+#[derive(Debug)]
 pub struct CairoHintProcessor<'a> {
     /// The Cairo runner.
     pub runner: Option<&'a SierraCasmRunner>,
@@ -118,7 +119,7 @@ type L2ToL1Message = (Felt252, Vec<Felt252>);
 
 /// Execution scope for starknet related data.
 /// All values will be 0 and by default if not setup by the test.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct StarknetState {
     /// The values of addresses in the simulated storage per contract.
     storage: HashMap<Felt252, HashMap<Felt252, Felt252>>,
@@ -155,7 +156,7 @@ impl StarknetState {
 }
 
 /// Object storing logs for a contract.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 struct ContractLogs {
     /// Events.
     events: VecDeque<Log>,
@@ -164,7 +165,7 @@ struct ContractLogs {
 }
 
 /// Copy of the cairo `ExecutionInfo` struct.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 struct ExecutionInfo {
     block_info: BlockInfo,
     tx_info: TxInfo,
@@ -174,7 +175,7 @@ struct ExecutionInfo {
 }
 
 /// Copy of the cairo `BlockInfo` struct.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 struct BlockInfo {
     block_number: Felt252,
     block_timestamp: Felt252,
@@ -182,7 +183,7 @@ struct BlockInfo {
 }
 
 /// Copy of the cairo `TxInfo` struct.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 struct TxInfo {
     version: Felt252,
     account_contract_address: Felt252,
@@ -200,7 +201,7 @@ struct TxInfo {
 }
 
 /// Copy of the cairo `ResourceBounds` struct.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 struct ResourceBounds {
     resource: Felt252,
     max_amount: Felt252,
@@ -484,6 +485,7 @@ fn segment_with_data<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
 }
 
 /// A helper struct to continuously write and read from a buffer in the VM memory.
+#[allow(missing_debug_implementations)]
 pub struct MemBuffer<'a> {
     /// The VM to write to.
     /// This is a trait so that we would borrow the actual VM only once.
@@ -2146,6 +2148,7 @@ pub fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt252) {
 }
 
 /// Provides context for the `additional_initialization` callback function of [run_function].
+#[allow(missing_debug_implementations)]
 pub struct RunFunctionContext<'a> {
     pub vm: &'a mut VirtualMachine,
     pub data_len: usize,
@@ -2193,6 +2196,7 @@ pub fn build_cairo_runner(
 }
 
 /// The result of [run_function].
+#[derive(Debug)]
 pub struct RunFunctionResult {
     /// The memory layout after the run.
     pub memory: Vec<Option<Felt252>>,
@@ -2254,6 +2258,7 @@ fn format_for_debug(mut felts: IntoIter<Felt252>) -> String {
 }
 
 /// A formatted string representation of anything formattable (e.g. ByteArray, felt, short-string).
+#[derive(Debug)]
 pub struct FormattedItem {
     /// The formatted string representing the item.
     item: String,

@@ -51,6 +51,7 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     }
 }
 
+#[allow(missing_debug_implementations)]
 pub struct ReturnOptimizerContext<'a> {
     db: &'a dyn LoweringGroup,
     lowered: &'a FlatLowered,
@@ -113,6 +114,7 @@ impl ReturnOptimizerContext<'_> {
 }
 
 /// Information about a fix that should be applied to the lowering.
+#[derive(Debug)]
 pub struct FixInfo {
     /// A location where we `return_vars` can be returned.
     location: StatementLocation,

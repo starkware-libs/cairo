@@ -33,6 +33,7 @@ use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
 use crate::{FlatLowered, MatchArm, MatchExternInfo, MatchInfo, VarUsage, VariableId};
 
+#[allow(missing_debug_implementations)]
 pub struct VariableAllocator<'db> {
     pub db: &'db dyn LoweringGroup,
     /// Arena of allocated lowered variables.
@@ -101,6 +102,7 @@ impl<'db> Index<VariableId> for VariableAllocator<'db> {
 /// Lowering context for the encapsulating semantic function.
 /// Each semantic function may generate multiple lowered functions. This context is common to all
 /// the generated lowered functions of an encapsulating semantic function.
+#[allow(missing_debug_implementations)]
 pub struct EncapsulatingLoweringContext<'db> {
     pub db: &'db dyn LoweringGroup,
     /// Id for the current function being lowered.
@@ -136,6 +138,7 @@ impl<'db> EncapsulatingLoweringContext<'db> {
     }
 }
 
+#[allow(missing_debug_implementations)]
 pub struct LoweringContext<'a, 'db> {
     pub encapsulating_ctx: Option<&'a mut EncapsulatingLoweringContext<'db>>,
     /// Variable allocator.
@@ -211,6 +214,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
 }
 
 /// Request for a lowered variable allocation.
+#[derive(Debug)]
 pub struct VarRequest {
     pub ty: semantic::TypeId,
     pub location: LocationId,

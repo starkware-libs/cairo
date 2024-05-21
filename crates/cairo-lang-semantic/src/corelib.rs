@@ -334,6 +334,7 @@ pub fn never_ty(db: &dyn SemanticGroup) -> TypeId {
         .intern(db)
 }
 
+#[derive(Debug)]
 pub enum ErrorPropagationType {
     Option { some_variant: ConcreteVariant, none_variant: ConcreteVariant },
     Result { ok_variant: ConcreteVariant, err_variant: ConcreteVariant },
@@ -648,6 +649,7 @@ fn get_core_concrete_trait(
 }
 
 /// The context for a core library trait.
+#[derive(Debug)]
 pub enum CoreTraitContext {
     /// The top level core library context.
     TopLevel,

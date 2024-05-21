@@ -39,7 +39,7 @@ use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Type representing an enum.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EnumType {}
 impl NamedType for EnumType {
     type Concrete = EnumConcreteType;
@@ -54,6 +54,7 @@ impl NamedType for EnumType {
     }
 }
 
+#[derive(Debug)]
 pub struct EnumConcreteType {
     pub info: TypeInfo,
     pub variants: Vec<ConcreteTypeId>,
@@ -130,6 +131,7 @@ define_libfunc_hierarchy! {
     }, EnumConcreteLibfunc
 }
 
+#[derive(Debug)]
 pub struct EnumInitConcreteLibfunc {
     pub signature: LibfuncSignature,
     /// The number of variants of the enum.
@@ -144,7 +146,7 @@ impl SignatureBasedConcreteLibfunc for EnumInitConcreteLibfunc {
 }
 
 /// Libfunc for setting a value to an enum.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EnumInitLibfunc {}
 impl EnumInitLibfunc {
     /// Creates the specialization of the enum-init libfunc with the given template arguments.
@@ -207,6 +209,7 @@ impl NamedLibfunc for EnumInitLibfunc {
     }
 }
 
+#[derive(Debug)]
 pub struct EnumFromBoundedIntConcreteLibfunc {
     pub signature: LibfuncSignature,
     /// The number of variants of the enum.
@@ -221,7 +224,7 @@ impl SignatureBasedConcreteLibfunc for EnumFromBoundedIntConcreteLibfunc {
 /// Libfunc for creating an enum from a `BoundedInt` type.
 /// Will only work where there are the same number of empty variants as in the range of the
 /// `BoundedInt` type, and the range starts from 0.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EnumFromBoundedIntLibfunc {}
 impl EnumFromBoundedIntLibfunc {
     /// Creates the specialization of the enum-from-bounded-int libfunc with the given template
@@ -288,7 +291,7 @@ impl NamedLibfunc for EnumFromBoundedIntLibfunc {
 }
 
 /// Libfunc for matching an enum.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EnumMatchLibfunc {}
 impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
     const STR_ID: &'static str = "enum_match";
@@ -327,7 +330,7 @@ impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
 }
 
 /// Libfunc for matching an enum snapshot.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EnumSnapshotMatchLibfunc {}
 impl SignatureOnlyGenericLibfunc for EnumSnapshotMatchLibfunc {
     const STR_ID: &'static str = "enum_snapshot_match";

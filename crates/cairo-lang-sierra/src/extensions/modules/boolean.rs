@@ -20,7 +20,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for converting a bool into a felt252.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoolToFelt252Libfunc {}
 impl NoGenericArgsGenericLibfunc for BoolToFelt252Libfunc {
     const STR_ID: &'static str = "bool_to_felt252";
@@ -63,7 +63,7 @@ fn boolean_libfunc_signature(
 }
 
 /// Libfunc for boolean AND.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoolAndLibfunc {}
 impl NoGenericArgsGenericLibfunc for BoolAndLibfunc {
     const STR_ID: &'static str = "bool_and_impl";
@@ -77,7 +77,7 @@ impl NoGenericArgsGenericLibfunc for BoolAndLibfunc {
 }
 
 /// Libfunc for boolean NOT.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoolNotLibfunc {}
 impl NoGenericArgsGenericLibfunc for BoolNotLibfunc {
     const STR_ID: &'static str = "bool_not_impl";
@@ -91,7 +91,7 @@ impl NoGenericArgsGenericLibfunc for BoolNotLibfunc {
 }
 
 /// Libfunc for boolean XOR.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoolXorLibfunc {}
 impl NoGenericArgsGenericLibfunc for BoolXorLibfunc {
     const STR_ID: &'static str = "bool_xor_impl";
@@ -105,7 +105,7 @@ impl NoGenericArgsGenericLibfunc for BoolXorLibfunc {
 }
 
 /// Libfunc for boolean OR.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoolOrLibfunc {}
 impl NoGenericArgsGenericLibfunc for BoolOrLibfunc {
     const STR_ID: &'static str = "bool_or_impl";

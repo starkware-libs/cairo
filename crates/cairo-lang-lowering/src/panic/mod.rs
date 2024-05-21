@@ -94,6 +94,7 @@ fn handle_block(
     Ok(ctx)
 }
 
+#[derive(Debug)]
 pub struct PanicSignatureInfo {
     /// The types of all the variables returned on OK: Reference variables and the original result.
     ok_ret_tys: Vec<TypeId>,

@@ -15,6 +15,7 @@ use crate::ParserDiagnostic;
 
 /// A salsa database for parsing only.
 #[salsa::database(ParserDatabase, SyntaxDatabase, FilesDatabase)]
+#[allow(missing_debug_implementations)]
 pub struct SimpleParserDatabase {
     storage: salsa::Storage<SimpleParserDatabase>,
 }

@@ -112,6 +112,7 @@ fn should_inline_lowered(
 // TODO(ilya): Add Rewriter trait.
 
 /// A rewriter that inlines functions annotated with #[inline(always)].
+#[allow(missing_debug_implementations)]
 pub struct FunctionInlinerRewriter<'db> {
     /// The LoweringContext were we are building the new blocks.
     variables: VariableAllocator<'db>,
@@ -130,6 +131,7 @@ pub struct FunctionInlinerRewriter<'db> {
     calling_function_id: ConcreteFunctionWithBodyId,
 }
 
+#[derive(Debug)]
 pub struct BlockRewriteQueue {
     /// A Queue of blocks that require processing, and their id.
     block_queue: VecDeque<(FlatBlock, bool)>,
@@ -161,6 +163,7 @@ impl BlockRewriteQueue {
 }
 
 /// Context for mapping ids from `lowered` to a new `FlatLowered` object.
+#[allow(missing_debug_implementations)]
 pub struct Mapper<'a, 'b> {
     variables: &'a mut VariableAllocator<'b>,
     lowered: &'a FlatLowered,

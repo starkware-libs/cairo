@@ -42,6 +42,7 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 mod test;
 
 /// Compile and run tests.
+#[allow(missing_debug_implementations)]
 pub struct TestRunner {
     compiler: TestCompiler,
     config: TestRunConfig,
@@ -74,6 +75,7 @@ impl TestRunner {
     }
 }
 
+#[derive(Debug)]
 pub struct CompiledTestRunner {
     pub compiled: TestCompilation,
     pub config: TestRunConfig,
@@ -181,6 +183,7 @@ pub struct TestRunConfig {
 }
 
 /// The test cases compiler.
+#[allow(missing_debug_implementations)]
 pub struct TestCompiler {
     pub db: RootDatabase,
     pub main_crate_ids: Vec<CrateId>,
@@ -298,6 +301,7 @@ struct TestResult {
 }
 
 /// Summary data of the ran tests.
+#[derive(Debug)]
 pub struct TestsSummary {
     passed: Vec<String>,
     failed: Vec<String>,

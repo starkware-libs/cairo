@@ -54,6 +54,7 @@ pub trait Analyzer<'a> {
 }
 
 /// Main analysis type that allows traversing the flow backwards.
+#[derive(Debug)]
 pub struct BackAnalysis<'a, TAnalyzer: Analyzer<'a>> {
     lowered: &'a FlatLowered,
     pub analyzer: TAnalyzer,

@@ -102,6 +102,7 @@ pub fn reorganize_blocks(lowered: &mut FlatLowered) {
     lowered.blocks = new_blocks.build().unwrap();
 }
 
+#[derive(Debug)]
 pub struct TopSortContext {
     old_block_rev_order: Vec<BlockId>,
     // The number of incoming gotos, indexed by block_id.
@@ -177,6 +178,7 @@ impl Analyzer<'_> for TopSortContext {
     }
 }
 
+#[derive(Debug)]
 pub struct RebuildContext {
     block_remapping: HashMap<BlockId, BlockId>,
     remappings_ctx: remappings::Context,
@@ -199,6 +201,7 @@ impl Rebuilder for RebuildContext {
 ///
 /// Note that it can't be integrated into the RebuildContext above because rebuild_remapping might
 /// call `map_var_id` on variables that are going to be removed.
+#[derive(Debug)]
 pub struct VarReassigner<'a> {
     pub old_vars: &'a Arena<Variable>,
     pub new_vars: Arena<Variable>,

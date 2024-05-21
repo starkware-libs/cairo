@@ -6,7 +6,7 @@ use crate::extensions::SpecializationError;
 use crate::ids::GenericTypeId;
 
 /// Uninitialized value of type T.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct UninitializedTypeWrapped {}
 impl GenericTypeArgGenericType for UninitializedTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("Uninitialized");

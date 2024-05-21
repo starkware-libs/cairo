@@ -127,6 +127,7 @@ impl<'a, T> IntoIterator for &'a Blocks<T> {
         BlocksIter { blocks: self, index: 0 }
     }
 }
+#[derive(Debug)]
 pub struct BlocksIter<'a, T> {
     pub blocks: &'a Blocks<T>,
     pub index: usize,

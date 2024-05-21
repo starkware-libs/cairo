@@ -38,6 +38,7 @@ use crate::utils::{jump_statement, return_statement, simple_statement};
     SierraGenDatabase,
     SyntaxDatabase
 )]
+#[allow(missing_debug_implementations)]
 pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
 }

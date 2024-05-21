@@ -23,7 +23,7 @@ struct Tag {
 }
 
 /// Represents a single test from the test file.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Test {
     pub attributes: OrderedHashMap<String, String>,
     pub line_num: usize,
@@ -244,6 +244,7 @@ macro_rules! test_file_test_with_runner {
 }
 
 /// A result returned by a test runner `run` function.
+#[derive(Debug)]
 pub struct TestRunnerResult {
     /// The outputs of the test, keyed by the output tag.
     pub outputs: OrderedHashMap<String, String>,
@@ -260,6 +261,7 @@ type TestRunnerFunction = fn(
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult;
 /// Simple runner wrapping a test function.
+#[derive(Debug)]
 pub struct SimpleRunner {
     pub func: TestRunnerFunction,
 }

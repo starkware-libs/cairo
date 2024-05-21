@@ -2,7 +2,7 @@ use crate::extensions::NoGenericArgsGenericType;
 use crate::ids::GenericTypeId;
 
 /// Type for Range Check builtin.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct RangeCheckType {}
 impl NoGenericArgsGenericType for RangeCheckType {
     const ID: GenericTypeId = GenericTypeId::new_inline("RangeCheck");
@@ -13,7 +13,7 @@ impl NoGenericArgsGenericType for RangeCheckType {
 }
 
 /// Type for Range Check builtin.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct RangeCheck96Type {}
 impl NoGenericArgsGenericType for RangeCheck96Type {
     const ID: GenericTypeId = GenericTypeId::new_inline("RangeCheck96");

@@ -18,7 +18,7 @@ pub trait IsZeroTraits: Default {
 
 /// Libfunc for checking whether the given value is zero or not, and returning a non-zero wrapped
 /// value in case of success.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct IsZeroLibfunc<TIsZeroTraits: IsZeroTraits> {
     _phantom: PhantomData<TIsZeroTraits>,
 }

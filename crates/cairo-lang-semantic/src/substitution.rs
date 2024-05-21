@@ -35,6 +35,7 @@ use crate::{
     MatchArmSelector, Parameter, Signature, TypeId, TypeLongId, ValueSelectorArm, VarId,
 };
 
+#[derive(Debug)]
 pub enum RewriteResult {
     Modified,
     NoChange,
@@ -390,6 +391,7 @@ macro_rules! add_expr_rewrites {
     };
 }
 
+#[allow(missing_debug_implementations)]
 pub struct SubstitutionRewriter<'a> {
     pub db: &'a dyn SemanticGroup,
     pub substitution: &'a GenericSubstitution,

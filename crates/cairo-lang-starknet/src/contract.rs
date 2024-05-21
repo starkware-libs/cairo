@@ -41,6 +41,7 @@ use crate::plugin::consts::{ABI_ATTR, ABI_ATTR_EMBED_V0_ARG};
 mod test;
 
 /// Represents a declaration of a contract.
+#[derive(Debug)]
 pub struct ContractDeclaration {
     /// The id of the module that defines the contract.
     pub submodule_id: SubmoduleId,

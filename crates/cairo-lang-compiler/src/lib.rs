@@ -28,6 +28,7 @@ mod test;
 
 /// Configuration for the compiler.
 #[derive(Default)]
+#[allow(missing_debug_implementations)]
 pub struct CompilerConfig<'c> {
     pub diagnostics_reporter: DiagnosticsReporter<'c>,
 

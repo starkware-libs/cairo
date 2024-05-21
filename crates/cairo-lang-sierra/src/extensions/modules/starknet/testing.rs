@@ -12,7 +12,7 @@ use crate::extensions::{
 use crate::program::GenericArg;
 
 /// Libfunc for creating a general cheatcode.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CheatcodeLibfunc {}
 impl NamedLibfunc for CheatcodeLibfunc {
     type Concrete = CheatcodeConcreteLibfunc;
@@ -67,6 +67,7 @@ impl NamedLibfunc for CheatcodeLibfunc {
     }
 }
 
+#[derive(Debug)]
 pub struct CheatcodeConcreteLibfunc {
     pub selector: BigInt,
     pub signature: LibfuncSignature,

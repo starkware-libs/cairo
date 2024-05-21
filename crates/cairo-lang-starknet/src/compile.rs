@@ -171,6 +171,7 @@ fn compile_contract_with_prepared_and_checked_db(
     Ok(contract_class)
 }
 
+#[derive(Debug)]
 pub struct SemanticEntryPoints {
     pub external: Vec<Aliased<ConcreteFunctionWithBodyId>>,
     pub l1_handler: Vec<Aliased<ConcreteFunctionWithBodyId>>,

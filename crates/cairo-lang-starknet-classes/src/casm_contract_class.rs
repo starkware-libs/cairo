@@ -209,6 +209,7 @@ fn bytecode_hash_node(
 }
 
 /// Context for resolving types.
+#[derive(Debug)]
 pub struct TypeResolver<'a> {
     type_decl: &'a [TypeDeclaration],
 }

@@ -22,7 +22,7 @@ pub trait DemandReporter<Var, Aux = ()> {
 
 /// Demanded variables from a certain point in the flow until the end of the function.
 /// Needs to be updates in backwards order.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Demand<Var: std::hash::Hash + Eq + Copy, UsePosition, Aux: Clone + Default = ()> {
     pub vars: OrderedHashMap<Var, UsePosition>,
     pub aux: Aux,

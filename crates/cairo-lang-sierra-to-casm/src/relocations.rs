@@ -156,7 +156,7 @@ pub fn relocate_instructions(
 }
 
 /// Represents a list of instructions with their relocations.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct InstructionsWithRelocations {
     pub instructions: Vec<Instruction>,
     pub relocations: Vec<RelocationEntry>,

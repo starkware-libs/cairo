@@ -75,6 +75,7 @@ type FunctionMap = HashMap<FunctionId, Function>;
 type ConcreteTypeIdMap<'a> = HashMap<(GenericTypeId, &'a [GenericArg]), ConcreteTypeId>;
 
 /// Registry for the data of the compiler, for all program specific data.
+#[derive(Debug, Default)]
 pub struct ProgramRegistry<TType: GenericType, TLibfunc: GenericLibfunc> {
     /// Mapping ids to the corresponding user function declaration from the program.
     functions: FunctionMap,
@@ -340,6 +341,7 @@ fn get_concrete_types_maps<TType: GenericType>(
 }
 
 /// Context required for specialization process.
+#[derive(Debug)]
 pub struct SpecializationContextForRegistry<'a, TType: GenericType> {
     pub functions: &'a FunctionMap,
     pub concrete_type_ids: &'a ConcreteTypeIdMap<'a>,

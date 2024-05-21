@@ -17,7 +17,7 @@ use crate::objects::{
 };
 use crate::{StatementDesnap, StatementEnumConstruct, StatementSnapshot};
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct StatementsBuilder {
     pub statements: Vec<Statement>,
 }
@@ -29,6 +29,7 @@ impl StatementsBuilder {
 }
 
 /// Generator for [StatementConst].
+#[derive(Debug)]
 pub struct Const {
     pub value: ConstValue,
     pub location: LocationId,
@@ -48,6 +49,7 @@ impl Const {
 
 /// Generator for [StatementCall].
 /// Note that builder.finalize_statement() must be called manually after ref bindings.
+#[derive(Debug)]
 pub struct Call {
     /// Called function.
     pub function: crate::ids::FunctionId,
@@ -97,6 +99,7 @@ impl Call {
     }
 }
 /// Result of adding a Call statement.
+#[derive(Debug)]
 pub struct CallResult {
     /// Output variables for function's return value.
     pub returns: Vec<VarUsage>,
@@ -105,6 +108,7 @@ pub struct CallResult {
 }
 
 /// Generator for [StatementEnumConstruct].
+#[derive(Debug)]
 pub struct EnumConstruct {
     pub input: VarUsage,
     pub variant: ConcreteVariant,
@@ -131,6 +135,7 @@ impl EnumConstruct {
 }
 
 /// Generator for [StatementSnapshot].
+#[derive(Debug)]
 pub struct Snapshot {
     pub input: VarUsage,
     pub location: LocationId,
@@ -159,6 +164,7 @@ impl Snapshot {
 }
 
 /// Generator for [StatementDesnap].
+#[derive(Debug)]
 pub struct Desnap {
     pub input: VarUsage,
     pub location: LocationId,
@@ -183,6 +189,7 @@ impl Desnap {
 ///
 /// Note that we return `Vec<VariableId>` rather then `Vec<VarUsage>` as the the caller typically
 /// has a more accurate location then the one we have in the var requests.
+#[derive(Debug)]
 pub struct StructDestructure {
     /// Variable that holds the struct value.
     pub input: VariableId,
@@ -206,6 +213,7 @@ impl StructDestructure {
 }
 
 /// Generator for [StatementStructDestructure] as member access.
+#[derive(Debug)]
 pub struct StructMemberAccess {
     pub input: VarUsage,
     pub member_tys: Vec<semantic::TypeId>,
@@ -235,6 +243,7 @@ impl StructMemberAccess {
 }
 
 /// Generator for [StatementStructConstruct].
+#[derive(Debug)]
 pub struct StructConstruct {
     pub inputs: Vec<VarUsage>,
     pub ty: semantic::TypeId,

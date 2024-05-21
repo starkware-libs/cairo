@@ -13,7 +13,7 @@ use crate::extensions::{
 use crate::ids::GenericTypeId;
 
 // Type representing the EcOp builtin.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcOpType {}
 impl NoGenericArgsGenericType for EcOpType {
     const ID: GenericTypeId = GenericTypeId::new_inline("EcOp");
@@ -24,7 +24,7 @@ impl NoGenericArgsGenericType for EcOpType {
 }
 
 /// An EC point is a pair (x,y) on the curve.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcPointType {}
 impl NoGenericArgsGenericType for EcPointType {
     const ID: GenericTypeId = GenericTypeId::new_inline("EcPoint");
@@ -35,7 +35,7 @@ impl NoGenericArgsGenericType for EcPointType {
 }
 
 /// An EC state is an EC point and a pointer to a random EC point shift.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcStateType {}
 impl NoGenericArgsGenericType for EcStateType {
     const ID: GenericTypeId = GenericTypeId::new_inline("EcState");
@@ -61,7 +61,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for returning the zero point (the point at infinity).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcZeroLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcZeroLibfunc {
     const STR_ID: &'static str = "ec_point_zero";
@@ -85,7 +85,7 @@ impl NoGenericArgsGenericLibfunc for EcZeroLibfunc {
 
 /// Libfunc for creating an EC point from its coordinates `x` and `y`.
 /// If `(x, y)` is not on the curve, nothing is returned.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcCreatePointLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
     const STR_ID: &'static str = "ec_point_try_new_nz";
@@ -124,7 +124,7 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
 /// If there exists `y` such that `(x, y)` is on the curve, either `(x, y)` or `(x, -y)` (both
 /// constitute valid points on the curve) is returned.
 /// Otherwise, nothing is returned.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcPointFromXLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
     const STR_ID: &'static str = "ec_point_from_x_nz";
@@ -168,7 +168,7 @@ impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
 }
 
 /// Libfunc for unwrapping the x,y values of an EC point.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcUnwrapPointLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
     const STR_ID: &'static str = "ec_point_unwrap";
@@ -195,7 +195,7 @@ impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
 }
 
 /// Libfunc for unwrapping the x,y values of an EC point.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcNegLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcNegLibfunc {
     const STR_ID: &'static str = "ec_neg";
@@ -218,7 +218,7 @@ impl NoGenericArgsGenericLibfunc for EcNegLibfunc {
 }
 
 /// Libfunc for checking whether the given `EcPoint` is the zero point.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcIsZeroLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcIsZeroLibfunc {
     const STR_ID: &'static str = "ec_point_is_zero";
@@ -253,7 +253,7 @@ impl NoGenericArgsGenericLibfunc for EcIsZeroLibfunc {
 }
 
 /// Libfunc for initializing an EC state from an EC point.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcStateInitLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcStateInitLibfunc {
     const STR_ID: &'static str = "ec_state_init";
@@ -274,7 +274,7 @@ impl NoGenericArgsGenericLibfunc for EcStateInitLibfunc {
 }
 
 /// Libfunc for initializing an EC state from an EC point.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcStateAddLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcStateAddLibfunc {
     const STR_ID: &'static str = "ec_state_add";
@@ -299,7 +299,7 @@ impl NoGenericArgsGenericLibfunc for EcStateAddLibfunc {
 }
 
 /// Libfunc for initializing an EC state from an EC point.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcStateFinalizeLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
     const STR_ID: &'static str = "ec_state_try_finalize_nz";
@@ -337,7 +337,7 @@ impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
 
 /// Libfunc for applying the EC op builtin: given an EC state `S`, a scalar `M` and an EC point `Q`,
 /// computes a new EC state `S + M * Q`.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EcStateAddMulLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcStateAddMulLibfunc {
     const STR_ID: &'static str = "ec_state_add_mul";

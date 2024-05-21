@@ -4,7 +4,7 @@ use crate::extensions::lib_func::SignatureSpecializationContext;
 use crate::extensions::SpecializationError;
 
 /// Libfunc for an emit event system call.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EmitEventLibfunc {}
 impl SyscallGenericLibfunc for EmitEventLibfunc {
     const STR_ID: &'static str = "emit_event_syscall";

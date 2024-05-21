@@ -21,7 +21,7 @@ define_libfunc_hierarchy! {
 }
 
 // IsZero.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Uint256IsZeroLibfunc;
 impl NoGenericArgsGenericLibfunc for Uint256IsZeroLibfunc {
     const STR_ID: &'static str = "u256_is_zero";
@@ -54,7 +54,7 @@ impl NoGenericArgsGenericLibfunc for Uint256IsZeroLibfunc {
 }
 
 // Divmod.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Uint256DivmodLibfunc;
 impl NoGenericArgsGenericLibfunc for Uint256DivmodLibfunc {
     const STR_ID: &'static str = "u256_safe_divmod";
@@ -88,7 +88,7 @@ impl NoGenericArgsGenericLibfunc for Uint256DivmodLibfunc {
 }
 
 // Square root.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Uint256SquareRootLibfunc;
 impl NoGenericArgsGenericLibfunc for Uint256SquareRootLibfunc {
     const STR_ID: &'static str = "u256_sqrt";
@@ -119,7 +119,7 @@ impl NoGenericArgsGenericLibfunc for Uint256SquareRootLibfunc {
 ///
 /// Libfunc for calculating the inverse of a number modulo N.
 /// If `N == 1`, the value is not considered invertible.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Uint256InvModNLibfunc;
 impl NoGenericArgsGenericLibfunc for Uint256InvModNLibfunc {
     const STR_ID: &'static str = "u256_guarantee_inv_mod_n";

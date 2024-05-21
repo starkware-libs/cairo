@@ -240,7 +240,7 @@ macro_rules! is_inc_ap {
 }
 
 #[allow(dead_code)]
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CasmContext {
     pub current_code_offset: usize,
     pub current_hints: Vec<Hint>,

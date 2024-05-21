@@ -8,7 +8,7 @@ use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 
 use crate::replace_ids::SierraIdReplacer;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CanonicalReplacer {
     type_ids: HashMap<ConcreteTypeId, u64>,
     function_ids: HashMap<FunctionId, u64>,

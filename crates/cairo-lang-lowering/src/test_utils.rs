@@ -22,6 +22,7 @@ use crate::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
     SyntaxDatabase,
     FilesDatabase
 )]
+#[allow(missing_debug_implementations)]
 pub struct LoweringDatabaseForTesting {
     storage: salsa::Storage<LoweringDatabaseForTesting>,
 }

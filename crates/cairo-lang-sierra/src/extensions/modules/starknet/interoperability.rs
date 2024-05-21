@@ -14,7 +14,7 @@ use crate::extensions::{
 use crate::ids::GenericTypeId;
 
 /// Type for Starknet contract address, a value in the range [0, 2 ** 251).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ContractAddressType {}
 impl NoGenericArgsGenericType for ContractAddressType {
     const ID: GenericTypeId = GenericTypeId::new_inline("ContractAddress");
@@ -25,7 +25,7 @@ impl NoGenericArgsGenericType for ContractAddressType {
 }
 
 /// Libfunc for creating a constant storage address.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ContractAddressConstLibfuncWrapped {}
 impl ConstGenLibfunc for ContractAddressConstLibfuncWrapped {
     const STR_ID: &'static str = "contract_address_const";
@@ -39,7 +39,7 @@ impl ConstGenLibfunc for ContractAddressConstLibfuncWrapped {
 pub type ContractAddressConstLibfunc = WrapConstGenLibfunc<ContractAddressConstLibfuncWrapped>;
 
 /// Libfunc for attempting to convert a felt252 into a contract address.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ContractAddressTryFromFelt252Libfunc;
 impl TryFromFelt252 for ContractAddressTryFromFelt252Libfunc {
     const STR_ID: &'static str = "contract_address_try_from_felt252";
@@ -47,7 +47,7 @@ impl TryFromFelt252 for ContractAddressTryFromFelt252Libfunc {
 }
 
 /// Libfunc for converting a ContractAddress into a felt252.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ContractAddressToFelt252Libfunc {}
 impl NoGenericArgsGenericLibfunc for ContractAddressToFelt252Libfunc {
     const STR_ID: &'static str = "contract_address_to_felt252";
@@ -64,7 +64,7 @@ impl NoGenericArgsGenericLibfunc for ContractAddressToFelt252Libfunc {
 }
 
 /// Type for Starknet class hash, a value in the range [0, 2 ** 251).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ClassHashType {}
 impl NoGenericArgsGenericType for ClassHashType {
     const ID: GenericTypeId = GenericTypeId::new_inline("ClassHash");
@@ -75,7 +75,7 @@ impl NoGenericArgsGenericType for ClassHashType {
 }
 
 /// Libfunc for creating a constant storage address.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ClassHashConstLibfuncWrapped {}
 impl ConstGenLibfunc for ClassHashConstLibfuncWrapped {
     const STR_ID: &'static str = "class_hash_const";
@@ -89,7 +89,7 @@ impl ConstGenLibfunc for ClassHashConstLibfuncWrapped {
 pub type ClassHashConstLibfunc = WrapConstGenLibfunc<ClassHashConstLibfuncWrapped>;
 
 /// Libfunc for attempting to convert a felt252 into a class hash.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ClassHashTryFromFelt252Trait;
 impl TryFromFelt252 for ClassHashTryFromFelt252Trait {
     const STR_ID: &'static str = "class_hash_try_from_felt252";
@@ -97,7 +97,7 @@ impl TryFromFelt252 for ClassHashTryFromFelt252Trait {
 }
 
 /// Libfunc for converting a class hash into a felt252.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ClassHashToFelt252Libfunc {}
 impl NoGenericArgsGenericLibfunc for ClassHashToFelt252Libfunc {
     const STR_ID: &'static str = "class_hash_to_felt252";
@@ -114,7 +114,7 @@ impl NoGenericArgsGenericLibfunc for ClassHashToFelt252Libfunc {
 }
 
 /// Libfunc for a storage call contract system call.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CallContractLibfunc {}
 impl SyscallGenericLibfunc for CallContractLibfunc {
     const STR_ID: &'static str = "call_contract_syscall";
@@ -140,7 +140,7 @@ impl SyscallGenericLibfunc for CallContractLibfunc {
 }
 
 /// Libfunc for a deploying a declared class system call.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct DeployLibfunc {}
 impl SyscallGenericLibfunc for DeployLibfunc {
     const STR_ID: &'static str = "deploy_syscall";
@@ -171,7 +171,7 @@ impl SyscallGenericLibfunc for DeployLibfunc {
 }
 
 /// Libfunc for a library call system call.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LibraryCallLibfunc {}
 impl SyscallGenericLibfunc for LibraryCallLibfunc {
     const STR_ID: &'static str = "library_call_syscall";
@@ -197,7 +197,7 @@ impl SyscallGenericLibfunc for LibraryCallLibfunc {
 }
 
 /// Libfunc for sending message to l1 system call.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SendMessageToL1Libfunc {}
 impl SyscallGenericLibfunc for SendMessageToL1Libfunc {
     const STR_ID: &'static str = "send_message_to_l1_syscall";

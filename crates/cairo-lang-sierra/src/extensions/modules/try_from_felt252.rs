@@ -19,7 +19,7 @@ pub trait TryFromFelt252: Default {
     const GENERIC_TYPE_ID: GenericTypeId;
 }
 /// Libfunc for attempting to convert a felt252 into a uint.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct TryFromFelt252Libfunc<TTryFromFelt252: TryFromFelt252> {
     _phantom: PhantomData<TTryFromFelt252>,
 }

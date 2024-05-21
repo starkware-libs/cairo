@@ -23,7 +23,7 @@ use crate::program::GenericArg;
 /// in `Option<Box<T>>`) - the value is 0 if and only if there is no object.
 ///
 /// This type uses the fact that Casm pointers can never be zero.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct NullableTypeWrapped {}
 impl GenericTypeArgGenericType for NullableTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("Nullable");
@@ -42,6 +42,7 @@ impl GenericTypeArgGenericType for NullableTypeWrapped {
 }
 pub type NullableType = GenericTypeArgGenericTypeWrapper<NullableTypeWrapped>;
 
+#[derive(Debug)]
 pub struct NullableConcreteType {
     pub info: TypeInfo,
     pub ty: ConcreteTypeId,
@@ -70,7 +71,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for creating a null object of type `Nullable<T>`.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct NullLibfunc {}
 impl SignatureOnlyGenericLibfunc for NullLibfunc {
     const STR_ID: &'static str = "null";
@@ -93,7 +94,7 @@ impl SignatureOnlyGenericLibfunc for NullLibfunc {
 }
 
 /// Libfunc for converting `Box<T>` to `Nullable<T>`.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct NullableFromBoxLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for NullableFromBoxLibfuncWrapped {
     const STR_ID: &'static str = "nullable_from_box";
@@ -109,7 +110,7 @@ impl SignatureAndTypeGenericLibfunc for NullableFromBoxLibfuncWrapped {
 pub type NullableFromBoxLibfunc = WrapSignatureAndTypeGenericLibfunc<NullableFromBoxLibfuncWrapped>;
 
 /// Libfunc for converting `Nullable<T>` to either `Box<T>` or nothing (in the case of `null`).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct MatchNullableLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for MatchNullableLibfuncWrapped {
     const STR_ID: &'static str = "match_nullable";
@@ -143,7 +144,7 @@ impl SignatureAndTypeGenericLibfunc for MatchNullableLibfuncWrapped {
 pub type MatchNullableLibfunc = WrapSignatureAndTypeGenericLibfunc<MatchNullableLibfuncWrapped>;
 
 /// Libfunc for converting `@Nullable<T>` into `Nullable<@T>`.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct NullableForwardSnapshotLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for NullableForwardSnapshotLibfuncWrapped {
     const STR_ID: &'static str = "nullable_forward_snapshot";

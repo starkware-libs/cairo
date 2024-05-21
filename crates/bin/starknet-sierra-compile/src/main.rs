@@ -33,7 +33,7 @@ struct Args {
 
 /// Same as `ContractClass` - but ignores `abi` in deserialization.
 /// Enables loading old contract classes.
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct ContractClassIgnoreAbi {
     pub sierra_program: Vec<BigUintAsHex>,
     pub sierra_program_debug_info: Option<cairo_lang_sierra::debug_info::DebugInfo>,

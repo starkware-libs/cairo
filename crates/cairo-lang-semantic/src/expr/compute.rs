@@ -115,6 +115,7 @@ enum LoopContext {
 }
 
 /// Context for computing the semantic model of expression trees.
+#[allow(missing_debug_implementations)]
 pub struct ComputationContext<'ctx> {
     pub db: &'ctx dyn SemanticGroup,
     pub diagnostics: &'ctx mut SemanticDiagnostics,

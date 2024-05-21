@@ -674,6 +674,7 @@ impl PendingLineState {
 }
 
 /// Represents the break line points before and after a syntax node.
+#[derive(Debug)]
 pub enum BreakLinePointsPositions {
     Leading(BreakLinePointProperties),
     Trailing(BreakLinePointProperties),
@@ -737,6 +738,7 @@ pub trait SyntaxNodeFormat {
     fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool;
 }
 
+#[allow(missing_debug_implementations)]
 pub struct FormatterImpl<'a> {
     db: &'a dyn SyntaxGroup,
     config: FormatterConfig,
