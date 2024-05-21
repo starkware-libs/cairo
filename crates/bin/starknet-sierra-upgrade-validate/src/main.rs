@@ -11,51 +11,62 @@ use cairo_lang_starknet_classes::casm_contract_class::{
 use cairo_lang_starknet_classes::compiler_version::VersionId;
 use cairo_lang_starknet_classes::contract_class::{ContractClass, ContractEntryPoints};
 use cairo_lang_utils::bigint::BigUintAsHex;
-use clap::Parser;
+use clap::{arg, value_parser, ArgGroup, Command};
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
+use indoc::formatdoc;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 const NUM_OF_PROCESSORS: usize = 32;
-/// Runs validation on existing contract classes to make sure they are still valid and compilable.
-/// Gets one of two different inputs:
-/// 1. If fullnode_url is provided, it reads the contract classes from the fullnode.
-/// 2. If fullnode_url is not provided, it reads the contract classes from the input files.
-/// Outputs one of two different outputs:
-/// 1. If class_info_output_file is provided, it writes the classes to the file.
-/// 2. If class_info_output_file is not provided, it returns the report of the runs over the
-///    processes of the classes.
-// TODO(TomerC): Use ArgGroup to enforce these using Clap.
-#[derive(Parser, Debug)]
-#[clap(version, verbatim_doc_comment)]
 struct Args {
     /// The input files with declared classes info.
     input_files: Vec<String>,
     /// The allowed libfuncs list to use (default: most recent audited list).
-    #[arg(long)]
     allowed_libfuncs_list_name: Option<String>,
     /// A file of the allowed libfuncs list to use.
-    #[arg(long)]
     allowed_libfuncs_list_file: Option<String>,
     /// Sierra version to override to prior to compilation.
-    #[arg(long)]
     override_version: Option<String>,
     /// The max bytecode size.
-    #[arg(long, default_value_t = 180000)]
     max_bytecode_size: usize,
     /// The url of the rpc server, if provided - Sierra classes would be read from it, and no input
     /// files should be provided.
-    #[arg(long)]
     fullnode_url: Option<String>,
     /// The start block of the declared Sierra classes to test.
-    #[arg(long)]
     start_block: Option<u64>,
     /// The end block of the declared Sierra classes to test.
-    #[arg(long)]
     end_block: Option<u64>,
     /// The output file to write the Sierra classes into.
-    #[arg(long)]
     class_info_output_file: Option<String>,
+}
+
+/// converts ArgMatches into Args struct.
+impl From<clap::ArgMatches> for Args {
+    fn from(matches: clap::ArgMatches) -> Self {
+        Args {
+            input_files: matches
+                .get_one::<String>("input-files")
+                .unwrap_or(&"".to_string())
+                .split(' ')
+                .map(|s| s.to_string())
+                .filter(|s| !s.is_empty())
+                .collect(),
+            allowed_libfuncs_list_name: matches
+                .get_one::<String>("allowed-libfuncs-list-name")
+                .map(|s| s.to_string()),
+            allowed_libfuncs_list_file: matches
+                .get_one::<String>("allowed-libfuncs-list-file")
+                .map(|s| s.to_string()),
+            override_version: matches.get_one::<String>("override-version").map(|s| s.to_string()),
+            max_bytecode_size: *matches.get_one::<usize>("max-bytecode-size").unwrap(),
+            fullnode_url: matches.get_one::<String>("fullnode-url").map(|s| s.to_string()),
+            start_block: matches.get_one::<u64>("start-block").copied(),
+            end_block: matches.get_one::<u64>("end-block").copied(),
+            class_info_output_file: matches
+                .get_one::<String>("class-info-output-file")
+                .map(|s| s.to_string()),
+        }
+    }
 }
 
 /// Parses version id from string.
@@ -115,7 +126,30 @@ struct CompilationMismatch {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let args: Args = Args::parse();
+    let res = Command::new("cmd").about(formatdoc!(
+        "
+        Runs validation on existing contract classes to make sure they are still valid and compilable.
+
+        Gets one of two different inputs:
+        1. If fullnode_url is provided, it reads the contract classes from the fullnode.
+        2. If fullnode_url is not provided, it reads the contract classes from the input files.
+        
+        Outputs one of two different outputs:
+        1. If class_info_output_file is provided, it writes the classes to the file.
+        2. If class_info_output_file is not provided, it returns the report of the runs over the processes of the classes."))
+        .arg(arg!(["input-files"] "The input files with declared classes info"))
+        .arg(arg!(--"allowed-libfuncs-list-name" <String> "The allowed libfuncs list to use (default: most recent audited list)."))
+        .arg(arg!(--"allowed-libfuncs-list-file" <File> "A file of the allowed libfuncs list to use."))
+        .arg(arg!(--"override-version" <String> "Sierra version to override to prior to compilation."))
+        .arg(arg!(--"max-bytecode-size" <usize> "The max bytecode size.").default_value("180000").value_parser(value_parser!(usize)))
+        .arg(arg!(--"fullnode-url" <URL> "The url of the rpc server, if provided - Sierra classes would be read from it, and no input files should be provided."))
+        .arg(arg!(--"start-block" <u64> "The start block of the declared Sierra classes to test.").value_parser(value_parser!(u64)))
+        .arg(arg!(--"end-block" <u64> "The end block of the declared Sierra classes to test.").value_parser(value_parser!(u64)))
+        .arg(arg!(--"class-info-output-file" <String> "The output file to write the Sierra classes into."))
+        .group(ArgGroup::new("fullnode").args(["fullnode-url"]).requires_all(["start-block", "end-block"]))
+        .group(ArgGroup::new("input").args(["fullnode-url", "input-files"]).required(true))
+        .group(ArgGroup::new("libfuncs").args(["allowed-libfuncs-list-name", "allowed-libfuncs-list-file"]));
+    let args: Args = res.get_matches().into();
     let list_selector =
         ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file)
             .expect("Both allowed libfunc list name and file were supplied.");
@@ -145,7 +179,6 @@ async fn main() -> anyhow::Result<()> {
     // If fullnode_url is provided, we retrieve the contract class info from the fullnode.
     // Otherwise, we read the contract class info from the input files.
     if let Some(fullnode_url) = args.fullnode_url {
-        assert!(args.input_files.is_empty(), "two different sources of classes provided.");
         let (class_hashes_tx, class_hashes_rx) = async_channel::bounded(128);
         spawn_block_class_hashes_retrievers(
             args.start_block.with_context(|| "no start block provided")?,
