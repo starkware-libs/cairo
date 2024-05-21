@@ -1,8 +1,11 @@
+use cairo_lang_sierra::program::Program;
+use cairo_lang_test_plugin::test_config::TestExpectation;
+use cairo_lang_test_plugin::TestConfig;
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use itertools::Itertools;
 use starknet_types_core::felt::Felt as Felt252;
 
-use crate::{format_for_panic, TestCompilation, TestCompiler};
+use crate::{filter_test_cases, format_for_panic, TestCompilation, TestCompiler};
 
 #[test]
 fn test_compiled_serialization() {
@@ -211,4 +214,87 @@ fn test_format_for_panic() {
         format_for_panic(felts.into_iter()),
         "Panicked with (0x9999, \"hello\", 0x776f726c64 ('world'), 0x8888)."
     );
+}
+
+fn test_compilation() -> TestCompilation {
+    let named_test_gen = |name: &str, ignored: bool| {
+        (
+            String::from(name),
+            TestConfig { available_gas: None, expectation: TestExpectation::Success, ignored },
+        )
+    };
+    TestCompilation {
+        named_tests: vec![
+            named_test_gen("test1", false),
+            named_test_gen("test2", true),
+            named_test_gen("test3", false),
+        ],
+        sierra_program: Program {
+            type_declarations: vec![],
+            libfunc_declarations: vec![],
+            statements: vec![],
+            funcs: vec![],
+        },
+        statements_functions: Default::default(),
+        contracts_info: Default::default(),
+        function_set_costs: Default::default(),
+    }
+}
+
+#[test]
+fn test_filter_test_cases() {
+    let named_tests = test_compilation().named_tests.clone();
+
+    // Nothing should be filtered out.
+    let (filtered, filtered_out) = filter_test_cases(test_compilation(), false, false, "test");
+
+    let expected = named_tests.clone();
+
+    assert_eq!(filtered_out, 0);
+    assert_eq!(expected, filtered.named_tests);
+
+    // All tests should be included, even the ignored ones.
+    let (filtered, filtered_out) = filter_test_cases(test_compilation(), true, false, "test");
+
+    let expected = named_tests
+        .clone()
+        .into_iter()
+        .map(|mut x| {
+            x.1.ignored = false;
+            x
+        })
+        .collect_vec();
+
+    assert_eq!(filtered_out, 0);
+    assert_eq!(expected, filtered.named_tests);
+
+    // Only the ignored tests should be included.
+    let (filtered, filtered_out) = filter_test_cases(test_compilation(), false, true, "test");
+
+    let expected = named_tests
+        .clone()
+        .into_iter()
+        .filter(|x| x.1.ignored)
+        .map(|mut x| {
+            x.1.ignored = false;
+            x
+        })
+        .collect_vec();
+
+    assert_eq!(filtered_out, 2);
+    assert_eq!(expected, filtered.named_tests);
+
+    // All tests should be included, even the ignored ones.
+    let (filtered, filtered_out) = filter_test_cases(test_compilation(), true, true, "test");
+
+    let expected = named_tests
+        .into_iter()
+        .map(|mut x| {
+            x.1.ignored = false;
+            x
+        })
+        .collect_vec();
+
+    assert_eq!(filtered_out, 0);
+    assert_eq!(expected, filtered.named_tests);
 }
