@@ -399,7 +399,7 @@ fn compute_expr_unary_semantic(
                 let desnapped_expr_type = ctx.reduce_ty(desnapped_expr.ty());
 
                 let desnapped_ty = match desnapped_expr_type.lookup_intern(ctx.db) {
-                    TypeLongId::Var(_) => {
+                    TypeLongId::Var(_) | TypeLongId::ImplType(_) => {
                         let inference = &mut ctx.resolver.inference();
                         // The type of the full desnap expr. E.g. the type of `*x` for `*x`.
                         let desnap_expr_type = inference
