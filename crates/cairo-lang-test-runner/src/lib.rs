@@ -261,18 +261,19 @@ pub fn filter_test_cases(
     filter: &str,
 ) -> (TestCompilation, usize) {
     let total_tests_count = compiled.named_tests.len();
-    let named_tests = compiled.named_tests
+    let named_tests = compiled
+        .named_tests
         .into_iter()
+        // Filtering unignored tests in `ignored` mode. Keep all tests in `include-ignored` mode.
+        .filter(|(_, test)| !ignored || test.ignored || include_ignored)
         .map(|(func, mut test)| {
-            // Un-ignoring all the tests in `include-ignored` mode.
-            if include_ignored {
+            // Un-ignoring all the tests in `include-ignored` and `ignored` mode.
+            if include_ignored || ignored {
                 test.ignored = false;
             }
             (func, test)
         })
         .filter(|(name, _)| name.contains(filter))
-        // Filtering unignored tests in `ignored` mode
-        .filter(|(_, test)| !ignored || test.ignored)
         .collect_vec();
     let filtered_out = total_tests_count - named_tests.len();
     let tests = TestCompilation { named_tests, ..compiled };
@@ -515,4 +516,154 @@ fn update_summary(
         println!("Profiling info:\n{processed_profiling_info}");
     }
     res_type.push(name);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_compilation() -> TestCompilation {
+        TestCompilation {
+            named_tests: vec![
+                (
+                    String::from("test1"),
+                    TestConfig {
+                        available_gas: None,
+                        expectation: TestExpectation::Success,
+                        ignored: false,
+                    },
+                ),
+                (
+                    String::from("test2"),
+                    TestConfig {
+                        available_gas: None,
+                        expectation: TestExpectation::Success,
+                        ignored: true,
+                    },
+                ),
+                (
+                    String::from("test3"),
+                    TestConfig {
+                        available_gas: None,
+                        expectation: TestExpectation::Success,
+                        ignored: false,
+                    },
+                ),
+            ],
+            sierra_program: Program {
+                type_declarations: vec![],
+                libfunc_declarations: vec![],
+                statements: vec![],
+                funcs: vec![],
+            },
+            statements_functions: Default::default(),
+            contracts_info: Default::default(),
+            function_set_costs: Default::default(),
+        }
+    }
+
+    fn assert_named_test(lhs: &(String, TestConfig), rhs: &(String, TestConfig)) -> bool {
+        lhs.0 == rhs.0
+            && lhs.1.available_gas == rhs.1.available_gas
+            && lhs.1.expectation == rhs.1.expectation
+            && lhs.1.ignored == rhs.1.ignored
+    }
+
+    #[test]
+    fn test_filter_test_cases() {
+        let compiled = test_compilation();
+
+        let (filtered, filtered_out) = filter_test_cases(compiled.clone(), false, false, "test");
+
+        // Nothing should be filtered out.
+        let expected = compiled.named_tests.clone();
+
+        assert_eq!(filtered_out, 0);
+        assert!(
+            filtered
+                .named_tests
+                .iter()
+                .enumerate()
+                .all(|(i, x)| assert_named_test(x, &expected[i]))
+        );
+    }
+
+    #[test]
+    fn test_filter_test_cases_include_ignored() {
+        let compiled = test_compilation();
+
+        let (filtered, filtered_out) = filter_test_cases(compiled.clone(), true, false, "test");
+
+        // All tests should be included, even the ignored ones.
+        let expected = compiled
+            .named_tests
+            .into_iter()
+            .map(|mut x| {
+                x.1.ignored = false;
+                x
+            })
+            .collect_vec();
+
+        assert_eq!(filtered_out, 0);
+        assert!(
+            filtered
+                .named_tests
+                .iter()
+                .enumerate()
+                .all(|(i, x)| assert_named_test(x, &expected[i]))
+        );
+    }
+
+    #[test]
+    fn test_filter_test_cases_ignored() {
+        let compiled = test_compilation();
+
+        let (filtered, filtered_out) = filter_test_cases(compiled.clone(), false, true, "test");
+
+        // Only the ignored tests should be included.
+        let expected = compiled
+            .named_tests
+            .into_iter()
+            .filter(|x| x.1.ignored)
+            .map(|mut x| {
+                x.1.ignored = false;
+                x
+            })
+            .collect_vec();
+
+        assert_eq!(filtered_out, 2);
+        assert!(
+            filtered
+                .named_tests
+                .iter()
+                .enumerate()
+                .all(|(i, x)| assert_named_test(x, &expected[i]))
+        );
+    }
+
+    #[test]
+    fn test_filter_test_cases_include_ignored_and_ignored() {
+        let compiled = test_compilation();
+
+        let (filtered, filtered_out) = filter_test_cases(compiled.clone(), true, true, "test");
+
+        // All tests should be included, even the ignored ones.
+        let expected = compiled
+            .named_tests
+            .into_iter()
+            .map(|mut x| {
+                x.1.ignored = false;
+                x
+            })
+            .collect_vec();
+
+        assert_eq!(filtered_out, 0);
+        assert!(
+            filtered
+                .named_tests
+                .iter()
+                .enumerate()
+                .all(|(i, x)| assert_named_test(x, &expected[i]))
+        );
+    }
 }
