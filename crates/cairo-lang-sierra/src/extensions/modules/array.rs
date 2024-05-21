@@ -1,19 +1,23 @@
+use num_traits::ToPrimitive;
+
 use super::boxing::box_ty;
 use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
 use super::structure::StructConcreteType;
+use super::utils::fixed_size_array_ty;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureAndTypeGenericLibfunc, SignatureOnlyGenericLibfunc,
-    SignatureSpecializationContext, WrapSignatureAndTypeGenericLibfunc,
+    SignatureSpecializationContext, SpecializationContext, WrapSignatureAndTypeGenericLibfunc,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
 use crate::extensions::{
-    args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
+    args_as_single_type, args_as_type_and_value, NamedLibfunc, NamedType, OutputVarReferenceInfo,
+    SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
@@ -60,6 +64,8 @@ define_libfunc_hierarchy! {
         Len(ArrayLenLibfunc),
         SnapshotPopFront(ArraySnapshotPopFrontLibfunc),
         SnapshotPopBack(ArraySnapshotPopBackLibfunc),
+        SnapshotMultiPopFront(ArraySnapshotMultiPopFrontLibfunc),
+        SnapshotMultiPopBack(ArraySnapshotMultiPopBackLibfunc),
     }, ArrayConcreteLibfunc
 }
 
@@ -502,3 +508,177 @@ impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopBackLibfuncWrapped {
 }
 pub type ArraySnapshotPopBackLibfunc =
     WrapSignatureAndTypeGenericLibfunc<ArraySnapshotPopBackLibfuncWrapped>;
+
+/// Libfunc for popping multiple first values from the beginning of an array snapshot.
+#[derive(Default)]
+pub struct ArraySnapshotMultiPopFrontLibfunc {}
+impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
+    const STR_ID: &'static str = "array_snapshot_multi_pop_front";
+
+    type Concrete = ConcreteMultiPopLibfunc;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let (ty, count) = args_as_type_and_value(args)?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
+        let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(range_check_ty.clone()).with_allow_add_const(),
+                ParamSignature::new(arr_snapshot_ty.clone()),
+            ],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo::new_builtin(range_check_ty.clone(), 0),
+                        OutputVarInfo {
+                            ty: arr_snapshot_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 1 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: snapshot_ty(
+                                context,
+                                box_ty(
+                                    context,
+                                    fixed_size_array_ty(
+                                        context,
+                                        ty,
+                                        count
+                                            .to_i16()
+                                            .ok_or(SpecializationError::UnsupportedGenericArg)?,
+                                    )?,
+                                )?,
+                            )?,
+                            ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 1 },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo::new_builtin(range_check_ty, 0),
+                        OutputVarInfo {
+                            ty: arr_snapshot_ty,
+                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let (ty, count) = args_as_type_and_value(args)?;
+        Ok(ConcreteMultiPopLibfunc {
+            ty,
+            signature: self.specialize_signature(context.upcast(), args)?,
+            // Early failing on size, although the type itself would fail on definition.
+            popped_values: count.to_i16().ok_or(SpecializationError::UnsupportedGenericArg)?,
+        })
+    }
+}
+
+/// Libfunc for popping the last value from the end of an array snapshot.
+#[derive(Default)]
+pub struct ArraySnapshotMultiPopBackLibfunc {}
+impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
+    const STR_ID: &'static str = "array_snapshot_multi_pop_back";
+
+    type Concrete = ConcreteMultiPopLibfunc;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let (ty, count) = args_as_type_and_value(args)?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
+        let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(range_check_ty.clone()).with_allow_add_const(),
+                ParamSignature::new(arr_snapshot_ty.clone()),
+            ],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo::new_builtin(range_check_ty.clone(), 0),
+                        OutputVarInfo {
+                            ty: arr_snapshot_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 1 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: snapshot_ty(
+                                context,
+                                box_ty(
+                                    context,
+                                    fixed_size_array_ty(
+                                        context,
+                                        ty,
+                                        count
+                                            .to_i16()
+                                            .ok_or(SpecializationError::UnsupportedGenericArg)?,
+                                    )?,
+                                )?,
+                            )?,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo::new_builtin(range_check_ty, 0),
+                        OutputVarInfo {
+                            ty: arr_snapshot_ty,
+                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let (ty, count) = args_as_type_and_value(args)?;
+        Ok(ConcreteMultiPopLibfunc {
+            ty,
+            signature: self.specialize_signature(context.upcast(), args)?,
+            // Early failing on size, although the type itself would fail on definition.
+            popped_values: count.to_i16().ok_or(SpecializationError::UnsupportedGenericArg)?,
+        })
+    }
+}
+
+/// Struct the data for a multi pop action.
+pub struct ConcreteMultiPopLibfunc {
+    pub ty: ConcreteTypeId,
+    pub popped_values: i16,
+    pub signature: LibfuncSignature,
+}
+impl SignatureBasedConcreteLibfunc for ConcreteMultiPopLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}

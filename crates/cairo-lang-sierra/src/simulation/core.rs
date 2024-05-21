@@ -225,6 +225,8 @@ pub fn simulate<
         },
         Array(ArrayConcreteLibfunc::SnapshotPopFront(_)) => todo!(),
         Array(ArrayConcreteLibfunc::SnapshotPopBack(_)) => todo!(),
+        Array(ArrayConcreteLibfunc::SnapshotMultiPopFront(_)) => todo!(),
+        Array(ArrayConcreteLibfunc::SnapshotMultiPopBack(_)) => todo!(),
         Uint8(libfunc) => simulate_u8_libfunc(libfunc, &inputs),
         Uint16(libfunc) => simulate_u16_libfunc(libfunc, &inputs),
         Uint32(libfunc) => simulate_u32_libfunc(libfunc, &inputs),
