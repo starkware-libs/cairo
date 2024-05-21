@@ -4,8 +4,10 @@ use cairo_lang_defs::ids::LookupItemId;
 use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::{Hover, HoverContents, HoverParams, MarkedString};
 
+use crate::get_definition_location;
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
-use crate::{get_definition_location, get_node_and_lookup_items};
+use crate::lang::semantic::LsSemanticGroup;
+use crate::lang::syntax::LsSyntaxGroup;
 
 /// Get hover information at a given text document position.
 #[tracing::instrument(
@@ -19,14 +21,14 @@ pub fn hover(params: HoverParams, db: &RootDatabase) -> Option<Hover> {
     // Get the item id of the definition.
     let (found_file, span) = get_definition_location(db, file_id, position)?;
     // Get the documentation and declaration of the item.
-    let (_, lookup_items) = get_node_and_lookup_items(
-        db,
+    let node = db.find_syntax_node_at_position(
         found_file,
         span.start.position_in_file(db.upcast(), found_file)?,
     )?;
+    let lookup_item = db.find_lookup_item(&node)?;
     // Build texts.
     let mut hints = Vec::new();
-    if let Some(hint) = get_expr_hint(db.upcast(), lookup_items.into_iter().next()?) {
+    if let Some(hint) = get_expr_hint(db.upcast(), lookup_item) {
         hints.extend(hint);
     };
 

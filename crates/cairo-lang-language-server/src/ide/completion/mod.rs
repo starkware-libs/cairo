@@ -1,5 +1,4 @@
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_defs::ids::{FileIndex, ModuleFileId};
 use cairo_lang_semantic::items::us::get_use_segments;
 use cairo_lang_semantic::resolve::AsSegments;
 use cairo_lang_syntax::node::ast::PathSegment;
@@ -8,11 +7,12 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
-use tracing::{debug, error};
+use tracing::debug;
 
 use self::completions::{colon_colon_completions, dot_completions, generic_completions};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
-use crate::{find_node_module, get_node_and_lookup_items};
+use crate::lang::semantic::LsSemanticGroup;
+use crate::lang::syntax::LsSyntaxGroup;
 
 mod completions;
 
@@ -28,15 +28,9 @@ pub fn complete(params: CompletionParams, db: &RootDatabase) -> Option<Completio
     let mut position = text_document_position.position;
     position.character = position.character.saturating_sub(1);
 
-    let (mut node, lookup_items) = get_node_and_lookup_items(db, file_id, position.to_cairo())?;
-
-    // Find module.
-    let Some(module_id) = find_node_module(db, file_id, node.clone()) else {
-        error!("completion failed: failed to find module");
-        return None;
-    };
-    let file_index = FileIndex(0);
-    let module_file_id = ModuleFileId(module_id, file_index);
+    let mut node = db.find_syntax_node_at_position(file_id, position.to_cairo())?;
+    let lookup_items = db.collect_lookup_items_stack(&node)?;
+    let module_file_id = db.find_module_file_containing_node(&node)?;
 
     // Skip trivia.
     while ast::Trivium::is_variant(node.kind(db))
