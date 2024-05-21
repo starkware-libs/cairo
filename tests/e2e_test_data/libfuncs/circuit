@@ -12,9 +12,9 @@ fn foo() -> CircuitInputAccumulator<MyCircuit> {
 }
 
 //! > casm
-[ap + 0] = [fp + -3] + 16, ap++;
+[ap + 0] = [fp + -3] + 20, ap++;
 [ap + 0] = [fp + -3], ap++;
-[ap + 0] = [fp + -3] + 8, ap++;
+[ap + 0] = [fp + -3] + 12, ap++;
 ret;
 
 //! > function_costs
