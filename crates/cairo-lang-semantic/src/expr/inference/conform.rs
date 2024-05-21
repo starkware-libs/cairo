@@ -428,14 +428,18 @@ impl<'db> InferenceConform for Inference<'db> {
             ),
             ImplId::GenericParameter(_) => false,
             ImplId::ImplVar(new_var) => {
-                let new_var_local_id = new_var.lookup_intern(self.db).id;
+                let new_var_long_id = new_var.lookup_intern(self.db);
+                let new_var_local_id = new_var_long_id.id;
                 if InferenceVar::Impl(new_var_local_id) == var {
                     return true;
                 }
                 if let Some(impl_id) = self.impl_assignment(new_var_local_id) {
                     return self.impl_contains_var(&impl_id, var);
                 }
-                false
+                self.generic_args_contain_var(
+                    &new_var_long_id.concrete_trait_id.generic_args(self.db),
+                    var,
+                )
             }
         }
     }
@@ -517,9 +521,8 @@ impl Inference<'_> {
                 }
                 false
             }
-            TypeLongId::GenericParameter(_)
-            | TypeLongId::TraitType(_)
-            | TypeLongId::ImplType(_)
+            TypeLongId::ImplType(impl_type_id) => self.impl_contains_var(&impl_type_id.impl_id(), var),
+            TypeLongId::TraitType(_) | TypeLongId::GenericParameter(_)
             | TypeLongId::Missing(_) => false,
             TypeLongId::Coupon(function_id) => self.function_contains_var(function_id, var),
             TypeLongId::FixedSizeArray { type_id, .. } => {
