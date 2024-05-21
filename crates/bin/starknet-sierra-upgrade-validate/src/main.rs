@@ -176,7 +176,7 @@ async fn main() -> anyhow::Result<()> {
             tokio::spawn(async move { collect_result(results_rx, classes_bar).await })
         };
 
-        spawn_class_processors(classes_rx, results_tx, classes_bar.clone(), config);
+        spawn_class_processors(classes_rx, results_tx, config);
 
         let report = results_handler.await.with_context(|| "Failed to collect results.")?;
         reader_bar.finish_and_clear();
@@ -265,17 +265,14 @@ async fn handle_classes_input_file(
 fn spawn_class_processors(
     classes_rx: async_channel::Receiver<ContractClassInfo>,
     results_tx: async_channel::Sender<RunResult>,
-    classes_bar: ProgressBar,
     config: Arc<RunConfig>,
 ) {
     for _ in 0..NUM_OF_PROCESSORS {
-        let classes_bar = classes_bar.clone();
         let classes_rx = classes_rx.clone();
         let results_tx = results_tx.clone();
         let config = config.clone();
         tokio::spawn(async move {
             while let Ok(sierra_class) = classes_rx.recv().await {
-                classes_bar.inc_length(1);
                 if let Err(err) = results_tx.send(run_single(sierra_class, config.as_ref())).await {
                     eprintln!("Failed to send result: {:#?}", err);
                 }
