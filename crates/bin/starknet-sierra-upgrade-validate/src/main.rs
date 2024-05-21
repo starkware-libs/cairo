@@ -15,7 +15,6 @@ use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio::task::JoinSet;
 
 const NUM_OF_PROCESSORS: usize = 32;
 /// Runs validation on existing contract classes to make sure they are still valid and compilable.
@@ -133,8 +132,8 @@ async fn main() -> anyhow::Result<()> {
     } else {
         "Process blocks"
     }));
-    let class_bar = multi_bar.add(ProgressBar::new(0));
-    class_bar.set_style(get_style("Process classes"));
+    let classes_bar = multi_bar.add(ProgressBar::new(0));
+    classes_bar.set_style(get_style("Process classes"));
 
     let (classes_tx, classes_rx) = async_channel::bounded(256);
     let config: Arc<RunConfig> = Arc::new(RunConfig {
@@ -154,34 +153,34 @@ async fn main() -> anyhow::Result<()> {
             class_hashes_tx,
             fullnode_url.clone(),
             reader_bar.clone(),
-            class_bar.clone(),
+            classes_bar.clone(),
         );
         spawn_classes_from_class_hashes(class_hashes_rx, classes_tx, fullnode_url);
     } else {
-        // Setting up results of class recompilation.
-        let mut input_readers =
-            spawn_input_file_readers(args.input_files, classes_tx, reader_bar.clone());
-        while let Some(result) = input_readers.join_next().await {
-            result.with_context(|| "Failed to join file reader.")??;
-        }
+        spawn_input_file_readers(
+            args.input_files,
+            classes_tx,
+            reader_bar.clone(),
+            classes_bar.clone(),
+        );
     }
 
     // If class_info_output_file is provided, dump all contract class infos into the file.
     // Otherwise, generate a report for the classes analysis.
     if let Some(class_info_output_file) = args.class_info_output_file {
-        dump_class_infos_into_json(classes_rx, class_bar, &class_info_output_file).await
+        dump_class_infos_into_json(classes_rx, classes_bar, &class_info_output_file).await
     } else {
         let (results_tx, results_rx) = async_channel::bounded(128);
         let results_handler = {
-            let class_bar = class_bar.clone();
-            tokio::spawn(async move { collect_result(results_rx, class_bar).await })
+            let classes_bar = classes_bar.clone();
+            tokio::spawn(async move { collect_result(results_rx, classes_bar).await })
         };
 
-        spawn_class_processors(classes_rx, results_tx, class_bar.clone(), config);
+        spawn_class_processors(classes_rx, results_tx, classes_bar.clone(), config);
 
         let report = results_handler.await.with_context(|| "Failed to collect results.")?;
         reader_bar.finish_and_clear();
-        class_bar.finish_and_clear();
+        classes_bar.finish_and_clear();
         analyze_report(report)
     }
 }
@@ -204,16 +203,16 @@ fn spawn_input_file_readers(
     input_files: Vec<String>,
     classes_tx: async_channel::Sender<ContractClassInfo>,
     reader_bar: ProgressBar,
-) -> JoinSet<anyhow::Result<()>> {
-    let mut readers_set = JoinSet::new();
+    classes_bar: ProgressBar,
+) {
     for input_file in input_files {
         let classes_tx = classes_tx.clone();
         let reader_bar = reader_bar.clone();
-        readers_set.spawn(async move {
-            handle_classes_input_file(&input_file, classes_tx, reader_bar).await
+        let classes_bar = classes_bar.clone();
+        tokio::spawn(async move {
+            handle_classes_input_file(&input_file, classes_tx, reader_bar, classes_bar).await
         });
     }
-    readers_set
 }
 
 /// Reads the classes from an input file and sends them to the classes channel.
@@ -221,6 +220,7 @@ async fn handle_classes_input_file(
     input_path: &str,
     classes_tx: async_channel::Sender<ContractClassInfo>,
     reader_bar: ProgressBar,
+    classes_bar: ProgressBar,
 ) -> anyhow::Result<()> {
     // Reading the contract classes from the file.
     let mut reader = BufReader::new(
@@ -253,6 +253,7 @@ async fn handle_classes_input_file(
             .unwrap()
             .with_context(|| "deserialization Failed.")?;
         classes_tx.send(sierra_class).await?;
+        classes_bar.inc_length(1);
         let new_position = reader.stream_position().unwrap();
         reader_bar.inc(new_position - prev_position);
         prev_position = new_position;
@@ -264,17 +265,17 @@ async fn handle_classes_input_file(
 fn spawn_class_processors(
     classes_rx: async_channel::Receiver<ContractClassInfo>,
     results_tx: async_channel::Sender<RunResult>,
-    class_bar: ProgressBar,
+    classes_bar: ProgressBar,
     config: Arc<RunConfig>,
 ) {
     for _ in 0..NUM_OF_PROCESSORS {
-        let class_bar = class_bar.clone();
+        let classes_bar = classes_bar.clone();
         let classes_rx = classes_rx.clone();
         let results_tx = results_tx.clone();
         let config = config.clone();
         tokio::spawn(async move {
             while let Ok(sierra_class) = classes_rx.recv().await {
-                class_bar.inc_length(1);
+                classes_bar.inc_length(1);
                 if let Err(err) = results_tx.send(run_single(sierra_class, config.as_ref())).await {
                     eprintln!("Failed to send result: {:#?}", err);
                 }
@@ -340,7 +341,7 @@ fn run_single(mut sierra_class: ContractClassInfo, config: &RunConfig) -> RunRes
 /// Spawns a task that collects the results from the results channel and returns the report.
 async fn collect_result(
     results_rx: async_channel::Receiver<RunResult>,
-    class_bar: ProgressBar,
+    classes_bar: ProgressBar,
 ) -> Report {
     let mut report = Report {
         validation_failures: Vec::new(),
@@ -349,7 +350,7 @@ async fn collect_result(
         num_of_classes: 0,
     };
     while let Ok(result) = results_rx.recv().await {
-        class_bar.inc(1);
+        classes_bar.inc(1);
         report.num_of_classes += 1;
         match result {
             RunResult::ValidationFailure(failure) => {
@@ -364,7 +365,7 @@ async fn collect_result(
             RunResult::Success => {}
         };
     }
-    class_bar.finish_and_clear();
+    classes_bar.finish_and_clear();
     report
 }
 
