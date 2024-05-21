@@ -51,6 +51,7 @@ define_libfunc_hierarchy! {
     pub enum ArrayLibfunc {
         New(ArrayNewLibfunc),
         SpanFromTuple(SpanFromTupleLibfunc),
+        TupleFromSpan(TupleFromSpanLibfunc),
         Append(ArrayAppendLibfunc),
         PopFront(ArrayPopFrontLibfunc),
         PopFrontConsume(ArrayPopFrontConsumeLibfunc),
@@ -96,24 +97,10 @@ impl SignatureAndTypeGenericLibfunc for SpanFromTupleLibfuncWrapped {
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let struct_type = StructConcreteType::try_from_concrete_type(context, &ty)?;
-        if struct_type.info.zero_sized {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
-
-        let member_type =
-            struct_type.members.first().ok_or(SpecializationError::UnsupportedGenericArg)?;
-        // Validate all members are of the same type.
-        for member in &struct_type.members {
-            if member != member_type {
-                return Err(SpecializationError::UnsupportedGenericArg);
-            }
-        }
-
-        let input_ty = box_ty(context, snapshot_ty(context, ty)?)?;
+        let member_type = validate_tuple_and_fetch_ty(context, &ty)?;
 
         Ok(LibfuncSignature::new_non_branch(
-            vec![input_ty],
+            vec![box_ty(context, snapshot_ty(context, ty)?)?],
             vec![OutputVarInfo {
                 ty: snapshot_ty(
                     context,
@@ -129,6 +116,65 @@ impl SignatureAndTypeGenericLibfunc for SpanFromTupleLibfuncWrapped {
 }
 
 pub type SpanFromTupleLibfunc = WrapSignatureAndTypeGenericLibfunc<SpanFromTupleLibfuncWrapped>;
+
+/// Libfunc for creating a box of struct of members of the same type from a span.
+#[derive(Default)]
+pub struct TupleFromSpanLibfuncWrapped;
+impl SignatureAndTypeGenericLibfunc for TupleFromSpanLibfuncWrapped {
+    const STR_ID: &'static str = "tuple_from_span";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let member_type = validate_tuple_and_fetch_ty(context, &ty)?;
+
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(snapshot_ty(
+                context,
+                context.get_wrapped_concrete_type(ArrayType::id(), member_type)?,
+            )?)],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: snapshot_ty(context, box_ty(context, ty)?)?,
+                        ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+/// Validates that the given type is a tuple with all members of the same type, and returns the type
+/// of the members.
+/// Any user type with such members is considered a tuple.
+fn validate_tuple_and_fetch_ty(
+    context: &dyn SignatureSpecializationContext,
+    ty: &ConcreteTypeId,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let struct_type = StructConcreteType::try_from_concrete_type(context, ty)?;
+    if struct_type.info.zero_sized {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
+    let mut members = struct_type.members.into_iter();
+    let member_type = members.next().ok_or(SpecializationError::UnsupportedGenericArg)?;
+    for member in members {
+        if member != member_type {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+    }
+    Ok(member_type)
+}
+
+pub type TupleFromSpanLibfunc = WrapSignatureAndTypeGenericLibfunc<TupleFromSpanLibfuncWrapped>;
 
 /// Libfunc for getting the length of the array.
 #[derive(Default)]
