@@ -3511,6 +3511,7 @@ dependencies = [
  "cairo-lang-utils",
  "clap",
  "indicatif",
+ "indoc",
  "reqwest",
  "serde",
  "serde_json",
