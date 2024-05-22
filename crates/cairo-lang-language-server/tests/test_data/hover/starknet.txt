@@ -1,33 +1,75 @@
-//! > hover at Position { line: 0, character: 18 }
+//! > Hover
 
-//! > source context
+//! > test_runner_name
+test_hover
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2023_11"
+
+//! > src/lib.cairo
+use Balance::contr<caret>act_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref se<caret>lf: Cont<caret>ractState, value_: u128) {
+        self.va<caret>lue.write(<caret>value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBa<caret>lance<Con<caret>tractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.r<caret>ead()
+        }
+        fn increase(ref self: ContractState, a: u128)  {
+            self.value.wr<caret>ite( self.value.read() + <caret>a );
+        }
+    }
+}
+
+//! > hover 0:18
+------------ source context ------------
 use Balance::contract_state_for_testing;
                   ↑
-
-//! > popover
+--------------- popover ----------------
 ```cairo
 pub fn contract_state_for_testing() -> ContractState
 ```
-=========
 
-//! > hover at Position { line: 23, character: 25 }
-
-//! > source context
+//! > hover 23:25
+--------------------- source context ----------------------
     fn constructor(ref self: ContractState, value_: u128) {
                          ↑
-
-//! > popover
+------------------------- popover -------------------------
 No hover information.
 
-=========
-
-//! > hover at Position { line: 23, character: 33 }
-
-//! > source context
+//! > hover 23:33
+--------------------- source context ----------------------
     fn constructor(ref self: ContractState, value_: u128) {
                                  ↑
-
-//! > popover
+------------------------- popover -------------------------
 ```cairo
 
 
@@ -36,53 +78,39 @@ No hover information.
     }
 
 ```
-=========
 
-//! > hover at Position { line: 24, character: 15 }
-
-//! > source context
+//! > hover 24:15
+-------- source context ---------
         self.value.write(value_);
                ↑
-
-//! > popover
+------------ popover ------------
 No hover information.
 
-=========
-
-//! > hover at Position { line: 24, character: 25 }
-
-//! > source context
+//! > hover 24:25
+-------- source context ---------
         self.value.write(value_);
                          ↑
-
-//! > popover
+------------ popover ------------
 ```cairo
 fn constructor(ref self: ContractState, value_: u128)
 ```
-=========
 
-//! > hover at Position { line: 28, character: 30 }
-
-//! > source context
+//! > hover 28:30
+------------------ source context ------------------
     impl Balance of super::IBalance<ContractState> {
                               ↑
-
-//! > popover
+--------------------- popover ----------------------
 ```cairo
  trait IBalance<T>
 ```
 ---
  The balance contract interface.
 
-=========
-
-//! > hover at Position { line: 28, character: 39 }
-
-//! > source context
+//! > hover 28:39
+------------------ source context ------------------
     impl Balance of super::IBalance<ContractState> {
                                        ↑
-
-//! > popover
+--------------------- popover ----------------------
 ```cairo
 
 
@@ -91,41 +119,30 @@ fn constructor(ref self: ContractState, value_: u128)
     }
 
 ```
-=========
 
-//! > hover at Position { line: 30, character: 24 }
-
-//! > source context
+//! > hover 30:24
+------ source context -------
             self.value.read()
                         ↑
-
-//! > popover
+---------- popover ----------
 ```cairo
 fn read(self: @TMemberState) -> Self::Value;
 ```
-=========
 
-//! > hover at Position { line: 33, character: 25 }
-
-//! > source context
+//! > hover 33:25
+------------------- source context -------------------
             self.value.write( self.value.read() + a );
                          ↑
-
-//! > popover
+---------------------- popover -----------------------
 ```cairo
 fn write(ref self: TMemberState, value: Self::Value);
 ```
-=========
 
-//! > hover at Position { line: 33, character: 50 }
-
-//! > source context
+//! > hover 33:50
+------------------- source context -------------------
             self.value.write( self.value.read() + a );
                                                   ↑
-
-//! > popover
+---------------------- popover -----------------------
 ```cairo
 fn increase(ref self: ContractState, a: u128)
 ```
-=========
-
