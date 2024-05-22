@@ -77,6 +77,7 @@ extern type CircuitDescriptor<C>;
 
 impl CircuitInputAccumulatorDrop<C> of Drop<CircuitInputAccumulator<C>>;
 impl CircuitDataDrop<C> of Drop<CircuitData<C>>;
+impl CircuitDescriptorDrop<C> of Drop<CircuitDescriptor<C>>;
 
 
 /// A wrapper for circuit elements, used to construct circuits..
@@ -98,6 +99,8 @@ pub trait CircuitDefinition<CE> {
     type CircuitType;
     /// calls `init_circuit_data` for the given circuit.
     fn init(self: CE) -> CircuitInputAccumulator<Self::CircuitType>;
+    /// calls `get_circuit_descriptor` for the given circuit.
+    fn get_descriptor(self: CE) -> CircuitDescriptor<Self::CircuitType>;
 }
 
 impl SingleOutputCircuit<Out0> of CircuitDefinition<(CircuitElement<Out0>,)> {
@@ -105,6 +108,10 @@ impl SingleOutputCircuit<Out0> of CircuitDefinition<(CircuitElement<Out0>,)> {
 
     fn init(self: (CircuitElement<Out0>,)) -> CircuitInputAccumulator<Self::CircuitType> {
         init_circuit_data::<Self::CircuitType>()
+    }
+
+    fn get_descriptor(self: (CircuitElement<Out0>,)) -> CircuitDescriptor<Self::CircuitType> {
+        get_circuit_descriptor::<Self::CircuitType>()
     }
 }
 

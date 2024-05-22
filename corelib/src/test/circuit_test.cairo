@@ -21,7 +21,8 @@ fn test_circuit_definition() {
     let in1 = CircuitElement::<CircuitInput<0>> {};
     let in2 = CircuitElement::<CircuitInput<1>> {};
     let out1 = circuit_add(in1, in2);
-    let inputs = (out1,).init();
+    let circ = (out1,);
+    let inputs = circ.init();
 
     let inputs = match inputs.fill_input([1, 2, 3, 4]) {
         FillInputResult::More(new_inputs) => new_inputs,
@@ -31,4 +32,6 @@ fn test_circuit_definition() {
         FillInputResult::More(_new_inputs) => panic!("Expected Done"),
         FillInputResult::Done(data) => data
     };
+
+    let _desc = circ.get_descriptor();
 }
