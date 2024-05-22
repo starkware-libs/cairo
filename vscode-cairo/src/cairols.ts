@@ -165,58 +165,43 @@ async function determineLanguageServerExecutableProvider(
   scarb: Scarb | undefined,
   ctx: Context,
 ): Promise<LanguageServerExecutableProvider> {
+  const log = ctx.log.span("determineLanguageServerExecutableProvider");
   const standalone = () => StandaloneLS.find(workspaceFolder, scarb, ctx);
 
   if (!scarb) {
-    ctx.log.trace(
-      "determineLanguageServerExecutableProvider: Scarb is missing",
-    );
+    log.trace("determineLanguageServerExecutableProvider: Scarb is missing");
     return await standalone();
   }
 
   if (await isScarbProject()) {
-    ctx.log.trace(
-      "determineLanguageServerExecutableProvider: this is a Scarb project",
-    );
+    log.trace("this is a Scarb project");
 
     if (!ctx.config.get("preferScarbLanguageServer", true)) {
-      ctx.log.trace(
-        "determineLanguageServerExecutableProvider: `preferScarbLanguageServer` is false, using standalone LS",
-      );
+      log.trace("`preferScarbLanguageServer` is false, using standalone LS");
       return await standalone();
     }
 
     if (await scarb.hasCairoLS(ctx)) {
-      ctx.log.trace(
-        "determineLanguageServerExecutableProvider: using Scarb LS",
-      );
+      log.trace("using Scarb LS");
       return scarb;
     }
 
-    ctx.log.trace(
-      "determineLanguageServerExecutableProvider: Scarb has no LS extension, falling back to standalone",
-    );
+    log.trace("Scarb has no LS extension, falling back to standalone");
     return await standalone();
   } else {
-    ctx.log.trace(
-      "determineLanguageServerExecutableProvider: this is *not* a Scarb project, looking for standalone LS",
-    );
+    log.trace("this is *not* a Scarb project, looking for standalone LS");
 
     try {
       return await standalone();
     } catch (e) {
-      ctx.log.trace(
-        "determineLanguageServerExecutableProvider: could not find standalone LS, trying Scarb LS",
-      );
+      log.trace("could not find standalone LS, trying Scarb LS");
       if (await scarb.hasCairoLS(ctx)) {
-        ctx.log.trace(
-          "determineLanguageServerExecutableProvider: using Scarb LS",
-        );
+        log.trace("using Scarb LS");
         return scarb;
       }
 
-      ctx.log.trace(
-        "determineLanguageServerExecutableProvider: could not find standalone LS and Scarb has no LS extension, will error out",
+      log.trace(
+        "could not find standalone LS and Scarb has no LS extension, will error out",
       );
       throw e;
     }
