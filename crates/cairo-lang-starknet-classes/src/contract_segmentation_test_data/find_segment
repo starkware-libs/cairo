@@ -371,7 +371,7 @@ test::foo@0() -> (CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::c
 call rel 11;
 [ap + 0] = [ap + -1] + 10, ap++;
 [ap + 0] = 1, ap++;
-[ap + 0] = [ap + -1] + 4, ap++;
+[ap + 0] = [ap + -2] + 4, ap++;
 [ap + 0] = 2, ap++;
 ret;
 ret;
