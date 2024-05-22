@@ -56,7 +56,7 @@ extern fn fill_circuit_input<C>(
 ) -> FillInputResult<C> nopanic;
 
 /// The result of filling an input in the circuit instance's data.
-enum FillInputResult<C> {
+pub enum FillInputResult<C> {
     /// More inputs are needed to fill the circuit instance's data.
     More: CircuitInputAccumulator<C>,
     /// All inputs have been filled.
@@ -76,6 +76,7 @@ extern type CircuitOutput<C>;
 extern type CircuitDescriptor<C>;
 
 impl CircuitInputAccumulatorDrop<C> of Drop<CircuitInputAccumulator<C>>;
+impl CircuitDataDrop<C> of Drop<CircuitData<C>>;
 
 
 /// A wrapper for circuit elements, used to construct circuits..
@@ -104,5 +105,22 @@ impl SingleOutputCircuit<Out0> of CircuitDefinition<(CircuitElement<Out0>,)> {
 
     fn init(self: (CircuitElement<Out0>,)) -> CircuitInputAccumulator<Self::CircuitType> {
         init_circuit_data::<Self::CircuitType>()
+    }
+}
+
+
+/// A trait for evaluating a circuit.
+pub trait InputAccumulatorTrait<InputAccumulator> {
+    type CircuitType;
+
+    /// Fills a circuit input with the given value.
+    fn fill_input(self: InputAccumulator, value: [u96; 4]) -> FillInputResult<Self::CircuitType>;
+}
+
+impl InputAccumulatorTraitImpl<C> of InputAccumulatorTrait<CircuitInputAccumulator<C>> {
+    type CircuitType = C;
+
+    fn fill_input(self: CircuitInputAccumulator<C>, value: [u96; 4]) -> FillInputResult<C> {
+        fill_circuit_input::<C>(self, value)
     }
 }

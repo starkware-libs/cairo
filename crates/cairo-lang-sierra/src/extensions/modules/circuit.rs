@@ -809,7 +809,7 @@ pub struct GateOffsets {
 /// Describes a circuit in the program.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CircuitInfo {
-    /// The number of circuit inputs (including the input 1 if needed).
+    /// The number of circuit inputs (excluding the input 1 if needed).
     pub n_inputs: usize,
 
     /// The circuit requires the input 1 to be present.
@@ -817,6 +817,8 @@ pub struct CircuitInfo {
     pub one_needed: bool,
 
     /// Maps a concrete type to it's offset in the values array.
+    /// The values mapping does not include the optional 1 input which is stored at the
+    /// the index n_inputs.
     pub values: UnorderedHashMap<ConcreteTypeId, usize>,
     /// The offsets for the add gates.
     pub add_offsets: Vec<GateOffsets>,
