@@ -23,8 +23,8 @@ use cairo_lang_utils::LookupIntern;
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 use tracing::debug;
 
-use crate::find_node_module;
 use crate::lang::lsp::ToLsp;
+use crate::lang::semantic::LsSemanticGroup;
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn generic_completions(
@@ -189,7 +189,7 @@ pub fn colon_colon_completions(
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn dot_completions(
-    db: &dyn SemanticGroup,
+    db: &(dyn SemanticGroup + 'static),
     file_id: FileId,
     lookup_items: Vec<LookupItemId>,
     expr: ast::ExprBinary,
@@ -220,7 +220,7 @@ pub fn dot_completions(
 
     // Find relevant methods for type.
     let offset = if let Some(ModuleId::Submodule(submodule_id)) =
-        find_node_module(db, file_id, expr.as_syntax_node())
+        db.find_module_containing_node(&expr.as_syntax_node())
     {
         let module_def_ast = submodule_id.stable_ptr(db.upcast()).lookup(syntax_db);
         if let ast::MaybeModuleBody::Some(body) = module_def_ast.body(syntax_db) {
