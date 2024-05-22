@@ -1,6 +1,6 @@
 use core::circuit::{
     RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, CircuitDefinition, circuit_add,
-    FillInputResult, InputAccumulatorTrait, u384
+    FillInputResult, InputAccumulatorTrait, CircuitDescriptorTrait, u384
 };
 
 
@@ -30,7 +30,7 @@ fn test_builtins() {
 }
 
 #[test]
-fn test_circuit_definition() {
+fn test_circuit() {
     let in1 = CircuitElement::<CircuitInput<0>> {};
     let in2 = CircuitElement::<CircuitInput<1>> {};
     let out1 = circuit_add(in1, in2);
@@ -41,10 +41,14 @@ fn test_circuit_definition() {
         FillInputResult::More(new_inputs) => new_inputs,
         FillInputResult::Done(_data) => { panic!("Expected more inputs") }
     };
-    let _data = match inputs.fill_input([1, 2, 3, 4]) {
+    let data = match inputs.fill_input([1, 2, 3, 4]) {
         FillInputResult::More(_new_inputs) => panic!("Expected Done"),
         FillInputResult::Done(data) => data
     };
 
-    let _desc = circ.get_descriptor();
+    let modulus: NonZero::<u384> = u384 { limb0: 1, limb1: 2, limb2: 3, limb3: 4 }
+        .try_into()
+        .unwrap();
+
+    let _outputs = circ.get_descriptor().eval(data, modulus);
 }
