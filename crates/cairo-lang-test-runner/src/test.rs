@@ -1,6 +1,6 @@
-use cairo_felt::{felt_str, Felt252};
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use itertools::Itertools;
+use starknet_types_core::felt::Felt as Felt252;
 
 use crate::{format_for_panic, TestCompilation, TestCompiler};
 
@@ -26,7 +26,7 @@ fn test_compiled_serialization() {
 #[test]
 fn test_format_for_panic() {
     // Valid short string.
-    let felts = vec![felt_str!("68656c6c6f", 16)];
+    let felts = vec![Felt252::from_hex_unchecked("68656c6c6f")];
     assert_eq!(format_for_panic(felts.into_iter()), "Panicked with 0x68656c6c6f ('hello').");
 
     // felt252
@@ -35,22 +35,24 @@ fn test_format_for_panic() {
 
     // Valid string with < 31 characters (no full words).
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
-        Felt252::from(0),                                    // No full words.
-        felt_str!("73686f72742c2062757420737472696e67", 16), // 'short, but string'
-        Felt252::from(17),                                   // pending word length
+        Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
+        Felt252::from(0), // No full words.
+        Felt252::from_hex_unchecked("73686f72742c2062757420737472696e67"), // 'short, but string'
+        Felt252::from(17), // pending word length
     ];
     assert_eq!(format_for_panic(felts.into_iter()), "Panicked with \"short, but string\".");
 
     // Valid string with > 31 characters (with a full word).
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
         // A single full word.
         Felt252::from(1),
         // full word: 'This is a long string with more'
-        felt_str!("546869732069732061206c6f6e6720737472696e672077697468206d6f7265", 16),
+        Felt252::from_hex_unchecked(
+            "546869732069732061206c6f6e6720737472696e672077697468206d6f7265",
+        ),
         // pending word: ' than 31 characters.'
-        felt_str!("207468616e20333120636861726163746572732e", 16),
+        Felt252::from_hex_unchecked("207468616e20333120636861726163746572732e"),
         // pending word length
         Felt252::from(20),
     ];
@@ -60,14 +62,17 @@ fn test_format_for_panic() {
     );
 
     // Only magic.
-    let felts = vec![felt_str!(BYTE_ARRAY_MAGIC, 16)];
+    let felts = vec![Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC)];
     assert_eq!(
         format_for_panic(felts.into_iter()),
         "Panicked with 0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3."
     );
 
     // num_full_words > usize.
-    let felts = vec![felt_str!(BYTE_ARRAY_MAGIC, 16), felt_str!("100000000", 16)];
+    let felts = vec![
+        Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
+        Felt252::from_hex_unchecked("100000000"),
+    ];
     assert_eq!(
         format_for_panic(felts.into_iter()),
         "Panicked with (0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, \
@@ -75,7 +80,7 @@ fn test_format_for_panic() {
     );
 
     // Not enough data after num_full_words.
-    let felts = vec![felt_str!(BYTE_ARRAY_MAGIC, 16), Felt252::from(0)];
+    let felts = vec![Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC), Felt252::from(0)];
     assert_eq!(
         format_for_panic(felts.into_iter()),
         "Panicked with (0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, 0x0 \
@@ -83,8 +88,12 @@ fn test_format_for_panic() {
     );
 
     // Not enough full words.
-    let felts =
-        vec![felt_str!(BYTE_ARRAY_MAGIC, 16), Felt252::from(1), Felt252::from(0), Felt252::from(0)];
+    let felts = vec![
+        Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
+        Felt252::from(1),
+        Felt252::from(0),
+        Felt252::from(0),
+    ];
     assert_eq!(
         format_for_panic(felts.into_iter()),
         "Panicked with (0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, 0x1, \
@@ -93,9 +102,11 @@ fn test_format_for_panic() {
 
     // Too much data in full word.
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
         Felt252::from(1),
-        felt_str!("161616161616161616161616161616161616161616161616161616161616161", 16),
+        Felt252::from_hex_unchecked(
+            "161616161616161616161616161616161616161616161616161616161616161",
+        ),
         Felt252::from(0),
         Felt252::from(0),
     ];
@@ -107,10 +118,10 @@ fn test_format_for_panic() {
 
     // num_pending_bytes > usize.
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
         Felt252::from(0),
         Felt252::from(0),
-        felt_str!("100000000", 16),
+        Felt252::from_hex_unchecked("100000000"),
     ];
     assert_eq!(
         format_for_panic(felts.into_iter()),
@@ -120,11 +131,11 @@ fn test_format_for_panic() {
 
     // "Not enough" data in pending_word (nulls in the beginning).
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
         // No full words.
         Felt252::from(0),
         // 'a'
-        felt_str!("61", 16),
+        Felt252::from_hex_unchecked("61"),
         // pending word length. Bigger than the actual data in the pending word.
         Felt252::from(2),
     ];
@@ -132,11 +143,11 @@ fn test_format_for_panic() {
 
     // Too much data in pending_word.
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
         // No full words.
         Felt252::from(0),
         // 'aa'
-        felt_str!("6161", 16),
+        Felt252::from_hex_unchecked("6161"),
         // pending word length. Smaller than the actual data in the pending word.
         Felt252::from(1),
     ];
@@ -148,11 +159,11 @@ fn test_format_for_panic() {
 
     // Valid string with Null.
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
         // No full word.
         Felt252::from(0),
         // pending word: 'Hello\0world'
-        felt_str!("48656c6c6f00776f726c64", 16),
+        Felt252::from_hex_unchecked("48656c6c6f00776f726c64"),
         // pending word length
         Felt252::from(11),
     ];
@@ -160,11 +171,11 @@ fn test_format_for_panic() {
 
     // Valid string with a non printable character.
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
         // No full word.
         Felt252::from(0),
         // pending word: 'Hello\x11world'
-        felt_str!("48656c6c6f11776f726c64", 16),
+        Felt252::from_hex_unchecked("48656c6c6f11776f726c64"),
         // pending word length
         Felt252::from(11),
     ];
@@ -172,11 +183,11 @@ fn test_format_for_panic() {
 
     // Valid string with a newline.
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
         // No full word.
         Felt252::from(0),
         // pending word: 'Hello\nworld'
-        felt_str!("48656c6c6f0a776f726c64", 16),
+        Felt252::from_hex_unchecked("48656c6c6f0a776f726c64"),
         // pending word length
         Felt252::from(11),
     ];
@@ -187,12 +198,12 @@ fn test_format_for_panic() {
         // felt: 0x9999
         Felt252::from(0x9999),
         // String: "hello"
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
         Felt252::from(0),
-        felt_str!("68656c6c6f", 16),
+        Felt252::from_hex_unchecked("68656c6c6f"),
         Felt252::from(5),
         // Short string: 'world'
-        felt_str!("776f726c64", 16),
+        Felt252::from_hex_unchecked("776f726c64"),
         // felt: 0x8888
         Felt252::from(0x8888),
     ];
