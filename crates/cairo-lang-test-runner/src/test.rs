@@ -216,19 +216,16 @@ fn test_format_for_panic() {
     );
 }
 
-fn test_compilation() -> TestCompilation {
-    let named_test_gen = |name: &str, ignored: bool| {
-        (
-            String::from(name),
-            TestConfig { available_gas: None, expectation: TestExpectation::Success, ignored },
-        )
-    };
+fn to_named_test(test: &(&str, bool)) -> (String, TestConfig) {
+    (
+        String::from(test.0),
+        TestConfig { available_gas: None, expectation: TestExpectation::Success, ignored: test.1 },
+    )
+}
+
+fn to_test_compilation(tests: &[(&str, bool)]) -> TestCompilation {
     TestCompilation {
-        named_tests: vec![
-            named_test_gen("test1", false),
-            named_test_gen("test2", true),
-            named_test_gen("test3", false),
-        ],
+        named_tests: tests.iter().map(to_named_test).collect(),
         sierra_program: Program {
             type_declarations: vec![],
             libfunc_declarations: vec![],
@@ -243,58 +240,52 @@ fn test_compilation() -> TestCompilation {
 
 #[test]
 fn test_filter_test_cases() {
-    let named_tests = test_compilation().named_tests.clone();
+    assert_eq!(
+        filter_test_cases(
+            to_test_compilation(&[("test1", false), ("test2", true), ("test3", false)]),
+            false,
+            false,
+            "test"
+        ),
+        (to_test_compilation(&[("test1", false), ("test2", true), ("test3", false)]), 0)
+    );
+}
 
-    // Nothing should be filtered out.
-    let (filtered, filtered_out) = filter_test_cases(test_compilation(), false, false, "test");
+#[test]
+fn test_filter_test_cases_include_ignored() {
+    assert_eq!(
+        filter_test_cases(
+            to_test_compilation(&[("test1", false), ("test2", true), ("test3", false)]),
+            true,
+            false,
+            "test"
+        ),
+        (to_test_compilation(&[("test1", false), ("test2", false), ("test3", false)]), 0)
+    );
+}
 
-    let expected = named_tests.clone();
+#[test]
+fn test_filter_test_cases_ignored() {
+    assert_eq!(
+        filter_test_cases(
+            to_test_compilation(&[("test1", false), ("test2", true), ("test3", false)]),
+            false,
+            true,
+            "test"
+        ),
+        (to_test_compilation(&[("test2", false)]), 2)
+    );
+}
 
-    assert_eq!(filtered_out, 0);
-    assert_eq!(expected, filtered.named_tests);
-
-    // All tests should be included, even the ignored ones.
-    let (filtered, filtered_out) = filter_test_cases(test_compilation(), true, false, "test");
-
-    let expected = named_tests
-        .clone()
-        .into_iter()
-        .map(|mut x| {
-            x.1.ignored = false;
-            x
-        })
-        .collect_vec();
-
-    assert_eq!(filtered_out, 0);
-    assert_eq!(expected, filtered.named_tests);
-
-    // Only the ignored tests should be included.
-    let (filtered, filtered_out) = filter_test_cases(test_compilation(), false, true, "test");
-
-    let expected = named_tests
-        .clone()
-        .into_iter()
-        .filter(|x| x.1.ignored)
-        .map(|mut x| {
-            x.1.ignored = false;
-            x
-        })
-        .collect_vec();
-
-    assert_eq!(filtered_out, 2);
-    assert_eq!(expected, filtered.named_tests);
-
-    // All tests should be included, even the ignored ones.
-    let (filtered, filtered_out) = filter_test_cases(test_compilation(), true, true, "test");
-
-    let expected = named_tests
-        .into_iter()
-        .map(|mut x| {
-            x.1.ignored = false;
-            x
-        })
-        .collect_vec();
-
-    assert_eq!(filtered_out, 0);
-    assert_eq!(expected, filtered.named_tests);
+#[test]
+fn test_filter_test_cases_include_ignored_and_ignored() {
+    assert_eq!(
+        filter_test_cases(
+            to_test_compilation(&[("test1", false), ("test2", true), ("test3", false)]),
+            true,
+            true,
+            "test"
+        ),
+        (to_test_compilation(&[("test1", false), ("test2", false), ("test3", false)]), 0)
+    );
 }
