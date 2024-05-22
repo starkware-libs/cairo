@@ -83,13 +83,13 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {
 
             // Get the root module of a file containing the node.
             let node_main_module =
-                db.file_modules(node_file_id).unwrap_or_default().iter().copied().next().unwrap();
+                db.file_modules(node_file_id).unwrap_or_default().iter().copied().next()?;
 
             // Get the main module of the file.
-            let main_file = db.module_main_file(node_main_module).ok().unwrap();
+            let main_file = db.module_main_file(node_main_module).ok()?;
 
             // Get the main module of that file.
-            db.file_modules(main_file).unwrap_or_default().iter().copied().next().unwrap()
+            db.file_modules(main_file).unwrap_or_default().iter().copied().next()?
         };
 
         // Get the stack (bottom-up) of submodule names in the file containing the node, in the main
