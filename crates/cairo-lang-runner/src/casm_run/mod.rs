@@ -1662,9 +1662,10 @@ pub fn execute_core_hint(
                 if lhs_val < rhs_val { Felt252::from(1) } else { Felt252::from(0) }
             )?;
         }
-        CoreHint::TestLessThanOrEqual { lhs, rhs, dst } => {
-            let lhs_val = get_val(vm, lhs)?;
-            let rhs_val = get_val(vm, rhs)?;
+        CoreHint::TestLessThanOrEqual { lhs, rhs, dst }
+        | CoreHint::TestLessThanOrEqualAddress { lhs, rhs, dst } => {
+            let lhs_val = get_maybe(vm, lhs)?;
+            let rhs_val = get_maybe(vm, rhs)?;
             insert_value_to_cellref!(
                 vm,
                 dst,

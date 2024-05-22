@@ -962,7 +962,7 @@ fn foo(ref arr: @Array::<felt252>) -> Option::<@Box<[felt252; 2]>> {
 }
 
 //! > casm
-%{ memory[ap + 0] = (memory[fp + -4] + 2) % PRIME <= memory[fp + -3] %}
+%{ memory[ap + 0] = memory[fp + -4] + 2 <= memory[fp + -3] %}
 jmp rel 8 if [ap + 0] != 0, ap++;
 [fp + -4] = [ap + 0] + [fp + -3], ap++;
 [ap + 0] = [ap + -1] + 3, ap++;
@@ -1037,7 +1037,7 @@ fn foo(ref arr: @Array::<felt252>) -> Option::<@Box<[felt252; 2]>> {
 }
 
 //! > casm
-%{ memory[ap + 0] = (memory[fp + -4] + 2) % PRIME <= memory[fp + -3] %}
+%{ memory[ap + 0] = memory[fp + -4] + 2 <= memory[fp + -3] %}
 jmp rel 8 if [ap + 0] != 0, ap++;
 [fp + -4] = [ap + 0] + [fp + -3], ap++;
 [ap + 0] = [ap + -1] + 3, ap++;
