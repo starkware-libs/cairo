@@ -18,6 +18,7 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
+        CircuitConcreteLibfunc::U384IsZero(_libfunc) => build_u384_is_zero(builder),
         CircuitConcreteLibfunc::FillInput(_libfunc) => build_fill_input(builder),
         CircuitConcreteLibfunc::Eval(libfunc) => build_circuit_eval(&libfunc.ty, builder),
         CircuitConcreteLibfunc::GetDescriptor(libfunc) => {
@@ -232,6 +233,29 @@ fn build_circuit_eval(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[new_add_mod], &[new_mul_mod], &[new_data]], None)],
+        Default::default(),
+    ))
+}
+
+/// Generates casm instructions for `u384_is_zero()`.
+fn build_u384_is_zero(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [l0, l1, l2, l3] = builder.try_get_refs::<1>()?[0].try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables!(casm_builder, deref l0; deref l1; deref l2; deref l3;);
+    casm_build_extend! {casm_builder,
+        jump Target if l0 != 0;
+        jump Target if l1 != 0;
+        jump Target if l2 != 0;
+        jump Target if l3 != 0;
+    };
+
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[], None), ("Target", &[&[l0, l1, l2, l3]], Some(target_statement_id))],
         Default::default(),
     ))
 }

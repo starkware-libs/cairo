@@ -1,3 +1,5 @@
+use core::zeroable;
+
 /// Given two circuit elements, returns a new circuit element representing the circuit that applies
 /// the `addmod` operation to the two input circuits.
 pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>,>(
@@ -8,11 +10,11 @@ pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs
 
 /// A 384-bit unsigned integer, used for circuit values.
 #[derive(Copy, Drop)]
-struct u384 {
-    limb0: u96,
-    limb1: u96,
-    limb2: u96,
-    limb3: u96,
+pub struct u384 {
+    pub limb0: u96,
+    pub limb1: u96,
+    pub limb2: u96,
+    pub limb3: u96,
 }
 
 pub type u96 = core::internal::BoundedInt<0, 79228162514264337593543950335>;
@@ -122,5 +124,16 @@ impl InputAccumulatorTraitImpl<C> of InputAccumulatorTrait<CircuitInputAccumulat
 
     fn fill_input(self: CircuitInputAccumulator<C>, value: [u96; 4]) -> FillInputResult<C> {
         fill_circuit_input::<C>(self, value)
+    }
+}
+
+extern fn u384_is_zero(a: u384) -> zeroable::IsZeroResult<u384> implicits() nopanic;
+
+impl U384TryIntoNonZero of TryInto<u384, NonZero<u384>> {
+    fn try_into(self: u384) -> Option<NonZero<u384>> {
+        match u384_is_zero(self) {
+            zeroable::IsZeroResult::Zero => Option::None,
+            zeroable::IsZeroResult::NonZero(x) => Option::Some(x),
+        }
     }
 }

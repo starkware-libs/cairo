@@ -518,6 +518,9 @@ pub fn core_libfunc_cost(
                 ])),
             }]
         }
+        Circuit(CircuitConcreteLibfunc::U384IsZero(_)) => {
+            vec![ConstCost::steps(4).into(), ConstCost::steps(4).into()]
+        }
         Circuit(CircuitConcreteLibfunc::GetDescriptor(_)) => {
             vec![ConstCost::steps(6).into()]
         }
