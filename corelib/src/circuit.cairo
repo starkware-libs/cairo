@@ -47,7 +47,7 @@ extern fn eval_circuit<C>(
     modulus: NonZero<u384>,
     zero: ConstZero,
     one: ConstOne,
-) -> CircuitOutput<C> implicits(AddMod, MulMod) nopanic;
+) -> CircuitOutputs<C> implicits(AddMod, MulMod) nopanic;
 
 /// Fill an input in the circuit instance's data.
 // TODO(ilya): Consider using RangeCheck96Guarantee for the inputs.
@@ -70,7 +70,7 @@ extern type CircuitInputAccumulator<C>;
 extern type CircuitData<C>;
 
 /// A type representing a circuit instance where the outputs are filled.
-extern type CircuitOutput<C>;
+extern type CircuitOutputs<C>;
 
 /// A type representing a circuit descriptor.
 extern type CircuitDescriptor<C>;

@@ -36,7 +36,7 @@ define_type_hierarchy! {
         AddModGate(AddModGate),
         Circuit(Circuit),
         CircuitData(CircuitData),
-        CircuitOutput(CircuitOutput),
+        CircuitOutputs(CircuitOutputs),
         CircuitDescriptor(CircuitDescriptor),
         CircuitInput(CircuitInput),
         CircuitInputAccumulator(CircuitInputAccumulator),
@@ -275,10 +275,10 @@ impl ConcreteType for ConcreteCircuitData {
 
 /// A type representing a circuit instance where the outputs is filled.
 #[derive(Default)]
-pub struct CircuitOutput {}
-impl NamedType for CircuitOutput {
-    type Concrete = ConcreteCircuitOutput;
-    const ID: GenericTypeId = GenericTypeId::new_inline("CircuitOutput");
+pub struct CircuitOutputs {}
+impl NamedType for CircuitOutputs {
+    type Concrete = ConcreteCircuitOutputs;
+    const ID: GenericTypeId = GenericTypeId::new_inline("CircuitOutputs");
 
     fn specialize(
         &self,
@@ -289,11 +289,11 @@ impl NamedType for CircuitOutput {
     }
 }
 
-pub struct ConcreteCircuitOutput {
+pub struct ConcreteCircuitOutputs {
     pub info: TypeInfo,
 }
 
-impl ConcreteCircuitOutput {
+impl ConcreteCircuitOutputs {
     fn new(
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
@@ -303,7 +303,7 @@ impl ConcreteCircuitOutput {
         Ok(Self {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId {
-                    generic_id: "CircuitOutput".into(),
+                    generic_id: "CircuitOutputs".into(),
                     generic_args: args.to_vec(),
                 },
                 duplicatable: false,
@@ -315,7 +315,7 @@ impl ConcreteCircuitOutput {
     }
 }
 
-impl ConcreteType for ConcreteCircuitOutput {
+impl ConcreteType for ConcreteCircuitOutputs {
     fn info(&self) -> &TypeInfo {
         &self.info
     }
@@ -651,7 +651,7 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                     }),
                 },
                 OutputVarInfo {
-                    ty: context.get_concrete_type(CircuitOutput::id(), &[GenericArg::Type(ty)])?,
+                    ty: context.get_concrete_type(CircuitOutputs::id(), &[GenericArg::Type(ty)])?,
                     ref_info: OutputVarReferenceInfo::SimpleDerefs,
                 },
             ],
