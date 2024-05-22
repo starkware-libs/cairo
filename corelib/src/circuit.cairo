@@ -1,3 +1,5 @@
+use core::zeroable::IsZeroResult;
+
 /// Given two circuit elements, returns a new circuit element representing the circuit that applies
 /// the `addmod` operation to the two input circuits.
 pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>,>(
@@ -124,3 +126,5 @@ impl InputAccumulatorTraitImpl<C> of InputAccumulatorTrait<CircuitInputAccumulat
         fill_circuit_input::<C>(self, value)
     }
 }
+
+extern fn u384_is_zero(a: u384) -> IsZeroResult<u384> implicits() nopanic;

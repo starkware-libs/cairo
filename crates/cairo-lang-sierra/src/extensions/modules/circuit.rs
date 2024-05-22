@@ -18,7 +18,8 @@ use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
     args_as_single_type, args_as_single_value, extract_type_generic_args, ConcreteType, NamedType,
-    NoGenericArgsGenericType, OutputVarReferenceInfo, SpecializationError,
+    NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -49,6 +50,7 @@ define_libfunc_hierarchy! {
          Eval(EvalCircuitLibFunc),
          GetDescriptor(GetCircuitDescriptorLibFunc),
          InitCircuitData(InitCircuitDataLibFunc),
+         U384IsZero(U384IsZeroLibfunc),
     }, CircuitConcreteLibfunc
 }
 
@@ -682,6 +684,41 @@ impl NoGenericArgsGenericType for MulModType {
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
     const ZERO_SIZED: bool = false;
+}
+
+/// Libfunc for checking whether the given `EcPoint` is the zero point.
+#[derive(Default)]
+pub struct U384IsZeroLibfunc {}
+impl NoGenericArgsGenericLibfunc for U384IsZeroLibfunc {
+    const STR_ID: &'static str = "u384_is_zero";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let u384_ty = get_u384_type(context)?;
+        let nonzero_u384_ty = nonzero_ty(context, &u384_ty)?;
+
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(u384_ty.clone())],
+            branch_signatures: vec![
+                // Zero.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+                // NonZero.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: nonzero_u384_ty,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
 }
 
 /// Gets a concrete type, if it is a const type returns a vector of the values to be stored in
