@@ -9,7 +9,9 @@ use cairo_lang_sierra::extensions::bounded_int::{
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
-use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};
+use cairo_lang_sierra::extensions::circuit::{
+    CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE, VALUE_SIZE,
+};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
@@ -490,12 +492,38 @@ pub fn core_libfunc_cost(
         Circuit(CircuitConcreteLibfunc::FillInput(_)) => {
             vec![ConstCost::steps(7).into(), ConstCost::steps(8).into()]
         }
+        Circuit(CircuitConcreteLibfunc::Eval(libfunc)) => {
+            let info = info_provider.circuit_info(&libfunc.ty);
+
+            let mut steps: i32 = 1;
+            let instance_size: i32 = BUILTIN_INSTANCE_SIZE.into_or_panic();
+
+            if !info.add_offsets.is_empty() {
+                steps += instance_size;
+            }
+
+            if !info.mul_offsets.is_empty() {
+                steps += instance_size;
+            }
+
+            if info.one_needed {
+                steps += 4;
+            }
+
+            vec![BranchCost::Regular {
+                const_cost: ConstCost::steps(steps),
+                pre_cost: PreCost(OrderedHashMap::from_iter([
+                    (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
+                    (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
+                ])),
+            }]
+        }
         Circuit(CircuitConcreteLibfunc::GetDescriptor(_)) => {
             vec![ConstCost::steps(6).into()]
         }
         Circuit(CircuitConcreteLibfunc::InitCircuitData(libfunc)) => {
             let info = info_provider.circuit_info(&libfunc.ty);
-            let rc_usage: i32 = (info.values.len() * VALUE_SIZE).try_into().unwrap();
+            let rc_usage: i32 = (info.values.len() * VALUE_SIZE).into_or_panic();
 
             vec![BranchCost::Regular {
                 const_cost: ConstCost::steps(0),

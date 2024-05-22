@@ -2,7 +2,9 @@ use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_casm::{casm, casm_build_extend};
-use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};
+use cairo_lang_sierra::extensions::circuit::{
+    CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE, VALUE_SIZE,
+};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -17,6 +19,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         CircuitConcreteLibfunc::FillInput(_libfunc) => build_fill_input(builder),
+        CircuitConcreteLibfunc::Eval(libfunc) => build_circuit_eval(&libfunc.ty, builder),
         CircuitConcreteLibfunc::GetDescriptor(libfunc) => {
             build_get_descriptor(&libfunc.ty, builder)
         }
@@ -138,5 +141,97 @@ fn build_get_descriptor(
         }]
         .into_iter()]
         .into_iter(),
+    ))
+}
+
+/// Builds instructions for `circuit_eval` libfunc.
+fn build_circuit_eval(
+    circuit_ty: &ConcreteTypeId,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_add_mod, expr_mul_mod, expr_desc, expr_data, modulus_expr, expr_zero, expr_one] =
+        builder.try_get_refs()?;
+    let add_mod = expr_add_mod.try_unpack_single()?;
+    let mul_mod = expr_mul_mod.try_unpack_single()?;
+    let [add_mod_offsets, n_adds, mul_mod_offsets, n_muls] = expr_desc.try_unpack()?;
+    let [modulus0, modulus1, modulus2, modulus3] = modulus_expr.try_unpack()?;
+    let values_end = expr_data.try_unpack_single()?;
+
+    let zero = expr_zero.try_unpack_single()?;
+    let one = expr_one.try_unpack_single()?;
+    let mut casm_builder = CasmBuilder::default();
+
+    let instance_size = BUILTIN_INSTANCE_SIZE.try_into().unwrap();
+
+    add_input_variables! {casm_builder,
+        buffer(instance_size) add_mod;
+        buffer(instance_size) mul_mod;
+        buffer(VALUE_SIZE.try_into().unwrap()) values_end;
+        deref add_mod_offsets;
+        deref n_adds;
+        deref mul_mod_offsets;
+        deref n_muls;
+
+        deref modulus0;
+        deref modulus1;
+        deref modulus2;
+        deref modulus3;
+
+        deref zero;
+        deref one;
+    };
+
+    let CircuitInfo { add_offsets, mul_offsets, values, one_needed, .. } =
+        builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
+
+    casm_build_extend! {casm_builder,
+        const values_size = values.len() * VALUE_SIZE;
+        tempvar values = values_end - values_size;
+    }
+    if !add_offsets.is_empty() {
+        casm_build_extend! {casm_builder,
+            assert modulus0 = add_mod[0];
+            assert modulus1 = add_mod[1];
+            assert modulus2 = add_mod[2];
+            assert modulus3 = add_mod[3];
+            assert values = add_mod[4];
+            assert add_mod_offsets = add_mod[5];
+            assert n_adds = add_mod[6];
+        };
+    }
+
+    if !mul_offsets.is_empty() {
+        casm_build_extend! {casm_builder,
+            assert modulus0 = mul_mod[0];
+            assert modulus1 = mul_mod[1];
+            assert modulus2 = mul_mod[2];
+            assert modulus3 = mul_mod[3];
+            assert values = mul_mod[4];
+            assert mul_mod_offsets = mul_mod[5];
+            assert n_muls = mul_mod[6];
+        };
+    }
+
+    if *one_needed {
+        casm_build_extend! {casm_builder,
+            assert one = values_end[0];
+            assert zero = values_end[1];
+            assert zero = values_end[2];
+            assert zero = values_end[3];
+        };
+    }
+
+    casm_build_extend! {casm_builder,
+        const add_mod_usage = (BUILTIN_INSTANCE_SIZE * add_offsets.len());
+        let new_add_mod = add_mod + add_mod_usage;
+        const mul_mod_usage = (BUILTIN_INSTANCE_SIZE * mul_offsets.len());
+        let new_mul_mod = mul_mod + mul_mod_usage;
+        let new_data = values;
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[new_add_mod], &[new_mul_mod], &[new_data]], None)],
+        Default::default(),
     ))
 }
