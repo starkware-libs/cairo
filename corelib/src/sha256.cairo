@@ -28,14 +28,11 @@ pub fn compute_sha256_u32_array(
 ; 8] {
     add_sha256_padding(ref input, last_input_word, last_input_num_bytes);
 
-    let arr = input.span();
+    let mut input = input.span();
     let mut state = sha256_state_handle_init(BoxTrait::new(SHA256_INITIAL_STATE));
-    let mut ind = 0;
 
-    while ind != arr.len() {
-        let input: Box<[u32; 16]> = *arr.slice(ind, 16).try_into().unwrap();
-        state = starknet::syscalls::sha256_process_block_syscall(state, input).unwrap_syscall();
-        ind = ind + 16;
+    while let Option::Some(chunk) = input.multi_pop_front() {
+        state = starknet::syscalls::sha256_process_block_syscall(state, *chunk).unwrap_syscall();
     };
 
     sha256_state_handle_digest(state).unbox()
