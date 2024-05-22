@@ -277,6 +277,9 @@ pub struct InferenceData {
     pub const_assignment: HashMap<LocalConstVarId, ConstValueId>,
     /// Current inferred assignment for impl variables.
     pub impl_assignment: HashMap<LocalImplVarId, ImplId>,
+    /// Impl pending type mapping, maps unsolved impl vars of an impl types, to a pair of types
+    /// that should be conformed upon solution.
+    pub pending_type_conforms: HashMap<LocalImplVarId, HashMap<TraitTypeId, TypeId>>,
     /// Type variables.
     pub type_vars: Vec<TypeVar>,
     /// Const variables.
@@ -310,6 +313,7 @@ impl InferenceData {
             type_assignment: HashMap::new(),
             impl_assignment: HashMap::new(),
             const_assignment: HashMap::new(),
+            pending_type_conforms: HashMap::new(),
             type_vars: Vec::new(),
             impl_vars: Vec::new(),
             const_vars: Vec::new(),
@@ -350,6 +354,19 @@ impl InferenceData {
                 .iter()
                 .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
                 .collect(),
+            pending_type_conforms: self
+                .pending_type_conforms
+                .iter()
+                .map(|(k, mapping)| {
+                    (
+                        *k,
+                        mapping
+                            .iter()
+                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                            .collect(),
+                    )
+                })
+                .collect(),
             type_vars: inference_id_replacer.rewrite(self.type_vars.clone()).no_err(),
             const_vars: inference_id_replacer.rewrite(self.const_vars.clone()).no_err(),
             impl_vars: inference_id_replacer.rewrite(self.impl_vars.clone()).no_err(),
@@ -369,6 +386,7 @@ impl InferenceData {
             type_assignment: self.type_assignment.clone(),
             const_assignment: self.const_assignment.clone(),
             impl_assignment: self.impl_assignment.clone(),
+            pending_type_conforms: self.pending_type_conforms.clone(),
             type_vars: self.type_vars.clone(),
             const_vars: self.const_vars.clone(),
             impl_vars: self.impl_vars.clone(),
@@ -678,6 +696,17 @@ impl<'db> Inference<'db> {
             return Err(self.set_error(InferenceError::Cycle(InferenceVar::Impl(var))));
         }
         self.impl_assignment.insert(var, impl_id);
+        if let Some(mapping) = self.pending_type_conforms.remove(&var) {
+            for (trait_ty, ty) in mapping {
+                self.conform_ty(
+                    ty,
+                    self.db
+                        .impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_ty, self.db))
+                        .map_err(|_| ErrorSet)?
+                        .unwrap(),
+                )?;
+            }
+        }
         Ok(impl_id)
     }
 
