@@ -121,7 +121,7 @@ fn starknet() {
 
                 #[constructor]
                 fn constructor(ref se<caret>lf: Cont<caret>ractState, value_: u128) {
-                    self.va<caret>lue.write(value_);
+                    self.va<caret>lue.write(<caret>value_);
                 }
 
                 #[abi(embed_v0)]
@@ -130,7 +130,7 @@ fn starknet() {
                         self.value.r<caret>ead()
                     }
                     fn increase(ref self: ContractState, a: u128)  {
-                        self.value.wr<caret>ite( self.value.read() + a );
+                        self.value.wr<caret>ite( self.value.read() + <caret>a );
                     }
                 }
             }

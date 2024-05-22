@@ -1,10 +1,11 @@
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::LookupItemId;
+use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::{Hover, HoverContents, HoverParams, MarkedString};
 
-use crate::get_definition_location;
+use crate::find_definition;
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::lang::semantic::LsSemanticGroup;
 use crate::lang::syntax::LsSyntaxGroup;
@@ -18,14 +19,15 @@ use crate::lang::syntax::LsSyntaxGroup;
 pub fn hover(params: HoverParams, db: &RootDatabase) -> Option<Hover> {
     let file_id = db.file_for_url(&params.text_document_position_params.text_document.uri);
     let position = params.text_document_position_params.position.to_cairo();
-    // Get the item id of the definition.
-    let (found_file, span) = get_definition_location(db, file_id, position)?;
-    // Get the documentation and declaration of the item.
-    let node = db.find_syntax_node_at_position(
-        found_file,
-        span.start.position_in_file(db.upcast(), found_file)?,
-    )?;
-    let lookup_item = db.find_lookup_item(&node)?;
+    // Get the syntax node of the definition.
+    let definition_node = {
+        let identifier = db.find_identifier_at_position(file_id, position)?;
+        let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
+        let stable_ptr = find_definition(db, &identifier, &lookup_items)?;
+        stable_ptr.lookup(db.upcast())
+    };
+    // Get the lookup item representing the defining item.
+    let lookup_item = db.find_lookup_item(&definition_node)?;
     // Build texts.
     let mut hints = Vec::new();
     if let Some(hint) = get_expr_hint(db.upcast(), lookup_item) {
