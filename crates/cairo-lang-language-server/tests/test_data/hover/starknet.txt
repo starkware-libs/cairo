@@ -5,8 +5,9 @@ use Balance::contract_state_for_testing;
                   ↑
 
 //! > popover
-No hover information.
-
+```cairo
+pub fn contract_state_for_testing() -> ContractState
+```
 =========
 
 //! > hover at Position { line: 23, character: 25 }
@@ -27,8 +28,14 @@ No hover information.
                                  ↑
 
 //! > popover
-No hover information.
+```cairo
 
+
+    pub struct ContractState {
+        pub value: __member_module_value::ContractMemberState,
+    }
+
+```
 =========
 
 //! > hover at Position { line: 24, character: 15 }
@@ -40,6 +47,18 @@ No hover information.
 //! > popover
 No hover information.
 
+=========
+
+//! > hover at Position { line: 24, character: 25 }
+
+//! > source context
+        self.value.write(value_);
+                         ↑
+
+//! > popover
+```cairo
+fn constructor(ref self: ContractState, value_: u128)
+```
 =========
 
 //! > hover at Position { line: 28, character: 30 }
@@ -64,8 +83,14 @@ No hover information.
                                        ↑
 
 //! > popover
-No hover information.
+```cairo
 
+
+    pub struct ContractState {
+        pub value: __member_module_value::ContractMemberState,
+    }
+
+```
 =========
 
 //! > hover at Position { line: 30, character: 24 }
@@ -89,6 +114,18 @@ fn read(self: @TMemberState) -> Self::Value;
 //! > popover
 ```cairo
 fn write(ref self: TMemberState, value: Self::Value);
+```
+=========
+
+//! > hover at Position { line: 33, character: 50 }
+
+//! > source context
+            self.value.write( self.value.read() + a );
+                                                  ↑
+
+//! > popover
+```cairo
+fn increase(ref self: ContractState, a: u128)
 ```
 =========
 
