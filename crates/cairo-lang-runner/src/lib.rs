@@ -588,23 +588,23 @@ impl SierraCasmRunner {
             BuiltinName::bitwise,
             BuiltinName::ec_op,
             BuiltinName::poseidon,
+            BuiltinName::range_check96,
+            BuiltinName::add_mod,
+            BuiltinName::mul_mod,
         ];
         // The offset [fp - i] for each of this builtins in this configuration.
         let builtin_offset: HashMap<GenericTypeId, i16> = HashMap::from([
-            (PedersenType::ID, 7),
-            (RangeCheckType::ID, 6),
-            (BitwiseType::ID, 5),
-            (EcOpType::ID, 4),
-            (PoseidonType::ID, 3),
+            (PedersenType::ID, 10),
+            (RangeCheckType::ID, 9),
+            (BitwiseType::ID, 8),
+            (EcOpType::ID, 7),
+            (PoseidonType::ID, 6),
+            (RangeCheck96Type::ID, 5),
+            (AddModType::ID, 4),
+            (MulModType::ID, 3),
         ]);
 
-        let emulated_builtins = HashSet::from([
-            SystemType::ID,
-            // TODO(ilya): Move to following when supported by cairo-vm.
-            RangeCheck96Type::ID,
-            AddModType::ID,
-            MulModType::ID,
-        ]);
+        let emulated_builtins = HashSet::from([SystemType::ID]);
 
         let mut ap_offset: i16 = 0;
         let mut array_args_data_iter = prep_array_args(&mut ctx, args, &mut ap_offset).into_iter();
