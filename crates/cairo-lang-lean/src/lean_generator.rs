@@ -3335,10 +3335,12 @@ impl CompletenessProof {
         if let Some(rc_offset) = rc_check_offset {
             let offset = rc_offset.to_usize().expect("rc offset out of bounds");
             self.push_main(indent, &format!("simp only [h_rc_plus_{offset}]"));
+            self.push_main(indent, "try dsimp [exec_vals, rc_vals]");
             self.push_main(indent, "try simp only [add_sub_add_comm, add_sub_right_comm, sub_add_cancel', sub_self] ; try norm_num1");
             // self.push_main(indent, "try ring_nf");
             // self.push_main(indent, &format!("simp only [Int.add_comm _ {offset}, Int.add_sub_cancel]"));
         } else if !is_rc_var {
+            self.push_main(indent, "try dsimp [exec_vals, rc_vals]");
             self.push_main(indent, "try simp only [add_sub_add_comm, add_sub_right_comm, sub_add_cancel', sub_self] ; try norm_num1");
             // self.push_main(indent, "try ring_nf");
             if let Some(simps) = assert_simps {
@@ -3346,8 +3348,11 @@ impl CompletenessProof {
                     self.push_main(indent, simp);
                 }
             }
-            self.push_main(indent, &format!("simp only [{assert_hyp}]"));
+            if assert_hyp.len() > 0 {
+                self.push_main(indent, &format!("simp only [{assert_hyp}]"));
+            }
         } else {
+            self.push_main(indent, "try dsimp [exec_vals, rc_vals]");
             self.push_main(indent, "try simp only [add_sub_add_comm, add_sub_right_comm, sub_add_cancel', sub_self] ; try norm_num1");
             // self.push_main(indent, "try ring_nf");
         }
@@ -3365,6 +3370,8 @@ impl CompletenessProof {
         &mut self,
         ret_block_name: &str,
         branch_id: usize,
+        // All return argument names, including implicit arguments.
+        ret_arg_names: &Vec<String>,
         lean_info: &LeanFuncInfo,
     ) {
         // If AP advanced at the beginning of the return block, assign skipped
@@ -3375,8 +3382,36 @@ impl CompletenessProof {
             }
         }
 
-        // Add the implicit arguments (only the range check argument is handled properly).
+        // TODO: this code is somewhat similar to code in various implementations of generate_return_args().
+        // Check whether these can be unified.
+
         let rc_arg_name = lean_info.get_range_check_arg_name().unwrap_or("".into());
+        // Depending on the return block, only some of the explicit return arguments may actually be used.
+        let explicit_len = lean_info.get_branch_explicit_arg_num(branch_id);
+        let first_explicit_name_pos = ret_arg_names.len() - explicit_len;
+        // If there is no branch ID position, set it to be a position beyond the end of the return arguments.
+        let branch_id_pos = if let Some(pos) = lean_info.ret_args.branch_id_pos { pos } else { ret_arg_names.len() };
+
+        for (pos, ret_name) in ret_arg_names.iter().enumerate() {
+            if pos < lean_info.ret_args.num_implicit_ret_args {
+                // Add the implicit argument (only the range check argument is handled properly).
+                if rc_arg_name == ret_name.strip_prefix("ρ_").unwrap_or(ret_name) {
+                    let max_rc_count = *lean_info.max_rc_counts.get(ret_block_name).unwrap_or(&0);
+                    self.ap_assignments.push(format!("rc ({rc_arg_name} + {max_rc_count})"));
+                } else {
+                    self.ap_assignments.push("val 0".into());
+                }
+            } else if pos == branch_id_pos || first_explicit_name_pos <= pos {
+                self.spec_rcases.push(format!("h_{ret_name}"));
+                self.ap_assignments.push(format!("val {ret_name}"));
+            } else {
+                // Explicit argument not used in this branch.
+                self.ap_assignments.push("val 0".into());
+            }
+        }
+
+        // Add the implicit arguments (only the range check argument is handled properly).
+/*        let rc_arg_name = lean_info.get_range_check_arg_name().unwrap_or("".into());
         for arg_name in lean_info.get_arg_names()[..lean_info.ret_args.num_implicit_ret_args].iter() {
             if *arg_name == rc_arg_name {
                 let max_rc_count = *lean_info.max_rc_counts.get(ret_block_name).unwrap_or(&0);
@@ -3387,13 +3422,15 @@ impl CompletenessProof {
         }
 
         // Add the explicit arguments.
-        let ret_arg_names = &lean_info.get_all_ret_arg_names()[lean_info.ret_args.num_implicit_ret_args..];
+        let ret_arg_name = &lean_info.get_explicit_ret_arg_names();
+        // let ret_arg_names = &lean_info.get_all_ret_arg_names()[lean_info.ret_args.num_implicit_ret_args..];
+
 
         // Add the return variables (pushed on the stack).
         for var_name in ret_arg_names {
             self.spec_rcases.push(format!("h_{var_name}"));
             self.ap_assignments.push(format!("val {var_name}"));
-        }
+        }*/
     }
 
     /// Generates the main proof steps for the return block.
@@ -3455,6 +3492,7 @@ impl CompletenessProof {
 
             // Generate the code to handle the assert.
 
+            let mut assert_hyp = format!("h_{ret_name}");
             let rhs_var_a = if is_rc {
                     if let Some((_, offset)) = get_ref_from_deref(
                         rebind.get_expr(&base_ret_name).expect("Failed to find range check in rebind table.")
@@ -3477,6 +3515,7 @@ impl CompletenessProof {
                     }
                 } else {
                     // Empty return positions (return 0).
+                    assert_hyp = "".into();
                     None
                 };
 
@@ -3489,7 +3528,7 @@ impl CompletenessProof {
                 None,
                 is_rc,
                 None,
-                &format!("h_{ret_name}"),
+                &assert_hyp,
                 None,
                 pc,
                 op_size,
@@ -3537,7 +3576,9 @@ impl CompletenessProof {
             }
             self.push_main(indent, &format!("simp only [h_ap_plus_{ap_offset}]"));
             // self.push_main(indent, "try simp only [add_sub_add_comm, add_sub_right_comm, sub_add_cancel', sub_self] ; try norm_num1");
+            self.push_main(indent, "try dsimp [exec_vals, rc_vals]");
             self.push_main(indent, "try ring_nf");
+            self.push_main(indent, "try rfl");
         }
     }
 
@@ -3677,14 +3718,15 @@ impl CompletenessProof {
                 self.push_lean(
                     indent + 2,
                     &format!(
-                        "simp only [assign_exec_of_lt mem loc₀ {var_ref} (by apply Int.add_lt_add_left ; norm_num1), htv_{arg_name}]",
+                        "simp only [assign_exec_of_lt mem loc₀ {var_ref} (by apply {simp_lemma} ; norm_num1), htv_{arg_name}]",
                         // Here we use the non-vm expression (as the theorem takes an offset in Z).
                         var_ref = get_lean_ref_from_deref(&expr, true, false, true),
+                        simp_lemma = if offset == 0 { "Int.lt_add_of_pos_right" } else { "Int.add_lt_add_left" },
                     ),
                 );
             } else {
                 // Inside the local assignment.
-                self.push_lean(indent + 2, &format!("simp only [h_{arg_name}_exec_pos] ; ring_nf"))
+                self.push_lean(indent + 2, &format!("simp only [h_{arg_name}_exec_pos] ; dsimp [exec_vals] ; ring_nf ; rfl"))
             }
         }
     }
@@ -3719,6 +3761,12 @@ impl CompletenessProof {
                             "(by apply Int.sub_lt_self ; norm_num1)"
                         }
                     )
+                } else if offset == 0 {
+                    self.push_lean(
+                        indent,
+                        &format!("have h_ap_plus_{offset} := assign_exec_of_lt mem loc σ.ap"),
+                    );
+                    self.push_lean(indent + 2, "(by apply Int.lt_add_of_pos_right ; norm_num1)");
                 } else {
                     self.push_lean(
                         indent,
@@ -3872,7 +3920,7 @@ impl CompletenessProof {
                 } else {
                     self.push_lean(rc_proof_indent, "apply VmRangeChecked_rec");
                 }
-                self.push_lean(rc_proof_indent, "· try norm_num1 ; try ring_nf");
+                self.push_lean(rc_proof_indent, "· try norm_num1 ; dsimp [rc_vals] ; try ring_nf");
                 self.push_lean(rc_proof_indent + 2, &format!("apply h_rc_{var_name}"));
             }
             self.push_lean(rc_proof_indent, "apply VmRangeChecked_zero");
@@ -4098,24 +4146,8 @@ impl LeanGenerator for CompletenessProof {
 
         self.push_main(
             indent,
-            &format!("vm_step_jnz {codes} <;>", codes = self.make_codes(pc, op_size))
+            &format!("vm_step_jnz {codes}", codes = self.make_codes(pc, op_size))
         );
-        self.push_main(indent, "simp only [neg_clip_checked', ←Int.sub_eq_add_neg] <;>");
-        self.push_main(indent, "norm_num1 <;>");
-
-        // Get the ap offset of the variable.
-        let var_ap_offset = self.get_var_ap_offset(cond_var, rebind)
-            .expect("Failed to find variable ap offset");
-
-        if var_ap_offset == 0 {
-            self.push_main(indent, "try simp only [add_zero] <;>");
-        }
-        self.push_main(indent, &format!("simp only [h_ap_plus_{var_ap_offset}] <;>"));
-        if var_ap_offset == 0 {
-            self.push_main(indent, "simp only [Int.sub_self]");
-        } else {
-            self.push_main(indent, &format!("simp only [Int.add_comm σ.ap {var_ap_offset}, Int.add_sub_cancel]"));
-        }
     }
 
     fn generate_label_block(
@@ -4176,7 +4208,7 @@ impl LeanGenerator for CompletenessProof {
         self.push_lean(
             indent,
             &format!(
-                "have h_ap_concat : {ap1} = {ap0} + ↑loc₀.exec_num := by simp",
+                "have h_ap_concat : {ap1} = {ap0} + ↑loc₀.exec_num := by dsimp ; try rw [add_assoc] ; norm_num1 ; rfl",
                 ap1 = self.make_start_local_ap_expr(block),
                 ap0 = self.make_start_local_ap_expr(calling_block),
             ));
@@ -4242,16 +4274,47 @@ impl LeanGenerator for CompletenessProof {
             &format!("-- {cond_var_name} {op} 0", op = if is_eq { "=" } else { "≠" }),
         );
 
+        // self.push_main(indent, "simp only [neg_clip_checked', ←Int.sub_eq_add_neg] <;>");
         if is_eq {
+            // We first want to prove (below) the case of the branch whose condition is false. In the case
+            // of equality, this is the second branch (not-equal branch).
             self.push_main(indent, "swap");
-            self.push_main(indent, &format!("· simp only [h_{cond_var_name}]"));
-            self.push_main(indent + 2, "simp only [IsEmpty.forall_iff]");
+        }
+        self.push_main(indent, "· norm_num1");
+
+        let indent = indent + 2;
+
+        // Get the ap offset of the variable.
+        let var_ap_offset = self.get_var_ap_offset(cond_var_name, rebind)
+            .expect("Failed to find variable ap offset");
+        if var_ap_offset == 0 {
+            self.push_main(indent, "try simp only [add_zero]");
+        }
+        self.push_main(indent, &format!("simp only [h_ap_plus_{var_ap_offset}]"));
+        self.push_main(indent, "dsimp [exec_vals]");
+        if var_ap_offset == 0 {
+            self.push_main(indent, "simp only [Int.sub_self]");
+        } else {
+            self.push_main(indent, &format!("simp only [Int.add_comm σ.ap {var_ap_offset}, Int.add_sub_cancel]"));
+        }
+
+        if is_eq {
+            // Prove the first goal (the not equal branch) by showing its condition is false.
+            self.push_main(indent, "rw [val_ne_iff]");
+            self.push_main(indent, &format!("simp only [h_{cond_var_name}]"));
+            self.push_main(indent, "simp only [not_true, false_implies]");
+        } else {
+            self.push_main(indent, "intro h_cond");
+            self.push_main(indent, "exfalso");
+            self.push_main(indent, &format!("apply h_{cond_var_name}"));
+            self.push_main(indent, "injection h_cond");
+        }
+
+        let indent = indent - 2;
+
+        if is_eq {
             self.push_main(indent, "intro _");
         } else {
-            self.push_main(indent, "· intro h_cond");
-            self.push_main(indent + 2, "exfalso");
-            self.push_main(indent + 2, &format!("apply h_{cond_var_name}"));
-            self.push_main(indent + 2, "injection h_cond");
             self.push_main(indent, "intro _");
             self.push_main(
                 indent,
@@ -4289,7 +4352,7 @@ impl LeanGenerator for CompletenessProof {
     ) {
         // Add the return block variables (and the associated hypotheses) to the list
         // of locally assigned variables and the list of spec rcases.
-        self.add_return_block_vars_and_hyp(ret_block_name, branch_id, lean_info);
+        self.add_return_block_vars_and_hyp(ret_block_name, branch_id, ret_arg_names, lean_info);
 
         // Add the steps of the return block to the main proof.
         self.generate_return_block_steps(
