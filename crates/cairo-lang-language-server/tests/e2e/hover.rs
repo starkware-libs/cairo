@@ -1,11 +1,21 @@
 use std::fmt::Write;
-use std::path::Path;
 
-use indoc::indoc;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use tower_lsp::lsp_types;
 use tower_lsp::lsp_types::lsp_request;
 
 use crate::support::{cursors, sandbox};
+
+cairo_lang_test_utils::test_file_test!(
+    hover,
+    "tests/test_data/hover",
+    {
+        basic: "basic.txt",
+        starknet: "starknet.txt",
+    },
+    test_hover
+);
 
 fn caps(base: lsp_types::ClientCapabilities) -> lsp_types::ClientCapabilities {
     use lsp_types::*;
@@ -23,139 +33,21 @@ fn caps(base: lsp_types::ClientCapabilities) -> lsp_types::ClientCapabilities {
     }
 }
 
-#[test]
-fn basic() {
-    check(
-        "tests/test_data/hover/basic.txt",
-        indoc! {r#"
-            fn main() {
-                let mut x = 5;
-                p<caret>rintln!("The value of x is: {}", x);
-                x<caret> = <caret>a<caret>dd_two<caret>(x);
-
-                front<caret>_of_house::ho<caret>sting::add<caret>_to_waitlist();
-            }
-
-            /// `add_two` documentation.
-            fn add_t<caret>wo(x: u32) -> u32 { x + 2 }
-
-            /// Rectangle struct.
-            #[derive(Copy, Drop)]
-            struct Rectangle {
-                /// Width of the rectangle.
-                width: u64,
-                /// Height of the rectangle.
-                height: u64,
-            }
-
-            /// Rectangle trait.
-            trait RectangleTrait {
-                /// Calculate the area of the rectangle.
-                fn area(self: @Rec<caret>tangle) -> u64;
-            }
-
-            /// Implementing the `RectangleTrait` for the `Rectangle` struct.
-            impl RectangleImpl of RectangleTrait {
-                fn area(self: @Rec<caret>tangle) -> u64 {
-                    (*self.wi<caret>dth) * (*self.height)
-                }
-            }
-
-            /// Testing `#[generate_trait]` attribute.
-            #[generate_trait]
-            impl RectangleImpl2 of RectangleTrait2 {
-                /// Calculate the area of the rectangle #2.
-                fn area(self: @Rec<caret>tangle) -> u64 {
-                    (*self.wi<caret>dth) * (*self.height)
-                }
-            }
-
-            enum Coin {
-                Penny,
-            }
-
-            fn value_in_cents(coin: C<caret>oin) -> felt252 {
-                match coin {
-                    Coin::P<caret>enny => 1,
-                }
-            }
-
-            /// Front of house module.
-            pub mod front_of_house {
-                /// Hosting module.
-                pub mod hosting {
-                    /// Add to waitlist function.
-                    pub fn add_to_waitlist() {}
-                }
-            }
-        "#},
-    );
-}
-
-#[test]
-fn starknet() {
-    check(
-        "tests/test_data/hover/starknet.txt",
-        indoc! {r#"
-            use Balance::contr<caret>act_state_for_testing;
-
-            /// The balance contract interface.
-            #[starknet::interface]
-            trait IBalance<T> {
-                /// Returns the current balance.
-                fn get(self: @T) -> u128;
-                /// Increases the balance by the given amount.
-                fn increase(ref self: T, a: u128);
-            }
-
-            /// The balance contract.
-            #[starknet::contract]
-            mod Balance {
-                use core::traits::Into;
-
-                #[storage]
-                struct Storage {
-                    /// Storage value.
-                    value: u128,
-                }
-
-                #[constructor]
-                fn constructor(ref se<caret>lf: Cont<caret>ractState, value_: u128) {
-                    self.va<caret>lue.write(<caret>value_);
-                }
-
-                #[abi(embed_v0)]
-                impl Balance of super::IBa<caret>lance<Con<caret>tractState> {
-                    fn get(self: @ContractState) -> u128 {
-                        self.value.r<caret>ead()
-                    }
-                    fn increase(ref self: ContractState, a: u128)  {
-                        self.value.wr<caret>ite( self.value.read() + <caret>a );
-                    }
-                }
-            }
-        "#},
-    );
-}
-
 /// Perform hover test.
 ///
 /// This function spawns a sandbox language server with the given code in the `src/lib.cairo` file.
 /// The Cairo source code is expected to contain caret markers.
 /// The function then requests hover information at each caret position and compares the result with
 /// the expected hover information from the snapshot file.
-fn check(test_data: &str, cairo: &str) {
-    let (cairo, cursors) = cursors(cairo);
+fn test_hover(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let (cairo, cursors) = cursors(&inputs["src/lib.cairo"]);
 
     let mut ls = sandbox! {
         files {
-            "cairo_project.toml" => indoc! {r#"
-                [crate_roots]
-                hello = "src"
-
-                [config.global]
-                edition = "2023_11"
-            "#},
+            "cairo_project.toml" => inputs["cairo_project.toml"].clone(),
             "src/lib.cairo" => cairo.clone(),
         }
         client_capabilities = caps;
@@ -163,17 +55,18 @@ fn check(test_data: &str, cairo: &str) {
 
     ls.open("src/lib.cairo");
 
-    let mut expected = String::new();
+    let mut hovers = OrderedHashMap::default();
 
     for position in cursors.carets() {
-        writeln!(&mut expected, "//! > hover at {position:?}").unwrap();
+        let hover_name = format!("hover {}:{}", position.line, position.character);
 
-        writeln!(&mut expected).unwrap();
-        writeln!(&mut expected, "//! > source context").unwrap();
+        let mut report = String::new();
+
         let source_line = cairo.lines().nth(position.line as usize).unwrap();
-        writeln!(&mut expected, "{source_line}").unwrap();
+        writeln!(&mut report, "{:-^1$}", " source context ", source_line.len()).unwrap();
+        writeln!(&mut report, "{source_line}").unwrap();
         writeln!(
-            &mut expected,
+            &mut report,
             "{caret:>width$}",
             caret = "↑",
             width = position.character as usize + 1
@@ -188,17 +81,17 @@ fn check(test_data: &str, cairo: &str) {
             work_done_progress_params: Default::default(),
         });
 
-        writeln!(&mut expected).unwrap();
-        writeln!(&mut expected, "//! > popover").unwrap();
-        match hover {
-            Some(hover) => expected.push_str(&render(hover)),
-            None => expected.push_str("No hover information.\n"),
-        }
+        let hover = match hover {
+            Some(hover) => render(hover),
+            None => "No hover information.\n".to_owned(),
+        };
+        writeln!(&mut report, "{:-^1$}", " popover ", source_line.len()).unwrap();
+        write!(&mut report, "{hover}").unwrap();
 
-        writeln!(&mut expected, "\n=========\n").unwrap();
+        hovers.insert(hover_name, report);
     }
 
-    cairo_lang_test_utils::compare_contents_or_fix_with_path(Path::new(test_data), expected);
+    TestRunnerResult::success(hovers)
 }
 
 /// Render a hover response to a Markdown string that resembles what would be shown in a hover popup
