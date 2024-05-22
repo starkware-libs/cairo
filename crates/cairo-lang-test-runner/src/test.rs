@@ -216,6 +216,7 @@ fn test_format_for_panic() {
     );
 }
 
+/// Return a named test ([String], [TestConfig]) from a test name and its ignored status.
 fn to_named_test(test: &(&str, bool)) -> (String, TestConfig) {
     (
         String::from(test.0),
@@ -223,6 +224,7 @@ fn to_named_test(test: &(&str, bool)) -> (String, TestConfig) {
     )
 }
 
+/// Return a [TestCompilation] from a list of test names and their ignored status.
 fn to_test_compilation(tests: &[(&str, bool)]) -> TestCompilation {
     TestCompilation {
         named_tests: tests.iter().map(to_named_test).collect(),
