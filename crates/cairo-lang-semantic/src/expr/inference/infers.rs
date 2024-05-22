@@ -410,11 +410,20 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             stable_ptr,
             lookup_context.clone(),
         )?;
-        Ok(TypeLongId::ImplType(ImplTypeId::new(
-            impl_id,
-            concrete_trait_type.trait_type(self.db),
-            self.db,
-        ))
-        .intern(self.db))
+        let ty = self.new_type_var(stable_ptr);
+        let var = extract_matches!(impl_id, ImplId::ImplVar).lookup_intern(self.db).id;
+        self.data.pending_type_conforms.insert(
+            var,
+            (
+                TypeLongId::ImplType(ImplTypeId::new(
+                    impl_id,
+                    concrete_trait_type.trait_type(self.db),
+                    self.db,
+                ))
+                .intern(self.db),
+                ty,
+            ),
+        );
+        Ok(ty)
     }
 }
