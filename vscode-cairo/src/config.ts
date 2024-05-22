@@ -5,6 +5,7 @@ interface ConfigProps {
   enableLanguageServer: boolean;
   languageServerPath: string;
   enableScarb: boolean;
+  preferScarbLanguageServer: boolean;
   scarbPath: string;
   corelibPath: string;
   languageServerExtraEnv: null | Record<string, string | number>;
@@ -28,11 +29,6 @@ export class Config {
       return replacePathPlaceholders(value, undefined);
     }
     return value;
-  }
-
-  public has(prop: keyof ConfigProps): boolean {
-    const config = vscode.workspace.getConfiguration(Config.ROOT);
-    return config.has(prop);
   }
 }
 
