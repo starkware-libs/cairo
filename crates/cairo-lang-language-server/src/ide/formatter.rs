@@ -16,7 +16,7 @@ use crate::lang::lsp::LsProtoGroup;
 )]
 pub fn format(params: DocumentFormattingParams, db: &RootDatabase) -> Option<Vec<TextEdit>> {
     let file_uri = params.text_document.uri;
-    let file = db.file_for_url(&file_uri);
+    let file = db.file_for_url(&file_uri)?;
 
     let Ok(node) = db.file_syntax(file) else {
         error!("formatting failed: file '{file_uri}' does not exist");

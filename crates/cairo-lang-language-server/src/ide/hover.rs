@@ -17,7 +17,7 @@ use crate::lang::syntax::LsSyntaxGroup;
     fields(uri = %params.text_document_position_params.text_document.uri)
 )]
 pub fn hover(params: HoverParams, db: &RootDatabase) -> Option<Hover> {
-    let file_id = db.file_for_url(&params.text_document_position_params.text_document.uri);
+    let file_id = db.file_for_url(&params.text_document_position_params.text_document.uri)?;
     let position = params.text_document_position_params.position.to_cairo();
     // Get the syntax node of the definition.
     let definition_node = {
