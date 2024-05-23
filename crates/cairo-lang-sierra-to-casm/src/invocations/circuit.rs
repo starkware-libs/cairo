@@ -6,6 +6,7 @@ use cairo_lang_sierra::extensions::circuit::{
     CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE, VALUE_SIZE,
 };
 use cairo_lang_sierra::ids::ConcreteTypeId;
+use cairo_lang_utils::casts::IntoOrPanic;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
@@ -115,7 +116,7 @@ fn build_get_descriptor(
         // TODO(Gil): Support relocatable CellExpression and return an unstored "[ap - 1] + 1".
         [ap] = [ap - 1] + 1, ap++;
         [ap] = (add_offsets.len()), ap++;
-        [ap] = [ap - 1] + (add_offsets.len() * VALUE_SIZE), ap++;
+        [ap] = [ap - 2] + (add_offsets.len() * VALUE_SIZE), ap++;
         [ap] = (mul_offsets.len()), ap++;
     };
 
@@ -156,18 +157,17 @@ fn build_circuit_eval(
     let mul_mod = expr_mul_mod.try_unpack_single()?;
     let [add_mod_offsets, n_adds, mul_mod_offsets, n_muls] = expr_desc.try_unpack()?;
     let [modulus0, modulus1, modulus2, modulus3] = modulus_expr.try_unpack()?;
-    let values_end = expr_data.try_unpack_single()?;
+    let inputs_end = expr_data.try_unpack_single()?;
 
     let zero = expr_zero.try_unpack_single()?;
     let one = expr_one.try_unpack_single()?;
     let mut casm_builder = CasmBuilder::default();
 
-    let instance_size = BUILTIN_INSTANCE_SIZE.try_into().unwrap();
-
+    let instance_size = BUILTIN_INSTANCE_SIZE.into_or_panic();
     add_input_variables! {casm_builder,
         buffer(instance_size) add_mod;
         buffer(instance_size) mul_mod;
-        buffer(VALUE_SIZE.try_into().unwrap()) values_end;
+        buffer(VALUE_SIZE.into_or_panic()) inputs_end;
         deref add_mod_offsets;
         deref n_adds;
         deref mul_mod_offsets;
@@ -182,12 +182,17 @@ fn build_circuit_eval(
         deref one;
     };
 
-    let CircuitInfo { add_offsets, mul_offsets, values, one_needed, .. } =
+    let CircuitInfo { add_offsets, mul_offsets, values, one_needed, n_inputs } =
         builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
 
+    let mut n_values = values.len();
+    if *one_needed {
+        n_values += 1;
+    }
+
     casm_build_extend! {casm_builder,
-        const values_size = values.len() * VALUE_SIZE;
-        tempvar values = values_end - values_size;
+        const inputs_size = n_inputs * VALUE_SIZE;
+        tempvar values = inputs_end - inputs_size;
     }
     if !add_offsets.is_empty() {
         casm_build_extend! {casm_builder,
@@ -215,10 +220,10 @@ fn build_circuit_eval(
 
     if *one_needed {
         casm_build_extend! {casm_builder,
-            assert one = values_end[0];
-            assert zero = values_end[1];
-            assert zero = values_end[2];
-            assert zero = values_end[3];
+            assert one = inputs_end[0];
+            assert zero = inputs_end[1];
+            assert zero = inputs_end[2];
+            assert zero = inputs_end[3];
         };
     }
 
@@ -227,7 +232,9 @@ fn build_circuit_eval(
         let new_add_mod = add_mod + add_mod_usage;
         const mul_mod_usage = (BUILTIN_INSTANCE_SIZE * mul_offsets.len());
         let new_mul_mod = mul_mod + mul_mod_usage;
-        let new_data = values;
+
+        const values_size = n_values * VALUE_SIZE;
+        let new_data = values + values_size;
     };
 
     Ok(builder.build_from_casm_builder(

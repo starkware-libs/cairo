@@ -654,7 +654,7 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                 },
                 OutputVarInfo {
                     ty: context.get_concrete_type(CircuitOutputs::id(), &[GenericArg::Type(ty)])?,
-                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
             SierraApChange::Known { new_vars_only: false },
