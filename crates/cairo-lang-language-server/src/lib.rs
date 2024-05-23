@@ -252,7 +252,7 @@ fn ensure_exists_in_db(
     let overrides = old_db.file_overrides();
     let mut new_overrides: OrderedHashMap<FileId, Arc<String>> = Default::default();
     for uri in open_files {
-        let file_id = old_db.file_for_url(&uri);
+        let Some(file_id) = old_db.file_for_url(&uri) else { continue };
         let new_file_id = file_id.lookup_intern(old_db).intern(new_db);
         if let Some(content) = overrides.get(&file_id) {
             new_overrides.insert(new_file_id, content.clone());
@@ -411,7 +411,7 @@ impl Backend {
     async fn refresh_file_diagnostics(&self, uri: &Url) {
         let db = self.db_mut().await;
 
-        let file_id = db.file_for_url(uri);
+        let Some(file_id) = db.file_for_url(uri) else { return };
 
         macro_rules! diags {
             ($db:ident. $query:ident($file_id:expr), $f:expr) => {
@@ -514,7 +514,7 @@ impl Backend {
             let _ = db.file_lowering_diagnostics(file_id);
         };
         for uri in open_files {
-            let file_id = db.file_for_url(&uri);
+            let Some(file_id) = db.file_for_url(&uri) else { continue };
             if let FileLongId::OnDisk(file_path) = file_id.lookup_intern(db) {
                 self.detect_crate_for(db, file_path).await;
             }
@@ -535,8 +535,11 @@ impl Backend {
         params: ProvideVirtualFileRequest,
     ) -> LSPResult<ProvideVirtualFileResponse> {
         self.with_db(|db| {
-            let file_id = db.file_for_url(&params.uri);
-            ProvideVirtualFileResponse { content: db.file_content(file_id).map(|s| (*s).clone()) }
+            let content = db
+                .file_for_url(&params.uri)
+                .and_then(|file_id| db.file_content(file_id))
+                .map(Arc::unwrap_or_clone);
+            ProvideVirtualFileResponse { content }
         })
         .await
     }
@@ -603,7 +606,7 @@ impl Backend {
 
         let mut db = self.db_mut().await;
         for uri in self.state_mutex.lock().await.open_files.iter() {
-            let file_id = db.file_for_url(uri);
+            let Some(file_id) = db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = db.lookup_intern_file(file_id) {
                 self.detect_crate_for(&mut db, file_path).await;
             }
@@ -737,7 +740,7 @@ impl LanguageServer for Backend {
         let mut db = self.db_mut().await;
         for change in &params.changes {
             if is_cairo_file_path(&change.uri) {
-                let file = db.file_for_url(&change.uri);
+                let Some(file) = db.file_for_url(&change.uri) else { continue };
                 PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
             }
         }
@@ -780,13 +783,11 @@ impl LanguageServer for Backend {
         // Try to detect the crate for physical files.
         // The crate for virtual files is already known.
         if uri.scheme() == "file" {
-            let Ok(path) = uri.to_file_path() else {
-                return;
-            };
+            let Ok(path) = uri.to_file_path() else { return };
             self.detect_crate_for(&mut db, path).await;
         }
 
-        let file_id = db.file_for_url(&uri);
+        let Some(file_id) = db.file_for_url(&uri) else { return };
         self.state_mut().await.open_files.insert(uri);
         db.override_file_content(file_id, Some(Arc::new(params.text_document.text)));
         drop(db);
@@ -804,7 +805,7 @@ impl LanguageServer for Backend {
             };
         let mut db = self.db_mut().await;
         let uri = params.text_document.uri;
-        let file = db.file_for_url(&uri);
+        let Some(file) = db.file_for_url(&uri) else { return };
         db.override_file_content(file, Some(Arc::new(text.into())));
         drop(db);
         self.refresh_diagnostics().await.ok();
@@ -813,7 +814,7 @@ impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_save(&self, params: DidSaveTextDocumentParams) {
         let mut db = self.db_mut().await;
-        let file = db.file_for_url(&params.text_document.uri);
+        let Some(file) = db.file_for_url(&params.text_document.uri) else { return };
         PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
         db.override_file_content(file, None);
     }
@@ -822,7 +823,7 @@ impl LanguageServer for Backend {
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let mut db = self.db_mut().await;
         self.state_mut().await.open_files.remove(&params.text_document.uri);
-        let file = db.file_for_url(&params.text_document.uri);
+        let Some(file) = db.file_for_url(&params.text_document.uri) else { return };
         db.override_file_content(file, None);
         drop(db);
         self.refresh_diagnostics().await.ok();
