@@ -3135,6 +3135,42 @@ impl U64CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMu
 impl U128CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u128>;
 impl U256CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u256>;
 
+
+/// SaturatingAdd implementations
+impl U8SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u8>;
+impl U16SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u16>;
+impl U32SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u32>;
+impl U64SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u64>;
+impl U128SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u128>;
+impl U256SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u256>;
+impl I8SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i8>;
+impl I16SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i16>;
+impl I32SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i32>;
+impl I64SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i64>;
+impl I128SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i128>;
+
+/// SaturatingSub implementations
+impl U8SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u8>;
+impl U16SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u16>;
+impl U32SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u32>;
+impl U64SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u64>;
+impl U128SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u128>;
+impl U256SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u256>;
+impl I8SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<i8>;
+impl I16SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<i16>;
+impl I32SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<i32>;
+impl I64SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<i64>;
+impl I128SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<i128>;
+
+/// SaturatingMul implementations
+impl U8SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u8>;
+impl U16SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u16>;
+impl U32SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u32>;
+impl U64SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u64>;
+impl U128SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u128>;
+impl U256SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u256>;
+
+
 /// Internal trait for easier finding of absolute values.
 pub(crate) trait AbsAndSign<Signed, Unsigned> {
     /// Returns the absolute value of the `Signed` value as `Unsigned` and the original sign.
