@@ -12,10 +12,10 @@ fn foo() -> CircuitInputAccumulator<MyCircuit> {
 }
 
 //! > casm
-[ap + 0] = [fp + -3] + 20, ap++;
-[ap + 0] = [fp + -3], ap++;
-[ap + 0] = [fp + -3] + 12, ap++;
-ret;
+[ap + 0] = [fp + -3] + 20, ap++; // 0
+[ap + 0] = [fp + -3], ap++; // 2
+[ap + 0] = [fp + -3] + 12, ap++; // 3
+ret; // 5
 
 //! > function_costs
 test::foo: OrderedHashMap({RangeCheck96: 16, Const: 300})
@@ -62,22 +62,22 @@ fn foo(
 }
 
 //! > casm
-[fp + -6] = [[fp + -8] + 0];
-[fp + -5] = [[fp + -8] + 1];
-[fp + -4] = [[fp + -8] + 2];
-[fp + -3] = [[fp + -8] + 3];
-[ap + 0] = [fp + -8] + 4, ap++;
-[fp + -7] = [ap + 0] + [ap + -1], ap++;
-jmp rel 4 if [ap + -1] != 0;
-jmp rel 7;
-[ap + 0] = 0, ap++;
-[ap + 0] = [ap + -3], ap++;
-[ap + 0] = [fp + -7], ap++;
-ret;
-[ap + 0] = 1, ap++;
-[ap + 0] = 0, ap++;
-[ap + 0] = [fp + -7], ap++;
-ret;
+[fp + -6] = [[fp + -8] + 0]; // 0
+[fp + -5] = [[fp + -8] + 1]; // 1
+[fp + -4] = [[fp + -8] + 2]; // 2
+[fp + -3] = [[fp + -8] + 3]; // 3
+[ap + 0] = [fp + -8] + 4, ap++; // 4
+[fp + -7] = [ap + 0] + [ap + -1], ap++; // 6
+jmp rel 4 if [ap + -1] != 0; // 7
+jmp rel 7; // 9
+[ap + 0] = 0, ap++; // 11
+[ap + 0] = [ap + -3], ap++; // 13
+[ap + 0] = [fp + -7], ap++; // 14
+ret; // 15
+[ap + 0] = 1, ap++; // 16
+[ap + 0] = 0, ap++; // 18
+[ap + 0] = [fp + -7], ap++; // 20
+ret; // 21
 
 //! > sierra_code
 type CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -131,22 +131,25 @@ fn foo() -> CircuitDescriptor<MyCircuit> {
 }
 
 //! > casm
-call rel 11;
-[ap + 0] = [ap + -1] + 10, ap++;
-[ap + 0] = 1, ap++;
-[ap + 0] = [ap + -2] + 4, ap++;
-[ap + 0] = 2, ap++;
-ret;
-ret;
-dw 16;
-dw 20;
-dw 12;
-dw 12;
-dw 0;
-dw 16;
-dw 12;
-dw 4;
-dw 20;
+call rel 11; // 0
+[ap + 0] = [ap + -1] + 10, ap++; // 2
+[ap + 0] = 1, ap++; // 4
+[ap + 0] = [ap + -2] + 4, ap++; // 6
+[ap + 0] = 3, ap++; // 8
+ret; // 10
+ret; // 11
+dw 16; // 12
+dw 20; // 13
+dw 28; // 14
+dw 12; // 15
+dw 0; // 16
+dw 16; // 17
+dw 12; // 18
+dw 4; // 19
+dw 20; // 20
+dw 12; // 21
+dw 8; // 22
+dw 24; // 23
 
 //! > sierra_code
 type CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -183,22 +186,22 @@ fn foo(a: u384) -> IsZeroResult::<u384> {
 }
 
 //! > casm
-jmp rel 19 if [fp + -6] != 0;
-jmp rel 17 if [fp + -5] != 0;
-jmp rel 15 if [fp + -4] != 0;
-jmp rel 13 if [fp + -3] != 0;
-[ap + 0] = 0, ap++;
-[ap + 0] = 0, ap++;
-[ap + 0] = 0, ap++;
-[ap + 0] = 0, ap++;
-[ap + 0] = 0, ap++;
-ret;
-[ap + 0] = 1, ap++;
-[ap + 0] = [fp + -6], ap++;
-[ap + 0] = [fp + -5], ap++;
-[ap + 0] = [fp + -4], ap++;
-[ap + 0] = [fp + -3], ap++;
-ret;
+jmp rel 19 if [fp + -6] != 0; // 0
+jmp rel 17 if [fp + -5] != 0; // 2
+jmp rel 15 if [fp + -4] != 0; // 4
+jmp rel 13 if [fp + -3] != 0; // 6
+[ap + 0] = 0, ap++; // 8
+[ap + 0] = 0, ap++; // 10
+[ap + 0] = 0, ap++; // 12
+[ap + 0] = 0, ap++; // 14
+[ap + 0] = 0, ap++; // 16
+ret; // 18
+[ap + 0] = 1, ap++; // 19
+[ap + 0] = [fp + -6], ap++; // 21
+[ap + 0] = [fp + -5], ap++; // 22
+[ap + 0] = [fp + -4], ap++; // 23
+[ap + 0] = [fp + -3], ap++; // 24
+ret; // 25
 
 //! > sierra_code
 type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -251,31 +254,31 @@ fn foo(
 }
 
 //! > casm
-[ap + 0] = 0, ap++;
-[ap + 0] = 1, ap++;
-[fp + -7] = [ap + 0] + 12, ap++;
-[fp + -6] = [[fp + -13] + 0];
-[fp + -5] = [[fp + -13] + 1];
-[fp + -4] = [[fp + -13] + 2];
-[fp + -3] = [[fp + -13] + 3];
-[ap + -1] = [[fp + -13] + 4];
-[fp + -11] = [[fp + -13] + 5];
-[fp + -10] = [[fp + -13] + 6];
-[fp + -6] = [[fp + -12] + 0];
-[fp + -5] = [[fp + -12] + 1];
-[fp + -4] = [[fp + -12] + 2];
-[fp + -3] = [[fp + -12] + 3];
-[ap + -1] = [[fp + -12] + 4];
-[fp + -9] = [[fp + -12] + 5];
-[fp + -8] = [[fp + -12] + 6];
-[ap + -2] = [[fp + -7] + 0];
-[ap + -3] = [[fp + -7] + 1];
-[ap + -3] = [[fp + -7] + 2];
-[ap + -3] = [[fp + -7] + 3];
-[ap + 0] = [fp + -13] + 7, ap++;
-[ap + 0] = [fp + -12] + 14, ap++;
-[ap + 0] = [ap + -3] + 20, ap++;
-ret;
+[ap + 0] = 0, ap++; // 0
+[ap + 0] = 1, ap++; // 2
+[fp + -7] = [ap + 0] + 12, ap++; // 4
+[fp + -6] = [[fp + -13] + 0]; // 6
+[fp + -5] = [[fp + -13] + 1]; // 7
+[fp + -4] = [[fp + -13] + 2]; // 8
+[fp + -3] = [[fp + -13] + 3]; // 9
+[ap + -1] = [[fp + -13] + 4]; // 10
+[fp + -11] = [[fp + -13] + 5]; // 11
+[fp + -10] = [[fp + -13] + 6]; // 12
+[fp + -6] = [[fp + -12] + 0]; // 13
+[fp + -5] = [[fp + -12] + 1]; // 14
+[fp + -4] = [[fp + -12] + 2]; // 15
+[fp + -3] = [[fp + -12] + 3]; // 16
+[ap + -1] = [[fp + -12] + 4]; // 17
+[fp + -9] = [[fp + -12] + 5]; // 18
+[fp + -8] = [[fp + -12] + 6]; // 19
+[ap + -2] = [[fp + -7] + 0]; // 20
+[ap + -3] = [[fp + -7] + 1]; // 21
+[ap + -3] = [[fp + -7] + 2]; // 22
+[ap + -3] = [[fp + -7] + 3]; // 23
+[ap + 0] = [fp + -13] + 7, ap++; // 24
+[ap + 0] = [fp + -12] + 21, ap++; // 26
+[ap + 0] = [ap + -3] + 20, ap++; // 28
+ret; // 30
 
 //! > sierra_code
 type BoundedInt<0, 0> = BoundedInt<0, 0> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -319,4 +322,4 @@ return([7], [8], [9]); // 8
 test::foo@0([0]: AddMod, [1]: MulMod, [2]: CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [3]: CircuitData<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [4]: NonZero<core::circuit::u384>) -> (AddMod, MulMod, CircuitOutputs<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>);
 
 //! > function_costs
-test::foo: OrderedHashMap({AddMod: 1, MulMod: 2, Const: 2400})
+test::foo: OrderedHashMap({AddMod: 1, MulMod: 3, Const: 2400})

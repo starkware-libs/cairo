@@ -39,13 +39,10 @@ fn build_init_circuit_data(
     let [expr_rc96] = builder.try_get_refs()?;
     let rc96 = expr_rc96.try_unpack_single()?;
 
-    let CircuitInfo { n_inputs, values, one_needed, .. } =
+    let CircuitInfo { n_inputs, values, .. } =
         builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
 
-    let mut n_values = values.len();
-    if *one_needed {
-        n_values += 1;
-    }
+    let n_values = values.len() + 1;
 
     let mut casm_builder = CasmBuilder::default();
 
@@ -182,13 +179,10 @@ fn build_circuit_eval(
         deref one;
     };
 
-    let CircuitInfo { add_offsets, mul_offsets, values, one_needed, n_inputs } =
+    let CircuitInfo { add_offsets, mul_offsets, values, n_inputs } =
         builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
 
-    let mut n_values = values.len();
-    if *one_needed {
-        n_values += 1;
-    }
+    let n_values = values.len() + 1;
 
     casm_build_extend! {casm_builder,
         const inputs_size = n_inputs * VALUE_SIZE;
@@ -217,17 +211,13 @@ fn build_circuit_eval(
             assert n_muls = mul_mod[6];
         };
     }
-
-    if *one_needed {
-        casm_build_extend! {casm_builder,
-            assert one = inputs_end[0];
-            assert zero = inputs_end[1];
-            assert zero = inputs_end[2];
-            assert zero = inputs_end[3];
-        };
-    }
-
     casm_build_extend! {casm_builder,
+        // Add the input 1 at the end of the inputs.
+        assert one = inputs_end[0];
+        assert zero = inputs_end[1];
+        assert zero = inputs_end[2];
+        assert zero = inputs_end[3];
+
         const add_mod_usage = (BUILTIN_INSTANCE_SIZE * add_offsets.len());
         let new_add_mod = add_mod + add_mod_usage;
         const mul_mod_usage = (BUILTIN_INSTANCE_SIZE * mul_offsets.len());
