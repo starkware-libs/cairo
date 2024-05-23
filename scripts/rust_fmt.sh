@@ -1,3 +1,5 @@
 #!/bin/bash
 
-cargo +nightly-2024-04-23 fmt --all -- "$@"
+export RUSTUP_TOOLCHAIN="${RUSTUP_TOOLCHAIN:-nightly-2024-04-23}"
+
+cargo fmt --all -- "$@"

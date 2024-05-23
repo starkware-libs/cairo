@@ -58,53 +58,27 @@ mod ownable_balance {
         }
     }
     
-    pub use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
-    pub mod __member_module_balance {
+
+        pub mod __member_module_balance {
         use super::ownable_comp;
         use super::TransferTrait;
         use super::ContractAddress;
         use super::Event;
         use super::OwnableBalanceImpl;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-
-        impl InternalPointerAccessContractMemberStateImpl of
-            starknet::storage::StorageAsPointer<ContractMemberState, u128> {
-            fn as_ptr(self: @ContractMemberState) ->
-                starknet::storage::StoragePointer<u128> {
-                starknet::storage::StoragePointer{
-                    address: InternalContractMemberStateImpl::address(self)
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = u128;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
                 }
             }
-        }
-
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> u128;
-            fn write(ref self: ContractMemberState, value: u128);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
-            }
-            fn read(self: @ContractMemberState) -> u128 {
-                starknet::storage::StoragePointerAccess::read(
-                    InternalPointerAccessContractMemberStateImpl::as_ptr(self)
-                )
-            }
-            fn write(ref self: ContractMemberState, value: u128) {
-                starknet::storage::StoragePointerAccess::write(
-                    InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
-                )
-            }
-        }
 impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
 impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-    }
+        }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 
 impl ContractStateTransfer of
@@ -316,53 +290,27 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         }
     }
     
-    pub use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
-    pub mod __member_module_balance {
+
+        pub mod __member_module_balance {
         use super::ownable_comp;
         use super::TransferTrait;
         use super::ContractAddress;
         use super::Event;
         use super::OwnableBalanceImpl;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-
-        impl InternalPointerAccessContractMemberStateImpl of
-            starknet::storage::StorageAsPointer<ContractMemberState, u128> {
-            fn as_ptr(self: @ContractMemberState) ->
-                starknet::storage::StoragePointer<u128> {
-                starknet::storage::StoragePointer{
-                    address: InternalContractMemberStateImpl::address(self)
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = u128;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
                 }
             }
-        }
-
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> u128;
-            fn write(ref self: ContractMemberState, value: u128);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
-            }
-            fn read(self: @ContractMemberState) -> u128 {
-                starknet::storage::StoragePointerAccess::read(
-                    InternalPointerAccessContractMemberStateImpl::as_ptr(self)
-                )
-            }
-            fn write(ref self: ContractMemberState, value: u128) {
-                starknet::storage::StoragePointerAccess::write(
-                    InternalPointerAccessContractMemberStateImpl::as_ptr(@self), value
-                )
-            }
-        }
 impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
 impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-    }
+        }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 
 impl ContractStateTransfer of

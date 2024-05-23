@@ -28,7 +28,8 @@ use crate::expr::pattern::*;
 use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
-    GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
+    GenericFunctionWithBodyId, ImplFunctionBodyId, ImplGenericFunctionId,
+    ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
@@ -982,16 +983,30 @@ impl<'a> SemanticRewriter<TypeId, NoError> for Inference<'a> {
 }
 impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, NoError> {
-        if let TypeLongId::Var(var) = value {
-            if let Some(type_id) = self.type_assignment.get(&var.id) {
-                let mut long_type_id = type_id.lookup_intern(self.db);
-                if let RewriteResult::Modified = self.internal_rewrite(&mut long_type_id)? {
-                    *self.type_assignment.get_mut(&var.id).unwrap() =
-                        long_type_id.clone().intern(self.db);
+        match value {
+            TypeLongId::Var(var) => {
+                if let Some(type_id) = self.type_assignment.get(&var.id) {
+                    let mut long_type_id = type_id.lookup_intern(self.db);
+                    if let RewriteResult::Modified = self.internal_rewrite(&mut long_type_id)? {
+                        *self.type_assignment.get_mut(&var.id).unwrap() =
+                            long_type_id.clone().intern(self.db);
+                    }
+                    *value = long_type_id;
+                    return Ok(RewriteResult::Modified);
                 }
-                *value = long_type_id;
-                return Ok(RewriteResult::Modified);
             }
+            TypeLongId::ImplType(impl_type_id) => {
+                let impl_type_id_rewrite_result = self.internal_rewrite(impl_type_id)?;
+                return Ok(
+                    if let Ok(Some(ty)) = self.db.impl_type_concrete_implized(*impl_type_id) {
+                        *value = ty.lookup_intern(self.db);
+                        RewriteResult::Modified
+                    } else {
+                        impl_type_id_rewrite_result
+                    },
+                );
+            }
+            _ => {}
         }
         value.default_rewrite(self)
     }

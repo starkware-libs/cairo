@@ -14,7 +14,7 @@ use crate::program::{GenericArg, Program, Statement};
 mod test;
 
 /// Debug information for a Sierra program, to get readable names.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Default, Serialize, Deserialize)]
 pub struct DebugInfo {
     #[serde(
         serialize_with = "serialize_map::<ConcreteTypeId, _>",
@@ -36,6 +36,9 @@ pub struct DebugInfo {
     /// See [`Annotations`] type documentation for more information about this field.
     #[serde(default, skip_serializing_if = "Annotations::is_empty")]
     pub annotations: Annotations,
+    /// List of functions marked as executable.
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub executables: HashMap<SmolStr, Vec<FunctionId>>,
 }
 
 /// Store for non-crucial information about the program, for use by external libraries and tool.
@@ -90,6 +93,7 @@ impl DebugInfo {
                 })
                 .collect(),
             annotations: Default::default(),
+            executables: Default::default(),
         }
     }
 

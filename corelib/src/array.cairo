@@ -15,6 +15,12 @@ extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
 extern fn array_pop_front_consume<T>(arr: Array<T>) -> Option<(Array<T>, Box<T>)> nopanic;
 pub(crate) extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 extern fn array_snapshot_pop_back<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
+extern fn array_snapshot_multi_pop_front<T, const SIZE: usize>(
+    ref arr: @Array<T>
+) -> Option<@Box<[T; SIZE]>> implicits(RangeCheck) nopanic;
+extern fn array_snapshot_multi_pop_back<T, const SIZE: usize>(
+    ref arr: @Array<T>
+) -> Option<@Box<[T; SIZE]>> implicits(RangeCheck) nopanic;
 #[panic_with('Index out of bounds', array_at)]
 extern fn array_get<T>(
     arr: @Array<T>, index: usize
@@ -187,6 +193,14 @@ pub impl SpanImpl<T> of SpanTrait<T> {
             Option::None => Option::None,
         }
     }
+    /// Pops multiple values from the front of the span.
+    fn multi_pop_front<const SIZE: usize>(ref self: Span<T>) -> Option<@Box<[T; SIZE]>> {
+        array_snapshot_multi_pop_front(ref self.snapshot)
+    }
+    /// Pops multiple values from the back of the span.
+    fn multi_pop_back<const SIZE: usize>(ref self: Span<T>) -> Option<@Box<[T; SIZE]>> {
+        array_snapshot_multi_pop_back(ref self.snapshot)
+    }
     #[inline(always)]
     fn get(self: Span<T>, index: usize) -> Option<Box<@T>> {
         array_get(self.snapshot, index)
@@ -256,6 +270,32 @@ impl EmptyFixedSizeArrayImpl<T, +Drop<T>> of ToSpanTrait<[T; 0], T> {
     }
 }
 
+/// Returns a box of struct of members of the same type from a span.
+/// The additional `+Copy<@T>` arg is to prevent later stages from propagating the `S` type Sierra
+/// level, where it is deduced by the `T` type.
+extern fn tuple_from_span<T, +Copy<@T>, S>(span: @Array<S>) -> Option<@Box<T>> nopanic;
+
+/// Implements `TryInto` for only copyable types
+impl SpanTryIntoFixedSizedArray<
+    T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
+> of TryInto<Span<T>, @Box<[T; SIZE]>> {
+    #[inline(always)]
+    fn try_into(self: Span<T>) -> Option<@Box<[T; SIZE]>> {
+        tuple_from_span(self.snapshot)
+    }
+}
+
+impl SpanTryIntoEmptyFixedSizedArray<T, +Drop<T>> of TryInto<Span<T>, @Box<[T; 0]>> {
+    #[inline(always)]
+    fn try_into(self: Span<T>) -> Option<@Box<[T; 0]>> {
+        if self.is_empty() {
+            Option::Some(@BoxTrait::new([]))
+        } else {
+            Option::None
+        }
+    }
+}
+
 // TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
 impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
     fn clone(self: @Array<T>) -> Array<T> {
@@ -274,9 +314,6 @@ impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
 impl ArrayPartialEq<T, +PartialEq<T>> of PartialEq<Array<T>> {
     fn eq(lhs: @Array<T>, rhs: @Array<T>) -> bool {
         lhs.span() == rhs.span()
-    }
-    fn ne(lhs: @Array<T>, rhs: @Array<T>) -> bool {
-        !(lhs == rhs)
     }
 }
 
@@ -297,8 +334,5 @@ impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
                 Option::None => { break true; },
             };
         }
-    }
-    fn ne(lhs: @Span<T>, rhs: @Span<T>) -> bool {
-        !(lhs == rhs)
     }
 }

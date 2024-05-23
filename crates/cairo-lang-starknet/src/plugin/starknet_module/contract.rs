@@ -205,8 +205,8 @@ impl ContractSpecificGenerationData {
         RewriteNode::interpolate_patched(
             &formatdoc! {"
                 use starknet::storage::{{
-                    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-                    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+                    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+                    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
                 }};
                 $test_config$
                 $entry_points_code$

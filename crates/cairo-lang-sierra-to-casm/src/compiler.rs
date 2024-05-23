@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
+use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::{
     CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
@@ -26,7 +27,7 @@ use num_traits::{ToPrimitive, Zero};
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
-use crate::circuit::get_circuit_info;
+use crate::circuit::CircuitsInfo;
 use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
     check_references_on_stack, compile_invocation, BranchChanges, InvocationError, ProgramInfo,
@@ -223,32 +224,53 @@ pub struct CairoProgramDebugInfo {
 pub struct ConstsInfo {
     pub segments: OrderedHashMap<u32, ConstSegment>,
     pub total_segments_size: usize,
+
+    /// Maps a circuit to its segment id.
+    pub circuit_segments: OrderedHashMap<ConcreteTypeId, u32>,
 }
 impl ConstsInfo {
     /// Creates a new `ConstSegmentsInfo` from the given libfuncs.
     pub fn new<'a>(
         registry: &ProgramRegistry<CoreType, CoreLibfunc>,
         type_sizes: &TypeSizeMap,
-        libfunc_ids: impl Iterator<Item = &'a ConcreteLibfuncId>,
+        libfunc_ids: impl Iterator<Item = &'a ConcreteLibfuncId> + Clone,
+        circuit_infos: &OrderedHashMap<ConcreteTypeId, CircuitInfo>,
         const_segments_max_size: usize,
     ) -> Result<Self, CompilationError> {
         let mut segments_data_size = 0;
+
+        // A lambda to add a const.
+        // Note that `segments` is passed as an argument to avoid taking borrowing it.
+        let mut add_const = |segments: &mut OrderedHashMap<u32, ConstSegment>,
+                             segment_id,
+                             ty,
+                             const_data: Vec<BigInt>| {
+            let segment: &mut ConstSegment = segments.entry(segment_id).or_default();
+
+            segments_data_size += const_data.len();
+            segment.const_offset.insert(ty, segment.values.len());
+            segment.values.extend(const_data);
+            if segments_data_size + segments.len() > const_segments_max_size {
+                return Err(CompilationError::CodeSizeLimitExceeded);
+            }
+            Ok(())
+        };
+
         let mut segments = OrderedHashMap::default();
-        for id in libfunc_ids {
+
+        for id in libfunc_ids.clone() {
             if let CoreConcreteLibfunc::Const(ConstConcreteLibfunc::AsBox(as_box)) =
                 registry.get_libfunc(id).unwrap()
             {
-                let segment: &mut ConstSegment = segments.entry(as_box.segment_id).or_default();
-                let const_data =
-                    extract_const_value(registry, type_sizes, &as_box.const_type).unwrap();
-                segments_data_size += const_data.len();
-                segment.const_offset.insert(as_box.const_type.clone(), segment.values.len());
-                segment.values.extend(const_data);
-                if segments_data_size + segments.len() > const_segments_max_size {
-                    return Err(CompilationError::CodeSizeLimitExceeded);
-                }
+                add_const(
+                    &mut segments,
+                    as_box.segment_id,
+                    as_box.const_type.clone(),
+                    extract_const_value(registry, type_sizes, &as_box.const_type).unwrap(),
+                )?;
             }
         }
+
         // Check that the segments were declared in order and without holes.
         if segments
             .keys()
@@ -258,13 +280,37 @@ impl ConstsInfo {
             return Err(CompilationError::ConstSegmentsOutOfOrder);
         }
 
+        let mut next_segment = segments.len() as u32;
+        let mut circuit_segments = OrderedHashMap::default();
+
+        for id in libfunc_ids {
+            if let CoreConcreteLibfunc::Circuit(CircuitConcreteLibfunc::GetDescriptor(libfunc)) =
+                registry.get_libfunc(id).unwrap()
+            {
+                let circ_ty = &libfunc.ty;
+                let info = circuit_infos.get(circ_ty).unwrap();
+                let mut const_value: Vec<BigInt> = vec![];
+                let mut push_offset =
+                    |offset: usize| const_value.push((offset * VALUE_SIZE).into());
+                for gate_offsets in chain!(info.add_offsets.iter(), info.mul_offsets.iter()) {
+                    push_offset(gate_offsets.lhs);
+                    push_offset(gate_offsets.rhs);
+                    push_offset(gate_offsets.output);
+                }
+
+                add_const(&mut segments, next_segment, circ_ty.clone(), const_value)?;
+                circuit_segments.insert(circ_ty.clone(), next_segment);
+                next_segment += 1;
+            }
+        }
+
         let mut total_segments_size = 0;
         for (_, segment) in segments.iter_mut() {
             segment.segment_offset = total_segments_size;
             // Add 1 for the `ret` instruction.
             total_segments_size += 1 + segment.values.len();
         }
-        Ok(Self { segments, total_segments_size })
+        Ok(Self { segments, total_segments_size, circuit_segments })
     }
 }
 
@@ -413,8 +459,10 @@ pub fn compile(
     )
     .map_err(|err| Box::new(err.into()))?;
 
-    let mut program_offset: usize = 0;
+    let circuits_info =
+        CircuitsInfo::new(&registry, program.type_declarations.iter().map(|td| &td.id))?;
 
+    let mut program_offset: usize = 0;
     for (statement_id, statement) in program.statements.iter().enumerate() {
         let statement_idx = StatementIdx(statement_id);
 
@@ -490,10 +538,10 @@ pub fn compile(
                     ProgramInfo {
                         metadata,
                         type_sizes: &type_sizes,
+                        circuits_info: &circuits_info,
                         const_data_values: &|ty| {
                             extract_const_value(&registry, &type_sizes, ty).unwrap()
                         },
-                        get_circuit_info: &|ty| get_circuit_info(&registry, ty).unwrap(),
                     },
                     invocation,
                     libfunc,
@@ -584,6 +632,7 @@ pub fn compile(
         &registry,
         &type_sizes,
         program.libfunc_declarations.iter().map(|ld| &ld.id),
+        &circuits_info.circuits,
         const_segments_max_size,
     )?;
     relocate_instructions(&relocations, &statement_offsets, &consts_info, &mut instructions);

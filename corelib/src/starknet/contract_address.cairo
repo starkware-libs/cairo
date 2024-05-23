@@ -60,10 +60,6 @@ impl ContractAddressPartialEq of PartialEq<ContractAddress> {
     fn eq(lhs: @ContractAddress, rhs: @ContractAddress) -> bool {
         contract_address_to_felt252(*lhs) == contract_address_to_felt252(*rhs)
     }
-    #[inline(always)]
-    fn ne(lhs: @ContractAddress, rhs: @ContractAddress) -> bool {
-        !(lhs == rhs)
-    }
 }
 
 impl ContractAddressPartialOrd of PartialOrd<ContractAddress> {

@@ -29,6 +29,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
@@ -40,12 +41,11 @@ use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
-    ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId,
-    ConcreteTraitTypeLongId,
+    ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
 use crate::items::{visibility, TraitOrImplContext};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{are_coupons_enabled, implize_type, resolve_type, ImplTypeId};
+use crate::types::{are_coupons_enabled, resolve_type, ImplTypeId};
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
     TypeId, TypeLongId,
@@ -583,8 +583,20 @@ impl<'db> Resolver<'db> {
                             trait_function_id,
                         )
                         .intern(self.db);
-                        let impl_lookup_context = self.impl_lookup_context();
                         let identifier_stable_ptr = identifier.stable_ptr().untyped();
+                        if let TraitOrImplContext::Trait(ctx_trait_id) = &self.trait_or_impl_ctx {
+                            if trait_id == *ctx_trait_id {
+                                return Ok(ResolvedConcreteItem::Function(
+                                    self.specialize_function(
+                                        diagnostics,
+                                        identifier_stable_ptr,
+                                        GenericFunctionId::Trait(concrete_trait_function),
+                                        &generic_args_syntax.unwrap_or_default(),
+                                    )?,
+                                ));
+                            }
+                        }
+                        let impl_lookup_context = self.impl_lookup_context();
                         let generic_function = self
                             .inference()
                             .infer_trait_generic_function(
@@ -608,13 +620,6 @@ impl<'db> Resolver<'db> {
                         )?))
                     }
                     TraitItemId::Type(trait_type_id) => {
-                        let concrete_trait_type = ConcreteTraitTypeLongId::new(
-                            self.db,
-                            *concrete_trait_id,
-                            trait_type_id,
-                        )
-                        .intern(self.db);
-
                         if let TraitOrImplContext::Trait(ctx_trait_id) = &self.trait_or_impl_ctx {
                             if trait_id == *ctx_trait_id {
                                 return Ok(ResolvedConcreteItem::Type(
@@ -622,6 +627,8 @@ impl<'db> Resolver<'db> {
                                 ));
                             }
                         }
+                        let concrete_trait_type =
+                            ConcreteTraitTypeId::new(self.db, *concrete_trait_id, trait_type_id);
 
                         let impl_lookup_context = self.impl_lookup_context();
                         let identifier_stable_ptr = identifier.stable_ptr().untyped();
@@ -639,14 +646,7 @@ impl<'db> Resolver<'db> {
                                     identifier_stable_ptr,
                                 )
                             })?;
-                        // Make sure the inference is solved for successful impl lookup in
-                        // `implize_type`.
-                        // Ignore the result of the `solve()` call - the error, if any, will be
-                        // reported later.
-                        self.inference().solve().ok();
-                        let ty = implize_type(self.db, ty, None, &mut self.inference())?;
-
-                        Ok(ResolvedConcreteItem::Type(ty))
+                        Ok(ResolvedConcreteItem::Type(self.inference().rewrite(ty).no_err()))
                     }
                     TraitItemId::Constant(_trait_constant_id) => {
                         // TODO(TomerStarkware): resolve trait constants when impl constants are
@@ -677,15 +677,11 @@ impl<'db> Resolver<'db> {
                         )?))
                     }
                     TraitItemId::Type(trait_type_id) => {
-                        let type_long_id =
-                            TypeLongId::ImplType(ImplTypeId::new(*impl_id, trait_type_id, self.db));
-
-                        let ty = implize_type(
-                            self.db,
-                            type_long_id.intern(self.db),
-                            self.trait_or_impl_ctx.impl_context(),
-                            &mut self.inference(),
-                        )?;
+                        let impl_type_id = ImplTypeId::new(*impl_id, trait_type_id, self.db);
+                        let ty = self
+                            .inference()
+                            .reduce_impl_ty(impl_type_id)
+                            .unwrap_or_else(|_| TypeLongId::ImplType(impl_type_id).intern(self.db));
                         Ok(ResolvedConcreteItem::Type(ty))
                     }
                     TraitItemId::Constant(_trait_constant_id) => {
@@ -788,7 +784,7 @@ impl<'db> Resolver<'db> {
             }
             ResolvedGenericItem::Variant(_) => panic!("Variant is not a module item."),
             ResolvedGenericItem::TraitFunction(_) => panic!("TraitFunction is not a module item."),
-            ResolvedGenericItem::Variable(_, _) => panic!("Variable is not a module item."),
+            ResolvedGenericItem::Variable(_) => panic!("Variable is not a module item."),
         })
     }
 
@@ -1003,7 +999,7 @@ impl<'db> Resolver<'db> {
                 diagnostics,
             )?;
             resolved_args.push(generic_arg);
-            substitution.0.insert(generic_param.id(), generic_arg);
+            substitution.insert(generic_param.id(), generic_arg);
         }
 
         Ok(resolved_args)
@@ -1104,15 +1100,9 @@ impl<'db> Resolver<'db> {
                     resolver.add_generic_param(*param);
                 }
 
-                let mut ctx = ComputationContext::new(
-                    self.db,
-                    diagnostics,
-                    None,
-                    resolver,
-                    None,
-                    environment,
-                );
-                let value = compute_expr_semantic(&mut ctx, generic_arg_syntax, None);
+                let mut ctx =
+                    ComputationContext::new(self.db, diagnostics, resolver, None, environment);
+                let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
 
                 let (_, const_value) = resolve_const_expr_and_evaluate(
                     self.db,

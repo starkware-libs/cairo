@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use cairo_felt::Felt252;
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::vm_core::VirtualMachine;
+use starknet_types_core::felt::Felt as Felt252;
 
 /// Stores the data of a specific dictionary.
 pub struct DictTrackerExecScope {

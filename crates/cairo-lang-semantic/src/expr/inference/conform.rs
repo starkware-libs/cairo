@@ -2,13 +2,13 @@ use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::zip_eq;
 
 use super::canonic::ResultNoErrEx;
-use super::{Inference, InferenceError, InferenceResult, InferenceVar};
+use super::{ErrorSet, Inference, InferenceError, InferenceResult, InferenceVar};
 use crate::corelib::never_ty;
 use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::ImplId;
 use crate::substitution::SemanticRewriter;
-use crate::types::peel_snapshots;
+use crate::types::{peel_snapshots, ImplTypeId};
 use crate::{
     ConcreteFunction, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
     FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
@@ -100,6 +100,12 @@ impl<'db> InferenceConform for Inference<'db> {
                     }
                 }
             }
+            TypeLongId::ImplType(impl_type_id) => {
+                if !impl_type_id.impl_id().is_var_free(self.db) {
+                    let ty = self.reduce_impl_ty(impl_type_id)?;
+                    return self.conform_ty_ex(ty0, ty, ty0_is_self);
+                }
+            }
             _ => {}
         }
         let n_snapshots = 0;
@@ -153,7 +159,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 let (ty, n_snapshots) = self.conform_ty_ex(ty0, ty1, ty0_is_self)?;
                 Ok((TypeLongId::Snapshot(ty).intern(self.db), n_snapshots))
             }
-            TypeLongId::GenericParameter(_) | TypeLongId::ImplType(_) => {
+            TypeLongId::GenericParameter(_) => {
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
             TypeLongId::TraitType(_) => {
@@ -162,6 +168,14 @@ impl<'db> InferenceConform for Inference<'db> {
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
             TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, n_snapshots)),
+            TypeLongId::ImplType(impl_type_id) => {
+                if !impl_type_id.impl_id().is_var_free(self.db) {
+                    let ty = self.reduce_impl_ty(impl_type_id)?;
+                    self.conform_ty_ex(ty, ty1, ty0_is_self)
+                } else {
+                    Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
+                }
+            }
             TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),
             TypeLongId::Coupon(function_id0) => {
                 let TypeLongId::Coupon(function_id1) = long_ty1 else {
@@ -414,14 +428,18 @@ impl<'db> InferenceConform for Inference<'db> {
             ),
             ImplId::GenericParameter(_) => false,
             ImplId::ImplVar(new_var) => {
-                let new_var_local_id = new_var.lookup_intern(self.db).id;
+                let new_var_long_id = new_var.lookup_intern(self.db);
+                let new_var_local_id = new_var_long_id.id;
                 if InferenceVar::Impl(new_var_local_id) == var {
                     return true;
                 }
                 if let Some(impl_id) = self.impl_assignment(new_var_local_id) {
                     return self.impl_contains_var(&impl_id, var);
                 }
-                false
+                self.generic_args_contain_var(
+                    &new_var_long_id.concrete_trait_id.generic_args(self.db),
+                    var,
+                )
             }
         }
     }
@@ -444,6 +462,43 @@ impl<'db> InferenceConform for Inference<'db> {
 }
 
 impl Inference<'_> {
+    /// Reduces an impl type to a concrete type.
+    pub fn reduce_impl_ty(&mut self, impl_type_id: ImplTypeId) -> InferenceResult<TypeId> {
+        let reduced_impl = if let ImplId::ImplVar(var) = impl_type_id.impl_id() {
+            self.solve_single_pending(var.id(self.db))?;
+            self.rewrite(impl_type_id.impl_id()).no_err()
+        } else {
+            impl_type_id.impl_id()
+        };
+        if let Ok(Some(ty)) = self.db.impl_type_concrete_implized(ImplTypeId::new(
+            reduced_impl,
+            impl_type_id.ty(),
+            self.db,
+        )) {
+            Ok(ty)
+        } else {
+            Err(self.set_error(
+                reduced_impl
+                    .concrete_trait(self.db)
+                    .map(InferenceError::NoImplsFound)
+                    .unwrap_or_else(InferenceError::Reported),
+            ))
+        }
+    }
+
+    /// Conforms a type to a type. Returning the reduced types on failure.
+    /// Useful for immediately reporting a diagnostic based on the compared types.
+    pub fn conform_ty_for_diag(
+        &mut self,
+        ty0: TypeId,
+        ty1: TypeId,
+    ) -> Result<(), (ErrorSet, TypeId, TypeId)> {
+        match self.conform_ty(ty0, ty1) {
+            Ok(_ty) => Ok(()),
+            Err(err) => Err((err, self.rewrite(ty0).no_err(), self.rewrite(ty1).no_err())),
+        }
+    }
+
     /// helper function for ty_contains_var
     /// Assumes ty was already rewritten.
     #[doc(hidden)]
@@ -466,10 +521,10 @@ impl Inference<'_> {
                 }
                 false
             }
-            TypeLongId::GenericParameter(_)
-            | TypeLongId::TraitType(_)
-            | TypeLongId::ImplType(_)
-            | TypeLongId::Missing(_) => false,
+            TypeLongId::ImplType(id) => self.impl_contains_var(&id.impl_id(), var),
+            TypeLongId::TraitType(_) | TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => {
+                false
+            }
             TypeLongId::Coupon(function_id) => self.function_contains_var(function_id, var),
             TypeLongId::FixedSizeArray { type_id, .. } => {
                 self.internal_ty_contains_var(type_id, var)

@@ -1,76 +1,93 @@
+use core::traits::Into;
 use core::poseidon::HashState;
 use starknet::storage_access::StorageBaseAddress;
 use starknet::SyscallResult;
 use starknet::storage_access::storage_base_address_from_felt252;
 
 /// Trait for getting the address of any contract/component storage member.
-pub trait StorageMemberAddressTrait<TMemberState, TValue> {
+pub trait StorageMemberAddressTrait<TMemberState> {
+    /// the type of the underlying storage member.
+    type Value;
     fn address(self: @TMemberState) -> starknet::StorageBaseAddress nopanic;
 }
 
 /// Trait for accessing any contract/component storage member.
-pub trait StorageMemberAccessTrait<TMemberState, TValue> {
-    fn read(self: @TMemberState) -> TValue;
-    fn write(ref self: TMemberState, value: TValue);
+pub trait StorageMemberAccessTrait<TMemberState> {
+    type Value;
+    fn read(self: @TMemberState) -> Self::Value;
+    fn write(ref self: TMemberState, value: Self::Value);
 }
 
 /// Implementation of StorageMemberAccessTrait for types that implement StorageMemberAddressTrait.
 pub impl StorageMemberAccessImpl<
     TMemberState,
-    TValue,
-    +StorageMemberAddressTrait<TMemberState, TValue>,
-    +starknet::Store<TValue>,
+    +StorageMemberAddressTrait<TMemberState>,
+    +starknet::Store<StorageMemberAddressTrait::<TMemberState>::Value>,
     +Drop<TMemberState>,
-> of StorageMemberAccessTrait<TMemberState, TValue> {
-    fn read(self: @TMemberState) -> TValue {
+> of StorageMemberAccessTrait<TMemberState> {
+    type Value = StorageMemberAddressTrait::<TMemberState>::Value;
+    fn read(self: @TMemberState) -> Self::Value {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<TValue>::read(address_domain, self.address())
+            starknet::Store::<Self::Value>::read(address_domain, self.address())
         )
     }
-    fn write(ref self: TMemberState, value: TValue) {
+    fn write(ref self: TMemberState, value: Self::Value) {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
-        let write_result = starknet::Store::<TValue>::write(address_domain, self.address(), value);
+        let write_result = starknet::Store::<
+            Self::Value
+        >::write(address_domain, self.address(), value);
         starknet::SyscallResultTrait::unwrap_syscall(write_result)
     }
 }
 
-/// Trait for getting the address of any contract/component mapping storage member.
-pub trait StorageMapMemberAddressTrait<TMemberState, TKey, TValue> {
-    fn address(self: @TMemberState, key: TKey) -> starknet::StorageBaseAddress;
+/// Trait for getting the address of a contract/component legacy map storage member.
+pub trait StorageLegacyMapMemberAddressTrait<TMemberState> {
+    type Key;
+    type Value;
+    fn address(self: @TMemberState, key: Self::Key) -> starknet::StorageBaseAddress;
 }
 
 /// Trait for accessing any contract/component storage member.
-pub trait StorageMapMemberAccessTrait<TMemberState, TKey, TValue> {
-    fn read(self: @TMemberState, key: TKey) -> TValue;
-    fn write(ref self: TMemberState, key: TKey, value: TValue);
+pub trait StorageLegacyMapMemberAccessTrait<TMemberState> {
+    type Key;
+    type Value;
+    fn read(self: @TMemberState, key: Self::Key) -> Self::Value;
+    fn write(ref self: TMemberState, key: Self::Key, value: Self::Value);
 }
 
-/// Implementation of StorageMapMemberAccessTrait for types that implement
-/// StorageMapMemberAddressTrait.
-pub impl StorageMapMemberAccessImpl<
+/// Trait for getting the address of a contract/component map storage member.
+pub trait StorageMapMemberAddressTrait<TMemberState> {
+    type Key;
+    type Value;
+    fn address(self: @TMemberState) -> starknet::StorageBaseAddress;
+}
+
+/// Implementation of StorageLegacyMapMemberAccessTrait for types that implement
+/// StorageLegacyMapMemberAddressTrait.
+pub impl StorageLegacyMapMemberAccessImpl<
     TMemberState,
-    TKey,
-    TValue,
-    +StorageMapMemberAddressTrait<TMemberState, TKey, TValue>,
-    +starknet::Store<TValue>,
+    +StorageLegacyMapMemberAddressTrait<TMemberState>,
+    +starknet::Store<StorageLegacyMapMemberAddressTrait::<TMemberState>::Value>,
     +Drop<TMemberState>,
-    +PanicDestruct<TValue>,
-> of StorageMapMemberAccessTrait<TMemberState, TKey, TValue> {
-    fn read(self: @TMemberState, key: TKey) -> TValue {
+    +PanicDestruct<StorageLegacyMapMemberAddressTrait::<TMemberState>::Value>,
+> of StorageLegacyMapMemberAccessTrait<TMemberState> {
+    type Key = StorageLegacyMapMemberAddressTrait::<TMemberState>::Key;
+    type Value = StorageLegacyMapMemberAddressTrait::<TMemberState>::Value;
+    fn read(self: @TMemberState, key: Self::Key) -> Self::Value {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<TValue>::read(address_domain, self.address(key))
+            starknet::Store::<Self::Value>::read(address_domain, self.address(key))
         )
     }
-    fn write(ref self: TMemberState, key: TKey, value: TValue) {
+    fn write(ref self: TMemberState, key: Self::Key, value: Self::Value) {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<TValue>::write(address_domain, self.address(key), value)
+            starknet::Store::<Self::Value>::write(address_domain, self.address(key), value)
         )
     }
 }
@@ -124,8 +141,9 @@ pub struct GenericStoragePath<T, THashState> {
 type StoragePath<T> = GenericStoragePath<T, core::poseidon::HashState>;
 
 /// Trait for creating a new `StoragePath` from a storage member.
-pub trait StorageAsPath<TMemberState, T> {
-    fn as_path(self: @TMemberState) -> StoragePath<T>;
+pub trait StorageAsPath<TMemberState> {
+    type Value;
+    fn as_path(self: @TMemberState) -> StoragePath<Self::Value>;
 }
 
 /// An implementation of `StorageAsPointer` for any `StoragePath` with inner type that implements
@@ -139,6 +157,22 @@ impl StorableStoragePathAsPointer<T, +starknet::Store<T>> of StorageAsPointer<St
                 core::hash::HashStateTrait::<core::poseidon::HashState>::finalize(*self.hash_state)
             )
         }
+    }
+}
+
+/// An implementation of `StorageAsPointer` for any type that implements `StorageMemberAccessTrait`
+/// and `Store`.
+impl StorageMemberStateAsPointer<
+    TMemberState,
+    +StorageMemberAddressTrait<TMemberState>,
+    +starknet::Store<StorageMemberAddressTrait::<TMemberState>::Value>,
+> of StorageAsPointer<TMemberState, StorageMemberAddressTrait::<TMemberState>::Value> {
+    fn as_ptr(
+        self: @TMemberState
+    ) -> StoragePointer<StorageMemberAddressTrait::<TMemberState>::Value> {
+        StoragePointer::<
+            StorageMemberAddressTrait::<TMemberState>::Value
+        > { address: self.address() }
     }
 }
 
@@ -166,3 +200,69 @@ impl StoragePathEntryMap<
         }
     }
 }
+
+/// A trait that binds a storage path to a struct, and the struct storage node (a storage node is a
+/// struct that all its fields are storage paths, one for each member of the original struct).
+trait StorageNodeTrait<T> {
+    type NodeType;
+    fn storage_node(self: StoragePath<T>) -> Self::NodeType;
+}
+
+
+/// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
+#[derive(Copy, Drop)]
+struct PendingStoragePath<T> {
+    hash_state: core::poseidon::HashState,
+    pending_key: felt252
+}
+
+/// An implementation of 'StorageAsPath' for `PendingStoragePath`.
+impl PendingStoragePathAsPath<T> of StorageAsPath<PendingStoragePath<T>> {
+    type Value = T;
+    fn as_path(self: @PendingStoragePath<T>) -> StoragePath<T> {
+        StoragePath::<
+            T
+        > { hash_state: core::hash::HashStateTrait::update(*self.hash_state, *self.pending_key) }
+    }
+}
+
+
+/// An implementation of `StorageAsPath` for any type that implements StorageNodeTrait.
+impl StorageNodeAsPath<
+    TMemberState,
+    +StorageMemberAddressTrait<TMemberState>,
+    +StorageNodeTrait<StorageMemberAddressTrait::<TMemberState>::Value>,
+> of StorageAsPath<TMemberState> {
+    type Value = StorageMemberAddressTrait::<TMemberState>::Value;
+    fn as_path(self: @TMemberState) -> StoragePath<Self::Value> {
+        let address = self.address().into();
+        StoragePath::<
+            Self::Value
+        > {
+            hash_state: core::hash::HashStateTrait::update(
+                core::poseidon::PoseidonTrait::new(), address
+            )
+        }
+    }
+}
+
+/// An implementation of `StorageAsPath` for `Map<K, V>`.
+impl MapAsPath<
+    TMemberState, +StorageMapMemberAddressTrait<TMemberState>
+> of StorageAsPath<TMemberState> {
+    type Value =
+        Map<
+            StorageMapMemberAddressTrait::<TMemberState>::Key,
+            StorageMapMemberAddressTrait::<TMemberState>::Value
+        >;
+    fn as_path(self: @TMemberState) -> StoragePath<Self::Value> {
+        StoragePath::<
+            Self::Value
+        > {
+            hash_state: core::hash::HashStateTrait::update(
+                core::poseidon::PoseidonTrait::new(), self.address().into()
+            )
+        }
+    }
+}
+

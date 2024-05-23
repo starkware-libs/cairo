@@ -12,7 +12,7 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
-use cairo_lang_parser::db::ParserDatabase;
+use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
@@ -192,6 +192,11 @@ impl Upcast<dyn SemanticGroup> for RootDatabase {
 }
 impl Upcast<dyn LoweringGroup> for RootDatabase {
     fn upcast(&self) -> &(dyn LoweringGroup + 'static) {
+        self
+    }
+}
+impl Upcast<dyn ParserGroup> for RootDatabase {
+    fn upcast(&self) -> &(dyn ParserGroup + 'static) {
         self
     }
 }

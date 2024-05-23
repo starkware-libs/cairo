@@ -1,3 +1,4 @@
+use cairo_lang_sierra::extensions::circuit::CircuitInfo;
 use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
@@ -66,6 +67,10 @@ pub struct PreCost(pub OrderedHashMap<CostTokenType, i32>);
 impl PreCost {
     pub fn builtin(token_type: CostTokenType) -> Self {
         Self(OrderedHashMap::from_iter([(token_type, 1)]))
+    }
+
+    pub fn n_builtins(token_type: CostTokenType, n: i32) -> Self {
+        Self(OrderedHashMap::from_iter([(token_type, n)]))
     }
 }
 
@@ -158,4 +163,7 @@ impl From<ConstCost> for BranchCost {
 pub trait CostInfoProvider {
     /// Provides the sizes of types.
     fn type_size(&self, ty: &ConcreteTypeId) -> usize;
+
+    /// Provides the info for the circuit.
+    fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo;
 }

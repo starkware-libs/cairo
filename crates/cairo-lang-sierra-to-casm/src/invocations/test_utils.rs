@@ -259,9 +259,9 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
                 function_costs: Default::default(),
             },
         },
+        circuits_info: &Default::default(),
         type_sizes: &type_sizes,
         const_data_values: &|_| panic!("const_data_values not implemented for tests."),
-        get_circuit_info: &|_| panic!("get_circuit_info not implemented for tests."),
     };
 
     let args: Vec<ReferenceValue> = zip_eq(refs, libfunc.param_signatures())

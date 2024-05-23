@@ -165,24 +165,47 @@ async function determineLanguageServerExecutableProvider(
   scarb: Scarb | undefined,
   ctx: Context,
 ): Promise<LanguageServerExecutableProvider> {
+  const log = ctx.log.span("determineLanguageServerExecutableProvider");
   const standalone = () => StandaloneLS.find(workspaceFolder, scarb, ctx);
 
-  // If Scarb is missing or is disabled, always fallback to standalone CairoLS.
   if (!scarb) {
+    log.trace("determineLanguageServerExecutableProvider: Scarb is missing");
     return await standalone();
   }
 
-  // If Scarb manifest is missing, and standalone CairoLS path is explicit.
-  if (!(await isScarbProject()) && ctx.config.has("languageServerPath")) {
+  if (await isScarbProject()) {
+    log.trace("this is a Scarb project");
+
+    if (!ctx.config.get("preferScarbLanguageServer", true)) {
+      log.trace("`preferScarbLanguageServer` is false, using standalone LS");
+      return await standalone();
+    }
+
+    if (await scarb.hasCairoLS(ctx)) {
+      log.trace("using Scarb LS");
+      return scarb;
+    }
+
+    log.trace("Scarb has no LS extension, falling back to standalone");
     return await standalone();
-  }
+  } else {
+    log.trace("this is *not* a Scarb project, looking for standalone LS");
 
-  // Otherwise, always prefer Scarb CairoLS.
-  if (await scarb.hasCairoLS(ctx)) {
-    return scarb;
-  }
+    try {
+      return await standalone();
+    } catch (e) {
+      log.trace("could not find standalone LS, trying Scarb LS");
+      if (await scarb.hasCairoLS(ctx)) {
+        log.trace("using Scarb LS");
+        return scarb;
+      }
 
-  return await standalone();
+      log.trace(
+        "could not find standalone LS and Scarb has no LS extension, will error out",
+      );
+      throw e;
+    }
+  }
 }
 
 function insertLanguageServerExtraEnv(

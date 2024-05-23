@@ -48,21 +48,17 @@ use std::time::{Duration, SystemTime};
 use anyhow::{bail, Context};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_defs::db::{get_all_path_leaves, DefsGroup};
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
-    FreeFunctionLongId, FunctionTitleId, ImplAliasLongId, ImplDefLongId, ImplFunctionLongId,
-    ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
-    ModuleTypeAliasLongId, StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitItemId,
-    TraitLongId, UseLongId,
+    FunctionTitleId, LanguageElementId, LookupItemId, ModuleId, SubmoduleLongId,
 };
-use cairo_lang_diagnostics::{Diagnostics, ToOption};
+use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
-use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::{TextPosition, TextSpan};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
@@ -75,25 +71,26 @@ use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
 use cairo_lang_starknet::starknet_plugin_suite;
-use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{try_extract_matches, Intern, LookupIntern, OptionHelper, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use serde_json::Value;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::*;
-use tower_lsp::{Client, LanguageServer, LspService, Server};
+use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
 
 use crate::config::Config;
 use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
+use crate::lang::semantic::LsSemanticGroup;
+use crate::lang::syntax::LsSyntaxGroup;
+use crate::lsp::client_capabilities::ClientCapabilitiesExt;
 use crate::project::scarb::db::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
@@ -105,6 +102,7 @@ mod config;
 mod env_config;
 mod ide;
 mod lang;
+mod lsp;
 mod project;
 mod server;
 mod toolchain;
@@ -138,7 +136,6 @@ pub fn start() {
 /// See [the top-level documentation][lib] documentation for usage examples.
 ///
 /// [lib]: crate#running-with-customizations
-
 #[tokio::main]
 pub async fn start_with_tricks(tricks: Tricks) {
     let _log_guard = init_logging();
@@ -148,12 +145,16 @@ pub async fn start_with_tricks(tricks: Tricks) {
 
     let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
 
-    let (service, socket) = LspService::build(|client| Backend::new(client, tricks))
-        .custom_method("vfs/provide", Backend::vfs_provide)
-        .finish();
+    let (service, socket) = Backend::build_service(tricks);
     Server::new(stdin, stdout, socket).serve(service).await;
 
     info!("language server stopped");
+}
+
+/// Special function to run the language server in end-to-end tests.
+#[cfg(feature = "testing")]
+pub fn build_service_for_e2e_tests() -> (LspService<impl LanguageServer>, ClientSocket) {
+    Backend::build_service(Tricks::default())
 }
 
 /// Initialize logging infrastructure for the language server.
@@ -276,6 +277,7 @@ impl std::panic::UnwindSafe for State {}
 
 struct Backend {
     client: Client,
+    client_capabilities: tokio::sync::RwLock<Box<ClientCapabilities>>,
     tricks: Tricks,
     // TODO(spapini): Remove this once we support ParallelDatabase.
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
@@ -288,12 +290,19 @@ struct Backend {
 }
 
 impl Backend {
+    fn build_service(tricks: Tricks) -> (LspService<Self>, ClientSocket) {
+        LspService::build(|client| Self::new(client, tricks))
+            .custom_method("vfs/provide", Self::vfs_provide)
+            .finish()
+    }
+
     fn new(client: Client, tricks: Tricks) -> Self {
         let db = configured_db(&tricks);
         let notifier = Notifier::new(&client);
         let scarb_toolchain = ScarbToolchain::new(&notifier);
         Self {
             client,
+            client_capabilities: Default::default(),
             tricks,
             db_mutex: db.into(),
             state_mutex: State::default().into(),
@@ -590,7 +599,7 @@ impl Backend {
     /// Reload crate detection for all open files.
     #[tracing::instrument(level = "trace", skip_all)]
     async fn reload(&self) -> LSPResult<()> {
-        self.config.write().await.reload(&self.client).await;
+        self.reload_config().await;
 
         let mut db = self.db_mut().await;
         for uri in self.state_mutex.lock().await.open_files.iter() {
@@ -601,6 +610,15 @@ impl Backend {
         }
         drop(db);
         self.refresh_diagnostics().await
+    }
+
+    /// Reload the [`Config`] and all its dependencies.
+    async fn reload_config(&self) {
+        let mut config = self.config.write().await;
+        {
+            let client_capabilities = self.client_capabilities.read().await;
+            config.reload(&self.client, &client_capabilities).await;
+        }
     }
 }
 
@@ -622,7 +640,12 @@ impl TryFrom<String> for ServerCommands {
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all)]
-    async fn initialize(&self, _: InitializeParams) -> LSPResult<InitializeResult> {
+    async fn initialize(&self, params: InitializeParams) -> LSPResult<InitializeResult> {
+        {
+            let mut client_capabilities = self.client_capabilities.write().await;
+            *client_capabilities = Box::new(params.capabilities);
+        }
+
         Ok(InitializeResult {
             server_info: None,
             capabilities: ServerCapabilities {
@@ -670,27 +693,29 @@ impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all)]
     async fn initialized(&self, _: InitializedParams) {
         // Initialize the configuration.
-        self.config.write().await.reload(&self.client).await;
+        self.reload_config().await;
 
-        // Register patterns for client file watcher.
-        // This is used to detect changes to Scarb.toml and invalidate .cairo files.
-        let registration_options = DidChangeWatchedFilesRegistrationOptions {
-            watchers: vec!["/**/*.cairo", "/**/Scarb.toml"]
-                .into_iter()
-                .map(|glob_pattern| FileSystemWatcher {
-                    glob_pattern: GlobPattern::String(glob_pattern.to_string()),
-                    kind: None,
-                })
-                .collect(),
-        };
-        let registration = Registration {
-            id: "workspace/didChangeWatchedFiles".to_string(),
-            method: "workspace/didChangeWatchedFiles".to_string(),
-            register_options: Some(serde_json::to_value(registration_options).unwrap()),
-        };
-        let result = self.client.register_capability(vec![registration]).await;
-        if let Err(err) = result {
-            warn!("Failed to register workspace/didChangeWatchedFiles event: {:#?}", err);
+        if self.client_capabilities.read().await.did_change_watched_files_dynamic_registration() {
+            // Register patterns for client file watcher.
+            // This is used to detect changes to Scarb.toml and invalidate .cairo files.
+            let registration_options = DidChangeWatchedFilesRegistrationOptions {
+                watchers: vec!["/**/*.cairo", "/**/Scarb.toml"]
+                    .into_iter()
+                    .map(|glob_pattern| FileSystemWatcher {
+                        glob_pattern: GlobPattern::String(glob_pattern.to_string()),
+                        kind: None,
+                    })
+                    .collect(),
+            };
+            let registration = Registration {
+                id: "workspace/didChangeWatchedFiles".to_string(),
+                method: "workspace/didChangeWatchedFiles".to_string(),
+                register_options: Some(serde_json::to_value(registration_options).unwrap()),
+            };
+            let result = self.client.register_capability(vec![registration]).await;
+            if let Err(err) = result {
+                warn!("Failed to register workspace/didChangeWatchedFiles event: {:#?}", err);
+            }
         }
     }
 
@@ -703,7 +728,7 @@ impl LanguageServer for Backend {
 
     #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {
-        self.config.write().await.reload(&self.client).await;
+        self.reload_config().await;
     }
 
     #[tracing::instrument(level = "debug", skip_all)]
@@ -846,24 +871,24 @@ impl LanguageServer for Backend {
 #[tracing::instrument(level = "trace", skip_all)]
 fn find_definition(
     db: &RootDatabase,
-    file: FileId,
     identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
 ) -> Option<SyntaxStablePtrId> {
     if let Some(parent) = identifier.as_syntax_node().parent() {
         if parent.kind(db) == SyntaxKind::ItemModule {
-            let containing_module_id =
-                find_node_module(db, file, parent.clone()).on_none(|| {
-                    error!("`find_definition` failed: could not find module");
-                })?;
+            let Some(containing_module_file_id) = db.find_module_file_containing_node(&parent)
+            else {
+                error!("`find_definition` failed: could not find module");
+                return None;
+            };
 
             let submodule_id = SubmoduleLongId(
-                ModuleFileId(containing_module_id, FileIndex(0)),
+                containing_module_file_id,
                 ast::ItemModule::from_syntax_node(db, parent).stable_ptr(),
             )
             .intern(db);
             return Some(resolved_generic_item_def(
-                db.upcast(),
+                db,
                 ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id)),
             ));
         }
@@ -872,7 +897,7 @@ fn find_definition(
         if let Some(item) =
             db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
-            return Some(resolved_generic_item_def(db.upcast(), item));
+            return Some(resolved_generic_item_def(db, item));
         } else if let Some(item) =
             db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
@@ -903,14 +928,18 @@ fn resolved_concrete_item_def(
 }
 
 #[tracing::instrument(level = "trace", skip_all)]
-fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> SyntaxStablePtrId {
+fn resolved_generic_item_def(
+    db: &dyn SemanticGroup,
+    item: ResolvedGenericItem,
+) -> SyntaxStablePtrId {
+    let defs_db = db.upcast();
     match item {
-        ResolvedGenericItem::Constant(item) => item.untyped_stable_ptr(db),
+        ResolvedGenericItem::Constant(item) => item.untyped_stable_ptr(defs_db),
         ResolvedGenericItem::Module(module_id) => {
             // Check if the module is an inline submodule.
             if let ModuleId::Submodule(submodule_id) = module_id {
                 if let ast::MaybeModuleBody::Some(submodule_id) =
-                    submodule_id.stable_ptr(db.upcast()).lookup(db.upcast()).body(db.upcast())
+                    submodule_id.stable_ptr(defs_db).lookup(db.upcast()).body(db.upcast())
                 {
                     // Inline module.
                     return submodule_id.stable_ptr().untyped();
@@ -928,251 +957,21 @@ fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> S
                     // Note: Only the trait title is returned.
                     FunctionTitleId::Trait(id.function)
                 }
+                GenericFunctionId::Trait(id) => FunctionTitleId::Trait(id.trait_function(db)),
             };
-            title.untyped_stable_ptr(db)
+            title.untyped_stable_ptr(defs_db)
         }
-        ResolvedGenericItem::GenericType(generic_type) => generic_type.untyped_stable_ptr(db),
-        ResolvedGenericItem::GenericTypeAlias(type_alias) => type_alias.untyped_stable_ptr(db),
-        ResolvedGenericItem::GenericImplAlias(impl_alias) => impl_alias.untyped_stable_ptr(db),
-        ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(db).untyped(),
-        ResolvedGenericItem::Trait(trt) => trt.stable_ptr(db).untyped(),
-        ResolvedGenericItem::Impl(imp) => imp.stable_ptr(db).untyped(),
+        ResolvedGenericItem::GenericType(generic_type) => generic_type.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::GenericTypeAlias(type_alias) => type_alias.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::GenericImplAlias(impl_alias) => impl_alias.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(defs_db).untyped(),
+        ResolvedGenericItem::Trait(trt) => trt.stable_ptr(defs_db).untyped(),
+        ResolvedGenericItem::Impl(imp) => imp.stable_ptr(defs_db).untyped(),
         ResolvedGenericItem::TraitFunction(trait_function) => {
-            trait_function.stable_ptr(db).untyped()
+            trait_function.stable_ptr(defs_db).untyped()
         }
-        ResolvedGenericItem::Variable(_item, var) => var.untyped_stable_ptr(db),
+        ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(defs_db),
     }
-}
-
-/// If the ast node is a lookup item, return the corresponding id. Otherwise, return None.
-/// See [LookupItemId].
-#[tracing::instrument(level = "trace", skip_all)]
-fn lookup_item_from_ast(
-    db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
-    node: SyntaxNode,
-) -> Vec<LookupItemId> {
-    let syntax_db = db.upcast();
-    // TODO(spapini): Handle trait items.
-    match node.kind(syntax_db) {
-        SyntaxKind::ItemConstant => vec![LookupItemId::ModuleItem(ModuleItemId::Constant(
-            ConstantLongId(
-                module_file_id,
-                ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(),
-            )
-            .intern(db),
-        ))],
-        SyntaxKind::FunctionWithBody => {
-            if is_grandparent_of_kind(syntax_db, &node, SyntaxKind::ImplBody) {
-                vec![LookupItemId::ImplItem(ImplItemId::Function(
-                    ImplFunctionLongId(
-                        module_file_id,
-                        ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
-                    )
-                    .intern(db),
-                ))]
-            } else {
-                vec![LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
-                    FreeFunctionLongId(
-                        module_file_id,
-                        ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
-                    )
-                    .intern(db),
-                ))]
-            }
-        }
-        SyntaxKind::ItemExternFunction => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::ExternFunction(
-                ExternFunctionLongId(
-                    module_file_id,
-                    ast::ItemExternFunction::from_syntax_node(syntax_db, node).stable_ptr(),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemExternType => vec![LookupItemId::ModuleItem(ModuleItemId::ExternType(
-            ExternTypeLongId(
-                module_file_id,
-                ast::ItemExternType::from_syntax_node(syntax_db, node).stable_ptr(),
-            )
-            .intern(db),
-        ))],
-        SyntaxKind::ItemTrait => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Trait(
-                TraitLongId(
-                    module_file_id,
-                    ast::ItemTrait::from_syntax_node(syntax_db, node).stable_ptr(),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::TraitItemFunction => {
-            vec![LookupItemId::TraitItem(TraitItemId::Function(
-                TraitFunctionLongId(
-                    module_file_id,
-                    ast::TraitItemFunction::from_syntax_node(syntax_db, node).stable_ptr(),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemImpl => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Impl(
-                ImplDefLongId(
-                    module_file_id,
-                    ast::ItemImpl::from_syntax_node(syntax_db, node).stable_ptr(),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemStruct => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Struct(
-                StructLongId(
-                    module_file_id,
-                    ast::ItemStruct::from_syntax_node(syntax_db, node).stable_ptr(),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemEnum => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Enum(
-                EnumLongId(
-                    module_file_id,
-                    ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr(),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemUse => {
-            // Item use is not a lookup item, so we need to collect all UseLeaf, which are lookup
-            // items.
-            let item_use = ast::ItemUse::from_syntax_node(db.upcast(), node);
-            let path_leaves = get_all_path_leaves(db.upcast(), item_use.use_path(syntax_db));
-            let mut res = Vec::new();
-            for path_leaf in path_leaves {
-                let use_long_id = UseLongId(module_file_id, path_leaf.stable_ptr());
-                let lookup_item_id =
-                    LookupItemId::ModuleItem(ModuleItemId::Use(use_long_id.intern(db)));
-                res.push(lookup_item_id);
-            }
-            res
-        }
-        SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
-            ModuleTypeAliasLongId(
-                module_file_id,
-                ast::ItemTypeAlias::from_syntax_node(syntax_db, node).stable_ptr(),
-            )
-            .intern(db),
-        ))],
-        SyntaxKind::ItemImplAlias => vec![LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
-            ImplAliasLongId(
-                module_file_id,
-                ast::ItemImplAlias::from_syntax_node(syntax_db, node).stable_ptr(),
-            )
-            .intern(db),
-        ))],
-        _ => vec![],
-    }
-}
-
-/// Given a position in a file, return the syntax node for the token at that position, and all the
-/// lookup items above this node.
-#[tracing::instrument(level = "trace", skip_all)]
-fn get_node_and_lookup_items(
-    db: &(dyn SemanticGroup + 'static),
-    file: FileId,
-    position: Position,
-) -> Option<(SyntaxNode, Vec<LookupItemId>)> {
-    let mut res = Vec::new();
-    let syntax_db = db.upcast();
-    let filename = file.file_name(db.upcast());
-
-    // Get syntax for file.
-    let syntax = db.file_syntax(file).to_option().on_none(|| {
-        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
-    })?;
-
-    // Get file summary and content.
-    let file_summary = db.file_summary(file).on_none(|| {
-        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
-    })?;
-    let content = db.file_content(file).on_none(|| {
-        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
-    })?;
-
-    // Find offset for position.
-    let offset = position_to_offset(file_summary, position, &content)?;
-    let node = syntax.lookup_offset(syntax_db, offset);
-
-    // Find module.
-    let module_id = find_node_module(db, file, node.clone()).on_none(|| {
-        error!("`get_node_and_lookup_items` failed: failed to find module");
-    })?;
-    let file_index = FileIndex(0);
-    let module_file_id = ModuleFileId(module_id, file_index);
-
-    // Find containing function.
-    let mut item_node = node.clone();
-    loop {
-        for item in lookup_item_from_ast(db, module_file_id, item_node.clone()) {
-            res.push(item);
-        }
-        match item_node.parent() {
-            Some(next_node) => {
-                item_node = next_node;
-            }
-            None => return Some((node, res)),
-        }
-    }
-}
-
-#[tracing::instrument(level = "trace", skip_all)]
-fn position_to_offset(
-    file_summary: Arc<FileSummary>,
-    position: Position,
-    content: &str,
-) -> Option<TextOffset> {
-    let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
-        error!("hover failed: position out of bounds");
-    })?;
-    let mut chars_it = offset.take_from(content).chars();
-    for _ in 0..position.character {
-        let c = chars_it.next().on_none(|| {
-            error!("position does not exist");
-        })?;
-        offset = offset.add_width(TextWidth::from_char(c));
-    }
-    Some(offset)
-}
-
-#[tracing::instrument(level = "trace", skip_all)]
-fn find_node_module(
-    db: &dyn SemanticGroup,
-    main_file: FileId,
-    mut node: SyntaxNode,
-) -> Option<ModuleId> {
-    let mut module = db.file_modules(main_file).unwrap_or_default().iter().copied().next()?;
-    let syntax_db = db.upcast();
-
-    let mut inner_module_names = vec![];
-    while let Some(parent) = node.parent() {
-        node = parent;
-        if node.kind(syntax_db) == SyntaxKind::ItemModule {
-            inner_module_names.push(
-                ast::ItemModule::from_syntax_node(syntax_db, node.clone())
-                    .stable_ptr()
-                    .name_green(syntax_db)
-                    .identifier(syntax_db),
-            );
-        }
-    }
-    for name in inner_module_names.into_iter().rev() {
-        let submodule = try_extract_matches!(
-            db.module_item_by_name(module, name).ok()??,
-            ModuleItemId::Submodule
-        )?;
-        module = ModuleId::Submodule(submodule);
-    }
-    Some(module)
 }
 
 fn is_cairo_file_path(file_path: &Url) -> bool {
@@ -1193,15 +992,14 @@ fn is_cairo_file_path(file_path: &Url) -> bool {
 fn get_definition_location(
     db: &RootDatabase,
     file: FileId,
-    position: Position,
+    position: TextPosition,
 ) -> Option<(FileId, TextSpan)> {
+    let identifier = db.find_identifier_at_position(file, position)?;
+
     let syntax_db = db.upcast();
-    let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
-    if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
-        return None;
-    }
-    let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-    let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
+    let node = db.find_syntax_node_at_position(file, position)?;
+    let lookup_items = db.collect_lookup_items_stack(&node)?;
+    let stable_ptr = find_definition(db, &identifier, &lookup_items)?;
     let node = stable_ptr.lookup(syntax_db);
     let found_file = stable_ptr.file_id(syntax_db);
     let span = node.span_without_trivia(syntax_db);

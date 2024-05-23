@@ -195,9 +195,7 @@ test_function_lowering
 
 //! > function
 fn foo() -> felt252 {
-    bar::<{
-        1 + 2
-    }>() + bar::<2>()
+    bar::<{ 1 + 2 }>() + bar::<2>()
 }
 
 //! > function_name

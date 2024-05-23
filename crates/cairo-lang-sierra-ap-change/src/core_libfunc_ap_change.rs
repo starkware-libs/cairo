@@ -71,12 +71,17 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         Array(libfunc) => match libfunc {
             ArrayConcreteLibfunc::New(_) => vec![ApChange::Known(1)],
             ArrayConcreteLibfunc::SpanFromTuple(_) => vec![ApChange::Known(0)],
+            ArrayConcreteLibfunc::TupleFromSpan(_) => vec![ApChange::Known(2), ApChange::Known(2)],
             ArrayConcreteLibfunc::Append(_) => vec![ApChange::Known(0)],
             ArrayConcreteLibfunc::PopFront(_)
             | ArrayConcreteLibfunc::PopFrontConsume(_)
             | ArrayConcreteLibfunc::SnapshotPopFront(_)
             | ArrayConcreteLibfunc::SnapshotPopBack(_) => {
                 vec![ApChange::Known(1), ApChange::Known(1)]
+            }
+            ArrayConcreteLibfunc::SnapshotMultiPopFront(_)
+            | ArrayConcreteLibfunc::SnapshotMultiPopBack(_) => {
+                vec![ApChange::Known(3), ApChange::Known(3)]
             }
             ArrayConcreteLibfunc::Get(libfunc) => {
                 if info_provider.type_size(&libfunc.ty) == 1 { [4, 3] } else { [5, 4] }
@@ -381,6 +386,14 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 ]
             }
         },
+        Circuit(CircuitConcreteLibfunc::U384IsZero(_)) => {
+            vec![ApChange::Known(0), ApChange::Known(0)]
+        }
+        Circuit(CircuitConcreteLibfunc::FillInput(_)) => {
+            vec![ApChange::Known(2), ApChange::Known(2)]
+        }
+        Circuit(CircuitConcreteLibfunc::Eval(_)) => vec![ApChange::Known(1)],
+        Circuit(CircuitConcreteLibfunc::GetDescriptor(_)) => vec![ApChange::Known(6)],
         Circuit(CircuitConcreteLibfunc::InitCircuitData(_)) => vec![ApChange::Known(0)],
     }
 }

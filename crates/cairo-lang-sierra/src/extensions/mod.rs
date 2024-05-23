@@ -32,7 +32,7 @@ fn args_as_single_value(args: &[GenericArg]) -> Result<BigInt, SpecializationErr
 }
 
 /// Helper for extracting the type from the template arguments.
-fn args_as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
+pub fn args_as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
     match args {
         [GenericArg::Type(ty)] => Ok(ty.clone()),
         [_] => Err(SpecializationError::UnsupportedGenericArg),
@@ -46,6 +46,17 @@ fn args_as_two_types(
 ) -> Result<(ConcreteTypeId, ConcreteTypeId), SpecializationError> {
     match args {
         [GenericArg::Type(ty0), GenericArg::Type(ty1)] => Ok((ty0.clone(), ty1.clone())),
+        [_, _] => Err(SpecializationError::UnsupportedGenericArg),
+        _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+    }
+}
+
+/// Helper for extracting a type and a value from the template arguments.
+fn args_as_type_and_value(
+    args: &[GenericArg],
+) -> Result<(ConcreteTypeId, BigInt), SpecializationError> {
+    match args {
+        [GenericArg::Type(ty), GenericArg::Value(value)] => Ok((ty.clone(), value.clone())),
         [_, _] => Err(SpecializationError::UnsupportedGenericArg),
         _ => Err(SpecializationError::WrongNumberOfGenericArgs),
     }

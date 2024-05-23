@@ -201,15 +201,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_id.name(defs_db),
                 )
             }
-            SemanticDiagnosticKind::TraitFunctionWithBody { trait_id, function_id } => {
-                let defs_db = db.upcast();
-                format!(
-                    "Trait function `{}::{}` has a body. Trait functions with body are not \
-                     supported.",
-                    trait_id.name(defs_db),
-                    function_id.name(defs_db),
-                )
-            }
             SemanticDiagnosticKind::ParameterShouldBeReference {
                 impl_def_id,
                 impl_function_id,
@@ -891,10 +882,6 @@ pub enum SemanticDiagnosticKind {
     },
     VariantCtorNotImmutable,
     TraitParamMutable {
-        trait_id: TraitId,
-        function_id: TraitFunctionId,
-    },
-    TraitFunctionWithBody {
         trait_id: TraitId,
         function_id: TraitFunctionId,
     },

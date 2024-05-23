@@ -1,7 +1,6 @@
 use cairo_lang_defs::ids::{
-    ConstantId, FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplDefId,
-    ModuleId, ModuleItemId, ModuleTypeAliasId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
-    VarId,
+    ConstantId, GenericParamId, GenericTypeId, ImplAliasId, ImplDefId, ModuleId, ModuleItemId,
+    ModuleTypeAliasId, TopLevelLanguageElementId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
@@ -31,7 +30,7 @@ pub enum ResolvedGenericItem {
     Variant(Variant),
     Trait(TraitId),
     Impl(ImplDefId),
-    Variable(FunctionWithBodyId, VarId),
+    Variable(VarId),
 }
 impl ResolvedGenericItem {
     /// Wraps a ModuleItem with the corresponding ResolveGenericItem.
@@ -78,7 +77,7 @@ impl ResolvedGenericItem {
             ResolvedGenericItem::Variant(id) => id.id.full_path(defs_db),
             ResolvedGenericItem::Trait(id) => id.full_path(defs_db),
             ResolvedGenericItem::Impl(id) => id.full_path(defs_db),
-            ResolvedGenericItem::Variable(_, _) => "".into(),
+            ResolvedGenericItem::Variable(_) => "".into(),
         }
     }
 }

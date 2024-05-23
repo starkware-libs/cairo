@@ -6,7 +6,6 @@ use itertools::Itertools;
 use super::canonic::ResultNoErrEx;
 use super::conform::InferenceConform;
 use super::{Inference, InferenceError, InferenceResult};
-use crate::expr::compute::ResultType;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitTypeId};
@@ -60,7 +59,6 @@ pub trait InferenceEmbeddings {
         trait_function: TraitFunctionId,
         self_ty: TypeId,
         lookup_context: &ImplLookupContext,
-        result_type: Option<ResultType>,
         stable_ptr: Option<SyntaxStablePtrId>,
         inference_error_cb: impl FnOnce(InferenceError),
     ) -> Option<(ConcreteTraitId, usize)>;
@@ -245,7 +243,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             let generic_arg =
                 self.infer_generic_arg(&generic_param, lookup_context.clone(), stable_ptr)?;
             generic_args.push(generic_arg);
-            substitution.0.insert(generic_param.id(), generic_arg);
+            substitution.insert(generic_param.id(), generic_arg);
         }
         Ok(generic_args)
     }
@@ -262,7 +260,6 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         trait_function: TraitFunctionId,
         self_ty: TypeId,
         lookup_context: &ImplLookupContext,
-        result_type: Option<ResultType>,
         stable_ptr: Option<SyntaxStablePtrId>,
         inference_error_cb: impl FnOnce(InferenceError),
     ) -> Option<(ConcreteTraitId, usize)> {
@@ -320,17 +317,6 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         };
 
         let generic_args = self.rewrite(trait_generic_args).no_err();
-        if let Some(ResultType { ty: result_type, .. }) = result_type {
-            let return_type = rewriter.rewrite(signature.return_type).ok()?;
-            let return_type = self.rewrite(return_type).no_err();
-            let result_type = self.rewrite(result_type).no_err();
-            if let Err(err_set) = self.conform_ty(return_type, result_type) {
-                if let Some(err) = self.consume_error_without_reporting(err_set) {
-                    inference_error_cb(err);
-                }
-                return None;
-            }
-        }
 
         Some((ConcreteTraitLongId { trait_id, generic_args }.intern(self.db), n_snapshots))
     }

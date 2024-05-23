@@ -13,12 +13,15 @@ use cairo_lang_lowering::add_withdraw_gas::add_withdraw_gas;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
 use cairo_lang_lowering::fmt::LoweredFormatter;
-use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::ids::{
+    ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction,
+};
 use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
 use cairo_lang_lowering::FlatLowered;
 use cairo_lang_semantic::items::functions::{
-    ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplGenericFunctionWithBodyId,
+    ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplFunctionBodyId,
+    ImplGenericFunctionWithBodyId,
 };
 use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_starknet::starknet_plugin_suite;
@@ -68,6 +71,10 @@ struct Args {
     /// whenever to print all lowering stages or only the final lowering.
     #[arg(short, long)]
     all: bool,
+
+    /// The id the expr id of the generated function to output.
+    #[arg(long)]
+    expr_id: Option<usize>,
 
     /// The output file name (default: stdout).
     output: Option<String>,
@@ -152,7 +159,7 @@ fn get_all_funcs(
                                 generic_args: vec![],
                             }
                             .intern(db),
-                            function: *impl_func,
+                            function_body: ImplFunctionBodyId::Impl(*impl_func),
                         }),
                     );
                 }
@@ -195,7 +202,30 @@ fn main() -> anyhow::Result<()> {
     let db = &db_val;
 
     let res = if let Some(function_path) = args.function_path {
-        let function_id = get_func_id_by_name(db, &main_crate_ids, function_path)?;
+        let mut function_id = get_func_id_by_name(db, &main_crate_ids, function_path)?;
+        if let Some(expr_id) = args.expr_id {
+            let multi = db
+                .priv_function_with_body_multi_lowering(
+                    function_id.function_with_body_id(db).base_semantic_function(db),
+                )
+                .unwrap();
+            let element = *multi
+                .generated_lowerings
+                .keys()
+                .find(|generated| generated.index() == expr_id)
+                .with_context(|| {
+                    format!(
+                        "expr_id not found - available expr_ids: {:?}",
+                        multi.generated_lowerings.keys().map(|x| x.index()).collect_vec()
+                    )
+                })?;
+            function_id = db.intern_lowering_concrete_function_with_body(
+                ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
+                    parent: function_id.base_semantic_function(db),
+                    element,
+                }),
+            );
+        }
 
         match args.all {
             true => format!("{:?}", PhasesFormatter { db, function_id }),
