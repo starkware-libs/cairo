@@ -1,4 +1,3 @@
-use std::env;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
@@ -8,7 +7,7 @@ use scarb_metadata::Metadata;
 use tower_lsp::lsp_types::Url;
 use tower_lsp::Client;
 
-use crate::{ScarbResolvingFinish, ScarbResolvingStart};
+use crate::{env_config, ScarbResolvingFinish, ScarbResolvingStart};
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 const SCARB_PROJECT_FILE_NAME: &str = "Scarb.toml";
@@ -20,7 +19,7 @@ pub struct ScarbService {
 
 impl ScarbService {
     pub fn new(client: &Client) -> Self {
-        let scarb_path = env::var_os("SCARB").map(PathBuf::from);
+        let scarb_path = env_config::scarb_path();
         ScarbService { scarb_path, client: client.clone() }
     }
 
@@ -32,10 +31,12 @@ impl ScarbService {
         self.scarb_path.is_some()
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn is_scarb_project(&self, root_path: PathBuf) -> bool {
         self.scarb_manifest_path(root_path).is_some()
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     fn scarb_manifest_path(&self, root_path: PathBuf) -> Option<PathBuf> {
         let mut path = root_path;
         for _ in 0..MAX_CRATE_DETECTION_DEPTH {
@@ -48,6 +49,7 @@ impl ScarbService {
         None
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     fn get_scarb_metadata(&self, root_path: PathBuf) -> Result<Metadata> {
         let manifest_path = self
             .scarb_manifest_path(root_path)
@@ -64,6 +66,7 @@ impl ScarbService {
     }
 
     /// Reads Scarb project metadata from manifest file.
+    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn scarb_metadata(&self, root_path: PathBuf) -> Result<Metadata> {
         self.client.send_notification::<ScarbResolvingStart>(()).await;
         let result = self.get_scarb_metadata(root_path);
@@ -71,6 +74,7 @@ impl ScarbService {
         result
     }
 
+    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn crate_source_paths(
         &self,
         root_path: PathBuf,
@@ -116,6 +120,7 @@ impl ScarbService {
         Ok(crate_roots)
     }
 
+    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn corelib_path(&self, root_path: PathBuf) -> Result<Option<PathBuf>> {
         let metadata = self
             .scarb_metadata(root_path)

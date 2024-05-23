@@ -37,10 +37,10 @@ pub fn setup_single_file_project(
         return Err(ProjectError::NoSuchFile { path: path.to_string_lossy().to_string() });
     }
     let bad_path_err = || ProjectError::BadPath { path: path.to_string_lossy().to_string() };
+    let canonical = path.canonicalize().map_err(|_| bad_path_err())?;
+    let file_dir = canonical.parent().ok_or_else(bad_path_err)?;
     let file_stem = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
     if file_stem == "lib" {
-        let canonical = path.canonicalize().map_err(|_| bad_path_err())?;
-        let file_dir = canonical.parent().ok_or_else(bad_path_err)?;
         let crate_name = file_dir.to_str().ok_or_else(bad_path_err)?;
         let crate_id = db.intern_crate(CrateLongId::Real(crate_name.into()));
         db.set_crate_config(
@@ -53,9 +53,7 @@ pub fn setup_single_file_project(
         let crate_id = db.intern_crate(CrateLongId::Real(file_stem.into()));
         db.set_crate_config(
             crate_id,
-            Some(CrateConfiguration::default_for_root(Directory::Real(
-                path.parent().unwrap().to_path_buf(),
-            ))),
+            Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf()))),
         );
 
         let module_id = ModuleId::CrateRoot(crate_id);

@@ -8,7 +8,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder, Severity,
+    error_code, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics,
+    DiagnosticsBuilder, ErrorCode, Severity,
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax as syntax;
@@ -20,6 +21,7 @@ use syntax::node::TypedSyntaxNode;
 use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
+use crate::items::feature_kind::FeatureMarkerDiagnostic;
 use crate::resolve::ResolvedConcreteItem;
 use crate::semantic;
 use crate::types::peel_snapshots;
@@ -364,30 +366,23 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ConditionNotBool { condition_ty } => {
                 format!(r#"Condition has type "{}", expected bool."#, condition_ty.format(db))
             }
-            SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
-                r#"Match arms have incompatible types: "{}" and "{}""#,
-                match_ty.format(db),
-                arm_ty.format(db)
-            ),
-            SemanticDiagnosticKind::IncompatibleIfBlockTypes { block_if_ty, block_else_ty } => {
-                format!(
-                    r#"If blocks have incompatible types: "{}" and "{}""#,
-                    block_if_ty.format(db),
-                    block_else_ty.format(db),
-                )
+            SemanticDiagnosticKind::IncompatibleArms {
+                multi_arm_expr_kind: incompatibility_kind,
+                pending_ty: first_ty,
+                different_ty,
+            } => {
+                let prefix = match incompatibility_kind {
+                    MultiArmExprKind::Match => "Match arms have incompatible types",
+                    MultiArmExprKind::If => "If blocks have incompatible types",
+                    MultiArmExprKind::Loop => "Loop has incompatible return types",
+                };
+                format!(r#"{prefix}: "{}" and "{}""#, first_ty.format(db), different_ty.format(db))
             }
             SemanticDiagnosticKind::LogicalOperatorNotAllowedInIfLet => {
                 "Logical operator not allowed in if-let.".into()
             }
             SemanticDiagnosticKind::LogicalOperatorNotAllowedInWhileLet => {
                 "Logical operator not allowed in while-let.".into()
-            }
-            SemanticDiagnosticKind::IncompatibleLoopBreakTypes { current_ty, break_ty } => {
-                format!(
-                    r#"Loop has incompatible return types: "{}" and "{}""#,
-                    current_ty.format(db),
-                    break_ty.format(db),
-                )
             }
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!(r#"Type "{}" has no members."#, ty.format(db))
@@ -425,9 +420,31 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UnstableFeature { feature_name } => {
                 format!(
-                    r#"Usage of unstable feature `{feature_name}` with no `#[feature({feature_name})]` attribute."#
+                    "Usage of unstable feature `{feature_name}` with no \
+                     `#[feature({feature_name})]` attribute."
                 )
             }
+            SemanticDiagnosticKind::DeprecatedFeature { feature_name, note } => {
+                format!(
+                    "Usage of deprecated feature `{feature_name}` with no \
+                     `#[feature({feature_name})]` attribute.{}",
+                    note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
+                )
+            }
+            SemanticDiagnosticKind::FeatureMarkerDiagnostic(diagnostic) => match diagnostic {
+                FeatureMarkerDiagnostic::MultipleMarkers => {
+                    "Multiple feature marker attributes.".into()
+                }
+                FeatureMarkerDiagnostic::MissingAllowFeature => {
+                    "Missing `feature` arg for feature marker attribute.".into()
+                }
+                FeatureMarkerDiagnostic::UnsupportedArgument => {
+                    "Unsupported argument for feature marker attribute.".into()
+                }
+                FeatureMarkerDiagnostic::DuplicatedArgument => {
+                    "Duplicated argument for feature marker attribute.".into()
+                }
+            },
             SemanticDiagnosticKind::UnusedVariable => {
                 "Unused variable. Consider ignoring by prefixing with `_`.".into()
             }
@@ -563,8 +580,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "This expression is not supported as constant.".into()
             }
             SemanticDiagnosticKind::DivisionByZero => "Division by zero.".into(),
-            SemanticDiagnosticKind::ExternItemWithImplGenericsNotSupported => {
-                "Extern items with impl generics are not supported".into()
+            SemanticDiagnosticKind::ExternTypeWithImplGenericsNotSupported => {
+                "Extern types with impl generics are not supported.".into()
             }
             SemanticDiagnosticKind::MissingSemicolon => "Missing semicolon".into(),
             SemanticDiagnosticKind::TraitMismatch { expected_trt, actual_trt } => {
@@ -739,6 +756,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::FixedSizeArraySizeTooBig => {
                 "Fixed size array size must be smaller than 2^15.".into()
             }
+            SemanticDiagnosticKind::SelfNotSupportedInContext => {
+                "`Self` is not supported in this context.".into()
+            }
+            SemanticDiagnosticKind::SelfMustBeFirst => {
+                "`Self` can only be the first segment of a path.".into()
+            }
+            SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => {
+                "Can not create instances of phantom types.".into()
+            }
         }
     }
 
@@ -758,6 +784,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
+    }
+
+    fn error_code(&self) -> Option<ErrorCode> {
+        self.kind.error_code()
     }
 }
 
@@ -795,6 +825,7 @@ pub enum SemanticDiagnosticKind {
     },
     UnexpectedGenericArgs,
     UnknownMember,
+    CannotCreateInstancesOfPhantomTypes,
     MemberSpecifiedMoreThanOnce,
     StructBaseStructExpressionNotLast,
     StructBaseStructExpressionNoEffect,
@@ -896,20 +927,13 @@ pub enum SemanticDiagnosticKind {
     ConditionNotBool {
         condition_ty: semantic::TypeId,
     },
-    IncompatibleMatchArms {
-        match_ty: semantic::TypeId,
-        arm_ty: semantic::TypeId,
-    },
-    IncompatibleIfBlockTypes {
-        block_if_ty: semantic::TypeId,
-        block_else_ty: semantic::TypeId,
+    IncompatibleArms {
+        multi_arm_expr_kind: MultiArmExprKind,
+        pending_ty: semantic::TypeId,
+        different_ty: semantic::TypeId,
     },
     LogicalOperatorNotAllowedInIfLet,
     LogicalOperatorNotAllowedInWhileLet,
-    IncompatibleLoopBreakTypes {
-        current_ty: semantic::TypeId,
-        break_ty: semantic::TypeId,
-    },
     TypeHasNoMembers {
         ty: semantic::TypeId,
         member_name: SmolStr,
@@ -943,6 +967,11 @@ pub enum SemanticDiagnosticKind {
     UnstableFeature {
         feature_name: SmolStr,
     },
+    DeprecatedFeature {
+        feature_name: SmolStr,
+        note: Option<SmolStr>,
+    },
+    FeatureMarkerDiagnostic(FeatureMarkerDiagnostic),
     UnhandledMustUseFunction,
     UnusedVariable,
     ConstGenericParamNotSupported,
@@ -1024,7 +1053,7 @@ pub enum SemanticDiagnosticKind {
     },
     UnsupportedConstant,
     DivisionByZero,
-    ExternItemWithImplGenericsNotSupported,
+    ExternTypeWithImplGenericsNotSupported,
     MissingSemicolon,
     TraitMismatch {
         expected_trt: semantic::ConcreteTraitId,
@@ -1089,6 +1118,25 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArrayNonSingleValue,
     FixedSizeArrayEmptyElements,
     FixedSizeArraySizeTooBig,
+    SelfNotSupportedInContext,
+    SelfMustBeFirst,
+}
+
+/// The kind of an expression with multiple possible return types.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum MultiArmExprKind {
+    If,
+    Match,
+    Loop,
+}
+
+impl SemanticDiagnosticKind {
+    pub fn error_code(&self) -> Option<ErrorCode> {
+        Some(match &self {
+            Self::UnusedVariable => error_code!(E0001),
+            _ => return None,
+        })
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -1122,6 +1170,7 @@ impl From<&ResolvedConcreteItem> for ElementKind {
     fn from(val: &ResolvedConcreteItem) -> Self {
         match val {
             ResolvedConcreteItem::Constant(_) => ElementKind::Constant,
+            ResolvedConcreteItem::ConstGenericParameter(_) => ElementKind::Constant,
             ResolvedConcreteItem::Module(_) => ElementKind::Module,
             ResolvedConcreteItem::Function(_) => ElementKind::Function,
             ResolvedConcreteItem::TraitFunction(_) => ElementKind::TraitFunction,

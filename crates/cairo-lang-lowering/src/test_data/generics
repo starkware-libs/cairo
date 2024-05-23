@@ -16,7 +16,7 @@ foo
 trait MyTrait<T> {
     fn foo<S>(self: T, y: S) -> (T, S);
 }
-impl MyImpl of MyTrait::<felt252> {
+impl MyImpl of MyTrait<felt252> {
     #[inline(always)]
     fn foo<S>(self: felt252, y: S) -> (felt252, S) {
         (self, y)
@@ -36,13 +36,13 @@ Statements:
   (v0: core::felt252) <- 5
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v13: (core::felt252, core::bool)) <- struct_construct(v0, v2)
-  (v4: core::felt252, v5: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v13)
+  (v3: (core::felt252, core::bool)) <- struct_construct(v0, v2)
+  (v4: core::felt252, v5: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v3)
   (v6: core::felt252) <- 6
   (v7: ()) <- struct_construct()
   (v8: core::bool) <- bool::False(v7)
-  (v14: (core::felt252, core::bool)) <- struct_construct(v6, v8)
-  (v10: core::felt252, v11: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v14)
+  (v9: (core::felt252, core::bool)) <- struct_construct(v6, v8)
+  (v10: core::felt252, v11: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v9)
 End:
   Return()
 
@@ -55,9 +55,9 @@ test_function_lowering
 
 //! > function
 fn foo() -> felt252 {
-  let q = Query { data: 1 };
-  let Query { data } = q;
-  Query { data: 2 }.data + data
+    let q = Query { data: 1 };
+    let Query { data } = q;
+    Query { data: 2 }.data + data
 }
 
 //! > function_name
@@ -65,7 +65,7 @@ foo
 
 //! > module_code
 struct Query<V> {
-  data: V,
+    data: V,
 }
 
 //! > semantic_diagnostics
@@ -77,10 +77,10 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 1
-  (v3: core::felt252) <- 2
-  (v7: core::felt252) <- core::felt252_add(v3, v0)
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- core::felt252_add(v1, v0)
 End:
-  Return(v7)
+  Return(v2)
 
 //! > ==========================================================================
 
@@ -91,19 +91,21 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  bar::<MyImpl>()
+    bar::<MyImpl>()
 }
 
 //! > function_name
 foo
 
 //! > module_code
-fn bar<impl Imp: MyTrait>(){Imp::foo()}
+fn bar<impl Imp: MyTrait>() {
+    Imp::foo()
+}
 trait MyTrait {
-  fn foo();
+    fn foo();
 }
 impl MyImpl of MyTrait {
-  fn foo(){}
+    fn foo() {}
 }
 
 //! > semantic_diagnostics
@@ -126,7 +128,7 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  MyTrait::bar(5);
+    MyTrait::bar(5);
 }
 
 //! > function_name
@@ -134,11 +136,11 @@ foo
 
 //! > module_code
 trait MyTrait<T> {
-  fn bar(x: T);
+    fn bar(x: T);
 }
-impl MyImpl<T, impl TDrop: Drop::<T>> of MyTrait::<T> {
-  #[inline(never)]
-  fn bar(x: T){}
+impl MyImpl<T, impl TDrop: Drop<T>> of MyTrait<T> {
+    #[inline(never)]
+    fn bar(x: T) {}
 }
 
 //! > semantic_diagnostics
@@ -163,7 +165,7 @@ test_function_lowering
 
 //! > function
 fn foo() -> felt252 {
-  felt252_const::<one>()
+    felt252_const::<one>()
 }
 
 //! > function_name
@@ -183,3 +185,95 @@ Statements:
   (v0: core::felt252) <- core::felt252_const::<1>()
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > generic param in expression
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> felt252 {
+    bar::<{
+        1 + 2
+    }>() + bar::<2>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<const N: felt252>() -> felt252 {
+    N + 5
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 3
+  (v1: core::felt252) <- 5
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
+  (v3: core::felt252) <- 2
+  (v4: core::felt252) <- 5
+  (v5: core::felt252) <- core::felt252_add(v3, v4)
+  (v6: core::felt252) <- core::felt252_add(v2, v5)
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Test generic const types
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> MyStruct::<9> {
+    let s1 = foo_helper();
+    s1.bar();
+    s1.bar();
+    s1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop, Copy)]
+struct MyStruct<const N: felt252> {}
+trait MyTrait<T> {
+    fn bar(self: @T) -> felt252;
+}
+impl MyStructMyTrait<const N: felt252> of MyTrait<MyStruct<N>> {
+    #[inline(never)]
+    fn bar(self: @MyStruct::<N>) -> felt252 {
+        N
+    }
+}
+
+#[inline(never)]
+fn foo_helper<const N: felt252>() -> MyStruct::<N> {
+    MyStruct::<N> {}
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::MyStruct::<9>) <- test::foo_helper::<9>()
+  (v1: test::MyStruct::<9>, v2: @test::MyStruct::<9>) <- snapshot(v0)
+  (v3: core::felt252) <- test::MyStructMyTrait::<9>::bar(v2)
+  (v4: test::MyStruct::<9>, v5: @test::MyStruct::<9>) <- snapshot(v1)
+  (v6: core::felt252) <- test::MyStructMyTrait::<9>::bar(v5)
+End:
+  Return(v4)

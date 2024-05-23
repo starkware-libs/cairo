@@ -1,6 +1,7 @@
 use cairo_lang_sierra::extensions::ap_tracking::ApTrackingConcreteLibfunc;
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
+use cairo_lang_sierra::extensions::bounded_int::BoundedIntConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
@@ -311,6 +312,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarkNetConcreteLibfunc::GetExecutionInfoV2(_)
             | StarkNetConcreteLibfunc::Deploy(_)
             | StarkNetConcreteLibfunc::Keccak(_)
+            | StarkNetConcreteLibfunc::Sha256ProcessBlock(_)
             | StarkNetConcreteLibfunc::LibraryCall(_)
             | StarkNetConcreteLibfunc::ReplaceClass(_)
             | StarkNetConcreteLibfunc::SendMessageToL1(_)
@@ -320,6 +322,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             StarkNetConcreteLibfunc::Testing(libfunc) => match libfunc {
                 TestingConcreteLibfunc::Cheatcode(_) => vec![ApChange::Known(2)],
             },
+            StarkNetConcreteLibfunc::Sha256StateHandleInit(_) => vec![ApChange::Known(0)],
+            StarkNetConcreteLibfunc::Sha256StateHandleDigest(_) => vec![ApChange::Known(0)],
         },
         Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_)
@@ -350,6 +354,12 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(_) => vec![ApChange::Known(0)],
             CouponConcreteLibfunc::Refund(_) => vec![ApChange::Known(0)],
+        },
+        BoundedInt(libfunc) => match libfunc {
+            BoundedIntConcreteLibfunc::Add(_)
+            | BoundedIntConcreteLibfunc::Sub(_)
+            | BoundedIntConcreteLibfunc::Mul(_) => vec![ApChange::Known(0)],
+            BoundedIntConcreteLibfunc::DivRem(_) => vec![ApChange::Known(5)],
         },
     }
 }

@@ -2,6 +2,7 @@ use std::iter;
 
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
+use cairo_lang_sierra::extensions::bounded_int::BoundedIntConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
@@ -76,16 +77,6 @@ pub trait CostOperations {
     /// Gets a cost from step count.
     fn steps(&self, steps: i32) -> Self::CostType {
         self.const_cost(ConstCost { steps, ..ConstCost::default() })
-    }
-
-    /// Gets a cost from hole count.
-    fn holes(&self, holes: i32) -> Self::CostType {
-        self.const_cost(ConstCost { holes, ..ConstCost::default() })
-    }
-
-    /// Gets a cost from range check count.
-    fn range_checks(&self, range_checks: i32) -> Self::CostType {
-        self.const_cost(ConstCost { range_checks, ..ConstCost::default() })
     }
 
     /// Gets a cost of the given token type.
@@ -436,6 +427,14 @@ pub fn core_libfunc_cost(
                     function: libfunc.function.clone(),
                     sign: BranchCostSign::Add,
                 }]
+            }
+        },
+        BoundedInt(libfunc) => match libfunc {
+            BoundedIntConcreteLibfunc::Add(_)
+            | BoundedIntConcreteLibfunc::Sub(_)
+            | BoundedIntConcreteLibfunc::Mul(_) => vec![ConstCost::steps(0).into()],
+            BoundedIntConcreteLibfunc::DivRem(_) => {
+                vec![(ConstCost { steps: 7, holes: 0, range_checks: 3 }).into()]
             }
         },
     }

@@ -24,8 +24,8 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-   let mut arr = array::array_new();
-   array::array_append(ref arr, 1);
+    let mut arr = array::array_new();
+    array::array_append(ref arr, 1);
 }
 
 //! > function_name
@@ -47,7 +47,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   MyTrait::foo();
+    MyTrait::foo();
 }
 
 //! > function_name
@@ -55,17 +55,16 @@ foo
 
 //! > module_code
 trait MyTrait {
-   fn foo();
+    fn foo();
 }
 
 impl MyImpl<+MyTrait> of MyTrait {
-   fn foo() {
-   }
+    fn foo() {}
 }
 
 //! > expected_diagnostics
 error: Inference cycle detected
- --> lib.cairo:9:10
+ --> lib.cairo:8:10
 fn foo() {
          ^
 
@@ -166,9 +165,9 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-   MyTrait::foo(5);
-   MyTrait::foo(true);
-   MyTrait::foo(Option::None);
+    MyTrait::foo(5);
+    MyTrait::foo(true);
+    MyTrait::foo(Option::None);
 }
 
 //! > function_name
@@ -176,17 +175,17 @@ foo
 
 //! > module_code
 trait MyTrait<T> {
-   fn foo(x: T);
+    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<felt252> {
-   fn foo(x: felt252) {}
+impl MyImpl1 of MyTrait<felt252> {
+    fn foo(x: felt252) {}
 }
-impl MyImpl2 of MyTrait::<bool> {
-   fn foo(x: bool) {}
+impl MyImpl2 of MyTrait<bool> {
+    fn foo(x: bool) {}
 }
-impl MyImpl3 of MyTrait::<Option::<felt252>> {
+impl MyImpl3 of MyTrait<Option<felt252>> {
     fn foo(x: Option::<felt252>) {}
- }
+}
 
 //! > expected_diagnostics
 
@@ -199,7 +198,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   MyTrait::foo(true);
+    MyTrait::foo(true);
 }
 
 //! > function_name
@@ -207,26 +206,26 @@ foo
 
 //! > module_code
 trait MyTrait<T> {
-   fn foo(x: T);
+    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<felt252> {
-   fn foo(x: felt252) {}
+impl MyImpl1 of MyTrait<felt252> {
+    fn foo(x: felt252) {}
 }
-impl MyImpl2 of MyTrait::<felt252> {
-   fn foo(x: felt252) {}
+impl MyImpl2 of MyTrait<felt252> {
+    fn foo(x: felt252) {}
 }
-impl MyImpl3 of MyTrait::<Option::<felt252>> {
+impl MyImpl3 of MyTrait<Option<felt252>> {
     fn foo(x: Option::<felt252>) {}
 }
-impl MyImpl4 of MyTrait::<Option::<bool>> {
+impl MyImpl4 of MyTrait<Option<bool>> {
     fn foo(x: Option::<bool>) {}
 }
 
 //! > expected_diagnostics
 error: Trait has no implementation in context: test::MyTrait::<core::bool>
- --> lib.cairo:17:13
-   MyTrait::foo(true);
-            ^*^
+ --> lib.cairo:17:14
+    MyTrait::foo(true);
+             ^*^
 
 //! > ==========================================================================
 
@@ -237,8 +236,8 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   MyTrait::foo(5);
-   MyTrait::foo(Option::<felt252>::None);
+    MyTrait::foo(5);
+    MyTrait::foo(Option::<felt252>::None);
 }
 
 //! > function_name
@@ -246,26 +245,26 @@ foo
 
 //! > module_code
 trait MyTrait<T> {
-   fn foo(x: T);
+    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<felt252> {
-   fn foo(x: felt252) {}
+impl MyImpl1 of MyTrait<felt252> {
+    fn foo(x: felt252) {}
 }
-impl MyImpl2 of MyTrait::<felt252> {
-   fn foo(x: felt252) {}
+impl MyImpl2 of MyTrait<felt252> {
+    fn foo(x: felt252) {}
 }
-impl MyImpl3 of MyTrait::<Option::<felt252>> {
+impl MyImpl3 of MyTrait<Option<felt252>> {
     fn foo(x: Option::<felt252>) {}
 }
-impl MyImpl4 of MyTrait::<Option::<bool>> {
+impl MyImpl4 of MyTrait<Option<bool>> {
     fn foo(x: Option::<bool>) {}
 }
 
 //! > expected_diagnostics
 error: Trait `test::MyTrait::<core::felt252>` has multiple implementations, in: `test::MyImpl1`, `test::MyImpl2`
- --> lib.cairo:17:13
-   MyTrait::foo(5);
-            ^*^
+ --> lib.cairo:17:14
+    MyTrait::foo(5);
+             ^*^
 
 //! > ==========================================================================
 
@@ -276,7 +275,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   MyTrait::foo(Option::None);
+    MyTrait::foo(Option::None);
 }
 
 //! > function_name
@@ -284,26 +283,26 @@ foo
 
 //! > module_code
 trait MyTrait<T> {
-   fn foo(x: T);
+    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<felt252> {
-   fn foo(x: felt252) {}
+impl MyImpl1 of MyTrait<felt252> {
+    fn foo(x: felt252) {}
 }
-impl MyImpl2 of MyTrait::<felt252> {
-   fn foo(x: felt252) {}
+impl MyImpl2 of MyTrait<felt252> {
+    fn foo(x: felt252) {}
 }
-impl MyImpl3 of MyTrait::<Option::<felt252>> {
+impl MyImpl3 of MyTrait<Option<felt252>> {
     fn foo(x: Option::<felt252>) {}
 }
-impl MyImpl4 of MyTrait::<Option::<bool>> {
+impl MyImpl4 of MyTrait<Option<bool>> {
     fn foo(x: Option::<bool>) {}
 }
 
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?1
- --> lib.cairo:17:17
-   MyTrait::foo(Option::None);
-                ^****^
+ --> lib.cairo:17:18
+    MyTrait::foo(Option::None);
+                 ^****^
 
 //! > ==========================================================================
 
@@ -314,7 +313,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(my_box: Box::<MyStruct>) -> felt252 {
-   box::unbox(my_box).a
+    box::unbox(my_box).a
 }
 
 //! > function_name
@@ -322,7 +321,7 @@ foo
 
 //! > module_code
 struct MyStruct {
-   a: felt252
+    a: felt252
 }
 
 //! > expected_diagnostics
@@ -336,21 +335,20 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-   bar(true);
+    bar(true);
 }
 
 //! > function_name
 foo
 
 //! > module_code
-fn bar<impl Tr: MyTrait::<bool>>(x: bool){
-}
+fn bar<impl Tr: MyTrait<bool>>(x: bool) {}
 
 trait MyTrait<T> {
-   fn foo(x: T);
+    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<bool> {
-   fn foo(x: bool) {}
+impl MyImpl1 of MyTrait<bool> {
+    fn foo(x: bool) {}
 }
 
 //! > expected_diagnostics
@@ -364,29 +362,28 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-   bar(Option::Some(5));
+    bar(Option::Some(5));
 }
 
 //! > function_name
 foo
 
 //! > module_code
-fn bar<S, impl Tr: MyTrait::<S>>(x: S){
-}
+fn bar<S, impl Tr: MyTrait<S>>(x: S) {}
 
 trait MyTrait<T> {
-   fn foo(x: T);
+    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<felt252> {
-   fn foo(x: felt252) {}
+impl MyImpl1 of MyTrait<felt252> {
+    fn foo(x: felt252) {}
 }
-impl MyImpl2 of MyTrait::<felt252> {
-   fn foo(x: felt252) {}
+impl MyImpl2 of MyTrait<felt252> {
+    fn foo(x: felt252) {}
 }
-impl MyImpl3 of MyTrait::<Option::<felt252>> {
+impl MyImpl3 of MyTrait<Option<felt252>> {
     fn foo(x: Option::<felt252>) {}
 }
-impl MyImpl4 of MyTrait::<Option::<bool>> {
+impl MyImpl4 of MyTrait<Option<bool>> {
     fn foo(x: Option::<bool>) {}
 }
 
@@ -401,37 +398,36 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   bar(true);
+    bar(true);
 }
 
 //! > function_name
 foo
 
 //! > module_code
-fn bar<S, impl Tr: MyTrait::<S>>(x: S){
-}
+fn bar<S, impl Tr: MyTrait<S>>(x: S) {}
 
 trait MyTrait<T> {
-   fn foo(x: T);
+    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<felt252> {
-   fn foo(x: felt252) {}
+impl MyImpl1 of MyTrait<felt252> {
+    fn foo(x: felt252) {}
 }
-impl MyImpl2 of MyTrait::<felt252> {
-   fn foo(x: felt252) {}
+impl MyImpl2 of MyTrait<felt252> {
+    fn foo(x: felt252) {}
 }
-impl MyImpl3 of MyTrait::<Option::<felt252>> {
+impl MyImpl3 of MyTrait<Option<felt252>> {
     fn foo(x: Option::<felt252>) {}
 }
-impl MyImpl4 of MyTrait::<Option::<bool>> {
+impl MyImpl4 of MyTrait<Option<bool>> {
     fn foo(x: Option::<bool>) {}
 }
 
 //! > expected_diagnostics
 error: Trait has no implementation in context: test::MyTrait::<core::bool>
- --> lib.cairo:20:4
-   bar(true);
-   ^*^
+ --> lib.cairo:19:5
+    bar(true);
+    ^*^
 
 //! > ==========================================================================
 
@@ -442,21 +438,23 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-   A::<felt252>{}.foo();
+    A::<felt252> {}.foo();
 }
 
 //! > function_name
 foo
 
 //! > module_code
-struct A<T> { }
+struct A<T> {}
 trait MyTrait<T> {
-   fn foo<impl TDrop: Drop::<T>>(self:A<T>);
-   fn bar<impl TDrop: Drop::<T>>(self:A<T>);
+    fn foo<impl TDrop: Drop<T>>(self: A<T>);
+    fn bar<impl TDrop: Drop<T>>(self: A<T>);
 }
-impl MyImpl<T> of MyTrait::<T> {
-   fn foo<impl TDrop: Drop::<T>>(self:A<T>){self.bar()}
-   fn bar<impl TDrop: Drop::<T>>(self:A<T>){}
+impl MyImpl<T> of MyTrait<T> {
+    fn foo<impl TDrop: Drop<T>>(self: A<T>) {
+        self.bar()
+    }
+    fn bar<impl TDrop: Drop<T>>(self: A<T>) {}
 }
 
 //! > expected_diagnostics
@@ -470,8 +468,8 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-   let _ = (@5).clone();
-   let _ = 5.clone();
+    let _ = (@5).clone();
+    let _ = 5.clone();
 }
 
 //! > function_name
@@ -490,15 +488,15 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-   clone_loop(5)
+    clone_loop(5)
 }
 
 //! > function_name
 foo
 
 //! > module_code
-fn clone_loop<T, impl TClone: Clone::<T>>(x: T) {
-   clone_loop::<T>(x)
+fn clone_loop<T, impl TClone: Clone<T>>(x: T) {
+    clone_loop::<T>(x)
 }
 
 //! > expected_diagnostics
@@ -511,18 +509,17 @@ fn clone_loop<T, impl TClone: Clone::<T>>(x: T) {
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo() {
-}
+fn foo() {}
 
 //! > function_name
 foo
 
 //! > module_code
 struct A {}
-struct B{
-   a: A,
+struct B {
+    a: A,
 }
-impl I<impl TI: Drop::<A>> of Drop::<B>;
+impl I<impl TI: Drop<A>> of Drop<B>;
 
 //! > expected_diagnostics
 
@@ -535,7 +532,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-   assert_eq(1, 2 + 3, '4');
+    assert_eq(1, 2 + 3, '4');
 }
 
 //! > function_name
@@ -558,7 +555,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-   let u256 { low: _, high: _ } = 123;
+    let u256 { low: _, high: _ } = 123;
 }
 
 //! > function_name
@@ -576,27 +573,28 @@ foo
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo() {
-}
+fn foo() {}
 
 //! > function_name
 foo
 
 //! > module_code
 trait BashStateTrait<S> {
-   fn update(self: S, value: felt252) -> S;
-   fn finalize(self: S) -> felt252;
+    fn update(self: S, value: felt252) -> S;
+    fn finalize(self: S) -> felt252;
 }
 trait Bash<T, S, impl X: BashStateTrait<S>> {
-   fn update_state(state: S, value: T) -> S;
+    fn update_state(state: S, value: T) -> S;
 }
 trait BashStateExTrait<S, T> {
-   fn update_with(self: S, value: T) -> S;
+    fn update_with(self: S, value: T) -> S;
 }
-impl BashStateEx<S, impl X0: BashStateTrait<S>, T, impl Y0: Bash<T, S, _>> of BashStateExTrait<S, T> {
-   fn update_with(self: S, value: T) -> S {
-       Bash::update_state(self, value)
-   }
+impl BashStateEx<
+    S, impl X0: BashStateTrait<S>, T, impl Y0: Bash<T, S, _>
+> of BashStateExTrait<S, T> {
+    fn update_with(self: S, value: T) -> S {
+        Bash::update_state(self, value)
+    }
 }
 
 //! > expected_diagnostics
@@ -610,7 +608,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   let _x = "hello";
+    let _x = "hello";
 }
 
 //! > function_name
@@ -620,9 +618,9 @@ foo
 
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:2:13
-   let _x = "hello";
-            ^*****^
+ --> lib.cairo:2:14
+    let _x = "hello";
+             ^*****^
 
 //! > ==========================================================================
 
@@ -633,21 +631,20 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   // A NumericLiteral<felt252> should be inferred here.
-   let _x = 123;
+    // A NumericLiteral<felt252> should be inferred here.
+    let _x = 123;
 }
 
 //! > function_name
 foo
 
 //! > module_code
-impl MyImpl of NonExistingTrait {
-}
+impl MyImpl of NonExistingTrait {}
 
 //! > expected_diagnostics
 error: Trait not found.
  --> lib.cairo:1:16
-impl MyImpl of NonExistingTrait {
+impl MyImpl of NonExistingTrait {}
                ^**************^
 
 //! > ==========================================================================
@@ -683,16 +680,14 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   bar(0_u8);
+    bar(0_u8);
 }
 
 //! > function_name
 foo
 
 //! > module_code
-trait MyTrait<T> {
-
-}
+trait MyTrait<T> {}
 
 impl MyIpls<T, +Drop<T>> of MyTrait<T> {}
 
@@ -703,18 +698,18 @@ impl MyIpls<T, +Drop<T>> of MyTrait<T> {}
 // }
 
 fn bar<T, +Drop<T>, +MyTrait<T>>(a: T) -> T {
-      baz(a)
+    baz(a)
 }
 
 fn baz<T, +Drop<T>, +MyTrait<T>>(a: T) -> T {
-      a
+    a
 }
 
 //! > expected_diagnostics
 error: Trait `test::MyTrait::<T>` has multiple implementations, in: `+MyTrait<T>`, `test::MyIpls::<T, +Drop<T>>`
- --> lib.cairo:14:7
-      baz(a)
-      ^*^
+ --> lib.cairo:12:5
+    baz(a)
+    ^*^
 
 //! > ==========================================================================
 
@@ -725,27 +720,44 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   let x = 5;
-   let y: u32 = 5;
-   takes_snapshots(x, y);
+    let x = 5;
+    let y: u32 = 5;
+    takes_snapshots(x, y);
 }
 
 //! > function_name
 foo
 
 //! > module_code
-fn takes_snapshots<T>(x: @T, y: @T) {
-}
+fn takes_snapshots<T>(x: @T, y: @T) {}
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "@?2", found: "core::integer::u32".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
- --> lib.cairo:6:23
-   takes_snapshots(x, y);
-                      ^
+ --> lib.cairo:5:24
+    takes_snapshots(x, y);
+                       ^
 
-error: Type annotations needed. Failed to infer ?2
- --> lib.cairo:6:4
-   takes_snapshots(x, y);
-   ^*************^
+//! > ==========================================================================
+
+//! > Returned type is not inferred.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> Option {
+    Option::Some(5_u32)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo:1:13
+fn foo() -> Option {
+            ^****^

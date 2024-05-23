@@ -2,12 +2,14 @@ use std::vec;
 
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::{extract_matches, try_extract_matches};
+use cairo_lang_utils::{extract_matches, try_extract_matches, ResultHelper};
+use defs::ids::TopLevelLanguageElementId;
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
@@ -21,7 +23,7 @@ use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
     ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
-    MatchArmSelector, TypeLongId,
+    MatchArmSelector, SemanticDiagnostic, TypeLongId,
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
@@ -77,9 +79,11 @@ pub fn lower_semantic_function(
     db: &dyn LoweringGroup,
     semantic_function_id: defs::ids::FunctionWithBodyId,
 ) -> Maybe<MultiLowering> {
-    db.function_declaration_diagnostics(semantic_function_id)
-        .check_error_free()
-        .and_then(|()| db.function_body_diagnostics(semantic_function_id).check_error_free())?;
+    let declaration_diagnostics = db.function_declaration_diagnostics(semantic_function_id);
+    check_error_free_or_warn(db, declaration_diagnostics, semantic_function_id, "declaration")?;
+    let body_diagnostics = db.function_body_diagnostics(semantic_function_id);
+    check_error_free_or_warn(db, body_diagnostics, semantic_function_id, "body")?;
+
     let mut encapsulating_ctx = EncapsulatingLoweringContext::new(db, semantic_function_id)?;
     let function_id = db
         .intern_lowering_function_with_body(FunctionWithBodyLongId::Semantic(semantic_function_id));
@@ -721,6 +725,7 @@ fn lower_expr(
     let expr = ctx.function_body.exprs[expr_id].clone();
     match &expr {
         semantic::Expr::Constant(expr) => lower_expr_constant(ctx, expr, builder),
+        semantic::Expr::ParamConstant(expr) => lower_expr_param_constant(ctx, expr, builder),
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, builder),
         semantic::Expr::Snapshot(expr) => lower_expr_snapshot(ctx, expr, builder),
         semantic::Expr::Desnap(expr) => lower_expr_desnap(ctx, expr, builder),
@@ -943,6 +948,20 @@ fn lower_expr_constant(
     ))
 }
 
+/// Lowers an expression of type [semantic::ExprParamConstant].
+fn lower_expr_param_constant(
+    ctx: &mut LoweringContext<'_, '_>,
+    expr: &semantic::ExprParamConstant,
+    builder: &mut BlockBuilder,
+) -> LoweringResult<LoweredExpr> {
+    log::trace!("Lowering a constant parameter: {:?}", expr.debug(&ctx.expr_formatter));
+    let value = ctx.db.lookup_intern_const_value(expr.const_value_id);
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+    Ok(LoweredExpr::AtVariable(
+        generators::Const { value, ty: expr.ty, location }.add(ctx, &mut builder.statements),
+    ))
+}
+
 /// Lowers an expression of type [semantic::ExprTuple].
 fn lower_expr_tuple(
     ctx: &mut LoweringContext<'_, '_>,
@@ -967,11 +986,36 @@ fn lower_expr_fixed_size_array(
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a fixed size array: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let exprs = expr
-        .items
-        .iter()
-        .map(|arg_expr_id| lower_expr(ctx, builder, *arg_expr_id))
-        .collect::<Result<Vec<_>, _>>()?;
+    let exprs = match &expr.items {
+        semantic::FixedSizeArrayItems::Items(items) => items
+            .iter()
+            .map(|arg_expr_id| lower_expr(ctx, builder, *arg_expr_id))
+            .collect::<Result<Vec<_>, _>>()?,
+        semantic::FixedSizeArrayItems::ValueAndSize(value, size) => {
+            let lowered_value = lower_expr(ctx, builder, *value)?;
+            let var_usage = lowered_value.as_var_usage(ctx, builder)?;
+            let size = extract_matches!(ctx.db.lookup_intern_const_value(*size), ConstValue::Int)
+                .to_usize()
+                .unwrap();
+            if size == 0 {
+                return Err(LoweringFlowError::Failed(
+                    ctx.diagnostics
+                        .report(expr.stable_ptr.untyped(), EmptyRepeatedElementFixedSizeArray),
+                ));
+            }
+            // If there are multiple elements, the type must be copyable as we copy the var `size`
+            // times.
+            if size > 1 && ctx.variables[var_usage.var_id].copyable.is_err() {
+                {
+                    return Err(LoweringFlowError::Failed(
+                        ctx.diagnostics.report(expr.stable_ptr.0, FixedSizeArrayNonCopyableType),
+                    ));
+                }
+            }
+            let expr = LoweredExpr::AtVariable(var_usage);
+            vec![expr; size]
+        }
+    };
     Ok(LoweredExpr::FixedSizeArray { exprs, location })
 }
 
@@ -1593,4 +1637,22 @@ fn create_subscope_with_bound_refs(
 /// Creates a new subscope of the given builder, with unchanged refs and with an empty block.
 fn create_subscope(ctx: &mut LoweringContext<'_, '_>, builder: &BlockBuilder) -> BlockBuilder {
     builder.child_block_builder(alloc_empty_block(ctx))
+}
+
+/// Calls `.check_error_free()` and warns (in log) if there are errors.
+fn check_error_free_or_warn(
+    db: &dyn LoweringGroup,
+    diagnostics: Diagnostics<SemanticDiagnostic>,
+    semantic_function_id: defs::ids::FunctionWithBodyId,
+    diagnostics_description: &str,
+) -> Maybe<()> {
+    let declaration_error_free = diagnostics.check_error_free();
+    declaration_error_free.on_err(|_| {
+        log::warn!(
+            "Function `{function_path}` has semantic diagnostics in its \
+             {diagnostics_description}:\n{diagnostics_format}",
+            function_path = semantic_function_id.full_path(db.upcast()),
+            diagnostics_format = diagnostics.format(db.upcast())
+        );
+    })
 }

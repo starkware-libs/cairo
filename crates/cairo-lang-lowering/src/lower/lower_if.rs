@@ -2,6 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
+use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use semantic::types::peel_snapshots;
 use semantic::{Condition, MatchArmSelector, TypeLongId};
@@ -99,7 +100,7 @@ pub fn lower_expr_if_let(
     matched_expr: semantic::ExprId,
     patterns: &[semantic::PatternId],
 ) -> LoweringResult<LoweredExpr> {
-    log::trace!("Lowering a match expression: {:?}", expr.debug(&ctx.expr_formatter));
+    log::trace!("Lowering an if let expression: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, builder, matched_expr)?;
 

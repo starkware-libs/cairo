@@ -5,6 +5,7 @@ use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use itertools::{zip_eq, Itertools};

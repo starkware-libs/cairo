@@ -267,7 +267,25 @@ impl LineBuilder {
     }
     /// Appends a comment to the line.
     pub fn push_comment(&mut self, content: &str, is_trailing: bool) {
+        // Aggregate consecutive comment lines into one.
+        let active_builder = self.get_active_builder_mut();
+        if let Some(LineComponent::Comment { content: prev_content, is_trailing }) =
+            active_builder.children.last_mut()
+        {
+            if !*is_trailing {
+                *prev_content += "\n";
+                *prev_content += content;
+                return;
+            }
+        }
         self.push_child(LineComponent::Comment { content: content.to_string(), is_trailing });
+        self.push_break_line_point(BreakLinePointProperties::new(
+            // Should be greater than any other precedence.
+            usize::MAX,
+            BreakLinePointIndentation::NotIndented,
+            false,
+            false,
+        ));
     }
     /// Appends all the pending break line points to the builder. Should be called whenever a
     /// component of another type (i.e. not a break line point) is appended.
@@ -400,7 +418,8 @@ impl LineBuilder {
                 }
                 _ => 0,
             };
-            trees.push(LineBuilder::new(base_indent + added_indent));
+            let cur_indent = base_indent + added_indent;
+            trees.push(LineBuilder::new(cur_indent));
             for j in current_line_start..*current_line_end {
                 match &self.children[j] {
                     LineComponent::Indent(_) => {}
@@ -409,6 +428,14 @@ impl LineBuilder {
                         if !trees.last().unwrap().is_only_indents() {
                             trees.last_mut().unwrap().push_space();
                         }
+                    }
+                    LineComponent::Comment { content, is_trailing } if !is_trailing => {
+                        let formatted_comment =
+                            format_leading_comment(content, cur_indent, max_line_width);
+                        trees.last_mut().unwrap().push_child(LineComponent::Comment {
+                            content: formatted_comment,
+                            is_trailing: *is_trailing,
+                        });
                     }
                     _ => trees.last_mut().unwrap().push_child(self.children[j].clone()),
                 }
@@ -442,7 +469,6 @@ impl LineBuilder {
     /// Creates a string of the code represented in the builder. The string may represent
     /// several lines (separated by '\n'), where each line length is
     /// less than max_line_width (if possible).
-    /// Each line is prepended by the leading
     pub fn build(&self, max_line_width: usize, tab_size: usize) -> String {
         self.break_line_tree(max_line_width, tab_size).iter().join("\n") + "\n"
     }
@@ -523,6 +549,114 @@ impl LineBuilder {
             pending_break_line_points: vec![],
         }
     }
+}
+
+/// Represents a comment line in the code.
+#[derive(Clone, PartialEq, Eq)]
+struct CommentLine {
+    /// The number of slashes in the comment prefix.
+    n_slashes: usize,
+    /// The number of exclamation marks in the comment prefix.
+    n_exclamations: usize,
+    /// The number of leading spaces in the comment prefix.
+    n_leading_spaces: usize,
+    /// The content of the comment.
+    content: String,
+}
+
+impl CommentLine {
+    /// Creates a new comment prefix.
+    pub fn from_string(mut comment_line: String) -> Self {
+        comment_line = comment_line.trim().to_string();
+        let n_slashes = comment_line.chars().take_while(|c| *c == '/').count();
+        comment_line = comment_line.chars().skip(n_slashes).collect();
+        let n_exclamations = comment_line.chars().take_while(|c| *c == '!').count();
+        comment_line = comment_line.chars().skip(n_exclamations).collect();
+        let n_leading_spaces = comment_line.chars().take_while(|c| *c == ' ').count();
+        let content = comment_line.chars().skip(n_leading_spaces).collect();
+        Self { n_slashes, n_exclamations, n_leading_spaces, content }
+    }
+    /// Returns true if the comment prefix is the same as the other comment prefix.
+    pub fn is_same_prefix(&self, other: &Self) -> bool {
+        self.n_slashes == other.n_slashes
+            && self.n_exclamations == other.n_exclamations
+            && self.n_leading_spaces == other.n_leading_spaces
+    }
+    /// Returns true if the comment ends with an alphanumeric character, or a comma, indicating that
+    /// the next line is probably a continuation of the comment, and thus in case of a line break it
+    /// should prepend the content of the next line.
+    pub fn is_open_line(&self) -> bool {
+        self.content.ends_with(|c: char| c.is_alphanumeric() || c == ',')
+    }
+}
+
+impl fmt::Display for CommentLine {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}{}{}{}",
+            "/".repeat(self.n_slashes),
+            "!".repeat(self.n_exclamations),
+            " ".repeat(self.n_leading_spaces),
+            self.content.trim()
+        )
+    }
+}
+
+/// Formats a comment to fit in the line width. There are no merges of lines, as this is not clear
+/// when to merge two lines the user choose to write on separate lines, so all original line breaks
+/// are preserved.
+fn format_leading_comment(content: &str, cur_indent: usize, max_line_width: usize) -> String {
+    let mut formatted_comment = String::new();
+    let mut prev_comment_line = CommentLine::from_string("".to_string());
+    let append_line = |formatted_comment: &mut String, comment_line: &CommentLine| {
+        formatted_comment.push_str(&" ".repeat(cur_indent));
+        formatted_comment.push_str(&comment_line.to_string());
+        formatted_comment.push('\n');
+    };
+    let mut last_line_broken = false;
+    for line in content.lines() {
+        let orig_comment_line = CommentLine::from_string(line.to_string());
+        let max_comment_width = max_line_width
+            - cur_indent
+            - orig_comment_line.n_slashes
+            - orig_comment_line.n_exclamations
+            - orig_comment_line.n_leading_spaces;
+        // The current line is initialized with the previous line only if it was broken (to avoid
+        // merging user separated lines).
+        let mut current_line = if last_line_broken
+            && prev_comment_line.is_open_line()
+            && prev_comment_line.is_same_prefix(&orig_comment_line)
+        {
+            prev_comment_line.content += " ";
+            prev_comment_line
+        } else {
+            append_line(&mut formatted_comment, &prev_comment_line);
+            CommentLine { content: "".to_string(), ..orig_comment_line }
+        };
+        last_line_broken = false;
+        for word in orig_comment_line.content.split(' ') {
+            if current_line.content.len() + word.len() <= max_comment_width {
+                current_line.content.push_str(word);
+                current_line.content.push(' ');
+            } else {
+                append_line(&mut formatted_comment, &current_line);
+                last_line_broken = true;
+                current_line = CommentLine { content: word.to_string(), ..current_line };
+                current_line.content.push(' ');
+            }
+        }
+        prev_comment_line = CommentLine {
+            n_slashes: orig_comment_line.n_slashes,
+            n_exclamations: orig_comment_line.n_exclamations,
+            n_leading_spaces: orig_comment_line.n_leading_spaces,
+            content: current_line.content.trim().to_string(),
+        };
+    }
+    append_line(&mut formatted_comment, &prev_comment_line);
+    // Remove the leading spaces of the first line, as they are added by the LineBuilder for the
+    // first line.
+    formatted_comment.trim().to_string()
 }
 
 /// A struct holding all the data of the pending line to be emitted.
@@ -712,16 +846,6 @@ impl<'a> FormatterImpl<'a> {
                     );
                     self.is_current_line_whitespaces = false;
                     self.empty_lines_allowance = 1;
-
-                    self.line_state.line_buffer.push_break_line_point(
-                        BreakLinePointProperties::new(
-                            // Should be greater than any other precedence.
-                            usize::MAX,
-                            BreakLinePointIndentation::NotIndented,
-                            false,
-                            false,
-                        ),
-                    );
                 }
                 ast::Trivium::Whitespace(_) => {}
                 ast::Trivium::Newline(_) => {

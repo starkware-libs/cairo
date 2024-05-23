@@ -5,13 +5,13 @@ test_borrow_check
 
 //! > function
 fn foo(x: ACopy, y: ADrop) {
-  if true {
+    if true {
+        use_a_copy(x);
+        use_a_drop(y);
+    } else {
+        use_a_drop(y);
+    }
     use_a_copy(x);
-    use_a_drop(y);
-  } else {
-    use_a_drop(y);
-  }
-  use_a_copy(x);
 }
 
 //! > function_name
@@ -19,9 +19,9 @@ foo
 
 //! > module_code
 extern type ACopy;
-impl ACopyCopy of Copy::<ACopy>;
+impl ACopyCopy of Copy<ACopy>;
 extern type ADrop;
-impl ADropDrop of Drop::<ADrop>;
+impl ADropDrop of Drop<ADrop>;
 
 extern fn use_a_copy(x: ACopy) nopanic;
 extern fn use_a_drop(x: ADrop) nopanic;
@@ -71,12 +71,11 @@ test_borrow_check
 
 //! > function
 fn foo(x: ACopy, y: ADrop) -> ADrop {
-  if true {
-    use_a_copy(x);
-    use_a_drop(y);
-  } else {
-  }
-  y
+    if true {
+        use_a_copy(x);
+        use_a_drop(y);
+    } else {}
+    y
 }
 
 //! > function_name
@@ -84,9 +83,9 @@ foo
 
 //! > module_code
 extern type ACopy;
-impl ACopyCopy of Copy::<ACopy>;
+impl ACopyCopy of Copy<ACopy>;
 extern type ADrop;
-impl ADropDrop of Drop::<ADrop>;
+impl ADropDrop of Drop<ADrop>;
 
 extern fn use_a_copy(x: ACopy) nopanic;
 extern fn use_a_drop(x: ADrop) nopanic;
@@ -95,13 +94,13 @@ extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:14:3
-  y
-  ^
+ --> lib.cairo:13:5
+    y
+    ^
 note: variable was previously used here:
-  --> lib.cairo:11:16
-    use_a_drop(y);
-               ^
+  --> lib.cairo:11:20
+        use_a_drop(y);
+                   ^
 note: Trait has no implementation in context: core::traits::Copy::<test::ADrop>
 
 error: Variable not dropped.
@@ -109,9 +108,9 @@ error: Variable not dropped.
 fn foo(x: ACopy, y: ADrop) -> ADrop {
        ^
 note: the variable needs to be dropped due to the divergence here:
-  --> lib.cairo:9:3
-  if true {
-  ^*******^
+  --> lib.cairo:9:5
+    if true {
+    ^*******^
 note: Trait has no implementation in context: core::traits::Drop::<test::ACopy>
 note: Trait has no implementation in context: core::traits::Destruct::<test::ACopy>
 
@@ -153,15 +152,15 @@ test_borrow_check
 
 //! > function
 fn foo(ref x: ADrop, y: ADrop) {
-  use_a_drop(x);
-  bar();
-  x = y;
+    use_a_drop(x);
+    bar();
+    x = y;
 }
 
-fn bar(){
-  let mut data = array![];
-  data.append(1);
-  panic(data);
+fn bar() {
+    let mut data = array![];
+    data.append(1);
+    panic(data);
 }
 
 //! > function_name
@@ -169,9 +168,9 @@ foo
 
 //! > module_code
 extern type ACopy;
-impl ACopyCopy of Copy::<ACopy>;
+impl ACopyCopy of Copy<ACopy>;
 extern type ADrop;
-impl ADropDrop of Drop::<ADrop>;
+impl ADropDrop of Drop<ADrop>;
 
 extern fn use_a_copy(x: ACopy) nopanic;
 extern fn use_a_drop(x: ADrop) nopanic;
@@ -199,7 +198,7 @@ test_borrow_check
 
 //! > function
 fn foo(ref self: Query::<felt252>, value: felt252) {
-  self.data.append(value)
+    self.data.append(value)
 }
 
 //! > function_name
@@ -207,7 +206,7 @@ foo
 
 //! > module_code
 struct Query<T> {
-  data: Array::<T>,
+    data: Array::<T>,
 }
 
 //! > semantic_diagnostics
@@ -233,8 +232,8 @@ test_borrow_check
 
 //! > function
 fn foo() {
-   let mut arr: Array<u256> = Default::default();
-   arr.append(1.into());
+    let mut arr: Array<u256> = Default::default();
+    arr.append(1.into());
 }
 
 //! > function_name
@@ -267,7 +266,7 @@ test_borrow_check
 
 //! > function
 fn foo(ref a: A) {
-   1 + 1;
+    1 + 1;
 }
 
 //! > function_name
@@ -284,9 +283,9 @@ error: Variable not dropped.
 fn foo(ref a: A) {
            ^
 note: the variable needs to be dropped due to the potential panic here:
-  --> lib.cairo:3:4
-   1 + 1;
-   ^***^
+  --> lib.cairo:3:5
+    1 + 1;
+    ^***^
 note: Trait has no implementation in context: core::traits::Drop::<test::A>
 note: Trait has no implementation in context: core::traits::Destruct::<test::A>
 note: Trait has no implementation in context: core::traits::PanicDestruct::<test::A>
@@ -311,13 +310,13 @@ test_borrow_check
 
 //! > function
 fn foo(x: ADrop, mut y: ADrop) -> ADrop {
-  if true {
-    use_a_drop(y);
-  } else {
-    y = x;
-  }
+    if true {
+        use_a_drop(y);
+    } else {
+        y = x;
+    }
 
-  return y;
+    return y;
 }
 
 //! > function_name
@@ -325,7 +324,7 @@ foo
 
 //! > module_code
 extern type ADrop;
-impl ADropDrop of Drop::<ADrop>;
+impl ADropDrop of Drop<ADrop>;
 
 extern fn use_a_drop(x: ADrop) nopanic;
 
@@ -333,13 +332,13 @@ extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:12:10
-  return y;
-         ^
+ --> lib.cairo:12:12
+    return y;
+           ^
 note: variable was previously used here:
-  --> lib.cairo:7:16
-    use_a_drop(y);
-               ^
+  --> lib.cairo:7:20
+        use_a_drop(y);
+                   ^
 note: Trait has no implementation in context: core::traits::Copy::<test::ADrop>
 
 //! > lowering
@@ -379,11 +378,11 @@ test_borrow_check
 
 //! > function
 fn foo() {
-  let arr = array!['err_code'];
-  let mut b = arr;
-  b.append('bla');
+    let arr = array!['err_code'];
+    let mut b = arr;
+    b.append('bla');
 
-  panic(arr);
+    panic(arr);
 }
 
 //! > function_name
@@ -395,13 +394,13 @@ foo
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:6:9
-  panic(arr);
-        ^*^
+ --> lib.cairo:6:11
+    panic(arr);
+          ^*^
 note: variable was previously used here:
-  --> lib.cairo:4:3
-  b.append('bla');
-  ^
+  --> lib.cairo:4:5
+    b.append('bla');
+    ^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
 
 //! > lowering
@@ -427,8 +426,8 @@ test_borrow_check
 
 //! > function
 fn foo(x: NonCopy) -> Option<NonCopy> {
-  use_non_copy(x);
-  do_match_extern(x)
+    use_non_copy(x);
+    do_match_extern(x)
 }
 
 //! > function_name
@@ -445,13 +444,13 @@ extern fn do_match_extern(x: NonCopy) -> Option<NonCopy> nopanic;
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:8:19
-  do_match_extern(x)
-                  ^
+ --> lib.cairo:8:21
+    do_match_extern(x)
+                    ^
 note: variable was previously used here:
-  --> lib.cairo:7:16
-  use_non_copy(x);
-               ^
+  --> lib.cairo:7:18
+    use_non_copy(x);
+                 ^
 note: Trait has no implementation in context: core::traits::Copy::<test::NonCopy>
 
 //! > lowering
@@ -492,9 +491,9 @@ test_borrow_check
 
 //! > function
 fn foo(mut x: MyStruct) -> MyStruct {
-  x.a = 17;
-  use_non_copy(x.b);
-  return x;
+    x.a = 17;
+    use_non_copy(x.b);
+    return x;
 }
 
 //! > function_name
@@ -506,21 +505,21 @@ extern type NonCopy;
 extern fn use_non_copy(x: NonCopy) nopanic;
 
 struct MyStruct {
-  a: u32,
-  b: NonCopy,
+    a: u32,
+    b: NonCopy,
 }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:12:10
-  return x;
-         ^
+ --> lib.cairo:12:12
+    return x;
+           ^
 note: variable was previously used here:
-  --> lib.cairo:11:16
-  use_non_copy(x.b);
-               ^*^
+  --> lib.cairo:11:18
+    use_non_copy(x.b);
+                 ^*^
 note: Trait has no implementation in context: core::traits::Copy::<test::NonCopy>
 
 //! > lowering
@@ -606,8 +605,8 @@ test_borrow_check
 //! > function
 fn foo(ref self: MyStruct) {
     if self.b == 0 {
-       self.a = Default::default();
-       invalidate(self.a);
+        self.a = Default::default();
+        invalidate(self.a);
     }
 }
 
@@ -631,9 +630,9 @@ error: Variable was previously moved.
 fn foo(ref self: MyStruct) {
            ^**^
 note: variable was previously used here:
-  --> lib.cairo:11:19
-       invalidate(self.a);
-                  ^****^
+  --> lib.cairo:11:20
+        invalidate(self.a);
+                   ^****^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
 
 //! > lowering
@@ -680,8 +679,8 @@ test_borrow_check
 //! > function
 fn foo(mut v: MyStruct) -> u8 {
     if v.b == 0 {
-       v.a = Default::default();
-       invalidate(v.a);
+        v.a = Default::default();
+        invalidate(v.a);
     }
     v.b
 }
@@ -743,9 +742,9 @@ test_borrow_check
 
 //! > function
 fn foo(mut x: MyStruct) -> MyStruct {
-  x.a = 17;
-  x.a += 1;
-  return x;
+    x.a = 17;
+    x.a += 1;
+    return x;
 }
 
 //! > function_name
@@ -757,8 +756,8 @@ extern type NonCopy;
 extern fn use_non_copy(x: NonCopy) nopanic;
 
 struct MyStruct {
-  a: felt252,
-  b: NonCopy,
+    a: felt252,
+    b: NonCopy,
 }
 
 //! > semantic_diagnostics
@@ -769,9 +768,9 @@ error: Variable not dropped.
 fn foo(mut x: MyStruct) -> MyStruct {
            ^
 note: the variable needs to be dropped due to the potential panic here:
-  --> lib.cairo:11:3
-  x.a += 1;
-  ^******^
+  --> lib.cairo:11:5
+    x.a += 1;
+    ^******^
 note: Trait has no implementation in context: core::traits::Drop::<test::NonCopy>
 note: Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>
 note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonCopy>
@@ -797,9 +796,9 @@ test_borrow_check
 
 //! > function
 fn foo(ref a: A) {
-  if true {
-      bar(@a.x);
-  }
+    if true {
+        bar(@a.x);
+    }
 }
 
 //! > function_name
@@ -810,7 +809,7 @@ fn bar(a: @usize) {}
 
 #[derive(Drop)]
 struct A {
-  x: usize
+    x: usize
 }
 
 //! > semantic_diagnostics
@@ -858,13 +857,11 @@ test_borrow_check
 
 //! > function
 fn foo(mut x: MyStruct) -> MyStruct {
-  let _arr = array![
-    {
-      x.a = 17;
-      x.a += 1;
-    },
-  ];
-  return x;
+    let _arr = array![{
+        x.a = 17;
+        x.a += 1;
+    },];
+    return x;
 }
 
 //! > function_name
@@ -874,8 +871,8 @@ foo
 extern type NonCopy;
 
 struct MyStruct {
-  a: felt252,
-  b: NonCopy,
+    a: felt252,
+    b: NonCopy,
 }
 
 //! > semantic_diagnostics
@@ -886,9 +883,9 @@ error: Variable not dropped.
 fn foo(mut x: MyStruct) -> MyStruct {
            ^
 note: the variable needs to be dropped due to the potential panic here:
-  --> lib.cairo:11:7
-      x.a += 1;
-      ^******^
+  --> lib.cairo:10:9
+        x.a += 1;
+        ^******^
 note: Trait has no implementation in context: core::traits::Drop::<test::NonCopy>
 note: Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>
 note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonCopy>

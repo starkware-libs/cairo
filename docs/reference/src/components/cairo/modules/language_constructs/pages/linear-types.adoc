@@ -8,7 +8,8 @@ types by having `move semantics` and forbidding copying and dropping values by d
 When passing a value to a function, it is moved by default. This means that after a value is used
 for the first time, it cannot be used again. For example, the following code does not compile:
 
-```rust
+[source,cairo]
+----
 struct A {}
 
 fn main() {
@@ -16,12 +17,13 @@ fn main() {
     foo(a); // value is passed by value once here.
     foo(a); // error: Value was previously moved.
 }
-```
+----
 
 To allow a value to be used multiple times, the `Copy` trait must be implemented for it.
 For example, the following code compiles:
 
-```rust
+[source,cairo]
+----
 #[derive(Copy)]
 struct A {}
 
@@ -30,7 +32,7 @@ fn main() {
     foo(a); // value is passed by value once here.
     foo(a); // Now there is no error.
 }
-```
+----
 
 Note: the snapshot operator `@` (See the docs about snapshot) is considered not moving a value.
 
@@ -45,26 +47,28 @@ that all fields implement `Clone`, and will automatically call `.clone()` on all
 By default, a value may not go out of scope unless it was previously moved. For example, the
 following code does not compile:
 
-```rust
+[source,cairo]
+----
 #[derive(Copy)]
 struct A {}
 
 fn main() {
     A {}; // error: Value not dropped.
 }
-```
+----
 
 To allow a value to be dropped, the `Drop` trait must be implemented for it.
 For example, the following code compiles:
 
-```rust
+[source,cairo]
+----
 #[derive(Drop)]
 struct A {}
 
 fn main() {
     A {}; // Now there is no error.
 }
-```
+----
 
 == Destructors
 Sometime a value must not be dropped, but we can still use code to get rid of it.
@@ -74,7 +78,8 @@ This can be done by implementing or deriving the `Destruct` trait, which will be
 automatically when a non-droppable value goes out of scope. The derived implementation requires
 that all fields implement `Destruct`, and will automatically call `.destruct()` on all the fields.
 
-```rust
+[source,cairo]
+----
 #[derive(Destruct)]
 struct A {
     d: Dict<usize>
@@ -83,7 +88,7 @@ struct A {
 fn main() {
     A {}; // No error, A will be destructed.
 }
-```
+----
 
 When implementing `Destruct` manually, note that the implementation must be `nopanic`, because
 destructors are called when a value goes out of scope, which may happen in a panic.

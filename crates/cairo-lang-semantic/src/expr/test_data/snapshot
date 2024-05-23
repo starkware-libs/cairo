@@ -16,8 +16,7 @@ struct A {
     a: Array::<felt252>,
     b: felt252,
 }
-fn bar(a: @Array::<felt252>, b: @felt252) {
-}
+fn bar(a: @Array::<felt252>, b: @felt252) {}
 
 //! > expected_diagnostics
 
@@ -46,11 +45,6 @@ Consider adding or removing snapshots.
  --> lib.cairo:3:23
     let _y: felt252 = @6;
                       ^^
-
-error: Mismatched types. The type `@core::felt252` cannot be created from a numeric literal.
- --> lib.cairo:2:24
-    let _x: @felt252 = 5;
-                       ^
 
 //! > ==========================================================================
 

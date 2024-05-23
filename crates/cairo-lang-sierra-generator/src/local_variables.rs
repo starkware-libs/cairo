@@ -9,11 +9,11 @@ use cairo_lang_sierra::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, ParamSignature,
 };
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use itertools::{chain, zip_eq, Itertools};
+use itertools::{chain, zip_eq};
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::DemandReporter;
 use lowering::borrow_check::Demand;
@@ -63,8 +63,7 @@ pub fn analyze_ap_changes(
         const_aliases: Default::default(),
         partial_param_parents: Default::default(),
     };
-    let mut analysis =
-        BackAnalysis { lowered: lowered_function, block_info: Default::default(), analyzer: ctx };
+    let mut analysis = BackAnalysis::new(lowered_function, ctx);
     let mut root_info = analysis.get_root_info()?;
     root_info.demand.variables_introduced(&mut analysis.analyzer, &lowered_function.parameters, ());
 
@@ -85,13 +84,11 @@ pub fn analyze_ap_changes(
         ctx.non_ap_based.extend(locals.iter().cloned());
 
         // Find all the variables that need ap alignment.
-        for (block_id, callers) in std::mem::take(&mut ctx.block_callers) {
-            if callers.len() <= 1 {
+        for (_, mut info) in std::mem::take(&mut ctx.block_callers) {
+            if info.caller_count <= 1 {
                 continue;
             }
-            let mut info = analysis.block_info[&block_id].as_ref().map_err(|v| *v)?.clone();
-            let introduced_vars = callers[0].1.keys().cloned().collect_vec();
-            info.demand.variables_introduced(&mut ctx, &introduced_vars, ());
+            info.demand.variables_introduced(&mut ctx, &info.introduced_vars, ());
             for var in info.demand.vars.keys() {
                 if ctx.might_be_revoked(&peeled_used_after_revoke, var) {
                     need_ap_alignment.insert(*var);
@@ -111,12 +108,18 @@ pub fn analyze_ap_changes(
     })
 }
 
+struct CalledBlockInfo {
+    caller_count: usize,
+    demand: LoweredDemand,
+    introduced_vars: Vec<VariableId>,
+}
+
 /// Context for the find_local_variables logic.
 struct FindLocalsContext<'a> {
     db: &'a dyn SierraGenGroup,
     lowered_function: &'a FlatLowered,
     used_after_revoke: OrderedHashSet<VariableId>,
-    block_callers: OrderedHashMap<BlockId, Vec<(BlockId, VarRemapping)>>,
+    block_callers: OrderedHashMap<BlockId, CalledBlockInfo>,
     /// Variables that are known not to be ap based, excluding constants.
     non_ap_based: UnorderedHashSet<VariableId>,
     /// Variables that are constants, i.e. created from Statement::Literal.
@@ -164,14 +167,25 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
     fn visit_goto(
         &mut self,
         info: &mut Self::Info,
-        (block_id, _statement_index): StatementLocation,
+        _statement_location: StatementLocation,
         target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
         let Ok(info) = info else {
             return;
         };
-        self.block_callers.entry(target_block_id).or_default().push((block_id, remapping.clone()));
+        match self.block_callers.entry(target_block_id) {
+            Entry::Occupied(mut e) => {
+                e.get_mut().caller_count += 1;
+            }
+            Entry::Vacant(e) => {
+                e.insert(CalledBlockInfo {
+                    caller_count: 1,
+                    demand: info.demand.clone(),
+                    introduced_vars: remapping.keys().copied().collect(),
+                });
+            }
+        }
         info.demand
             .apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
     }
@@ -180,7 +194,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
         &mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        infos: &[Self::Info],
+        infos: impl Iterator<Item = Self::Info>,
     ) -> Maybe<AnalysisInfo> {
         let mut arm_demands = vec![];
         let mut known_ap_change = true;
@@ -191,7 +205,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
         for (arm, (info, branch_signature)) in
             zip_eq(match_info.arms(), zip_eq(infos, libfunc_signature.branch_signatures))
         {
-            let mut info = info.clone()?;
+            let mut info = info?;
             info.demand.variables_introduced(self, &arm.var_ids, ());
             let branch_info = self.analyze_branch(
                 &libfunc_signature.param_signatures,

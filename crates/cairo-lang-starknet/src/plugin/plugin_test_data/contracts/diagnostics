@@ -403,14 +403,11 @@ mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
-    fn foo_v0(ref self: ContractState, x: (felt252, felt252)) {
-    }
+    fn foo_v0(ref self: ContractState, x: (felt252, felt252)) {}
     #[external]
-    fn foo(ref self: ContractState, x: (felt252, felt252)) {
-    }
+    fn foo(ref self: ContractState, x: (felt252, felt252)) {}
     #[external(v1)]
-    fn foo_v1(ref self: ContractState, x: (felt252, felt252)) {
-    }
+    fn foo_v1(ref self: ContractState, x: (felt252, felt252)) {}
 }
 
 //! > generated_cairo_code
@@ -421,14 +418,11 @@ mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
-    fn foo_v0(ref self: ContractState, x: (felt252, felt252)) {
-    }
+    fn foo_v0(ref self: ContractState, x: (felt252, felt252)) {}
     #[external]
-    fn foo(ref self: ContractState, x: (felt252, felt252)) {
-    }
+    fn foo(ref self: ContractState, x: (felt252, felt252)) {}
     #[external(v1)]
-    fn foo_v1(ref self: ContractState, x: (felt252, felt252)) {
-    }
+    fn foo_v1(ref self: ContractState, x: (felt252, felt252)) {}
 }
 
 contract:
@@ -457,7 +451,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0xdee30876537447b8a21b901cf0379b47de6b9fcb087ab5e54f097e822f243c;
+pub const TEST_CLASS_HASH: felt252 = 0x547f368ac55821b57d7da42588a2985edb69dd87af9e9c16e740d6e14b2420;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -577,12 +571,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Only #[external(v0)] is supported.
- --> lib.cairo:8:5
+ --> lib.cairo:7:5
     #[external]
     ^*********^
 
 error: Plugin diagnostic: Only #[external(v0)] is supported.
- --> lib.cairo:11:5
+ --> lib.cairo:9:5
     #[external(v1)]
     ^*************^
 
@@ -599,11 +593,10 @@ mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
-    fn foo(ref self: ContractState, x: super::MyType) {
-    }
+    fn foo(ref self: ContractState, x: super::MyType) {}
 }
 #[derive(Drop)]
-struct MyType{}
+struct MyType {}
 
 //! > generated_cairo_code
 lib.cairo:
@@ -613,11 +606,10 @@ mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
-    fn foo(ref self: ContractState, x: super::MyType) {
-    }
+    fn foo(ref self: ContractState, x: super::MyType) {}
 }
 #[derive(Drop)]
-struct MyType{}
+struct MyType {}
 
 impls:
 
@@ -650,7 +642,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0xd3b97940b766b03f59196c092939b4f964559ef1cd235415d018804dbdcfe3;
+pub const TEST_CLASS_HASH: felt252 = 0x16fce813e4d7f676441c2cffa36b5101b7e75cb787a8aec7259094fdbacb80e;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -743,8 +735,7 @@ mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
-    fn foo(ref self: ContractState) -> (felt252, felt252) {
-    }
+    fn foo(ref self: ContractState) -> (felt252, felt252) {}
 }
 
 //! > generated_cairo_code
@@ -755,8 +746,7 @@ mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
-    fn foo(ref self: ContractState) -> (felt252, felt252) {
-    }
+    fn foo(ref self: ContractState) -> (felt252, felt252) {}
 }
 
 contract:
@@ -785,7 +775,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x114e2e703df7c3eba53b970519666cfce0ede18d79e35b62fa95c0ecb6601fc;
+pub const TEST_CLASS_HASH: felt252 = 0x2c31752790f50b7f25195fc7cc9dcc1234d7af736c5ed771c69ddc8bb9fd8d4;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -860,8 +850,8 @@ impl EventIsEvent of starknet::Event<Event> {
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
  --> lib.cairo:6:59
-    fn foo(ref self: ContractState) -> (felt252, felt252) {
-                                                          ^
+    fn foo(ref self: ContractState) -> (felt252, felt252) {}
+                                                          ^^
 
 //! > ==========================================================================
 
@@ -876,8 +866,7 @@ mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
-    fn foo<T>(ref self: ContractState, x: T) {
-    }
+    fn foo<T>(ref self: ContractState, x: T) {}
 }
 
 //! > generated_cairo_code
@@ -888,8 +877,7 @@ mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
-    fn foo<T>(ref self: ContractState, x: T) {
-    }
+    fn foo<T>(ref self: ContractState, x: T) {}
 }
 
 contract:
@@ -918,7 +906,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x2cc0463f1cfda138e64b2f35959f33601b5e1076814981ef2444d17ce259dfb;
+pub const TEST_CLASS_HASH: felt252 = 0x2bcbd7e08add1bbb62c174729940be27dbe922f83afd842f02af5355af726a1;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -995,7 +983,7 @@ impl EventIsEvent of starknet::Event<Event> {
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract entry points cannot have generic arguments
  --> lib.cairo:6:11
-    fn foo<T>(ref self: ContractState, x: T) {
+    fn foo<T>(ref self: ContractState, x: T) {}
           ^*^
 
 warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
@@ -1015,7 +1003,7 @@ error: Type annotations needed. Failed to infer ?2
 
 error: Variable not dropped.
  --> lib.cairo:6:40
-    fn foo<T>(ref self: ContractState, x: T) {
+    fn foo<T>(ref self: ContractState, x: T) {}
                                        ^
 note: Trait has no implementation in context: core::traits::Drop::<T>
 note: Trait has no implementation in context: core::traits::Destruct::<T>
@@ -1033,8 +1021,9 @@ mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
-    fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
-    }
+    fn foo(
+        ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)
+    ) -> (felt252, felt252) {}
 }
 
 //! > generated_cairo_code
@@ -1045,8 +1034,9 @@ mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
-    fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
-    }
+    fn foo(
+        ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)
+    ) -> (felt252, felt252) {}
 }
 
 contract:
@@ -1075,7 +1065,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x34ebdf0a4defb7a8b628dda81a7dc347d8d3459040c2e1165ae0f7856bb7a29;
+pub const TEST_CLASS_HASH: felt252 = 0x37db5b411e79068f08f0832de46108b618c2f188115ac652f78be4f6dfcdeb4;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -1156,9 +1146,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:6:105
-    fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
-                                                                                                        ^
+ --> lib.cairo:8:29
+    ) -> (felt252, felt252) {}
+                            ^^
 
 //! > ==========================================================================
 
@@ -1383,7 +1373,9 @@ mod test_contract {
 
     #[external(v0)]
     #[raw_output]
-    fn bar1(ref self: ContractState, a: felt252) -> felt252 { 0 }
+    fn bar1(ref self: ContractState, a: felt252) -> felt252 {
+        0
+    }
 
     #[external(v0)]
     #[raw_output]
@@ -1393,7 +1385,7 @@ mod test_contract {
     #[external(v0)]
     #[raw_output]
     fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
-         array::array_new()
+        array::array_new()
     }
 
     // Should generate diagnostic as alias resolving is not supported.
@@ -1419,7 +1411,9 @@ mod test_contract {
 
     #[external(v0)]
     #[raw_output]
-    fn bar1(ref self: ContractState, a: felt252) -> felt252 { 0 }
+    fn bar1(ref self: ContractState, a: felt252) -> felt252 {
+        0
+    }
 
     #[external(v0)]
     #[raw_output]
@@ -1429,7 +1423,7 @@ mod test_contract {
     #[external(v0)]
     #[raw_output]
     fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
-         array::array_new()
+        array::array_new()
     }
 
     // Should generate diagnostic as alias resolving is not supported.
@@ -1467,7 +1461,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x36b41c3fffa5f7f882a01476ca45292d6254f8dc075e4837185259a4d5d8351;
+pub const TEST_CLASS_HASH: felt252 = 0x1fe1d7e90cfe8c4fc07093ee454571079f241cebea881fdbe6d42ab30f16735;
 
 
 pub mod __external {
@@ -1537,21 +1531,21 @@ error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:12:53
-    fn bar1(ref self: ContractState, a: felt252) -> felt252 { 0 }
+    fn bar1(ref self: ContractState, a: felt252) -> felt252 {
                                                     ^*****^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:16:50
+ --> lib.cairo:18:50
     fn bar2(ref self: ContractState, a: felt252) {}
                                                  ^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:21:53
+ --> lib.cairo:23:53
     fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
                                                     ^********************^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:29:53
+ --> lib.cairo:31:53
     fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type {
                                                     ^*******************^
 
@@ -1786,8 +1780,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 #[starknet::contract]
 mod test_contract {
     #[storage]
-    struct Storage {
-    }
+    struct Storage {}
     #[external(v0)]
     #[generate_trait]
     impl AImpl of ATrait {}
@@ -1803,8 +1796,7 @@ lib.cairo:
 #[starknet::contract]
 mod test_contract {
     #[storage]
-    struct Storage {
-    }
+    struct Storage {}
     #[external(v0)]
     #[generate_trait]
     impl AImpl of ATrait {}
@@ -1840,7 +1832,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x3d8335ac3c47c73a6e9c5c10ea897e897b215aba4c18ccab86db3595169e73c;
+pub const TEST_CLASS_HASH: felt252 = 0x1f35904b8fc9bed6ac08457ded74e522aa254844ebb1d7da8eaff06532a8b4d;
 
 
 pub mod __external {
@@ -1904,17 +1896,17 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
- --> lib.cairo:6:5
+ --> lib.cairo:5:5
     #[external(v0)]
     ^*************^
 
 error: Plugin diagnostic: Only #[external(v0)] is supported.
- --> lib.cairo:10:5
+ --> lib.cairo:9:5
     #[external(v1)]
     ^*************^
 
 warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
- --> lib.cairo:10:5
+ --> lib.cairo:9:5
     #[external(v1)]
     ^*************^
 
@@ -1927,27 +1919,19 @@ ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[contract]
-mod test_contract {
-
-}
+mod test_contract {}
 
 #[abi]
-trait ContractAbi {
-
-}
+trait ContractAbi {}
 
 //! > generated_cairo_code
 lib.cairo:
 
 #[contract]
-mod test_contract {
-
-}
+mod test_contract {}
 
 #[abi]
-trait ContractAbi {
-
-}
+trait ContractAbi {}
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The 'contract' attribute was deprecated, please use `starknet::contract` instead.
@@ -1961,7 +1945,7 @@ error: Plugin diagnostic: Unsupported attribute.
 ^*********^
 
 error: Plugin diagnostic: The 'abi' attribute for traits was deprecated, please use `starknet::interface` instead.
- --> lib.cairo:6:1
+ --> lib.cairo:4:1
 #[abi]
 ^****^
 
@@ -1983,8 +1967,7 @@ trait InterfaceTrait<TContractState> {
 #[starknet::contract]
 mod test_contract {
     #[storage]
-    struct Storage {
-    }
+    struct Storage {}
 
     #[external(v0)]
     impl Impl2 of super::InterfaceTrait<ContractState> {
@@ -2010,42 +1993,42 @@ mod test_contract {
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
- --> lib.cairo:14:5
+ --> lib.cairo:13:5
     #[external(v0)]
     ^*************^
 
 error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[external(v0)]`.
- --> lib.cairo:16:9
+ --> lib.cairo:15:9
         #[external(v0)]
         ^*************^
 
 error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[external(v0)]`.
- --> lib.cairo:18:9
+ --> lib.cairo:17:9
         #[l1_handler]
         ^***********^
 
 error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[external(v0)]`.
- --> lib.cairo:20:9
+ --> lib.cairo:19:9
         #[constructor]
         ^************^
 
 warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
- --> lib.cairo:25:5
+ --> lib.cairo:24:5
     #[external(v0)]
     ^*************^
 
 error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[external(v0)]`.
- --> lib.cairo:27:9
+ --> lib.cairo:26:9
         #[external(v0)]
         ^*************^
 
 error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[external(v0)]`.
- --> lib.cairo:29:9
+ --> lib.cairo:28:9
         #[l1_handler]
         ^***********^
 
 error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[external(v0)]`.
- --> lib.cairo:31:9
+ --> lib.cairo:30:9
         #[constructor]
         ^************^
 
@@ -2062,8 +2045,7 @@ trait InterfaceTrait<TContractState> {
 #[starknet::contract]
 mod test_contract {
     #[storage]
-    struct Storage {
-    }
+    struct Storage {}
 
     #[external(v0)]
     impl Impl2 of super::InterfaceTrait<ContractState> {
@@ -2504,7 +2486,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0xf88f1c8a0a8d514425e46be98fb5ba0ba2db1093397ff93bd36d471ed4b970;
+pub const TEST_CLASS_HASH: felt252 = 0xb2b80f78cee80a1a53222a998e318822f6d9d701bdc8037948c5964158503c;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__Impl2__foo_external1(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -2693,12 +2675,10 @@ ExpandContractTestRunner(expect_diagnostics: true)
 #[starknet::contract]
 mod test_contract {
     #[storage]
-    struct Storage {
-    }
+    struct Storage {}
 
     #[derive(Drop, starknet::Event)]
-    enum Event {
-    }
+    enum Event {}
 }
 
 //! > generated_cairo_code
@@ -2707,12 +2687,10 @@ lib.cairo:
 #[starknet::contract]
 mod test_contract {
     #[storage]
-    struct Storage {
-    }
+    struct Storage {}
 
     #[derive(Drop, starknet::Event)]
-    enum Event {
-    }
+    enum Event {}
 }
 
 contract:
@@ -2738,7 +2716,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x6c97de948ac6fb043d95e7e280901efdd422607b3b71dafd3abf300622647b;
+pub const TEST_CLASS_HASH: felt252 = 0x820d41c225755fd6813443e1db69b44d323763bb1bdc6c58da9d8011855f0b;
 
 
 pub mod __external {
@@ -2792,8 +2770,8 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract type that is named `Event` must be marked with #[event].
- --> lib.cairo:8:10
-    enum Event {
+ --> lib.cairo:7:10
+    enum Event {}
          ^***^
 
 //! > ==========================================================================
@@ -2807,13 +2785,11 @@ ExpandContractTestRunner(expect_diagnostics: true)
 #[starknet::contract]
 mod test_contract {
     #[storage]
-    struct Storage {
-    }
+    struct Storage {}
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum MyEvent {
-    }
+    enum MyEvent {}
 }
 
 //! > generated_cairo_code
@@ -2822,13 +2798,11 @@ lib.cairo:
 #[starknet::contract]
 mod test_contract {
     #[storage]
-    struct Storage {
-    }
+    struct Storage {}
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum MyEvent {
-    }
+    enum MyEvent {}
 }
 
 contract:
@@ -2857,7 +2831,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x2e575c45381314b9946066629db110dd30bb5e0b081753f226075310e440696;
+pub const TEST_CLASS_HASH: felt252 = 0x1786cd1474db7f1bf61efa820fedb6cc8a9892313c56a8ab854a488db0d2879;
 
 
 pub mod __external {
@@ -2935,8 +2909,8 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract type that is marked with #[event] must be named `Event`.
- --> lib.cairo:9:10
-    enum MyEvent {
+ --> lib.cairo:8:10
+    enum MyEvent {}
          ^*****^
 
 //! > ==========================================================================
@@ -2971,47 +2945,41 @@ ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::interface]
-trait IContract2Generics<T, S> {
-}
+trait IContract2Generics<T, S> {}
 
 #[starknet::interface]
-trait IContract0Generics {
-}
+trait IContract0Generics {}
 
 #[starknet::interface]
-trait IContractNonTypeGenerics<+Destruct<u32>> {
-}
+trait IContractNonTypeGenerics<+Destruct<u32>> {}
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Starknet interfaces must have exactly one generic parameter, which is a type.
  --> lib.cairo:2:25
-trait IContract2Generics<T, S> {
+trait IContract2Generics<T, S> {}
                         ^****^
 
 error: Plugin diagnostic: Starknet interfaces must have exactly one generic parameter, which is a type.
- --> lib.cairo:6:26
-trait IContract0Generics {
+ --> lib.cairo:5:26
+trait IContract0Generics {}
                          ^
 
 error: Plugin diagnostic: Starknet interfaces must have exactly one generic parameter, which is a type.
- --> lib.cairo:10:31
-trait IContractNonTypeGenerics<+Destruct<u32>> {
+ --> lib.cairo:8:31
+trait IContractNonTypeGenerics<+Destruct<u32>> {}
                               ^**************^
 
 //! > generated_cairo_code
 lib.cairo:
 
 #[starknet::interface]
-trait IContract2Generics<T, S> {
-}
+trait IContract2Generics<T, S> {}
 
 #[starknet::interface]
-trait IContract0Generics {
-}
+trait IContract0Generics {}
 
 #[starknet::interface]
-trait IContractNonTypeGenerics<+Destruct<u32>> {
-}
+trait IContractNonTypeGenerics<+Destruct<u32>> {}
 
 //! > ==========================================================================
 
@@ -4718,7 +4686,9 @@ mod component {
     struct Storage {}
 
     #[embeddable_as(MyEmbeddableImpl)]
-    impl MyImpl<TContractState, impl X: HasComponent<TContractState>> of super::Interface::<ComponentState::<TContractState>> {
+    impl MyImpl<
+        TContractState, impl X: HasComponent<TContractState>
+    > of super::Interface<ComponentState<TContractState>> {
         #[external(v0)]
         fn foo1(self: @ComponentState<TContractState>) {}
         #[l1_handler]
@@ -4750,17 +4720,17 @@ mod contract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[embeddable]`.
- --> lib.cairo:14:9
+ --> lib.cairo:16:9
         #[external(v0)]
         ^*************^
 
 error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[embeddable]`.
- --> lib.cairo:16:9
+ --> lib.cairo:18:9
         #[l1_handler]
         ^***********^
 
 error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[embeddable]`.
- --> lib.cairo:18:9
+ --> lib.cairo:20:9
         #[constructor]
         ^************^
 
@@ -4779,7 +4749,9 @@ mod component {
     struct Storage {}
 
     #[embeddable_as(MyEmbeddableImpl)]
-    impl MyImpl<TContractState, impl X: HasComponent<TContractState>> of super::Interface::<ComponentState::<TContractState>> {
+    impl MyImpl<
+        TContractState, impl X: HasComponent<TContractState>
+    > of super::Interface<ComponentState<TContractState>> {
         #[external(v0)]
         fn foo1(self: @ComponentState<TContractState>) {}
         #[l1_handler]
@@ -5236,7 +5208,8 @@ pub trait HasComponent<TContractState> {
 
 #[starknet::embeddable]
 pub impl MyEmbeddableImpl<
-    TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>
 > of super::Interface<TContractState> {
     #[external(v0)]
     fn foo1(self: @TContractState) {
@@ -5288,7 +5261,8 @@ pub trait UnsafeNewContractStateTraitForMyEmbeddableImpl<
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__MyEmbeddableImpl__foo1<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyEmbeddableImpl__foo1<TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -5306,7 +5280,8 @@ fn __wrapper__MyEmbeddableImpl__foo1<TContractState, impl X: HasComponent<TContr
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__MyEmbeddableImpl__foo2<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyEmbeddableImpl__foo2<TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -5324,7 +5299,8 @@ fn __wrapper__MyEmbeddableImpl__foo2<TContractState, impl X: HasComponent<TContr
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__MyEmbeddableImpl__foo3<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyEmbeddableImpl__foo3<TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -5635,8 +5611,7 @@ mod component1 {
     impl Comp1HelperImpl<
         TContractState, impl X: HasComponent<TContractState>
     > of Comp1HelperTrait<TContractState, X> {
-        fn foo1(self: @ComponentState<TContractState>) {
-        }
+        fn foo1(self: @ComponentState<TContractState>) {}
     }
 }
 
@@ -5649,15 +5624,12 @@ mod component2 {
     impl Comp1HelperImpl<
         TContractState, impl X: HasComponent<TContractState>
     > of Comp1HelperTrait<TContractState, X> {
-        fn foo2(self: @ComponentState<TContractState>) {
-        }
+        fn foo2(self: @ComponentState<TContractState>) {}
     }
 }
 
-trait NotHasComponentTrait {
-}
-impl NotHasComponent of NotHasComponentTrait{
-}
+trait NotHasComponentTrait {}
+impl NotHasComponent of NotHasComponentTrait {}
 
 #[starknet::interface]
 trait Comp3Trait<TContractState> {
@@ -5682,7 +5654,7 @@ mod component3 {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
             get_dep_component!(@self, Comp1).foo1();
-            
+
             // Should raise diagnostics
             get_dep_component!(self, Comp1).foo1();
             get_dep_component!(Comp1, @self).foo1();
@@ -5693,7 +5665,6 @@ mod component3 {
             let not_contract_state: felt252 = 0;
             get_dep_component!(not_contract_state, Comp1).foo1();
             get_dep_component!(@self, NonExistingImpl).foo1();
-            
         }
         fn foo4(self: @ComponentState<TContractState>) {
             // No diagnostics
@@ -5706,33 +5677,32 @@ mod component3 {
 error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?2>", found: "test::component3::ComponentState::<TContractState>".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
- --> lib.cairo:59:32
+ --> lib.cairo:55:32
             get_dep_component!(self, Comp1).foo1();
                                ^**^
 
 error: Expected variable or constant, found impl.
- --> lib.cairo:60:32
+ --> lib.cairo:56:32
             get_dep_component!(Comp1, @self).foo1();
                                ^***^
 
 error: Identifier not found.
- --> lib.cairo:60:40
+ --> lib.cairo:56:40
             get_dep_component!(Comp1, @self).foo1();
                                        ^**^
 
 error: Identifier not found.
- --> lib.cairo:61:40
+ --> lib.cairo:57:40
             get_dep_component!(@self, @self).foo1();
                                        ^**^
 
 error: Expected variable or constant, found impl.
- --> lib.cairo:62:32
+ --> lib.cairo:58:32
             get_dep_component!(Comp1, Comp1).foo1();
                                ^***^
 
-error: Method `foo1` could not be called on type `@test::component2::ComponentState::<TContractState>`.
-Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `test::component1::ComponentState::<?11>`
- --> lib.cairo:63:46
+error: Method `foo1` not found on type `@test::component2::ComponentState::<TContractState>`. Did you import the correct trait and impl?
+ --> lib.cairo:59:46
             get_dep_component!(@self, Comp2).foo1();
                                              ^**^
 
@@ -5744,19 +5714,14 @@ error: Invalid path.
 error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?14>", found: "core::felt252".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
- --> lib.cairo:66:32
+ --> lib.cairo:62:32
             get_dep_component!(not_contract_state, Comp1).foo1();
                                ^****************^
 
 error: Identifier not found.
- --> lib.cairo:67:39
+ --> lib.cairo:63:39
             get_dep_component!(@self, NonExistingImpl).foo1();
                                       ^*************^
-
-error: Type annotations needed. Failed to infer ?4
- --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
-                                                                ^**********^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -5770,8 +5735,7 @@ mod component1 {
     impl Comp1HelperImpl<
         TContractState, impl X: HasComponent<TContractState>
     > of Comp1HelperTrait<TContractState, X> {
-        fn foo1(self: @ComponentState<TContractState>) {
-        }
+        fn foo1(self: @ComponentState<TContractState>) {}
     }
 }
 
@@ -5784,15 +5748,12 @@ mod component2 {
     impl Comp1HelperImpl<
         TContractState, impl X: HasComponent<TContractState>
     > of Comp1HelperTrait<TContractState, X> {
-        fn foo2(self: @ComponentState<TContractState>) {
-        }
+        fn foo2(self: @ComponentState<TContractState>) {}
     }
 }
 
-trait NotHasComponentTrait {
-}
-impl NotHasComponent of NotHasComponentTrait{
-}
+trait NotHasComponentTrait {}
+impl NotHasComponent of NotHasComponentTrait {}
 
 #[starknet::interface]
 trait Comp3Trait<TContractState> {
@@ -5817,7 +5778,7 @@ mod component3 {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
             get_dep_component!(@self, Comp1).foo1();
-            
+
             // Should raise diagnostics
             get_dep_component!(self, Comp1).foo1();
             get_dep_component!(Comp1, @self).foo1();
@@ -5828,7 +5789,6 @@ mod component3 {
             let not_contract_state: felt252 = 0;
             get_dep_component!(not_contract_state, Comp1).foo1();
             get_dep_component!(@self, NonExistingImpl).foo1();
-            
         }
         fn foo4(self: @ComponentState<TContractState>) {
             // No diagnostics
@@ -6420,8 +6380,7 @@ mod component1 {
     impl Comp1HelperImpl<
         TContractState, impl X: HasComponent<TContractState>
     > of Comp1HelperTrait<TContractState, X> {
-        fn foo1(self: @ComponentState<TContractState>) {
-        }
+        fn foo1(self: @ComponentState<TContractState>) {}
     }
 }
 
@@ -6434,8 +6393,7 @@ mod component2 {
     impl Comp1HelperImpl<
         TContractState, impl X: HasComponent<TContractState>
     > of Comp1HelperTrait<TContractState, X> {
-        fn foo2(self: @ComponentState<TContractState>) {
-        }
+        fn foo2(self: @ComponentState<TContractState>) {}
     }
 }
 
@@ -6461,7 +6419,7 @@ mod component3 {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
             get_dep_component_mut!(ref self, Comp1).foo1();
-            
+
             // Should raise diagnostics
             get_dep_component_mut!(Comp1, self).foo1();
             get_dep_component_mut!(ref self, self).foo1();
@@ -6477,53 +6435,53 @@ mod component3 {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
- --> lib.cairo:53:36
+ --> lib.cairo:51:36
             get_dep_component_mut!(Comp1, self).foo1();
                                    ^***^
 
 error: Identifier not found.
- --> lib.cairo:54:46
+ --> lib.cairo:52:46
             get_dep_component_mut!(ref self, self).foo1();
                                              ^**^
 
 error: Expected variable or constant, found impl.
- --> lib.cairo:55:40
+ --> lib.cairo:53:40
             get_dep_component_mut!(ref Comp1, Comp1).foo1();
                                        ^***^
 
 error: ref argument must be a variable.
- --> lib.cairo:55:40
+ --> lib.cairo:53:40
             get_dep_component_mut!(ref Comp1, Comp1).foo1();
                                        ^***^
 
 error: Method `foo1` could not be called on type `test::component2::ComponentState::<TContractState>`.
 Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `@test::component1::ComponentState::<?8>`
- --> lib.cairo:56:53
+ --> lib.cairo:54:53
             get_dep_component_mut!(ref self, Comp2).foo1();
                                                     ^**^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
- --> lib.cairo:57:36
+ --> lib.cairo:55:36
             get_dep_component_mut!(self, Comp1).foo1();
                                    ^**^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
- --> lib.cairo:58:40
+ --> lib.cairo:56:40
             get_dep_component_mut!(mut self, Comp1).foo1();
                                        ^**^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
- --> lib.cairo:59:44
+ --> lib.cairo:57:44
             get_dep_component_mut!(ref ref self, Comp1).foo1();
                                            ^**^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
- --> lib.cairo:60:44
+ --> lib.cairo:58:44
             get_dep_component_mut!(ref mut self, Comp1).foo1();
                                            ^**^
 
 error: Type annotations needed. Failed to infer ?2
- --> lib.cairo:53:49
+ --> lib.cairo:51:49
             get_dep_component_mut!(Comp1, self).foo1();
                                                 ^**^
 
@@ -6539,8 +6497,7 @@ mod component1 {
     impl Comp1HelperImpl<
         TContractState, impl X: HasComponent<TContractState>
     > of Comp1HelperTrait<TContractState, X> {
-        fn foo1(self: @ComponentState<TContractState>) {
-        }
+        fn foo1(self: @ComponentState<TContractState>) {}
     }
 }
 
@@ -6553,8 +6510,7 @@ mod component2 {
     impl Comp1HelperImpl<
         TContractState, impl X: HasComponent<TContractState>
     > of Comp1HelperTrait<TContractState, X> {
-        fn foo2(self: @ComponentState<TContractState>) {
-        }
+        fn foo2(self: @ComponentState<TContractState>) {}
     }
 }
 
@@ -6580,7 +6536,7 @@ mod component3 {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
             get_dep_component_mut!(ref self, Comp1).foo1();
-            
+
             // Should raise diagnostics
             get_dep_component_mut!(Comp1, self).foo1();
             get_dep_component_mut!(ref self, self).foo1();

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::izip;
 use thiserror::Error;
 
@@ -84,7 +85,7 @@ impl SimulationContext<'_> {
                 actual: inputs.len(),
             });
         }
-        let mut state = HashMap::<VarId, CoreValue>::from_iter(
+        let mut state = OrderedHashMap::<VarId, CoreValue>::from_iter(
             izip!(func.params.iter(), inputs).map(|(param, input)| (param.id.clone(), input)),
         );
         loop {

@@ -100,7 +100,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 fn f() {
-    let x: [u32; 4] = [1,2,3,4];
+    let x: [u32; 4] = [1, 2, 3, 4];
 }
 
 //! > top_level_kind

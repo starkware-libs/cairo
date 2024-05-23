@@ -174,7 +174,8 @@ impl SemanticTokenKind {
                         ResolvedConcreteItem::Module(_) => SemanticTokenKind::Namespace,
                         ResolvedConcreteItem::Function(_)
                         | ResolvedConcreteItem::TraitFunction(_) => SemanticTokenKind::Function,
-                        ResolvedConcreteItem::Type(_) => SemanticTokenKind::Type,
+                        ResolvedConcreteItem::Type(_)
+                        | ResolvedConcreteItem::ConstGenericParameter(_) => SemanticTokenKind::Type,
                         ResolvedConcreteItem::Variant(_) => SemanticTokenKind::EnumMember,
                         ResolvedConcreteItem::Trait(_) => SemanticTokenKind::Interface,
                         ResolvedConcreteItem::Impl(_) => SemanticTokenKind::Class,

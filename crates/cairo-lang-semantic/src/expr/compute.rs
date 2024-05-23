@@ -9,21 +9,18 @@ use ast::PathSegment;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId,
-    LookupItemId, MemberId, ModuleId, TraitFunctionId, TraitId,
+    MemberId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
-use cairo_lang_syntax::attribute::consts::FEATURE_ATTR;
-use cairo_lang_syntax::attribute::structured::{
-    Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
-};
+use cairo_lang_syntax::attribute::consts::PHANTOM_ATTR;
 use cairo_lang_syntax::node::ast::{
     BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils as utils;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -47,17 +44,19 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
-    get_usize_ty, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
+    never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
     unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{
-    ElementKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
+    ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
     UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::items::constant::{value_as_const_value, ConstValue};
+use crate::items::attribute::SemanticQueryAttrs;
+use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
+use crate::items::feature_kind::extract_item_allowed_features;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
@@ -71,8 +70,8 @@ use crate::types::{
     verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
 };
 use crate::{
-    ConcreteEnumId, GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral,
-    PatternStruct, Signature,
+    ConcreteEnumId, GenericArgumentId, GenericParam, Member, Mutability, Parameter,
+    PatternStringLiteral, PatternStruct, Signature,
 };
 
 /// Expression with its id.
@@ -219,7 +218,6 @@ pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
     used_variables: UnorderedHashSet<semantic::VarId>,
-    allowed_features: UnorderedHashSet<SmolStr>,
 }
 impl Environment {
     /// Adds a parameter to the environment.
@@ -244,73 +242,7 @@ impl Environment {
     }
 
     pub fn empty() -> Self {
-        Self {
-            parent: None,
-            variables: Default::default(),
-            used_variables: Default::default(),
-            allowed_features: Default::default(),
-        }
-    }
-
-    pub fn from_lookup_item_id(
-        db: &dyn SemanticGroup,
-        lookup_item_id: LookupItemId,
-        diagnostics: &mut SemanticDiagnostics,
-    ) -> Self {
-        let defs_db = db.upcast();
-        let semantic_db = db.upcast();
-        let allowed_features = match lookup_item_id {
-            LookupItemId::ModuleItem(id) => extract_allowed_features(
-                semantic_db,
-                &id.stable_location(defs_db).syntax_node(defs_db),
-                diagnostics,
-            ),
-            LookupItemId::TraitItem(id) => extract_allowed_features(
-                semantic_db,
-                &id.stable_location(defs_db).syntax_node(defs_db),
-                diagnostics,
-            ),
-            LookupItemId::ImplItem(id) => extract_allowed_features(
-                semantic_db,
-                &id.stable_location(defs_db).syntax_node(defs_db),
-                diagnostics,
-            ),
-        };
-
-        Self::from_element_id(db, lookup_item_id, allowed_features.into_iter().collect())
-    }
-
-    fn from_element_id(
-        db: &dyn SemanticGroup,
-        element_id: impl LanguageElementId,
-        mut allowed_features: UnorderedHashSet<SmolStr>,
-    ) -> Environment {
-        let defs_db = db.upcast();
-        let syntax_db = db.upcast();
-        let ignored_diagnostics = &mut SemanticDiagnostics::new(
-            element_id.module_file_id(defs_db).file_id(defs_db).unwrap(),
-        );
-        let mut curr_module_id = element_id.parent_module(defs_db);
-        loop {
-            let submodule_id = match curr_module_id {
-                ModuleId::CrateRoot(_) => break,
-                ModuleId::Submodule(id) => id,
-            };
-            let parent = submodule_id.parent_module(defs_db);
-            let module = &defs_db.module_submodules(parent).unwrap()[&submodule_id];
-            // TODO(orizi): Add parent module diagnostics.
-            for allowed_feature in extract_allowed_features(syntax_db, module, ignored_diagnostics)
-            {
-                allowed_features.insert(allowed_feature);
-            }
-            curr_module_id = parent;
-        }
-        Self {
-            parent: None,
-            variables: Default::default(),
-            used_variables: Default::default(),
-            allowed_features,
-        }
+        Self { parent: None, variables: Default::default(), used_variables: Default::default() }
     }
 }
 
@@ -321,11 +253,6 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Exp
     let expr = maybe_compute_expr_semantic(ctx, syntax);
     let expr = wrap_maybe_with_missing(ctx, expr, syntax.stable_ptr());
     let id = ctx.exprs.alloc(expr.clone());
-    if let TypeLongId::Concrete(concrete) = ctx.db.lookup_intern_type(expr.ty()) {
-        if let Ok(Some(attr)) = concrete.unstable_attr(ctx.db.upcast()) {
-            validate_unstable_feature_usage(ctx, attr, syntax.stable_ptr());
-        }
-    }
     ExprAndId { expr, id }
 }
 
@@ -453,17 +380,19 @@ fn compute_expr_unary_semantic(
     if let UnaryOperator::Desnap(_) = unary_op {
         let desnapped_ty = match ctx.db.lookup_intern_type(expr_ty) {
             TypeLongId::Var(_) => {
-                let desnapped_var =
-                    ctx.resolver.inference().new_type_var(Some(syntax.stable_ptr().untyped()));
+                let inference = &mut ctx.resolver.inference();
+                let desnapped_var = inference.new_type_var(Some(syntax.stable_ptr().untyped()));
                 let snapped_desnapped_var = ctx.db.intern_type(TypeLongId::Snapshot(desnapped_var));
-                if ctx.resolver.inference().conform_ty(snapped_desnapped_var, expr_ty).is_err() {
-                    return Err(ctx.diagnostics.report(
+                if let Err(err_set) = inference.conform_ty(snapped_desnapped_var, expr_ty) {
+                    let diag_added = ctx.diagnostics.report(
                         syntax,
                         WrongArgumentType {
                             expected_ty: snapped_desnapped_var,
                             actual_ty: expr_ty,
                         },
-                    ));
+                    );
+                    inference.consume_reported_error(err_set, diag_added);
+                    return Err(diag_added);
                 };
                 desnapped_var
             }
@@ -491,15 +420,20 @@ fn compute_expr_unary_semantic(
     };
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
-    let function = ctx
-        .resolver
-        .inference()
+    let inference = &mut ctx.resolver.inference();
+    let function = inference
         .infer_trait_function(
             concrete_trait_function,
             &impl_lookup_context,
             Some(syntax.stable_ptr().untyped()),
         )
-        .map_err(|err| err.report(ctx.diagnostics, syntax.stable_ptr().untyped()))?;
+        .map_err(|err_set| {
+            inference.report_on_pending_error(
+                err_set,
+                ctx.diagnostics,
+                syntax.stable_ptr().untyped(),
+            )
+        })?;
 
     expr_function_call(
         ctx,
@@ -536,10 +470,13 @@ fn compute_expr_binary_semantic(
             let expected_ty = ctx.reduce_ty(member_path.ty());
             let actual_ty = ctx.reduce_ty(rexpr.ty());
 
-            if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
-                return Err(ctx
+            let inference = &mut ctx.resolver.inference();
+            if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
+                let diag_added = ctx
                     .diagnostics
-                    .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty }));
+                    .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty });
+                inference.consume_reported_error(err_set, diag_added);
+                return Err(diag_added);
             }
             // Verify the variable argument is mutable.
             if !ctx.semantic_defs[&member_path.base_var()].is_mut() {
@@ -559,19 +496,22 @@ fn compute_expr_binary_semantic(
                 _ => unreachable!(),
             };
 
+            let inference = &mut ctx.resolver.inference();
             let bool_ty = core_bool_ty(db);
-            if ctx.resolver.inference().conform_ty(lexpr.expr.ty(), bool_ty).is_err() {
-                ctx.diagnostics.report(
+            if let Err(err_set) = inference.conform_ty(lexpr.expr.ty(), bool_ty) {
+                let diag_added = ctx.diagnostics.report(
                     lhs_syntax,
                     WrongType { expected_ty: bool_ty, actual_ty: lexpr.expr.ty() },
                 );
+                inference.consume_reported_error(err_set, diag_added);
             }
 
-            if ctx.resolver.inference().conform_ty(rexpr.expr.ty(), bool_ty).is_err() {
-                ctx.diagnostics.report(
+            if let Err(err_set) = inference.conform_ty(rexpr.expr.ty(), bool_ty) {
+                let diag_added = ctx.diagnostics.report(
                     &rhs_syntax,
                     WrongType { expected_ty: bool_ty, actual_ty: rexpr.expr.ty() },
                 );
+                inference.consume_reported_error(err_set, diag_added);
             }
 
             return Ok(Expr::LogicalOperator(ExprLogicalOperator {
@@ -623,15 +563,20 @@ fn call_core_binary_op(
     }
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
-    let function = ctx
-        .resolver
-        .inference()
+    let inference = &mut ctx.resolver.inference();
+    let function = inference
         .infer_trait_function(
             concrete_trait_function,
             &impl_lookup_context,
             Some(syntax.stable_ptr().untyped()),
         )
-        .map_err(|err| err.report(ctx.diagnostics, syntax.stable_ptr().untyped()))?;
+        .map_err(|err_set| {
+            inference.report_on_pending_error(
+                err_set,
+                ctx.diagnostics,
+                syntax.stable_ptr().untyped(),
+            )
+        })?;
 
     let sig = ctx.db.concrete_function_signature(function)?;
     let first_param = sig.params.into_iter().next().unwrap();
@@ -666,7 +611,6 @@ fn compute_expr_tuple_semantic(
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
-
 /// Computes the semantic model of an expression of type [ast::ExprFixedSizeArray].
 fn compute_expr_fixed_size_array_semantic(
     ctx: &mut ComputationContext<'_>,
@@ -680,20 +624,22 @@ fn compute_expr_fixed_size_array_semantic(
         .ok_or_else(|| ctx.diagnostics.report(syntax, FixedSizeArrayEmptyElements))?;
     let first_expr_semantic = compute_expr_semantic(ctx, first_expr);
 
-    let mut items: Vec<ExprId> = vec![];
-
-    if let Some(size) = extract_fixed_size_array_size(db, ctx.diagnostics, syntax, &ctx.resolver)? {
+    let items = if let Some(size_const_id) =
+        extract_fixed_size_array_size(db, ctx.diagnostics, syntax, &ctx.resolver)?
+    {
         // Fixed size array with a defined size must have exactly one element.
         if !tail_exprs.is_empty() {
             return Err(ctx.diagnostics.report(syntax, FixedSizeArrayNonSingleValue));
         }
-        let size = extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
-            .to_usize()
-            .unwrap();
-        for _ in 0..size {
-            items.push(first_expr_semantic.id);
-        }
+        let size =
+            try_extract_matches!(db.lookup_intern_const_value(size_const_id), ConstValue::Int)
+                .ok_or_else(|| ctx.diagnostics.report(syntax, FixedSizeArrayNonNumericSize))?
+                .to_usize()
+                .unwrap();
+        verify_fixed_size_array_size(ctx.diagnostics, &size.into(), syntax)?;
+        FixedSizeArrayItems::ValueAndSize(first_expr_semantic.id, size_const_id)
     } else {
+        let mut items: Vec<ExprId> = vec![];
         items.push(first_expr_semantic.id);
         // The type of the first expression is the type of the array. All other expressions must
         // have the same type.
@@ -701,24 +647,32 @@ fn compute_expr_fixed_size_array_semantic(
         for expr_syntax in tail_exprs {
             let expr_semantic = compute_expr_semantic(ctx, expr_syntax);
             let expr_ty = ctx.reduce_ty(expr_semantic.ty());
-            if ctx.resolver.inference().conform_ty(expr_ty, first_expr_ty).is_err() {
-                let expected_ty = ctx.reduce_ty(first_expr_semantic.ty());
-                return Err(ctx
-                    .diagnostics
-                    .report(expr_syntax, WrongArgumentType { expected_ty, actual_ty: expr_ty }));
+            let inference = &mut ctx.resolver.inference();
+            if let Err(err_set) = inference.conform_ty(expr_ty, first_expr_ty) {
+                let diag_added = ctx.diagnostics.report(
+                    expr_syntax,
+                    WrongArgumentType { expected_ty: first_expr_ty, actual_ty: expr_ty },
+                );
+                inference.consume_reported_error(err_set, diag_added);
+                return Err(diag_added);
             }
             items.push(expr_semantic.id);
         }
-    }
-    let size = items.len();
-    verify_fixed_size_array_size(ctx.diagnostics, &size.into(), syntax)?;
-    let size_const_value_id =
-        db.intern_const_value(value_as_const_value(db, get_usize_ty(db), &size.into()).unwrap());
+        FixedSizeArrayItems::Items(items)
+    };
+    let size = match &items {
+        FixedSizeArrayItems::ValueAndSize(_, size_const_id) => *size_const_id,
+        FixedSizeArrayItems::Items(items) => {
+            let size = BigInt::from(items.len());
+            verify_fixed_size_array_size(ctx.diagnostics, &size, syntax)?;
+            db.intern_const_value(ConstValue::Int(size))
+        }
+    };
     Ok(Expr::FixedSizeArray(ExprFixedSizeArray {
         items,
         ty: db.intern_type(TypeLongId::FixedSizeArray {
             type_id: ctx.reduce_ty(first_expr_semantic.ty()),
-            size: size_const_value_id,
+            size,
         }),
         stable_ptr: syntax.stable_ptr().into(),
     }))
@@ -760,12 +714,18 @@ fn compute_expr_function_call_semantic(
             }
             let expected_ty = ctx.reduce_ty(concrete_variant.ty);
             let actual_ty = ctx.reduce_ty(arg.ty());
-            if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
-                return Err(ctx
+            let inference = &mut ctx.resolver.inference();
+            if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
+                let diag_added = ctx
                     .diagnostics
-                    .report(&args_syntax, WrongArgumentType { expected_ty, actual_ty }));
+                    .report(&args_syntax, WrongArgumentType { expected_ty, actual_ty });
+                inference.consume_reported_error(err_set, diag_added);
+                return Err(diag_added);
             }
             let concrete_enum_id = concrete_variant.concrete_enum_id;
+            if concrete_enum_id.has_attr(db, PHANTOM_ATTR)? {
+                ctx.diagnostics.report(syntax, CannotCreateInstancesOfPhantomTypes);
+            }
             Ok(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
                 variant: concrete_variant,
                 value_expr: arg.id,
@@ -827,18 +787,19 @@ pub fn compute_root_expr(
     return_type: TypeId,
 ) -> Maybe<ExprId> {
     let res = compute_expr_block_semantic(ctx, syntax)?;
-    let res_ty = res.ty();
+    let res_ty = ctx.reduce_ty(res.ty());
     let res = ctx.exprs.alloc(res);
-    if ctx.resolver.inference().conform_ty(res_ty, return_type).is_err() {
-        ctx.diagnostics
+    let return_type = ctx.reduce_ty(return_type);
+    let inference = &mut ctx.resolver.inference();
+    if let Err(err_set) = inference.conform_ty(res_ty, return_type) {
+        let diag_added = ctx
+            .diagnostics
             .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res_ty });
+        inference.consume_reported_error(err_set, diag_added);
     }
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
-        inference_err.report(ctx.diagnostics, stable_ptr.unwrap_or(syntax.stable_ptr().untyped()));
-        return Ok(res);
-    }
+    inference.finalize(ctx.diagnostics, syntax.stable_ptr().untyped());
 
     // Apply inference.
     infer_all(ctx).ok();
@@ -848,13 +809,13 @@ pub fn compute_root_expr(
 
 fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
     for (_id, expr) in ctx.exprs.iter_mut() {
-        *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
+        ctx.resolver.inference().internal_rewrite(expr).no_err();
     }
     for (_id, pattern) in ctx.patterns.iter_mut() {
-        *pattern = ctx.resolver.inference().rewrite(pattern.clone()).no_err();
+        ctx.resolver.inference().internal_rewrite(pattern).no_err();
     }
     for (_id, stmt) in ctx.statements.iter_mut() {
-        *stmt = ctx.resolver.inference().rewrite(stmt.clone()).no_err();
+        ctx.resolver.inference().internal_rewrite(stmt).no_err();
     }
     Ok(())
 }
@@ -909,31 +870,69 @@ pub fn compute_expr_block_semantic(
 /// Helper for merging the return types of branch blocks (match or if else).
 #[derive(Debug, Clone)]
 struct FlowMergeTypeHelper {
+    multi_arm_expr_kind: MultiArmExprKind,
     never_type: TypeId,
     final_type: Option<TypeId>,
+    expected_type: Option<TypeId>,
+    /// Whether or not the Helper had a previous type merge error.
+    had_merge_error: bool,
 }
 impl FlowMergeTypeHelper {
-    fn new(db: &dyn SemanticGroup) -> Self {
-        Self { never_type: never_ty(db), final_type: None }
+    fn new(
+        db: &dyn SemanticGroup,
+        multi_arm_expr_kind: MultiArmExprKind,
+        expected_type: Option<TypeId>,
+    ) -> Self {
+        Self {
+            multi_arm_expr_kind,
+            never_type: never_ty(db),
+            final_type: None,
+            expected_type,
+            had_merge_error: false,
+        }
     }
 
-    /// Attempt merge a branch into the helper, on error will return the conflicting types.
+    /// Merge a type into the helper. Returns false on error or if had a previous error.
+    /// May conform the type to the self.expected_type, if set. Mostly, it is called after
+    /// the types have already been conformed earlier, in which case it has no external effect.
     fn try_merge_types(
         &mut self,
-        inference: &mut Inference<'_>,
         db: &dyn SemanticGroup,
+        diagnostics: &mut SemanticDiagnostics,
+        inference: &mut Inference<'_>,
         ty: TypeId,
-    ) -> Result<(), (TypeId, TypeId)> {
+        stable_ptr: SyntaxStablePtrId,
+    ) -> bool {
+        if self.had_merge_error {
+            return false;
+        }
+
         if ty != self.never_type && !ty.is_missing(db) {
-            if let Some(existing) = &self.final_type {
-                if inference.conform_ty(ty, *existing).is_err() {
-                    return Err((*existing, ty));
+            if let Some(pending) = &self.final_type {
+                if let Err(err_set) = inference.conform_ty(ty, *pending) {
+                    let diag_added = diagnostics.report_by_ptr(
+                        stable_ptr,
+                        IncompatibleArms {
+                            multi_arm_expr_kind: self.multi_arm_expr_kind,
+                            pending_ty: *pending,
+                            different_ty: ty,
+                        },
+                    );
+                    inference.consume_reported_error(err_set, diag_added);
+                    self.had_merge_error = true;
+                    return false;
                 }
             } else {
                 self.final_type = Some(ty);
+                if let Some(expected_type) = self.expected_type {
+                    if inference.conform_ty(ty, expected_type).is_err() {
+                        self.had_merge_error = true;
+                        return false;
+                    }
+                }
             }
         }
-        Ok(())
+        true
     }
 
     /// Returns the merged type.
@@ -974,14 +973,23 @@ fn compute_arm_semantic(
                         std::collections::hash_map::Entry::Occupied(entry) => {
                             let get_location = || variable.stable_ptr.lookup(db.upcast());
                             let var = entry.get();
-                            let expected_ty = var.ty;
 
-                            if expected_ty != variable.var.ty {
-                                new_ctx.diagnostics.report(
-                                    &get_location(),
-                                    WrongType { expected_ty, actual_ty: variable.var.ty },
-                                );
-                            } else if var.is_mut != variable.var.is_mut {
+                            let expected_ty = new_ctx.reduce_ty(var.ty);
+                            let actual_ty = new_ctx.reduce_ty(variable.var.ty);
+
+                            let mut has_inference_error = false;
+                            if !variable.var.ty.is_missing(new_ctx.db) {
+                                let inference = &mut new_ctx.resolver.inference();
+                                if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
+                                    let diag_added = new_ctx.diagnostics.report(
+                                        &get_location(),
+                                        WrongType { expected_ty, actual_ty: variable.var.ty },
+                                    );
+                                    inference.consume_reported_error(err_set, diag_added);
+                                    has_inference_error = true;
+                                }
+                            };
+                            if !has_inference_error && var.is_mut != variable.var.is_mut {
                                 new_ctx.diagnostics.report(&get_location(), InconsistentBinding);
                             }
                         }
@@ -1051,16 +1059,18 @@ fn compute_expr_match_semantic(
         })
         .collect();
     // Unify arm types.
-    let mut helper = FlowMergeTypeHelper::new(ctx.db);
+    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::Match, None);
     for (_, expr) in patterns_and_exprs.iter() {
-        if let Err((match_ty, arm_ty)) =
-            helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr.ty())
-        {
-            ctx.diagnostics.report_by_ptr(
-                expr.stable_ptr().untyped(),
-                IncompatibleMatchArms { match_ty, arm_ty },
-            );
-        }
+        let expr_ty = ctx.reduce_ty(expr.ty());
+        if !helper.try_merge_types(
+            ctx.db,
+            ctx.diagnostics,
+            &mut ctx.resolver.inference(),
+            expr_ty,
+            expr.stable_ptr().untyped(),
+        ) {
+            break;
+        };
     }
     // Compute semantic representation of the match arms.
     let semantic_arms = patterns_and_exprs
@@ -1123,13 +1133,23 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
         }
     };
 
-    let mut helper = FlowMergeTypeHelper::new(ctx.db);
-    helper
-        .try_merge_types(&mut ctx.resolver.inference(), ctx.db, if_block.ty())
-        .and(helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, else_block_ty))
-        .unwrap_or_else(|(block_if_ty, block_else_ty)| {
-            ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty });
-        });
+    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::If, None);
+    let if_block_ty = ctx.reduce_ty(if_block.ty());
+    let else_block_ty = ctx.reduce_ty(else_block_ty);
+    let inference = &mut ctx.resolver.inference();
+    let _ = helper.try_merge_types(
+        ctx.db,
+        ctx.diagnostics,
+        inference,
+        if_block_ty,
+        syntax.stable_ptr().untyped(),
+    ) && helper.try_merge_types(
+        ctx.db,
+        ctx.diagnostics,
+        inference,
+        else_block_ty,
+        syntax.stable_ptr().untyped(),
+    );
     Ok(Expr::If(ExprIf {
         condition,
         if_block: if_block.id,
@@ -1150,7 +1170,7 @@ fn compute_expr_loop_semantic(
     let (body, loop_ctx) = compute_loop_body_semantic(
         ctx,
         syntax.body(syntax_db),
-        LoopContext::Loop(FlowMergeTypeHelper::new(db)),
+        LoopContext::Loop(FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop, None)),
     );
     Ok(Expr::Loop(ExprLoop {
         body,
@@ -1284,7 +1304,13 @@ fn compute_expr_error_propagate_semantic(
         ctx.resolver.inference().conform_ty(func_err_variant.ty, err_variant.ty);
     // If conforming the types failed, the next check will fail and a better diagnostic will be
     // added.
-    let err_variant_ty = conformed_err_variant_ty.unwrap_or(err_variant.ty);
+    let err_variant_ty = match conformed_err_variant_ty {
+        Ok(ty) => ty,
+        Err(err_set) => {
+            ctx.resolver.inference().consume_error_without_reporting(err_set);
+            err_variant.ty
+        }
+    };
     // TODO(orizi): When auto conversion of types is added, try to convert the error type.
     if func_err_variant.ty != err_variant_ty
         || func_err_variant.concrete_enum_id.enum_id(ctx.db)
@@ -1363,7 +1389,10 @@ fn compute_method_function_call_data(
         TraitFunctionId,
     ) -> SemanticDiagnosticKind,
 ) -> Maybe<(FunctionId, ExprAndId, Mutability)> {
-    let self_ty = self_expr.ty();
+    let self_ty = ctx.reduce_ty(self_expr.ty());
+    // Inference errors found when looking for candidates. Only relevant in the case of 0 candidates
+    // found. If >0 candidates are found these are ignored as they may describe, e.g., "errors"
+    // indicating certain traits/impls/functions don't match, which is OK as we only look for one.
     let mut inference_errors = vec![];
     let candidates = filter_candidate_traits(
         ctx,
@@ -1549,10 +1578,12 @@ fn maybe_compute_pattern_semantic(
                 ResolvedConcreteItem::Type
             )
             .ok_or_else(|| ctx.diagnostics.report(&pattern_struct.path(syntax_db), NotAType))?;
-            ctx.resolver
-                .inference()
+            let inference = &mut ctx.resolver.inference();
+            inference
                 .conform_ty(pattern_ty, ctx.db.intern_type(peel_snapshots(ctx.db, ty).1))
-                .map_err(|err| err.report(ctx.diagnostics, stable_ptr))?;
+                .map_err(|err_set| {
+                    inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr)
+                })?;
             let ty = ctx.reduce_ty(ty);
             // Peel all snapshot wrappers.
             let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
@@ -1700,10 +1731,10 @@ fn maybe_compute_pattern_semantic(
             })
         }
     };
-    ctx.resolver
-        .inference()
-        .conform_ty(pattern.ty(), ty)
-        .map_err(|err| err.report(ctx.diagnostics, stable_ptr))?;
+    let inference = &mut ctx.resolver.inference();
+    inference.conform_ty(pattern.ty(), ty).map_err(|err_set| {
+        inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr)
+    })?;
     Ok(pattern)
 }
 
@@ -1851,6 +1882,10 @@ fn struct_ctor_expr(
             .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
             .ok_or_else(|| ctx.diagnostics.report(&path, NotAStruct))?;
 
+    if concrete_struct_id.has_attr(db, PHANTOM_ATTR)? {
+        ctx.diagnostics.report(ctor_syntax, CannotCreateInstancesOfPhantomTypes);
+    }
+
     let members = db.concrete_struct_members(concrete_struct_id)?;
     let mut member_exprs: OrderedHashMap<MemberId, Option<ExprId>> = OrderedHashMap::default();
     let mut base_struct = None;
@@ -1909,10 +1944,13 @@ fn struct_ctor_expr(
                 // Check types.
                 let expected_ty = ctx.reduce_ty(member.ty);
                 let actual_ty = ctx.reduce_ty(arg_expr.ty());
-                if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
+                let inference = &mut ctx.resolver.inference();
+                if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
                     if !member.ty.is_missing(db) {
-                        ctx.diagnostics
+                        let diag_added = ctx
+                            .diagnostics
                             .report(&arg_identifier, WrongArgumentType { expected_ty, actual_ty });
+                        inference.consume_reported_error(err_set, diag_added);
                     }
                     continue;
                 }
@@ -1933,11 +1971,13 @@ fn struct_ctor_expr(
                 let base_struct_expr =
                     compute_expr_semantic(ctx, &base_struct_syntax.expression(syntax_db));
                 let base_struct_ty = ctx.reduce_ty(base_struct_expr.ty());
-                if ctx.resolver.inference().conform_ty(base_struct_ty, ty).is_err() {
-                    ctx.diagnostics.report(
+                let inference = &mut ctx.resolver.inference();
+                if let Err(err_set) = inference.conform_ty(base_struct_ty, ty) {
+                    let diag_added = ctx.diagnostics.report(
                         &base_struct_syntax,
                         WrongArgumentType { expected_ty: ty, actual_ty: base_struct_ty },
                     );
+                    inference.consume_reported_error(err_set, diag_added);
                     continue;
                 }
 
@@ -2018,10 +2058,10 @@ fn new_literal_expr(
     let concrete_trait_id =
         ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
     let lookup_context = ctx.resolver.impl_lookup_context();
-    ctx.resolver
-        .inference()
-        .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
-        .map_err(|err| err.report(ctx.diagnostics, stable_ptr.untyped()))?;
+    let inference = &mut ctx.resolver.inference();
+    inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context).map_err(
+        |err_set| inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr.untyped()),
+    )?;
 
     Ok(ExprLiteral { value, ty, stable_ptr })
 }
@@ -2070,10 +2110,10 @@ fn new_string_literal_expr(
     let concrete_trait_id =
         ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
     let lookup_context = ctx.resolver.impl_lookup_context();
-    ctx.resolver
-        .inference()
-        .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
-        .map_err(|err| err.report(ctx.diagnostics, stable_ptr.untyped()))?;
+    let inference = &mut ctx.resolver.inference();
+    inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context).map_err(
+        |err_set| inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr.untyped()),
+    )?;
 
     Ok(ExprStringLiteral { value, ty, stable_ptr })
 }
@@ -2149,7 +2189,7 @@ fn method_call_expr(
     };
     let func_name = segment.identifier(syntax_db);
     let generic_args_syntax = segment.generic_args(syntax_db);
-    // Save some work.
+    // Save some work. ignore the result. The error, if any, will be reported later.
     ctx.resolver.inference().solve().ok();
 
     let mut candidate_traits = traits_in_context(ctx)?;
@@ -2311,6 +2351,17 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
             ty: db.constant_semantic_data(constant_id)?.ty(),
             stable_ptr: path.stable_ptr().into(),
         })),
+        ResolvedConcreteItem::ConstGenericParameter(generic_param_id) => {
+            Ok(Expr::ParamConstant(ExprParamConstant {
+                const_value_id: db.intern_const_value(ConstValue::Generic(generic_param_id)),
+                ty: extract_matches!(
+                    db.generic_param_semantic(generic_param_id)?,
+                    GenericParam::Const
+                )
+                .ty,
+                stable_ptr: path.stable_ptr().into(),
+            }))
+        }
         ResolvedConcreteItem::Variant(variant) if variant.ty == unit_ty(db) => {
             let stable_ptr = path.stable_ptr().into();
             let concrete_enum_id = variant.concrete_enum_id;
@@ -2376,15 +2427,6 @@ fn expr_function_call(
     mut named_args: Vec<NamedArg>,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
-    if let Ok(Some(attr)) = ctx
-        .db
-        .lookup_intern_function(function_id)
-        .function
-        .generic_function
-        .unstable_feature(ctx.db.upcast())
-    {
-        validate_unstable_feature_usage(ctx, attr, stable_ptr);
-    }
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let signature = ctx.db.concrete_function_signature(function_id)?;
@@ -2399,13 +2441,15 @@ fn expr_function_call(
             let expected_ty = ctx.db.intern_type(TypeLongId::Coupon(function_id));
             let arg_typ = arg.ty();
             let actual_ty = ctx.reduce_ty(arg_typ);
-            if !arg_typ.is_missing(ctx.db)
-                && ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err()
-            {
-                ctx.diagnostics.report_by_ptr(
-                    arg.stable_ptr().untyped(),
-                    WrongArgumentType { expected_ty, actual_ty },
-                );
+            if !arg_typ.is_missing(ctx.db) {
+                let inference = &mut ctx.resolver.inference();
+                if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
+                    let diag_added = ctx.diagnostics.report_by_ptr(
+                        arg.stable_ptr().untyped(),
+                        WrongArgumentType { expected_ty, actual_ty },
+                    );
+                    inference.consume_reported_error(err_set, diag_added);
+                }
             }
 
             // Check that the argument is not mutable/reference.
@@ -2442,13 +2486,15 @@ fn expr_function_call(
         // TODO(lior): Add a test to missing type once possible.
         let expected_ty = ctx.reduce_ty(param_typ);
         let actual_ty = ctx.reduce_ty(arg_typ);
-        if !arg_typ.is_missing(ctx.db)
-            && ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err()
-        {
-            ctx.diagnostics.report_by_ptr(
-                arg.stable_ptr().untyped(),
-                WrongArgumentType { expected_ty, actual_ty },
-            );
+        if !arg_typ.is_missing(ctx.db) {
+            let inference = &mut ctx.resolver.inference();
+            if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
+                let diag_added = ctx.diagnostics.report_by_ptr(
+                    arg.stable_ptr().untyped(),
+                    WrongArgumentType { expected_ty, actual_ty },
+                );
+                inference.consume_reported_error(err_set, diag_added);
+            }
         }
 
         args.push(if param.mutability == Mutability::Reference {
@@ -2559,8 +2605,8 @@ pub fn compute_statement_semantic(
     // are allowed.
     validate_statement_attributes(ctx, &syntax);
     let mut features_to_remove = vec![];
-    for feature_name in extract_allowed_features(syntax_db, &syntax, ctx.diagnostics) {
-        if ctx.environment.allowed_features.insert(feature_name.clone()) {
+    for feature_name in extract_item_allowed_features(syntax_db, &syntax, ctx.diagnostics) {
+        if ctx.resolver.data.allowed_features.insert(feature_name.clone()) {
             features_to_remove.push(feature_name);
         }
     }
@@ -2578,20 +2624,18 @@ pub fn compute_statement_semantic(
                         resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &var_type_path);
                     let explicit_type = ctx.reduce_ty(explicit_type);
                     let inferred_type = ctx.reduce_ty(inferred_type);
-                    if !inferred_type.is_missing(db)
-                        && ctx
-                            .resolver
-                            .inference()
-                            .conform_ty(inferred_type, explicit_type)
-                            .is_err()
-                    {
-                        ctx.diagnostics.report(
-                            &let_syntax.rhs(syntax_db),
-                            WrongArgumentType {
-                                expected_ty: explicit_type,
-                                actual_ty: inferred_type,
-                            },
-                        );
+                    if !inferred_type.is_missing(db) {
+                        let inference = &mut ctx.resolver.inference();
+                        if let Err(err_set) = inference.conform_ty(inferred_type, explicit_type) {
+                            let diag_added = ctx.diagnostics.report(
+                                &let_syntax.rhs(syntax_db),
+                                WrongArgumentType {
+                                    expected_ty: explicit_type,
+                                    actual_ty: inferred_type,
+                                },
+                            );
+                            inference.consume_reported_error(err_set, diag_added);
+                        }
                     }
                     explicit_type
                 }
@@ -2685,12 +2729,15 @@ pub fn compute_statement_semantic(
                     UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
                 )?
                 .return_type;
-            if !expected_ty.is_missing(db)
-                && !expr_ty.is_missing(db)
-                && ctx.resolver.inference().conform_ty(expr_ty, expected_ty).is_err()
-            {
-                ctx.diagnostics
-                    .report_by_ptr(stable_ptr, WrongReturnType { expected_ty, actual_ty: expr_ty });
+            if !expected_ty.is_missing(db) && !expr_ty.is_missing(db) {
+                let inference = &mut ctx.resolver.inference();
+                if let Err(err_set) = inference.conform_ty(expr_ty, expected_ty) {
+                    let diag_added = ctx.diagnostics.report_by_ptr(
+                        stable_ptr,
+                        WrongReturnType { expected_ty, actual_ty: expr_ty },
+                    );
+                    inference.consume_reported_error(err_set, diag_added);
+                }
             }
             semantic::Statement::Return(semantic::StatementReturn {
                 expr_option,
@@ -2708,19 +2755,19 @@ pub fn compute_statement_semantic(
                     (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
                 }
             };
+            let ty = ctx.reduce_ty(ty);
             match &mut ctx.loop_ctx {
                 None => {
                     return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
                 }
                 Some(LoopContext::Loop(flow_merge)) => {
-                    if let Err((current_ty, break_ty)) =
-                        flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, ty)
-                    {
-                        ctx.diagnostics.report_by_ptr(
-                            stable_ptr,
-                            IncompatibleLoopBreakTypes { current_ty, break_ty },
-                        );
-                    };
+                    flow_merge.try_merge_types(
+                        ctx.db,
+                        ctx.diagnostics,
+                        &mut ctx.resolver.inference(),
+                        ty,
+                        stable_ptr,
+                    );
                 }
                 Some(LoopContext::While) => {
                     if expr_option.is_some() {
@@ -2736,50 +2783,25 @@ pub fn compute_statement_semantic(
         ast::Statement::Missing(_) => todo!(),
     };
     for feature_name in features_to_remove {
-        ctx.environment.allowed_features.remove(&feature_name);
+        ctx.resolver.data.allowed_features.swap_remove(&feature_name);
     }
     Ok(ctx.statements.alloc(statement))
 }
 
-/// Returns the allowed features of an object which supports attributes.
-fn extract_allowed_features(
-    db: &dyn SyntaxGroup,
-    syntax: &impl QueryAttrs,
-    diagnostics: &mut SemanticDiagnostics,
-) -> Vec<SmolStr> {
-    let mut features = vec![];
-    for attr_syntax in syntax.query_attr(db, FEATURE_ATTR) {
-        let attr = attr_syntax.structurize(db);
-        let feature_name = match &attr.args[..] {
-            [
-                AttributeArg {
-                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::String(value), .. },
-                    ..
-                },
-            ] => value.text(db),
-            _ => {
-                diagnostics
-                    .report_by_ptr(attr.args_stable_ptr.untyped(), UnsupportedFeatureAttrArguments);
-                continue;
-            }
-        };
-        features.push(feature_name);
-    }
-    features
-}
-
-/// Computes the semantic model of an expression and reports diaganostics if
-/// the expression does not evaluate to a boolean value.
+/// Computes the semantic model of an expression and reports diagnostics if the expression does not
+/// evaluate to a boolean value.
 fn compute_bool_condition_semantic(
     ctx: &mut ComputationContext<'_>,
     condition_syntax: &ast::Expr,
 ) -> ExprAndId {
     let condition = compute_expr_semantic(ctx, condition_syntax);
-    if ctx.resolver.inference().conform_ty(condition.ty(), core_bool_ty(ctx.db)).is_err() {
-        ctx.diagnostics.report_by_ptr(
+    let inference = &mut ctx.resolver.inference();
+    if let Err(err_set) = inference.conform_ty(condition.ty(), core_bool_ty(ctx.db)) {
+        let diag_added = ctx.diagnostics.report_by_ptr(
             condition.stable_ptr().untyped(),
             ConditionNotBool { condition_ty: condition.ty() },
         );
+        inference.consume_reported_error(err_set, diag_added);
     }
     condition
 }
@@ -2822,39 +2844,5 @@ fn validate_statement_attributes(ctx: &mut ComputationContext<'_>, syntax: &ast:
             diagnostic.stable_ptr,
             SemanticDiagnosticKind::UnknownStatementAttribute,
         );
-    }
-}
-
-/// Adds diagnostics if an expression using an unstable feature is not explicitly allowed to use the
-/// feature.
-fn validate_unstable_feature_usage(
-    ctx: &mut ComputationContext<'_>,
-    attr: Attribute,
-    stable_ptr: ExprPtr,
-) {
-    let Some(feature_name) = attr.args.iter().find_map(|arg| match &arg.variant {
-        AttributeArgVariant::Named { value: ast::Expr::String(value), name, .. }
-            if name == "feature" =>
-        {
-            Some(value.text(ctx.db.upcast()))
-        }
-        // TODO(orizi): Creates diagnostics for this case.
-        _ => None,
-    }) else {
-        return;
-    };
-    let mut env = &ctx.environment;
-    loop {
-        if env.allowed_features.contains(feature_name.as_str()) {
-            // The feature is allowed.
-            return;
-        }
-        if let Some(parent) = env.parent.as_ref() {
-            // Continue checking if the feature was allowed up the tree.
-            env = parent;
-        } else {
-            ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnstableFeature { feature_name });
-            return;
-        }
     }
 }

@@ -31,9 +31,8 @@ use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, OptionFrom};
-use salsa;
 use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
@@ -353,21 +352,21 @@ define_top_level_language_element_id!(ImplDefId, ImplDefLongId, ast::ItemImpl, l
 
 // --- Impl type items ---
 define_named_language_element_id!(
-    ImplTypeId,
-    ImplTypeLongId,
+    ImplTypeDefId,
+    ImplTypeDefLongId,
     ast::ItemTypeAlias,
-    lookup_intern_impl_type
+    lookup_intern_impl_type_def
 );
-impl ImplTypeId {
+impl ImplTypeDefId {
     pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
-        let ImplTypeLongId(module_file_id, ptr) = db.lookup_intern_impl_type(*self);
+        let ImplTypeDefLongId(module_file_id, ptr) = db.lookup_intern_impl_type_def(*self);
 
         // Impl type ast lies 3 levels below the impl ast.
         let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
         db.intern_impl(ImplDefLongId(module_file_id, impl_ptr))
     }
 }
-impl TopLevelLanguageElementId for ImplTypeId {
+impl TopLevelLanguageElementId for ImplTypeDefId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.impl_def_id(db).name(db), self.name(db))
     }
@@ -628,7 +627,7 @@ define_language_element_id_as_enum! {
     #[toplevel]
     /// The ID of a impl item with generic parameters.
     pub enum GenericImplItemId {
-        Type(ImplTypeId),
+        Type(ImplTypeDefId),
     }
 }
 
@@ -733,8 +732,8 @@ impl GenericItemId {
                         )),
                     ),
                     SyntaxKind::ImplItemList => {
-                        GenericItemId::ImplItem(GenericImplItemId::Type(db.intern_impl_type(
-                            ImplTypeLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr)),
+                        GenericItemId::ImplItem(GenericImplItemId::Type(db.intern_impl_type_def(
+                            ImplTypeDefLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr)),
                         )))
                     }
                     _ => panic!(),
@@ -918,7 +917,7 @@ define_language_element_id_as_enum! {
     /// Id for direct children of an impl.
     pub enum ImplItemId {
         Function(ImplFunctionId),
-        Type(ImplTypeId),
+        Type(ImplTypeDefId),
     }
 }
 impl ImplItemId {
@@ -944,5 +943,64 @@ define_language_element_id_as_enum! {
         ModuleItem(ModuleItemId),
         TraitItem(TraitItemId),
         ImplItem(ImplItemId),
+    }
+}
+
+/// A context of a trait, if in a trait. This is used in the resolver to resolve
+/// "Self::" paths.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct TraitContext {
+    pub trait_id: TraitId,
+    // TODO(yuval): add generics.
+}
+impl DebugWithDb<dyn DefsGroup> for TraitContext {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn DefsGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{:?}", db.lookup_intern_trait(self.trait_id).debug(db))
+    }
+}
+
+/// A context of an impl, if in an impl. This is used in the resolver to resolve
+/// "Self::" paths and in implizations.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ImplContext {
+    pub impl_def_id: ImplDefId,
+    // TODO(yuval): add generics.
+}
+impl DebugWithDb<dyn DefsGroup> for ImplContext {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn DefsGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{:?}", db.lookup_intern_impl(self.impl_def_id).debug(db))
+    }
+}
+
+/// A context of a trait or an impl, if in any of those. This is used in the resolver to resolve
+/// "Self::" paths.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum TraitOrImplContext {
+    /// No trait/impl context.
+    None,
+    /// The context is of a trait.
+    Trait(TraitContext),
+    /// The context is of an impl.
+    Impl(ImplContext),
+}
+impl DebugWithDb<dyn DefsGroup> for TraitOrImplContext {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn DefsGroup + 'static),
+    ) -> std::fmt::Result {
+        match self {
+            TraitOrImplContext::None => write!(f, "None"),
+            TraitOrImplContext::Trait(trait_ctx) => write!(f, "{:?}", trait_ctx.debug(db)),
+            TraitOrImplContext::Impl(impl_ctx) => write!(f, "{:?}", impl_ctx.debug(db)),
+        }
     }
 }

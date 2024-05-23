@@ -7,6 +7,8 @@ pub mod modules;
 pub mod type_specialization_context;
 pub mod types;
 
+use num_bigint::BigInt;
+
 pub use self::error::{ExtensionError, SpecializationError};
 pub use self::lib_func::{
     ConcreteLibfunc, GenericLibfunc, GenericLibfuncEx, NamedLibfunc, NoGenericArgsGenericLibfunc,
@@ -18,6 +20,15 @@ pub use self::types::{
 };
 use crate::ids::{ConcreteTypeId, FunctionId};
 use crate::program::GenericArg;
+
+/// Helper for extracting the value from the template arguments.
+fn args_as_single_value(args: &[GenericArg]) -> Result<BigInt, SpecializationError> {
+    match args {
+        [GenericArg::Value(c)] => Ok(c.clone()),
+        [_] => Err(SpecializationError::UnsupportedGenericArg),
+        _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+    }
+}
 
 /// Helper for extracting the type from the template arguments.
 fn args_as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {

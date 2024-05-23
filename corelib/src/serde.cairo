@@ -87,7 +87,8 @@ impl TupleSize4Serde<
     }
 }
 
-/// Impl for `Serde` for types that can be converted into `felt252` using the `Into` trait and from `felt252` using the `TryInto` trait.
+/// Impl for `Serde` for types that can be converted into `felt252` using the `Into` trait and from
+/// `felt252` using the `TryInto` trait.
 /// Usage example:
 /// ```ignore
 /// impl MyTypeSerde = core::serde::into_felt252_based::SerdeImpl<MyType>;`

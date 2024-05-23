@@ -26,8 +26,10 @@ cairo_lang_test_utils::test_file_test!(
 cairo_lang_test_utils::test_file_test!(
     expr_diagnostics,
     "src/expr/test_data",
+
     {
         assignment: "assignment",
+        attributes: "attributes",
         constant: "constant",
         constructor: "constructor",
         coupon: "coupon",
@@ -70,6 +72,7 @@ cairo_lang_test_utils::test_file_test!(
         literals: "literals",
         match_: "match",
         if_: "if",
+        loop_: "loop",
         operator: "operator",
         structure: "structure",
         tuple: "tuple",

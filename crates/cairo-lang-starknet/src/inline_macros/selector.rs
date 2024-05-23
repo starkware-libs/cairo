@@ -1,10 +1,10 @@
+use cairo_lang_defs::extract_macro_single_unnamed_arg;
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
-use cairo_lang_semantic::extract_macro_single_unnamed_arg;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 
 /// Macro for expanding a selector to a string literal.
 #[derive(Debug, Default)]

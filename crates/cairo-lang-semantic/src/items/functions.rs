@@ -17,9 +17,11 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
-use syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
+use syntax::attribute::consts::MUST_USE_ATTR;
+use syntax::node::TypedStablePtr;
 
 use super::attribute::SemanticQueryAttrs;
+use super::constant::ConstValue;
 use super::imp::ImplId;
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -39,10 +41,13 @@ use crate::{
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ImplGenericFunctionId {
     // TODO(spapini): Consider making these private and enforcing invariants in the ctor.
+    /// The impl the function is in.
     pub impl_id: ImplId,
+    /// The trait function this impl function implements.
     pub function: TraitFunctionId,
 }
 impl ImplGenericFunctionId {
+    /// Gets the impl function language element, if self.impl_id is of a concrete impl.
     pub fn impl_function(&self, db: &dyn SemanticGroup) -> Maybe<Option<ImplFunctionId>> {
         match self.impl_id {
             ImplId::Concrete(concrete_impl_id) => {
@@ -78,6 +83,15 @@ impl ImplGenericFunctionId {
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
         format!("{}::{}", self.impl_id.name(db.upcast()), self.function.name(db.upcast())).into()
+    }
+}
+impl DebugWithDb<dyn SemanticGroup> for ImplGenericFunctionId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
     }
 }
 
@@ -171,21 +185,21 @@ impl GenericFunctionId {
             GenericFunctionId::Extern(_) => Ok(false),
         }
     }
-    /// Returns the attribute if a function has the `#[unstable(feature: "some-string")]` attribute.
-    pub fn unstable_feature(&self, db: &dyn SemanticGroup) -> Maybe<Option<Attribute>> {
-        match self {
-            GenericFunctionId::Free(id) => id.find_attr(db, UNSTABLE_ATTR),
-            GenericFunctionId::Impl(id) => id.function.find_attr(db, UNSTABLE_ATTR),
-            GenericFunctionId::Extern(_) => Ok(None),
-        }
-    }
-
     /// Returns true if the function does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         match self {
             GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => true,
             GenericFunctionId::Impl(impl_generic_function) => {
                 impl_generic_function.impl_id.is_fully_concrete(db)
+            }
+        }
+    }
+    /// Returns true if the function does not depend on impl or type variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        match self {
+            GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => true,
+            GenericFunctionId::Impl(impl_generic_function) => {
+                impl_generic_function.impl_id.is_var_free(db)
             }
         }
     }
@@ -259,6 +273,15 @@ impl FunctionId {
                 .generic_args
                 .iter()
                 .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
+    }
+    /// Returns true if the function does not depend on impl or type variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        let func = self.get_concrete(db);
+        func.generic_function.is_var_free(db)
+            && func
+                .generic_args
+                .iter()
+                .all(|generic_argument_id| generic_argument_id.is_var_free(db))
     }
 }
 
@@ -380,7 +403,7 @@ impl ConcreteFunctionWithBody {
         Ok(match function_id {
             FunctionWithBodyId::Free(free) => {
                 let params = db.free_function_generic_params(free)?;
-                let generic_args = generic_params_to_args(params, db)?;
+                let generic_args = generic_params_to_args(&params, db);
                 ConcreteFunctionWithBody {
                     generic_function: GenericFunctionWithBodyId::Free(free),
                     generic_args,
@@ -388,10 +411,10 @@ impl ConcreteFunctionWithBody {
             }
             FunctionWithBodyId::Impl(impl_function_id) => {
                 let params = db.impl_function_generic_params(impl_function_id)?;
-                let generic_args = generic_params_to_args(params, db)?;
+                let generic_args = generic_params_to_args(&params, db);
                 let impl_def_id = impl_function_id.impl_def_id(db.upcast());
                 let impl_def_params = db.impl_def_generic_params(impl_def_id)?;
-                let impl_generic_args = generic_params_to_args(impl_def_params, db)?;
+                let impl_generic_args = generic_params_to_args(&impl_def_params, db);
                 let impl_generic_function = ImplGenericFunctionWithBodyId {
                     concrete_impl_id: db.intern_concrete_impl(ConcreteImplLongId {
                         impl_def_id,
@@ -424,23 +447,25 @@ impl ConcreteFunctionWithBody {
 }
 
 /// Converts each generic param to a generic argument that passes the same generic param.
-fn generic_params_to_args(
-    params: Vec<GenericParam>,
+pub fn generic_params_to_args(
+    params: &[GenericParam],
     db: &dyn SemanticGroup,
-) -> Maybe<Vec<GenericArgumentId>> {
+) -> Vec<GenericArgumentId> {
     params
-        .into_iter()
+        .iter()
         .map(|param| match param {
-            GenericParam::Type(param) => Ok(GenericArgumentId::Type(
+            GenericParam::Type(param) => GenericArgumentId::Type(
                 db.intern_type(crate::TypeLongId::GenericParameter(param.id)),
-            )),
-            GenericParam::Const(_) => todo!("Support const generic arguments"),
-            GenericParam::Impl(param) => {
-                Ok(GenericArgumentId::Impl(ImplId::GenericParameter(param.id)))
+            ),
+            GenericParam::Const(param) => {
+                GenericArgumentId::Constant(db.intern_const_value(ConstValue::Generic(param.id)))
             }
-            GenericParam::NegImpl(_) => Ok(GenericArgumentId::NegImpl),
+            GenericParam::Impl(param) => {
+                GenericArgumentId::Impl(ImplId::GenericParameter(param.id))
+            }
+            GenericParam::NegImpl(_) => GenericArgumentId::NegImpl,
         })
-        .collect::<Maybe<Vec<_>>>()
+        .collect()
 }
 
 impl DebugWithDb<dyn SemanticGroup> for ConcreteFunctionWithBody {
@@ -604,8 +629,6 @@ impl Signature {
         function_title_id: FunctionTitleId,
         environment: &mut Environment,
     ) -> Self {
-        let return_type =
-            function_signature_return_type(diagnostics, db, resolver, signature_syntax);
         let params = function_signature_params(
             diagnostics,
             db,
@@ -614,6 +637,8 @@ impl Signature {
             function_title_id,
             environment,
         );
+        let return_type =
+            function_signature_return_type(diagnostics, db, resolver, signature_syntax);
         let implicits =
             function_signature_implicit_parameters(diagnostics, db, resolver, signature_syntax);
         let panicable = match signature_syntax.optional_no_panic(db.upcast()) {

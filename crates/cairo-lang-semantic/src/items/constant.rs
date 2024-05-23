@@ -2,18 +2,20 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    ConstantId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
+    ConstantId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
+    NamedLanguageElementId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
 use id_arena::Arena;
 use itertools::Itertools;
 use num_bigint::BigInt;
-use num_traits::{Num, Zero};
+use num_traits::{Num, ToPrimitive, Zero};
 
+use super::feature_kind::extract_allowed_features;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::structure::SemanticStructEx;
 use crate::corelib::{
@@ -25,14 +27,15 @@ use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment, ExprAndId};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
-use crate::expr::inference::InferenceId;
+use crate::expr::inference::{ConstVar, InferenceId};
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 use crate::{
-    ConcreteVariant, Expr, ExprBlock, ExprFunctionCall, ExprFunctionCallArg, ExprId,
-    ExprMemberAccess, ExprStructCtor, FunctionId, SemanticDiagnostic, TypeId,
+    semantic_object_for_id, ConcreteVariant, Expr, ExprBlock, ExprFunctionCall,
+    ExprFunctionCallArg, ExprId, ExprMemberAccess, ExprStructCtor, FunctionId, SemanticDiagnostic,
+    TypeId,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -63,22 +66,62 @@ pub struct ConstantData {
 }
 
 define_short_id!(ConstValueId, ConstValue, SemanticGroup, lookup_intern_const_value);
+semantic_object_for_id!(ConstValueId, lookup_intern_const_value, intern_const_value, ConstValue);
 impl ConstValueId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         format!("{:?}", db.lookup_intern_const_value(*self).debug(db.elongate()))
     }
+
+    /// Returns true if the const does not depend on any generics.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        db.lookup_intern_const_value(*self).is_fully_concrete()
+    }
+
+    /// Returns true if the const does not contain any inference variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        db.lookup_intern_const_value(*self).is_var_free()
+    }
 }
 
 /// A constant value.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum ConstValue {
-    Int(BigInt),
+    Int(#[dont_rewrite] BigInt),
     Struct(Vec<(TypeId, ConstValue)>),
     Enum(ConcreteVariant, Box<ConstValue>),
     NonZero(TypeId, Box<ConstValue>),
     Boxed(TypeId, Box<ConstValue>),
+    Generic(#[dont_rewrite] GenericParamId),
+    Var(ConstVar),
     /// A missing value, used in cases where the value is not known due to diagnostics.
-    Missing(DiagnosticAdded),
+    Missing(#[dont_rewrite] DiagnosticAdded),
+}
+impl ConstValue {
+    /// Returns true if the const does not depend on any generics.
+    pub fn is_fully_concrete(&self) -> bool {
+        match self {
+            ConstValue::Int(_) => true,
+            ConstValue::Struct(members) => {
+                members.iter().all(|(_, member)| member.is_fully_concrete())
+            }
+            ConstValue::Enum(_, value)
+            | ConstValue::NonZero(_, value)
+            | ConstValue::Boxed(_, value) => value.is_fully_concrete(),
+            ConstValue::Generic(_) | ConstValue::Var(_) | ConstValue::Missing(_) => false,
+        }
+    }
+
+    /// Returns true if the const does not contain any inference variables.
+    pub fn is_var_free(&self) -> bool {
+        match self {
+            ConstValue::Int(_) | ConstValue::Generic(_) | ConstValue::Missing(_) => true,
+            ConstValue::Struct(members) => members.iter().all(|(_, member)| member.is_var_free()),
+            ConstValue::Enum(_, value)
+            | ConstValue::NonZero(_, value)
+            | ConstValue::Boxed(_, value) => value.is_var_free(),
+            ConstValue::Var(_) => false,
+        }
+    }
 }
 
 /// Query implementation of [SemanticGroup::priv_constant_semantic_data].
@@ -97,6 +140,8 @@ pub fn priv_constant_semantic_data(
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(const_id));
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    resolver.data.allowed_features =
+        extract_allowed_features(db.upcast(), &const_id, &const_ast, &mut diagnostics);
 
     let const_type = resolve_type(
         db,
@@ -105,7 +150,7 @@ pub fn priv_constant_semantic_data(
         &const_ast.type_clause(syntax_db).ty(syntax_db),
     );
 
-    let environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
+    let environment = Environment::empty();
     let mut ctx = ComputationContext::new(db, &mut diagnostics, None, resolver, None, environment);
 
     let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db));
@@ -136,19 +181,21 @@ pub fn resolve_const_expr_and_evaluate(
     const_stable_ptr: SyntaxStablePtrId,
     target_type: TypeId,
 ) -> (TypeId, ConstValue) {
-    if let Err(err) = ctx.resolver.inference().conform_ty(value.ty(), target_type) {
-        err.report(ctx.diagnostics, const_stable_ptr);
+    let inference = &mut ctx.resolver.inference();
+    if let Err(err_set) = inference.conform_ty(value.ty(), target_type) {
+        inference.report_on_pending_error(err_set, ctx.diagnostics, const_stable_ptr);
     }
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
-        inference_err.report(ctx.diagnostics, stable_ptr.unwrap_or(const_stable_ptr));
-    }
-    for (_, expr) in ctx.exprs.iter_mut() {
-        *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
-    }
+    inference.finalize(ctx.diagnostics, const_stable_ptr);
 
-    // Check that the expression is a valid constant.
-    evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics)
+    for (_, expr) in ctx.exprs.iter_mut() {
+        *expr = inference.rewrite(expr.clone()).no_err();
+    }
+    match &value.expr {
+        Expr::ParamConstant(expr) => (expr.ty, db.lookup_intern_const_value(expr.const_value_id)),
+        // Check that the expression is a valid constant.
+        _ => evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics),
+    }
 }
 
 /// Cycle handling for [SemanticGroup::priv_constant_semantic_data].
@@ -217,7 +264,6 @@ pub fn evaluate_constant_expr(
             Expr::Constant(expr) => priv_constant_semantic_data(db, expr.constant_id)
                 .map(|data| data.const_value)
                 .unwrap_or_else(ConstValue::Missing),
-
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. })
                 if statements.is_empty() =>
             {
@@ -265,12 +311,28 @@ pub fn evaluate_constant_expr(
             ),
             Expr::MemberAccess(expr) => extract_const_member_access(db, exprs, expr, diagnostics)
                 .unwrap_or_else(ConstValue::Missing),
-            Expr::FixedSizeArray(expr) => ConstValue::Struct(
-                expr.items
+            Expr::FixedSizeArray(expr) => ConstValue::Struct(match &expr.items {
+                crate::FixedSizeArrayItems::Items(items) => items
                     .iter()
                     .map(|expr_id| evaluate_constant_expr(db, exprs, *expr_id, diagnostics))
                     .collect(),
-            ),
+                crate::FixedSizeArrayItems::ValueAndSize(value, count) => {
+                    let value = evaluate_constant_expr(db, exprs, *value, diagnostics).1;
+                    let count = db.lookup_intern_const_value(*count);
+                    if let ConstValue::Int(count) = count {
+                        (0..count.to_usize().unwrap())
+                            .map(|_| value.clone())
+                            .map(|value| (expr.ty, value))
+                            .collect()
+                    } else {
+                        diagnostics.report_by_ptr(
+                            expr.stable_ptr.untyped(),
+                            SemanticDiagnosticKind::UnsupportedConstant,
+                        );
+                        vec![]
+                    }
+                }
+            }),
             _ if diagnostics.diagnostics.error_count == 0 => {
                 ConstValue::Missing(diagnostics.report_by_ptr(
                     expr.stable_ptr().untyped(),

@@ -6,11 +6,11 @@ use cairo_lang_defs::ids::{
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::{
-    ImplVar, ImplVarId, Inference, InferenceId, InferenceVar, LocalImplVarId, LocalTypeVarId,
-    TypeVar,
+    ConstVar, ImplVar, ImplVarId, Inference, InferenceId, InferenceVar, LocalConstVarId,
+    LocalImplVarId, LocalTypeVarId, TypeVar,
 };
 use crate::db::SemanticGroup;
-use crate::items::constant::ConstValueId;
+use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -18,7 +18,7 @@ use crate::items::functions::{
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{ImplId, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
-use crate::substitution::{HasDb, SemanticObject, SemanticRewriter};
+use crate::substitution::{HasDb, RewriteResult, SemanticObject, SemanticRewriter};
 use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId};
 use crate::{
     add_basic_rewrites, ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId,
@@ -78,6 +78,7 @@ impl CanonicalMapping {
     fn from_to_canonic(to_canonic: VarMapping) -> CanonicalMapping {
         let from_canonic = VarMapping {
             type_var_mapping: to_canonic.type_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
+            const_var_mapping: to_canonic.const_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
             impl_var_mapping: to_canonic.impl_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
             source_inference_id: to_canonic.target_inference_id,
             target_inference_id: to_canonic.source_inference_id,
@@ -87,6 +88,11 @@ impl CanonicalMapping {
     fn from_from_canonic(from_canonic: VarMapping) -> CanonicalMapping {
         let to_canonic = VarMapping {
             type_var_mapping: from_canonic.type_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
+            const_var_mapping: from_canonic
+                .const_var_mapping
+                .iter()
+                .map(|(k, v)| (*v, *k))
+                .collect(),
             impl_var_mapping: from_canonic.impl_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
             source_inference_id: from_canonic.target_inference_id,
             target_inference_id: from_canonic.source_inference_id,
@@ -99,6 +105,7 @@ impl CanonicalMapping {
 #[derive(Debug)]
 pub struct VarMapping {
     type_var_mapping: OrderedHashMap<LocalTypeVarId, LocalTypeVarId>,
+    const_var_mapping: OrderedHashMap<LocalConstVarId, LocalConstVarId>,
     impl_var_mapping: OrderedHashMap<LocalImplVarId, LocalImplVarId>,
     source_inference_id: InferenceId,
     target_inference_id: InferenceId,
@@ -107,6 +114,7 @@ impl VarMapping {
     fn new_to_canonic(source_inference_id: InferenceId) -> Self {
         Self {
             type_var_mapping: OrderedHashMap::default(),
+            const_var_mapping: OrderedHashMap::default(),
             impl_var_mapping: OrderedHashMap::default(),
             source_inference_id,
             target_inference_id: InferenceId::Canonical,
@@ -115,6 +123,7 @@ impl VarMapping {
     fn new_from_canonic(target_inference_id: InferenceId) -> Self {
         Self {
             type_var_mapping: OrderedHashMap::default(),
+            const_var_mapping: OrderedHashMap::default(),
             impl_var_mapping: OrderedHashMap::default(),
             source_inference_id: InferenceId::Canonical,
             target_inference_id,
@@ -164,9 +173,17 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for Canonicalizer<'a> {
         self.db
     }
 }
-add_basic_rewrites!(<'a>, Canonicalizer<'a>, NoError, @exclude TypeLongId ImplId);
+add_basic_rewrites!(<'a>, Canonicalizer<'a>, NoError, @exclude TypeLongId TypeId ImplId ConstValue);
+impl<'a> SemanticRewriter<TypeId, NoError> for Canonicalizer<'a> {
+    fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, NoError> {
+        if value.is_var_free(self.db) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
 impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
-    fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, NoError> {
+    fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, NoError> {
         let TypeLongId::Var(var) = value else {
             return value.default_rewrite(self);
         };
@@ -174,15 +191,35 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
             return value.default_rewrite(self);
         }
         let next_id = LocalTypeVarId(self.to_canonic.type_var_mapping.len());
-        Ok(TypeLongId::Var(TypeVar {
+        *value = TypeLongId::Var(TypeVar {
             id: *self.to_canonic.type_var_mapping.entry(var.id).or_insert(next_id),
             inference_id: InferenceId::Canonical,
-        }))
+        });
+        Ok(RewriteResult::Modified)
+    }
+}
+impl<'a> SemanticRewriter<ConstValue, NoError> for Canonicalizer<'a> {
+    fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, NoError> {
+        let ConstValue::Var(var) = value else {
+            return value.default_rewrite(self);
+        };
+        if var.inference_id != self.to_canonic.source_inference_id {
+            return value.default_rewrite(self);
+        }
+        let next_id = LocalConstVarId(self.to_canonic.const_var_mapping.len());
+        *value = ConstValue::Var(ConstVar {
+            id: *self.to_canonic.const_var_mapping.entry(var.id).or_insert(next_id),
+            inference_id: InferenceId::Canonical,
+        });
+        Ok(RewriteResult::Modified)
     }
 }
 impl<'a> SemanticRewriter<ImplId, NoError> for Canonicalizer<'a> {
-    fn rewrite(&mut self, value: ImplId) -> Result<ImplId, NoError> {
+    fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
         let ImplId::ImplVar(var_id) = value else {
+            if value.is_var_free(self.db) {
+                return Ok(RewriteResult::NoChange);
+            }
             return value.default_rewrite(self);
         };
         let var = var_id.get(self.db);
@@ -195,7 +232,8 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Canonicalizer<'a> {
             inference_id: InferenceId::Canonical,
             ..var
         };
-        Ok(ImplId::ImplVar(var.intern(self.db)))
+        *value = ImplId::ImplVar(var.intern(self.db));
+        Ok(RewriteResult::Modified)
     }
 }
 
@@ -222,9 +260,17 @@ impl<'a, 'b> HasDb<&'a dyn SemanticGroup> for Embedder<'a, 'b> {
         self.inference.db
     }
 }
-add_basic_rewrites!(<'a,'b>, Embedder<'a,'b>, NoError, @exclude TypeLongId ImplId);
+add_basic_rewrites!(<'a,'b>, Embedder<'a,'b>, NoError, @exclude TypeLongId TypeId ImplId);
+impl<'a, 'b> SemanticRewriter<TypeId, NoError> for Embedder<'a, 'b> {
+    fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, NoError> {
+        if value.is_var_free(self.get_db()) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
 impl<'a, 'b> SemanticRewriter<TypeLongId, NoError> for Embedder<'a, 'b> {
-    fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, NoError> {
+    fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, NoError> {
         let TypeLongId::Var(var) = value else {
             return value.default_rewrite(self);
         };
@@ -236,12 +282,16 @@ impl<'a, 'b> SemanticRewriter<TypeLongId, NoError> for Embedder<'a, 'b> {
             .type_var_mapping
             .entry(var.id)
             .or_insert_with(|| self.inference.new_type_var_raw(None).id);
-        Ok(TypeLongId::Var(self.inference.type_vars[new_id.0]))
+        *value = TypeLongId::Var(self.inference.type_vars[new_id.0]);
+        Ok(RewriteResult::Modified)
     }
 }
 impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
-    fn rewrite(&mut self, value: ImplId) -> Result<ImplId, NoError> {
+    fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
         let ImplId::ImplVar(var_id) = value else {
+            if value.is_var_free(self.get_db()) {
+                return Ok(RewriteResult::NoChange);
+            }
             return value.default_rewrite(self);
         };
         let var = var_id.get(self.get_db());
@@ -252,12 +302,13 @@ impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
         let new_id = self.from_canonic.impl_var_mapping.entry(var.id).or_insert_with(|| {
             self.inference.new_impl_var_raw(var.lookup_context.clone(), concrete_trait_id, None)
         });
-        Ok(ImplId::ImplVar(self.inference.impl_vars[new_id.0].intern(self.get_db())))
+        *value = ImplId::ImplVar(self.inference.impl_vars[new_id.0].intern(self.get_db()));
+        Ok(RewriteResult::Modified)
     }
 }
 
 /// Mapper rewriter. Maps variables according to a given [VarMapping].
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct MapperError(pub InferenceVar);
 struct Mapper<'db> {
     db: &'db dyn SemanticGroup,
@@ -282,9 +333,17 @@ impl<'db> HasDb<&'db dyn SemanticGroup> for Mapper<'db> {
         self.db
     }
 }
-add_basic_rewrites!(<'a>, Mapper<'a>, MapperError, @exclude TypeLongId ImplId);
+add_basic_rewrites!(<'a>, Mapper<'a>, MapperError, @exclude TypeLongId TypeId ImplId ConstValue);
+impl<'db> SemanticRewriter<TypeId, MapperError> for Mapper<'db> {
+    fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, MapperError> {
+        if value.is_var_free(self.db) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
 impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
-    fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, MapperError> {
+    fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, MapperError> {
         let TypeLongId::Var(var) = value else {
             return value.default_rewrite(self);
         };
@@ -294,12 +353,32 @@ impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
             .get(&var.id)
             .copied()
             .ok_or(MapperError(InferenceVar::Type(var.id)))?;
-        Ok(TypeLongId::Var(TypeVar { id, inference_id: self.mapping.target_inference_id }))
+        *value = TypeLongId::Var(TypeVar { id, inference_id: self.mapping.target_inference_id });
+        Ok(RewriteResult::Modified)
     }
 }
+impl<'db> SemanticRewriter<ConstValue, MapperError> for Mapper<'db> {
+    fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, MapperError> {
+        let ConstValue::Var(var) = value else {
+            return value.default_rewrite(self);
+        };
+        let id = self
+            .mapping
+            .const_var_mapping
+            .get(&var.id)
+            .copied()
+            .ok_or(MapperError(InferenceVar::Const(var.id)))?;
+        *value = ConstValue::Var(ConstVar { id, inference_id: self.mapping.target_inference_id });
+        Ok(RewriteResult::Modified)
+    }
+}
+
 impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {
-    fn rewrite(&mut self, value: ImplId) -> Result<ImplId, MapperError> {
+    fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, MapperError> {
         let ImplId::ImplVar(var_id) = value else {
+            if value.is_var_free(self.db) {
+                return Ok(RewriteResult::NoChange);
+            }
             return value.default_rewrite(self);
         };
         let var = var_id.get(self.get_db());
@@ -310,6 +389,8 @@ impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {
             .copied()
             .ok_or(MapperError(InferenceVar::Impl(var.id)))?;
         let var = ImplVar { id, inference_id: self.mapping.target_inference_id, ..var };
-        Ok(ImplId::ImplVar(var.intern(self.get_db())))
+
+        *value = ImplId::ImplVar(var.intern(self.get_db()));
+        Ok(RewriteResult::Modified)
     }
 }

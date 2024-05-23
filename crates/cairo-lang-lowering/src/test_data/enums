@@ -6,7 +6,10 @@ test_function_lowering
 //! > function
 fn foo(a: felt252) -> MyEnum {
     immovable(true);
-    MyEnum::B({(); 5})
+    MyEnum::B({
+        ();
+        5
+    })
 }
 
 //! > function_name
@@ -14,13 +17,15 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: (),
-  B: felt252,
-  C: Box::<((), felt252)>,
+    A: (),
+    B: felt252,
+    C: Box::<((), felt252)>,
 }
 
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > semantic_diagnostics
 

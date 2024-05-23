@@ -10,6 +10,8 @@ use core::ops::Index;
 #[cfg(feature = "std")]
 pub use std::collections::hash_map::Entry;
 #[cfg(feature = "std")]
+use std::collections::hash_map::OccupiedEntry;
+#[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
@@ -77,10 +79,10 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     ///
     /// The key may be any borrowed form of the map's key type, but [`Hash`] and [`Eq`] on the
     /// borrowed form *must* match those for the key type.
-    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&Value>
+    pub fn get<Q>(&self, key: &Q) -> Option<&Value>
     where
         Key: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.0.get(key)
     }
@@ -89,10 +91,10 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     ///
     /// The key may be any borrowed form of the map's key type, but [`Hash`] and [`Eq`] on the
     /// borrowed form *must* match those for the key type.
-    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut Value>
+    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut Value>
     where
         Key: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.0.get_mut(key)
     }
@@ -113,10 +115,10 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     ///
     /// The key may be any borrowed form of the map's key type, but Hash and Eq on the borrowed form
     /// must match those for the key type.
-    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<Value>
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<Value>
     where
         Key: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.0.remove(key)
     }
@@ -189,8 +191,8 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
             |mut acc, (key, value)| {
                 let target_key = mapping_function(key);
                 match acc.entry(target_key) {
-                    Entry::Occupied(mut occupied) => {
-                        let old_target_value = occupied.get_mut();
+                    Entry::Occupied(occupied) => {
+                        let old_target_value = occupied.into_mut();
                         let new_target_value = reduce_function(old_target_value, value);
                         *old_target_value = new_target_value;
                     }
@@ -279,6 +281,28 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
                 )
                 .collect(),
         )
+    }
+
+    #[cfg(feature = "std")]
+    /// Merges the map with another map. If a key is present in both maps, the given handler
+    /// function is used to combine the values.
+    pub fn merge<HandleDuplicate>(&mut self, other: &Self, handle_duplicate: HandleDuplicate)
+    where
+        BH: Clone,
+        HandleDuplicate: Fn(OccupiedEntry<'_, Key, Value>, &Value),
+        Key: Clone,
+        Value: Clone,
+    {
+        for (key, value) in &other.0 {
+            match self.0.entry(key.clone()) {
+                Entry::Occupied(e) => {
+                    handle_duplicate(e, value);
+                }
+                Entry::Vacant(e) => {
+                    e.insert(value.clone());
+                }
+            }
+        }
     }
 }
 

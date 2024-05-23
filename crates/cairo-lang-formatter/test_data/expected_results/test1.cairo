@@ -33,6 +33,9 @@ fn bar<T>(x: T) -> T {
     let x: T = 1;
     let x: [u32; 3] = [1, 2, 3];
     let [a, b, c] = x;
+    let [a, b, c] = f(
+        "very long string that should not cause a break in the fixed size array pattern"
+    );
 }
 
 
@@ -62,3 +65,8 @@ fn if_let_test() {
         if_let_block_content();
     }
 }
+
+
+impl DropMyImplCoupon<T> of Drop<MyImpl::<T>::trait_fn::Coupon>;
+impl DropMyImplCoupon<T> of Drop<MyImpl::<T>::trait_fn>;
+impl DropMyImplCoupon<T> of Drop<MyImpl<T>>;

@@ -7,6 +7,7 @@ interface ConfigProps {
   enableScarb: boolean;
   scarbPath: string;
   corelibPath: string;
+  languageServerExtraEnv: null | Record<string, string | number>;
 }
 
 export class Config {

@@ -106,11 +106,7 @@ pub fn find_variable_lifetime(
 ) -> Maybe<VariableLifetimeResult> {
     lowered_function.blocks.has_root()?;
     let context = VariableLifetimeContext { local_vars, res: VariableLifetimeResult::default() };
-    let mut analysis = BackAnalysis {
-        lowered: lowered_function,
-        block_info: Default::default(),
-        analyzer: context,
-    };
+    let mut analysis = BackAnalysis::new(lowered_function, context);
 
     let mut root_demands = analysis.get_root_info();
 
@@ -238,7 +234,7 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
         &mut self,
         statement_location: StatementLocation,
         match_info: &lowering::MatchInfo,
-        infos: &[Self::Info],
+        infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .map(|(arm, demand)| {

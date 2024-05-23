@@ -238,8 +238,8 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
                 continue;
             }
             match self.tracking_info.entry(target) {
-                Entry::Occupied(mut e) => {
-                    e.get_mut().ap_change = e.get().ap_change.max(base_info.ap_change);
+                Entry::Occupied(e) => {
+                    e.into_mut().ap_change = e.get().ap_change.max(base_info.ap_change);
                 }
                 Entry::Vacant(e) => {
                     e.insert(base_info);

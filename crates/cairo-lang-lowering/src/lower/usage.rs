@@ -132,11 +132,16 @@ impl BlockUsages {
                     self.handle_expr(function_body, *expr_id, current);
                 }
             }
-            Expr::FixedSizeArray(expr) => {
-                for expr_id in &expr.items {
-                    self.handle_expr(function_body, *expr_id, current);
+            Expr::FixedSizeArray(expr) => match &expr.items {
+                semantic::FixedSizeArrayItems::Items(items) => {
+                    for expr_id in items {
+                        self.handle_expr(function_body, *expr_id, current);
+                    }
                 }
-            }
+                semantic::FixedSizeArrayItems::ValueAndSize(value, _) => {
+                    self.handle_expr(function_body, *value, current);
+                }
+            },
             Expr::Snapshot(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Desnap(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Assignment(expr) => {
@@ -266,6 +271,7 @@ impl BlockUsages {
             }
             Expr::PropagateError(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Constant(_) => {}
+            Expr::ParamConstant(_) => {}
             Expr::Missing(_) => {}
         }
     }

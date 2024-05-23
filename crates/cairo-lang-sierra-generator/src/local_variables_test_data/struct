@@ -10,9 +10,9 @@ foo
 fn foo(x: felt252) -> felt252 {
     let x2 = immovable(x + x);
     revoke_ap();
-    let s = immovable(MyStruct{a: x, b: x2});
-    let _s2 = immovable(MyStruct{a: s.a, b: 0});
-    let s3 = immovable(MyStruct{a: x, b: 1});
+    let s = immovable(MyStruct { a: x, b: x2 });
+    let _s2 = immovable(MyStruct { a: s.a, b: 0 });
+    let s3 = immovable(MyStruct { a: x, b: 1 });
     revoke_ap();
     s3.a
 }
@@ -28,17 +28,19 @@ struct MyStruct {
     b: felt252,
 }
 
-impl MyStructDrop of Drop::<MyStruct>;
+impl MyStructDrop of Drop<MyStruct>;
 
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > lowering_format
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v17: core::felt252) <- core::felt252_add(v0, v0)
-  (v2: core::felt252) <- test::immovable::<core::felt252>(v17)
+  (v1: core::felt252) <- core::felt252_add(v0, v0)
+  (v2: core::felt252) <- test::immovable::<core::felt252>(v1)
   (v3: core::felt252) <- test::revoke_ap()
   (v4: test::MyStruct) <- struct_construct(v0, v2)
   (v5: test::MyStruct) <- test::immovable::<test::MyStruct>(v4)
@@ -69,9 +71,9 @@ foo
 
 //! > function_code
 fn foo() -> felt252 {
-  let a = immovable(MyStruct { a: 12 }.a);
-  internal::revoke_ap_tracking();
-  a
+    let a = immovable(MyStruct { a: 12 }.a);
+    internal::revoke_ap_tracking();
+    a
 }
 
 //! > module_code
@@ -79,20 +81,22 @@ struct MyStruct {
     a: felt252,
 }
 
-impl MyStructDrop of Drop::<MyStruct>;
+impl MyStructDrop of Drop<MyStruct>;
 
 #[inline(never)]
-fn immovable<T>(t: T) -> T { t }
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > lowering_format
 Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 12
-  (v3: core::felt252) <- test::immovable::<core::felt252>(v0)
+  (v1: core::felt252) <- test::immovable::<core::felt252>(v0)
   () <- core::internal::revoke_ap_tracking()
 End:
-  Return(v3)
+  Return(v1)
 
 //! > local_variables
-v3
+v1

@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
 

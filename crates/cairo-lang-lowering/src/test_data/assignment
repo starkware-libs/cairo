@@ -6,7 +6,12 @@ test_function_lowering
 //! > function
 fn foo(a: bool) -> felt252 {
     let mut x = 2;
-    if a { x = 3; } else { let mut y = 4; y = 5; }
+    if a {
+        x = 3;
+    } else {
+        let mut y = 4;
+        y = 5;
+    }
     x
 }
 
@@ -25,18 +30,18 @@ blk0 (root):
 Statements:
 End:
   Match(match_enum(v0) {
-    bool::False(v4) => blk1,
+    bool::False(v1) => blk1,
     bool::True(v2) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt252) <- 2
+  (v3: core::felt252) <- 2
 End:
-  Return(v1)
+  Return(v3)
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 3
+  (v4: core::felt252) <- 3
 End:
-  Return(v3)
+  Return(v4)

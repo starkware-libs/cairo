@@ -23,12 +23,11 @@ use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 
-// TODO(Gil): Consider returning a 'Statement' instead of a 'StatementWithLocation'.
-pub fn simple_statement(
+pub fn simple_basic_statement(
     libfunc_id: ConcreteLibfuncId,
     args: &[cairo_lang_sierra::ids::VarId],
     results: &[cairo_lang_sierra::ids::VarId],
-) -> pre_sierra::StatementWithLocation {
+) -> pre_sierra::Statement {
     pre_sierra::Statement::Sierra(program::GenStatement::Invocation(program::GenInvocation {
         libfunc_id,
         args: args.into(),
@@ -37,13 +36,20 @@ pub fn simple_statement(
             results: results.into(),
         }],
     }))
-    .into_statement_without_location()
+}
+
+pub fn simple_statement(
+    libfunc_id: ConcreteLibfuncId,
+    args: &[cairo_lang_sierra::ids::VarId],
+    results: &[cairo_lang_sierra::ids::VarId],
+) -> pre_sierra::StatementWithLocation {
+    simple_basic_statement(libfunc_id, args, results).into_statement_without_location()
 }
 
 pub fn jump_statement(
     jump: ConcreteLibfuncId,
     label: pre_sierra::LabelId,
-) -> pre_sierra::StatementWithLocation {
+) -> pre_sierra::Statement {
     pre_sierra::Statement::Sierra(program::GenStatement::Invocation(program::GenInvocation {
         libfunc_id: jump,
         args: vec![],
@@ -52,14 +58,10 @@ pub fn jump_statement(
             results: vec![],
         }],
     }))
-    .into_statement_without_location()
 }
 
-pub fn return_statement(
-    res: Vec<cairo_lang_sierra::ids::VarId>,
-) -> pre_sierra::StatementWithLocation {
+pub fn return_statement(res: Vec<cairo_lang_sierra::ids::VarId>) -> pre_sierra::Statement {
     pre_sierra::Statement::Sierra(program::GenStatement::Return(res))
-        .into_statement_without_location()
 }
 
 pub fn get_libfunc_id_with_generic_arg(
@@ -211,7 +213,9 @@ fn const_type_id(
                 ConstValue::Boxed(_, _) => {
                     unreachable!("Should be handled by `const_libfunc_id_by_type`.")
                 }
-                ConstValue::Missing(_) => unreachable!("Should be caught by the lowering."),
+                ConstValue::Generic(_) | ConstValue::Var(_) | ConstValue::Missing(_) => {
+                    unreachable!("Should be caught by the lowering.")
+                }
             },
         }
         .into(),
@@ -383,23 +387,26 @@ pub fn get_concrete_libfunc_id(
 
     let mut generic_args = vec![];
     for generic_arg in &concrete_function.generic_args {
-        generic_args.push(match generic_arg {
+        match generic_arg {
             semantic::GenericArgumentId::Type(ty) => {
                 // TODO(lior): How should the following unwrap() be handled?
-                GenericArg::Type(db.get_concrete_type_id(*ty).unwrap())
+                generic_args.push(GenericArg::Type(db.get_concrete_type_id(*ty).unwrap()))
             }
-            semantic::GenericArgumentId::Constant(value_id) => GenericArg::Value(extract_matches!(
-                db.lookup_intern_const_value(*value_id),
-                ConstValue::Int,
-                "Only integer constants are supported."
-            )),
-            semantic::GenericArgumentId::Impl(_) => {
-                panic!("Extern function with impl generics are not supported.")
+            semantic::GenericArgumentId::Constant(value_id) => {
+                generic_args.push(GenericArg::Value(extract_matches!(
+                    db.lookup_intern_const_value(*value_id),
+                    ConstValue::Int,
+                    "Only integer constants are supported."
+                )))
             }
-            semantic::GenericArgumentId::NegImpl => {
-                panic!("Extern function with neg impl generics are not supported.")
+            semantic::GenericArgumentId::Impl(_) | semantic::GenericArgumentId::NegImpl => {
+                // Everything after an impl generic is ignored as it does not exist in Sierra.
+                // This may still be used in high level code for getting type information that is
+                // otherwise concluded by the sierra-to-casm compiler, or addition of `where` clause
+                // style blocks.
+                break;
             }
-        });
+        };
     }
 
     (None, generic_libfunc_id(db, extern_id, generic_args))

@@ -35,11 +35,11 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(orig: @A) -> @A{
-  bar(orig.a, orig.b);
-  let A {a, b} = orig;
-  bar(a, b);
-  orig
+fn foo(orig: @A) -> @A {
+    bar(orig.a, orig.b);
+    let A { a, b } = orig;
+    bar(a, b);
+    orig
 }
 
 //! > function_name
@@ -51,8 +51,7 @@ struct A {
     b: felt252,
 }
 #[inline(never)]
-fn bar(a: @Array::<felt252>, b: @felt252) {
-}
+fn bar(a: @Array::<felt252>, b: @felt252) {}
 
 //! > semantic_diagnostics
 
@@ -65,8 +64,8 @@ Statements:
   (v1: @core::array::Array::<core::felt252>, v2: @core::felt252) <- struct_destructure(v0)
   (v3: @core::array::Array::<core::felt252>, v4: @core::felt252) <- struct_destructure(v0)
   () <- test::bar(v1, v4)
-  (v6: @core::array::Array::<core::felt252>, v7: @core::felt252) <- struct_destructure(v0)
-  () <- test::bar(v6, v7)
+  (v5: @core::array::Array::<core::felt252>, v6: @core::felt252) <- struct_destructure(v0)
+  () <- test::bar(v5, v6)
 End:
   Return(v0)
 
@@ -79,12 +78,12 @@ test_function_lowering
 
 //! > function
 fn foo(orig: @A) -> @A {
-  match orig {
-    A::A(a) => bar0(a),
-    A::B(b) => bar1(b),
-    A::C((c, d)) => bar2(c, d),
-  }
-  orig
+    match orig {
+        A::A(a) => bar0(a),
+        A::B(b) => bar1(b),
+        A::C((c, d)) => bar2(c, d),
+    }
+    orig
 }
 
 //! > function_name
@@ -97,14 +96,11 @@ enum A {
     C: (felt252, Array::<felt252>),
 }
 #[inline(never)]
-fn bar0(a: @Array::<felt252>) {
-}
+fn bar0(a: @Array::<felt252>) {}
 #[inline(never)]
-fn bar1(b: @felt252) {
-}
+fn bar1(b: @felt252) {}
 #[inline(never)]
-fn bar2(c: @felt252, d: @Array::<felt252>) {
-}
+fn bar2(c: @felt252, d: @Array::<felt252>) {}
 
 //! > semantic_diagnostics
 
@@ -149,7 +145,7 @@ test_function_lowering
 
 //! > function
 fn foo(value: @felt252) -> felt252 {
-  *value
+    *value
 }
 
 //! > function_name
@@ -178,7 +174,7 @@ test_function_lowering
 
 //! > function
 fn foo(value: @Array::<felt252>) -> Array::<felt252> {
-  *value
+    *value
 }
 
 //! > function_name
@@ -190,9 +186,9 @@ foo
 
 //! > lowering_diagnostics
 error: Cannot desnap a non copyable type.
- --> lib.cairo:2:3
-  *value
-  ^****^
+ --> lib.cairo:2:5
+    *value
+    ^****^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
 
 //! > lowering_flat
@@ -207,8 +203,8 @@ test_function_lowering
 
 //! > function
 fn foo(a: A) -> usize {
-  bar(@a.b);
-  a.b
+    bar(@a.b);
+    a.b
 }
 
 //! > function_name
@@ -216,7 +212,7 @@ foo
 
 //! > module_code
 struct A {
-  b: usize,
+    b: usize,
 }
 extern fn bar(x: @usize) nopanic;
 

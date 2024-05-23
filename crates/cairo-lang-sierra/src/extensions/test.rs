@@ -242,10 +242,10 @@ fn find_type_specialization(
 #[test_case("u128_const", vec![value_arg(8)] => Ok(()); "u128_const<8>")]
 #[test_case("u128_const", vec![] => Err(UnsupportedGenericArg); "u128_const")]
 #[test_case("storage_base_address_const", vec![value_arg(8)] => Ok(()); "storage_base_address_const<8>")]
-#[test_case("storage_base_address_const", vec![] => Err(UnsupportedGenericArg);
+#[test_case("storage_base_address_const", vec![] => Err(WrongNumberOfGenericArgs);
 "storage_base_address_const")]
 #[test_case("contract_address_const", vec![value_arg(8)] => Ok(()); "contract_address_const<8>")]
-#[test_case("contract_address_const", vec![] => Err(UnsupportedGenericArg);
+#[test_case("contract_address_const", vec![] => Err(WrongNumberOfGenericArgs);
 "contract_address_const")]
 #[test_case("drop", vec![type_arg("u128")] => Ok(()); "drop<u128>")]
 #[test_case("drop", vec![] => Err(WrongNumberOfGenericArgs); "drop<>")]

@@ -30,9 +30,9 @@ fn keccak_add_u256_le(ref keccak_input: Array::<u64>, v: u256) {
 }
 
 
-// Computes the keccak256 of multiple u256 values.
-// The input values are interpreted as little-endian.
-// The 32-byte result is represented as a little-endian u256.
+/// Computes the keccak256 of multiple u256 values.
+/// The input values are interpreted as little-endian.
+/// The 32-byte result is represented as a little-endian u256.
 pub fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = Default::default();
 
@@ -56,9 +56,9 @@ fn keccak_add_u256_be(ref keccak_input: Array::<u64>, v: u256) {
     keccak_input.append(high);
 }
 
-// Computes the keccak256 of multiple u256 values.
-// The input values are interpreted as big-endian.
-// The 32-byte result is represented as a little-endian u256.
+/// Computes the keccak256 of multiple u256 values.
+/// The input values are interpreted as big-endian.
+/// The 32-byte result is represented as a little-endian u256.
 pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = Default::default();
 
@@ -73,15 +73,15 @@ pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
     starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
 }
 
-// Computes the keccak of `input` + `last_input_num_bytes` LSB bytes of `last_input_word`.
-// To use this function, split the input into words of 64 bits (little endian).
-// For example, to compute keccak('Hello world!'), use:
-//   inputs = [8031924123371070792, 560229490]
-// where:
-//   8031924123371070792 == int.from_bytes(b'Hello wo', 'little')
-//   560229490 == int.from_bytes(b'rld!', 'little')
-//
-// Returns the hash as a little endian u256.
+/// Computes the keccak of `input` + `last_input_num_bytes` LSB bytes of `last_input_word`.
+/// To use this function, split the input into words of 64 bits (little endian).
+/// For example, to compute keccak('Hello world!'), use:
+///   inputs = [8031924123371070792, 560229490]
+/// where:
+///   8031924123371070792 == int.from_bytes(b'Hello wo', 'little')
+///   560229490 == int.from_bytes(b'rld!', 'little')
+///
+/// Returns the hash as a little endian u256.
 pub fn cairo_keccak(
     ref input: Array<u64>, last_input_word: u64, last_input_num_bytes: usize
 ) -> u256 {
@@ -89,8 +89,8 @@ pub fn cairo_keccak(
     starknet::syscalls::keccak_syscall(input.span()).unwrap_syscall()
 }
 
-// The padding in keccak256 is "1 0* 1".
-// `last_input_num_bytes` (0-7) is the number of bytes in the last u64 input - `last_input_word`.
+/// The padding in keccak256 is "1 0* 1".
+/// `last_input_num_bytes` (0-7) is the number of bytes in the last u64 input - `last_input_word`.
 fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes: usize) {
     let words_divisor = KECCAK_FULL_RATE_IN_U64S.try_into().unwrap();
     // `last_block_num_full_words` is in range [0, KECCAK_FULL_RATE_IN_U64S - 1]
@@ -137,7 +137,7 @@ fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes
     finalize_padding(ref input, KECCAK_FULL_RATE_IN_U64S - 1 - last_block_num_full_words);
 }
 
-// Finalize the padding by appending "0* 1".
+/// Finalize the padding by appending "0* 1".
 fn finalize_padding(ref input: Array<u64>, num_padding_words: u32) {
     if (num_padding_words == 1) {
         input.append(0x8000000000000000);

@@ -26,13 +26,20 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         return;
     }
     let ctx = ReturnOptimizerContext { db, lowered, fixes: vec![] };
-    let mut analysis =
-        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
-    analysis.get_root_info();
-    let ctx = analysis.analyzer;
+    let mut analysis = BackAnalysis::new(lowered, ctx);
+    let info = analysis.get_root_info();
+    let mut ctx = analysis.analyzer;
 
-    for FixInfo { block_id, return_info } in ctx.fixes.into_iter() {
+    if info.early_return_possible() {
+        ctx.fixes.push(FixInfo {
+            location: (BlockId::root(), 0),
+            return_info: info.opt_return_info.clone().unwrap(),
+        });
+    }
+
+    for FixInfo { location: (block_id, statement_idx), return_info } in ctx.fixes.into_iter() {
         let block = &mut lowered.blocks[block_id];
+        block.statements.truncate(statement_idx);
         block.end = FlatBlockEnd::Return(
             return_info
                 .returned_vars
@@ -71,7 +78,6 @@ impl ReturnOptimizerContext<'_> {
     /// Returns `Option<ReturnInfo>` rather then `AnalyzerInfo` to simplify early return.
     fn try_merge_match(
         &mut self,
-        (block_id, _statement_idx): StatementLocation,
         match_info: &MatchInfo,
         infos: &[AnalyzerInfo],
     ) -> Option<ReturnInfo> {
@@ -106,16 +112,14 @@ impl ReturnOptimizerContext<'_> {
             }
         }
 
-        let last_info = opt_last_info.unwrap();
-        self.fixes.push(FixInfo { block_id, return_info: last_info.clone() });
-        Some(last_info)
+        Some(opt_last_info.unwrap())
     }
 }
 
 /// Information about a fix that should be applied to the lowering.
 pub struct FixInfo {
-    /// a block id of a block that can be fixed to return `return_vars`.
-    block_id: BlockId,
+    /// A location where we `return_vars` can be returned.
+    location: StatementLocation,
     /// The return info at the fix location.
     return_info: ReturnInfo,
 }
@@ -412,9 +416,11 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
-        _statement_location: StatementLocation,
+        (block_idx, statement_idx): StatementLocation,
         stmt: &'a Statement,
     ) {
+        let opt_orig_info = if info.early_return_possible() { Some(info.clone()) } else { None };
+
         match stmt {
             Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
                 // Note that the ValueInfo::StructConstruct can only be removed by
@@ -441,12 +447,21 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
             }
             _ => info.invalidate(),
         }
+
+        if let Some(return_info) = opt_orig_info {
+            if !info.early_return_possible() {
+                self.fixes.push(FixInfo {
+                    location: (block_idx, statement_idx + 1),
+                    return_info: return_info.opt_return_info.unwrap(),
+                });
+            }
+        }
     }
 
     fn visit_goto(
         &mut self,
         info: &mut Self::Info,
-        (block_id, _statement_idx): StatementLocation,
+        _statement_location: StatementLocation,
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
@@ -457,22 +472,29 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 ValueInfo::Var(*var_usage)
             }
         });
-
-        if info.early_return_possible() {
-            self.fixes
-                .push(FixInfo { block_id, return_info: info.opt_return_info.clone().unwrap() });
-        }
     }
 
     fn merge_match(
         &mut self,
-        (block_id, _statement_idx): StatementLocation,
+        _statement_location: StatementLocation,
         match_info: &'a MatchInfo,
-        infos: &[Self::Info],
+        infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
-        Self::Info {
-            opt_return_info: self.try_merge_match((block_id, _statement_idx), match_info, infos),
+        let infos: Vec<_> = infos.collect();
+        let opt_return_info = self.try_merge_match(match_info, &infos);
+        if opt_return_info.is_none() {
+            // If the optimization is not applicable before the match, check if it is applicable
+            // in the arms.
+            for (arm, info) in match_info.arms().iter().zip(infos) {
+                if info.early_return_possible() {
+                    self.fixes.push(FixInfo {
+                        location: (arm.block_id, 0),
+                        return_info: info.opt_return_info.unwrap(),
+                    });
+                }
+            }
         }
+        Self::Info { opt_return_info }
     }
 
     fn info_from_return(

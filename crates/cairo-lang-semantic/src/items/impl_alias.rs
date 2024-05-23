@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, LanguageElementId, LookupItem
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 
 use super::generics::{semantic_generic_params, GenericParamsData};
@@ -63,12 +63,11 @@ pub fn priv_impl_alias_semantic_data(
     });
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(impl_alias_ast.stable_ptr().untyped()));
-    }
-    let resolved_impl = resolver.inference().rewrite(resolved_impl).no_err();
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr().untyped());
+
+    let resolved_impl = inference.rewrite(resolved_impl).no_err();
+    let generic_params = inference.rewrite(generic_params).no_err();
 
     let attributes = impl_alias_ast.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
@@ -163,10 +162,10 @@ pub fn impl_alias_generic_params_data(
         module_file_id,
         &impl_alias_ast.generic_params(syntax_db),
     )?;
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, impl_alias_ast.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let inference = &mut resolver.inference();
+    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr().untyped());
+
+    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }

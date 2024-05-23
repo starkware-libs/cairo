@@ -27,7 +27,7 @@ pub fn get_concrete_type_id(
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
     match db.lookup_intern_type(type_id) {
         semantic::TypeLongId::Snapshot(inner_ty)
-            if db.type_info(ImplLookupContext::default(), inner_ty)?.duplicatable.is_ok() =>
+            if db.type_info(ImplLookupContext::default(), inner_ty)?.copyable.is_ok() =>
         {
             db.get_concrete_type_id(inner_ty)
         }
@@ -36,6 +36,13 @@ pub fn get_concrete_type_id(
         ) if db.is_self_referential(type_id)? => {
             Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::CycleBreaker(type_id)))
         }
+
+        semantic::TypeLongId::Concrete(concrete_type_id)
+            if concrete_type_id.is_phantom(db.upcast())? =>
+        {
+            Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Phantom(type_id)))
+        }
+
         _ => Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
             db.get_concrete_long_type_id(type_id)?,
         ))),

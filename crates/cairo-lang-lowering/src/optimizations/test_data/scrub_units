@@ -1,19 +1,18 @@
-//! > Test return optimizer simple scenario.
+//! > Test test_scrub_units simple scenario.
 
 //! > test_runner_name
-test_return_optimizer
+test_scrub_units
 
 //! > function
 fn foo(a: Option<()>) {
-  bar::<(), MyDestruct>(a.expect('Should be some.'))
+    bar::<(), MyDestruct>(a.expect('Should be some.'))
 }
 
 //! > function_name
 foo
 
 //! > module_code
-fn bar<T, +Destruct<T>>(a: T) {
-}
+fn bar<T, +Destruct<T>>(a: T) {}
 
 
 pub impl MyDestruct of Destruct<()> {

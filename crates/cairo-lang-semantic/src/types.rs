@@ -1,17 +1,18 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, StructId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplTypeDefId, ModuleFileId,
+    NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
-use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
-use cairo_lang_syntax::attribute::structured::Attribute;
+use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, PHANTOM_ATTR};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::Zero;
+use smol_str::SmolStr;
 
 use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
@@ -22,7 +23,7 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
-use crate::expr::inference::{InferenceData, InferenceId, InferenceResult, TypeVar};
+use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
@@ -89,16 +90,12 @@ impl TypeId {
 
     /// Returns true if the type does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
-        match db.lookup_intern_type(*self) {
-            TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
-            TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
-            TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
-            TypeLongId::GenericParameter(_) => false,
-            TypeLongId::Var(_) => false,
-            TypeLongId::Missing(_) => false,
-            TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
-            TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
-        }
+        db.priv_type_is_fully_concrete(*self)
+    }
+
+    /// Returns true if the type does not contain any inference variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        db.priv_type_is_var_free(*self)
     }
 }
 impl TypeLongId {
@@ -222,20 +219,22 @@ impl ConcreteTypeId {
             )
         }
     }
+
+    /// Returns whether the type has the `#[phantom]` attribute.
+    pub fn is_phantom(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
+        match self {
+            ConcreteTypeId::Struct(id) => id.has_attr(db, PHANTOM_ATTR),
+            ConcreteTypeId::Enum(id) => id.has_attr(db, PHANTOM_ATTR),
+            ConcreteTypeId::Extern(id) => id.has_attr(db, PHANTOM_ATTR),
+        }
+    }
+
     /// Returns whether the type has the `#[must_use]` attribute.
     pub fn is_must_use(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
         match self {
             ConcreteTypeId::Struct(id) => id.has_attr(db, MUST_USE_ATTR),
             ConcreteTypeId::Enum(id) => id.has_attr(db, MUST_USE_ATTR),
-            ConcreteTypeId::Extern(_) => Ok(false),
-        }
-    }
-    /// Returns the attribute if a type has the `#[unstable(feature: "some-string")]` attribute.
-    pub fn unstable_attr(&self, db: &dyn SemanticGroup) -> Maybe<Option<Attribute>> {
-        match self {
-            ConcreteTypeId::Struct(id) => id.find_attr(db, UNSTABLE_ATTR),
-            ConcreteTypeId::Enum(id) => id.find_attr(db, UNSTABLE_ATTR),
-            ConcreteTypeId::Extern(_) => Ok(None),
+            ConcreteTypeId::Extern(id) => id.has_attr(db, MUST_USE_ATTR),
         }
     }
     /// Returns true if the type does not depend on any generics.
@@ -243,6 +242,10 @@ impl ConcreteTypeId {
         self.generic_args(db)
             .iter()
             .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
+    }
+    /// Returns true if the type does not contain any inference variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        self.generic_args(db).iter().all(|generic_argument_id| generic_argument_id.is_var_free(db))
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteTypeId {
@@ -335,6 +338,52 @@ semantic_object_for_id!(
 impl ConcreteExternTypeId {
     pub fn extern_type_id(&self, db: &dyn SemanticGroup) -> ExternTypeId {
         db.lookup_intern_concrete_extern_type(*self).extern_type_id
+    }
+}
+
+/// An impl item of kind type.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct ImplTypeId {
+    /// The impl the item type is in.
+    impl_id: ImplId,
+    /// The trait type this impl type "implements".
+    ty: TraitTypeId,
+}
+impl ImplTypeId {
+    /// Creates a new impl type id. For an impl type of a concrete impl, asserts that the trait
+    /// type belongs to the same trait that the impl implements (panics if not).
+    pub fn new(impl_id: ImplId, ty: TraitTypeId, db: &dyn SemanticGroup) -> Self {
+        if let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_id {
+            let impl_def_id = concrete_impl.impl_def_id(db);
+            assert_eq!(Ok(ty.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
+        }
+
+        ImplTypeId { impl_id, ty }
+    }
+    pub fn impl_id(&self) -> ImplId {
+        self.impl_id
+    }
+    pub fn ty(&self) -> TraitTypeId {
+        self.ty
+    }
+    /// Gets the impl type def (language element), if `self.impl_id` is of a concrete impl.
+    pub fn impl_type_def(&self, db: &dyn SemanticGroup) -> Maybe<Option<ImplTypeDefId>> {
+        match self.impl_id {
+            ImplId::Concrete(concrete_impl_id) => concrete_impl_id.get_impl_type_def(db, self.ty),
+            ImplId::GenericParameter(_) | ImplId::ImplVar(_) => Ok(None),
+        }
+    }
+    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("{}::{}", self.impl_id.name(db.upcast()), self.ty.name(db.upcast())).into()
+    }
+}
+impl DebugWithDb<dyn SemanticGroup> for ImplTypeId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
     }
 }
 
@@ -444,6 +493,7 @@ pub fn extract_fixed_size_array_size(
             );
             match &const_value {
                 ConstValue::Int(_) => Ok(Some(db.intern_const_value(const_value))),
+                ConstValue::Generic(_) => Ok(Some(db.intern_const_value(const_value))),
 
                 _ => Err(diagnostics.report(syntax, FixedSizeArrayNonNumericSize)),
             }
@@ -478,10 +528,10 @@ pub fn generic_type_generic_params(
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypeInfo {
-    pub droppable: InferenceResult<ImplId>,
-    pub duplicatable: InferenceResult<ImplId>,
-    pub destruct_impl: InferenceResult<ImplId>,
-    pub panic_destruct_impl: InferenceResult<ImplId>,
+    pub droppable: Result<ImplId, InferenceError>,
+    pub copyable: Result<ImplId, InferenceError>,
+    pub destruct_impl: Result<ImplId, InferenceError>,
+    pub panic_destruct_impl: Result<ImplId, InferenceError>,
 }
 
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
@@ -490,12 +540,22 @@ pub fn get_impl_at_context(
     lookup_context: ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: Option<SyntaxStablePtrId>,
-) -> InferenceResult<ImplId> {
+) -> Result<ImplId, InferenceError> {
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
-    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
-    if let Some((_, err)) = inference.finalize() {
-        return Err(err);
+    // It's ok to consume the errors without reporting as this is a helper function meant to find an
+    // impl and return it, but it's ok if the impl can't be found.
+    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context).map_err(
+        |err_set| {
+            inference
+                .consume_error_without_reporting(err_set)
+                .expect("Error couldn't be already consumed")
+        },
+    )?;
+    if let Err((err_set, _)) = inference.finalize_without_reporting() {
+        return Err(inference
+            .consume_error_without_reporting(err_set)
+            .expect("Error couldn't be already consumed"));
     };
     Ok(inference.rewrite(impl_id).no_err())
 }
@@ -539,7 +599,7 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         semantic::TypeLongId::Coupon(_) => false,
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
-                || matches!(db.lookup_intern_const_value(size), 
+                || matches!(db.lookup_intern_const_value(size),
                             ConstValue::Int(value) if value.is_zero())
         }
     })
@@ -556,13 +616,43 @@ pub fn type_info(
     // Dummy stable pointer for type inference variables, since inference is disabled.
     let droppable =
         get_impl_at_context(db, lookup_context.clone(), concrete_drop_trait(db, ty), None);
-    let duplicatable =
+    let copyable =
         get_impl_at_context(db, lookup_context.clone(), concrete_copy_trait(db, ty), None);
     let destruct_impl =
         get_impl_at_context(db, lookup_context.clone(), concrete_destruct_trait(db, ty), None);
     let panic_destruct_impl =
         get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
-    Ok(TypeInfo { droppable, duplicatable, destruct_impl, panic_destruct_impl })
+    Ok(TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl })
+}
+
+pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
+    match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
+        TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
+        TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
+        TypeLongId::GenericParameter(_) => false,
+        TypeLongId::Var(_) => false,
+        TypeLongId::Missing(_) => false,
+        TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            type_id.is_fully_concrete(db) && size.is_fully_concrete(db)
+        }
+    }
+}
+
+pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
+    match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_var_free(db),
+        TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_var_free(db)),
+        TypeLongId::Snapshot(ty) => ty.is_var_free(db),
+        TypeLongId::GenericParameter(_) => true,
+        TypeLongId::Var(_) => false,
+        TypeLongId::Missing(_) => true,
+        TypeLongId::Coupon(function_id) => function_id.is_var_free(db),
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            type_id.is_var_free(db) && size.is_var_free(db)
+        }
+    }
 }
 
 /// Peels all wrapping Snapshot (`@`) from the type.

@@ -14,8 +14,7 @@ struct MyStruct {
     a: foo::Coupon,
 }
 
-fn bar<T>(x: T) {
-}
+fn bar<T>(x: T) {}
 
 fn foo(x: foo::Coupon) {
     x.a;
@@ -45,7 +44,7 @@ type E = foo::UnknownIdentifier;
               ^***************^
 
 error: Type "test::foo::Coupon" has no members.
- --> lib.cairo:15:7
+ --> lib.cairo:14:7
     x.a;
       ^
 
@@ -126,11 +125,6 @@ error: Unexpected argument type. Expected: "test::bar::<?12, ?13>::Coupon", foun
     z = get_struct();
         ^**********^
 
-error: Type annotations needed. Failed to infer ?8
- --> lib.cairo:22:17
-    let mut y = get_coupon();
-                ^********^
-
 //! > ==========================================================================
 
 //! > Test finding impls.
@@ -183,11 +177,9 @@ error: Trait has no implementation in context: core::traits::Drop::<test::m::bar
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > module_code
-fn bar<S, T>(x: T) {
-}
+fn bar<S, T>(x: T) {}
 
-fn bar2<S, T>(x: T) {
-}
+fn bar2<S, T>(x: T) {}
 
 //! > function
 fn foo(x: bar::<u8, u16>::Coupon) {
@@ -204,24 +196,19 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "test::bar2::<?6, ?7>::Coupon", found: "test::bar::<core::integer::u8, core::integer::u16>::Coupon".
- --> lib.cairo:10:25
+ --> lib.cairo:8:25
     bar2(1, __coupon__: x); // Wrong coupon type.
                         ^
 
 error: The __coupon__ argument cannot have modifiers.
- --> lib.cairo:11:28
+ --> lib.cairo:9:28
     bar(1, mut __coupon__: x); // Wrong mutability.
                            ^
 
 error: The __coupon__ argument cannot have modifiers.
- --> lib.cairo:12:28
+ --> lib.cairo:10:28
     bar(1, ref __coupon__: x); // Wrong mutability.
                            ^
-
-error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:7:5
-    bar(1); // Cannot infer S.
-    ^*^
 
 //! > ==========================================================================
 

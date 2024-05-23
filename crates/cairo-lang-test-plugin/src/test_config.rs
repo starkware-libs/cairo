@@ -2,7 +2,7 @@ use cairo_felt::{felt_str, Felt252};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::byte_array::{BYTES_IN_WORD, BYTE_ARRAY_MAGIC};
 use cairo_lang_utils::OptionHelper;
 use itertools::chain;

@@ -5,11 +5,11 @@ test_function_generator
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-  if a == 2 {
-    bar(a)
-  } else {
-    a
-  }
+    if a == 2 {
+        bar(a)
+    } else {
+        a
+    }
 }
 
 //! > function_name
@@ -18,10 +18,10 @@ foo
 //! > module_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
-  if a == 0 {
-    return 1;
-  }
-  0
+    if a == 0 {
+        return 1;
+    }
+    0
 }
 
 //! > semantic_diagnostics

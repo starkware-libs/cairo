@@ -23,9 +23,9 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 4660
-  (v3: core::felt252) <- core::felt252_add(v1, v0)
+  (v2: core::felt252) <- core::felt252_add(v1, v0)
 End:
-  Return(v3)
+  Return(v2)
 
 //! > ==========================================================================
 
@@ -55,12 +55,10 @@ enum MyEnum {
     B,
 }
 
-const MY_CONST: MyStruct = MyStruct {
-    felt_val: 1234,
-    bool_val: true,
-    my_enum_val1: MyEnum::A(5678),
-    my_enum_val2: MyEnum::B,
-};
+const MY_CONST: MyStruct =
+    MyStruct {
+        felt_val: 1234, bool_val: true, my_enum_val1: MyEnum::A(5678), my_enum_val2: MyEnum::B,
+    };
 
 //! > semantic_diagnostics
 

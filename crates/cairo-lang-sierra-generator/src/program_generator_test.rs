@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{arc_unwrap_or_clone, try_extract_matches};
+use cairo_lang_utils::try_extract_matches;
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
@@ -82,7 +84,7 @@ fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
     )
     .unwrap();
     let SierraProgramWithDebug { program, .. } =
-        arc_unwrap_or_clone(db.get_sierra_program_for_functions(vec![func_id]).unwrap());
+        Arc::unwrap_or_clone(db.get_sierra_program_for_functions(vec![func_id]).unwrap());
     assert_eq!(
         replace_sierra_ids_in_program(&db, &program)
             .funcs

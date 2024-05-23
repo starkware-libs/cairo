@@ -15,7 +15,8 @@ When a module is defined in a separate file, the file is located according to th
 For example, the module `crate_name::a::b::c` is defined in the file
 `<crate_root_dir>/a/b/c.cairo`.
 
-```rust
+[source,cairo]
+----
 a.cairo:
 
 // This is a module defined in the current file.
@@ -25,7 +26,7 @@ mod foo {
 
 // This is a module defined in `a/bar.cairo`.
 mod bar;
-```
+----
 
 == Module hierarchy
 The module hierarchy is defined by the module definitions in the source code.
@@ -40,7 +41,8 @@ In particular, items defined at outer modules are not directly available in inne
 inlined. To refer to an item defined in another module, the item must be either fully qualified or
 imported with the xref:use.adoc[`use`] keyword. For more information, see xref:path.adoc[Paths].
 
-```rust
+[source,cairo]
+----
 struct A {}
 struct B {}
 
@@ -52,4 +54,4 @@ mod foo {
         B {};        // This is allowed, because `B` is imported.
     }
 }
-```
+----

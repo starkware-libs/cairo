@@ -234,6 +234,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             },
             Some(SyntaxKind::ExprWhile) => match self.kind(db) {
                 SyntaxKind::ExprBlock => Some(1),
+                SyntaxKind::ConditionExpr | SyntaxKind::ConditionLet => Some(2),
                 SyntaxKind::ExprBinary
                 | SyntaxKind::ExprErrorPropagate
                 | SyntaxKind::ExprFieldInitShorthand
@@ -248,7 +249,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ExprListParenthesized
                 | SyntaxKind::ArgListBraced
                 | SyntaxKind::ArgListBracketed
-                | SyntaxKind::ExprUnary => Some(2),
+                | SyntaxKind::ExprUnary => Some(3),
                 _ => None,
             },
             Some(SyntaxKind::ExprIf) => match self.kind(db) {
@@ -295,9 +296,10 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ArgListBracketed
                 | SyntaxKind::ExprUnary => Some(1),
                 SyntaxKind::TerminalEq => Some(10),
-                SyntaxKind::PatternEnum | SyntaxKind::PatternTuple | SyntaxKind::PatternStruct => {
-                    Some(11)
-                }
+                SyntaxKind::PatternEnum
+                | SyntaxKind::PatternTuple
+                | SyntaxKind::PatternStruct
+                | SyntaxKind::PatternFixedSizeArray => Some(11),
                 SyntaxKind::TypeClause => Some(12),
                 _ => None,
             },
@@ -628,16 +630,23 @@ impl SyntaxNodeFormat for SyntaxNode {
         if self.kind(db) == SyntaxKind::TerminalColonColon
             && parent_kind(db, self) == Some(SyntaxKind::PathSegmentWithGenericArgs)
         {
-            let path_node = self.parent().unwrap().parent().unwrap();
-            matches!(
-                parent_kind(db, &path_node),
-                Some(
-                    SyntaxKind::ItemImpl
-                        | SyntaxKind::GenericParamImplNamed
-                        | SyntaxKind::GenericParamImplAnonymous
-                        | SyntaxKind::GenericArgValueExpr
+            let path_segment_node = self.parent().unwrap();
+            let position_in_path = path_segment_node.position_in_parent(db).unwrap();
+            let path_node = path_segment_node.parent().unwrap();
+            let path_len = path_node.green_node(db).children().len();
+            if position_in_path != path_len - 1 {
+                false
+            } else {
+                matches!(
+                    parent_kind(db, &path_node),
+                    Some(
+                        SyntaxKind::ItemImpl
+                            | SyntaxKind::GenericParamImplNamed
+                            | SyntaxKind::GenericParamImplAnonymous
+                            | SyntaxKind::GenericArgValueExpr
+                    )
                 )
-            )
+            }
         } else {
             false
         }
