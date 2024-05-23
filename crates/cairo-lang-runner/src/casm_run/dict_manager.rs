@@ -2,28 +2,34 @@ use std::collections::HashMap;
 
 use cairo_felt::Felt252;
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
+use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::vm_core::VirtualMachine;
+
+use num_traits::One;
 
 /// Stores the data of a specific dictionary.
 pub struct DictTrackerExecScope {
     /// The data of the dictionary.
     data: HashMap<Felt252, MaybeRelocatable>,
-    /// The index of the dictionary in the dict_infos segment.
-    #[allow(dead_code)]
-    idx: usize,
+    /// The start of the segment of the dictionary.
+    start: Relocatable,
+    /// The start of the next segment in the segment arena, if finalized.
+    next_start: Option<Relocatable>,
 }
 
 /// Helper object to allocate, track and destruct all dictionaries in the run.
 #[derive(Default)]
 pub struct DictManagerExecScope {
     /// Maps between a segment index and the DictTrackerExecScope associated with it.
-    trackers: HashMap<isize, DictTrackerExecScope>,
+    segment_to_tracker: HashMap<isize, usize>,
+    /// The actual trackers of the dictionaries, in the order of allocation.
+    trackers: Vec<DictTrackerExecScope>,
 }
 
 impl DictTrackerExecScope {
-    /// Creates a new tracker placed in index `idx` in the dict_infos segment.
-    pub fn new(idx: usize) -> Self {
-        Self { data: HashMap::default(), idx }
+    /// Creates a new tracker starting at `start`.
+    pub fn new(start: Relocatable) -> Self {
+        Self { data: HashMap::default(), start, next_start: None }
     }
 }
 
@@ -31,35 +37,84 @@ impl DictManagerExecScope {
     pub const DICT_DEFAULT_VALUE: usize = 0;
 
     /// Allocates a new segment for a new dictionary and return the start of the segment.
-    pub fn new_default_dict(&mut self, vm: &mut VirtualMachine) -> Relocatable {
-        let dict_segment = vm.add_memory_segment();
-        assert!(
-            self.trackers
-                .insert(dict_segment.segment_index, DictTrackerExecScope::new(self.trackers.len()))
-                .is_none(),
-            "Segment index already in use."
-        );
-        dict_segment
-    }
+    pub fn new_default_dict(&mut self, vm: &mut VirtualMachine) -> Result<Relocatable, HintError> {
+        let dict_segment = match self.trackers.last() {
+            // This is the first dict - a totally new segment is required.
+            None => vm.add_memory_segment(),
+            // New dict segment should be appended to the last segment.
+            // Appending by a temporary segment, if the last segment is not finalized.
+            Some(last) => last.next_start.unwrap_or_else(|| vm.add_temporary_segment()),
+        };
+        let tracker = DictTrackerExecScope::new(dict_segment);
+        // Not checking if overriding - since overriding is allowed.
+        self.segment_to_tracker.insert(dict_segment.segment_index, self.trackers.len());
 
-    /// Returns a reference for a dict tracker corresponding to a given pointer to a dict segment.
-    fn get_dict_tracker(&self, dict_end: Relocatable) -> &DictTrackerExecScope {
-        self.trackers
-            .get(&dict_end.segment_index)
-            .expect("The given value does not point to a known dictionary.")
+        self.trackers.push(tracker);
+        Ok(dict_segment)
     }
 
     /// Returns a mut reference for a dict tracker corresponding to a given pointer to a dict
     /// segment.
     fn get_dict_tracker_mut(&mut self, dict_end: Relocatable) -> &mut DictTrackerExecScope {
-        self.trackers
-            .get_mut(&dict_end.segment_index)
-            .expect("The given value does not point to a known dictionary.")
+        let idx = self
+            .get_dict_infos_index(dict_end)
+            .expect("The given value does not point to a known dictionary.");
+        &mut self.trackers[idx]
     }
 
     /// Returns the index of the dict tracker corresponding to a given pointer to a dict segment.
-    pub fn get_dict_infos_index(&self, dict_end: Relocatable) -> usize {
-        self.get_dict_tracker(dict_end).idx
+    pub fn get_dict_infos_index(&self, dict_end: Relocatable) -> Result<usize, HintError> {
+        Ok(*self.segment_to_tracker.get(&dict_end.segment_index).ok_or_else(|| {
+            HintError::CustomHint(
+                "The given value does not point to a known dictionary."
+                    .to_string()
+                    .into_boxed_str(),
+            )
+        })?)
+    }
+
+    /// Finalizes a segment of a dictionary and attempts to relocate it.
+    /// Relocates the dictionary if the previous dictionary was also relocated, if not, assigns a temporary next_start to aid in a future relocation.
+    /// Relocates the next dictionary if it was already finalized but not relocated.
+    pub fn finalize_segment(
+        &mut self,
+        vm: &mut VirtualMachine,
+        dict_end: Relocatable,
+    ) -> Result<(), HintError> {
+        let tracker_idx = self.get_dict_infos_index(dict_end).unwrap();
+        if self.trackers[tracker_idx].start.segment_index >= 0 {
+            // The dict is already on a real segment so we don't need to relocate it
+            // This is the case of the first dictionary
+            self.trackers[tracker_idx].next_start = Some(dict_end);
+        } else {
+            // Finalize & relocate the dictionary
+            // The first dictionary will always be on a real segment so we can be sure that a previous dictionary exists here
+            match self.trackers[tracker_idx - 1].next_start {
+                // We can only relocate if the previous dict has been relocated too
+                Some(relocated_start) if relocated_start.segment_index >= 0 => {
+                    // Relocate this dictionary based on the previous segment's next_start
+                    vm.add_relocation_rule(self.trackers[tracker_idx].start, relocated_start)?;
+                    let next_start =
+                        (relocated_start + (dict_end - self.trackers[tracker_idx].start)?)?;
+                    self.trackers[tracker_idx].next_start = Some(next_start);
+                }
+                _ => {
+                    // Store the temporary next_start so we can properly finalize it later
+                    self.trackers[tracker_idx].next_start = Some(dict_end);
+                    return Ok(());
+                }
+            }
+        }
+        // Check if the next dict has been finalized but not relocated
+        if let Some(next_dict) = self.trackers.get(tracker_idx + 1) {
+            // Has been finalized but not relocated
+            if next_dict.next_start.is_some_and(|r| r.segment_index < 0) {
+                // As the next dict has already been finalized and the current one has been relocated
+                // we know that this call will relocate the next dict
+                self.finalize_segment(vm, next_dict.next_start.unwrap())?;
+            }
+        }
+        Ok(())
     }
 
     /// Inserts a value to the dict tracker corresponding to a given pointer to a dict segment.
@@ -79,7 +134,7 @@ impl DictManagerExecScope {
         dict_end: Relocatable,
         key: &Felt252,
     ) -> Option<MaybeRelocatable> {
-        self.get_dict_tracker(dict_end).data.get(key).cloned()
+        self.trackers[self.get_dict_infos_index(dict_end).ok()?].data.get(key).cloned()
     }
 }
 
@@ -87,9 +142,9 @@ impl DictManagerExecScope {
 #[derive(Default, Debug)]
 pub struct DictSquashExecScope {
     /// A map from key to the list of indices accessing it, each list in reverse order.
-    pub access_indices: HashMap<Felt252, Vec<Felt252>>,
+    pub(crate) access_indices: HashMap<Felt252, Vec<Felt252>>,
     /// Descending list of keys.
-    pub keys: Vec<Felt252>,
+    pub(crate) keys: Vec<Felt252>,
 }
 
 impl DictSquashExecScope {
@@ -98,15 +153,22 @@ impl DictSquashExecScope {
         self.keys.last().cloned()
     }
 
-    /// Returns and removes the current key, and its access indices. Should be called when only the
+    /// Removes the current key, and its access indices. Should be called when only the
     /// last key access is in the corresponding indices list.
-    pub fn pop_current_key(&mut self) -> Option<Felt252> {
-        let key_accesses = self.access_indices.remove(&self.current_key().unwrap());
-        assert!(
-            key_accesses.unwrap().len() == 1,
-            "Key popped but not all accesses were processed."
-        );
-        self.keys.pop()
+    pub fn pop_current_key(&mut self) -> Result<(), HintError> {
+        let current_key = self.current_key().ok_or_else(|| {
+            HintError::CustomHint("Failed to get current key".to_string().into_boxed_str())
+        })?;
+        let key_accesses = self.access_indices.remove(&current_key).ok_or_else(|| {
+            HintError::CustomHint(format!("No key accesses for key {current_key}").into_boxed_str())
+        })?;
+        if !key_accesses.len().is_one() {
+            return Err(HintError::CustomHint(
+                "Key popped but not all accesses were processed.".to_string().into_boxed_str(),
+            ));
+        }
+        self.keys.pop();
+        Ok(())
     }
 
     /// Returns a reference to the access indices list of the current key.

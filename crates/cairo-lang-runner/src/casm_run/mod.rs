@@ -1862,7 +1862,7 @@ pub fn execute_core_hint(
                     exec_scopes.get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")?
                 }
             };
-            let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
+            let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm)?;
             vm.insert_value((dict_infos_base + 3 * n_dicts)?, new_dict_segment)?;
         }
         CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
@@ -1891,7 +1891,7 @@ pub fn execute_core_hint(
             let dict_manager_exec_scope = exec_scopes
                 .get_ref::<DictManagerExecScope>("dict_manager_exec_scope")
                 .expect("Trying to read from a dict while dict manager was not initialized.");
-            let dict_infos_index = dict_manager_exec_scope.get_dict_infos_index(dict_address);
+            let dict_infos_index = dict_manager_exec_scope.get_dict_infos_index(dict_address)?;
             insert_value_to_cellref!(vm, dict_index, Felt252::from(dict_infos_index))?;
         }
         CoreHint::InitSquashData { dict_accesses, n_accesses, first_key, big_keys, .. } => {
@@ -1987,8 +1987,15 @@ pub fn execute_core_hint(
         CoreHint::GetNextDictKey { next_key } => {
             let dict_squash_exec_scope: &mut DictSquashExecScope =
                 exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
-            dict_squash_exec_scope.pop_current_key();
+            dict_squash_exec_scope.pop_current_key()?;
             insert_value_to_cellref!(vm, next_key, dict_squash_exec_scope.current_key().unwrap())?;
+        }
+        CoreHint::FinalizeDict { dict_end_ptr } => {
+            let dict_address = extract_relocatable(vm, dict_end_ptr)?;
+            let dict_manager_exec_scope = exec_scopes
+                .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                .expect("Trying to read from a dict while dict manager was not initialized.");
+            dict_manager_exec_scope.finalize_segment(vm, dict_address)?;
         }
         CoreHint::AssertLeFindSmallArcs { a, b, range_check_ptr } => {
             let a_val = get_val(vm, a)?;
@@ -2100,8 +2107,6 @@ pub fn execute_core_hint(
                 insert_value_to_cellref!(vm, g0_or_no_inv, Felt252::from(0))?;
             }
         }
-        // TODO: The DictManager doesn't use temporary segments yet so this is a NoOp
-        CoreHint::FinalizeDict { dict_end_ptr: _ } => {},
     };
     Ok(())
 }
