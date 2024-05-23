@@ -112,6 +112,9 @@ fn build_felt252_dict_squash(
                 final_segment_arena_ptr,
                 final_squashed_dict_start,
                 final_squashed_dict_end) = call DestructDict;
+            hint FinalizeDict {
+                dict_end_ptr: dict_end_address
+            };
             jump DONE;
         }
 

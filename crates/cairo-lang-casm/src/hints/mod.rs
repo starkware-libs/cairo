@@ -281,6 +281,8 @@ pub enum CoreHint {
         t_or_k0: CellRef,
         t_or_k1: CellRef,
     },
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 28))]
+    FinalizeDict { dict_end_ptr: ResOperand },
 }
 
 /// Represents a deprecated hint which is kept for backward compatibility of previously deployed
@@ -795,6 +797,7 @@ impl PythonicHint for CoreHint {
                     "
                 )
             }
+            CoreHint::FinalizeDict { dict_end_ptr: _ } => formatdoc!(""),
         }
     }
 }
