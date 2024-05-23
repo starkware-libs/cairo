@@ -377,16 +377,16 @@ ret;
 ret;
 dw 16;
 dw 20;
-dw 28;
+dw 32;
 dw 12;
 dw 0;
-dw 4;
+dw 16;
 dw 12;
 dw 4;
-dw 8;
+dw 20;
 dw 12;
 dw 8;
-dw 12;
+dw 24;
 
 //! > function_segments
 Ok([0])

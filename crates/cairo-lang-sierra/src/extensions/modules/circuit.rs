@@ -818,7 +818,7 @@ fn get_circuit_info(
                 stack.push((ty, false));
                 stack.extend(gate_inputs.map(|ty| (ty.clone(), true)))
             } else {
-                let output_offset = n_inputs + 1 + values.len();
+                let output_offset = n_inputs + 1 + values.len() + 1;
                 let mut input_offsets = gate_inputs.map(|ty| *values.get(ty).unwrap());
 
                 if generic_id == AddModGate::ID {
@@ -886,7 +886,11 @@ fn parse_circuit_inputs<'a>(
 
     for (input_idx, ty) in inputs.iter_sorted() {
         // Add the gate result = 1 * input to reduce the input module the modulus.
-        mul_offsets.push(GateOffsets { lhs: n_inputs, rhs: *input_idx, output: 1 + values.len() });
+        mul_offsets.push(GateOffsets {
+            lhs: n_inputs,
+            rhs: *input_idx,
+            output: reduced_input_offset,
+        });
         values.insert(ty.clone(), reduced_input_offset);
         reduced_input_offset += 1;
     }
