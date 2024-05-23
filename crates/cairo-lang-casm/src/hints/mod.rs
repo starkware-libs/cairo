@@ -797,6 +797,7 @@ impl PythonicHint for CoreHint {
                     "
                 )
             }
+            // TODO: The DictManager doesn't use temporary segments yet so this is a NoOp
             CoreHint::FinalizeDict { dict_end_ptr: _ } => formatdoc!(""),
         }
     }

@@ -2018,6 +2018,8 @@ pub fn execute_core_hint(
                 insert_value_to_cellref!(vm, g0_or_no_inv, Felt252::from(0))?;
             }
         }
+        // TODO: The DictManager doesn't use temporary segments yet so this is a NoOp
+        CoreHint::FinalizeDict { dict_end_ptr: _ } => {},
     };
     Ok(())
 }
