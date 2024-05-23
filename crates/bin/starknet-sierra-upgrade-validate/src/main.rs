@@ -14,7 +14,7 @@ use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::{arg, Parser};
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{json, Value};
 
 const NUM_OF_PROCESSORS: usize = 32;
 
@@ -27,13 +27,13 @@ const NUM_OF_PROCESSORS: usize = 32;
 /// 1. If class_info_output_file is provided, it writes the classes to the file.
 /// 2. If class_info_output_file is not provided, it returns the report of the runs over the
 ///    processes of the classes.
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
-struct Args {
+struct Cli {
     /// The input files with declared classes info.
     #[arg(
         required_unless_present = "fullnode_url",
-        conflicts_with_all = ["fullnode_url", "start_block", "end_block"],
+        conflicts_with_all = ["fullnode_url", "FullnodeArgs"],
     )]
     input_files: Vec<String>,
     /// The allowed libfuncs list to use (default: most recent audited list).
@@ -52,22 +52,31 @@ struct Args {
     /// files should be provided.
     #[arg(
         long,
-        requires_all = &["start_block", "end_block"], 
+        requires_all = &["FullnodeArgs"], 
         required_unless_present = "input_files", 
         conflicts_with = "input_files"
     )]
     fullnode_url: Option<String>,
-    /// The start block of the declared Sierra classes to test.
-    #[arg(long, requires_all = &["fullnode_url", "end_block"])]
-    start_block: Option<u64>,
-    /// The end block of the declared Sierra classes to test.
-    #[arg(long, requires_all = &["fullnode_url", "start_block"])]
-    end_block: Option<u64>,
+    #[clap(flatten)]
+    fullnode_args: Option<FullnodeArgs>,
     /// The output file to write the Sierra classes into.
     #[arg(long)]
     class_info_output_file: Option<String>,
 }
 
+#[derive(Parser, Debug)]
+#[command(group = clap::ArgGroup::new("range").multiple(true).conflicts_with("last_n_blocks"))]
+struct FullnodeArgs {
+    /// The start block of the declared Sierra classes to test.
+    #[arg(long, group = "range", requires = "end_block")]
+    start_block: Option<u64>,
+    /// The end block of the declared Sierra classes to test.
+    #[arg(long, group = "range", requires = "start_block")]
+    end_block: Option<u64>,
+    /// The number of last n blocks to test.
+    #[arg(long, conflicts_with = "range")]
+    last_n_blocks: Option<u64>,
+}
 /// Parses version id from string.
 fn parse_version_id(major_minor_patch: &str) -> anyhow::Result<VersionId> {
     let context = || format!("Could not parse version {major_minor_patch}.");
@@ -125,7 +134,7 @@ struct CompilationMismatch {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let args = Args::parse();
+    let args = Cli::parse();
     let list_selector =
         ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file)
             .expect("Both allowed libfunc list name and file were supplied.");
@@ -155,10 +164,21 @@ async fn main() -> anyhow::Result<()> {
     // If fullnode_url is provided, we retrieve the contract class info from the fullnode.
     // Otherwise, we read the contract class info from the input files.
     if let Some(fullnode_url) = args.fullnode_url {
+        let fullnode_args = args.fullnode_args.unwrap();
+        let (start_block, end_block) = if let Some(last_n_blocks) = fullnode_args.last_n_blocks {
+            let end_block = get_last_block_number(&fullnode_url).await?;
+            let start_block = end_block - last_n_blocks;
+            (start_block, end_block)
+        } else {
+            let start_block =
+                fullnode_args.start_block.with_context(|| "no start block provided")?;
+            let end_block = fullnode_args.end_block.with_context(|| "no end block provided")?;
+            (start_block, end_block)
+        };
         let (class_hashes_tx, class_hashes_rx) = async_channel::bounded(128);
         spawn_block_class_hashes_retrievers(
-            args.start_block.with_context(|| "no start block provided")?,
-            args.end_block.with_context(|| "no end block provided")?,
+            start_block,
+            end_block,
             class_hashes_tx,
             fullnode_url.clone(),
             reader_bar.clone(),
@@ -590,4 +610,29 @@ async fn dump_class_infos_into_json(
     std::fs::write(class_info_output_file, res_string).unwrap();
     classes_bar.finish_and_clear();
     Ok(())
+}
+
+/// Given a fullnode url, retrieves the last block number.
+async fn get_last_block_number(node_url: &str) -> anyhow::Result<u64> {
+    let request_body = json!({
+        "jsonrpc": "2.0",
+        "id": 0,
+        "method": "starknet_blockNumber",
+        "params": {
+        }
+    });
+
+    let client = reqwest::Client::new();
+    let res = client
+        .post(node_url.to_string())
+        .header("Content-Type", "application/json")
+        .body(request_body.to_string())
+        .send()
+        .await?;
+
+    if !res.status().is_success() {
+        return Err(anyhow::anyhow!("Request failed."));
+    }
+    let res = res.json::<Value>().await?;
+    res["result"].as_u64().ok_or_else(|| anyhow::anyhow!("Couldn't parse json response."))
 }
