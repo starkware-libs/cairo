@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern, ResultHelper};
+use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern};
 use defs::ids::TopLevelLanguageElementId;
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
@@ -1645,7 +1645,7 @@ fn check_error_free_or_warn(
     diagnostics_description: &str,
 ) -> Maybe<()> {
     let declaration_error_free = diagnostics.check_error_free();
-    declaration_error_free.on_err(|_| {
+    declaration_error_free.inspect_err(|_| {
         log::warn!(
             "Function `{function_path}` has semantic diagnostics in its \
              {diagnostics_description}:\n{diagnostics_format}",
