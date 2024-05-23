@@ -87,14 +87,14 @@ fn build_fill_input(
         tempvar new_start = start;
         tempvar remaining = end - new_start;
         jump More if remaining != 0;
-        jump Failure;
+        jump Done;
         More:
     };
-    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    let done_handle = get_non_fallthrough_statement_id(&builder);
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[new_start, end]], None), ("Failure", &[&[end]], Some(failure_handle))],
+        [("Fallthrough", &[&[new_start, end]], None), ("Done", &[&[end]], Some(done_handle))],
         Default::default(),
     ))
 }
