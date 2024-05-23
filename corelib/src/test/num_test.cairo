@@ -1,7 +1,7 @@
 use core::num::traits::BitSize;
 use core::num::traits::{
     OverflowingAdd, OverflowingSub, OverflowingMul, WrappingAdd, WrappingSub, WrappingMul,
-    CheckedAdd, CheckedSub, CheckedMul
+    CheckedAdd, CheckedSub, CheckedMul, SaturatingAdd, SaturatingSub, SaturatingMul
 };
 use core::integer::BoundedInt;
 
@@ -340,4 +340,80 @@ fn test_checked_mul_unsigned_integers() {
     assert!(BoundedInt::<u128>::max().checked_mul(2).is_none());
     assert_eq!(2_u256.checked_mul(3), Option::Some(6));
     assert!(BoundedInt::<u256>::max().checked_mul(2).is_none());
+}
+
+#[test]
+fn test_saturating_add_unsigned_integers() {
+    assert_eq!(1_u8.saturating_add(2), 3);
+    assert_eq!(BoundedInt::<u8>::max().saturating_add(1), BoundedInt::<u8>::max());
+    assert_eq!(1_u16.saturating_add(2), 3);
+    assert_eq!(BoundedInt::<u16>::max().saturating_add(1), BoundedInt::<u16>::max());
+    assert_eq!(1_u32.saturating_add(2), 3);
+    assert_eq!(BoundedInt::<u32>::max().saturating_add(1), BoundedInt::<u32>::max());
+    assert_eq!(1_u64.saturating_add(2), 3);
+    assert_eq!(BoundedInt::<u64>::max().saturating_add(1), BoundedInt::<u64>::max());
+    assert_eq!(1_u128.saturating_add(2), 3);
+    assert_eq!(BoundedInt::<u128>::max().saturating_add(1), BoundedInt::<u128>::max());
+    assert_eq!(1_u256.saturating_add(2), 3);
+    assert_eq!(BoundedInt::<u256>::max().saturating_add(1), BoundedInt::<u256>::max());
+}
+
+#[test]
+fn test_saturating_add_signed_integers() {
+    assert_eq!(1_i8.saturating_add(2), 3);
+    assert_eq!(BoundedInt::<i8>::max().saturating_add(1), BoundedInt::<i8>::max());
+    assert_eq!(1_i16.saturating_add(2), 3);
+    assert_eq!(BoundedInt::<i16>::max().saturating_add(1), BoundedInt::<i16>::max());
+    assert_eq!(1_i32.saturating_add(2), 3);
+    assert_eq!(BoundedInt::<i32>::max().saturating_add(1), BoundedInt::<i32>::max());
+    assert_eq!(1_i64.saturating_add(2), 3);
+    assert_eq!(BoundedInt::<i64>::max().saturating_add(1), BoundedInt::<i64>::max());
+    assert_eq!(1_i128.saturating_add(2), 3);
+    assert_eq!(BoundedInt::<i128>::max().saturating_add(1), BoundedInt::<i128>::max());
+}
+
+#[test]
+fn test_saturating_sub_unsigned_integers() {
+    assert_eq!(3_u8.saturating_sub(2), 1);
+    assert_eq!(0_u8.saturating_sub(1), 0);
+    assert_eq!(3_u16.saturating_sub(2), 1);
+    assert_eq!(0_u16.saturating_sub(1), 0);
+    assert_eq!(3_u32.saturating_sub(2), 1);
+    assert_eq!(0_u32.saturating_sub(1), 0);
+    assert_eq!(3_u64.saturating_sub(2), 1);
+    assert_eq!(0_u64.saturating_sub(1), 0);
+    assert_eq!(3_u128.saturating_sub(2), 1);
+    assert_eq!(0_u128.saturating_sub(1), 0);
+    assert_eq!(3_u256.saturating_sub(2), 1);
+    assert_eq!(0_u256.saturating_sub(1), 0);
+}
+
+#[test]
+fn test_saturating_sub_signed_integers() {
+    assert_eq!(3_i8.saturating_sub(2), 1);
+    assert_eq!(BoundedInt::<i8>::min().saturating_sub(1), BoundedInt::<i8>::min());
+    assert_eq!(3_i16.saturating_sub(2), 1);
+    assert_eq!(BoundedInt::<i16>::min().saturating_sub(1), BoundedInt::<i16>::min());
+    assert_eq!(3_i32.saturating_sub(2), 1);
+    assert_eq!(BoundedInt::<i32>::min().saturating_sub(1), BoundedInt::<i32>::min());
+    assert_eq!(3_i64.saturating_sub(2), 1);
+    assert_eq!(BoundedInt::<i64>::min().saturating_sub(1), BoundedInt::<i64>::min());
+    assert_eq!(3_i128.saturating_sub(2), 1);
+    assert_eq!(BoundedInt::<i128>::min().saturating_sub(1), BoundedInt::<i128>::min());
+}
+
+#[test]
+fn test_saturating_mul_unsigned_integers() {
+    assert_eq!(2_u8.saturating_mul(3), 6);
+    assert_eq!(BoundedInt::<u8>::max().saturating_mul(2), BoundedInt::<u8>::max());
+    assert_eq!(2_u16.saturating_mul(3), 6);
+    assert_eq!(BoundedInt::<u16>::max().saturating_mul(2), BoundedInt::<u16>::max());
+    assert_eq!(2_u32.saturating_mul(3), 6);
+    assert_eq!(BoundedInt::<u32>::max().saturating_mul(2), BoundedInt::<u32>::max());
+    assert_eq!(2_u64.saturating_mul(3), 6);
+    assert_eq!(BoundedInt::<u64>::max().saturating_mul(2), BoundedInt::<u64>::max());
+    assert_eq!(2_u128.saturating_mul(3), 6);
+    assert_eq!(BoundedInt::<u128>::max().saturating_mul(2), BoundedInt::<u128>::max());
+    assert_eq!(2_u256.saturating_mul(3), 6);
+    assert_eq!(BoundedInt::<u256>::max().saturating_mul(2), BoundedInt::<u256>::max());
 }
