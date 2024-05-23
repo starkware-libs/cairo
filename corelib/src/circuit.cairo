@@ -59,10 +59,10 @@ extern fn fill_circuit_input<C>(
 
 /// The result of filling an input in the circuit instance's data.
 pub enum FillInputResult<C> {
-    /// More inputs are needed to fill the circuit instance's data.
-    More: CircuitInputAccumulator<C>,
     /// All inputs have been filled.
     Done: CircuitData<C>,
+    /// More inputs are needed to fill the circuit instance's data.
+    More: CircuitInputAccumulator<C>,
 }
 
 /// Type for accumulating inputs into the circuit instance's data.

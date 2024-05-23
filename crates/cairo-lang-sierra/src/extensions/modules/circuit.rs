@@ -537,18 +537,18 @@ impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
                 ParamSignature::new(val_ty),
             ],
             branch_signatures: vec![
-                // More inputs to fill.
-                BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: circuit_input_accumulator_ty,
-                        ref_info: OutputVarReferenceInfo::SimpleDerefs,
-                    }],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
                 // All inputs were filled.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: circuit_data_ty,
+                        ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // More inputs to fill.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: circuit_input_accumulator_ty,
                         ref_info: OutputVarReferenceInfo::SimpleDerefs,
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
