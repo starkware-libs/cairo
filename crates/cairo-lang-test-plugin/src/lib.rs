@@ -11,10 +11,12 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
+use cairo_lang_sierra::debug_info::DebugInfo;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
-use cairo_lang_sierra::program::{Program, StatementIdx};
+use cairo_lang_sierra::program::{ProgramArtifact, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_starknet::contract::{
@@ -84,6 +86,7 @@ pub fn compile_test_prepared_db(
                 )
             })
             .collect();
+    let executable_functions = find_executable_function_ids(db, main_crate_ids.clone());
     let all_tests = find_all_tests(db, test_crate_ids.clone());
     let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
         db.get_sierra_program_for_functions(
@@ -102,7 +105,7 @@ pub fn compile_test_prepared_db(
     let sierra_program = replacer.apply(&sierra_program);
     let statements_functions =
         debug_info.statements_locations.get_statements_functions_map_for_tests(db);
-
+    let executables = collect_executables(db, executable_functions, &sierra_program);
     let named_tests = all_tests
         .into_iter()
         .map(|(func_id, test)| {
@@ -122,7 +125,8 @@ pub fn compile_test_prepared_db(
         })
         .collect_vec();
     let contracts_info = get_contracts_info(db, main_crate_ids.clone(), &replacer)?;
-
+    let sierra_program = ProgramArtifact::stripped(sierra_program)
+        .with_debug_info(DebugInfo { executables, ..DebugInfo::default() });
     Ok(TestCompilation {
         named_tests,
         sierra_program,
@@ -146,7 +150,7 @@ pub struct TestCompilation {
     )]
     pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     pub named_tests: Vec<(String, TestConfig)>,
-    pub sierra_program: Program,
+    pub sierra_program: ProgramArtifact,
     /// A map between sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
     /// path (modules and impls) to the function in the file. Used only if the tests are running
