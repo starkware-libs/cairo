@@ -3136,7 +3136,7 @@ impl U128CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedM
 impl U256CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u256>;
 
 
-/// SaturatingAdd implementations
+// SaturatingAdd implementations
 impl U8SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u8>;
 impl U16SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u16>;
 impl U32SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u32>;
@@ -3149,7 +3149,7 @@ impl I32SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSat
 impl I64SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i64>;
 impl I128SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i128>;
 
-/// SaturatingSub implementations
+// SaturatingSub implementations
 impl U8SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u8>;
 impl U16SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u16>;
 impl U32SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u32>;
@@ -3162,7 +3162,7 @@ impl I32SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSat
 impl I64SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<i64>;
 impl I128SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<i128>;
 
-/// SaturatingMul implementations
+// SaturatingMul implementations
 impl U8SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u8>;
 impl U16SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u16>;
 impl U32SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u32>;
