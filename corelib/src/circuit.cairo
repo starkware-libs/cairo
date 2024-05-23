@@ -80,6 +80,7 @@ extern type CircuitDescriptor<C>;
 impl CircuitInputAccumulatorDrop<C> of Drop<CircuitInputAccumulator<C>>;
 impl CircuitDataDrop<C> of Drop<CircuitData<C>>;
 impl CircuitDescriptorDrop<C> of Drop<CircuitDescriptor<C>>;
+impl CircuitOutputsDrop<C> of Drop<CircuitOutputs<C>>;
 
 
 /// A wrapper for circuit elements, used to construct circuits..
@@ -142,5 +143,25 @@ impl U384TryIntoNonZero of TryInto<u384, NonZero<u384>> {
             zeroable::IsZeroResult::Zero => Option::None,
             zeroable::IsZeroResult::NonZero(x) => Option::Some(x),
         }
+    }
+}
+
+/// A trait for evaluating a circuit.
+pub trait CircuitDescriptorTrait<Descriptor> {
+    type CircuitType;
+
+    /// Evaluates the circuit with the given data and modulus.
+    fn eval(
+        self: Descriptor, data: CircuitData<Self::CircuitType>, modulus: NonZero<u384>
+    ) -> core::circuit::CircuitOutputs<Self::CircuitType>;
+}
+
+impl CircuitDescriptorImpl<C> of CircuitDescriptorTrait<CircuitDescriptor<C>> {
+    type CircuitType = C;
+
+    fn eval(
+        self: CircuitDescriptor<C>, data: CircuitData<C>, modulus: NonZero<u384>
+    ) -> core::circuit::CircuitOutputs<C> {
+        eval_circuit::<C>(self, data, modulus, 0, 1)
     }
 }
