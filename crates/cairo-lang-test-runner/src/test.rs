@@ -1,8 +1,11 @@
+use cairo_lang_sierra::program::Program;
+use cairo_lang_test_plugin::test_config::TestExpectation;
+use cairo_lang_test_plugin::TestConfig;
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use itertools::Itertools;
 use starknet_types_core::felt::Felt as Felt252;
 
-use crate::{format_for_panic, TestCompilation, TestCompiler};
+use crate::{filter_test_cases, format_for_panic, TestCompilation, TestCompiler};
 
 #[test]
 fn test_compiled_serialization() {
@@ -210,5 +213,81 @@ fn test_format_for_panic() {
     assert_eq!(
         format_for_panic(felts.into_iter()),
         "Panicked with (0x9999, \"hello\", 0x776f726c64 ('world'), 0x8888)."
+    );
+}
+
+/// Return a named test ([String], [TestConfig]) from a test name and its ignored status.
+fn to_named_test(test: &(&str, bool)) -> (String, TestConfig) {
+    (
+        String::from(test.0),
+        TestConfig { available_gas: None, expectation: TestExpectation::Success, ignored: test.1 },
+    )
+}
+
+/// Return a [TestCompilation] from a list of test names and their ignored status.
+fn to_test_compilation(tests: &[(&str, bool)]) -> TestCompilation {
+    TestCompilation {
+        named_tests: tests.iter().map(to_named_test).collect(),
+        sierra_program: Program {
+            type_declarations: vec![],
+            libfunc_declarations: vec![],
+            statements: vec![],
+            funcs: vec![],
+        },
+        statements_functions: Default::default(),
+        contracts_info: Default::default(),
+        function_set_costs: Default::default(),
+    }
+}
+
+#[test]
+fn test_filter_test_cases() {
+    assert_eq!(
+        filter_test_cases(
+            to_test_compilation(&[("test1", false), ("test2", true), ("test3", false)]),
+            false,
+            false,
+            "test"
+        ),
+        (to_test_compilation(&[("test1", false), ("test2", true), ("test3", false)]), 0)
+    );
+}
+
+#[test]
+fn test_filter_test_cases_include_ignored() {
+    assert_eq!(
+        filter_test_cases(
+            to_test_compilation(&[("test1", false), ("test2", true), ("test3", false)]),
+            true,
+            false,
+            "test"
+        ),
+        (to_test_compilation(&[("test1", false), ("test2", false), ("test3", false)]), 0)
+    );
+}
+
+#[test]
+fn test_filter_test_cases_ignored() {
+    assert_eq!(
+        filter_test_cases(
+            to_test_compilation(&[("test1", false), ("test2", true), ("test3", false)]),
+            false,
+            true,
+            "test"
+        ),
+        (to_test_compilation(&[("test2", false)]), 2)
+    );
+}
+
+#[test]
+fn test_filter_test_cases_include_ignored_and_ignored() {
+    assert_eq!(
+        filter_test_cases(
+            to_test_compilation(&[("test1", false), ("test2", true), ("test3", false)]),
+            true,
+            true,
+            "test"
+        ),
+        (to_test_compilation(&[("test1", false), ("test2", false), ("test3", false)]), 0)
     );
 }
