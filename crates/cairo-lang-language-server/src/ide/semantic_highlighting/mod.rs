@@ -29,7 +29,7 @@ pub fn semantic_highlight_full(
     db: &RootDatabase,
 ) -> Option<SemanticTokensResult> {
     let file_uri = params.text_document.uri;
-    let file = db.file_for_url(&file_uri);
+    let file = db.file_for_url(&file_uri)?;
     let Ok(node) = db.file_syntax(file) else {
         error!("semantic analysis failed: file '{file_uri}' does not exist");
         return None;

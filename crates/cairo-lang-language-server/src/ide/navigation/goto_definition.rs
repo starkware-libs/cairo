@@ -15,7 +15,7 @@ pub fn goto_definition(
     params: GotoDefinitionParams,
     db: &RootDatabase,
 ) -> Option<GotoDefinitionResponse> {
-    let file = db.file_for_url(&params.text_document_position_params.text_document.uri);
+    let file = db.file_for_url(&params.text_document_position_params.text_document.uri)?;
     let position = params.text_document_position_params.position.to_cairo();
     let (found_file, span) = get_definition_location(db, file, position)?;
     let found_uri = db.url_for_file(found_file);
