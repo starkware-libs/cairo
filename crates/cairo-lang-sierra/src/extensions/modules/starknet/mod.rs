@@ -45,7 +45,7 @@ use self::syscalls::{
 use self::testing::TestingLibfunc;
 use super::array::ArrayType;
 use super::felt252::Felt252Type;
-use super::int::unsigned::{Uint32Type, Uint64Type};
+use super::int::unsigned::Uint64Type;
 use super::snapshot::snapshot_ty;
 use super::structure::StructType;
 use super::try_from_felt252::TryFromFelt252Libfunc;
@@ -128,11 +128,4 @@ fn u64_span_ty(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
     span_ty(context, context.get_concrete_type(Uint64Type::id(), &[])?, "core::integer::u64")
-}
-
-/// User type for `Span<u32>`.
-fn u32_span_ty(
-    context: &dyn SignatureSpecializationContext,
-) -> Result<ConcreteTypeId, SpecializationError> {
-    span_ty(context, context.get_concrete_type(Uint32Type::id(), &[])?, "core::integer::u32")
 }

@@ -12,13 +12,13 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{
     CrateId, CrateLongId, Directory, FileKind, FileLongId, VirtualFile,
 };
-use cairo_lang_parser::db::ParserDatabase;
+use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern, OptionFrom, Upcast};
 use once_cell::sync::Lazy;
 
 use crate::db::{SemanticDatabase, SemanticGroup};
@@ -85,6 +85,11 @@ impl Upcast<dyn SemanticGroup> for SemanticDatabaseForTesting {
         self
     }
 }
+impl Upcast<dyn ParserGroup> for SemanticDatabaseForTesting {
+    fn upcast(&self) -> &(dyn ParserGroup + 'static) {
+        self
+    }
+}
 
 pub struct WithStringDiagnostics<T> {
     value: T,
@@ -120,13 +125,14 @@ pub fn setup_test_crate_ex(
     content: &str,
     crate_settings: Option<&str>,
 ) -> CrateId {
-    let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
+    let file_id = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "lib.cairo".into(),
         content: Arc::new(content.into()),
         code_mappings: Default::default(),
         kind: FileKind::Module,
-    }));
+    })
+    .intern(db);
 
     let settings: CrateSettings = if let Some(crate_settings) = crate_settings {
         toml::from_str(crate_settings).expect("Invalid config.")
@@ -141,7 +147,7 @@ pub fn setup_test_crate_ex(
         }
     };
 
-    db.intern_crate(CrateLongId::Virtual {
+    CrateLongId::Virtual {
         name: "test".into(),
         config: CrateConfiguration {
             root: Directory::Virtual {
@@ -150,7 +156,8 @@ pub fn setup_test_crate_ex(
             },
             settings,
         },
-    })
+    }
+    .intern(db)
 }
 
 /// See [setup_test_crate_ex].
@@ -380,7 +387,7 @@ fn get_recursive_module_semantic_diagnostics(
 
 /// Returns true if the given submodule is inline (i.e. has a body), false otherwise.
 fn is_submodule_inline(db: &dyn SemanticGroup, submodule: SubmoduleId) -> bool {
-    let SubmoduleLongId(_, ptr) = db.lookup_intern_submodule(submodule);
+    let SubmoduleLongId(_, ptr) = submodule.lookup_intern(db);
     match ptr.lookup(db.upcast()).body(db.upcast()) {
         ast::MaybeModuleBody::Some(_) => true,
         ast::MaybeModuleBody::None(_) => false,

@@ -160,11 +160,6 @@
     ],
     "description": "Create a generate trait impl"
   },
-  "Print the selected item": {
-    "prefix": "print",
-    "body": ["use debug::PrintTrait;", "$TM_SELECTED_TEXT$1.print();"],
-    "description": "Print the selected item"
-  },
   "Creates an Enum object": {
     "prefix": "enum",
     "body": ["#[derive(Copy, Drop, $1)]", "enum $2 {", "\t$3: ${4},", "}"],

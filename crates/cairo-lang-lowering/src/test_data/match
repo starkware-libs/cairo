@@ -368,7 +368,7 @@ foo
 //! > module_code
 
 //! > semantic_diagnostics
-error: Type mismatch: `core::felt252` and `core::integer::u8`
+error: Type mismatch: `core::felt252` and `core::integer::u8`.
  --> lib.cairo:4:9
         1_felt252 | 2_u8 => 8,
         ^*******^

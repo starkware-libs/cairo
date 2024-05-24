@@ -9,6 +9,7 @@ use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::Intern;
 use defs::diagnostic_utils::StableLocation;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
@@ -165,7 +166,6 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
         let db = global_ctx.db;
         let concrete_function_id = function_id.to_concrete(db)?;
         let semantic_function = function_id.base_semantic_function(db);
-        let module_file_id = semantic_function.module_file_id(db.upcast());
         Ok(Self {
             encapsulating_ctx: Some(global_ctx),
             variables: VariableAllocator::new(db, semantic_function, Default::default())?,
@@ -173,7 +173,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
             function_id,
             concrete_function_id,
             current_loop_expr_id: Option::None,
-            diagnostics: LoweringDiagnostics::new(module_file_id.file_id(db.upcast())?),
+            diagnostics: LoweringDiagnostics::default(),
             blocks: Default::default(),
         })
     }
@@ -228,6 +228,7 @@ pub enum LoweredExpr {
     },
     /// The expression value is a fixed size array.
     FixedSizeArray {
+        ty: semantic::TypeId,
         exprs: Vec<LoweredExpr>,
         location: LocationId,
     },
@@ -255,7 +256,7 @@ impl LoweredExpr {
                     .collect::<Result<Vec<_>, _>>()?;
                 let tys =
                     inputs.iter().map(|var_usage| ctx.variables[var_usage.var_id].ty).collect();
-                let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
+                let ty = semantic::TypeLongId::Tuple(tys).intern(ctx.db);
                 Ok(generators::StructConstruct { inputs, ty, location }
                     .add(ctx, &mut builder.statements))
             }
@@ -273,18 +274,7 @@ impl LoweredExpr {
 
                 Ok(VarUsage { var_id: snapshot, location })
             }
-            LoweredExpr::FixedSizeArray { exprs, location } => {
-                let ty = ctx.db.intern_type(semantic::TypeLongId::FixedSizeArray {
-                    type_id: exprs[0].ty(ctx),
-                    size: ctx.db.intern_const_value(
-                        value_as_const_value(
-                            ctx.db.upcast(),
-                            get_usize_ty(ctx.db.upcast()),
-                            &exprs.len().into(),
-                        )
-                        .unwrap(),
-                    ),
-                });
+            LoweredExpr::FixedSizeArray { exprs, location, ty } => {
                 let inputs = exprs
                     .into_iter()
                     .map(|expr| expr.as_var_usage(ctx, builder))
@@ -298,31 +288,29 @@ impl LoweredExpr {
     pub fn ty(&self, ctx: &mut LoweringContext<'_, '_>) -> semantic::TypeId {
         match self {
             LoweredExpr::AtVariable(var_usage) => ctx.variables[var_usage.var_id].ty,
-            LoweredExpr::Tuple { exprs, .. } => ctx.db.intern_type(semantic::TypeLongId::Tuple(
-                exprs.iter().map(|expr| expr.ty(ctx)).collect(),
-            )),
-            LoweredExpr::ExternEnum(extern_enum) => {
-                ctx.db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(
-                    extern_enum.concrete_enum_id,
-                )))
+            LoweredExpr::Tuple { exprs, .. } => {
+                semantic::TypeLongId::Tuple(exprs.iter().map(|expr| expr.ty(ctx)).collect())
+                    .intern(ctx.db)
             }
+            LoweredExpr::ExternEnum(extern_enum) => semantic::TypeLongId::Concrete(
+                semantic::ConcreteTypeId::Enum(extern_enum.concrete_enum_id),
+            )
+            .intern(ctx.db),
             LoweredExpr::Member(member_path, _) => member_path.ty(),
             LoweredExpr::Snapshot { expr, .. } => {
                 wrap_in_snapshots(ctx.db.upcast(), expr.ty(ctx), 1)
             }
-            LoweredExpr::FixedSizeArray { exprs, .. } => {
-                ctx.db.intern_type(semantic::TypeLongId::FixedSizeArray {
-                    type_id: exprs[0].ty(ctx),
-                    size: ctx.db.intern_const_value(
-                        value_as_const_value(
-                            ctx.db.upcast(),
-                            get_usize_ty(ctx.db.upcast()),
-                            &exprs.len().into(),
-                        )
-                        .unwrap(),
-                    ),
-                })
+            LoweredExpr::FixedSizeArray { exprs, .. } => semantic::TypeLongId::FixedSizeArray {
+                type_id: exprs[0].ty(ctx),
+                size: value_as_const_value(
+                    ctx.db.upcast(),
+                    get_usize_ty(ctx.db.upcast()),
+                    &exprs.len().into(),
+                )
+                .unwrap()
+                .intern(ctx.db),
             }
+            .intern(ctx.db),
         }
     }
     pub fn location(&self) -> LocationId {
@@ -473,10 +461,11 @@ pub fn lowering_flow_error_to_sealed_block(
             .add(ctx, &mut builder.statements);
             let err_instance = generators::StructConstruct {
                 inputs: vec![panic_instance, data_var],
-                ty: ctx.db.intern_type(TypeLongId::Tuple(vec![
+                ty: TypeLongId::Tuple(vec![
                     ctx.variables[panic_instance.var_id].ty,
                     ctx.variables[data_var.var_id].ty,
-                ])),
+                ])
+                .intern(ctx.db),
                 location,
             }
             .add(ctx, &mut builder.statements);

@@ -11,7 +11,7 @@ use cairo_lang_semantic::{self as semantic, corelib, ConcreteTypeId, TypeId, Typ
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{extract_matches, Upcast};
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern, Upcast};
 use defs::ids::NamedLanguageElementId;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -374,7 +374,7 @@ fn priv_function_with_body_lowering(
 ) -> Maybe<Arc<FlatLowered>> {
     let semantic_function_id = function_id.base_semantic_function(db);
     let multi_lowering = db.priv_function_with_body_multi_lowering(semantic_function_id)?;
-    let lowered = match &db.lookup_intern_lowering_function_with_body(function_id) {
+    let lowered = match &function_id.lookup_intern(db) {
         ids::FunctionWithBodyLongId::Semantic(_) => multi_lowering.main_lowering.clone(),
         ids::FunctionWithBodyLongId::Generated { element, .. } => {
             multi_lowering.generated_lowerings[element].clone()
@@ -388,8 +388,7 @@ fn function_with_body_lowering_with_borrow_check(
     function_id: ids::FunctionWithBodyId,
 ) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)> {
     let mut lowered = (*db.priv_function_with_body_lowering(function_id)?).clone();
-    let module_file_id = function_id.base_semantic_function(db).module_file_id(db.upcast());
-    let block_extra_calls = borrow_check(db, module_file_id, &mut lowered);
+    let block_extra_calls = borrow_check(db, &mut lowered);
     Ok((Arc::new(lowered), Arc::new(block_extra_calls)))
 }
 
@@ -474,7 +473,7 @@ pub(crate) fn get_direct_callees(
         return direct_callees;
     }
     let withdraw_gas_fns = corelib::core_withdraw_gas_fns(db.upcast())
-        .map(|id| db.intern_lowering_function(FunctionLongId::Semantic(id)));
+        .map(|id| FunctionLongId::Semantic(id).intern(db));
     let mut visited = vec![false; lowered_function.blocks.len()];
     let mut stack = vec![BlockId(0)];
     while let Some(block_id) = stack.pop() {
@@ -571,7 +570,7 @@ fn extract_coupon_function(
     concrete: ids::FunctionId,
 ) -> Maybe<Option<ids::ConcreteFunctionWithBodyId>> {
     // Check that the function is a semantic function.
-    let ids::FunctionLongId::Semantic(function_id) = concrete.lookup(db) else {
+    let ids::FunctionLongId::Semantic(function_id) = concrete.lookup_intern(db) else {
         return Ok(None);
     };
 
@@ -583,7 +582,7 @@ fn extract_coupon_function(
     else {
         return Ok(None);
     };
-    let name = db.lookup_intern_extern_function(extern_function_id).name(db.upcast());
+    let name = extern_function_id.lookup_intern(db).name(db.upcast());
     if !(name == "coupon_buy" || name == "coupon_refund") {
         return Ok(None);
     }
@@ -592,7 +591,7 @@ fn extract_coupon_function(
     let [semantic::GenericArgumentId::Type(type_id)] = concrete_function.generic_args[..] else {
         panic!("Unexpected generic_args for coupon_buy().");
     };
-    let semantic::TypeLongId::Coupon(coupon_function) = db.lookup_intern_type(type_id) else {
+    let semantic::TypeLongId::Coupon(coupon_function) = type_id.lookup_intern(db) else {
         panic!("Unexpected generic_args for coupon_buy().");
     };
 
@@ -665,17 +664,15 @@ fn semantic_function_with_body_lowering_diagnostics(
     let mut diagnostics = DiagnosticsBuilder::default();
 
     if let Ok(multi_lowering) = db.priv_function_with_body_multi_lowering(semantic_function_id) {
-        let function_id = db.intern_lowering_function_with_body(
-            ids::FunctionWithBodyLongId::Semantic(semantic_function_id),
-        );
+        let function_id = ids::FunctionWithBodyLongId::Semantic(semantic_function_id).intern(db);
         diagnostics
             .extend(db.function_with_body_lowering_diagnostics(function_id).unwrap_or_default());
         for (element, _) in multi_lowering.generated_lowerings.iter() {
-            let function_id =
-                db.intern_lowering_function_with_body(ids::FunctionWithBodyLongId::Generated {
-                    parent: semantic_function_id,
-                    element: *element,
-                });
+            let function_id = ids::FunctionWithBodyLongId::Generated {
+                parent: semantic_function_id,
+                element: *element,
+            }
+            .intern(db);
             diagnostics.extend(
                 db.function_with_body_lowering_diagnostics(function_id).unwrap_or_default(),
             );
@@ -733,7 +730,7 @@ fn file_lowering_diagnostics(
 }
 
 fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
-    match db.lookup_intern_type(ty) {
+    match ty.lookup_intern(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(struct_id) => db
                 .concrete_struct_members(struct_id)
@@ -763,12 +760,14 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
         TypeLongId::Snapshot(ty) => db.type_size(ty),
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.type_size(type_id)
-                * extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
-                    .to_usize()
-                    .unwrap()
+                * extract_matches!(size.lookup_intern(db), ConstValue::Int).to_usize().unwrap()
         }
         TypeLongId::Coupon(_) => 0,
-        TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::ImplType(_)
+        | TypeLongId::TraitType(_)
+        | TypeLongId::Missing(_) => {
             panic!("Function should only be called with fully concrete types")
         }
     }

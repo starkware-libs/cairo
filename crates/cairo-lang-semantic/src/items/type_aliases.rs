@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::TypeAliasCycle;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::resolve::{Resolver, ResolverData};
@@ -34,7 +34,7 @@ pub fn type_alias_generic_params_data_helper(
     lookup_item_id: LookupItemId,
     parent_resolver_data: Option<Arc<ResolverData>>,
 ) -> Maybe<GenericParamsData> {
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
 
     let mut resolver = match parent_resolver_data {
@@ -73,7 +73,7 @@ pub fn type_alias_semantic_data_helper(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
 
     let ty = resolve_type(db, diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
 
@@ -104,7 +104,7 @@ pub fn type_alias_semantic_data_cycle_helper(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
 
     let attributes = type_alias_ast.attributes(syntax_db).structurize(syntax_db);
 

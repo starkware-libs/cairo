@@ -105,12 +105,12 @@ error: Fixed size array with defined size must have exactly one value.
     let _x: [u32; 2] = [1, 2; 2];
                        ^*******^
 
-error: Fixed size array must have at least one element.
+error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?4; 0]".
  --> lib.cairo:5:24
     let _x: [u32; 2] = [];
                        ^^
 
-error: Fixed size array must have at least one element.
+error: Fixed size array with defined size must have exactly one value.
  --> lib.cairo:6:24
     let _x: [u32; 2] = [; 2];
                        ^***^
@@ -137,22 +137,7 @@ foo
 const SIZE: usize = 2;
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>
- --> lib.cairo:3:29
-    let _x: [u32; -1] = [1; -1];
-                            ^^
-
-error: The value does not fit within the range of type core::integer::u32.
- --> lib.cairo:3:29
-    let _x: [u32; -1] = [1; -1];
-                            ^^
-
-error: Fixed size array type must have a positive integer size.
- --> lib.cairo:3:25
-    let _x: [u32; -1] = [1; -1];
-                        ^*****^
-
-error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>
+error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>.
  --> lib.cairo:3:19
     let _x: [u32; -1] = [1; -1];
                   ^^
@@ -166,6 +151,21 @@ error: Fixed size array type must have a positive integer size.
  --> lib.cairo:3:13
     let _x: [u32; -1] = [1; -1];
             ^*******^
+
+error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>.
+ --> lib.cairo:3:29
+    let _x: [u32; -1] = [1; -1];
+                            ^^
+
+error: The value does not fit within the range of type core::integer::u32.
+ --> lib.cairo:3:29
+    let _x: [u32; -1] = [1; -1];
+                            ^^
+
+error: Fixed size array type must have a positive integer size.
+ --> lib.cairo:3:25
+    let _x: [u32; -1] = [1; -1];
+                        ^*****^
 
 error: Fixed size array size must be smaller than 2^15.
  --> lib.cairo:6:28

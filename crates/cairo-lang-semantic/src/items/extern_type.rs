@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::resolve::Resolver;
@@ -56,7 +56,7 @@ pub fn extern_type_declaration_generic_params_data(
     extern_type_id: ExternTypeId,
 ) -> Maybe<GenericParamsData> {
     let module_file_id = extern_type_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?.to_maybe()?;
 
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
@@ -71,7 +71,7 @@ pub fn extern_type_declaration_generic_params_data(
         &extern_type_syntax.generic_params(db.upcast()),
     )?;
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
-        diagnostics.report_by_ptr(
+        diagnostics.report(
             param.stable_ptr(db.upcast()).untyped(),
             ExternTypeWithImplGenericsNotSupported,
         );
@@ -89,9 +89,7 @@ pub fn priv_extern_type_declaration_data(
     db: &dyn SemanticGroup,
     extern_type_id: ExternTypeId,
 ) -> Maybe<ExternTypeDeclarationData> {
-    let module_file_id = extern_type_id.module_file_id(db.upcast());
-
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?.to_maybe()?;
 
     // Generic params.
@@ -104,7 +102,7 @@ pub fn priv_extern_type_declaration_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
     let syntax_db = db.upcast();
     let attributes = extern_type_syntax.attributes(syntax_db).structurize(syntax_db);
 

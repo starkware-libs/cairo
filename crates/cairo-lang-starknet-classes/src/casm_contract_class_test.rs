@@ -1,8 +1,8 @@
 use std::fs;
 use std::io::BufReader;
 
-use cairo_felt::Felt252;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
+use starknet_types_core::felt::Felt as Felt252;
 use test_case::test_case;
 
 use crate::casm_contract_class::{BigUintAsHex, CasmContractClass, StarknetSierraCompilationError};

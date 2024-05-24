@@ -104,6 +104,9 @@ impls:
 impl MyTypeDrop of core::traits::Drop::<MyType>;
 
 
+lib.cairo:1:16
+#[derive(Drop, starknet::Store)]
+               ^*************^
 starknet_derive:
 
 impl StoreMyType of starknet::Store::<MyType> {
@@ -139,6 +142,9 @@ impl StoreMyType of starknet::Store::<MyType> {
 }
 
 
+lib.cairo:41:1
+#[starknet::interface]
+^********************^
 MyTraitDispatcherTrait:
 
 trait MyTraitDispatcherTrait<T> {
@@ -323,6 +329,9 @@ impl MyTraitDispatcherSerde of core::serde::Serde::<MyTraitDispatcher> {
 }
 
 
+lib.cairo:41:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreMyTraitDispatcher of starknet::Store::<MyTraitDispatcher> {
@@ -374,6 +383,9 @@ impl MyTraitLibraryDispatcherSerde of core::serde::Serde::<MyTraitLibraryDispatc
 }
 
 
+lib.cairo:41:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreMyTraitLibraryDispatcher of starknet::Store::<MyTraitLibraryDispatcher> {
@@ -425,6 +437,9 @@ impl MyTraitSafeLibraryDispatcherSerde of core::serde::Serde::<MyTraitSafeLibrar
 }
 
 
+lib.cairo:41:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreMyTraitSafeLibraryDispatcher of starknet::Store::<MyTraitSafeLibraryDispatcher> {
@@ -476,6 +491,9 @@ impl MyTraitSafeDispatcherSerde of core::serde::Serde::<MyTraitSafeDispatcher> {
 }
 
 
+lib.cairo:41:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreMyTraitSafeDispatcher of starknet::Store::<MyTraitSafeDispatcher> {
@@ -511,6 +529,9 @@ impl StoreMyTraitSafeDispatcher of starknet::Store::<MyTraitSafeDispatcher> {
 }
 
 
+lib.cairo:6:1
+#[starknet::component]
+^********************^
 component:
 
 
@@ -535,20 +556,22 @@ component:
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
+
+        pub mod __member_module_data {
         use super::ContractAddress;
         use super::MyTrait;
         use super::Event;
         use super::Log;
         use super::MyInnerImpl;
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
     pub mod __member_module_map {
         use super::ContractAddress;
         use super::MyTrait;
@@ -558,31 +581,35 @@ component:
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
 
-        impl StorageMapComponentMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ComponentMemberState, u32, u32> {
+        impl StorageLegacyMapComponentMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ComponentMemberState> {
+            type Key = u32;
+            type Value = u32;
             fn address(self: @ComponentMemberState, key: u32) -> starknet::storage_access::StorageBaseAddress {
                 starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<u32>::hash(0x1af9e30ee4fed507d9432e0f1308eb5bd12221bef97071a48d86951102231be, key))
             }
         }
     }
-    pub mod __member_module_my_type_var {
+
+        pub mod __member_module_my_type_var {
         use super::ContractAddress;
         use super::MyTrait;
         use super::Event;
         use super::Log;
         use super::MyInnerImpl;
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, super::super::MyType> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x1d7ac842e8e2a1c4fd94662d0a812cd378294e5156fee62dafbd49a010246c7>()
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = super::super::MyType;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x1d7ac842e8e2a1c4fd94662d0a812cd378294e5156fee62dafbd49a010246c7>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -614,6 +641,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:19:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -655,6 +685,9 @@ impls:
 impl LogDrop of core::traits::Drop::<Log>;
 
 
+lib.cairo:23:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl LogIsEvent of starknet::Event<Log> {
@@ -670,6 +703,9 @@ impl LogIsEvent of starknet::Event<Log> {
 }
 
 
+lib.cairo:26:5
+    #[embeddable_as(MyImpl)]
+    ^**********************^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForMyImpl<

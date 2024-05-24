@@ -41,7 +41,7 @@ fn with_err() -> Option::<felt252> {
 }
 
 //! > expected_diagnostics
-error: Return type "core::felt252" does not wrap error "()"
+error: `?` can only be used in a function with `Option` or `Result` return type.
  --> lib.cairo:5:5
     with_err()?;
     ^*********^
@@ -95,7 +95,7 @@ fn with_err() -> Result::<felt252, u128> {
 }
 
 //! > expected_diagnostics
-error: Return type "core::felt252" does not wrap error "core::integer::u128"
+error: `?` can only be used in a function with `Option` or `Result` return type.
  --> lib.cairo:5:5
     with_err()?;
     ^*********^
@@ -140,9 +140,9 @@ fn foo() -> Result::<felt252, u128> {
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo() -> felt252 {
-    6?;
-    35
+fn foo() -> Option<felt252> {
+    6_u32?;
+    Option::None
 }
 
 //! > function_name
@@ -151,7 +151,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Type "?0" can not error propagate
+error: Type "core::integer::u32" can not error propagate
  --> lib.cairo:2:5
-    6?;
-    ^^
+    6_u32?;
+    ^****^

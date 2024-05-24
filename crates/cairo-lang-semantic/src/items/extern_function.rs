@@ -15,7 +15,7 @@ use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::corelib::get_core_generic_function_id;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
@@ -71,7 +71,7 @@ pub fn extern_function_declaration_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let syntax_db = db.upcast();
     let module_file_id = extern_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
     let declaration = extern_function_syntax.declaration(syntax_db);
 
@@ -135,8 +135,7 @@ pub fn priv_extern_function_declaration_data(
     extern_function_id: ExternFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
     let syntax_db = db.upcast();
-    let module_file_id = extern_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
 
     let declaration = extern_function_syntax.declaration(syntax_db);
@@ -151,7 +150,7 @@ pub fn priv_extern_function_declaration_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics);
     resolver.data.allowed_features = extract_allowed_features(
         db.upcast(),
         &extern_function_id,
@@ -188,17 +187,14 @@ pub fn priv_extern_function_declaration_data(
         InlineConfiguration::Always(attr)
         | InlineConfiguration::Never(attr)
         | InlineConfiguration::Should(attr) => {
-            diagnostics
-                .report_by_ptr(attr.stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
+            diagnostics.report(attr.stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
         }
     }
 
     let (_, implicit_precedence_attr) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
     if let Some(attr) = implicit_precedence_attr {
-        diagnostics.report_by_ptr(
-            attr.stable_ptr.untyped(),
-            ImplicitPrecedenceAttrForExternFunctionNotAllowed,
-        );
+        diagnostics
+            .report(attr.stable_ptr.untyped(), ImplicitPrecedenceAttrForExternFunctionNotAllowed);
     }
 
     // Check fully resolved.

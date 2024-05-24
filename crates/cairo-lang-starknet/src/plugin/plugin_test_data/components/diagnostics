@@ -43,6 +43,9 @@ trait MyTrait<T> {
     fn do_nothing(self: @T);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -66,8 +69,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -84,6 +87,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -154,6 +160,9 @@ trait MyTrait<T> {
     fn do_nothing(self: @T);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -177,8 +186,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -195,6 +204,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -265,6 +277,9 @@ trait MyTrait<T> {
     fn do_nothing(self: @T);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -288,8 +303,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -306,6 +321,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -372,6 +390,9 @@ trait MyTrait<T> {
     fn do_nothing();
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -395,8 +416,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -413,6 +434,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -479,6 +503,9 @@ trait MyTrait<T> {
     fn do_nothing();
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -502,8 +529,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -520,6 +547,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -590,6 +620,9 @@ trait MyTrait<T> {
     fn do_nothing();
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -613,8 +646,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -631,6 +664,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -697,6 +733,9 @@ trait MyTrait<T> {
     fn do_nothing();
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -720,8 +759,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -738,6 +777,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -800,6 +842,9 @@ mod component {
 }
 trait MyTrait<T>;
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -823,8 +868,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -841,6 +886,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -915,6 +963,9 @@ trait MyTrait<T> {
     fn self_of_wrong_type(self: T);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -938,8 +989,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -961,6 +1012,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -980,6 +1034,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:8:5
+    #[embeddable_as(MyImpl)]
+    ^**********************^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForMyImpl<
@@ -1073,6 +1130,9 @@ trait MyTrait<T> {
     fn do_nothing(self: @T);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -1096,8 +1156,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1114,6 +1174,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1184,6 +1247,9 @@ trait MyTrait<T> {
     fn do_nothing(self: @T);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -1207,8 +1273,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1225,6 +1291,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {

@@ -28,7 +28,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?0
+error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:10
 type B = bar::Coupon; // Invalid: missing type annotation.
          ^*^
@@ -164,7 +164,7 @@ fn foo2(x: m::MyImpl::<u8>::trait_fn::Coupon) {
 foo0
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::Drop::<test::m::bar_no_drop::Coupon>
+error: Trait has no implementation in context: core::traits::Drop::<test::m::bar_no_drop::Coupon>.
  --> lib.cairo:19:5
     use_drop(x);
     ^******^

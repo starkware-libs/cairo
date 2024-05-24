@@ -5,9 +5,9 @@ mod test;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_semantic::corelib;
 use cairo_lang_semantic::items::constant::ConstValue;
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_lang_utils::{extract_matches, Intern};
 use itertools::{chain, zip_eq};
 use num_traits::Zero;
 
@@ -40,7 +40,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     let mut var_info = UnorderedHashMap::<_, _>::default();
 
     let semantic_db = db.upcast();
-    let to_lowering_id = |id| db.intern_lowering_function(FunctionLongId::Semantic(id));
+    let to_lowering_id = |id| FunctionLongId::Semantic(id).intern(db);
     let get_extern = |module, name: &str, fullpath: &str| {
         let Ok(Some(ModuleItemId::ExternFunction(id))) =
             db.module_item_by_name(module, name.into())
@@ -116,7 +116,8 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                                     lowered.variables[inputs[0].var_id].ty,
                                     val.clone().into(),
                                 );
-                                var_info.insert(outputs[0], VarInfo::Const(value.clone()));
+                                // Not inserting the value into the `var_info` map because the
+                                // resulting box isn't an actual const at the Sierra level.
                                 *stmt =
                                     Statement::Const(StatementConst { value, output: outputs[0] });
                             }

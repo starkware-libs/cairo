@@ -10,6 +10,7 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::Intern;
 use lowering::BlockId;
 
 use crate::block_generator::generate_block_code;
@@ -130,7 +131,7 @@ fn get_function_code(
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should
     // be regarded as private.
     Ok(pre_sierra::Function {
-        id: db.intern_sierra_function(function_id.function_id(db.upcast())?),
+        id: function_id.function_id(db.upcast())?.intern(db),
         body: statements,
         entry_point: label_id,
         parameters,

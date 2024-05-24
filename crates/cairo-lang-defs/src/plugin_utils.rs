@@ -1,6 +1,7 @@
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_utils::require;
 use itertools::Itertools;
 
 use crate::plugin::{InlinePluginResult, PluginDiagnostic, PluginResult};
@@ -89,9 +90,7 @@ pub fn extract_unnamed_args(
     n: usize,
 ) -> Option<Vec<ast::Expr>> {
     let elements = macro_arguments.elements(db);
-    if elements.len() != n {
-        return None;
-    }
+    require(elements.len() == n)?;
     elements.iter().map(|x| try_extract_unnamed_arg(db, x)).collect()
 }
 
@@ -137,7 +136,7 @@ macro_rules! extract_macro_unnamed_args {
         let Some(args) = args else {
             return $crate::plugin_utils::PluginResultTrait::diagnostic_only(
                 PluginDiagnostic::error(
-                    $syntax.stable_ptr().untyped(),
+                    $syntax,
                     format!(
                         "Macro `{}` must have exactly {} unnamed arguments.",
                         $crate::plugin_utils::InlineMacroCall::path($syntax, $db)

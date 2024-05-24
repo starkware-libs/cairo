@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
-use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
@@ -30,6 +29,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, Itertools};
 pub use plugin::TestPlugin;
 use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::Felt as Felt252;
 pub use test_config::{try_extract_test_config, TestConfig};
 
 mod inline_macros;
@@ -47,8 +47,8 @@ const STATIC_GAS_ARG: &str = "static";
 /// # Arguments
 /// * `db` - Preloaded compilation database.
 /// * `starknet` - Add the starknet contracts to the compiled tests.
-/// * `main_crate_ids` - [`CrateId`]s to compile. Use `db.intern_crate(CrateLongId::Real(name))` in
-///   order to obtain [`CrateId`] from its name.
+/// * `main_crate_ids` - [`CrateId`]s to compile. Use `CrateLongId::Real(name).intern(db)` in order
+///   to obtain [`CrateId`] from its name.
 /// * `test_crate_ids` - [`CrateId`]s to find tests cases in. Must be a subset of `main_crate_ids`.
 /// # Returns
 /// * `Ok(TestCompilation)` - The compiled test cases with metadata.
@@ -133,7 +133,7 @@ pub fn compile_test_prepared_db(
 }
 
 /// Compiled test cases.
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct TestCompilation {
     #[serde(
         serialize_with = "serialize_ordered_hashmap_vec",

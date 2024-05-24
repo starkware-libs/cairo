@@ -37,7 +37,7 @@ mod self_caller {
 #[test]
 fn test_deploy_in_construct() {
     let (contract_address, _) = deploy_syscall(
-        self_caller::TEST_CLASS_HASH.try_into().unwrap(), 0, array![].span(), false
+        self_caller::TEST_CLASS_HASH.try_into().unwrap(), 0, [].span(), false
     )
         .expect('deployment failed');
     assert!(IValueDispatcher { contract_address }.get_value() == 1);
@@ -47,12 +47,12 @@ fn test_deploy_in_construct() {
 #[test]
 fn test_redeploy_in_construct() {
     assert!(
-        deploy_syscall(self_caller::TEST_CLASS_HASH.try_into().unwrap(), 0, array![].span(), false)
+        deploy_syscall(self_caller::TEST_CLASS_HASH.try_into().unwrap(), 0, [].span(), false)
             .is_ok()
     );
     assert!(
         deploy_syscall(
-            self_caller::TEST_CLASS_HASH.try_into().unwrap(), 0, array![].span(), false
+            self_caller::TEST_CLASS_HASH.try_into().unwrap(), 0, [].span(), false
         ) == Result::Err(array!['CONTRACT_ALREADY_DEPLOYED'])
     );
 }

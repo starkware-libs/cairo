@@ -24,7 +24,7 @@ To set up a development environment, please follow these steps:
 The `rustfmt` configuration used by cairo requires a nightly version of Rust. 
 You can install the nightly version by running.
 ```sh
-rustup install nightly-2024-03-09
+rustup install nightly-2024-04-23
 ```
 
 ## Running Tests

@@ -4,6 +4,7 @@ use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
+use cairo_lang_sierra::extensions::circuit::CircuitInfo;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
@@ -23,6 +24,7 @@ use itertools::{chain, zip_eq, Itertools};
 use num_bigint::BigInt;
 use thiserror::Error;
 
+use crate::circuit::CircuitsInfo;
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
@@ -38,6 +40,7 @@ mod boolean;
 mod boxing;
 mod bytes31;
 mod casts;
+mod circuit;
 mod const_type;
 mod debug;
 mod ec;
@@ -337,6 +340,10 @@ impl<'a> InvocationCostInfoProvider for CompiledInvocationBuilder<'a> {
     fn token_usages(&self, token_type: CostTokenType) -> usize {
         InvocationApChangeInfoProvider::token_usages(self, token_type)
     }
+
+    fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo {
+        self.program_info.circuits_info.circuits.get(ty).unwrap()
+    }
 }
 
 /// Information required for validating libfunc cost.
@@ -611,6 +618,8 @@ impl CompiledInvocationBuilder<'_> {
 pub struct ProgramInfo<'a> {
     pub metadata: &'a Metadata,
     pub type_sizes: &'a TypeSizeMap,
+    /// Information about the circuits in the program.
+    pub circuits_info: &'a CircuitsInfo,
     /// Returns the given a const type returns a vector of cells value representing it.
     pub const_data_values: &'a dyn Fn(&ConcreteTypeId) -> Vec<BigInt>,
 }
@@ -689,6 +698,7 @@ pub fn compile_invocation(
             }
         },
         BoundedInt(libfunc) => int::bounded::build(libfunc, builder),
+        Circuit(libfunc) => circuit::build(libfunc, builder),
     }
 }
 

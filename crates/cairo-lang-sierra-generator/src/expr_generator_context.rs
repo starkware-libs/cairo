@@ -7,6 +7,7 @@ use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::Intern;
 use lowering::ids::ConcreteFunctionWithBodyId;
 use lowering::{BlockId, FlatLowered, VariableId};
 
@@ -34,7 +35,7 @@ pub struct ExprGeneratorContext<'a> {
     ap_tracking_configuration: ApTrackingConfiguration,
 
     /// The current location for adding statements.
-    curr_cairo_location: Vec<StableLocation>,
+    pub curr_cairo_location: Vec<StableLocation>,
     /// The accumulated statements for the expression.
     statements: Vec<pre_sierra::StatementWithLocation>,
 }
@@ -129,13 +130,14 @@ impl<'a> ExprGeneratorContext<'a> {
             SierraGenVar::UninitializedLocal(lowering_var) => {
                 let inner_type =
                     self.db.get_concrete_type_id(self.lowered.variables[lowering_var].ty)?;
-                self.db.intern_concrete_type(crate::db::SierraGeneratorTypeLongId::Regular(
+                crate::db::SierraGeneratorTypeLongId::Regular(
                     ConcreteTypeLongId {
                         generic_id: UninitializedType::ID,
                         generic_args: vec![GenericArg::Type(inner_type)],
                     }
                     .into(),
-                ))
+                )
+                .intern(self.db)
             }
         })
     }
@@ -213,8 +215,5 @@ pub fn alloc_label_id(
     function_id: ConcreteFunctionWithBodyId,
     label_id_allocator: &mut IdAllocator,
 ) -> pre_sierra::LabelId {
-    db.intern_label_id(pre_sierra::LabelLongId {
-        parent: function_id,
-        id: label_id_allocator.allocate(),
-    })
+    pre_sierra::LabelLongId { parent: function_id, id: label_id_allocator.allocate() }.intern(db)
 }

@@ -259,6 +259,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
                 function_costs: Default::default(),
             },
         },
+        circuits_info: &Default::default(),
         type_sizes: &type_sizes,
         const_data_values: &|_| panic!("const_data_values not implemented for tests."),
     };

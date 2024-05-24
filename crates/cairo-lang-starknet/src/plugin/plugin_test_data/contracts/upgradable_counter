@@ -82,54 +82,28 @@ mod counter_contract {
         }
     }
     
-    pub use __member_module_counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
-    pub mod __member_module_counter {
+
+        pub mod __member_module_counter {
         use super::upgradable_comp;
         use super::ownable_comp;
         use super::Event;
         use super::CounterIncreased;
         use super::CounterDecreased;
         use super::CounterContract;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> u128;
-            fn write(ref self: ContractMemberState, value: u128);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x7ebcc807b5c7e19f245995a55aed6f46f5f582f476a886b91b834b0ddf5854>()
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = u128;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x7ebcc807b5c7e19f245995a55aed6f46f5f582f476a886b91b834b0ddf5854>()
+                }
             }
-            fn read(self: @ContractMemberState) -> u128 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<u128>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
-                )
-            }
-            fn write(ref self: ContractMemberState, value: u128) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<u128>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
-                )
-            }
-        }
 impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
 impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-    }
+        }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -849,54 +823,28 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
         }
     }
     
-    pub use __member_module_counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
-    pub mod __member_module_counter {
+
+        pub mod __member_module_counter {
         use super::upgradable_comp;
         use super::ownable_comp;
         use super::Event;
         use super::CounterIncreased;
         use super::CounterDecreased;
         use super::CounterContract;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> u128;
-            fn write(ref self: ContractMemberState, value: u128);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x7ebcc807b5c7e19f245995a55aed6f46f5f582f476a886b91b834b0ddf5854>()
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = u128;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x7ebcc807b5c7e19f245995a55aed6f46f5f582f476a886b91b834b0ddf5854>()
+                }
             }
-            fn read(self: @ContractMemberState) -> u128 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<u128>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
-                )
-            }
-            fn write(ref self: ContractMemberState, value: u128) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<u128>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
-                )
-            }
-        }
 impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
 impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-    }
+        }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]

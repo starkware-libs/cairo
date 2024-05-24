@@ -1,13 +1,10 @@
 use std::any::Any;
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
-use std::ops::{Deref, Shl};
+use std::ops::{Shl, Sub};
 use std::vec::IntoIter;
 
-use ark_ff::fields::{Fp256, MontBackend, MontConfig};
-use ark_ff::{BigInteger, Field, PrimeField};
-use ark_std::UniformRand;
-use cairo_felt::{felt_str as felt252_str, Felt252};
+use ark_ff::{BigInteger, PrimeField};
 use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, Hint, StarknetHint};
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
@@ -20,9 +17,11 @@ use cairo_vm::hint_processor::hint_processor_definition::{
     HintProcessor, HintProcessorLogic, HintReference,
 };
 use cairo_vm::serde::deserialize_program::{
-    ApTracking, BuiltinName, FlowTrackingData, HintParams, ReferenceManager,
+    ApTracking, FlowTrackingData, HintParams, ReferenceManager,
 };
+use cairo_vm::types::builtin_name::BuiltinName;
 use cairo_vm::types::exec_scope::ExecutionScopes;
+use cairo_vm::types::layout_name::LayoutName;
 use cairo_vm::types::program::Program;
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
@@ -32,12 +31,16 @@ use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use cairo_vm::vm::runners::cairo_runner::{
     CairoRunner, ExecutionResources, ResourceTracker, RunResources,
 };
+use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
 use itertools::Itertools;
 use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
-use num_traits::{FromPrimitive, Signed, ToPrimitive, Zero};
+use num_traits::{Signed, ToPrimitive, Zero};
+use rand::Rng;
+use starknet_crypto::FieldElement;
+use starknet_types_core::felt::Felt as Felt252;
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::contract_address::calculate_contract_address;
@@ -50,18 +53,6 @@ mod test;
 
 mod contract_address;
 mod dict_manager;
-
-// TODO(orizi): This def is duplicated.
-/// Returns the Beta value of the Starkware elliptic curve.
-fn get_beta() -> Felt252 {
-    felt252_str!("3141592653589793238462643383279502884197169399375105820974944592307816406665")
-}
-
-#[derive(MontConfig)]
-#[modulus = "3618502788666131213697322783095070105623107215331596699973092056135872020481"]
-#[generator = "3"]
-struct FqConfig;
-type Fq = Fp256<MontBackend<FqConfig, 4>>;
 
 /// Convert a Hint to the cairo-vm class HintParams by canonically serializing it to a string.
 pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
@@ -227,7 +218,7 @@ struct MemoryExecScope {
 
 /// Fetches the value of a cell from the vm.
 fn get_cell_val(vm: &VirtualMachine, cell: &CellRef) -> Result<Felt252, VirtualMachineError> {
-    Ok(vm.get_integer(cell_ref_to_relocatable(cell, vm))?.as_ref().clone())
+    Ok(*vm.get_integer(cell_ref_to_relocatable(cell, vm))?)
 }
 
 /// Fetch the `MaybeRelocatable` value from an address.
@@ -262,7 +253,7 @@ fn get_double_deref_val(
     cell: &CellRef,
     offset: &Felt252,
 ) -> Result<Felt252, VirtualMachineError> {
-    Ok(vm.get_integer(get_ptr(vm, cell, offset)?)?.as_ref().clone())
+    Ok(*vm.get_integer(get_ptr(vm, cell, offset)?)?)
 }
 
 /// Fetches the maybe relocatable value of a pointer described by the value at `cell` plus an offset
@@ -317,10 +308,10 @@ enum SyscallResult {
 
 macro_rules! fail_syscall {
     ($reason:expr) => {
-        return Ok(SyscallResult::Failure(vec![Felt252::from_bytes_be($reason)]))
+        return Ok(SyscallResult::Failure(vec![Felt252::from_bytes_be_slice($reason)]))
     };
     ($existing:ident, $reason:expr) => {
-        $existing.push(Felt252::from_bytes_be($reason));
+        $existing.push(Felt252::from_bytes_be_slice($reason));
         return Ok(SyscallResult::Failure($existing))
     };
 }
@@ -334,7 +325,7 @@ mod gas_costs {
 
     /// Entry point initial gas cost enforced by the compiler.
     /// Should match `ENTRY_POINT_COST` at `crates/cairo-lang-starknet/src/casm_contract_class.rs`.
-    const ENTRY_POINT_INITIAL_BUDGET: usize = 100 * STEP;
+    pub const ENTRY_POINT_INITIAL_BUDGET: usize = 100 * STEP;
     /// OS gas costs.
     const ENTRY_POINT: usize = ENTRY_POINT_INITIAL_BUDGET + 500 * STEP;
     // The required gas for each syscall minus the base amount that was pre-charged (by the
@@ -660,7 +651,7 @@ impl<'a> CairoHintProcessor<'a> {
                 }
                 Ok(())
             };
-        let selector = std::str::from_utf8(&selector).unwrap();
+        let selector = std::str::from_utf8(&selector).unwrap().trim_start_matches('\0');
         *self.syscalls_used_resources.syscalls.entry(selector.into()).or_default() += 1;
         match selector {
             "StorageWrite" => execute_handle_helper(&mut |system_buffer, gas_counter| {
@@ -701,7 +692,7 @@ impl<'a> CairoHintProcessor<'a> {
                 sha_256_process_block(
                     gas_counter,
                     system_buffer.next_fixed_size_arr_pointer(8)?,
-                    system_buffer.next_arr()?,
+                    system_buffer.next_fixed_size_arr_pointer(16)?,
                     exec_scopes,
                     system_buffer,
                 )
@@ -824,7 +815,7 @@ impl<'a> CairoHintProcessor<'a> {
             // Only address_domain 0 is currently supported.
             fail_syscall!(b"Unsupported address domain");
         }
-        let contract = self.starknet_state.exec_info.contract_address.clone();
+        let contract = self.starknet_state.exec_info.contract_address;
         self.starknet_state.storage.entry(contract).or_default().insert(addr, value);
         Ok(SyscallResult::Success(vec![]))
     }
@@ -859,7 +850,7 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, GET_BLOCK_HASH);
         if let Some(block_hash) = self.starknet_state.block_hash.get(&block_number) {
-            Ok(SyscallResult::Success(vec![block_hash.clone().into()]))
+            Ok(SyscallResult::Success(vec![block_hash.into()]))
         } else {
             fail_syscall!(b"GET_BLOCK_HASH_NOT_SET");
         }
@@ -881,9 +872,9 @@ impl<'a> CairoHintProcessor<'a> {
         let signature_end = res_segment.ptr;
         let resource_bounds_start = res_segment.ptr;
         for value in &tx_info.resource_bounds {
-            res_segment.write(&value.resource)?;
-            res_segment.write(&value.max_amount)?;
-            res_segment.write(&value.max_price_per_unit)?;
+            res_segment.write(value.resource)?;
+            res_segment.write(value.max_amount)?;
+            res_segment.write(value.max_price_per_unit)?;
         }
         let resource_bounds_end = res_segment.ptr;
         let paymaster_data_start = res_segment.ptr;
@@ -893,33 +884,33 @@ impl<'a> CairoHintProcessor<'a> {
         res_segment.write_data(tx_info.account_deployment_data.iter().cloned())?;
         let account_deployment_data_end = res_segment.ptr;
         let tx_info_ptr = res_segment.ptr;
-        res_segment.write(tx_info.version.clone())?;
-        res_segment.write(tx_info.account_contract_address.clone())?;
-        res_segment.write(tx_info.max_fee.clone())?;
+        res_segment.write(tx_info.version)?;
+        res_segment.write(tx_info.account_contract_address)?;
+        res_segment.write(tx_info.max_fee)?;
         res_segment.write(signature_start)?;
         res_segment.write(signature_end)?;
-        res_segment.write(tx_info.transaction_hash.clone())?;
-        res_segment.write(tx_info.chain_id.clone())?;
-        res_segment.write(tx_info.nonce.clone())?;
+        res_segment.write(tx_info.transaction_hash)?;
+        res_segment.write(tx_info.chain_id)?;
+        res_segment.write(tx_info.nonce)?;
         res_segment.write(resource_bounds_start)?;
         res_segment.write(resource_bounds_end)?;
-        res_segment.write(tx_info.tip.clone())?;
+        res_segment.write(tx_info.tip)?;
         res_segment.write(paymaster_data_start)?;
         res_segment.write(paymaster_data_end)?;
-        res_segment.write(tx_info.nonce_data_availability_mode.clone())?;
-        res_segment.write(tx_info.fee_data_availability_mode.clone())?;
+        res_segment.write(tx_info.nonce_data_availability_mode)?;
+        res_segment.write(tx_info.fee_data_availability_mode)?;
         res_segment.write(account_deployment_data_start)?;
         res_segment.write(account_deployment_data_end)?;
         let block_info_ptr = res_segment.ptr;
-        res_segment.write(block_info.block_number.clone())?;
-        res_segment.write(block_info.block_timestamp.clone())?;
-        res_segment.write(block_info.sequencer_address.clone())?;
+        res_segment.write(block_info.block_number)?;
+        res_segment.write(block_info.block_timestamp)?;
+        res_segment.write(block_info.sequencer_address)?;
         let exec_info_ptr = res_segment.ptr;
         res_segment.write(block_info_ptr)?;
         res_segment.write(tx_info_ptr)?;
-        res_segment.write(exec_info.caller_address.clone())?;
-        res_segment.write(exec_info.contract_address.clone())?;
-        res_segment.write(exec_info.entry_point_selector.clone())?;
+        res_segment.write(exec_info.caller_address)?;
+        res_segment.write(exec_info.contract_address)?;
+        res_segment.write(exec_info.entry_point_selector)?;
         Ok(SyscallResult::Success(vec![exec_info_ptr.into()]))
     }
 
@@ -931,7 +922,7 @@ impl<'a> CairoHintProcessor<'a> {
         data: Vec<Felt252>,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, EMIT_EVENT);
-        let contract = self.starknet_state.exec_info.contract_address.clone();
+        let contract = self.starknet_state.exec_info.contract_address;
         self.starknet_state.logs.entry(contract).or_default().events.push_back((keys, data));
         Ok(SyscallResult::Success(vec![]))
     }
@@ -944,7 +935,7 @@ impl<'a> CairoHintProcessor<'a> {
         payload: Vec<Felt252>,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
-        let contract = self.starknet_state.exec_info.contract_address.clone();
+        let contract = self.starknet_state.exec_info.contract_address;
         self.starknet_state
             .logs
             .entry(contract)
@@ -970,7 +961,7 @@ impl<'a> CairoHintProcessor<'a> {
         let deployer_address = if deploy_from_zero {
             Felt252::zero()
         } else {
-            self.starknet_state.exec_info.contract_address.clone()
+            self.starknet_state.exec_info.contract_address
         };
         let deployed_contract_address = calculate_contract_address(
             &_contract_address_salt,
@@ -990,7 +981,7 @@ impl<'a> CairoHintProcessor<'a> {
         if self
             .starknet_state
             .deployed_contracts
-            .insert(deployed_contract_address.clone(), class_hash)
+            .insert(deployed_contract_address, class_hash)
             .is_some()
         {
             fail_syscall!(b"CONTRACT_ALREADY_DEPLOYED");
@@ -1000,7 +991,7 @@ impl<'a> CairoHintProcessor<'a> {
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
             let old_addrs = self
                 .starknet_state
-                .open_caller_context((deployed_contract_address.clone(), deployer_address));
+                .open_caller_context((deployed_contract_address, deployer_address));
             let res = self.call_entry_point(gas_counter, runner, constructor, calldata, vm);
             self.starknet_state.close_caller_context(old_addrs);
             match res {
@@ -1055,8 +1046,8 @@ impl<'a> CairoHintProcessor<'a> {
         };
 
         let old_addrs = self.starknet_state.open_caller_context((
-            contract_address.clone(),
-            self.starknet_state.exec_info.contract_address.clone(),
+            contract_address,
+            self.starknet_state.exec_info.contract_address,
         ));
         let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm);
         self.starknet_state.close_caller_context(old_addrs);
@@ -1117,7 +1108,7 @@ impl<'a> CairoHintProcessor<'a> {
         {
             fail_syscall!(b"CLASS_HASH_NOT_FOUND");
         };
-        let address = self.starknet_state.exec_info.contract_address.clone();
+        let address = self.starknet_state.exec_info.contract_address;
         self.starknet_state.deployed_contracts.insert(address, new_class);
         Ok(SyscallResult::Success(vec![]))
     }
@@ -1139,7 +1130,7 @@ impl<'a> CairoHintProcessor<'a> {
             .run_function_with_starknet_context(
                 function,
                 &[Arg::Array(calldata.into_iter().map(Arg::Value).collect())],
-                Some(*gas_counter),
+                Some(*gas_counter + gas_costs::ENTRY_POINT_INITIAL_BUDGET),
                 self.starknet_state.clone(),
             )
             .expect("Internal runner error.");
@@ -1234,9 +1225,7 @@ impl<'a> CairoHintProcessor<'a> {
                          two elements",
                     )
                 })?;
-                self.starknet_state
-                    .block_hash
-                    .insert(block_number.to_u64().unwrap(), block_hash.clone());
+                self.starknet_state.block_hash.insert(block_number.to_u64().unwrap(), block_hash);
             }
             "pop_log" => {
                 let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
@@ -1293,8 +1282,8 @@ fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, 
         keccak::f1600(&mut state)
     }
     Ok(SyscallResult::Success(vec![
-        ((Felt252::from(state[1]) << 64u32) + Felt252::from(state[0])).into(),
-        ((Felt252::from(state[3]) << 64u32) + Felt252::from(state[2])).into(),
+        ((Felt252::from((state[1] as u128) << 64u32)) + Felt252::from(state[0])).into(),
+        ((Felt252::from((state[3] as u128) << 64u32)) + Felt252::from(state[2])).into(),
     ]))
 }
 
@@ -1307,10 +1296,6 @@ fn sha_256_process_block(
     vm: &mut dyn VMWrapper,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SHA256_PROCESS_BLOCK);
-    if data.len() != 16 {
-        fail_syscall!(b"Invalid sha256_chunk input size");
-    }
-
     let data_as_bytes = sha2::digest::generic_array::GenericArray::from_exact_iter(
         data.iter().flat_map(|felt| felt.to_bigint().to_u32().unwrap().to_be_bytes()),
     )
@@ -1677,9 +1662,10 @@ pub fn execute_core_hint(
                 if lhs_val < rhs_val { Felt252::from(1) } else { Felt252::from(0) }
             )?;
         }
-        CoreHint::TestLessThanOrEqual { lhs, rhs, dst } => {
-            let lhs_val = get_val(vm, lhs)?;
-            let rhs_val = get_val(vm, rhs)?;
+        CoreHint::TestLessThanOrEqual { lhs, rhs, dst }
+        | CoreHint::TestLessThanOrEqualAddress { lhs, rhs, dst } => {
+            let lhs_val = get_maybe(vm, lhs)?;
+            let rhs_val = get_maybe(vm, rhs)?;
             insert_value_to_cellref!(
                 vm,
                 dst,
@@ -1815,28 +1801,28 @@ pub fn execute_core_hint(
         CoreHint::RandomEcPoint { x, y } => {
             // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
             // residue.
-            let beta = Fq::from(get_beta().to_biguint());
-            let mut rng = ark_std::test_rng();
-            let (random_x, random_y_squared) = loop {
-                let random_x = Fq::rand(&mut rng);
-                let random_y_squared = random_x * random_x * random_x + random_x + beta;
-                if random_y_squared.legendre().is_qr() {
-                    break (random_x, random_y_squared);
+            let mut rng = rand::thread_rng();
+            let (random_x, random_y) = loop {
+                // Randominzing 31 bytes to make sure is in range.
+                // TODO(orizi): Use `FieldElement` random implementation when exists.
+                let x_bytes: [u8; 31] = rng.gen();
+                let random_x = FieldElement::from_byte_slice_be(&x_bytes).unwrap();
+                let random_y_squared = random_x * random_x * random_x + random_x + ec::BETA;
+                if let Some(random_y) = random_y_squared.sqrt() {
+                    break (random_x, random_y);
                 }
             };
-            let x_bigint: BigUint = random_x.into_bigint().into();
-            let y_bigint: BigUint = random_y_squared.sqrt().unwrap().into_bigint().into();
+            let x_bigint: BigUint = BigUint::from_bytes_be(&random_x.to_bytes_be());
+            let y_bigint: BigUint = BigUint::from_bytes_be(&random_y.to_bytes_be());
             insert_value_to_cellref!(vm, x, Felt252::from(x_bigint))?;
             insert_value_to_cellref!(vm, y, Felt252::from(y_bigint))?;
         }
         CoreHint::FieldSqrt { val, sqrt } => {
-            let val = Fq::from(get_val(vm, val)?.to_biguint());
+            let val = FieldElement::from_bytes_be(&get_val(vm, val)?.to_bytes_be()).unwrap();
             insert_value_to_cellref!(vm, sqrt, {
-                let three_fq = Fq::from(BigUint::from_usize(3).unwrap());
-                let res =
-                    (if val.legendre().is_qr() { val } else { val * three_fq }).sqrt().unwrap();
-                let root0: BigUint = res.into_bigint().into();
-                let root1: BigUint = (-res).into_bigint().into();
+                let res = val.sqrt().unwrap_or_else(|| (val * FieldElement::THREE).sqrt().unwrap());
+                let root0 = BigUint::from_bytes_be(&res.to_bytes_be());
+                let root1 = BigUint::from_bytes_be(&(-res).to_bytes_be());
                 let res_big_uint = std::cmp::min(root0, root1);
                 Felt252::from(res_big_uint)
             })?;
@@ -1896,7 +1882,7 @@ pub fn execute_core_hint(
         }
         CoreHint::InitSquashData { dict_accesses, n_accesses, first_key, big_keys, .. } => {
             let dict_access_size = 3;
-            let rangecheck_bound = Felt252::from(u128::MAX) + 1u32;
+            let rangecheck_bound = Felt252::from(BigInt::from(1).shl(128));
 
             exec_scopes.assign_or_update_variable(
                 "dict_squash_exec_scope",
@@ -1963,10 +1949,10 @@ pub fn execute_core_hint(
             let dict_squash_exec_scope: &mut DictSquashExecScope =
                 exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
             let prev_access_index = dict_squash_exec_scope.pop_current_access_index().unwrap();
-            let index_delta_minus_1_val =
-                dict_squash_exec_scope.current_access_index().unwrap().clone()
-                    - prev_access_index
-                    - 1_u32;
+            let index_delta_minus_1_val = (*dict_squash_exec_scope.current_access_index().unwrap()
+                - prev_access_index)
+                .sub(1);
+
             insert_value_to_cellref!(vm, index_delta_minus1, index_delta_minus_1_val)?;
         }
         CoreHint::ShouldContinueSquashLoop { should_continue } => {
@@ -2001,7 +1987,7 @@ pub fn execute_core_hint(
             let a_val = get_val(vm, a)?;
             let b_val = get_val(vm, b)?;
             let mut lengths_and_indices =
-                [(a_val.clone(), 0), (b_val.clone() - a_val, 1), (Felt252::from(-1) - b_val, 2)];
+                [(a_val, 0), (b_val - a_val, 1), (Felt252::from(-1) - b_val, 2)];
             lengths_and_indices.sort();
             exec_scopes
                 .assign_or_update_variable("excluded_arc", Box::new(lengths_and_indices[2].1));
@@ -2122,7 +2108,7 @@ fn read_felts(
 
     let mut felts = Vec::new();
     while curr != end {
-        let value = vm.get_integer(curr)?.deref().clone();
+        let value = *vm.get_integer(curr)?;
         felts.push(value);
         curr = (curr + 1)?;
     }
@@ -2138,7 +2124,7 @@ fn read_array_result_as_vec(memory: &[Option<Felt252>], value: &[Felt252]) -> Ve
     };
     let res_start: usize = res_start.clone().to_bigint().try_into().unwrap();
     let res_end: usize = res_end.clone().to_bigint().try_into().unwrap();
-    (res_start..res_end).map(|i| memory[i].clone().unwrap()).collect()
+    (res_start..res_end).map(|i| memory[i].unwrap()).collect()
 }
 
 /// Loads a range of values from the VM memory.
@@ -2149,7 +2135,7 @@ pub fn vm_get_range(
 ) -> Result<Vec<Felt252>, HintError> {
     let mut values = vec![];
     while calldata_start_ptr != calldata_end_ptr {
-        let val = vm.get_integer(calldata_start_ptr)?.deref().clone();
+        let val = *vm.get_integer(calldata_start_ptr)?;
         values.push(val);
         calldata_start_ptr.offset += 1;
     }
@@ -2177,7 +2163,6 @@ pub struct RunFunctionContext<'a> {
 /// Runs CairoRunner on layout with prime.
 /// Allows injecting custom CairoRunner.
 pub fn run_function_with_runner(
-    vm: &mut VirtualMachine,
     data_len: usize,
     additional_initialization: fn(
         context: RunFunctionContext<'_>,
@@ -2185,13 +2170,13 @@ pub fn run_function_with_runner(
     hint_processor: &mut dyn HintProcessor,
     runner: &mut CairoRunner,
 ) -> Result<(), Box<CairoRunError>> {
-    let end = runner.initialize(vm).map_err(CairoRunError::from)?;
+    let end = runner.initialize(true).map_err(CairoRunError::from)?;
 
-    additional_initialization(RunFunctionContext { vm, data_len })?;
+    additional_initialization(RunFunctionContext { vm: &mut runner.vm, data_len })?;
 
-    runner.run_until_pc(end, vm, hint_processor).map_err(CairoRunError::from)?;
-    runner.end_run(true, false, vm, hint_processor).map_err(CairoRunError::from)?;
-    runner.relocate(vm, true).map_err(CairoRunError::from)?;
+    runner.run_until_pc(end, hint_processor).map_err(CairoRunError::from)?;
+    runner.end_run(true, false, hint_processor).map_err(CairoRunError::from)?;
+    runner.relocate(true).map_err(CairoRunError::from)?;
     Ok(())
 }
 
@@ -2212,23 +2197,26 @@ pub fn build_cairo_runner(
         None,
     )
     .map_err(CairoRunError::from)?;
-    CairoRunner::new(&program, "all_cairo", false).map_err(CairoRunError::from).map_err(Box::new)
+    CairoRunner::new(&program, LayoutName::all_cairo, false, true)
+        .map_err(CairoRunError::from)
+        .map_err(Box::new)
 }
 
 /// The result of [run_function].
 pub struct RunFunctionResult {
-    /// The memory layout after the run.
-    pub memory: Vec<Option<Felt252>>,
     /// The ap value after the run.
     pub ap: usize,
     /// The used resources after the run.
     pub used_resources: ExecutionResources,
+    /// The relocated memory after the run.
+    pub memory: Vec<Option<Felt252>>,
+    /// The relocated trace.
+    pub relocated_trace: Vec<RelocatedTraceEntry>,
 }
 
 /// Runs `bytecode` on layout with prime, and returns the matching [RunFunctionResult].
 /// Allows injecting custom HintProcessor.
 pub fn run_function<'a, 'b: 'a>(
-    vm: &mut VirtualMachine,
     bytecode: impl Iterator<Item = &'a BigInt> + Clone,
     builtins: Vec<BuiltinName>,
     additional_initialization: fn(
@@ -2242,14 +2230,20 @@ pub fn run_function<'a, 'b: 'a>(
     let data_len = data.len();
     let mut runner = build_cairo_runner(data, builtins, hints_dict)?;
 
-    run_function_with_runner(vm, data_len, additional_initialization, hint_processor, &mut runner)?;
+    run_function_with_runner(data_len, additional_initialization, hint_processor, &mut runner)?;
+
     let used_resources = runner
-        .get_execution_resources(vm)
+        .get_execution_resources()
         .expect("Failed to get execution resources, but the run was successful.");
+
+    let relocated_trace = runner.relocated_trace.unwrap();
+    let memory = runner.relocated_memory;
+
     Ok(RunFunctionResult {
-        memory: runner.relocated_memory,
-        ap: vm.get_relocated_trace().unwrap().last().unwrap().ap,
+        ap: relocated_trace.last().unwrap().ap,
         used_resources,
+        memory,
+        relocated_trace,
     })
 }
 
@@ -2302,7 +2296,7 @@ where
 {
     let first_felt = values.next()?;
 
-    if first_felt == felt252_str!(BYTE_ARRAY_MAGIC, 16) {
+    if first_felt == Felt252::from_hex(BYTE_ARRAY_MAGIC).unwrap() {
         if let Some(string) = try_format_string(values) {
             return Some(FormattedItem { item: string, is_string: true });
         }
@@ -2347,4 +2341,30 @@ where
     *values = cloned_values_iter;
 
     Some(format!("{full_words_string}{pending_word_string}"))
+}
+
+// TODO(orizi): Remove when const not from montgomery is supported.
+mod ec {
+    use starknet_crypto::FieldElement;
+
+    /// Returns the Beta value of the Starkware elliptic curve.
+    pub const BETA: FieldElement = FieldElement::from_mont([
+        3863487492851900874,
+        7432612994240712710,
+        12360725113329547591,
+        88155977965380735,
+    ]);
+
+    #[cfg(test)]
+    #[test]
+    fn constant_validation() {
+        assert_eq!(
+            BETA.into_mont(),
+            FieldElement::from_dec_str(
+                "3141592653589793238462643383279502884197169399375105820974944592307816406665"
+            )
+            .unwrap()
+            .into_mont()
+        );
+    }
 }

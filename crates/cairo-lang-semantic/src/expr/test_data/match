@@ -81,10 +81,10 @@ error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
         A::b(_) => 1,
         ^*****^
 
-error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
- --> lib.cairo:6:15
+error: Trait has no implementation in context: core::traits::Add::<core::bool>.
+ --> lib.cairo:6:11
     match a + 1 {
-              ^
+          ^***^
 
 //! > ==========================================================================
 

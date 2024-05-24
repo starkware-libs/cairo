@@ -98,7 +98,7 @@ pub fn priv_module_type_alias_semantic_data(
         db.priv_module_type_alias_generic_params_data(module_type_alias_id)?;
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(module_type_alias_id));
 
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let type_alias_data = type_alias_semantic_data_helper(
         db,
         &mut diagnostics,
@@ -122,7 +122,7 @@ pub fn priv_module_type_alias_semantic_data_cycle(
         db.priv_module_type_alias_generic_params_data(*module_type_alias_id)?;
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(*module_type_alias_id));
 
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let type_alias_data = type_alias_semantic_data_cycle_helper(
         db,
         &mut diagnostics,

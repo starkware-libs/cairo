@@ -68,11 +68,11 @@ pub struct PluginDiagnostic {
     pub severity: Severity,
 }
 impl PluginDiagnostic {
-    pub fn error(stable_ptr: SyntaxStablePtrId, message: String) -> PluginDiagnostic {
-        PluginDiagnostic { stable_ptr, message, severity: Severity::Error }
+    pub fn error(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
+        PluginDiagnostic { stable_ptr: stable_ptr.into(), message, severity: Severity::Error }
     }
-    pub fn warning(stable_ptr: SyntaxStablePtrId, message: String) -> PluginDiagnostic {
-        PluginDiagnostic { stable_ptr, message, severity: Severity::Warning }
+    pub fn warning(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
+        PluginDiagnostic { stable_ptr: stable_ptr.into(), message, severity: Severity::Warning }
     }
 }
 
@@ -102,6 +102,15 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     /// Note: They may not cause a diagnostic if some other plugin declares such attribute, but
     /// plugin writers should not rely on that.
     fn declared_attributes(&self) -> Vec<String>;
+
+    /// Attributes that should mark the function as an executable.
+    /// Functions marked with executable attributes will be listed
+    /// in a dedicated field in the generated program.
+    /// Must return a subset of `declared_attributes`.
+    /// This mechanism is optional.
+    fn executable_attributes(&self) -> Vec<String> {
+        Vec::new()
+    }
 }
 
 /// Result of plugin code generation.

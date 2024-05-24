@@ -1,34 +1,64 @@
-//! Cairo language server.
+//! # CairoLS
 //!
 //! Implements the LSP protocol over stdin/out.
+//!
+//! ## Running vanilla
+//!
+//! This is basically the source code of the `cairo-language-server` and
+//! `scarb cairo-language-server` binaries.
+//!
+//! ```no_run
+//! # #![allow(clippy::needless_doctest_main)]
+//! fn main() {
+//!     cairo_lang_language_server::start();
+//! }
+//! ```
+//!
+//! ## Running with customizations
+//!
+//! Due to the immaturity of various Cairo compiler parts (especially around potentially
+//! dynamically-loadable things), for some projects it might be necessary to provide a custom build
+//! of CairoLS that includes custom modifications to the compiler.
+//! The [`start_with_tricks`] function allows building a customized build of CairoLS that supports
+//! project-specific features.
+//! See the [`Tricks`] struct documentation for available customizations.
+//!
+//! ```no_run
+//! # #![allow(clippy::needless_doctest_main)]
+//! use cairo_lang_language_server::Tricks;
+//!
+//! # fn dojo_plugin_suite() -> cairo_lang_semantic::plugin::PluginSuite {
+//! #    // Returning something realistic, to make sure restrictive trait bounds do compile.
+//! #    cairo_lang_starknet::starknet_plugin_suite()
+//! # }
+//! fn main() {
+//!     let mut tricks = Tricks::default();
+//!     tricks.extra_plugin_suites = Some(&|| vec![dojo_plugin_suite()]);
+//!     cairo_lang_language_server::start_with_tricks(tricks);
+//! }
+//! ```
 
 use std::collections::{HashMap, HashSet};
 use std::io;
-use std::panic::AssertUnwindSafe;
+use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use anyhow::{bail, Error};
+use anyhow::{bail, Context};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_defs::db::{get_all_path_leaves, DefsGroup};
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
-    FreeFunctionLongId, FunctionTitleId, ImplAliasLongId, ImplDefLongId, ImplFunctionLongId,
-    ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
-    ModuleTypeAliasLongId, StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitItemId,
-    TraitLongId, UseLongId,
+    FunctionTitleId, LanguageElementId, LookupItemId, ModuleId, SubmoduleLongId,
 };
-use cairo_lang_diagnostics::{Diagnostics, ToOption};
+use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    get_originating_location, init_dev_corelib, AsFilesGroupMut, CrateConfiguration, CrateSettings,
-    FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
+    get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
-use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
-use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::ids::{FileId, FileLongId};
+use cairo_lang_filesystem::span::{TextPosition, TextSpan};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
@@ -37,40 +67,77 @@ use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplId;
+use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
 use cairo_lang_starknet::starknet_plugin_suite;
-use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use serde_json::Value;
+use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
-use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::*;
-use tower_lsp::{Client, LanguageServer, LspService, Server};
+use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
 
+use crate::config::Config;
 use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
-use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
+use crate::lang::semantic::LsSemanticGroup;
+use crate::lang::syntax::LsSyntaxGroup;
+use crate::lsp::client_capabilities::ClientCapabilitiesExt;
+use crate::project::scarb::db::update_crate_roots;
+use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
+use crate::project::ProjectManifestPath;
+use crate::server::notifier::Notifier;
+use crate::toolchain::scarb::ScarbToolchain;
 use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
+mod config;
 mod env_config;
 mod ide;
 mod lang;
-mod scarb_service;
+mod lsp;
+mod project;
+mod server;
+mod toolchain;
 mod vfs;
 
-const MAX_CRATE_DETECTION_DEPTH: usize = 20;
+/// Carries various customizations that can be applied to CairoLS.
+///
+/// See [the top-level documentation][lib] documentation for usage examples.
+///
+/// [lib]: crate#running-with-customizations
+#[non_exhaustive]
+#[derive(Default)]
+pub struct Tricks {
+    /// A function that returns a list of additional compiler plugin suites to be loaded in the
+    /// language server database.
+    pub extra_plugin_suites:
+        Option<&'static (dyn Fn() -> Vec<PluginSuite> + Send + Sync + RefUnwindSafe)>,
+}
 
+/// Starts the language server.
+///
+/// See [the top-level documentation][lib] documentation for usage examples.
+///
+/// [lib]: crate#running-vanilla
+pub fn start() {
+    start_with_tricks(Tricks::default());
+}
+
+/// Starts the language server with customizations.
+///
+/// See [the top-level documentation][lib] documentation for usage examples.
+///
+/// [lib]: crate#running-with-customizations
 #[tokio::main]
-pub async fn start() {
+pub async fn start_with_tricks(tricks: Tricks) {
     let _log_guard = init_logging();
 
     info!("language server starting");
@@ -78,14 +145,16 @@ pub async fn start() {
 
     let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
 
-    let db = configured_db();
-
-    let (service, socket) = LspService::build(|client| Backend::new(client, db))
-        .custom_method("vfs/provide", Backend::vfs_provide)
-        .finish();
+    let (service, socket) = Backend::build_service(tricks);
     Server::new(stdin, stdout, socket).serve(service).await;
 
     info!("language server stopped");
+}
+
+/// Special function to run the language server in end-to-end tests.
+#[cfg(feature = "testing")]
+pub fn build_service_for_e2e_tests() -> (LspService<impl LanguageServer>, ClientSocket) {
+    Backend::build_service(Tricks::default())
 }
 
 /// Initialize logging infrastructure for the language server.
@@ -155,15 +224,22 @@ fn init_logging() -> Option<impl Drop> {
     guard
 }
 
-fn configured_db() -> RootDatabase {
-    let db = RootDatabase::builder()
-        // TODO(mkaput): Cfg items should be pulled from Scarb metadata.
-        .with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]))
-        .with_plugin_suite(starknet_plugin_suite())
-        .with_plugin_suite(test_plugin_suite())
-        .build()
-        .expect("Failed to initialize Cairo compiler database.");
-    db
+fn configured_db(tricks: &Tricks) -> RootDatabase {
+    let mut b = RootDatabase::builder();
+
+    // TODO(mkaput): Cfg items should be pulled from Scarb metadata.
+    b.with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]));
+
+    b.with_plugin_suite(starknet_plugin_suite());
+    b.with_plugin_suite(test_plugin_suite());
+
+    if let Some(extra_plugin_suites) = tricks.extra_plugin_suites {
+        for suite in extra_plugin_suites() {
+            b.with_plugin_suite(suite);
+        }
+    }
+
+    b.build().expect("salsa initialization should never fail")
 }
 
 /// Makes sure that all open files exist in the new db, with their current changes.
@@ -176,8 +252,8 @@ fn ensure_exists_in_db(
     let overrides = old_db.file_overrides();
     let mut new_overrides: OrderedHashMap<FileId, Arc<String>> = Default::default();
     for uri in open_files {
-        let file_id = old_db.file_for_url(&uri);
-        let new_file_id = new_db.intern_file(old_db.lookup_intern_file(file_id));
+        let Some(file_id) = old_db.file_for_url(&uri) else { continue };
+        let new_file_id = file_id.lookup_intern(old_db).intern(new_db);
         if let Some(content) = overrides.get(&file_id) {
             new_overrides.insert(new_file_id, content.clone());
         }
@@ -186,38 +262,52 @@ fn ensure_exists_in_db(
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
-pub struct FileDiagnostics {
-    pub parser: Diagnostics<ParserDiagnostic>,
-    pub semantic: Diagnostics<SemanticDiagnostic>,
-    pub lowering: Diagnostics<LoweringDiagnostic>,
+struct FileDiagnostics {
+    parser: Diagnostics<ParserDiagnostic>,
+    semantic: Diagnostics<SemanticDiagnostic>,
+    lowering: Diagnostics<LoweringDiagnostic>,
 }
 impl std::panic::UnwindSafe for FileDiagnostics {}
 #[derive(Clone, Default)]
-pub struct State {
-    pub file_diagnostics: HashMap<Url, FileDiagnostics>,
-    pub open_files: HashSet<Url>,
+struct State {
+    file_diagnostics: HashMap<Url, FileDiagnostics>,
+    open_files: HashSet<Url>,
 }
 impl std::panic::UnwindSafe for State {}
 
-pub struct Backend {
-    pub client: Client,
+struct Backend {
+    client: Client,
+    client_capabilities: tokio::sync::RwLock<Box<ClientCapabilities>>,
+    tricks: Tricks,
     // TODO(spapini): Remove this once we support ParallelDatabase.
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
-    pub db_mutex: tokio::sync::Mutex<RootDatabase>,
-    pub state_mutex: tokio::sync::Mutex<State>,
-    pub scarb: ScarbService,
+    db_mutex: tokio::sync::Mutex<RootDatabase>,
+    state_mutex: tokio::sync::Mutex<State>,
+    config: tokio::sync::RwLock<Config>,
+    scarb_toolchain: ScarbToolchain,
     last_replace: tokio::sync::Mutex<SystemTime>,
     db_replace_interval: Duration,
 }
 
 impl Backend {
-    pub fn new(client: Client, db: RootDatabase) -> Self {
-        let scarb = ScarbService::new(&client);
+    fn build_service(tricks: Tricks) -> (LspService<Self>, ClientSocket) {
+        LspService::build(|client| Self::new(client, tricks))
+            .custom_method("vfs/provide", Self::vfs_provide)
+            .finish()
+    }
+
+    fn new(client: Client, tricks: Tricks) -> Self {
+        let db = configured_db(&tricks);
+        let notifier = Notifier::new(&client);
+        let scarb_toolchain = ScarbToolchain::new(&notifier);
         Self {
             client,
+            client_capabilities: Default::default(),
+            tricks,
             db_mutex: db.into(),
             state_mutex: State::default().into(),
-            scarb,
+            config: Config::default().into(),
+            scarb_toolchain,
             last_replace: tokio::sync::Mutex::new(SystemTime::now()),
             db_replace_interval: env_config::db_replace_interval(),
         }
@@ -321,14 +411,25 @@ impl Backend {
     async fn refresh_file_diagnostics(&self, uri: &Url) {
         let db = self.db_mut().await;
 
-        let file_id = db.file_for_url(uri);
+        let Some(file_id) = db.file_for_url(uri) else { return };
+
+        macro_rules! diags {
+            ($db:ident. $query:ident($file_id:expr), $f:expr) => {
+                trace_span!(stringify!($query)).in_scope(|| {
+                    catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
+                        .map($f)
+                        .inspect_err(|_| {
+                            error!("caught panic when computing diagnostics for {uri}");
+                        })
+                        .unwrap_or_default()
+                })
+            };
+        }
+
         let new_file_diagnostics = FileDiagnostics {
-            parser: trace_span!("file_syntax_diagnostics")
-                .in_scope(|| db.file_syntax_diagnostics(file_id)),
-            semantic: trace_span!("file_semantic_diagnostics")
-                .in_scope(|| db.file_semantic_diagnostics(file_id).unwrap_or_default()),
-            lowering: trace_span!("file_lowering_diagnostics")
-                .in_scope(|| db.file_lowering_diagnostics(file_id).unwrap_or_default()),
+            parser: diags!(db.file_syntax_diagnostics(file_id), |r| r),
+            semantic: diags!(db.file_semantic_diagnostics(file_id), Result::unwrap_or_default),
+            lowering: diags!(db.file_lowering_diagnostics(file_id), Result::unwrap_or_default),
         };
 
         let mut state = self.state_mut().await;
@@ -379,10 +480,13 @@ impl Backend {
         let open_files = self.state_mut().await.open_files.clone();
         debug!("scheduled");
         let mut new_db = self
-            .with_db(|db| {
-                let mut new_db = configured_db();
-                ensure_exists_in_db(&mut new_db, db, open_files.iter().cloned());
-                new_db
+            .with_db({
+                let tricks = &self.tricks;
+                |db| {
+                    let mut new_db = configured_db(tricks);
+                    ensure_exists_in_db(&mut new_db, db, open_files.iter().cloned());
+                    new_db
+                }
             })
             .await?;
         debug!("initial setup done");
@@ -410,8 +514,8 @@ impl Backend {
             let _ = db.file_lowering_diagnostics(file_id);
         };
         for uri in open_files {
-            let file_id = db.file_for_url(&uri);
-            if let FileLongId::OnDisk(file_path) = db.lookup_intern_file(file_id) {
+            let Some(file_id) = db.file_for_url(&uri) else { continue };
+            if let FileLongId::OnDisk(file_path) = file_id.lookup_intern(db) {
                 self.detect_crate_for(db, file_path).await;
             }
             query_diags(db, file_id);
@@ -426,135 +530,83 @@ impl Backend {
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
-    pub async fn vfs_provide(
+    async fn vfs_provide(
         &self,
         params: ProvideVirtualFileRequest,
     ) -> LSPResult<ProvideVirtualFileResponse> {
         self.with_db(|db| {
-            let file_id = db.file_for_url(&params.uri);
-            ProvideVirtualFileResponse { content: db.file_content(file_id).map(|s| (*s).clone()) }
+            let content = db
+                .file_for_url(&params.uri)
+                .and_then(|file_id| db.file_content(file_id))
+                .map(Arc::unwrap_or_clone);
+            ProvideVirtualFileResponse { content }
         })
         .await
-    }
-
-    /// Get corelib path fallback from the client configuration.
-    ///
-    /// The value is set by the user under the `cairo1.corelibPath` key in client configuration.
-    /// The value is not required to be set.
-    /// The path may omit the `corelib/src` or `src` suffix.
-    #[tracing::instrument(level = "trace", skip_all)]
-    async fn get_corelib_fallback_path(&self) -> Option<PathBuf> {
-        const CORELIB_CONFIG_SECTION: &str = "cairo1.corelibPath";
-        let item = vec![ConfigurationItem {
-            scope_uri: None,
-            section: Some(CORELIB_CONFIG_SECTION.to_string()),
-        }];
-        let corelib_response = self.client.configuration(item).await;
-        match corelib_response.map_err(Error::from) {
-            Ok(value_vec) => {
-                if let Some(Value::String(value)) = value_vec.first() {
-                    if !value.is_empty() {
-                        let root_path: PathBuf = value.into();
-
-                        let mut path = root_path.clone();
-                        path.push("corelib");
-                        path.push("src");
-                        if path.exists() {
-                            return Some(path);
-                        }
-
-                        let mut path = root_path.clone();
-                        path.push("src");
-                        if path.exists() {
-                            return Some(path);
-                        }
-
-                        if root_path.exists() {
-                            return Some(root_path);
-                        }
-                    }
-                }
-            }
-            Err(err) => {
-                let err =
-                    err.context("Failed to get configuration under `cairo1.corelibPath` key.");
-                warn!("{err:?}");
-            }
-        };
-        None
     }
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
     #[tracing::instrument(level = "trace", skip_all)]
     async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: PathBuf) {
-        let corelib_fallback = self.get_corelib_fallback_path().await;
-        if self.scarb.is_scarb_project(file_path.clone()) {
-            if self.scarb.is_scarb_found() {
-                // Carrying out Scarb based setup.
-                let corelib = match self.scarb.corelib_path(file_path.clone()).await {
-                    Ok(corelib) => corelib,
-                    Err(err) => {
-                        let err =
-                            err.context("Failed to obtain scarb corelib path from manifest file.");
-                        warn!("{err:?}");
-                        None
-                    }
+        match ProjectManifestPath::discover(&file_path) {
+            Some(ProjectManifestPath::Scarb(manifest_path)) => {
+                let scarb = self.scarb_toolchain.clone();
+                let Ok(metadata) = spawn_blocking(move || {
+                    scarb
+                        .metadata(&manifest_path)
+                        .with_context(|| {
+                            format!(
+                                "failed to refresh scarb workspace: {}",
+                                manifest_path.display()
+                            )
+                        })
+                        .inspect_err(|e| {
+                            // TODO(mkaput): Send a notification to the language client.
+                            warn!("{e:?}");
+                        })
+                        .ok()
+                })
+                .await
+                else {
+                    error!("scarb invoking thread panicked");
+                    return;
                 };
-                if let Some(corelib) = corelib.or_else(detect_corelib).or(corelib_fallback) {
-                    init_dev_corelib(db, corelib);
+
+                if let Some(metadata) = metadata {
+                    update_crate_roots(&metadata, db);
                 } else {
-                    warn!("Failed to find corelib path.");
+                    // Try to set up a corelib at least.
+                    try_to_init_unmanaged_core(&*self.config.read().await, db);
                 }
-
-                match self.scarb.crate_source_paths(file_path).await {
-                    Ok(source_paths) => {
-                        update_crate_roots(db, source_paths.clone());
-                    }
-                    Err(err) => {
-                        let err =
-                            err.context("Failed to obtain scarb metadata from manifest file.");
-                        warn!("{err:?}");
-                    }
-                };
-                return;
-            } else {
-                warn!("Not resolving Scarb metadata from manifest file due to missing Scarb path.");
-                self.client.send_notification::<ScarbPathMissing>(()).await;
             }
-        }
 
-        // Scarb based setup not possible.
-        if let Some(corelib) = detect_corelib().or(corelib_fallback) {
-            init_dev_corelib(db, corelib);
-        } else {
-            warn!("Failed to find corelib path.");
-        }
+            Some(ProjectManifestPath::CairoProject(config_path)) => {
+                try_to_init_unmanaged_core(&*self.config.read().await, db);
 
-        // Fallback to cairo_project manifest format.
-        let mut path = file_path.clone();
-        for _ in 0..MAX_CRATE_DETECTION_DEPTH {
-            path.pop();
-            // Check for a cairo project file.
-            if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
-                update_crate_roots_from_project_config(db, &config);
-                return;
-            };
-        }
+                if let Ok(config) = ProjectConfig::from_file(&config_path) {
+                    update_crate_roots_from_project_config(db, &config);
+                };
+            }
 
-        // Fallback to a single file.
-        if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
-            let file_path_s = file_path.to_string_lossy();
-            error!("error loading file {file_path_s} as a single crate: {err}");
+            None => {
+                try_to_init_unmanaged_core(&*self.config.read().await, db);
+
+                if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
+                    let file_path_s = file_path.to_string_lossy();
+                    error!("error loading file {file_path_s} as a single crate: {err}");
+                }
+            }
         }
     }
 
     /// Reload crate detection for all open files.
     #[tracing::instrument(level = "trace", skip_all)]
-    pub async fn reload(&self) -> LSPResult<()> {
+    async fn reload(&self) -> LSPResult<()> {
+        self.reload_config().await;
+
         let mut db = self.db_mut().await;
         for uri in self.state_mutex.lock().await.open_files.iter() {
-            let file_id = db.file_for_url(uri);
+            let Some(file_id) = db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = db.lookup_intern_file(file_id) {
                 self.detect_crate_for(&mut db, file_path).await;
             }
@@ -562,33 +614,18 @@ impl Backend {
         drop(db);
         self.refresh_diagnostics().await
     }
+
+    /// Reload the [`Config`] and all its dependencies.
+    async fn reload_config(&self) {
+        let mut config = self.config.write().await;
+        {
+            let client_capabilities = self.client_capabilities.read().await;
+            config.reload(&self.client, &client_capabilities).await;
+        }
+    }
 }
 
-#[derive(Debug)]
-pub struct ScarbPathMissing {}
-
-impl Notification for ScarbPathMissing {
-    type Params = ();
-    const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
-}
-
-#[derive(Debug)]
-pub struct ScarbResolvingStart {}
-
-impl Notification for ScarbResolvingStart {
-    type Params = ();
-    const METHOD: &'static str = "scarb/resolving-start";
-}
-
-#[derive(Debug)]
-pub struct ScarbResolvingFinish {}
-
-impl Notification for ScarbResolvingFinish {
-    type Params = ();
-    const METHOD: &'static str = "scarb/resolving-finish";
-}
-
-pub enum ServerCommands {
+enum ServerCommands {
     Reload,
 }
 
@@ -606,7 +643,12 @@ impl TryFrom<String> for ServerCommands {
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all)]
-    async fn initialize(&self, _: InitializeParams) -> LSPResult<InitializeResult> {
+    async fn initialize(&self, params: InitializeParams) -> LSPResult<InitializeResult> {
+        {
+            let mut client_capabilities = self.client_capabilities.write().await;
+            *client_capabilities = Box::new(params.capabilities);
+        }
+
         Ok(InitializeResult {
             server_info: None,
             capabilities: ServerCapabilities {
@@ -653,25 +695,30 @@ impl LanguageServer for Backend {
 
     #[tracing::instrument(level = "debug", skip_all)]
     async fn initialized(&self, _: InitializedParams) {
-        // Register patterns for client file watcher.
-        // This is used to detect changes to Scarb.toml and invalidate .cairo files.
-        let registration_options = DidChangeWatchedFilesRegistrationOptions {
-            watchers: vec!["/**/*.cairo", "/**/Scarb.toml"]
-                .into_iter()
-                .map(|glob_pattern| FileSystemWatcher {
-                    glob_pattern: GlobPattern::String(glob_pattern.to_string()),
-                    kind: None,
-                })
-                .collect(),
-        };
-        let registration = Registration {
-            id: "workspace/didChangeWatchedFiles".to_string(),
-            method: "workspace/didChangeWatchedFiles".to_string(),
-            register_options: Some(serde_json::to_value(registration_options).unwrap()),
-        };
-        let result = self.client.register_capability(vec![registration]).await;
-        if let Err(err) = result {
-            warn!("Failed to register workspace/didChangeWatchedFiles event: {:#?}", err);
+        // Initialize the configuration.
+        self.reload_config().await;
+
+        if self.client_capabilities.read().await.did_change_watched_files_dynamic_registration() {
+            // Register patterns for client file watcher.
+            // This is used to detect changes to Scarb.toml and invalidate .cairo files.
+            let registration_options = DidChangeWatchedFilesRegistrationOptions {
+                watchers: vec!["/**/*.cairo", "/**/Scarb.toml"]
+                    .into_iter()
+                    .map(|glob_pattern| FileSystemWatcher {
+                        glob_pattern: GlobPattern::String(glob_pattern.to_string()),
+                        kind: None,
+                    })
+                    .collect(),
+            };
+            let registration = Registration {
+                id: "workspace/didChangeWatchedFiles".to_string(),
+                method: "workspace/didChangeWatchedFiles".to_string(),
+                register_options: Some(serde_json::to_value(registration_options).unwrap()),
+            };
+            let result = self.client.register_capability(vec![registration]).await;
+            if let Err(err) = result {
+                warn!("Failed to register workspace/didChangeWatchedFiles event: {:#?}", err);
+            }
         }
     }
 
@@ -679,9 +726,13 @@ impl LanguageServer for Backend {
         Ok(())
     }
 
+    #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_workspace_folders(&self, _: DidChangeWorkspaceFoldersParams) {}
 
-    async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {}
+    #[tracing::instrument(level = "debug", skip_all)]
+    async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {
+        self.reload_config().await;
+    }
 
     #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_watched_files(&self, params: DidChangeWatchedFilesParams) {
@@ -689,14 +740,16 @@ impl LanguageServer for Backend {
         let mut db = self.db_mut().await;
         for change in &params.changes {
             if is_cairo_file_path(&change.uri) {
-                let file = db.file_for_url(&change.uri);
+                let Some(file) = db.file_for_url(&change.uri) else { continue };
                 PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
             }
         }
         drop(db);
         // Reload workspace if Scarb.toml changed.
         for change in params.changes {
-            if is_scarb_manifest_path(&change.uri) {
+            let changed_file_path = change.uri.to_file_path().unwrap_or_default();
+            let changed_file_name = changed_file_path.file_name().unwrap_or_default();
+            if changed_file_name == "Scarb.toml" {
                 self.reload().await.ok();
             }
         }
@@ -730,13 +783,11 @@ impl LanguageServer for Backend {
         // Try to detect the crate for physical files.
         // The crate for virtual files is already known.
         if uri.scheme() == "file" {
-            let Ok(path) = uri.to_file_path() else {
-                return;
-            };
+            let Ok(path) = uri.to_file_path() else { return };
             self.detect_crate_for(&mut db, path).await;
         }
 
-        let file_id = db.file_for_url(&uri);
+        let Some(file_id) = db.file_for_url(&uri) else { return };
         self.state_mut().await.open_files.insert(uri);
         db.override_file_content(file_id, Some(Arc::new(params.text_document.text)));
         drop(db);
@@ -754,7 +805,7 @@ impl LanguageServer for Backend {
             };
         let mut db = self.db_mut().await;
         let uri = params.text_document.uri;
-        let file = db.file_for_url(&uri);
+        let Some(file) = db.file_for_url(&uri) else { return };
         db.override_file_content(file, Some(Arc::new(text.into())));
         drop(db);
         self.refresh_diagnostics().await.ok();
@@ -763,7 +814,7 @@ impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_save(&self, params: DidSaveTextDocumentParams) {
         let mut db = self.db_mut().await;
-        let file = db.file_for_url(&params.text_document.uri);
+        let Some(file) = db.file_for_url(&params.text_document.uri) else { return };
         PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
         db.override_file_content(file, None);
     }
@@ -772,7 +823,7 @@ impl LanguageServer for Backend {
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let mut db = self.db_mut().await;
         self.state_mut().await.open_files.remove(&params.text_document.uri);
-        let file = db.file_for_url(&params.text_document.uri);
+        let Some(file) = db.file_for_url(&params.text_document.uri) else { return };
         db.override_file_content(file, None);
         drop(db);
         self.refresh_diagnostics().await.ok();
@@ -821,23 +872,24 @@ impl LanguageServer for Backend {
 #[tracing::instrument(level = "trace", skip_all)]
 fn find_definition(
     db: &RootDatabase,
-    file: FileId,
     identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
 ) -> Option<SyntaxStablePtrId> {
     if let Some(parent) = identifier.as_syntax_node().parent() {
         if parent.kind(db) == SyntaxKind::ItemModule {
-            let containing_module_id =
-                find_node_module(db, file, parent.clone()).on_none(|| {
-                    error!("`find_definition` failed: could not find module");
-                })?;
+            let Some(containing_module_file_id) = db.find_module_file_containing_node(&parent)
+            else {
+                error!("`find_definition` failed: could not find module");
+                return None;
+            };
 
-            let submodule_id = db.intern_submodule(SubmoduleLongId(
-                ModuleFileId(containing_module_id, FileIndex(0)),
+            let submodule_id = SubmoduleLongId(
+                containing_module_file_id,
                 ast::ItemModule::from_syntax_node(db, parent).stable_ptr(),
-            ));
+            )
+            .intern(db);
             return Some(resolved_generic_item_def(
-                db.upcast(),
+                db,
                 ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id)),
             ));
         }
@@ -846,7 +898,7 @@ fn find_definition(
         if let Some(item) =
             db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
-            return Some(resolved_generic_item_def(db.upcast(), item));
+            return Some(resolved_generic_item_def(db, item));
         } else if let Some(item) =
             db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
@@ -863,7 +915,7 @@ fn resolved_concrete_item_def(
 ) -> Option<SyntaxStablePtrId> {
     match item {
         ResolvedConcreteItem::Type(ty) => {
-            if let TypeLongId::GenericParameter(param) = db.lookup_intern_type(ty) {
+            if let TypeLongId::GenericParameter(param) = ty.lookup_intern(db) {
                 Some(param.untyped_stable_ptr(db.upcast()))
             } else {
                 None
@@ -877,14 +929,18 @@ fn resolved_concrete_item_def(
 }
 
 #[tracing::instrument(level = "trace", skip_all)]
-fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> SyntaxStablePtrId {
+fn resolved_generic_item_def(
+    db: &dyn SemanticGroup,
+    item: ResolvedGenericItem,
+) -> SyntaxStablePtrId {
+    let defs_db = db.upcast();
     match item {
-        ResolvedGenericItem::Constant(item) => item.untyped_stable_ptr(db),
+        ResolvedGenericItem::Constant(item) => item.untyped_stable_ptr(defs_db),
         ResolvedGenericItem::Module(module_id) => {
             // Check if the module is an inline submodule.
             if let ModuleId::Submodule(submodule_id) = module_id {
                 if let ast::MaybeModuleBody::Some(submodule_id) =
-                    submodule_id.stable_ptr(db.upcast()).lookup(db.upcast()).body(db.upcast())
+                    submodule_id.stable_ptr(defs_db).lookup(db.upcast()).body(db.upcast())
                 {
                     // Inline module.
                     return submodule_id.stable_ptr().untyped();
@@ -902,285 +958,20 @@ fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> S
                     // Note: Only the trait title is returned.
                     FunctionTitleId::Trait(id.function)
                 }
+                GenericFunctionId::Trait(id) => FunctionTitleId::Trait(id.trait_function(db)),
             };
-            title.untyped_stable_ptr(db)
+            title.untyped_stable_ptr(defs_db)
         }
-        ResolvedGenericItem::GenericType(generic_type) => generic_type.untyped_stable_ptr(db),
-        ResolvedGenericItem::GenericTypeAlias(type_alias) => type_alias.untyped_stable_ptr(db),
-        ResolvedGenericItem::GenericImplAlias(impl_alias) => impl_alias.untyped_stable_ptr(db),
-        ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(db).untyped(),
-        ResolvedGenericItem::Trait(trt) => trt.stable_ptr(db).untyped(),
-        ResolvedGenericItem::Impl(imp) => imp.stable_ptr(db).untyped(),
+        ResolvedGenericItem::GenericType(generic_type) => generic_type.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::GenericTypeAlias(type_alias) => type_alias.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::GenericImplAlias(impl_alias) => impl_alias.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(defs_db).untyped(),
+        ResolvedGenericItem::Trait(trt) => trt.stable_ptr(defs_db).untyped(),
+        ResolvedGenericItem::Impl(imp) => imp.stable_ptr(defs_db).untyped(),
         ResolvedGenericItem::TraitFunction(trait_function) => {
-            trait_function.stable_ptr(db).untyped()
+            trait_function.stable_ptr(defs_db).untyped()
         }
-        ResolvedGenericItem::Variable(_item, var) => var.untyped_stable_ptr(db),
-    }
-}
-
-/// If the ast node is a lookup item, return the corresponding id. Otherwise, return None.
-/// See [LookupItemId].
-#[tracing::instrument(level = "trace", skip_all)]
-fn lookup_item_from_ast(
-    db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
-    node: SyntaxNode,
-) -> Vec<LookupItemId> {
-    let syntax_db = db.upcast();
-    // TODO(spapini): Handle trait items.
-    match node.kind(syntax_db) {
-        SyntaxKind::ItemConstant => vec![LookupItemId::ModuleItem(ModuleItemId::Constant(
-            db.intern_constant(ConstantLongId(
-                module_file_id,
-                ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(),
-            )),
-        ))],
-        SyntaxKind::FunctionWithBody => {
-            if is_grandparent_of_kind(syntax_db, &node, SyntaxKind::ImplBody) {
-                vec![LookupItemId::ImplItem(ImplItemId::Function(db.intern_impl_function(
-                    ImplFunctionLongId(
-                        module_file_id,
-                        ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
-                    ),
-                )))]
-            } else {
-                vec![LookupItemId::ModuleItem(ModuleItemId::FreeFunction(db.intern_free_function(
-                    FreeFunctionLongId(
-                        module_file_id,
-                        ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
-                    ),
-                )))]
-            }
-        }
-        SyntaxKind::ItemExternFunction => vec![LookupItemId::ModuleItem(
-            ModuleItemId::ExternFunction(db.intern_extern_function(ExternFunctionLongId(
-                module_file_id,
-                ast::ItemExternFunction::from_syntax_node(syntax_db, node).stable_ptr(),
-            ))),
-        )],
-        SyntaxKind::ItemExternType => vec![LookupItemId::ModuleItem(ModuleItemId::ExternType(
-            db.intern_extern_type(ExternTypeLongId(
-                module_file_id,
-                ast::ItemExternType::from_syntax_node(syntax_db, node).stable_ptr(),
-            )),
-        ))],
-        SyntaxKind::ItemTrait => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Trait(db.intern_trait(TraitLongId(
-                module_file_id,
-                ast::ItemTrait::from_syntax_node(syntax_db, node).stable_ptr(),
-            ))))]
-        }
-        SyntaxKind::TraitItemFunction => {
-            vec![LookupItemId::TraitItem(TraitItemId::Function(db.intern_trait_function(
-                TraitFunctionLongId(
-                    module_file_id,
-                    ast::TraitItemFunction::from_syntax_node(syntax_db, node).stable_ptr(),
-                ),
-            )))]
-        }
-        SyntaxKind::ItemImpl => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(ImplDefLongId(
-                module_file_id,
-                ast::ItemImpl::from_syntax_node(syntax_db, node).stable_ptr(),
-            ))))]
-        }
-        SyntaxKind::ItemStruct => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Struct(db.intern_struct(StructLongId(
-                module_file_id,
-                ast::ItemStruct::from_syntax_node(syntax_db, node).stable_ptr(),
-            ))))]
-        }
-        SyntaxKind::ItemEnum => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Enum(db.intern_enum(EnumLongId(
-                module_file_id,
-                ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr(),
-            ))))]
-        }
-        SyntaxKind::ItemUse => {
-            // Item use is not a lookup item, so we need to collect all UseLeaf, which are lookup
-            // items.
-            let item_use = ast::ItemUse::from_syntax_node(db.upcast(), node);
-            let path_leaves = get_all_path_leaves(db.upcast(), item_use.use_path(syntax_db));
-            let mut res = Vec::new();
-            for path_leaf in path_leaves {
-                let use_long_id = UseLongId(module_file_id, path_leaf.stable_ptr());
-                let lookup_item_id =
-                    LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(use_long_id)));
-                res.push(lookup_item_id);
-            }
-            res
-        }
-        SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
-            db.intern_module_type_alias(ModuleTypeAliasLongId(
-                module_file_id,
-                ast::ItemTypeAlias::from_syntax_node(syntax_db, node).stable_ptr(),
-            )),
-        ))],
-        SyntaxKind::ItemImplAlias => vec![LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
-            db.intern_impl_alias(ImplAliasLongId(
-                module_file_id,
-                ast::ItemImplAlias::from_syntax_node(syntax_db, node).stable_ptr(),
-            )),
-        ))],
-        _ => vec![],
-    }
-}
-
-/// Given a position in a file, return the syntax node for the token at that position, and all the
-/// lookup items above this node.
-#[tracing::instrument(level = "trace", skip_all)]
-fn get_node_and_lookup_items(
-    db: &(dyn SemanticGroup + 'static),
-    file: FileId,
-    position: Position,
-) -> Option<(SyntaxNode, Vec<LookupItemId>)> {
-    let mut res = Vec::new();
-    let syntax_db = db.upcast();
-    let filename = file.file_name(db.upcast());
-
-    // Get syntax for file.
-    let syntax = db.file_syntax(file).to_option().on_none(|| {
-        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
-    })?;
-
-    // Get file summary and content.
-    let file_summary = db.file_summary(file).on_none(|| {
-        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
-    })?;
-    let content = db.file_content(file).on_none(|| {
-        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
-    })?;
-
-    // Find offset for position.
-    let offset = position_to_offset(file_summary, position, &content)?;
-    let node = syntax.lookup_offset(syntax_db, offset);
-
-    // Find module.
-    let module_id = find_node_module(db, file, node.clone()).on_none(|| {
-        error!("`get_node_and_lookup_items` failed: failed to find module");
-    })?;
-    let file_index = FileIndex(0);
-    let module_file_id = ModuleFileId(module_id, file_index);
-
-    // Find containing function.
-    let mut item_node = node.clone();
-    loop {
-        for item in lookup_item_from_ast(db, module_file_id, item_node.clone()) {
-            res.push(item);
-        }
-        match item_node.parent() {
-            Some(next_node) => {
-                item_node = next_node;
-            }
-            None => return Some((node, res)),
-        }
-    }
-}
-
-#[tracing::instrument(level = "trace", skip_all)]
-fn position_to_offset(
-    file_summary: Arc<FileSummary>,
-    position: Position,
-    content: &str,
-) -> Option<TextOffset> {
-    let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
-        error!("hover failed: position out of bounds");
-    })?;
-    let mut chars_it = offset.take_from(content).chars();
-    for _ in 0..position.character {
-        let c = chars_it.next().on_none(|| {
-            error!("position does not exist");
-        })?;
-        offset = offset.add_width(TextWidth::from_char(c));
-    }
-    Some(offset)
-}
-
-#[tracing::instrument(level = "trace", skip_all)]
-fn find_node_module(
-    db: &dyn SemanticGroup,
-    main_file: FileId,
-    mut node: SyntaxNode,
-) -> Option<ModuleId> {
-    let mut module = db.file_modules(main_file).unwrap_or_default().iter().copied().next()?;
-    let syntax_db = db.upcast();
-
-    let mut inner_module_names = vec![];
-    while let Some(parent) = node.parent() {
-        node = parent;
-        if node.kind(syntax_db) == SyntaxKind::ItemModule {
-            inner_module_names.push(
-                ast::ItemModule::from_syntax_node(syntax_db, node.clone())
-                    .stable_ptr()
-                    .name_green(syntax_db)
-                    .identifier(syntax_db),
-            );
-        }
-    }
-    for name in inner_module_names.into_iter().rev() {
-        let submodule = try_extract_matches!(
-            db.module_item_by_name(module, name).ok()??,
-            ModuleItemId::Submodule
-        )?;
-        module = ModuleId::Submodule(submodule);
-    }
-    Some(module)
-}
-
-#[tracing::instrument(level = "trace", skip_all)]
-fn update_crate_roots(
-    db: &mut dyn SemanticGroup,
-    source_paths: Vec<(CrateLongId, PathBuf, CrateSettings)>,
-) {
-    let source_paths = source_paths
-        .into_iter()
-        .filter_map(|(crate_long_id, source_path, crate_settings)| {
-            let file_stem =
-                source_path.clone().file_stem().map(|x| x.to_string_lossy().to_string());
-
-            let crate_root: Option<PathBuf> = if !source_path.is_dir() {
-                source_path.clone().parent().map(|x| x.to_path_buf())
-            } else {
-                Some(source_path.clone())
-            };
-
-            match (crate_root, file_stem) {
-                (Some(crate_root), Some(file_stem)) => {
-                    let crate_id = db.intern_crate(crate_long_id);
-                    Some((crate_id, crate_root, crate_settings, file_stem))
-                }
-                _ => None,
-            }
-        })
-        .collect::<Vec<_>>();
-
-    for (crate_id, crate_root, settings, _file_stem) in source_paths.clone() {
-        let crate_root = Directory::Real(crate_root);
-        db.set_crate_config(crate_id, Some(CrateConfiguration { root: crate_root, settings }));
-    }
-
-    let source_paths = source_paths
-        .into_iter()
-        .filter(|(_crate_id, _crate_root, _edition, file_stem)| *file_stem != "lib")
-        .map(|(crate_id, _crate_root, _edition, file_stem)| (crate_id, file_stem))
-        .collect::<Vec<_>>();
-
-    inject_virtual_wrapper_lib(db, source_paths);
-}
-
-/// Generates a wrapper lib file for appropriate compilation units.
-///
-/// This approach allows compiling crates that do not define `lib.cairo` file.
-/// For example, single file crates can be created this way.
-/// The actual single file module is defined as `mod` item in created lib file.
-#[tracing::instrument(level = "trace", skip_all)]
-fn inject_virtual_wrapper_lib(db: &mut dyn SemanticGroup, components: Vec<(CrateId, String)>) {
-    for (crate_id, file_stem) in components {
-        let module_id = ModuleId::CrateRoot(crate_id);
-        let file_id = db.module_main_file(module_id).unwrap();
-        // Inject virtual lib file wrapper.
-        db.as_files_group_mut()
-            .override_file_content(file_id, Some(Arc::new(format!("mod {file_stem};"))));
+        ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(defs_db),
     }
 }
 
@@ -1202,15 +993,14 @@ fn is_cairo_file_path(file_path: &Url) -> bool {
 fn get_definition_location(
     db: &RootDatabase,
     file: FileId,
-    position: Position,
+    position: TextPosition,
 ) -> Option<(FileId, TextSpan)> {
+    let identifier = db.find_identifier_at_position(file, position)?;
+
     let syntax_db = db.upcast();
-    let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
-    if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
-        return None;
-    }
-    let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-    let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
+    let node = db.find_syntax_node_at_position(file, position)?;
+    let lookup_items = db.collect_lookup_items_stack(&node)?;
+    let stable_ptr = find_definition(db, &identifier, &lookup_items)?;
     let node = stable_ptr.lookup(syntax_db);
     let found_file = stable_ptr.file_id(syntax_db);
     let span = node.span_without_trivia(syntax_db);

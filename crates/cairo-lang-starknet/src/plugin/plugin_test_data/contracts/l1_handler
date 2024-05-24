@@ -31,6 +31,9 @@ mod test_contract {
     fn good_l1_handler_ignored(ref self: ContractState, _from_address: felt252, arg: felt252) {}
 }
 
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 contract:
 
 #[event]
@@ -53,8 +56,8 @@ pub enum Event {}
     }
     
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x32a1956d182625bfe7f9834635d01441624366b326c190ecbf557e699f94b76;
@@ -144,6 +147,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {

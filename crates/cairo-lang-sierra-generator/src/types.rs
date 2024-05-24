@@ -10,7 +10,7 @@ use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
-use cairo_lang_utils::{extract_matches, try_extract_matches};
+use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern};
 use itertools::chain;
 use num_traits::ToPrimitive;
 use semantic::items::constant::ConstValue;
@@ -25,7 +25,7 @@ pub fn get_concrete_type_id(
     db: &dyn SierraGenGroup,
     type_id: semantic::TypeId,
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
-    match db.lookup_intern_type(type_id) {
+    match type_id.lookup_intern(db) {
         semantic::TypeLongId::Snapshot(inner_ty)
             if db.type_info(ImplLookupContext::default(), inner_ty)?.copyable.is_ok() =>
         {
@@ -34,18 +34,14 @@ pub fn get_concrete_type_id(
         semantic::TypeLongId::Concrete(
             semantic::ConcreteTypeId::Enum(_) | semantic::ConcreteTypeId::Struct(_),
         ) if db.is_self_referential(type_id)? => {
-            Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::CycleBreaker(type_id)))
+            Ok(SierraGeneratorTypeLongId::CycleBreaker(type_id).intern(db))
         }
-
-        semantic::TypeLongId::Concrete(concrete_type_id)
-            if concrete_type_id.is_phantom(db.upcast())? =>
-        {
-            Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Phantom(type_id)))
+        _ => Ok(if type_id.is_phantom(db.upcast()) {
+            SierraGeneratorTypeLongId::Phantom(type_id)
+        } else {
+            SierraGeneratorTypeLongId::Regular(db.get_concrete_long_type_id(type_id)?)
         }
-
-        _ => Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
-            db.get_concrete_long_type_id(type_id)?,
-        ))),
+        .intern(db)),
     }
 }
 
@@ -54,7 +50,7 @@ pub fn get_index_enum_type_id(
     db: &dyn SierraGenGroup,
     index_count: usize,
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
-    let unit = db.intern_type(semantic::TypeLongId::Tuple(vec![]));
+    let unit = semantic::TypeLongId::Tuple(vec![]).intern(db);
     let deps: Arc<Vec<TypeId>> = vec![unit; index_count].into();
     let generic_args = chain!(
         [Ok(SierraGenericArg::UserType(format!("index_enum_type<{}>", index_count).into()))],
@@ -67,7 +63,7 @@ pub fn get_index_enum_type_id(
         ConcreteTypeLongId { generic_id: "Enum".into(), generic_args }.into(),
     );
 
-    Ok(db.intern_concrete_type(x))
+    Ok(x.intern(db))
 }
 
 /// See [SierraGenGroup::get_concrete_long_type_id] for documentation.
@@ -88,7 +84,7 @@ pub fn get_concrete_long_type_id(
             .collect::<Maybe<_>>()?,
         })
     };
-    Ok(match db.lookup_intern_type(type_id) {
+    Ok(match type_id.lookup_intern(db) {
         semantic::TypeLongId::Concrete(ty) => {
             match ty {
                 semantic::ConcreteTypeId::Struct(_) => {
@@ -110,7 +106,7 @@ pub fn get_concrete_long_type_id(
                                 }
                                 semantic::GenericArgumentId::Constant(value_id) => {
                                     SierraGenericArg::Value(extract_matches!(
-                                        db.lookup_intern_const_value(value_id),
+                                        value_id.lookup_intern(db),
                                         ConstValue::Int,
                                         "Only integer constants are supported."
                                     ))
@@ -148,12 +144,14 @@ pub fn get_concrete_long_type_id(
         semantic::TypeLongId::Coupon(function_id) => ConcreteTypeLongId {
             generic_id: "Coupon".into(),
             generic_args: vec![SierraGenericArg::UserFunc(
-                db.intern_sierra_function(function_id.lowered(db.upcast())),
+                function_id.lowered(db.upcast()).intern(db),
             )],
         }
         .into(),
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
+        | semantic::TypeLongId::ImplType(_)
+        | semantic::TypeLongId::TraitType(_)
         | semantic::TypeLongId::Missing(_) => {
             panic!(
                 "Types should be fully resolved at this point. Got: `{}`.",
@@ -185,7 +183,7 @@ pub fn type_dependencies(
     db: &dyn SierraGenGroup,
     type_id: semantic::TypeId,
 ) -> Maybe<Arc<Vec<semantic::TypeId>>> {
-    Ok(match db.lookup_intern_type(type_id) {
+    Ok(match type_id.lookup_intern(db) {
         semantic::TypeLongId::Concrete(ty) => match ty {
             semantic::ConcreteTypeId::Struct(structure) => db
                 .concrete_struct_members(structure)?
@@ -205,13 +203,14 @@ pub fn type_dependencies(
         semantic::TypeLongId::Snapshot(ty) => vec![ty],
         semantic::TypeLongId::Coupon(_) => vec![],
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
-            let size = extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
-                .to_usize()
-                .unwrap();
+            let size =
+                extract_matches!(size.lookup_intern(db), ConstValue::Int).to_usize().unwrap();
             [type_id].repeat(size)
         }
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
+        | semantic::TypeLongId::ImplType(_)
+        | semantic::TypeLongId::TraitType(_)
         | semantic::TypeLongId::Missing(_) => {
             panic!(
                 "Types should be fully resolved at this point. Got: `{}`.",

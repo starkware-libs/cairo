@@ -99,6 +99,8 @@ impl BoolIntoFelt252 of Into<bool, felt252> {
 }
 pub mod boolean;
 
+pub mod circuit;
+
 /// General purpose implicits.
 pub extern type RangeCheck;
 pub extern type SegmentArena;
@@ -189,10 +191,6 @@ impl Felt252PartialEq of PartialEq<felt252> {
             0 => true,
             _ => false,
         }
-    }
-    #[inline(always)]
-    fn ne(lhs: @felt252, rhs: @felt252) -> bool {
-        !(*lhs == *rhs)
     }
 }
 

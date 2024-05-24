@@ -55,6 +55,9 @@ mod test_contract {
     component!(super::test_component, test_component_storage, ABC);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -78,19 +81,21 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -107,6 +112,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -126,6 +134,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -145,8 +156,8 @@ contract:
     }
     
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x2943e6b272892c78655f823e0abb3da425a1ac0c3f9bdd70869a3f37bc54797;
@@ -184,6 +195,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:15:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -304,6 +318,9 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage::<a>, event: ABC::<b>);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -327,19 +344,21 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -356,6 +375,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -375,6 +397,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -394,8 +419,8 @@ contract:
     }
     
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0xe61d99740f46b06b2ccd91d014bc9f9acc438fec59d79dd30fd0d852e5210;
@@ -433,6 +458,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:15:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -541,6 +569,9 @@ mod test_contract {
     component!(path: a + b, storage: c + d, event: e + f);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -564,19 +595,21 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -593,6 +626,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -612,6 +648,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -631,8 +670,8 @@ contract:
     }
     
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x14aaf6de6aff44d64b4c3609768860615e979fdd851d125bbdfc10597a50a1d;
@@ -670,6 +709,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:15:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -791,6 +833,9 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage);
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -814,19 +859,21 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -843,6 +890,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -862,6 +912,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -881,8 +934,8 @@ contract:
     }
     
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x215c44bbf0e7c3b987e93bf1597778322461e87fd0059894735b0464ce94aff;
@@ -920,6 +973,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:15:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1044,6 +1100,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -1067,19 +1126,21 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1096,6 +1157,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1115,6 +1179,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -1136,8 +1203,8 @@ contract:
     }
     
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x13a81b6876baa1445c90fd69add3e928a4f6c6807e5227544ac6f6698c463b2;
@@ -1194,6 +1261,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:24:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1308,6 +1378,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -1331,19 +1404,21 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1360,6 +1435,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1379,6 +1457,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -1398,8 +1479,8 @@ contract:
     }
     
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x1092f63083af07b77ee426fd76d9695c3747a2e42571a914cee1dd17960254f;
@@ -1437,6 +1518,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:16:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1518,41 +1602,6 @@ error: Type not found.
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Type not found.
- --> lib.cairo:14:56
-        test_component_storage: super::test_component::Storage,
-                                                       ^*****^
-
-error: Type not found.
- --> lib.cairo:14:56
-        test_component_storage: super::test_component::Storage,
-                                                       ^*****^
-
-error: Type not found.
- --> lib.cairo:14:56
-        test_component_storage: super::test_component::Storage,
-                                                       ^*****^
-
-error: Type annotations needed. Failed to infer ?0
- --> lib.cairo[contract]:37:27
-                starknet::SyscallResultTrait::unwrap_syscall(
-                          ^****************^
-
-error: Type not found.
- --> lib.cairo:14:56
-        test_component_storage: super::test_component::Storage,
-                                                       ^*****^
-
-error: Type not found.
- --> lib.cairo:14:56
-        test_component_storage: super::test_component::Storage,
-                                                       ^*****^
-
-error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> lib.cairo[contract]:48:79
-                    starknet::Store::<super::super::test_component::Storage>::write(
-                                                                              ^***^
-
 //! > generated_cairo_code
 lib.cairo:
 
@@ -1579,6 +1628,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -1602,19 +1654,21 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1631,6 +1685,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1650,6 +1707,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -1670,47 +1730,21 @@ contract:
         unsafe_new_contract_state()
     }
     
-    pub use __member_module_test_component_storage::InternalContractMemberStateTrait as test_component_storageContractMemberStateTrait;
-    pub mod __member_module_test_component_storage {
-        use super::Event;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> super::super::test_component::Storage;
-            fn write(ref self: ContractMemberState, value: super::super::test_component::Storage);
-        }
 
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x19021f3e2d5378318bca36a3cf603805c3cb1938bd7e1be1ce4ab2c7158890>()
-            }
-            fn read(self: @ContractMemberState) -> super::super::test_component::Storage {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<super::super::test_component::Storage>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
-                )
-            }
-            fn write(ref self: ContractMemberState, value: super::super::test_component::Storage) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<super::super::test_component::Storage>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
-                )
+        pub mod __member_module_test_component_storage {
+        use super::Event;
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = super::super::test_component::Storage;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x19021f3e2d5378318bca36a3cf603805c3cb1938bd7e1be1ce4ab2c7158890>()
+                }
             }
         }
-    }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x8618264598f52601eed9355f5b7c0fc7c8912d966e620eb0a2914ed8cb5c10;
@@ -1748,6 +1782,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:18:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1850,6 +1887,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -1873,19 +1913,21 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1902,6 +1944,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1921,6 +1966,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 contract:
 
 #[event]
@@ -1945,8 +1993,8 @@ pub enum Event {}
     }
     
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x8f9d2a9bd3a3fe28e42c16030ed25a2756a86a13d4297597e43683c3df9a02;
@@ -2004,6 +2052,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2110,6 +2161,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:9:16
+#[derive(Drop, starknet::Event)]
+               ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2146,6 +2200,9 @@ impl EventABCIntoEvent of Into<test_component::Event, Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -2169,19 +2226,21 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -2198,6 +2257,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2217,6 +2279,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:14:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -2238,8 +2303,8 @@ contract:
     }
     
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x150d2e1961908098174a1d0101315691e91ab91682760b04003683fab54f03e;
@@ -2396,6 +2461,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -2419,19 +2487,21 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -2448,6 +2518,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2467,6 +2540,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:8:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -2490,19 +2566,21 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod __member_module_data {
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+
+        pub mod __member_module_data {
+            #[derive(Copy, Drop)]
+            pub struct ComponentMemberState {}
+            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
+                type Value = u32;
+                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+                }
             }
         }
-    }
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -2519,6 +2597,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:8:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2538,6 +2619,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:16:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -2561,8 +2645,8 @@ contract:
     }
     
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x3aa40c01c626d72d07c8dbda3c92460e7f71827931a5429b93fc69603190369;
@@ -2639,6 +2723,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:31:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {

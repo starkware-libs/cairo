@@ -1,6 +1,5 @@
 use std::cmp::Ordering;
 
-use cairo_felt::Felt252;
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
 use cairo_lang_sierra::extensions::array::ArrayType;
@@ -19,12 +18,15 @@ use cairo_lang_sierra::extensions::structure::StructType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
-use cairo_lang_sierra_to_casm::compiler::{CompilationError, SierraToCasmConfig};
+use cairo_lang_sierra_to_casm::compiler::{
+    CairoProgramDebugInfo, CompilationError, SierraToCasmConfig,
+};
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
@@ -35,6 +37,7 @@ use num_traits::Signed;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use starknet_crypto::{poseidon_hash_many, FieldElement};
+use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
@@ -292,9 +295,7 @@ impl TypeResolver<'_> {
     /// Extracts types `TOk`, `TErr` from the type `Result<TOk, TErr>`.
     fn extract_result_ty(&self, ty: &ConcreteTypeId) -> Option<(&ConcreteTypeId, &ConcreteTypeId)> {
         let long_id = self.get_long_id(ty);
-        if long_id.generic_id != EnumType::id() {
-            return None;
-        }
+        require(long_id.generic_id == EnumType::id())?;
         let [GenericArg::UserType(_), GenericArg::Type(result_tuple_ty), GenericArg::Type(err_ty)] =
             long_id.generic_args.as_slice()
         else {
@@ -306,9 +307,7 @@ impl TypeResolver<'_> {
     /// Extracts type `T` from the tuple type `(T,)`.
     fn extract_struct1(&self, ty: &ConcreteTypeId) -> Option<&ConcreteTypeId> {
         let long_id = self.get_long_id(ty);
-        if long_id.generic_id != StructType::id() {
-            return None;
-        }
+        require(long_id.generic_id == StructType::id())?;
         let [GenericArg::UserType(_), GenericArg::Type(ty0)] = long_id.generic_args.as_slice()
         else {
             return None;
@@ -319,9 +318,7 @@ impl TypeResolver<'_> {
     /// Extracts types `T0`, `T1` from the tuple type `(T0, T1)`.
     fn extract_struct2(&self, ty: &ConcreteTypeId) -> Option<(&ConcreteTypeId, &ConcreteTypeId)> {
         let long_id = self.get_long_id(ty);
-        if long_id.generic_id != StructType::id() {
-            return None;
-        }
+        require(long_id.generic_id == StructType::id())?;
         let [GenericArg::UserType(_), GenericArg::Type(ty0), GenericArg::Type(ty1)] =
             long_id.generic_args.as_slice()
         else {
@@ -332,13 +329,26 @@ impl TypeResolver<'_> {
 }
 
 impl CasmContractClass {
-    // TODO(ilya): Reduce the size of CompilationError.
-    #[allow(clippy::result_large_err)]
     pub fn from_contract_class(
         contract_class: ContractClass,
         add_pythonic_hints: bool,
         max_bytecode_size: usize,
     ) -> Result<Self, StarknetSierraCompilationError> {
+        Ok(Self::from_contract_class_with_debug_info(
+            contract_class,
+            add_pythonic_hints,
+            max_bytecode_size,
+        )?
+        .0)
+    }
+
+    // TODO(ilya): Reduce the size of CompilationError.
+    #[allow(clippy::result_large_err)]
+    pub fn from_contract_class_with_debug_info(
+        contract_class: ContractClass,
+        add_pythonic_hints: bool,
+        max_bytecode_size: usize,
+    ) -> Result<(Self, CairoProgramDebugInfo), StarknetSierraCompilationError> {
         let prime = Felt252::prime();
         for felt252 in &contract_class.sierra_program {
             if felt252.value >= prime {
@@ -462,27 +472,22 @@ impl CasmContractClass {
             let statement_id = function.entry_point;
 
             // The expected return types are [builtins.., gas_builtin, system, PanicResult].
-            if function.signature.ret_types.len() < 3 {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignatureMissingArgs);
-            }
+            require(function.signature.ret_types.len() >= 3)
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignatureMissingArgs)?;
 
             let (input_span, input_builtins) = function.signature.param_types.split_last().unwrap();
 
             let type_resolver = TypeResolver { type_decl: &program.type_declarations };
-            if !type_resolver.is_felt252_span(input_span) {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
-            }
+            require(type_resolver.is_felt252_span(input_span))
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
             let (panic_result, output_builtins) =
                 function.signature.ret_types.split_last().unwrap();
 
-            if input_builtins != output_builtins {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
-            }
-
-            if !type_resolver.is_valid_entry_point_return_type(panic_result) {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
-            }
+            require(input_builtins == output_builtins)
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
+            require(type_resolver.is_valid_entry_point_return_type(panic_result))
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
             for type_id in input_builtins.iter() {
                 if !builtin_types.contains(type_resolver.get_generic_id(type_id)) {
@@ -550,7 +555,7 @@ impl CasmContractClass {
         };
 
         let compiler_version = current_compiler_version_id().to_string();
-        Ok(Self {
+        let casm_contract_class = Self {
             prime,
             compiler_version,
             bytecode,
@@ -562,7 +567,9 @@ impl CasmContractClass {
                 l1_handler: as_casm_entry_points(contract_class.entry_points_by_type.l1_handler)?,
                 constructor: as_casm_entry_points(contract_class.entry_points_by_type.constructor)?,
             },
-        })
+        };
+
+        Ok((casm_contract_class, cairo_program.debug_info))
     }
 }
 

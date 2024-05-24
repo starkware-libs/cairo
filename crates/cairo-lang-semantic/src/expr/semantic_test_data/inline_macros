@@ -11,7 +11,7 @@ array![10, 11, 12].span()
 //! > expected_semantics
 FunctionCall(
     ExprFunctionCall {
-        function: core::array::ArrayImpl::<core::felt252>::span,
+        function: core::array::ArrayToSpan::<core::felt252>::span,
         args: [
             Value(
                 Snapshot(

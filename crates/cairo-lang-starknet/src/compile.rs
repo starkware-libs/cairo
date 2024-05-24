@@ -228,17 +228,7 @@ pub fn starknet_compile(
     config: Option<CompilerConfig<'_>>,
     allowed_libfuncs_list: Option<ListSelector>,
 ) -> anyhow::Result<String> {
-    let contract = compile_path(
-        &crate_path,
-        contract_path.as_deref(),
-        if let Some(config) = config { config } else { CompilerConfig::default() },
-    )?;
-    contract.validate_version_compatible(
-        if let Some(allowed_libfuncs_list) = allowed_libfuncs_list {
-            allowed_libfuncs_list
-        } else {
-            ListSelector::default()
-        },
-    )?;
+    let contract = compile_path(&crate_path, contract_path.as_deref(), config.unwrap_or_default())?;
+    contract.validate_version_compatible(allowed_libfuncs_list.unwrap_or_default())?;
     serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")
 }

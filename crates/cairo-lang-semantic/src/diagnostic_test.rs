@@ -79,7 +79,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
     ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::FreeFunction(func) if func.has_attr(db, "test_change_return_type") => {
-                let mut builder = PatchBuilder::new(db);
+                let mut builder = PatchBuilder::new(db, &func);
                 let mut new_func = RewriteNode::from_ast(&func);
                 if matches!(
                     func.declaration(db).signature(db).ret_ty(db),
@@ -113,11 +113,12 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                     &[("func".to_string(), new_func)].into(),
                 ));
 
+                let (content, code_mappings) = builder.build();
                 PluginResult {
                     code: Some(PluginGeneratedFile {
                         name: "virt2".into(),
-                        content: builder.code,
-                        code_mappings: builder.code_mappings,
+                        content,
+                        code_mappings,
                         aux_data: None,
                     }),
                     diagnostics: vec![],

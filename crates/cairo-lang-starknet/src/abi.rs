@@ -25,7 +25,7 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::{require, try_extract_matches, Intern, LookupIntern};
 use itertools::zip_eq;
 use smol_str::SmolStr;
 use thiserror::Error;
@@ -199,18 +199,17 @@ impl<'a> AbiBuilder<'a> {
         let mut storage_type = None;
         for struct_id in structs {
             let struct_name = struct_id.name(self.db.upcast());
-            let concrete_struct_id = self
-                .db
-                .intern_concrete_struct(ConcreteStructLongId { struct_id, generic_args: vec![] });
+            let concrete_struct_id =
+                ConcreteStructLongId { struct_id, generic_args: vec![] }.intern(self.db);
             let source = Source::Struct(concrete_struct_id);
             if struct_name == CONTRACT_STATE_NAME {
                 if storage_type.is_some() {
                     self.errors.push(ABIError::MultipleStorages(source));
                 }
-                storage_type =
-                    Some(self.db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(
-                        concrete_struct_id,
-                    ))));
+                storage_type = Some(
+                    TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))
+                        .intern(self.db),
+                );
             }
             // Forbid a struct named Event.
             if struct_name == EVENT_TYPE_NAME {
@@ -271,18 +270,16 @@ impl<'a> AbiBuilder<'a> {
             let enm_name = enum_id.name(self.db.upcast());
             if enm_name == EVENT_TYPE_NAME && enum_id.has_attr(self.db.upcast(), EVENT_ATTR)? {
                 // Get the ConcreteEnumId from the EnumId.
-                let concrete_enum_id = self
-                    .db
-                    .intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] });
+                let concrete_enum_id =
+                    ConcreteEnumLongId { enum_id, generic_args: vec![] }.intern(self.db);
                 let source = Source::Enum(concrete_enum_id);
                 // Check that the enum has no generic parameters.
                 if !self.db.enum_generic_params(enum_id).unwrap_or_default().is_empty() {
                     self.errors.push(ABIError::EventWithGenericParams(source));
                 }
                 // Get the TypeId of the enum.
-                let ty = self
-                    .db
-                    .intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)));
+                let ty =
+                    TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)).intern(self.db);
                 self.add_event(ty, source).unwrap_or_else(|err| self.errors.push(err));
             }
         }
@@ -296,7 +293,7 @@ impl<'a> AbiBuilder<'a> {
         let [GenericParam::Type(storage_type)] = generic_params.as_slice() else {
             return Err(ABIError::ExpectedOneGenericParam(source));
         };
-        let storage_type = self.db.intern_type(TypeLongId::GenericParameter(storage_type.id));
+        let storage_type = TypeLongId::GenericParameter(storage_type.id).intern(self.db);
 
         let interface_path = trait_id.full_path(self.db.upcast());
         let mut items = Vec::new();
@@ -442,9 +439,7 @@ impl<'a> AbiBuilder<'a> {
         let (inputs, state_mutability) =
             self.get_function_signature_inputs_and_mutability(&signature, storage_type)?;
         self.ctor = Some(EntryPointInfo { source, inputs: inputs.clone() });
-        if state_mutability != StateMutability::External {
-            return Err(ABIError::UnexpectedType);
-        }
+        require(state_mutability == StateMutability::External).ok_or(ABIError::UnexpectedType)?;
 
         let constructor_item = Item::Constructor(Constructor { name, inputs });
         self.add_abi_item(constructor_item, true, source)?;
@@ -483,17 +478,12 @@ impl<'a> AbiBuilder<'a> {
         let Some(first_param) = params.next() else {
             return Err(ABIError::EntrypointMustHaveSelf);
         };
-        if first_param.name != "self" {
-            return Err(ABIError::EntrypointMustHaveSelf);
-        }
+        require(first_param.name == "self").ok_or(ABIError::EntrypointMustHaveSelf)?;
         let is_ref = first_param.mutability == Mutability::Reference;
-        if is_ref {
-            if first_param.ty != storage_type {
-                return Err(ABIError::UnexpectedType);
-            }
-        } else if first_param.ty != self.db.intern_type(TypeLongId::Snapshot(storage_type)) {
-            return Err(ABIError::UnexpectedType);
-        }
+        let expected_storage_ty = is_ref
+            .then_some(storage_type)
+            .unwrap_or_else(|| TypeLongId::Snapshot(storage_type).intern(self.db));
+        require(first_param.ty == expected_storage_ty).ok_or(ABIError::UnexpectedType)?;
         let state_mutability =
             if is_ref { StateMutability::External } else { StateMutability::View };
         let mut inputs = vec![];
@@ -555,9 +545,8 @@ impl<'a> AbiBuilder<'a> {
             return Ok(());
         }
 
-        let concrete =
-            try_extract_matches!(self.db.lookup_intern_type(type_id), TypeLongId::Concrete)
-                .ok_or(ABIError::UnexpectedType)?;
+        let concrete = try_extract_matches!(type_id.lookup_intern(self.db), TypeLongId::Concrete)
+            .ok_or(ABIError::UnexpectedType)?;
         let (event_kind, source) = match fetch_event_data(self.db, type_id)
             .ok_or(ABIError::EventNotDerived(source))?
         {
@@ -662,7 +651,7 @@ impl<'a> AbiBuilder<'a> {
             return Ok(());
         }
 
-        match self.db.lookup_intern_type(type_id) {
+        match type_id.lookup_intern(self.db) {
             TypeLongId::Concrete(concrete) => self.add_concrete_type(concrete),
             TypeLongId::Tuple(inner_types) => {
                 for ty in inner_types {
@@ -678,6 +667,8 @@ impl<'a> AbiBuilder<'a> {
             TypeLongId::Coupon(_)
             | TypeLongId::GenericParameter(_)
             | TypeLongId::Var(_)
+            | TypeLongId::TraitType(_)
+            | TypeLongId::ImplType(_)
             | TypeLongId::Missing(_) => Err(ABIError::UnexpectedType),
         }
     }
@@ -830,10 +821,11 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
         ModuleItemId::Trait
     )?;
     // `starknet::event::Event<ThisEvent>`.
-    let concrete_trait_id = db.intern_concrete_trait(ConcreteTraitLongId {
+    let concrete_trait_id = ConcreteTraitLongId {
         trait_id: event_trait_id,
         generic_args: vec![GenericArgumentId::Type(event_type_id)],
-    });
+    }
+    .intern(db);
     // The impl of `starknet::event::Event<ThisEvent>`.
     let event_impl =
         get_impl_at_context(db.upcast(), ImplLookupContext::default(), concrete_trait_id, None)

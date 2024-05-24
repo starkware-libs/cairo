@@ -3,7 +3,7 @@
 mod test;
 
 // Mostly taken from https://github.com/salsa-rs/salsa/blob/fd715619813f634fa07952f0d1b3d3a18b68fd65/components/salsa-2022/src/debug.rs
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::hash::Hash;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -124,6 +124,17 @@ where
     }
 }
 
+impl<Db: ?Sized, K, V> DebugWithDb<Db> for BTreeMap<K, V>
+where
+    K: DebugWithDb<Db>,
+    V: DebugWithDb<Db>,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
+        let elements = self.iter().map(|(k, v)| (k.debug(db), v.debug(db)));
+        f.debug_map().entries(elements).finish()
+    }
+}
+
 impl<Db: ?Sized, K: Hash + Eq, V> DebugWithDb<Db> for OrderedHashMap<K, V>
 where
     K: DebugWithDb<Db>,
@@ -132,6 +143,15 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
         let elements = self.iter().map(|(k, v)| (k.debug(db), v.debug(db)));
         f.debug_map().entries(elements).finish()
+    }
+}
+
+impl<Db: ?Sized, A> DebugWithDb<Db> for (A,)
+where
+    A: DebugWithDb<Db>,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
+        f.debug_tuple("").field(&self.0.debug(db)).finish()
     }
 }
 
@@ -161,6 +181,16 @@ where
 }
 
 impl<Db: ?Sized, V, S> DebugWithDb<Db> for HashSet<V, S>
+where
+    V: DebugWithDb<Db>,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
+        let elements = self.iter().map(|e| e.debug(db));
+        f.debug_list().entries(elements).finish()
+    }
+}
+
+impl<Db: ?Sized, V> DebugWithDb<Db> for BTreeSet<V>
 where
     V: DebugWithDb<Db>,
 {

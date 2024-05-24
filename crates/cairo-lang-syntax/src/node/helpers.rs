@@ -1,3 +1,4 @@
+use cairo_lang_utils::LookupIntern;
 use smol_str::SmolStr;
 
 use super::ast::{
@@ -12,7 +13,7 @@ use super::ast::{
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
 use super::kind::SyntaxKind;
-use super::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
+use super::{SyntaxNode, Terminal, TypedSyntaxNode};
 use crate::node::ast::{Attribute, AttributeList};
 use crate::node::green::GreenNodeDetails;
 
@@ -31,7 +32,7 @@ impl ast::UsePathLeafPtr {
 impl GetIdentifier for ast::UsePathLeafPtr {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
         let alias_clause_green = self.alias_clause_green(db).0;
-        let green_node = db.lookup_intern_green(alias_clause_green);
+        let green_node = alias_clause_green.lookup_intern(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
@@ -47,7 +48,7 @@ impl GetIdentifier for ast::UsePathLeafPtr {
 impl GetIdentifier for ast::PathSegmentGreen {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let green_node = db.lookup_intern_green(self.0);
+        let green_node = self.0.lookup_intern(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
@@ -59,7 +60,7 @@ impl GetIdentifier for ast::PathSegmentGreen {
 impl GetIdentifier for ast::ExprPathGreen {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let green_node = db.lookup_intern_green(self.0);
+        let green_node = self.0.lookup_intern(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
@@ -71,7 +72,7 @@ impl GetIdentifier for ast::ExprPathGreen {
 }
 impl GetIdentifier for ast::TerminalIdentifierGreen {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        match &db.lookup_intern_green(self.0).details {
+        match &self.0.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => "Unexpected token".into(),
             GreenNodeDetails::Node { children, width: _ } => {
                 TokenIdentifierGreen(children[1]).text(db)
@@ -132,7 +133,7 @@ pub trait NameGreen {
 impl NameGreen for FunctionDeclarationGreen {
     fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         TerminalIdentifierGreen(
-            db.lookup_intern_green(self.0).children()[FunctionDeclaration::INDEX_NAME],
+            self.0.lookup_intern(db).children()[FunctionDeclaration::INDEX_NAME],
         )
     }
 }
@@ -527,10 +528,10 @@ impl WrappedArgListHelper for WrappedArgList {
 
     fn left_bracket_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
         match self {
-            WrappedArgList::ParenthesizedArgList(args) => args.lparen(db).stable_ptr().untyped(),
-            WrappedArgList::BracketedArgList(args) => args.lbrack(db).stable_ptr().untyped(),
-            WrappedArgList::BracedArgList(args) => args.lbrace(db).stable_ptr().untyped(),
-            WrappedArgList::Missing(_) => self.stable_ptr().untyped(),
+            WrappedArgList::ParenthesizedArgList(args) => (&args.lparen(db)).into(),
+            WrappedArgList::BracketedArgList(args) => (&args.lbrack(db)).into(),
+            WrappedArgList::BracedArgList(args) => (&args.lbrace(db)).into(),
+            WrappedArgList::Missing(_) => self.into(),
         }
     }
 }

@@ -3,7 +3,8 @@ use std::fmt::Display;
 use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
+use cairo_lang_utils::{require, Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
@@ -49,7 +50,7 @@ impl SyntaxNode {
             green,
             offset: TextOffset::default(),
             parent: None,
-            stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::Root(file_id, green)),
+            stable_ptr: SyntaxStablePtr::Root(file_id, green).intern(db),
         };
         Self(Arc::new(inner))
     }
@@ -76,7 +77,7 @@ impl SyntaxNode {
         }
     }
     pub fn green_node(&self, db: &dyn SyntaxGroup) -> Arc<GreenNode> {
-        db.lookup_intern_green(self.0.green)
+        self.0.green.lookup_intern(db)
     }
     pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
         let start = self.span_start_without_trivia(db);
@@ -102,9 +103,7 @@ impl SyntaxNode {
     /// returns None.
     pub fn get_terminal_token(&self, db: &dyn SyntaxGroup) -> Option<SyntaxNode> {
         let green_node = self.green_node(db);
-        if !green_node.kind.is_terminal() {
-            return None;
-        }
+        require(green_node.kind.is_terminal())?;
         // At this point we know we should have a second child which is the token.
         let token_node = db.get_children(self.clone())[1].clone();
         Some(token_node)
@@ -157,6 +156,14 @@ impl SyntaxNode {
             }
         }
         self.clone()
+    }
+
+    /// Lookups a syntax node using a position.
+    pub fn lookup_position(&self, db: &dyn SyntaxGroup, position: TextPosition) -> SyntaxNode {
+        match position.offset_in_file(db.upcast(), self.stable_ptr().file_id(db)) {
+            Some(offset) => self.lookup_offset(db, offset),
+            None => self.clone(),
+        }
     }
 
     /// Returns all the text under the syntax node.

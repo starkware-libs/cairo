@@ -17,3 +17,123 @@ struct A<T> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test invalid recursive struct.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    member: A,
+}
+
+struct B {
+    member: C,
+    member2: A,
+}
+
+struct C {
+    member: B,
+}
+
+//! > expected_diagnostics
+error: Recursive type "test::A" has infinite size.
+ --> lib.cairo:2:5
+    member: A,
+    ^*******^
+
+error: Recursive type "test::C" has infinite size.
+ --> lib.cairo:6:5
+    member: C,
+    ^*******^
+
+error: Recursive type "test::A" has infinite size.
+ --> lib.cairo:7:5
+    member2: A,
+    ^********^
+
+error: Recursive type "test::B" has infinite size.
+ --> lib.cairo:11:5
+    member: B,
+    ^*******^
+
+//! > ==========================================================================
+
+//! > Test phantom recursive struct.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+struct A {
+    member: A,
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test struct containing phantom.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+struct A {}
+
+struct B {
+    member: A,
+}
+
+//! > expected_diagnostics
+error: Non-phantom type containing phantom type.
+ --> lib.cairo:5:5
+    member: A,
+    ^*******^
+
+//! > ==========================================================================
+
+//! > Test struct containing empty array.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    member: Array<((), ())>,
+}
+
+//! > expected_diagnostics
+error: Cannot have array of type "((), ())" that is zero sized.
+ --> lib.cairo:2:5
+    member: Array<((), ())>,
+    ^*********************^

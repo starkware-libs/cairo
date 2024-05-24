@@ -1,9 +1,10 @@
 use cairo_lang_defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, VarId,
-    VariantId,
+    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, TraitTypeId,
+    VarId, VariantId,
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::LookupIntern;
 
 use super::{
     ConstVar, ImplVar, ImplVarId, Inference, InferenceId, InferenceVar, LocalConstVarId,
@@ -13,13 +14,16 @@ use crate::db::SemanticGroup;
 use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
-    GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
+    GenericFunctionWithBodyId, ImplFunctionBodyId, ImplGenericFunctionId,
+    ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{ImplId, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::substitution::{HasDb, RewriteResult, SemanticObject, SemanticRewriter};
-use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId};
+use crate::types::{
+    ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId, ImplTypeId,
+};
 use crate::{
     add_basic_rewrites, ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId,
     ConcreteImplLongId, ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
@@ -222,7 +226,7 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Canonicalizer<'a> {
             }
             return value.default_rewrite(self);
         };
-        let var = var_id.get(self.db);
+        let var = var_id.lookup_intern(self.db);
         if var.inference_id != self.to_canonic.source_inference_id {
             return value.default_rewrite(self);
         }
@@ -294,7 +298,7 @@ impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
             }
             return value.default_rewrite(self);
         };
-        let var = var_id.get(self.get_db());
+        let var = var_id.lookup_intern(self.get_db());
         if var.inference_id != InferenceId::Canonical {
             return value.default_rewrite(self);
         }
@@ -381,7 +385,7 @@ impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {
             }
             return value.default_rewrite(self);
         };
-        let var = var_id.get(self.get_db());
+        let var = var_id.lookup_intern(self.get_db());
         let id = self
             .mapping
             .impl_var_mapping

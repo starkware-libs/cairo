@@ -19,11 +19,11 @@ use cairo_lang_utils::try_extract_matches;
 use num_bigint::ToBigInt;
 use num_traits::Signed;
 
-use super::bounded_int::BoundedIntType;
 use super::snapshot::snapshot_ty;
 use super::structure::StructType;
-use super::utils::{reinterpret_cast_signature, Range};
+use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
+use crate::extensions::bounded_int::bounded_int_ty;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
@@ -245,7 +245,7 @@ impl EnumFromBoundedIntLibfunc {
                 return Err(SpecializationError::UnsupportedGenericArg);
             }
         }
-        let input_ty = bounded_int_ty(context, Range::half_open(0, n_variants))?;
+        let input_ty = bounded_int_ty(context, 0.into(), (n_variants - 1).into())?;
         if n_variants <= 2 {
             Ok(EnumFromBoundedIntConcreteLibfunc {
                 signature: reinterpret_cast_signature(input_ty, enum_type),
@@ -364,15 +364,4 @@ impl SignatureOnlyGenericLibfunc for EnumSnapshotMatchLibfunc {
             fallthrough: Some(0),
         })
     }
-}
-
-/// Creates a `BoundedInt` type with the given range.
-fn bounded_int_ty(
-    context: &dyn SignatureSpecializationContext,
-    range: Range,
-) -> Result<ConcreteTypeId, SpecializationError> {
-    context.get_concrete_type(
-        BoundedIntType::id(),
-        &[GenericArg::Value(range.lower), GenericArg::Value(range.upper - 1)],
-    )
 }

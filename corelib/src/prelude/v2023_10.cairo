@@ -1,6 +1,6 @@
 pub use core::{RangeCheck, SegmentArena, assert, bool, felt252, usize};
 
-pub use core::array::{Array, ArrayTrait, FixedSizeArrayTrait, Span, SpanTrait};
+pub use core::array::{Array, ArrayTrait, Span, SpanTrait, ToSpanTrait};
 pub use core::box::{Box, BoxTrait};
 pub use core::bytes_31::{Bytes31Trait, bytes31};
 pub use core::byte_array::{ByteArray, ByteArrayTrait};

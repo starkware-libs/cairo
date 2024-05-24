@@ -8,7 +8,7 @@ use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -114,7 +114,7 @@ impl<'a> DiagnosticsReporter<'a> {
             };
 
             if db.file_content(module_file).is_none() {
-                match db.lookup_intern_file(module_file) {
+                match module_file.lookup_intern(db) {
                     FileLongId::OnDisk(path) => {
                         self.callback.on_diagnostic(FormattedDiagnosticEntry::new(
                             Severity::Error,

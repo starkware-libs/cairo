@@ -67,7 +67,7 @@ fn test_events() {
     core::internal::revoke_ap_tracking();
     // Set up.
     let (contract_address, _) = deploy_syscall(
-        contract_with_event::TEST_CLASS_HASH.try_into().unwrap(), 0, array![].span(), false
+        contract_with_event::TEST_CLASS_HASH.try_into().unwrap(), 0, [].span(), false
     )
         .unwrap();
     let mut contract = IContractWithEventDispatcher { contract_address };

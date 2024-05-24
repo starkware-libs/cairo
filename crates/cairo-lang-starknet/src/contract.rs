@@ -1,8 +1,7 @@
 use anyhow::{bail, Context};
-use cairo_felt::Felt252;
 use cairo_lang_defs::ids::{
-    FileIndex, FreeFunctionId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
-    ModuleItemId, NamedLanguageElementId, SubmoduleId,
+    FreeFunctionId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
+    NamedLanguageElementId, SubmoduleId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
@@ -23,12 +22,13 @@ use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::{
     deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
 };
+use cairo_lang_utils::{extract_matches, Intern};
 use itertools::chain;
 use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::Felt as Felt252;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::aliased::Aliased;
@@ -160,8 +160,7 @@ fn get_impl_aliases_abi_functions(
 ) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId>>> {
     let syntax_db = db.upcast();
     let generated_module_id = get_generated_contract_module(db, contract)?;
-    let module_file_id = ModuleFileId(generated_module_id, FileIndex(0));
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast()).unwrap());
+    let mut diagnostics = SemanticDiagnostics::default();
     let mut all_abi_functions = vec![];
     for (impl_alias_id, impl_alias) in db
         .module_impl_aliases(generated_module_id)
@@ -211,7 +210,7 @@ fn get_impl_aliases_abi_functions(
                         &mut diagnostics,
                         impl_alias.stable_ptr().untyped(),
                         GenericFunctionId::Free(f),
-                        generic_args.clone(),
+                        &generic_args,
                     )
                     .to_option()?
                     .get_concrete(db)
@@ -273,7 +272,7 @@ fn get_submodule_id(
 }
 
 /// Sierra information of a contract.
-#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug, Eq)]
 pub struct ContractInfo {
     /// Sierra function of the constructor.
     pub constructor: Option<FunctionId>,
@@ -311,7 +310,7 @@ fn analyze_contract<T: SierraIdReplacer>(
     db: &dyn SierraGenGroup,
     contract: &ContractDeclaration,
     replacer: &T,
-) -> anyhow::Result<(cairo_felt::Felt252, ContractInfo)> {
+) -> anyhow::Result<(Felt252, ContractInfo)> {
     // Extract class hash.
     let item =
         db.module_item_by_name(contract.module_id(), "TEST_CLASS_HASH".into()).unwrap().unwrap();
@@ -350,7 +349,7 @@ pub fn get_selector_and_sierra_function<T: SierraIdReplacer>(
     replacer: &T,
 ) -> (Felt252, FunctionId) {
     let function_id = function_with_body.value.function_id(db.upcast()).expect("Function error.");
-    let sierra_id = replacer.replace_function_id(&db.intern_sierra_function(function_id));
+    let sierra_id = replacer.replace_function_id(&function_id.intern(db));
     let selector: Felt252 = starknet_keccak(function_with_body.alias.as_bytes()).into();
     (selector, sierra_id)
 }

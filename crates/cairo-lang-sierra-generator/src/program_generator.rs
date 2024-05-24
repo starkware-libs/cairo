@@ -10,8 +10,8 @@ use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
 use cairo_lang_sierra::program::{self, DeclaredTypeInfo, StatementIdx};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_lang_utils::{try_extract_matches, LookupIntern};
 use itertools::{chain, Itertools};
 
 use crate::db::{sierra_concrete_long_id, SierraGenGroup};
@@ -36,7 +36,7 @@ fn generate_libfunc_declarations<'a>(
         .into_iter()
         .map(|libfunc_id| program::LibfuncDeclaration {
             id: libfunc_id.clone(),
-            long_id: db.lookup_intern_concrete_lib_func(libfunc_id.clone()),
+            long_id: libfunc_id.lookup_intern(db),
         })
         .collect()
 }
@@ -293,7 +293,7 @@ fn try_get_function_with_body_id(
         try_extract_matches!(&statement.statement, pre_sierra::Statement::Sierra)?,
         program::GenStatement::Invocation
     )?;
-    let libfunc = db.lookup_intern_concrete_lib_func(invc.libfunc_id.clone());
+    let libfunc = invc.libfunc_id.lookup_intern(db);
     let inner_function = if libfunc.generic_id == "function_call".into()
         || libfunc.generic_id == "coupon_call".into()
     {
@@ -315,12 +315,10 @@ fn try_get_function_with_body_id(
         return None;
     };
 
-    db.lookup_intern_sierra_function(
-        try_extract_matches!(inner_function, cairo_lang_sierra::program::GenericArg::UserFunc)?
-            .clone(),
-    )
-    .body(db.upcast())
-    .expect("No diagnostics at this stage.")
+    try_extract_matches!(inner_function, cairo_lang_sierra::program::GenericArg::UserFunc)?
+        .lookup_intern(db)
+        .body(db.upcast())
+        .expect("No diagnostics at this stage.")
 }
 
 pub fn get_sierra_program(

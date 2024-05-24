@@ -1,13 +1,14 @@
 use std::collections::VecDeque;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, VariantId,
+    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, TraitTypeId,
+    VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{extract_matches, LookupIntern};
 use itertools::{zip_eq, Itertools};
 
 use crate::db::SemanticGroup;
@@ -18,12 +19,15 @@ use crate::expr::inference::{
 use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
-    GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
+    GenericFunctionWithBodyId, ImplFunctionBodyId, ImplGenericFunctionId,
+    ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{ImplId, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
-use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId};
+use crate::types::{
+    ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId, ImplTypeId,
+};
 use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
     ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
@@ -36,19 +40,33 @@ pub enum RewriteResult {
     NoChange,
 }
 
-/// A substitution of generic arguments in generic parameters. Used for concretization.
+/// A substitution of generic arguments in generic parameters as well as the `Self` of traits. Used
+/// for concretization.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct GenericSubstitution(pub OrderedHashMap<GenericParamId, GenericArgumentId>);
+pub struct GenericSubstitution {
+    param_to_arg: OrderedHashMap<GenericParamId, GenericArgumentId>,
+    self_impl: Option<ImplId>,
+}
 impl GenericSubstitution {
+    pub fn from_impl(self_impl: ImplId) -> Self {
+        GenericSubstitution { param_to_arg: OrderedHashMap::default(), self_impl: Some(self_impl) }
+    }
     pub fn new(generic_params: &[GenericParam], generic_args: &[GenericArgumentId]) -> Self {
-        GenericSubstitution(
-            zip_eq(generic_params.iter().map(|param| param.id()), generic_args.iter().copied())
-                .collect(),
-        )
+        GenericSubstitution {
+            param_to_arg: zip_eq(
+                generic_params.iter().map(|param| param.id()),
+                generic_args.iter().copied(),
+            )
+            .collect(),
+            self_impl: None,
+        }
     }
     pub fn concat(mut self, other: GenericSubstitution) -> Self {
-        for (key, value) in other.0.into_iter() {
-            self.0.insert(key, value);
+        for (key, value) in other.param_to_arg.into_iter() {
+            self.param_to_arg.insert(key, value);
+        }
+        if let Some(self_impl) = other.self_impl {
+            self.self_impl = Some(self_impl);
         }
         self
     }
@@ -57,13 +75,18 @@ impl Deref for GenericSubstitution {
     type Target = OrderedHashMap<GenericParamId, GenericArgumentId>;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.param_to_arg
+    }
+}
+impl DerefMut for GenericSubstitution {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.param_to_arg
     }
 }
 #[allow(clippy::derived_hash_with_manual_eq)]
 impl std::hash::Hash for GenericSubstitution {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.iter().collect_vec().hash(state);
+        self.param_to_arg.iter().collect_vec().hash(state);
     }
 }
 
@@ -245,6 +268,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper, EnumId, $($exclude)*);
         $crate::prune_single!(__identity_helper, StructId, $($exclude)*);
         $crate::prune_single!(__identity_helper, GenericParamId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, TraitTypeId, $($exclude)*);
         $crate::prune_single!(__identity_helper, TypeVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, ConstVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, VarId, $($exclude)*);
@@ -255,6 +279,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper, LocalConstVarId, $($exclude)*);
         $crate::prune_single!(__identity_helper, InferenceVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, ConstValue, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ImplFunctionBodyId, $($exclude)*);
 
         $crate::prune_single!(__regular_helper, Signature, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericFunctionId, $($exclude)*);
@@ -294,6 +319,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ImplTypeId, $($exclude)*);
         $crate::prune_single!(__regular_helper, UninferredImpl, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVarMemberPath, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVar, $($exclude)*);
@@ -378,7 +404,7 @@ add_basic_rewrites!(
     <'a>,
     SubstitutionRewriter<'a>,
     DiagnosticAdded,
-    @exclude TypeId TypeLongId ImplId ConstValue
+    @exclude TypeId TypeLongId ImplId ConstValue GenericFunctionId
 );
 
 impl<'a> SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'a> {
@@ -391,13 +417,40 @@ impl<'a> SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'a> 
 }
 impl<'a> SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<'a> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Maybe<RewriteResult> {
-        if let TypeLongId::GenericParameter(generic_param) = value {
-            if let Some(generic_arg) = self.substitution.get(generic_param) {
-                let type_id = *extract_matches!(generic_arg, GenericArgumentId::Type);
-                // return self.rewrite(self.db.lookup_intern_type(type_id));
-                *value = self.db.lookup_intern_type(type_id);
-                return Ok(RewriteResult::Modified);
+        match value {
+            TypeLongId::GenericParameter(generic_param) => {
+                if let Some(generic_arg) = self.substitution.get(generic_param) {
+                    let type_id = *extract_matches!(generic_arg, GenericArgumentId::Type);
+                    // return self.rewrite(type_id.lookup_intern(self.db));
+                    *value = type_id.lookup_intern(self.db);
+                    return Ok(RewriteResult::Modified);
+                }
             }
+            TypeLongId::ImplType(impl_type_id) => {
+                let impl_type_id_rewrite_result = self.internal_rewrite(impl_type_id)?;
+                return Ok(if let Some(ty) = self.db.impl_type_concrete_implized(*impl_type_id)? {
+                    *value = ty.lookup_intern(self.db);
+                    RewriteResult::Modified
+                } else {
+                    impl_type_id_rewrite_result
+                });
+            }
+            TypeLongId::TraitType(trait_type_id) => {
+                if let Some(self_impl) = &self.substitution.self_impl {
+                    assert_eq!(
+                        trait_type_id.trait_id(self.db.upcast()),
+                        self_impl.concrete_trait(self.db)?.trait_id(self.db)
+                    );
+                    let impl_type_id = ImplTypeId::new(*self_impl, *trait_type_id, self.db);
+                    *value = if let Some(ty) = self.db.impl_type_concrete_implized(impl_type_id)? {
+                        ty.lookup_intern(self.db)
+                    } else {
+                        TypeLongId::ImplType(impl_type_id)
+                    };
+                    return Ok(RewriteResult::Modified);
+                }
+            }
+            _ => {}
         }
         value.default_rewrite(self)
     }
@@ -408,7 +461,7 @@ impl<'a> SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<
             if let Some(generic_arg) = self.substitution.get(param_id) {
                 let const_value_id = extract_matches!(generic_arg, GenericArgumentId::Constant);
 
-                *value = self.db.lookup_intern_const_value(*const_value_id);
+                *value = const_value_id.lookup_intern(self.db);
                 return Ok(RewriteResult::Modified);
             }
         }
@@ -426,6 +479,24 @@ impl<'a> SemanticRewriter<ImplId, DiagnosticAdded> for SubstitutionRewriter<'a> 
             }
         } else if value.is_fully_concrete(self.db) {
             return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
+impl<'a> SemanticRewriter<GenericFunctionId, DiagnosticAdded> for SubstitutionRewriter<'a> {
+    fn internal_rewrite(&mut self, value: &mut GenericFunctionId) -> Maybe<RewriteResult> {
+        if let GenericFunctionId::Trait(id) = value {
+            if let Some(self_impl) = &self.substitution.self_impl {
+                let id_rewritten = self.internal_rewrite(id)?;
+                if id.concrete_trait(self.db.upcast()) == self_impl.concrete_trait(self.db)? {
+                    *value = GenericFunctionId::Impl(ImplGenericFunctionId {
+                        impl_id: *self_impl,
+                        function: id.trait_function(self.db),
+                    });
+                    return Ok(RewriteResult::Modified);
+                }
+                return Ok(id_rewritten);
+            }
         }
         value.default_rewrite(self)
     }
