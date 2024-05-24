@@ -28,7 +28,14 @@ pub fn containing_function_identifier(
     let absolute_semantic_path_to_file_module = file_module_absolute_identifier(db, file_id)?;
 
     let relative_semantic_path = function_identifier_relative_to_file_module(db, location);
-    Some(absolute_semantic_path_to_file_module.add("::").add(&relative_semantic_path))
+    if relative_semantic_path.is_empty() {
+        // In some cases the stable location maps to a code that is a statement like a function call
+        // directly in a file module, e.g. `Self::eq(lhs, rhs)` in `core::traits`. This brings no
+        // information about the function it was called from.
+        None
+    } else {
+        Some(absolute_semantic_path_to_file_module.add("::").add(&relative_semantic_path))
+    }
 }
 
 /// Returns an identifier of the function that contains the given [StableLocation].
