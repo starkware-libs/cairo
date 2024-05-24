@@ -115,7 +115,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Machete
-        uses: vsuryamurthy/cargo-machete-action@v1
+        uses: bnjbvr/cargo-machete@main
 
   clippy:
     runs-on: ubuntu-latest
