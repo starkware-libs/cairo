@@ -20,7 +20,7 @@ mod test;
 /// It is a fully qualified path to the function which contains:
 /// - fully qualified path to the file module,
 /// - relative path to the function in the file module.
-pub fn containing_function_identifier(
+pub fn maybe_containing_function_identifier(
     db: &dyn DefsGroup,
     location: StableLocation,
 ) -> Option<String> {
@@ -45,16 +45,20 @@ pub fn containing_function_identifier(
 ///
 /// In case the fully qualified path to the file module cannot be found
 /// it is replaced in the fully qualified function path by the file name.
-pub fn containing_function_identifier_for_tests(
+pub fn maybe_containing_function_identifier_for_tests(
     db: &dyn DefsGroup,
     location: StableLocation,
-) -> String {
+) -> Option<String> {
     let file_id = location.file_id(db.upcast());
     let absolute_semantic_path_to_file_module = file_module_absolute_identifier(db, file_id)
         .unwrap_or_else(|| file_id.file_name(db.upcast()));
 
     let relative_semantic_path = function_identifier_relative_to_file_module(db, location);
-    absolute_semantic_path_to_file_module.add("::").add(&relative_semantic_path)
+    if relative_semantic_path.is_empty() {
+        None
+    } else {
+        Some(absolute_semantic_path_to_file_module.add("::").add(&relative_semantic_path))
+    }
 }
 
 /// Returns the path (modules and impls) to the function in the file.
@@ -173,7 +177,9 @@ impl StatementsLocations {
         &self,
         db: &dyn DefsGroup,
     ) -> UnorderedHashMap<StatementIdx, String> {
-        self.locations.map(|s| containing_function_identifier_for_tests(db, *s.first().unwrap()))
+        self.locations.map(|s| {
+            maybe_containing_function_identifier_for_tests(db, *s.first().unwrap()).unwrap()
+        })
     }
 
     /// Creates a new [StatementsFunctions] struct using [StatementsLocations] and [DefsGroup].
@@ -187,7 +193,7 @@ impl StatementsLocations {
                         *statement_idx,
                         stable_locations
                             .iter()
-                            .filter_map(|s| containing_function_identifier(db, *s))
+                            .filter_map(|s| maybe_containing_function_identifier(db, *s))
                             .collect(),
                     )
                 })
