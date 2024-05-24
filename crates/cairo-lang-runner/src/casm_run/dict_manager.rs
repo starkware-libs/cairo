@@ -81,7 +81,7 @@ impl DictManagerExecScope {
         vm: &mut VirtualMachine,
         dict_end: Relocatable,
     ) -> Result<(), HintError> {
-        let tracker_idx = self.get_dict_infos_index(dict_end).unwrap();
+        let tracker_idx = self.get_dict_infos_index(dict_end)?;
         if self.trackers[tracker_idx].start.segment_index >= 0 {
             // The dict is already on a real segment so we don't need to relocate it
             // This is the case of the first dictionary
