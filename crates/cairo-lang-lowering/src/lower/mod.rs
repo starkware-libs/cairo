@@ -1407,23 +1407,40 @@ fn lower_expr_struct_ctor(
         }));
     if members.len() != member_expr_usages.len() {
         // Semantic model should have made sure base struct exist if some members are missing.
-        let base_struct_usage = lower_expr_to_var_usage(ctx, builder, expr.base_struct.unwrap())?;
-
-        for (base_member, (_, member)) in izip!(
-            StructDestructure {
-                input: base_struct_usage.var_id,
-                var_reqs: members
-                    .iter()
-                    .map(|(_, member)| VarRequest { ty: member.ty, location })
-                    .collect(),
+        let base_struct = lower_expr(ctx, builder, expr.base_struct.unwrap())?;
+        if let LoweredExpr::Member(path, location) = base_struct {
+            for (_, member) in members.iter() {
+                let Entry::Vacant(entry) = member_expr_usages.entry(member.id) else {
+                    continue;
+                };
+                let member_path = ExprVarMemberPath::Member {
+                    parent: Box::new(path.clone()),
+                    member_id: member.id,
+                    stable_ptr: path.stable_ptr(),
+                    concrete_struct_id: expr.concrete_struct_id,
+                    ty: member.ty,
+                };
+                entry.insert(Ok(
+                    LoweredExpr::Member(member_path, location).as_var_usage(ctx, builder)?
+                ));
             }
-            .add(ctx, &mut builder.statements),
-            members.iter()
-        ) {
-            match member_expr_usages.entry(member.id) {
-                Entry::Occupied(_) => {}
-                Entry::Vacant(entry) => {
-                    entry.insert(Ok(VarUsage { var_id: base_member, location }));
+        } else {
+            for (base_member, (_, member)) in izip!(
+                StructDestructure {
+                    input: base_struct.as_var_usage(ctx, builder)?.var_id,
+                    var_reqs: members
+                        .iter()
+                        .map(|(_, member)| VarRequest { ty: member.ty, location })
+                        .collect(),
+                }
+                .add(ctx, &mut builder.statements),
+                members.iter()
+            ) {
+                match member_expr_usages.entry(member.id) {
+                    Entry::Occupied(_) => {}
+                    Entry::Vacant(entry) => {
+                        entry.insert(Ok(VarUsage { var_id: base_member, location }));
+                    }
                 }
             }
         }
