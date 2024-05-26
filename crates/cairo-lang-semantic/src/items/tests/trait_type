@@ -2227,8 +2227,7 @@ fn bar<T, impl TrtImp: Trt<T>>(x: T) -> TrtImp::Assoc {
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-// TODO(orizi): Test this works with `u32` as return type as well.
-fn foo() -> felt252 {
+fn foo() -> u32 {
     array![12, 13, 14].first()
 }
 

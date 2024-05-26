@@ -736,6 +736,14 @@ impl<'db> Inference<'db> {
         if !ty.is_var_free(self.db) && self.ty_contains_var(ty, inference_var) {
             return Err(self.set_error(InferenceError::Cycle(inference_var)));
         }
+        // If assigning var to var - making sure assigning to the lower id for proper canonization.
+        if let TypeLongId::Var(other) = ty.lookup_intern(self.db) {
+            if other.inference_id == self.inference_id && other.id.0 > var.id.0 {
+                let var_ty = TypeLongId::Var(var).intern(self.db);
+                self.type_assignment.insert(other.id, var_ty);
+                return Ok(var_ty);
+            }
+        }
         self.type_assignment.insert(var.id, ty);
         Ok(ty)
     }
