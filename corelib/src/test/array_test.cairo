@@ -176,3 +176,14 @@ fn test_span_multi_pop() {
     let mut span = array![10, 11, 12, 13].span();
     assert!(debox(span.multi_pop_back::<3>()) == Option::Some(@[11, 12, 13]));
 }
+
+#[test]
+fn test_span_iterator() {
+    let mut span = array![10, 11, 12, 13_felt252].span();
+    let mut iter = core::array::SpanIntoIterator::into_iter(ref span);
+    let mut i = 10;
+    while let Option::Some(value) = iter.next() {
+        assert_eq!(value, @i);
+        i += 1;
+    }
+}
