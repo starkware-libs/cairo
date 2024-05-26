@@ -3,7 +3,7 @@ use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::circuit::{
-    CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE, VALUE_SIZE,
+    CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE, OFFSETS_PER_GATE, VALUE_SIZE,
 };
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::casts::IntoOrPanic;
@@ -112,7 +112,7 @@ fn build_get_descriptor(
         // TODO(Gil): Support relocatable CellExpression and return an unstored "[ap - 1] + 1".
         [ap] = [ap - 1] + 1, ap++;
         [ap] = (add_offsets.len()), ap++;
-        [ap] = [ap - 2] + (add_offsets.len() * VALUE_SIZE), ap++;
+        [ap] = [ap - 2] + (add_offsets.len() * OFFSETS_PER_GATE), ap++;
         [ap] = (mul_offsets.len()), ap++;
     };
 

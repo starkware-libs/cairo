@@ -29,6 +29,8 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 pub const VALUE_SIZE: usize = 4;
 /// The size of a builtin instance.
 pub const BUILTIN_INSTANCE_SIZE: usize = 7;
+/// A gate is defined by 3 offsets, the first two are the inputs and the third is the output.
+pub const OFFSETS_PER_GATE: usize = 3;
 
 define_type_hierarchy! {
     pub enum CircuitType {
