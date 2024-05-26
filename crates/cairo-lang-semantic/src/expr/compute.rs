@@ -2281,6 +2281,11 @@ fn member_access_expr(
         };
         long_ty = ty.lookup_intern(ctx.db);
     }
+    if matches!(long_ty, TypeLongId::Var(_)) {
+        // Save some work. ignore the result. The error, if any, will be reported later.
+        ctx.resolver.inference().solve().ok();
+        long_ty = ctx.resolver.inference().rewrite(long_ty).no_err();
+    }
 
     match long_ty {
         TypeLongId::Concrete(concrete) => match concrete {
