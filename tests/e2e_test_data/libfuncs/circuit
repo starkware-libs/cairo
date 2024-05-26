@@ -133,7 +133,7 @@ fn foo() -> CircuitDescriptor<MyCircuit> {
 call rel 11;
 [ap + 0] = [ap + -1] + 10, ap++;
 [ap + 0] = 1, ap++;
-[ap + 0] = [ap + -2] + 4, ap++;
+[ap + 0] = [ap + -2] + 3, ap++;
 [ap + 0] = 3, ap++;
 ret;
 ret;
