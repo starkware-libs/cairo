@@ -38,3 +38,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/docs.sh
+
+  starknet_sierra_validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+      - run: >
+          scripts/starknet_sierra_validate.sh
