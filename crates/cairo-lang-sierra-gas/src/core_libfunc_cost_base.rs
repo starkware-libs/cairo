@@ -490,7 +490,7 @@ pub fn core_libfunc_cost(
             }
         },
         Circuit(CircuitConcreteLibfunc::FillInput(_)) => {
-            vec![ConstCost::steps(7).into(), ConstCost::steps(8).into()]
+            vec![ConstCost::steps(7).into(), ConstCost::steps(7).into()]
         }
         Circuit(CircuitConcreteLibfunc::Eval(libfunc)) => {
             let info = info_provider.circuit_info(&libfunc.ty);
