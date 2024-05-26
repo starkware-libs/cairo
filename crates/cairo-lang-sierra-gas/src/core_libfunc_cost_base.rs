@@ -475,13 +475,13 @@ pub fn core_libfunc_cost(
             BoundedIntConcreteLibfunc::Constrain(libfunc) => {
                 vec![
                     (ConstCost {
-                        steps: 2 + i32::from(libfunc.boundary != BigInt::one().shl(128)),
+                        steps: 2 + if libfunc.boundary == BigInt::one().shl(128) { 0 } else { 1 },
                         holes: 0,
                         range_checks: 1,
                     })
                     .into(),
                     (ConstCost {
-                        steps: 3 + i32::from(!libfunc.boundary.is_zero()),
+                        steps: 3 + if libfunc.boundary.is_zero() { 0 } else { 1 },
                         holes: 0,
                         range_checks: 1,
                     })
