@@ -145,20 +145,6 @@ pub(crate) impl U128TryIntoNonZero of TryInto<u128, NonZero<u128>> {
     }
 }
 
-impl U128Div of Div<u128> {
-    fn div(lhs: u128, rhs: u128) -> u128 {
-        let (q, _r) = u128_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        q
-    }
-}
-
-impl U128Rem of Rem<u128> {
-    fn rem(lhs: u128, rhs: u128) -> u128 {
-        let (_q, r) = u128_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        r
-    }
-}
-
 impl U128DivRem of DivRem<u128> {
     fn div_rem(lhs: u128, rhs: NonZero<u128>) -> (u128, u128) {
         u128_safe_divmod(lhs, rhs)
@@ -344,20 +330,6 @@ impl U8TryIntoNonZero of TryInto<u8, NonZero<u8>> {
     }
 }
 
-impl U8Div of Div<u8> {
-    fn div(lhs: u8, rhs: u8) -> u8 {
-        let (q, _r) = u8_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        q
-    }
-}
-
-impl U8Rem of Rem<u8> {
-    fn rem(lhs: u8, rhs: u8) -> u8 {
-        let (_q, r) = u8_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        r
-    }
-}
-
 impl U8DivRem of DivRem<u8> {
     fn div_rem(lhs: u8, rhs: NonZero<u8>) -> (u8, u8) {
         u8_safe_divmod(lhs, rhs)
@@ -508,20 +480,6 @@ fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> nopanic {
 impl U16TryIntoNonZero of TryInto<u16, NonZero<u16>> {
     fn try_into(self: u16) -> Option<NonZero<u16>> {
         u16_try_as_non_zero(self)
-    }
-}
-
-impl U16Div of Div<u16> {
-    fn div(lhs: u16, rhs: u16) -> u16 {
-        let (q, _r) = u16_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        q
-    }
-}
-
-impl U16Rem of Rem<u16> {
-    fn rem(lhs: u16, rhs: u16) -> u16 {
-        let (_q, r) = u16_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        r
     }
 }
 
@@ -678,20 +636,6 @@ pub(crate) impl U32TryIntoNonZero of TryInto<u32, NonZero<u32>> {
     }
 }
 
-impl U32Div of Div<u32> {
-    fn div(lhs: u32, rhs: u32) -> u32 {
-        let (q, _r) = u32_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        q
-    }
-}
-
-impl U32Rem of Rem<u32> {
-    fn rem(lhs: u32, rhs: u32) -> u32 {
-        let (_q, r) = u32_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        r
-    }
-}
-
 impl U32DivRem of DivRem<u32> {
     fn div_rem(lhs: u32, rhs: NonZero<u32>) -> (u32, u32) {
         u32_safe_divmod(lhs, rhs)
@@ -842,20 +786,6 @@ fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> nopanic {
 impl U64TryIntoNonZero of TryInto<u64, NonZero<u64>> {
     fn try_into(self: u64) -> Option<NonZero<u64>> {
         u64_try_as_non_zero(self)
-    }
-}
-
-impl U64Div of Div<u64> {
-    fn div(lhs: u64, rhs: u64) -> u64 {
-        let (q, _r) = u64_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        q
-    }
-}
-
-impl U64Rem of Rem<u64> {
-    fn rem(lhs: u64, rhs: u64) -> u64 {
-        let (_q, r) = u64_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        r
     }
 }
 
@@ -1081,20 +1011,6 @@ fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> nopanic {
 pub(crate) impl U256TryIntoNonZero of TryInto<u256, NonZero<u256>> {
     fn try_into(self: u256) -> Option<NonZero<u256>> {
         u256_try_as_non_zero(self)
-    }
-}
-
-impl U256Div of Div<u256> {
-    fn div(lhs: u256, rhs: u256) -> u256 {
-        let (q, _r) = u256_safe_div_rem(lhs, rhs.try_into().expect('Division by 0'));
-        q
-    }
-}
-
-impl U256Rem of Rem<u256> {
-    fn rem(lhs: u256, rhs: u256) -> u256 {
-        let (_q, r) = u256_safe_div_rem(lhs, rhs.try_into().expect('Division by 0'));
-        r
     }
 }
 
@@ -2148,6 +2064,34 @@ impl I128PartialOrd of PartialOrd<i128> {
         i128_diff(rhs, lhs).into_is_err()
     }
 }
+
+// Implementations for `Div` and `Rem` given `DivRem`.
+mod by_div_rem {
+    pub impl DivImpl<T, +DivRem<T>, +TryInto<T, NonZero<T>>, +Drop<T>> of Div<T> {
+        fn div(lhs: T, rhs: T) -> T {
+            let (q, _r) = DivRem::div_rem(lhs, rhs.try_into().expect('Division by 0'));
+            q
+        }
+    }
+    pub impl RemImpl<T, +DivRem<T>, +TryInto<T, NonZero<T>>, +Drop<T>> of Rem<T> {
+        fn rem(lhs: T, rhs: T) -> T {
+            let (_q, r) = DivRem::div_rem(lhs, rhs.try_into().expect('Division by 0'));
+            r
+        }
+    }
+}
+impl U8Div = by_div_rem::DivImpl<u8>;
+impl U8Rem = by_div_rem::RemImpl<u8>;
+impl U16Div = by_div_rem::DivImpl<u16>;
+impl U16Rem = by_div_rem::RemImpl<u16>;
+impl U32Div = by_div_rem::DivImpl<u32>;
+impl U32Rem = by_div_rem::RemImpl<u32>;
+impl U64Div = by_div_rem::DivImpl<u64>;
+impl U64Rem = by_div_rem::RemImpl<u64>;
+impl U128Div = by_div_rem::DivImpl<u128>;
+impl U128Rem = by_div_rem::RemImpl<u128>;
+impl U256Div = by_div_rem::DivImpl<u256>;
+impl U256Rem = by_div_rem::RemImpl<u256>;
 
 // Implementations for `*Eq` operations.
 mod op_eq_by_op {
