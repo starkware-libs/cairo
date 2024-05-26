@@ -14,5 +14,5 @@ pub trait IntoIterator<T> {
     type IntoIter;
 
     /// Creates an iterator from a collection.
-    fn into_iter(ref self: T) -> Self::IntoIter;
+    fn into_iter(self: T) -> Self::IntoIter;
 }
