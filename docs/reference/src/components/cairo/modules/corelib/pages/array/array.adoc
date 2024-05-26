@@ -1,0 +1,79 @@
+[id="array"]
+
+= Array<T>
+
+`Array<T>` is a generic, dynamic, growable array data structure, where `T` represents the type of elements stored in the array. It provides several operations, such as creating a new array, appending elements to an array, popping elements from the front of an array, and accessing elements by their index.
+
+== Array<T> native functions
+
+These native functions serve as the building blocks for higher-level abstractions, such as traits. By providing the low-level implementation for array operations, they enable the creation of traits like `ArrayTrait<T>`. The `ArrayTrait<T>` trait is an example of how these native functions can be wrapped to create a coherent interface for working with arrays. By defining methods like `new`, `append`, `pop_front`, `get`, and others, the trait leverages the native functions to perform the underlying operations, while presenting a more convenient and idiomatic API for the library users.
+
+=== array_new
+* Signature: `extern fn array_new<T>() -> Array<T> nopanic`
+* Description: Creates a new empty array of type `T`.
+
+=== array_append
+* Signature: `extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic`
+* Description: Appends an element of type `T` to the end of the array.
+
+=== array_pop_front
+* Signature: `extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic`
+* Description: Removes and returns the first element of the array, if it exists.
+
+=== array_snapshot_pop_front
+* Signature: `extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic`
+* Description: Removes and returns the first element of the array snapshot, if it exists.
+
+=== array_snapshot_pop_back
+* Signature: `extern fn array_snapshot_pop_back<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic`
+* Description: Removes and returns the last element of the array snapshot, if it exists.
+
+=== array_get
+* Signature: `extern fn array_get<T>(arr: @Array<T>, index: usize) -> Option<Box<@T>> implicits(RangeCheck) nopanic`
+* Description: Returns an `Option<Box<@T>>` of the element at the given index in the array, if it exists.
+
+=== array_slice
+* Signature: `extern fn array_slice<T>(arr: @Array<T>, start: usize, length: usize) -> Option<@Array<T>> implicits(RangeCheck) nopanic`
+* Description: Returns a slice of the array as an `Option<@Array<T>>` starting at the given index and with the specified length, if the range is valid.
+
+=== array_len
+* Signature: `extern fn array_len<T>(arr: @Array<T>) -> usize nopanic`
+* Description: Returns the length of the array.
+
+== Example
+
+Here's an example demonstrating how to create and work with an `Array<T>`:
+
+[source,cairo]
+----
+TODO
+----
+
+// TODO: make a proper example. Here's the old one:
+
+// [source,cairo]
+// ----
+// from array import Array, ArrayTrait
+// using array : ArrayTrait
+
+// func main() -> ():
+//     let arr : Array(i32) = Array.new()
+//     arr.append(1)
+//     arr.append(2)
+//     arr.append(3)
+
+//     let first = arr.pop_front().unwrap()
+//     assert first == 1
+
+//     let len = arr.len()
+//     assert len == 2
+
+//     let second = arr.at(0)
+//     assert second == 2
+
+//     let third = arr.get(1).unwrap().unbox()
+//     assert third == 3
+// end
+// ----
+
+// This example creates a new Array<i32> and performs various operations, such as appending elements, popping the first element, checking the length, and accessing elements by index.

@@ -1,0 +1,108 @@
+[id="span"]
+
+= Span<T> and SpanTrait<T>
+
+== Span<T>
+
+`Span<T>` is a struct that represents a snapshot of an `Array<T>` object. It allows you to perform operations on the snapshot without modifying the original array.
+
+[source,cairo]
+----
+struct Span<T> {
+    snapshot: @Array<T>
+}
+----
+
+The functionality of `Span<T>` is provided through the `SpanTrait<T>` trait.
+
+== SpanTrait<T>
+
+`SpanTrait<T>` is a trait that provides the functionality for the `Span<T>` struct. It includes methods for querying and modifying the snapshot, such as `pop_front`, `pop_back`, `get`, `at`, `len`, and `is_empty`.
+
+[source,cairo]
+----
+trait SpanTrait<T> {
+    fn pop_front(ref self: Span<T>) -> Option<@T>;
+    fn pop_back(ref self: Span<T>) -> Option<@T>;
+    fn get(self: Span<T>, index: usize) -> Option<Box<@T>>;
+    fn at(self: Span<T>, index: usize) -> @T;
+    fn len(self: Span<T>) -> usize;
+    fn is_empty(self: Span<T>) -> bool;
+}
+----
+
+The `SpanTrait<T>` trait is implemented for `Span<T>` in the `SpanImpl<T>` implementation block, which includes the actual code for each method.
+
+The `SpanIndex<T>` implementation block provides an `IndexView` for `Span<T>`, allowing you to use indexing syntax with a `Span<T>` object.
+
+== SpanTrait<T> methods
+
+=== pop_front
+* Signature: `fn pop_front(ref self: Span<T>) -> Option<@T>`
+* Description: Removes and returns the first element of the snapshot, if it exists.
+
+=== pop_back
+* Signature: `fn pop_back(ref self: Span<T>) -> Option<@T>`
+* Description: Removes and returns the last element of the snapshot, if it exists.
+
+=== get
+* Signature: `fn get(self: Span<T>, index: usize) -> Option<Box<@T>>`
+* Description: Returns an `Option<Box<@T>>` of the element at the given index in the snapshot, if it exists.
+
+=== at
+* Signature: `fn at(self: Span<T>, index: usize) -> @T`
+* Description: Returns the element at the given index in the snapshot.
+
+=== len
+* Signature: `fn len(self: Span<T>) -> usize`
+* Description: Returns the length of the snapshot.
+
+=== is_empty
+* Signature: `fn is_empty(self: Span<T>) -> bool`
+* Description: Returns `true` if the snapshot is empty; otherwise, returns `false`.
+
+== Example
+
+[source,cairo]
+----
+TODO
+----
+
+
+// TODO: add example likely like this (which is based on a rust example):
+
+// In this example, we create an `Array<T>` and a corresponding `Span<T>` to demonstrate the usage of the `SpanTrait<T>` methods.
+
+// [source,cairo]
+// ----
+// let array: Array<i32> = Array::<i32>::new();
+// array.append(1);
+// array.append(2);
+// array.append(3);
+// array.append(4);
+// array.append(5);
+
+// let span: Span<i32> = array.span();
+
+// // Prints 5
+// println!("Length: {}", span.len());
+
+// // Prints 1
+// println!("First element: {}", span.at(0));
+
+// // Prints 3
+// println!("Element at index 2: {}", span.at(2));
+
+// // Removes and prints the first element (1)
+// if let Option::Some(value) = span.pop_front() {
+//     println!("Popped front element: {}", value);
+// }
+
+// // Removes and prints the last element (5)
+// if let Option::Some(value) = span.pop_back() {
+//     println!("Popped back element: {}", value);
+// }
+
+// // Prints 3, the new length of the snapshot after removing two elements
+// println!("New length: {}", span.len());
+// ----
