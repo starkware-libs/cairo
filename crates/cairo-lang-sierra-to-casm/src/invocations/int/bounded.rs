@@ -11,6 +11,7 @@ use num_bigint::BigInt;
 use num_traits::One;
 
 use crate::invocations::felt252::build_felt252_op_with_var;
+use crate::invocations::misc::build_is_zero;
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
@@ -37,6 +38,7 @@ pub fn build(
         BoundedIntConcreteLibfunc::Constrain(libfunc) => {
             build_constrain(builder, &libfunc.boundary)
         }
+        BoundedIntConcreteLibfunc::IsZero(_) => build_is_zero(builder),
     }
 }
 

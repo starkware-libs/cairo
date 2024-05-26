@@ -387,6 +387,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                     ApChange::Known(1 + if libfunc.boundary.is_zero() { 0 } else { 1 }),
                 ]
             }
+            BoundedIntConcreteLibfunc::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         },
         Circuit(CircuitConcreteLibfunc::U384IsZero(_)) => {
             vec![ApChange::Known(0), ApChange::Known(0)]
