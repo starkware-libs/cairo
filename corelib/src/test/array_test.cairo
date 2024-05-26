@@ -180,12 +180,24 @@ fn test_span_multi_pop() {
 
 #[test]
 fn test_span_iterator() {
-    let mut span = array![10, 11, 12, 13_felt252].span();
+    let span = array![10, 11, 12, 13_felt252].span();
     #[feature("collections-into-iter")]
-    let mut iter = core::iter::traits::iterator::IntoIterator::into_iter(ref span);
+    let mut iter = core::iter::traits::iterator::IntoIterator::into_iter(span);
     let mut i = 10;
     while let Option::Some(value) = iter.next() {
         assert_eq!(value, @i);
+        i += 1;
+    }
+}
+
+#[test]
+fn test_array_iterator() {
+    let array = array![10, 11, 12, 13];
+    #[feature("collections-into-iter")]
+    let mut iter = core::iter::traits::iterator::IntoIterator::into_iter(array);
+    let mut i = 10;
+    while let Option::Some(value) = iter.next() {
+        assert_eq!(value, i);
         i += 1;
     }
 }
