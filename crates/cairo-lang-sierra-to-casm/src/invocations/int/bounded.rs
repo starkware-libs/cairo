@@ -57,6 +57,8 @@ pub fn build_div_rem(
         BoundedIntDivRemAlgorithm::KnownSmallQuotient(_) => 3,
         BoundedIntDivRemAlgorithm::KnownSmallLhs(_) => 4,
     };
+    // TODO: What is the argument of buffer? and what is the relation to the (3, 4, 4) range checks
+    //   in the cost module.
     add_input_variables! {casm_builder,
         buffer(rc_slack) range_check;
         deref a;
@@ -138,6 +140,10 @@ pub fn build_div_rem(
                 // Therefore `(min(q, b) + 1) * max(q, b) <= (lhs_upper_sqrt + 1) * 2**128 < prime`.
                 // We can now guess which whether `b` or `q` is small enough and verify.
                 const limiter_bound = lhs_upper_sqrt.clone();
+                // TODO: Why not q <= limiter_bound?
+                // Explanation can be:
+                //   q * b + r < min{q, b} * max{q, b} + 2**128 <=
+                //   root * 2**128 + 2**128 <= (root + 1) * 2**128 < prime.
                 hint TestLessThan {lhs: q, rhs: limiter_bound} into {dst: q_is_small};
                 const u128_bound_minus_limiter_bound = (BigInt::one().shl(128) - lhs_upper_sqrt) as BigInt;
                 jump QIsSmall if q_is_small != 0;

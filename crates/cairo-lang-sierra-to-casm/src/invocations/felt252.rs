@@ -45,7 +45,7 @@ pub fn build_felt252_op_with_var(
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
         deref a;
-        deref_or_immediate b;
+        deref_or_immediate b; // TODO: Signature doesn't allow it ATM.
     };
     let (res_var, extra_costs) = bin_op_helper(&mut casm_builder, a, b, op);
     Ok(builder.build_from_casm_builder(

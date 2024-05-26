@@ -481,6 +481,7 @@ fn extend_multi_pop_failure_checks(
         const popped_size = popped_size;
         let arr_start_popped = arr_start + popped_size;
         tempvar has_enough_elements;
+        // TODO: Why not use the regular TestLessThanOrEqual hint on `popped_size <= end - start`?
         hint TestLessThanOrEqualAddress {
             lhs: arr_start_popped, rhs: arr_end
         } into { dst: has_enough_elements };

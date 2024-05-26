@@ -207,6 +207,9 @@ impl NoGenericArgsGenericLibfunc for Sha256StateHandleInitLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
+        // TODO: Why do we need the handle, if we are allowing to cast Box<...> to it?
+        // Note that since the signature is reinterpret cast (using SameAsParam inside) this
+        // doesn't allow future changes.
         Ok(reinterpret_cast_signature(
             sha256_state_handle_unwrapped_type(context)?,
             context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
@@ -224,6 +227,7 @@ impl NoGenericArgsGenericLibfunc for Sha256StateHandleDigestLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
+        // TODO: Same here.
         Ok(reinterpret_cast_signature(
             context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
             sha256_state_handle_unwrapped_type(context)?,

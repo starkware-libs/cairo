@@ -2015,12 +2015,25 @@ mod bounded_int {
         (upcast(q), upcast(r))
     }
 
+    type OurType = BoundedInt<1, 0x1000000000000000000000000000001000000000000000000000000000001>;
+    type NonZeroU128 = BoundedInt<0x20000000000000000000000000000, {0x100000000000000000000000000000000 - 1}>;
+
+    impl OurDivRemRes of DivRemRes<OurType, NonZeroU128> {
+        type DivT = BoundedInt<0, 0x80000000000000000000000000000080>;
+        type RemT = BoundedInt<0, {0x100000000000000000000000000000000 - 2}>;
+    }
+
     #[test]
     fn test_div_rem() {
         assert!(div_rem_helper(128, 3) == (42, 2));
         assert!(div_rem_helper(255, 3) == (85, 0));
         assert!(div_rem_helper(128, 8) == (16, 0));
         assert!(div_rem_helper(255, 8) == (31, 7));
+
+        bounded_int_div_rem::<OurType, NonZeroU128>(
+            0x1000000000000000000000000000001000000000000000000000000000000,
+            0x1000000000000000000000000000000
+        );
     }
 
     impl U128DivRemRes of DivRemRes<u128, BoundedInt<1, 0xffffffffffffffffffffffffffffffff>> {

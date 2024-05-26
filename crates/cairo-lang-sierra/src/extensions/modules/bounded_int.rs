@@ -176,6 +176,7 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
             vec![
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(lhs.clone()),
+                // Maybe rhs should be NonZero<Range<>>?
                 ParamSignature::new(rhs.clone()),
             ],
             vec![
@@ -234,6 +235,7 @@ impl BoundedIntDivRemAlgorithm {
     /// Fails if the div_rem of the ranges is not supported yet.
     ///
     /// Assumption: `lhs` is non-negative and `rhs` is positive.
+    // TODO: rename to try_new.
     pub fn new(lhs: &Range, rhs: &Range) -> Option<Self> {
         let prime = Felt252::prime().to_bigint().unwrap();
         let q_max = (&lhs.upper - 1) / &rhs.lower;
@@ -241,6 +243,7 @@ impl BoundedIntDivRemAlgorithm {
         // `q` is range checked in all algorithm variants, so `q_max` must be smaller than `2**128`.
         require(q_max < u128_limit)?;
         // `r` is range checked in all algorithm variants, so `lhs.upper` must be at most `2**128`.
+        // TODO: Can lhs.upper be `2**128 + 1`?
         require(rhs.upper <= u128_limit)?;
         if &rhs.upper * &u128_limit < prime {
             return Some(Self::KnownSmallRhs);
@@ -250,6 +253,7 @@ impl BoundedIntDivRemAlgorithm {
             return Some(Self::KnownSmallQuotient(q_upper_bound));
         }
         let root = lhs.upper.sqrt();
+        // TODO: Add explicit check that root < 2**128.
         if (&root + 1) * &u128_limit < prime {
             return Some(Self::KnownSmallLhs(root));
         }
@@ -278,9 +282,12 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
         }?;
         let range = Range::from_type(context, ty.clone())?;
+        // TODO: rename ot low_range and high_range.
+        // TODO: Check that range.lower < boundary < range.upper.
         let under_range = Range::half_open(range.lower, boundary.clone());
         let over_range = Range::half_open(boundary.clone(), range.upper);
         require(
+            // TODO: size() is always >= 1 (the check should be before Range::half_open).
             under_range.size() >= BigInt::one()
                 && over_range.size() >= BigInt::one()
                 && under_range.is_small_range()

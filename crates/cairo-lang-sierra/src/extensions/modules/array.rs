@@ -522,6 +522,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
+        // TODO: Shouldn't this function get a struct like `tuple_from_span`?
         let (ty, count) = args_as_type_and_value(args)?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
@@ -562,6 +563,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(range_check_ty, 0),
+                        // Note that it's duplicatable.
                         OutputVarInfo {
                             ty: arr_snapshot_ty,
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
