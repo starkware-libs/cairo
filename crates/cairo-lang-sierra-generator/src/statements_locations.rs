@@ -55,6 +55,10 @@ pub fn maybe_containing_function_identifier_for_tests(
 
     let relative_semantic_path = function_identifier_relative_to_file_module(db, location);
     if relative_semantic_path.is_empty() {
+        // In some cases the stable location maps to a code that is a statement like a function call
+        // directly in a file module, e.g. `Self::eq(lhs, rhs)` in `core::traits`. This brings no
+        // information about the function it was called from. It is especially relevant for corelib
+        // tests where the first stable location may map to this kind of code.
         None
     } else {
         Some(absolute_semantic_path_to_file_module.add("::").add(&relative_semantic_path))
@@ -177,9 +181,16 @@ impl StatementsLocations {
         &self,
         db: &dyn DefsGroup,
     ) -> UnorderedHashMap<StatementIdx, String> {
-        self.locations.map(|s| {
-            maybe_containing_function_identifier_for_tests(db, *s.first().unwrap()).unwrap()
-        })
+        self.locations
+            .iter_sorted()
+            .filter_map(|(statement_idx, stable_locations)| {
+                maybe_containing_function_identifier_for_tests(
+                    db,
+                    *stable_locations.first().unwrap(),
+                )
+                .map(|function_identifier| (*statement_idx, function_identifier))
+            })
+            .collect()
     }
 
     /// Creates a new [StatementsFunctions] struct using [StatementsLocations] and [DefsGroup].
