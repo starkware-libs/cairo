@@ -265,6 +265,9 @@ impl BlockUsages {
                 for (_, expr_id) in &expr.members {
                     self.handle_expr(function_body, *expr_id, current);
                 }
+                if let Some(base) = &expr.base_struct {
+                    self.handle_expr(function_body, *base, current);
+                }
             }
             Expr::EnumVariantCtor(expr) => {
                 self.handle_expr(function_body, expr.value_expr, current)

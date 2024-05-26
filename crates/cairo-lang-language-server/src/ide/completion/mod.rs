@@ -24,7 +24,7 @@ mod completions;
 )]
 pub fn complete(params: CompletionParams, db: &RootDatabase) -> Option<CompletionResponse> {
     let text_document_position = params.text_document_position;
-    let file_id = db.file_for_url(&text_document_position.text_document.uri);
+    let file_id = db.file_for_url(&text_document_position.text_document.uri)?;
     let mut position = text_document_position.position;
     position.character = position.character.saturating_sub(1);
 

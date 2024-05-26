@@ -537,18 +537,18 @@ impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
                 ParamSignature::new(val_ty),
             ],
             branch_signatures: vec![
-                // More inputs to fill.
-                BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: circuit_input_accumulator_ty,
-                        ref_info: OutputVarReferenceInfo::SimpleDerefs,
-                    }],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
                 // All inputs were filled.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: circuit_data_ty,
+                        ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // More inputs to fill.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: circuit_input_accumulator_ty,
                         ref_info: OutputVarReferenceInfo::SimpleDerefs,
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -732,7 +732,7 @@ fn get_circuit_info(
     // Skip user type.
     let circ_outputs = ty_info.long_id.generic_args.iter().skip(1);
 
-    let ParsedInputs { mut values, mul_offsets, one_needed } =
+    let ParsedInputs { mut values, mul_offsets } =
         parse_circuit_inputs(context, circ_outputs.clone())?;
     let n_inputs = values.len();
     let mut add_offsets = vec![];
@@ -757,7 +757,7 @@ fn get_circuit_info(
                 stack.push((ty, true));
                 stack.extend(gate_inputs.map(|ty| (ty.clone(), false)))
             } else {
-                let output_offset = values.len();
+                let output_offset = n_inputs + 1 + values.len();
                 let mut input_offsets = gate_inputs.map(|ty| *values.get(ty).unwrap());
 
                 add_offsets.push(GateOffsets {
@@ -773,7 +773,7 @@ fn get_circuit_info(
         };
     }
 
-    Ok(CircuitInfo { n_inputs, values, add_offsets, mul_offsets, one_needed })
+    Ok(CircuitInfo { n_inputs, values, add_offsets, mul_offsets })
 }
 
 /// Parses the circuit inputs and returns `ParsedInputs`.
@@ -783,27 +783,25 @@ fn parse_circuit_inputs<'a>(
     circuit_outputs: impl Iterator<Item = &'a GenericArg>,
 ) -> Result<ParsedInputs, SpecializationError> {
     let mut stack = circuit_outputs
-        .map(|garg| (extract_matches!(garg, GenericArg::Type).clone(), false))
+        .map(|garg| extract_matches!(garg, GenericArg::Type).clone())
         .collect::<Vec<_>>();
 
-    let mut inputs: UnorderedHashMap<usize, (ConcreteTypeId, bool)> = Default::default();
-    let mut one_needed = false;
+    let mut inputs: UnorderedHashMap<usize, ConcreteTypeId> = Default::default();
 
-    while let Some((ty, needs_reduction)) = stack.pop() {
+    while let Some(ty) = stack.pop() {
         let long_id = context.get_type_info(ty.clone())?.long_id;
         let generic_id = long_id.generic_id;
         if generic_id == CircuitInput::ID {
-            one_needed |= needs_reduction;
             let idx = args_as_single_value(&long_id.generic_args)?
                 .to_usize()
                 .ok_or(SpecializationError::UnsupportedGenericArg)?;
-            inputs.insert(idx, (ty, needs_reduction));
+            inputs.insert(idx, ty);
         } else if generic_id == AddModGate::ID {
             stack.extend(
                 long_id
                     .generic_args
                     .iter()
-                    .map(|garg| (extract_matches!(garg, GenericArg::Type).clone(), true)),
+                    .map(|garg| extract_matches!(garg, GenericArg::Type).clone()),
             );
         } else {
             return Err(SpecializationError::UnsupportedGenericArg);
@@ -817,22 +815,14 @@ fn parse_circuit_inputs<'a>(
     let mut reduced_input_offset = n_inputs + 1;
     let mut mul_offsets = vec![];
 
-    for (input_idx, (ty, needs_reduction)) in inputs.iter_sorted() {
-        if *needs_reduction {
-            // Add the gate result = 1 * input to reduce the input module the modulus.
-            mul_offsets.push(GateOffsets {
-                lhs: n_inputs,
-                rhs: *input_idx,
-                output: reduced_input_offset,
-            });
-            values.insert(ty.clone(), reduced_input_offset);
-            reduced_input_offset += 1;
-        } else {
-            values.insert(ty.clone(), *input_idx);
-        }
+    for (input_idx, ty) in inputs.iter_sorted() {
+        // Add the gate result = 1 * input to reduce the input module the modulus.
+        mul_offsets.push(GateOffsets { lhs: n_inputs, rhs: *input_idx, output: 1 + values.len() });
+        values.insert(ty.clone(), reduced_input_offset);
+        reduced_input_offset += 1;
     }
 
-    Ok(ParsedInputs { values, mul_offsets, one_needed })
+    Ok(ParsedInputs { values, mul_offsets })
 }
 
 /// Describes the offset that define a gate in a circuit.
@@ -846,16 +836,13 @@ pub struct GateOffsets {
 /// Describes a circuit in the program.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CircuitInfo {
-    /// The number of circuit inputs (excluding the input 1 if needed).
+    /// The number of circuit inputs.
     pub n_inputs: usize,
-
-    /// The circuit requires the input 1 to be present.
-    /// we put this 1 as the first value after the inputs.
-    pub one_needed: bool,
 
     /// Maps a concrete type to it's offset in the values array.
     /// The values mapping does not include the optional 1 input which is stored at the
     /// the index n_inputs.
+    /// The input 1 is located at offset n_inputs and is not part of this mapping.
     pub values: UnorderedHashMap<ConcreteTypeId, usize>,
     /// The offsets for the add gates.
     pub add_offsets: Vec<GateOffsets>,
@@ -868,6 +855,4 @@ struct ParsedInputs {
     values: UnorderedHashMap<ConcreteTypeId, usize>,
     /// The offsets for the mul gates that are used to reduce the inputs.
     mul_offsets: Vec<GateOffsets>,
-    /// The circuit requires the input 1 to be present.
-    one_needed: bool,
 }
