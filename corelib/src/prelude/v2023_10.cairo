@@ -25,3 +25,4 @@ pub use core::traits::{
     PartialOrd, Rem, RemEq, Sub, SubEq, TryInto
 };
 pub use core::zeroable::NonZero;
+pub use core::iter::traits::iterator::Iterator;

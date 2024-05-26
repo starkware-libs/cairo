@@ -227,9 +227,6 @@ pub impl SpanImpl<T> of SpanTrait<T> {
             Option::None => true,
         }
     }
-    fn into_iter(self: Span<T>) -> SpanIter<T> {
-        SpanIter { span: self }
-    }
 }
 
 pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
@@ -340,8 +337,6 @@ impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
     }
 }
 
-pub use core::num::traits::Iterator;
-
 pub struct SpanIter<T> {
     span: Span<T>,
 }
@@ -349,9 +344,17 @@ pub struct SpanIter<T> {
 impl SpanIterDrop<T> of Drop<SpanIter<T>>;
 impl SpanIterCopy<T> of Copy<SpanIter<T>>;
 
-impl SpanIterator<T> of Iterator<SpanIter<T>> {
+impl SpanIterator<T> of core::iter::traits::iterator::Iterator<SpanIter<T>> {
     type Item = @T;
     fn next(ref self: SpanIter<T>) -> Option<@T> {
         self.span.pop_front()
+    }
+}
+
+#[feature("collections")]
+impl SpanIntoIterator<T> of core::iter::traits::iterator::IntoIterator<Span<T>> {
+    type IntoIter = SpanIter<T>;
+    fn into_iter(ref self: Span<T>) -> SpanIter<T> {
+        SpanIter { span: self }
     }
 }
