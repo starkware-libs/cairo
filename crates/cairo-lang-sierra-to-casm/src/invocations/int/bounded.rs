@@ -67,19 +67,28 @@ pub fn build_div_rem(
         tempvar r_plus_1;
         tempvar b_minus_r_minus_1;
     };
-    let q_is_small = matches!(alg, BoundedIntDivRemAlgorithm::KnownSmallLhs(_))
-        .then(|| casm_builder.alloc_var(false));
-    let b_or_q_bound_rc_value = (!matches!(alg, BoundedIntDivRemAlgorithm::KnownSmallRhs))
-        .then(|| casm_builder.alloc_var(false));
+
+    let (q_is_small, b_or_q_bound_rc_value) = match alg {
+        BoundedIntDivRemAlgorithm::KnownSmallRhs => (None, None),
+        BoundedIntDivRemAlgorithm::KnownSmallQuotient(_) => {
+            (None, Some(casm_builder.alloc_var(false)))
+        }
+        BoundedIntDivRemAlgorithm::KnownSmallLhs(_) => {
+            (Some(casm_builder.alloc_var(false)), Some(casm_builder.alloc_var(false)))
+        }
+    };
     casm_build_extend! {casm_builder,
         tempvar bq;
         tempvar q;
         tempvar r;
         hint DivMod { lhs: a, rhs: b } into { quotient: q, remainder: r };
     };
-    // The following assertion is added in any case.
-    // It is added in this order since `u128_safe_divmod` is using this order.
-    if !matches!(alg, BoundedIntDivRemAlgorithm::KnownSmallRhs) {
+
+    // The following assertion is added in all algorithms.
+    // For backward compatibility with the `u*_safe_divmod` libfuncs, we put it either here
+    // or below according to `alg`.
+    let range_check_q_after = matches!(alg, BoundedIntDivRemAlgorithm::KnownSmallRhs);
+    if !range_check_q_after {
         casm_build_extend!(casm_builder, assert q = *(range_check++););
     }
     casm_build_extend! {casm_builder,
@@ -92,9 +101,7 @@ pub fn build_div_rem(
         assert b_minus_r_minus_1 = *(range_check++);
 
     };
-    // The following assertion is added in any case.
-    // It is added in this order since any non `u128` `u*_safe_divmod` is using this order.
-    if matches!(alg, BoundedIntDivRemAlgorithm::KnownSmallRhs) {
+    if range_check_q_after {
         casm_build_extend!(casm_builder, assert q = *(range_check++););
     }
 
