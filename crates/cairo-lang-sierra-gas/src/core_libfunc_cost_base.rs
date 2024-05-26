@@ -495,7 +495,7 @@ pub fn core_libfunc_cost(
         Circuit(CircuitConcreteLibfunc::Eval(libfunc)) => {
             let info = info_provider.circuit_info(&libfunc.ty);
 
-            let mut steps: i32 = 1;
+            let mut steps: i32 = 5;
             let instance_size: i32 = BUILTIN_INSTANCE_SIZE.into_or_panic();
 
             if !info.add_offsets.is_empty() {
@@ -504,10 +504,6 @@ pub fn core_libfunc_cost(
 
             if !info.mul_offsets.is_empty() {
                 steps += instance_size;
-            }
-
-            if info.one_needed {
-                steps += 4;
             }
 
             vec![BranchCost::Regular {
