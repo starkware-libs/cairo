@@ -6,6 +6,7 @@ use num_bigint::{BigInt, ToBigInt};
 use num_traits::{One, Signed};
 use starknet_types_core::felt::Felt as Felt252;
 
+use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
 use super::utils::Range;
 use crate::define_libfunc_hierarchy;
@@ -17,8 +18,8 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    args_as_two_types, ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo,
-    SignatureBasedConcreteLibfunc, SpecializationError,
+    args_as_single_type, args_as_two_types, ConcreteType, NamedLibfunc, NamedType,
+    OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
@@ -78,6 +79,7 @@ define_libfunc_hierarchy! {
         Mul(BoundedIntMulLibfunc),
         DivRem(BoundedIntDivRemLibfunc),
         Constrain(BoundedIntConstrainLibfunc),
+        IsZero(BoundedIntIsZeroLibfunc),
     }, BoundedIntConcreteLibfunc
 }
 
@@ -355,6 +357,45 @@ fn specialize_helper(
         }],
         SierraApChange::Known { new_vars_only: true },
     ))
+}
+
+/// Libfunc for checking whether the given bounded int is zero or not, and returning a non-zero
+/// wrapped value in case of success.
+#[derive(Default)]
+pub struct BoundedIntIsZeroLibfunc;
+impl SignatureOnlyGenericLibfunc for BoundedIntIsZeroLibfunc {
+    const STR_ID: &'static str = "bounded_int_is_zero";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let range = Range::from_type(context, ty.clone())?;
+        // Making sure 0 is actually in the given range.
+        require(!range.lower.is_positive() && range.upper.is_positive())
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(ty.clone())],
+            branch_signatures: vec![
+                // Zero.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+                // NonZero.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: nonzero_ty(context, &ty)?,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
 }
 
 /// Returns the concrete type for a BoundedInt<min, max>.

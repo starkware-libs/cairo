@@ -488,6 +488,9 @@ pub fn core_libfunc_cost(
                     .into(),
                 ]
             }
+            BoundedIntConcreteLibfunc::IsZero(_) => {
+                vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
+            }
         },
         Circuit(CircuitConcreteLibfunc::FillInput(_)) => {
             vec![ConstCost::steps(7).into(), ConstCost::steps(7).into()]
