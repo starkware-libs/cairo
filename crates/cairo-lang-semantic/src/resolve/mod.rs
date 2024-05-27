@@ -1198,8 +1198,13 @@ impl<'db> Resolver<'db> {
             }
         }
         match &item_info.feature_kind {
-            FeatureKind::Unstable(feature) if !self.data.allowed_features.contains(feature) => {
-                diagnostics.report(identifier, UnstableFeature(feature.clone()));
+            FeatureKind::Unstable { feature, note }
+                if !self.data.allowed_features.contains(feature) =>
+            {
+                diagnostics.report(
+                    identifier,
+                    UnstableFeature { feature_name: feature.clone(), note: note.clone() },
+                );
             }
             FeatureKind::Deprecated { feature, note }
                 if !self.data.allowed_features.contains(feature) =>

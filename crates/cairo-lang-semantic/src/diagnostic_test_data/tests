@@ -491,6 +491,9 @@ test_expr_diagnostics(expect_diagnostics: true)
   let _fail = unstable_function();
   #[feature("testing")]
   let _work = unstable_function();
+  let _fail = unstable_function_with_note();
+  #[feature("testing")]
+  let _work = unstable_function_with_note();
 }
 
 //! > module_code
@@ -499,13 +502,23 @@ fn unstable_function() -> felt252 {
     0
 }
 
+#[unstable(feature: "testing", note: "Some reason", since: "1.0.0")]
+fn unstable_function_with_note() -> felt252 {
+    0
+}
+
 //! > function_body
 
 //! > expected_diagnostics
 error: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
- --> lib.cairo:7:15
+ --> lib.cairo:12:15
   let _fail = unstable_function();
               ^***************^
+
+error: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute. Note: "Some reason"
+ --> lib.cairo:15:15
+  let _fail = unstable_function_with_note();
+              ^*************************^
 
 //! > ==========================================================================
 
@@ -655,11 +668,6 @@ error: Unsupported argument for feature marker attribute.
  --> lib.cairo:4:32
 #[unstable(feature: "testing", extra)]
                                ^***^
-
-error: Unsupported argument for feature marker attribute.
- --> lib.cairo:7:32
-#[unstable(feature: "testing", note: "extra")]
-                               ^**^
 
 error: Duplicated argument for feature marker attribute.
  --> lib.cairo:10:32
