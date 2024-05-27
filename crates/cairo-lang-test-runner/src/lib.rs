@@ -101,7 +101,7 @@ impl CompiledTestRunner {
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
             if self.config.run_profiler == RunProfilerConfig::Cairo { db } else { None },
             compiled.named_tests,
-            compiled.sierra_program,
+            compiled.sierra_program.program,
             compiled.function_set_costs,
             compiled.contracts_info,
             compiled.statements_functions,

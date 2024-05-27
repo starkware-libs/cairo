@@ -1,4 +1,4 @@
-use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_test_plugin::test_config::TestExpectation;
 use cairo_lang_test_plugin::TestConfig;
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
@@ -228,12 +228,12 @@ fn to_named_test(test: &(&str, bool)) -> (String, TestConfig) {
 fn to_test_compilation(tests: &[(&str, bool)]) -> TestCompilation {
     TestCompilation {
         named_tests: tests.iter().map(to_named_test).collect(),
-        sierra_program: Program {
+        sierra_program: ProgramArtifact::stripped(Program {
             type_declarations: vec![],
             libfunc_declarations: vec![],
             statements: vec![],
             funcs: vec![],
-        },
+        }),
         statements_functions: Default::default(),
         contracts_info: Default::default(),
         function_set_costs: Default::default(),
