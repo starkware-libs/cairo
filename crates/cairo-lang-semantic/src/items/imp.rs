@@ -35,7 +35,6 @@ use super::constant::{
     constant_semantic_data_cycle_helper, constant_semantic_data_helper, ConstValue, ConstantData,
 };
 use super::enm::SemanticEnumEx;
-use super::feature_kind::extract_allowed_features;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
@@ -267,6 +266,7 @@ pub fn impl_def_generic_params_data(
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id)));
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    resolver.set_allowed_features(&impl_def_id, &impl_ast, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -353,6 +353,7 @@ pub fn impl_def_trait(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> Maybe<T
     let inference_id = InferenceId::ImplDefTrait(impl_def_id);
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    resolver.set_allowed_features(&impl_def_id, &impl_ast, &mut diagnostics);
 
     let trait_path_syntax = impl_ast.trait_path(db.upcast());
 
@@ -425,6 +426,7 @@ pub fn priv_impl_declaration_data_inner(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
+    resolver.set_allowed_features(&impl_def_id, &impl_ast, &mut diagnostics);
     diagnostics.extend(generic_params_data.diagnostics);
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
 
@@ -1823,8 +1825,7 @@ pub fn priv_impl_function_declaration_data(
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.extend(generic_params_data.diagnostics);
-    resolver.data.allowed_features =
-        extract_allowed_features(db.upcast(), &impl_function_id, function_syntax, &mut diagnostics);
+    resolver.set_allowed_features(&impl_function_id, function_syntax, &mut diagnostics);
 
     let signature_syntax = declaration.signature(syntax_db);
 
