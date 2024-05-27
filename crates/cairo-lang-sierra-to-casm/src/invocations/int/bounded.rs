@@ -51,13 +51,13 @@ pub fn build_div_rem(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, a, b] = builder.try_get_single_cells()?;
 
-    let alg = BoundedIntDivRemAlgorithm::new(lhs, rhs).unwrap();
+    let alg = BoundedIntDivRemAlgorithm::try_new(lhs, rhs).unwrap();
 
     let mut casm_builder = CasmBuilder::default();
     let rc_slack = match &alg {
         BoundedIntDivRemAlgorithm::KnownSmallRhs => 2,
-        BoundedIntDivRemAlgorithm::KnownSmallQuotient(_) => 3,
-        BoundedIntDivRemAlgorithm::KnownSmallLhs(_) => 4,
+        BoundedIntDivRemAlgorithm::KnownSmallQuotient { .. }
+        | BoundedIntDivRemAlgorithm::KnownSmallLhs { .. } => 3,
     };
     add_input_variables! {casm_builder,
         buffer(rc_slack) range_check;
@@ -72,10 +72,10 @@ pub fn build_div_rem(
 
     let (q_is_small, b_or_q_bound_rc_value) = match alg {
         BoundedIntDivRemAlgorithm::KnownSmallRhs => (None, None),
-        BoundedIntDivRemAlgorithm::KnownSmallQuotient(_) => {
+        BoundedIntDivRemAlgorithm::KnownSmallQuotient { .. } => {
             (None, Some(casm_builder.alloc_var(false)))
         }
-        BoundedIntDivRemAlgorithm::KnownSmallLhs(_) => {
+        BoundedIntDivRemAlgorithm::KnownSmallLhs { .. } => {
             (Some(casm_builder.alloc_var(false)), Some(casm_builder.alloc_var(false)))
         }
     };
@@ -113,32 +113,22 @@ pub fn build_div_rem(
             // For this case `q + 1 <= q_max + 1 <= 2**128` and `b < rhs.upper` therefore
             // `(q + 1) * b < 2**128 * rhs.upper <= prime`.
         }
-        BoundedIntDivRemAlgorithm::KnownSmallQuotient(q_bound) => {
+        BoundedIntDivRemAlgorithm::KnownSmallQuotient { q_upper_bound } => {
             let b_or_q_bound_rc_value = b_or_q_bound_rc_value.unwrap();
             // For this case `(q + 1) <= q_bound`, and `b < rhs.upper <= 2**128` therefore
             // `(q + 1) * b < q_bound * 2**128 < prime`.
             casm_build_extend! {casm_builder,
-                const u128_bound_minus_q_upper = (BigInt::one().shl(128) - q_bound) as BigInt;
+                const u128_bound_minus_q_upper = (BigInt::one().shl(128) - q_upper_bound) as BigInt;
                 assert b_or_q_bound_rc_value = q + u128_bound_minus_q_upper;
                 assert b_or_q_bound_rc_value = *(range_check++);
             }
         }
-        BoundedIntDivRemAlgorithm::KnownSmallLhs(lhs_upper_sqrt) => {
+        BoundedIntDivRemAlgorithm::KnownSmallLhs { lhs_upper_sqrt } => {
             let q_is_small = q_is_small.unwrap();
             let b_or_q_bound_rc_value = b_or_q_bound_rc_value.unwrap();
             casm_build_extend! {casm_builder,
-                // For this case we know that `(lhs_upper_sqrt + 1) * 2**128 < prime`.
-                // First note that `(q + 1) * b <= (min(q, b) + 1) * max(q, b)`, since:
-                // ```
-                // max((min(q, b) + 1) * max(q, b), (max(q, b) + 1) * min(q, b)) ==
-                // max(min(q, b) * max(q, b) + max(q, b), max(q, b) * min(q, b) + min(q, b)) ==
-                // min(q, b) * max(q, b) + max(max(q, b), min(q, b)) ==
-                // min(q, b) * max(q, b) + max(q, b) == (min(q, b) + 1) * max(q, b)
-                // ```
-                // Since `b * q < lhs.upper`, `min(b, q) <= sqrt(lhs.upper)`.
-                // Since `b` and `q` are less than 2**128, `max(b, q) < 2**128`.
-                // Therefore `(min(q, b) + 1) * max(q, b) <= (lhs_upper_sqrt + 1) * 2**128 < prime`.
-                // We can now guess which whether `b` or `q` is small enough and verify.
+                // q * b + r < min{q, b} * max{q, b} + 2**128 <=
+                // root * 2**128 + 2**128 <= (root + 1) * 2**128 < prime.
                 const limiter_bound = lhs_upper_sqrt.clone();
                 hint TestLessThan {lhs: q, rhs: limiter_bound} into {dst: q_is_small};
                 const u128_bound_minus_limiter_bound = (BigInt::one().shl(128) - lhs_upper_sqrt) as BigInt;

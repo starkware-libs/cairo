@@ -2006,13 +2006,20 @@ mod bounded_int {
         a: T1, b: T2
     ) -> (DRR::DivT, DRR::RemT) implicits(RangeCheck) nopanic;
 
+    /// Same as `bounded_int_div_rem`, but unwraps the result into felt252s.
+    fn bounded_int_div_rem_unwrapped<T1, T2, impl DRR: DivRemRes<T1, T2>>(
+        a: T1, b: T2
+    ) -> (felt252, felt252) {
+        let (q, r) = bounded_int_div_rem(a, b);
+        (upcast(q), upcast(r))
+    }
+
     impl SmallNumDivRemRes of DivRemRes<BoundedInt<128, 255>, BoundedInt<3, 8>> {
         type DivT = BoundedInt<16, 85>;
         type RemT = BoundedInt<0, 7>;
     }
     fn div_rem_helper(a: u128, b: u128) -> (felt252, felt252) {
-        let (q, r) = bounded_int_div_rem(bi_value::<128, 255>(a), bi_value::<3, 8>(b));
-        (upcast(q), upcast(r))
+        bounded_int_div_rem_unwrapped(bi_value::<128, 255>(a), bi_value::<3, 8>(b))
     }
 
     #[test]
@@ -2028,8 +2035,7 @@ mod bounded_int {
         type RemT = BoundedInt<0, 0xfffffffffffffffffffffffffffffffe>;
     }
     fn div_rem_wide_helper(a: u128, b: u128) -> (felt252, felt252) {
-        let (q, r) = bounded_int_div_rem(a, bi_value::<1, 0xffffffffffffffffffffffffffffffff>(b));
-        (upcast(q), upcast(r))
+        bounded_int_div_rem_unwrapped(a, bi_value::<1, 0xffffffffffffffffffffffffffffffff>(b))
     }
 
     #[test]
@@ -2057,8 +2063,7 @@ mod bounded_int {
     >(
         a: BoundedInt<A, A>
     ) -> (felt252, felt252) {
-        let (q, r) = bounded_int_div_rem::<BoundedInt<0, A_MAX>>(upcast(a), bi_const::<B>());
-        (upcast(q), upcast(r))
+        bounded_int_div_rem_unwrapped::<BoundedInt<0, A_MAX>>(upcast(a), bi_const::<B>())
     }
 
     const POW_2_124: felt252 = 0x10000000000000000000000000000000;
@@ -2070,6 +2075,15 @@ mod bounded_int {
     impl U128Pow124DivRemRes = helpers::DivRemResImpl<U128_MAX, POW_2_124, MASK4, MASK124>;
     impl U251Pow128DivRemRes =
         helpers::DivRemResImpl<POW_2_251, U128_MAX, POW_2_123, { U128_MAX - 1 }>;
+
+    type MaxRootLhs =
+        BoundedInt<1, 0x1000000000000000000000000000001000000000000000000000000000001>;
+    type MaxRootRhs =
+        BoundedInt<0x20000000000000000000000000000, { 0x100000000000000000000000000000000 - 1 }>;
+    impl MaxRootDivRemRes of DivRemRes<MaxRootLhs, MaxRootRhs,> {
+        type DivT = BoundedInt<0, 0x80000000000000000000000000000080>;
+        type RemT = BoundedInt<0, { 0x100000000000000000000000000000000 - 2 }>;
+    }
 
     #[test]
     fn test_div_rem_small_quotient() {
@@ -2083,6 +2097,14 @@ mod bounded_int {
         let dividend = bi_const::<POW_2_251>();
         assert!(
             div_rem_small_quotient_helper::<POW_2_251, U128_MAX>(dividend) == (POW_2_123, POW_2_123)
+        );
+        assert_eq!(
+            bounded_int_div_rem_unwrapped::<
+                MaxRootLhs, MaxRootRhs
+            >(
+                0x1000000000000000000000000000001000000000000000000000000000000,
+                0x1000000000000000000000000000000
+            ), (0x1000000000000000000000000000001, 0)
         );
     }
 
