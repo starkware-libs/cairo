@@ -1,3 +1,5 @@
+use serde::ser::Error;
+use serde::Serialize;
 use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
@@ -220,7 +222,7 @@ pub struct CairoProgramDebugInfo {
 }
 
 /// The information about the constants used in the program.
-#[derive(Debug, Eq, PartialEq, Default, Clone)]
+#[derive(Serialize, Debug, Eq, PartialEq, Default, Clone)]
 pub struct ConstsInfo {
     pub segments: OrderedHashMap<u32, ConstSegment>,
     pub total_segments_size: usize,
@@ -315,7 +317,7 @@ impl ConstsInfo {
 }
 
 /// The data for a single segment.
-#[derive(Debug, Eq, PartialEq, Default, Clone)]
+#[derive(Serialize, Debug, Eq, PartialEq, Default, Clone)]
 pub struct ConstSegment {
     /// The values in the segment.
     pub values: Vec<BigInt>,
@@ -723,4 +725,47 @@ fn is_branch_align(
     }
 
     Ok(false)
+}
+
+pub struct CairoProgramWithSierraContext<'a> {
+    pub cairo_program: &'a CairoProgram,
+    pub sierra_program: &'a Program,
+}
+
+impl<'a> CairoProgramWithSierraContext<'a> {
+    pub fn new(
+        cairo_program: &'a CairoProgram,
+        sierra_program: &'a Program,
+    ) -> CairoProgramWithSierraContext<'a> {
+        CairoProgramWithSierraContext { cairo_program, sierra_program }
+    }
+}
+
+impl<'a> Serialize for CairoProgramWithSierraContext<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeMap;
+        let mut map = serializer.serialize_map(None)?;
+        let main_func = self
+            .sierra_program
+            .find_function("::main")
+            .ok_or_else(|| S::Error::custom("Main function not found"))?;
+        let entry_point = main_func.entry_point.0;
+        let builtins = vec![
+            "pedersen_builtin",
+            "range_check_builtin",
+            "bitwise_builtin",
+            "ec_op_builtin",
+            "poseidon_builtin",
+        ];
+        let assembled_cairo_program = self.cairo_program.assemble();
+        map.serialize_entry("bytecode", &assembled_cairo_program.bytecode)?;
+        map.serialize_entry("hints", &assembled_cairo_program.hints)?;
+        map.serialize_entry("entry_point", &entry_point)?;
+        map.serialize_entry("builtins", &builtins)?;
+        map.serialize_entry("consts_info", &self.cairo_program.consts_info)?;
+        map.end()
+    }
 }

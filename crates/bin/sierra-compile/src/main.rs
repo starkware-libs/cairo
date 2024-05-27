@@ -2,6 +2,7 @@ use std::fs;
 
 use anyhow::Context;
 use cairo_lang_sierra::ProgramParser;
+use cairo_lang_sierra_to_casm::compiler::CairoProgramWithSierraContext;
 use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
 use cairo_lang_sierra_to_casm::metadata::calc_metadata;
 use cairo_lang_utils::logging::init_logging;
@@ -39,6 +40,20 @@ fn main() -> anyhow::Result<()> {
         SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX },
     )
     .with_context(|| "Compilation failed.")?;
+
+    let cairo_program_with_sierra_context =
+        CairoProgramWithSierraContext::new(&cairo_program, &program);
+    let serialized_casm = serde_json::to_string_pretty(&cairo_program_with_sierra_context);
+    match serialized_casm {
+        Ok(casm_json) => {
+            let casm_json_path = args.output.clone() + ".json";
+            fs::write(&casm_json_path, &casm_json)
+                .with_context(|| format!("Failed to write output to {}", casm_json_path))?;
+        }
+        Err(e) => {
+            anyhow::bail!("Failed to serialize CairoProgram: {}", e);
+        }
+    }
 
     fs::write(args.output, format!("{cairo_program}")).with_context(|| "Failed to write output.")
 }

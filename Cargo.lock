@@ -891,6 +891,7 @@ dependencies = [
  "num-bigint",
  "num-traits 0.2.19",
  "pretty_assertions",
+ "serde",
  "test-case",
  "test-log",
  "thiserror",
@@ -3004,6 +3005,7 @@ dependencies = [
  "clap",
  "indoc",
  "log",
+ "serde_json",
 ]
 
 [[package]]

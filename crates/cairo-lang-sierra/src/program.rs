@@ -134,6 +134,17 @@ impl Program {
     pub fn into_artifact(self) -> VersionedProgram {
         ProgramArtifact::stripped(self).into()
     }
+
+    /// Finds first function ending with `name_suffix`.
+    pub fn find_function(&self, name_suffix: &str) -> Option<&Function> {
+        self.funcs.iter().find(|f| {
+            if let Some(name) = &f.id.debug_name {
+                name.ends_with(name_suffix)
+            } else {
+                false
+            }
+        })
+    }
 }
 
 /// Declaration of a concrete type.
