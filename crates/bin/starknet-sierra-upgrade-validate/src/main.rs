@@ -165,15 +165,23 @@ async fn main() -> anyhow::Result<()> {
     // Otherwise, we read the contract class info from the input files.
     if let Some(fullnode_url) = args.fullnode_url {
         let client = FullNodeClient::new(fullnode_url.clone());
+        let max_end_block = client.post::<_, u64>("starknet_blockNumber", ()).await? + 1;
         let fullnode_args = args.fullnode_args.unwrap();
         let (start_block, end_block) = if let Some(last_n_blocks) = fullnode_args.last_n_blocks {
-            let end_block = client.post::<_, u64>("starknet_blockNumber", ()).await? + 1;
+            let end_block = max_end_block;
             let start_block = end_block - last_n_blocks;
             (start_block, end_block)
         } else {
             let start_block =
                 fullnode_args.start_block.with_context(|| "no start block provided")?;
-            let end_block = fullnode_args.end_block.with_context(|| "no end block provided")?;
+            let mut end_block = fullnode_args.end_block.with_context(|| "no end block provided")?;
+            if max_end_block < end_block {
+                eprintln!(
+                    "provided `end-block` {end_block} is greater than the max possible block \
+                     {max_end_block}. Setting `end-block` to {max_end_block}."
+                );
+                end_block = max_end_block;
+            }
             (start_block, end_block)
         };
         let (class_hashes_tx, class_hashes_rx) = async_channel::bounded(128);
