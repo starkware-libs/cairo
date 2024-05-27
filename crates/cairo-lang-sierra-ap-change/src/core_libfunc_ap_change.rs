@@ -372,10 +372,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | BoundedIntConcreteLibfunc::Mul(_) => vec![ApChange::Known(0)],
             BoundedIntConcreteLibfunc::DivRem(libfunc) => {
                 vec![ApChange::Known(
-                    match BoundedIntDivRemAlgorithm::new(&libfunc.lhs, &libfunc.rhs).unwrap() {
+                    match BoundedIntDivRemAlgorithm::try_new(&libfunc.lhs, &libfunc.rhs).unwrap() {
                         BoundedIntDivRemAlgorithm::KnownSmallRhs => 5,
-                        BoundedIntDivRemAlgorithm::KnownSmallQuotient(_) => 6,
-                        BoundedIntDivRemAlgorithm::KnownSmallLhs(_) => 7,
+                        BoundedIntDivRemAlgorithm::KnownSmallQuotient { .. } => 6,
+                        BoundedIntDivRemAlgorithm::KnownSmallLhs { .. } => 7,
                     },
                 )]
             }
