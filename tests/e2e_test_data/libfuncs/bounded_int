@@ -115,6 +115,48 @@ test::foo@0([0]: i8, [1]: i8) -> (BoundedInt<-16256, 16384>);
 
 //! > ==========================================================================
 
+//! > bounded_int_add with const libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+const MIN_I8: felt252 = -128;
+const MAX_I8: felt252 = 127;
+type AddType = BoundedInt<{MIN_I8 + MIN_I8}, {MAX_I8 + MAX_I8}>;
+
+extern fn bounded_int_add<T1, T2>(a: T1, b: T2) -> AddType nopanic;
+
+fn foo(a: i8) -> AddType {
+    bounded_int_add(a, 50_i8)
+}
+
+//! > casm
+[ap + 0] = [fp + -3] + 50, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedInt<-256, 254> = BoundedInt<-256, 254> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<i8, 50> = Const<i8, 50> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<i8, 50>> = const_as_immediate<Const<i8, 50>>;
+libfunc bounded_int_add<i8, i8> = bounded_int_add<i8, i8>;
+libfunc store_temp<BoundedInt<-256, 254>> = store_temp<BoundedInt<-256, 254>>;
+
+const_as_immediate<Const<i8, 50>>() -> ([1]); // 0
+bounded_int_add<i8, i8>([0], [1]) -> ([2]); // 1
+store_temp<BoundedInt<-256, 254>>([2]) -> ([2]); // 2
+return([2]); // 3
+
+test::foo@0([0]: i8) -> (BoundedInt<-256, 254>);
+
+//! > ==========================================================================
+
 //! > bounded_int_div_rem libfunc
 
 //! > test_runner_name
