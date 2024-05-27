@@ -9,7 +9,9 @@ use cairo_lang_sierra::extensions::bounded_int::{
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
-use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};
+use cairo_lang_sierra::extensions::circuit::{
+    CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE, VALUE_SIZE,
+};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
@@ -246,6 +248,9 @@ pub fn core_libfunc_cost(
         Array(libfunc) => match libfunc {
             ArrayConcreteLibfunc::New(_) => vec![ConstCost::steps(1).into()],
             ArrayConcreteLibfunc::SpanFromTuple(_) => vec![ConstCost::steps(0).into()],
+            ArrayConcreteLibfunc::TupleFromSpan(_) => {
+                vec![ConstCost::steps(3).into(), ConstCost::steps(3).into()]
+            }
             ArrayConcreteLibfunc::Append(libfunc) => {
                 vec![ConstCost::steps(info_provider.type_size(&libfunc.ty) as i32).into()]
             }
@@ -254,6 +259,13 @@ pub fn core_libfunc_cost(
             | ArrayConcreteLibfunc::SnapshotPopFront(_)
             | ArrayConcreteLibfunc::SnapshotPopBack(_) => {
                 vec![ConstCost::steps(2).into(), ConstCost::steps(3).into()]
+            }
+            ArrayConcreteLibfunc::SnapshotMultiPopFront(_)
+            | ArrayConcreteLibfunc::SnapshotMultiPopBack(_) => {
+                vec![
+                    (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
+                    (ConstCost::steps(5) + ConstCost::range_checks(1)).into(),
+                ]
             }
             ArrayConcreteLibfunc::Get(libfunc) => {
                 if info_provider.type_size(&libfunc.ty) == 1 {
@@ -463,29 +475,57 @@ pub fn core_libfunc_cost(
             BoundedIntConcreteLibfunc::Constrain(libfunc) => {
                 vec![
                     (ConstCost {
-                        steps: 2 + i32::from(libfunc.boundary != BigInt::one().shl(128)),
+                        steps: 2 + if libfunc.boundary == BigInt::one().shl(128) { 0 } else { 1 },
                         holes: 0,
                         range_checks: 1,
                     })
                     .into(),
                     (ConstCost {
-                        steps: 3 + i32::from(!libfunc.boundary.is_zero()),
+                        steps: 3 + if libfunc.boundary.is_zero() { 0 } else { 1 },
                         holes: 0,
                         range_checks: 1,
                     })
                     .into(),
                 ]
             }
+            BoundedIntConcreteLibfunc::IsZero(_) => {
+                vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
+            }
         },
         Circuit(CircuitConcreteLibfunc::FillInput(_)) => {
-            vec![ConstCost::steps(7).into(), ConstCost::steps(8).into()]
+            vec![ConstCost::steps(7).into(), ConstCost::steps(7).into()]
+        }
+        Circuit(CircuitConcreteLibfunc::Eval(libfunc)) => {
+            let info = info_provider.circuit_info(&libfunc.ty);
+
+            let mut steps: i32 = 5;
+            let instance_size: i32 = BUILTIN_INSTANCE_SIZE.into_or_panic();
+
+            if !info.add_offsets.is_empty() {
+                steps += instance_size;
+            }
+
+            if !info.mul_offsets.is_empty() {
+                steps += instance_size;
+            }
+
+            vec![BranchCost::Regular {
+                const_cost: ConstCost::steps(steps),
+                pre_cost: PreCost(OrderedHashMap::from_iter([
+                    (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
+                    (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
+                ])),
+            }]
+        }
+        Circuit(CircuitConcreteLibfunc::U384IsZero(_)) => {
+            vec![ConstCost::steps(4).into(), ConstCost::steps(4).into()]
         }
         Circuit(CircuitConcreteLibfunc::GetDescriptor(_)) => {
             vec![ConstCost::steps(6).into()]
         }
         Circuit(CircuitConcreteLibfunc::InitCircuitData(libfunc)) => {
             let info = info_provider.circuit_info(&libfunc.ty);
-            let rc_usage: i32 = (info.values.len() * VALUE_SIZE).try_into().unwrap();
+            let rc_usage: i32 = (info.values.len() * VALUE_SIZE).into_or_panic();
 
             vec![BranchCost::Regular {
                 const_cost: ConstCost::steps(0),

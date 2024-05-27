@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern, ResultHelper};
+use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern};
 use defs::ids::TopLevelLanguageElementId;
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
@@ -724,7 +724,6 @@ fn lower_expr(
     let expr = ctx.function_body.exprs[expr_id].clone();
     match &expr {
         semantic::Expr::Constant(expr) => lower_expr_constant(ctx, expr, builder),
-        semantic::Expr::ParamConstant(expr) => lower_expr_param_constant(ctx, expr, builder),
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, builder),
         semantic::Expr::Snapshot(expr) => lower_expr_snapshot(ctx, expr, builder),
         semantic::Expr::Desnap(expr) => lower_expr_desnap(ctx, expr, builder),
@@ -931,33 +930,12 @@ fn lower_expr_constant(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a constant: {:?}", expr.debug(&ctx.expr_formatter));
-    let (value, ty) = ctx
-        .db
-        .constant_const_value(expr.constant_id)
-        .map(|value| {
-            (
-                value,
-                ctx.db.constant_const_type(expr.constant_id).expect("Constant must have a type."),
-            )
-        })
-        .map_err(LoweringFlowError::Failed)?;
+    let value = expr.const_value_id.lookup_intern(ctx.db);
+    let ty = expr.ty;
+
     let location = ctx.get_location(expr.stable_ptr.untyped());
     Ok(LoweredExpr::AtVariable(
         generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
-    ))
-}
-
-/// Lowers an expression of type [semantic::ExprParamConstant].
-fn lower_expr_param_constant(
-    ctx: &mut LoweringContext<'_, '_>,
-    expr: &semantic::ExprParamConstant,
-    builder: &mut BlockBuilder,
-) -> LoweringResult<LoweredExpr> {
-    log::trace!("Lowering a constant parameter: {:?}", expr.debug(&ctx.expr_formatter));
-    let value = expr.const_value_id.lookup_intern(ctx.db);
-    let location = ctx.get_location(expr.stable_ptr.untyped());
-    Ok(LoweredExpr::AtVariable(
-        generators::Const { value, ty: expr.ty, location }.add(ctx, &mut builder.statements),
     ))
 }
 
@@ -1407,23 +1385,40 @@ fn lower_expr_struct_ctor(
         }));
     if members.len() != member_expr_usages.len() {
         // Semantic model should have made sure base struct exist if some members are missing.
-        let base_struct_usage = lower_expr_to_var_usage(ctx, builder, expr.base_struct.unwrap())?;
-
-        for (base_member, (_, member)) in izip!(
-            StructDestructure {
-                input: base_struct_usage.var_id,
-                var_reqs: members
-                    .iter()
-                    .map(|(_, member)| VarRequest { ty: member.ty, location })
-                    .collect(),
+        let base_struct = lower_expr(ctx, builder, expr.base_struct.unwrap())?;
+        if let LoweredExpr::Member(path, location) = base_struct {
+            for (_, member) in members.iter() {
+                let Entry::Vacant(entry) = member_expr_usages.entry(member.id) else {
+                    continue;
+                };
+                let member_path = ExprVarMemberPath::Member {
+                    parent: Box::new(path.clone()),
+                    member_id: member.id,
+                    stable_ptr: path.stable_ptr(),
+                    concrete_struct_id: expr.concrete_struct_id,
+                    ty: member.ty,
+                };
+                entry.insert(Ok(
+                    LoweredExpr::Member(member_path, location).as_var_usage(ctx, builder)?
+                ));
             }
-            .add(ctx, &mut builder.statements),
-            members.iter()
-        ) {
-            match member_expr_usages.entry(member.id) {
-                Entry::Occupied(_) => {}
-                Entry::Vacant(entry) => {
-                    entry.insert(Ok(VarUsage { var_id: base_member, location }));
+        } else {
+            for (base_member, (_, member)) in izip!(
+                StructDestructure {
+                    input: base_struct.as_var_usage(ctx, builder)?.var_id,
+                    var_reqs: members
+                        .iter()
+                        .map(|(_, member)| VarRequest { ty: member.ty, location })
+                        .collect(),
+                }
+                .add(ctx, &mut builder.statements),
+                members.iter()
+            ) {
+                match member_expr_usages.entry(member.id) {
+                    Entry::Occupied(_) => {}
+                    Entry::Vacant(entry) => {
+                        entry.insert(Ok(VarUsage { var_id: base_member, location }));
+                    }
                 }
             }
         }
@@ -1645,7 +1640,7 @@ fn check_error_free_or_warn(
     diagnostics_description: &str,
 ) -> Maybe<()> {
     let declaration_error_free = diagnostics.check_error_free();
-    declaration_error_free.on_err(|_| {
+    declaration_error_free.inspect_err(|_| {
         log::warn!(
             "Function `{function_path}` has semantic diagnostics in its \
              {diagnostics_description}:\n{diagnostics_format}",

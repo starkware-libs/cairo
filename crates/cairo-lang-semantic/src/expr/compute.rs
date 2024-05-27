@@ -399,7 +399,7 @@ fn compute_expr_unary_semantic(
                 let desnapped_expr_type = ctx.reduce_ty(desnapped_expr.ty());
 
                 let desnapped_ty = match desnapped_expr_type.lookup_intern(ctx.db) {
-                    TypeLongId::Var(_) => {
+                    TypeLongId::Var(_) | TypeLongId::ImplType(_) => {
                         let inference = &mut ctx.resolver.inference();
                         // The type of the full desnap expr. E.g. the type of `*x` for `*x`.
                         let desnap_expr_type = inference
@@ -2281,6 +2281,11 @@ fn member_access_expr(
         };
         long_ty = ty.lookup_intern(ctx.db);
     }
+    if matches!(long_ty, TypeLongId::Var(_)) {
+        // Save some work. ignore the result. The error, if any, will be reported later.
+        ctx.resolver.inference().solve().ok();
+        long_ty = ctx.resolver.inference().rewrite(long_ty).no_err();
+    }
 
     match long_ty {
         TypeLongId::Concrete(concrete) => match concrete {
@@ -2386,12 +2391,12 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
 
     match resolved_item {
         ResolvedConcreteItem::Constant(constant_id) => Ok(Expr::Constant(ExprConstant {
-            constant_id,
-            ty: db.constant_semantic_data(constant_id)?.ty(),
+            const_value_id: db.constant_const_value(constant_id)?.intern(db),
+            ty: db.constant_const_type(constant_id)?,
             stable_ptr: path.stable_ptr().into(),
         })),
         ResolvedConcreteItem::ConstGenericParameter(generic_param_id) => {
-            Ok(Expr::ParamConstant(ExprParamConstant {
+            Ok(Expr::Constant(ExprConstant {
                 const_value_id: ConstValue::Generic(generic_param_id).intern(db),
                 ty: extract_matches!(
                     db.generic_param_semantic(generic_param_id)?,

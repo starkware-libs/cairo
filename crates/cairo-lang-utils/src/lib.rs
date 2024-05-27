@@ -59,22 +59,6 @@ impl<T> OptionHelper for Option<T> {
     }
 }
 
-/// Helper operations on `Option<T>`.
-pub trait ResultHelper<E> {
-    fn on_err<F: FnOnce(&E)>(self, f: F) -> Self;
-}
-impl<T, E> ResultHelper<E> for Result<T, E> {
-    fn on_err<F: FnOnce(&E)>(self, f: F) -> Self {
-        match &self {
-            Ok(_) => self,
-            Err(e) => {
-                f(e);
-                self
-            }
-        }
-    }
-}
-
 /// Borrows a mutable reference as Box for the lifespan of this function. Runs the given closure
 /// with the boxed value as a parameter.
 /// The closure is expected to return a boxed value, whose changes will be reflected on the mutable

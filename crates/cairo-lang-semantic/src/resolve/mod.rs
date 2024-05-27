@@ -22,6 +22,7 @@ pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
+use syntax::node::helpers::QueryAttrs;
 use syntax::node::TypedStablePtr;
 
 use crate::corelib::{core_submodule, get_submodule};
@@ -35,7 +36,7 @@ use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue};
 use crate::items::enm::SemanticEnumEx;
-use crate::items::feature_kind::FeatureKind;
+use crate::items::feature_kind::{extract_allowed_features, FeatureKind};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
@@ -157,6 +158,19 @@ impl Deref for Resolver<'_> {
 impl DerefMut for Resolver<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.data
+    }
+}
+impl Resolver<'_> {
+    /// Extracts the allowed node from the syntax, and sets it as the allowed features of the
+    /// resolver.
+    pub fn set_allowed_features(
+        &mut self,
+        element_id: &impl LanguageElementId,
+        syntax: &impl QueryAttrs,
+        diagnostics: &mut SemanticDiagnostics,
+    ) {
+        self.allowed_features =
+            extract_allowed_features(self.db.upcast(), element_id, syntax, diagnostics);
     }
 }
 
@@ -1184,8 +1198,13 @@ impl<'db> Resolver<'db> {
             }
         }
         match &item_info.feature_kind {
-            FeatureKind::Unstable(feature) if !self.data.allowed_features.contains(feature) => {
-                diagnostics.report(identifier, UnstableFeature(feature.clone()));
+            FeatureKind::Unstable { feature, note }
+                if !self.data.allowed_features.contains(feature) =>
+            {
+                diagnostics.report(
+                    identifier,
+                    UnstableFeature { feature_name: feature.clone(), note: note.clone() },
+                );
             }
             FeatureKind::Deprecated { feature, note }
                 if !self.data.allowed_features.contains(feature) =>

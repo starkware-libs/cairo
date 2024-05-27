@@ -101,7 +101,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 }
             }
             TypeLongId::ImplType(impl_type_id) => {
-                if !impl_type_id.impl_id().is_var_free(self.db) {
+                if !matches!(impl_type_id.impl_id(), ImplId::GenericParameter(_)) {
                     let ty = self.reduce_impl_ty(impl_type_id)?;
                     return self.conform_ty_ex(ty0, ty, ty0_is_self);
                 }
@@ -169,7 +169,7 @@ impl<'db> InferenceConform for Inference<'db> {
             }
             TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, n_snapshots)),
             TypeLongId::ImplType(impl_type_id) => {
-                if !impl_type_id.impl_id().is_var_free(self.db) {
+                if !matches!(impl_type_id.impl_id(), ImplId::GenericParameter(_)) {
                     let ty = self.reduce_impl_ty(impl_type_id)?;
                     self.conform_ty_ex(ty, ty1, ty0_is_self)
                 } else {
@@ -428,14 +428,18 @@ impl<'db> InferenceConform for Inference<'db> {
             ),
             ImplId::GenericParameter(_) => false,
             ImplId::ImplVar(new_var) => {
-                let new_var_local_id = new_var.lookup_intern(self.db).id;
+                let new_var_long_id = new_var.lookup_intern(self.db);
+                let new_var_local_id = new_var_long_id.id;
                 if InferenceVar::Impl(new_var_local_id) == var {
                     return true;
                 }
                 if let Some(impl_id) = self.impl_assignment(new_var_local_id) {
                     return self.impl_contains_var(&impl_id, var);
                 }
-                false
+                self.generic_args_contain_var(
+                    &new_var_long_id.concrete_trait_id.generic_args(self.db),
+                    var,
+                )
             }
         }
     }
@@ -460,21 +464,30 @@ impl<'db> InferenceConform for Inference<'db> {
 impl Inference<'_> {
     /// Reduces an impl type to a concrete type.
     pub fn reduce_impl_ty(&mut self, impl_type_id: ImplTypeId) -> InferenceResult<TypeId> {
-        let reduced_impl = if let ImplId::ImplVar(var) = impl_type_id.impl_id() {
-            self.solve_single_pending(var.id(self.db))?;
-            self.rewrite(impl_type_id.impl_id()).no_err()
-        } else {
-            impl_type_id.impl_id()
-        };
-        if let Ok(Some(ty)) = self.db.impl_type_concrete_implized(ImplTypeId::new(
-            reduced_impl,
-            impl_type_id.ty(),
-            self.db,
-        )) {
+        let impl_id = impl_type_id.impl_id();
+        let trait_ty = impl_type_id.ty();
+        if let ImplId::ImplVar(var) = impl_id {
+            let var_id = var.id(self.db);
+            if let Some(ty) = self
+                .data
+                .impl_vars_trait_types
+                .get(&var_id)
+                .and_then(|mapping| mapping.get(&trait_ty))
+            {
+                Ok(*ty)
+            } else {
+                let ty = self
+                    .new_type_var(self.data.stable_ptrs.get(&InferenceVar::Impl(var_id)).cloned());
+                self.data.impl_vars_trait_types.entry(var_id).or_default().insert(trait_ty, ty);
+                Ok(ty)
+            }
+        } else if let Ok(Some(ty)) =
+            self.db.impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_ty, self.db))
+        {
             Ok(ty)
         } else {
             Err(self.set_error(
-                reduced_impl
+                impl_id
                     .concrete_trait(self.db)
                     .map(InferenceError::NoImplsFound)
                     .unwrap_or_else(InferenceError::Reported),
@@ -517,10 +530,10 @@ impl Inference<'_> {
                 }
                 false
             }
-            TypeLongId::GenericParameter(_)
-            | TypeLongId::TraitType(_)
-            | TypeLongId::ImplType(_)
-            | TypeLongId::Missing(_) => false,
+            TypeLongId::ImplType(id) => self.impl_contains_var(&id.impl_id(), var),
+            TypeLongId::TraitType(_) | TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => {
+                false
+            }
             TypeLongId::Coupon(function_id) => self.function_contains_var(function_id, var),
             TypeLongId::FixedSizeArray { type_id, .. } => {
                 self.internal_ty_contains_var(type_id, var)

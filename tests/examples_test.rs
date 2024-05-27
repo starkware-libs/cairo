@@ -2,7 +2,6 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use assert_matches::assert_matches;
-use cairo_felt::{felt_str as felt252_str, Felt252};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
@@ -22,6 +21,7 @@ use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use cairo_lang_utils::{extract_matches, Upcast};
 use itertools::Itertools;
 use rstest::{fixture, rstest};
+use starknet_types_core::felt::Felt as Felt252;
 
 type ExampleDirData = (Mutex<RootDatabase>, Vec<CrateId>);
 
@@ -212,7 +212,7 @@ fn run_function(
         .expect("Failed running the function.");
     if let Some(expected_cost) = expected_cost {
         assert_eq!(
-            available_gas.unwrap() - result.gas_counter.as_ref().unwrap(),
+            Felt252::from(available_gas.unwrap()) - result.gas_counter.unwrap(),
             Felt252::from(expected_cost)
         );
     }
@@ -263,7 +263,7 @@ fn run_function(
 #[case::fib_u128_fail(
     "fib_u128",
     &[1, 1, 200].map(Felt252::from), None, None,
-    RunResultValue::Panic(vec![Felt252::from_bytes_be(b"u128_add Overflow")])
+    RunResultValue::Panic(vec![Felt252::from_bytes_be_slice(b"u128_add Overflow")])
 )]
 #[case::fib_local(
     "fib_local",
@@ -278,13 +278,13 @@ fn run_function(
 #[case::hash_chain(
     "hash_chain",
     &[3].map(Felt252::from), None, None,
-    RunResultValue::Success(vec![felt252_str!(
-        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]))]
+    RunResultValue::Success(vec![Felt252::from_hex_unchecked(
+        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
 #[case::hash_chain_gas(
     "hash_chain_gas",
     &[3].map(Felt252::from), Some(100000), Some(9880 + 3 * token_gas_cost(CostTokenType::Pedersen)),
-    RunResultValue::Success(vec![felt252_str!(
-        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]))]
+    RunResultValue::Success(vec![Felt252::from_hex_unchecked(
+        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
 fn run_function_test(
     #[case] name: &str,
     #[case] params: &[Felt252],
@@ -308,7 +308,7 @@ fn run_function_test(
 #[case::fib_fail(
     "fib",
     &[1, 1, 10].map(Felt252::from), Some(10000), None,
-    RunResultValue::Panic(vec![Felt252::from_bytes_be(b"Out of gas")])
+    RunResultValue::Panic(vec![Felt252::from_bytes_be_slice(b"Out of gas")])
 )]
 fn run_function_auto_gas_test(
     #[case] name: &str,

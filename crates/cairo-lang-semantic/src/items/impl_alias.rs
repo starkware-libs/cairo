@@ -154,6 +154,7 @@ pub fn impl_alias_generic_params_data(
         ModuleItemId::ImplAlias(impl_alias_id),
     ));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    resolver.set_allowed_features(&impl_alias_id, &impl_alias_ast, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -203,6 +204,7 @@ pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -
     let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    resolver.set_allowed_features(&impl_alias_id, &impl_alias_ast, &mut diagnostics);
 
     let impl_path_syntax = impl_alias_ast.impl_path(db.upcast());
 

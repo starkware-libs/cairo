@@ -419,10 +419,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnhandledMustUseFunction => {
                 "Unhandled `#[must_use]` function.".into()
             }
-            SemanticDiagnosticKind::UnstableFeature(feature_name) => {
+            SemanticDiagnosticKind::UnstableFeature { feature_name, note } => {
                 format!(
                     "Usage of unstable feature `{feature_name}` with no \
-                     `#[feature({feature_name})]` attribute."
+                     `#[feature({feature_name})]` attribute.{}",
+                    note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
                 )
             }
             SemanticDiagnosticKind::DeprecatedFeature { feature_name, note } => {
@@ -982,7 +983,10 @@ pub enum SemanticDiagnosticKind {
     },
     ErrorPropagateOnNonErrorType(semantic::TypeId),
     UnhandledMustUseType(semantic::TypeId),
-    UnstableFeature(SmolStr),
+    UnstableFeature {
+        feature_name: SmolStr,
+        note: Option<SmolStr>,
+    },
     DeprecatedFeature {
         feature_name: SmolStr,
         note: Option<SmolStr>,

@@ -371,22 +371,25 @@ test::foo@0() -> (CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::c
 call rel 11;
 [ap + 0] = [ap + -1] + 10, ap++;
 [ap + 0] = 1, ap++;
-[ap + 0] = [ap + -1] + 4, ap++;
-[ap + 0] = 2, ap++;
+[ap + 0] = [ap + -2] + 3, ap++;
+[ap + 0] = 3, ap++;
 ret;
 ret;
 dw 16;
 dw 20;
-dw 12;
+dw 28;
 dw 12;
 dw 0;
-dw 16;
+dw 4;
 dw 12;
 dw 4;
-dw 20;
+dw 8;
+dw 12;
+dw 8;
+dw 12;
 
 //! > function_segments
 Ok([0])
 
 //! > bytecode_lengths
-Ok(Node([Leaf(11), Leaf(10)]))
+Ok(Node([Leaf(11), Leaf(13)]))

@@ -1,10 +1,10 @@
-use cairo_felt::Felt252;
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::require;
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::ToPrimitive;
+use starknet_types_core::felt::Felt as Felt252;
 
 /// Compresses a vector of `BigUintAsHex` representing felts into `result`, by creating a code
 /// mapping, and then compressing several original code words into the given felts.

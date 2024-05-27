@@ -102,12 +102,6 @@ impl U128Add of Add<u128> {
         u128_overflowing_add(lhs, rhs).expect('u128_add Overflow')
     }
 }
-impl U128AddEq of AddEq<u128> {
-    #[inline(always)]
-    fn add_eq(ref self: u128, other: u128) {
-        self = Add::add(self, other);
-    }
-}
 
 #[panic_with('u128_sub Overflow', u128_sub)]
 fn u128_checked_sub(lhs: u128, rhs: u128) -> Option<u128> implicits(RangeCheck) nopanic {
@@ -120,12 +114,6 @@ fn u128_checked_sub(lhs: u128, rhs: u128) -> Option<u128> implicits(RangeCheck) 
 impl U128Sub of Sub<u128> {
     fn sub(lhs: u128, rhs: u128) -> u128 {
         u128_overflowing_sub(lhs, rhs).expect('u128_sub Overflow')
-    }
-}
-impl U128SubEq of SubEq<u128> {
-    #[inline(always)]
-    fn sub_eq(ref self: u128, other: u128) {
-        self = Sub::sub(self, other);
     }
 }
 
@@ -142,12 +130,6 @@ impl U128Mul of Mul<u128> {
         u128_checked_mul(lhs, rhs).expect('u128_mul Overflow')
     }
 }
-impl U128MulEq of MulEq<u128> {
-    #[inline(always)]
-    fn mul_eq(ref self: u128, other: u128) {
-        self = Mul::mul(self, other);
-    }
-}
 
 #[panic_with('u128 is 0', u128_as_non_zero)]
 fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> nopanic {
@@ -160,32 +142,6 @@ fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> nopanic {
 pub(crate) impl U128TryIntoNonZero of TryInto<u128, NonZero<u128>> {
     fn try_into(self: u128) -> Option<NonZero<u128>> {
         u128_try_as_non_zero(self)
-    }
-}
-
-impl U128Div of Div<u128> {
-    fn div(lhs: u128, rhs: u128) -> u128 {
-        let (q, _r) = u128_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        q
-    }
-}
-impl U128DivEq of DivEq<u128> {
-    #[inline(always)]
-    fn div_eq(ref self: u128, other: u128) {
-        self = Div::div(self, other);
-    }
-}
-
-impl U128Rem of Rem<u128> {
-    fn rem(lhs: u128, rhs: u128) -> u128 {
-        let (_q, r) = u128_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        r
-    }
-}
-impl U128RemEq of RemEq<u128> {
-    #[inline(always)]
-    fn rem_eq(ref self: u128, other: u128) {
-        self = Rem::rem(self, other);
     }
 }
 
@@ -334,12 +290,6 @@ impl U8Add of Add<u8> {
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
     }
 }
-impl U8AddEq of AddEq<u8> {
-    #[inline(always)]
-    fn add_eq(ref self: u8, other: u8) {
-        self = Add::add(self, other);
-    }
-}
 
 fn u8_checked_sub(lhs: u8, rhs: u8) -> Option<u8> implicits(RangeCheck) nopanic {
     match u8_overflowing_sub(lhs, rhs) {
@@ -353,12 +303,6 @@ impl U8Sub of Sub<u8> {
         u8_overflowing_sub(lhs, rhs).expect('u8_sub Overflow')
     }
 }
-impl U8SubEq of SubEq<u8> {
-    #[inline(always)]
-    fn sub_eq(ref self: u8, other: u8) {
-        self = Sub::sub(self, other);
-    }
-}
 
 pub extern fn u8_wide_mul(lhs: u8, rhs: u8) -> u16 implicits() nopanic;
 pub extern fn u8_sqrt(value: u8) -> u8 implicits(RangeCheck) nopanic;
@@ -366,12 +310,6 @@ pub extern fn u8_sqrt(value: u8) -> u8 implicits(RangeCheck) nopanic;
 impl U8Mul of Mul<u8> {
     fn mul(lhs: u8, rhs: u8) -> u8 {
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-    }
-}
-impl U8MulEq of MulEq<u8> {
-    #[inline(always)]
-    fn mul_eq(ref self: u8, other: u8) {
-        self = Mul::mul(self, other);
     }
 }
 
@@ -389,32 +327,6 @@ fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> nopanic {
 impl U8TryIntoNonZero of TryInto<u8, NonZero<u8>> {
     fn try_into(self: u8) -> Option<NonZero<u8>> {
         u8_try_as_non_zero(self)
-    }
-}
-
-impl U8Div of Div<u8> {
-    fn div(lhs: u8, rhs: u8) -> u8 {
-        let (q, _r) = u8_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        q
-    }
-}
-impl U8DivEq of DivEq<u8> {
-    #[inline(always)]
-    fn div_eq(ref self: u8, other: u8) {
-        self = Div::div(self, other);
-    }
-}
-
-impl U8Rem of Rem<u8> {
-    fn rem(lhs: u8, rhs: u8) -> u8 {
-        let (_q, r) = u8_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        r
-    }
-}
-impl U8RemEq of RemEq<u8> {
-    #[inline(always)]
-    fn rem_eq(ref self: u8, other: u8) {
-        self = Rem::rem(self, other);
     }
 }
 
@@ -529,12 +441,6 @@ impl U16Add of Add<u16> {
         u16_overflowing_add(lhs, rhs).expect('u16_add Overflow')
     }
 }
-impl U16AddEq of AddEq<u16> {
-    #[inline(always)]
-    fn add_eq(ref self: u16, other: u16) {
-        self = Add::add(self, other);
-    }
-}
 
 fn u16_checked_sub(lhs: u16, rhs: u16) -> Option<u16> implicits(RangeCheck) nopanic {
     match u16_overflowing_sub(lhs, rhs) {
@@ -548,12 +454,6 @@ impl U16Sub of Sub<u16> {
         u16_overflowing_sub(lhs, rhs).expect('u16_sub Overflow')
     }
 }
-impl U16SubEq of SubEq<u16> {
-    #[inline(always)]
-    fn sub_eq(ref self: u16, other: u16) {
-        self = Sub::sub(self, other);
-    }
-}
 
 pub extern fn u16_wide_mul(lhs: u16, rhs: u16) -> u32 implicits() nopanic;
 pub extern fn u16_sqrt(value: u16) -> u8 implicits(RangeCheck) nopanic;
@@ -561,12 +461,6 @@ pub extern fn u16_sqrt(value: u16) -> u8 implicits(RangeCheck) nopanic;
 impl U16Mul of Mul<u16> {
     fn mul(lhs: u16, rhs: u16) -> u16 {
         u16_wide_mul(lhs, rhs).try_into().expect('u16_mul Overflow')
-    }
-}
-impl U16MulEq of MulEq<u16> {
-    #[inline(always)]
-    fn mul_eq(ref self: u16, other: u16) {
-        self = Mul::mul(self, other);
     }
 }
 
@@ -586,32 +480,6 @@ fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> nopanic {
 impl U16TryIntoNonZero of TryInto<u16, NonZero<u16>> {
     fn try_into(self: u16) -> Option<NonZero<u16>> {
         u16_try_as_non_zero(self)
-    }
-}
-
-impl U16Div of Div<u16> {
-    fn div(lhs: u16, rhs: u16) -> u16 {
-        let (q, _r) = u16_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        q
-    }
-}
-impl U16DivEq of DivEq<u16> {
-    #[inline(always)]
-    fn div_eq(ref self: u16, other: u16) {
-        self = Div::div(self, other);
-    }
-}
-
-impl U16Rem of Rem<u16> {
-    fn rem(lhs: u16, rhs: u16) -> u16 {
-        let (_q, r) = u16_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        r
-    }
-}
-impl U16RemEq of RemEq<u16> {
-    #[inline(always)]
-    fn rem_eq(ref self: u16, other: u16) {
-        self = Rem::rem(self, other);
     }
 }
 
@@ -726,12 +594,6 @@ impl U32Add of Add<u32> {
         u32_overflowing_add(lhs, rhs).expect('u32_add Overflow')
     }
 }
-impl U32AddEq of AddEq<u32> {
-    #[inline(always)]
-    fn add_eq(ref self: u32, other: u32) {
-        self = Add::add(self, other);
-    }
-}
 
 fn u32_checked_sub(lhs: u32, rhs: u32) -> Option<u32> implicits(RangeCheck) nopanic {
     match u32_overflowing_sub(lhs, rhs) {
@@ -745,12 +607,6 @@ impl U32Sub of Sub<u32> {
         u32_overflowing_sub(lhs, rhs).expect('u32_sub Overflow')
     }
 }
-impl U32SubEq of SubEq<u32> {
-    #[inline(always)]
-    fn sub_eq(ref self: u32, other: u32) {
-        self = Sub::sub(self, other);
-    }
-}
 
 pub extern fn u32_wide_mul(lhs: u32, rhs: u32) -> u64 implicits() nopanic;
 pub extern fn u32_sqrt(value: u32) -> u16 implicits(RangeCheck) nopanic;
@@ -758,12 +614,6 @@ pub extern fn u32_sqrt(value: u32) -> u16 implicits(RangeCheck) nopanic;
 impl U32Mul of Mul<u32> {
     fn mul(lhs: u32, rhs: u32) -> u32 {
         u32_wide_mul(lhs, rhs).try_into().expect('u32_mul Overflow')
-    }
-}
-impl U32MulEq of MulEq<u32> {
-    #[inline(always)]
-    fn mul_eq(ref self: u32, other: u32) {
-        self = Mul::mul(self, other);
     }
 }
 
@@ -783,32 +633,6 @@ fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> nopanic {
 pub(crate) impl U32TryIntoNonZero of TryInto<u32, NonZero<u32>> {
     fn try_into(self: u32) -> Option<NonZero<u32>> {
         u32_try_as_non_zero(self)
-    }
-}
-
-impl U32Div of Div<u32> {
-    fn div(lhs: u32, rhs: u32) -> u32 {
-        let (q, _r) = u32_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        q
-    }
-}
-impl U32DivEq of DivEq<u32> {
-    #[inline(always)]
-    fn div_eq(ref self: u32, other: u32) {
-        self = Div::div(self, other);
-    }
-}
-
-impl U32Rem of Rem<u32> {
-    fn rem(lhs: u32, rhs: u32) -> u32 {
-        let (_q, r) = u32_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        r
-    }
-}
-impl U32RemEq of RemEq<u32> {
-    #[inline(always)]
-    fn rem_eq(ref self: u32, other: u32) {
-        self = Rem::rem(self, other);
     }
 }
 
@@ -923,12 +747,6 @@ impl U64Add of Add<u64> {
         u64_overflowing_add(lhs, rhs).expect('u64_add Overflow')
     }
 }
-impl U64AddEq of AddEq<u64> {
-    #[inline(always)]
-    fn add_eq(ref self: u64, other: u64) {
-        self = Add::add(self, other);
-    }
-}
 
 fn u64_checked_sub(lhs: u64, rhs: u64) -> Option<u64> implicits(RangeCheck) nopanic {
     match u64_overflowing_sub(lhs, rhs) {
@@ -942,12 +760,6 @@ impl U64Sub of Sub<u64> {
         u64_overflowing_sub(lhs, rhs).expect('u64_sub Overflow')
     }
 }
-impl U64SubEq of SubEq<u64> {
-    #[inline(always)]
-    fn sub_eq(ref self: u64, other: u64) {
-        self = Sub::sub(self, other);
-    }
-}
 
 pub extern fn u64_wide_mul(lhs: u64, rhs: u64) -> u128 implicits() nopanic;
 pub extern fn u64_sqrt(value: u64) -> u32 implicits(RangeCheck) nopanic;
@@ -955,12 +767,6 @@ pub extern fn u64_sqrt(value: u64) -> u32 implicits(RangeCheck) nopanic;
 impl U64Mul of Mul<u64> {
     fn mul(lhs: u64, rhs: u64) -> u64 {
         u64_wide_mul(lhs, rhs).try_into().expect('u64_mul Overflow')
-    }
-}
-impl U64MulEq of MulEq<u64> {
-    #[inline(always)]
-    fn mul_eq(ref self: u64, other: u64) {
-        self = Mul::mul(self, other);
     }
 }
 
@@ -980,32 +786,6 @@ fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> nopanic {
 impl U64TryIntoNonZero of TryInto<u64, NonZero<u64>> {
     fn try_into(self: u64) -> Option<NonZero<u64>> {
         u64_try_as_non_zero(self)
-    }
-}
-
-impl U64Div of Div<u64> {
-    fn div(lhs: u64, rhs: u64) -> u64 {
-        let (q, _r) = u64_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        q
-    }
-}
-impl U64DivEq of DivEq<u64> {
-    #[inline(always)]
-    fn div_eq(ref self: u64, other: u64) {
-        self = Div::div(self, other);
-    }
-}
-
-impl U64Rem of Rem<u64> {
-    fn rem(lhs: u64, rhs: u64) -> u64 {
-        let (_q, r) = u64_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
-        r
-    }
-}
-impl U64RemEq of RemEq<u64> {
-    #[inline(always)]
-    fn rem_eq(ref self: u64, other: u64) {
-        self = Rem::rem(self, other);
     }
 }
 
@@ -1122,12 +902,6 @@ impl U256Add of Add<u256> {
         u256_checked_add(lhs, rhs).expect('u256_add Overflow')
     }
 }
-impl U256AddEq of AddEq<u256> {
-    #[inline(always)]
-    fn add_eq(ref self: u256, other: u256) {
-        self = Add::add(self, other);
-    }
-}
 
 #[panic_with('u256_sub Overflow', u256_sub)]
 fn u256_checked_sub(lhs: u256, rhs: u256) -> Option<u256> implicits(RangeCheck) nopanic {
@@ -1144,12 +918,6 @@ impl U256Sub of Sub<u256> {
         u256_checked_sub(lhs, rhs).expect('u256_sub Overflow')
     }
 }
-impl U256SubEq of SubEq<u256> {
-    #[inline(always)]
-    fn sub_eq(ref self: u256, other: u256) {
-        self = Sub::sub(self, other);
-    }
-}
 
 fn u256_checked_mul(lhs: u256, rhs: u256) -> Option<u256> implicits(RangeCheck) {
     let (r, overflow) = u256_overflow_mul(lhs, rhs);
@@ -1163,12 +931,6 @@ fn u256_checked_mul(lhs: u256, rhs: u256) -> Option<u256> implicits(RangeCheck) 
 impl U256Mul of Mul<u256> {
     fn mul(lhs: u256, rhs: u256) -> u256 {
         u256_checked_mul(lhs, rhs).expect('u256_mul Overflow')
-    }
-}
-impl U256MulEq of MulEq<u256> {
-    #[inline(always)]
-    fn mul_eq(ref self: u256, other: u256) {
-        self = Mul::mul(self, other);
     }
 }
 
@@ -1249,32 +1011,6 @@ fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> nopanic {
 pub(crate) impl U256TryIntoNonZero of TryInto<u256, NonZero<u256>> {
     fn try_into(self: u256) -> Option<NonZero<u256>> {
         u256_try_as_non_zero(self)
-    }
-}
-
-impl U256Div of Div<u256> {
-    fn div(lhs: u256, rhs: u256) -> u256 {
-        let (q, _r) = u256_safe_div_rem(lhs, rhs.try_into().expect('Division by 0'));
-        q
-    }
-}
-impl U256DivEq of DivEq<u256> {
-    #[inline(always)]
-    fn div_eq(ref self: u256, other: u256) {
-        self = Div::div(self, other);
-    }
-}
-
-impl U256Rem of Rem<u256> {
-    fn rem(lhs: u256, rhs: u256) -> u256 {
-        let (_q, r) = u256_safe_div_rem(lhs, rhs.try_into().expect('Division by 0'));
-        r
-    }
-}
-impl U256RemEq of RemEq<u256> {
-    #[inline(always)]
-    fn rem_eq(ref self: u256, other: u256) {
-        self = Rem::rem(self, other);
     }
 }
 
@@ -1934,12 +1670,6 @@ impl I8Add of Add<i8> {
         }
     }
 }
-impl I8AddEq of AddEq<i8> {
-    #[inline(always)]
-    fn add_eq(ref self: i8, other: i8) {
-        self = Add::add(self, other);
-    }
-}
 impl I8Sub of Sub<i8> {
     fn sub(lhs: i8, rhs: i8) -> i8 {
         match i8_overflowing_sub_impl(lhs, rhs) {
@@ -1947,12 +1677,6 @@ impl I8Sub of Sub<i8> {
             SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i8_sub Underflow'),
             SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i8_sub Overflow'),
         }
-    }
-}
-impl I8SubEq of SubEq<i8> {
-    #[inline(always)]
-    fn sub_eq(ref self: i8, other: i8) {
-        self = Sub::sub(self, other);
     }
 }
 
@@ -1967,12 +1691,6 @@ pub extern fn i8_wide_mul(lhs: i8, rhs: i8) -> i16 implicits() nopanic;
 impl I8Mul of Mul<i8> {
     fn mul(lhs: i8, rhs: i8) -> i8 {
         i8_wide_mul(lhs, rhs).try_into().expect('i8_mul Overflow')
-    }
-}
-impl I8MulEq of MulEq<i8> {
-    #[inline(always)]
-    fn mul_eq(ref self: i8, other: i8) {
-        self = Mul::mul(self, other);
     }
 }
 
@@ -2036,12 +1754,6 @@ impl I16Add of Add<i16> {
         }
     }
 }
-impl I16AddEq of AddEq<i16> {
-    #[inline(always)]
-    fn add_eq(ref self: i16, other: i16) {
-        self = Add::add(self, other);
-    }
-}
 impl I16Sub of Sub<i16> {
     fn sub(lhs: i16, rhs: i16) -> i16 {
         match i16_overflowing_sub_impl(lhs, rhs) {
@@ -2049,12 +1761,6 @@ impl I16Sub of Sub<i16> {
             SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i16_sub Underflow'),
             SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i16_sub Overflow'),
         }
-    }
-}
-impl I16SubEq of SubEq<i16> {
-    #[inline(always)]
-    fn sub_eq(ref self: i16, other: i16) {
-        self = Sub::sub(self, other);
     }
 }
 
@@ -2069,12 +1775,6 @@ pub extern fn i16_wide_mul(lhs: i16, rhs: i16) -> i32 implicits() nopanic;
 impl I16Mul of Mul<i16> {
     fn mul(lhs: i16, rhs: i16) -> i16 {
         i16_wide_mul(lhs, rhs).try_into().expect('i16_mul Overflow')
-    }
-}
-impl I16MulEq of MulEq<i16> {
-    #[inline(always)]
-    fn mul_eq(ref self: i16, other: i16) {
-        self = Mul::mul(self, other);
     }
 }
 
@@ -2138,12 +1838,6 @@ impl I32Add of Add<i32> {
         }
     }
 }
-impl I32AddEq of AddEq<i32> {
-    #[inline(always)]
-    fn add_eq(ref self: i32, other: i32) {
-        self = Add::add(self, other);
-    }
-}
 impl I32Sub of Sub<i32> {
     fn sub(lhs: i32, rhs: i32) -> i32 {
         match i32_overflowing_sub_impl(lhs, rhs) {
@@ -2151,12 +1845,6 @@ impl I32Sub of Sub<i32> {
             SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i32_sub Underflow'),
             SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i32_sub Overflow'),
         }
-    }
-}
-impl I32SubEq of SubEq<i32> {
-    #[inline(always)]
-    fn sub_eq(ref self: i32, other: i32) {
-        self = Sub::sub(self, other);
     }
 }
 
@@ -2171,12 +1859,6 @@ pub extern fn i32_wide_mul(lhs: i32, rhs: i32) -> i64 implicits() nopanic;
 impl I32Mul of Mul<i32> {
     fn mul(lhs: i32, rhs: i32) -> i32 {
         i32_wide_mul(lhs, rhs).try_into().expect('i32_mul Overflow')
-    }
-}
-impl I32MulEq of MulEq<i32> {
-    #[inline(always)]
-    fn mul_eq(ref self: i32, other: i32) {
-        self = Mul::mul(self, other);
     }
 }
 
@@ -2240,12 +1922,6 @@ impl I64Add of Add<i64> {
         }
     }
 }
-impl I64AddEq of AddEq<i64> {
-    #[inline(always)]
-    fn add_eq(ref self: i64, other: i64) {
-        self = Add::add(self, other);
-    }
-}
 impl I64Sub of Sub<i64> {
     fn sub(lhs: i64, rhs: i64) -> i64 {
         match i64_overflowing_sub_impl(lhs, rhs) {
@@ -2253,12 +1929,6 @@ impl I64Sub of Sub<i64> {
             SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i64_sub Underflow'),
             SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i64_sub Overflow'),
         }
-    }
-}
-impl I64SubEq of SubEq<i64> {
-    #[inline(always)]
-    fn sub_eq(ref self: i64, other: i64) {
-        self = Sub::sub(self, other);
     }
 }
 
@@ -2273,12 +1943,6 @@ pub extern fn i64_wide_mul(lhs: i64, rhs: i64) -> i128 implicits() nopanic;
 impl I64Mul of Mul<i64> {
     fn mul(lhs: i64, rhs: i64) -> i64 {
         i64_wide_mul(lhs, rhs).try_into().expect('i64_mul Overflow')
-    }
-}
-impl I64MulEq of MulEq<i64> {
-    #[inline(always)]
-    fn mul_eq(ref self: i64, other: i64) {
-        self = Mul::mul(self, other);
     }
 }
 
@@ -2346,12 +2010,6 @@ impl I128Add of Add<i128> {
         }
     }
 }
-impl I128AddEq of AddEq<i128> {
-    #[inline(always)]
-    fn add_eq(ref self: i128, other: i128) {
-        self = Add::add(self, other);
-    }
-}
 impl I128Sub of Sub<i128> {
     fn sub(lhs: i128, rhs: i128) -> i128 {
         match i128_overflowing_sub_impl(lhs, rhs) {
@@ -2359,12 +2017,6 @@ impl I128Sub of Sub<i128> {
             SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i128_sub Underflow'),
             SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i128_sub Overflow'),
         }
-    }
-}
-impl I128SubEq of SubEq<i128> {
-    #[inline(always)]
-    fn sub_eq(ref self: i128, other: i128) {
-        self = Sub::sub(self, other);
     }
 }
 
@@ -2391,12 +2043,6 @@ impl I128Mul of Mul<i128> {
         res_as_felt252.try_into().expect('i128_mul Overflow')
     }
 }
-impl I128MulEq of MulEq<i128> {
-    #[inline(always)]
-    fn mul_eq(ref self: i128, other: i128) {
-        self = Mul::mul(self, other);
-    }
-}
 
 /// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**128 + lhs - rhs)`.
 pub extern fn i128_diff(lhs: i128, rhs: i128) -> Result<u128, u128> implicits(RangeCheck) nopanic;
@@ -2418,6 +2064,108 @@ impl I128PartialOrd of PartialOrd<i128> {
         i128_diff(rhs, lhs).into_is_err()
     }
 }
+
+// Implementations for `Div` and `Rem` given `DivRem`.
+mod by_div_rem {
+    pub impl DivImpl<T, +DivRem<T>, +TryInto<T, NonZero<T>>, +Drop<T>> of Div<T> {
+        fn div(lhs: T, rhs: T) -> T {
+            let (q, _r) = DivRem::div_rem(lhs, rhs.try_into().expect('Division by 0'));
+            q
+        }
+    }
+    pub impl RemImpl<T, +DivRem<T>, +TryInto<T, NonZero<T>>, +Drop<T>> of Rem<T> {
+        fn rem(lhs: T, rhs: T) -> T {
+            let (_q, r) = DivRem::div_rem(lhs, rhs.try_into().expect('Division by 0'));
+            r
+        }
+    }
+}
+impl U8Div = by_div_rem::DivImpl<u8>;
+impl U8Rem = by_div_rem::RemImpl<u8>;
+impl U16Div = by_div_rem::DivImpl<u16>;
+impl U16Rem = by_div_rem::RemImpl<u16>;
+impl U32Div = by_div_rem::DivImpl<u32>;
+impl U32Rem = by_div_rem::RemImpl<u32>;
+impl U64Div = by_div_rem::DivImpl<u64>;
+impl U64Rem = by_div_rem::RemImpl<u64>;
+impl U128Div = by_div_rem::DivImpl<u128>;
+impl U128Rem = by_div_rem::RemImpl<u128>;
+impl U256Div = by_div_rem::DivImpl<u256>;
+impl U256Rem = by_div_rem::RemImpl<u256>;
+
+// Implementations for `*Eq` operations.
+mod op_eq_by_op {
+    pub impl AddEqImpl<T, +Add<T>> of AddEq<T> {
+        fn add_eq(ref self: T, other: T) {
+            self = Add::add(self, other);
+        }
+    }
+    pub impl SubEqImpl<T, +Sub<T>> of SubEq<T> {
+        fn sub_eq(ref self: T, other: T) {
+            self = Sub::sub(self, other);
+        }
+    }
+    pub impl MulEqImpl<T, +Mul<T>> of MulEq<T> {
+        fn mul_eq(ref self: T, other: T) {
+            self = Mul::mul(self, other);
+        }
+    }
+    pub impl DivEqImpl<T, +Div<T>> of DivEq<T> {
+        fn div_eq(ref self: T, other: T) {
+            self = Div::div(self, other);
+        }
+    }
+    pub impl RemEqImpl<T, +Rem<T>> of RemEq<T> {
+        fn rem_eq(ref self: T, other: T) {
+            self = Rem::rem(self, other);
+        }
+    }
+}
+impl I8AddEq = op_eq_by_op::AddEqImpl<i8>;
+impl I8SubEq = op_eq_by_op::SubEqImpl<i8>;
+impl I8MulEq = op_eq_by_op::MulEqImpl<i8>;
+impl I16AddEq = op_eq_by_op::AddEqImpl<i16>;
+impl I16SubEq = op_eq_by_op::SubEqImpl<i16>;
+impl I16MulEq = op_eq_by_op::MulEqImpl<i16>;
+impl I32AddEq = op_eq_by_op::AddEqImpl<i32>;
+impl I32SubEq = op_eq_by_op::SubEqImpl<i32>;
+impl I32MulEq = op_eq_by_op::MulEqImpl<i32>;
+impl I64AddEq = op_eq_by_op::AddEqImpl<i64>;
+impl I64SubEq = op_eq_by_op::SubEqImpl<i64>;
+impl I64MulEq = op_eq_by_op::MulEqImpl<i64>;
+impl I128AddEq = op_eq_by_op::AddEqImpl<i128>;
+impl I128SubEq = op_eq_by_op::SubEqImpl<i128>;
+impl I128MulEq = op_eq_by_op::MulEqImpl<i128>;
+impl U8AddEq = op_eq_by_op::AddEqImpl<u8>;
+impl U8SubEq = op_eq_by_op::SubEqImpl<u8>;
+impl U8MulEq = op_eq_by_op::MulEqImpl<u8>;
+impl U8DivEq = op_eq_by_op::DivEqImpl<u8>;
+impl U8RemEq = op_eq_by_op::RemEqImpl<u8>;
+impl U16AddEq = op_eq_by_op::AddEqImpl<u16>;
+impl U16SubEq = op_eq_by_op::SubEqImpl<u16>;
+impl U16MulEq = op_eq_by_op::MulEqImpl<u16>;
+impl U16DivEq = op_eq_by_op::DivEqImpl<u16>;
+impl U16RemEq = op_eq_by_op::RemEqImpl<u16>;
+impl U32AddEq = op_eq_by_op::AddEqImpl<u32>;
+impl U32SubEq = op_eq_by_op::SubEqImpl<u32>;
+impl U32MulEq = op_eq_by_op::MulEqImpl<u32>;
+impl U32DivEq = op_eq_by_op::DivEqImpl<u32>;
+impl U32RemEq = op_eq_by_op::RemEqImpl<u32>;
+impl U64AddEq = op_eq_by_op::AddEqImpl<u64>;
+impl U64SubEq = op_eq_by_op::SubEqImpl<u64>;
+impl U64MulEq = op_eq_by_op::MulEqImpl<u64>;
+impl U64DivEq = op_eq_by_op::DivEqImpl<u64>;
+impl U64RemEq = op_eq_by_op::RemEqImpl<u64>;
+impl U128AddEq = op_eq_by_op::AddEqImpl<u128>;
+impl U128SubEq = op_eq_by_op::SubEqImpl<u128>;
+impl U128MulEq = op_eq_by_op::MulEqImpl<u128>;
+impl U128DivEq = op_eq_by_op::DivEqImpl<u128>;
+impl U128RemEq = op_eq_by_op::RemEqImpl<u128>;
+impl U256AddEq = op_eq_by_op::AddEqImpl<u256>;
+impl U256SubEq = op_eq_by_op::SubEqImpl<u256>;
+impl U256MulEq = op_eq_by_op::MulEqImpl<u256>;
+impl U256DivEq = op_eq_by_op::DivEqImpl<u256>;
+impl U256RemEq = op_eq_by_op::RemEqImpl<u256>;
 
 // Zeroable impls
 pub(crate) impl U8Zeroable = core::zeroable::zero_based::ZeroableImpl<u8, U8Zero>;
@@ -3134,6 +2882,42 @@ impl U32CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMu
 impl U64CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u64>;
 impl U128CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u128>;
 impl U256CheckedMul = core::num::traits::ops::checked::overflow_based::TCheckedMul<u256>;
+
+
+// SaturatingAdd implementations
+impl U8SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u8>;
+impl U16SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u16>;
+impl U32SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u32>;
+impl U64SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u64>;
+impl U128SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u128>;
+impl U256SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u256>;
+impl I8SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i8>;
+impl I16SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i16>;
+impl I32SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i32>;
+impl I64SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i64>;
+impl I128SaturatingAdd = core::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i128>;
+
+// SaturatingSub implementations
+impl U8SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u8>;
+impl U16SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u16>;
+impl U32SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u32>;
+impl U64SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u64>;
+impl U128SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u128>;
+impl U256SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<u256>;
+impl I8SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<i8>;
+impl I16SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<i16>;
+impl I32SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<i32>;
+impl I64SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<i64>;
+impl I128SaturatingSub = core::num::traits::ops::saturating::overflow_based::TSaturatingSub<i128>;
+
+// SaturatingMul implementations
+impl U8SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u8>;
+impl U16SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u16>;
+impl U32SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u32>;
+impl U64SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u64>;
+impl U128SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u128>;
+impl U256SaturatingMul = core::num::traits::ops::saturating::overflow_based::TSaturatingMul<u256>;
+
 
 /// Internal trait for easier finding of absolute values.
 pub(crate) trait AbsAndSign<Signed, Unsigned> {

@@ -1,5 +1,5 @@
-use cairo_felt::Felt252;
 use num_traits::Zero;
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::range_check::RangeCheckType;
 use super::utils::{reinterpret_cast_signature, Range};

@@ -21,7 +21,7 @@ pub enum FeatureKind {
     /// The feature of the item is stable.
     Stable,
     /// The feature of the item is unstable, with the given name to allow.
-    Unstable(SmolStr),
+    Unstable { feature: SmolStr, note: Option<SmolStr> },
     /// The feature of the item is deprecated, with the given name to allow, and an optional note
     /// to appear in diagnostics.
     Deprecated { feature: SmolStr, note: Option<SmolStr> },
@@ -43,8 +43,9 @@ impl FeatureKind {
         }
         if deprecated_attrs.is_empty() {
             let attr = unstable_attrs.into_iter().next().unwrap().structurize(db);
-            let [feature] = parse_feature_attr(db, diagnostics, &attr, ["feature"]);
-            feature.map(Self::Unstable).ok_or(attr)
+            let [feature, note, _] =
+                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
+            feature.map(|feature| Self::Unstable { feature, note }).ok_or(attr)
         } else {
             let attr = deprecated_attrs.into_iter().next().unwrap().structurize(db);
             let [feature, note, _] =

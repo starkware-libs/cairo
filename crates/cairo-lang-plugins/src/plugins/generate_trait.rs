@@ -148,61 +148,92 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
             builder.add_node(impl_generic_params.as_syntax_node());
             builder.add_node(body.lbrace(db).as_syntax_node());
             for item in body.items_vec(db) {
-                let ast::ImplItem::Function(item) = item else {
-                    // Only functions are supported as trait items for now.
-                    continue;
-                };
-                let decl = item.declaration(db);
-                let signature = decl.signature(db);
-                builder.add_node(item.attributes(db).as_syntax_node());
-                builder.add_node(decl.function_kw(db).as_syntax_node());
-                builder.add_node(decl.name(db).as_syntax_node());
-                builder.add_node(decl.generic_params(db).as_syntax_node());
-                builder.add_node(signature.lparen(db).as_syntax_node());
-                for node in db.get_children(signature.parameters(db).node.clone()).iter().cloned() {
-                    if node.kind(db) != SyntaxKind::Param {
-                        builder.add_node(node);
-                    } else {
-                        let param = ast::Param::from_syntax_node(db, node);
-                        for modifier in param.modifiers(db).elements(db) {
-                            // `mut` modifiers are only relevant for impls, not traits.
-                            if !matches!(modifier, ast::Modifier::Mut(_)) {
-                                builder.add_node(modifier.as_syntax_node());
+                match item {
+                    ast::ImplItem::Function(function_item) => {
+                        let decl = function_item.declaration(db);
+                        let signature = decl.signature(db);
+                        builder.add_node(function_item.attributes(db).as_syntax_node());
+                        builder.add_node(decl.function_kw(db).as_syntax_node());
+                        builder.add_node(decl.name(db).as_syntax_node());
+                        builder.add_node(decl.generic_params(db).as_syntax_node());
+                        builder.add_node(signature.lparen(db).as_syntax_node());
+                        for node in
+                            db.get_children(signature.parameters(db).node.clone()).iter().cloned()
+                        {
+                            if node.kind(db) != SyntaxKind::Param {
+                                builder.add_node(node);
+                            } else {
+                                let param = ast::Param::from_syntax_node(db, node);
+                                for modifier in param.modifiers(db).elements(db) {
+                                    // `mut` modifiers are only relevant for impls, not traits.
+                                    if !matches!(modifier, ast::Modifier::Mut(_)) {
+                                        builder.add_node(modifier.as_syntax_node());
+                                    }
+                                }
+                                builder.add_node(param.name(db).as_syntax_node());
+                                builder.add_node(param.type_clause(db).as_syntax_node());
                             }
                         }
-                        builder.add_node(param.name(db).as_syntax_node());
-                        builder.add_node(param.type_clause(db).as_syntax_node());
+                        let rparen = signature.rparen(db);
+                        let ret_ty = signature.ret_ty(db);
+                        let implicits_clause = signature.implicits_clause(db);
+                        let optional_no_panic = signature.optional_no_panic(db);
+                        let last_node = if matches!(
+                            optional_no_panic,
+                            ast::OptionTerminalNoPanic::TerminalNoPanic(_)
+                        ) {
+                            builder.add_node(rparen.as_syntax_node());
+                            builder.add_node(ret_ty.as_syntax_node());
+                            builder.add_node(implicits_clause.as_syntax_node());
+                            optional_no_panic.as_syntax_node()
+                        } else if matches!(
+                            implicits_clause,
+                            ast::OptionImplicitsClause::ImplicitsClause(_)
+                        ) {
+                            builder.add_node(rparen.as_syntax_node());
+                            builder.add_node(ret_ty.as_syntax_node());
+                            implicits_clause.as_syntax_node()
+                        } else if matches!(ret_ty, ast::OptionReturnTypeClause::ReturnTypeClause(_))
+                        {
+                            builder.add_node(rparen.as_syntax_node());
+                            ret_ty.as_syntax_node()
+                        } else {
+                            rparen.as_syntax_node()
+                        };
+                        builder.add_modified(RewriteNode::Trimmed {
+                            node: last_node,
+                            trim_left: false,
+                            trim_right: true,
+                        });
+                        builder.add_str(";\n");
                     }
+                    ast::ImplItem::Type(type_item) => {
+                        builder.add_node(type_item.attributes(db).as_syntax_node());
+                        builder.add_node(type_item.type_kw(db).as_syntax_node());
+                        builder.add_modified(RewriteNode::Trimmed {
+                            node: type_item.name(db).as_syntax_node(),
+                            trim_left: false,
+                            trim_right: true,
+                        });
+                        builder.add_str(";\n");
+                    }
+                    ast::ImplItem::Constant(const_item) => {
+                        builder.add_node(const_item.attributes(db).as_syntax_node());
+                        builder.add_node(const_item.const_kw(db).as_syntax_node());
+                        builder.add_node(const_item.name(db).as_syntax_node());
+                        builder.add_modified(RewriteNode::Trimmed {
+                            node: const_item.type_clause(db).as_syntax_node(),
+                            trim_left: false,
+                            trim_right: true,
+                        });
+                        builder.add_str(";\n");
+                    }
+                    _ => diagnostics.push(PluginDiagnostic::error(
+                        &item,
+                        "Only functions, types, and constants are supported in #[generate_trait]."
+                            .to_string(),
+                    )),
                 }
-                let rparen = signature.rparen(db);
-                let ret_ty = signature.ret_ty(db);
-                let implicits_clause = signature.implicits_clause(db);
-                let optional_no_panic = signature.optional_no_panic(db);
-                let last_node = if matches!(
-                    optional_no_panic,
-                    ast::OptionTerminalNoPanic::TerminalNoPanic(_)
-                ) {
-                    builder.add_node(rparen.as_syntax_node());
-                    builder.add_node(ret_ty.as_syntax_node());
-                    builder.add_node(implicits_clause.as_syntax_node());
-                    optional_no_panic.as_syntax_node()
-                } else if matches!(implicits_clause, ast::OptionImplicitsClause::ImplicitsClause(_))
-                {
-                    builder.add_node(rparen.as_syntax_node());
-                    builder.add_node(ret_ty.as_syntax_node());
-                    implicits_clause.as_syntax_node()
-                } else if matches!(ret_ty, ast::OptionReturnTypeClause::ReturnTypeClause(_)) {
-                    builder.add_node(rparen.as_syntax_node());
-                    ret_ty.as_syntax_node()
-                } else {
-                    rparen.as_syntax_node()
-                };
-                builder.add_modified(RewriteNode::Trimmed {
-                    node: last_node,
-                    trim_left: false,
-                    trim_right: true,
-                });
-                builder.add_str(";\n");
             }
             builder.add_node(body.rbrace(db).as_syntax_node());
         }

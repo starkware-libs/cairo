@@ -83,7 +83,7 @@ pub fn get_type_size_map(
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitInputAccumulator(_)) => Some(2),
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitDescriptor(_)) => Some(4),
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitData(_))
-            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitOutput(_))
+            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitOutputs(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::AddMod(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::MulMod(_)) => Some(1),
 
@@ -91,7 +91,8 @@ pub fn get_type_size_map(
             CoreTypeConcrete::Const(_)
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::Circuit(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitInput(_))
-            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::AddModGate(_)) => continue,
+            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::AddModGate(_))
+            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::InverseGate(_)) => continue,
         }?;
         type_sizes.insert(declaration.id.clone(), size);
     }

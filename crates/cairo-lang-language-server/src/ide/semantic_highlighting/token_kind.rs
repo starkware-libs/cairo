@@ -1,17 +1,13 @@
-use cairo_lang_defs::ids::{
-    FileIndex, FunctionWithBodyId, ImplItemId, LookupItemId, ModuleFileId, ModuleItemId,
-};
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_defs::ids::{FunctionWithBodyId, ImplItemId, LookupItemId, ModuleItemId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::grandparent_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::OptionHelper;
 use tower_lsp::lsp_types::SemanticTokenType;
 
-use crate::{find_node_module, lookup_item_from_ast};
+use crate::lang::semantic::LsSemanticGroup;
 
 #[allow(dead_code)]
 pub enum SemanticTokenKind {
@@ -39,8 +35,7 @@ pub enum SemanticTokenKind {
 }
 impl SemanticTokenKind {
     pub fn from_syntax_node(
-        db: &dyn SemanticGroup,
-        file_id: FileId,
+        db: &(dyn SemanticGroup + 'static),
         mut node: SyntaxNode,
     ) -> Option<Self> {
         let syntax_db = db.upcast();
@@ -126,11 +121,6 @@ impl SemanticTokenKind {
         // Identifier.
         while let Some(parent) = node.parent() {
             node = parent;
-            let module_id = find_node_module(db, file_id, node.clone()).on_none(|| {
-                eprintln!("SemanticTokenKind recovery failed. Failed to find module.");
-            })?;
-            let file_index = FileIndex(0);
-            let module_file_id = ModuleFileId(module_id, file_index);
 
             match node.kind(syntax_db) {
                 SyntaxKind::ExprInlineMacro => return Some(SemanticTokenKind::InlineMacro),
@@ -145,8 +135,7 @@ impl SemanticTokenKind {
                 _ => {}
             };
 
-            let lookup_items = lookup_item_from_ast(db, module_file_id, node.clone());
-            for lookup_item_id in lookup_items {
+            for lookup_item_id in db.collect_lookup_items_leaf(&node)? {
                 // Resolved items.
                 if let Some(item) =
                     db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())

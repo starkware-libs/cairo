@@ -21,7 +21,7 @@ mod rename_unused_variable;
 )]
 pub fn code_actions(params: CodeActionParams, db: &RootDatabase) -> Option<CodeActionResponse> {
     let mut actions = Vec::with_capacity(params.context.diagnostics.len());
-    let file_id = db.file_for_url(&params.text_document.uri);
+    let file_id = db.file_for_url(&params.text_document.uri)?;
     let node = db.find_syntax_node_at_position(file_id, params.range.start.to_cairo())?;
     for diagnostic in params.context.diagnostics.iter() {
         actions.extend(

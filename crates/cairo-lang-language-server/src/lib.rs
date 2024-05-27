@@ -48,13 +48,9 @@ use std::time::{Duration, SystemTime};
 use anyhow::{bail, Context};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_defs::db::{get_all_path_leaves, DefsGroup};
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
-    FreeFunctionLongId, FunctionTitleId, ImplAliasLongId, ImplDefLongId, ImplFunctionLongId,
-    ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
-    ModuleTypeAliasLongId, StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitItemId,
-    TraitLongId, UseLongId,
+    FunctionTitleId, LanguageElementId, LookupItemId, ModuleId, SubmoduleLongId,
 };
 use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -75,14 +71,12 @@ use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
 use cairo_lang_starknet::starknet_plugin_suite;
-use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{try_extract_matches, Intern, LookupIntern, OptionHelper, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use serde_json::Value;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
@@ -94,6 +88,7 @@ use crate::config::Config;
 use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
+use crate::lang::semantic::LsSemanticGroup;
 use crate::lang::syntax::LsSyntaxGroup;
 use crate::lsp::client_capabilities::ClientCapabilitiesExt;
 use crate::project::scarb::db::update_crate_roots;
@@ -257,7 +252,7 @@ fn ensure_exists_in_db(
     let overrides = old_db.file_overrides();
     let mut new_overrides: OrderedHashMap<FileId, Arc<String>> = Default::default();
     for uri in open_files {
-        let file_id = old_db.file_for_url(&uri);
+        let Some(file_id) = old_db.file_for_url(&uri) else { continue };
         let new_file_id = file_id.lookup_intern(old_db).intern(new_db);
         if let Some(content) = overrides.get(&file_id) {
             new_overrides.insert(new_file_id, content.clone());
@@ -416,7 +411,7 @@ impl Backend {
     async fn refresh_file_diagnostics(&self, uri: &Url) {
         let db = self.db_mut().await;
 
-        let file_id = db.file_for_url(uri);
+        let Some(file_id) = db.file_for_url(uri) else { return };
 
         macro_rules! diags {
             ($db:ident. $query:ident($file_id:expr), $f:expr) => {
@@ -519,7 +514,7 @@ impl Backend {
             let _ = db.file_lowering_diagnostics(file_id);
         };
         for uri in open_files {
-            let file_id = db.file_for_url(&uri);
+            let Some(file_id) = db.file_for_url(&uri) else { continue };
             if let FileLongId::OnDisk(file_path) = file_id.lookup_intern(db) {
                 self.detect_crate_for(db, file_path).await;
             }
@@ -540,8 +535,11 @@ impl Backend {
         params: ProvideVirtualFileRequest,
     ) -> LSPResult<ProvideVirtualFileResponse> {
         self.with_db(|db| {
-            let file_id = db.file_for_url(&params.uri);
-            ProvideVirtualFileResponse { content: db.file_content(file_id).map(|s| (*s).clone()) }
+            let content = db
+                .file_for_url(&params.uri)
+                .and_then(|file_id| db.file_content(file_id))
+                .map(Arc::unwrap_or_clone);
+            ProvideVirtualFileResponse { content }
         })
         .await
     }
@@ -608,7 +606,7 @@ impl Backend {
 
         let mut db = self.db_mut().await;
         for uri in self.state_mutex.lock().await.open_files.iter() {
-            let file_id = db.file_for_url(uri);
+            let Some(file_id) = db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = db.lookup_intern_file(file_id) {
                 self.detect_crate_for(&mut db, file_path).await;
             }
@@ -742,7 +740,7 @@ impl LanguageServer for Backend {
         let mut db = self.db_mut().await;
         for change in &params.changes {
             if is_cairo_file_path(&change.uri) {
-                let file = db.file_for_url(&change.uri);
+                let Some(file) = db.file_for_url(&change.uri) else { continue };
                 PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
             }
         }
@@ -785,13 +783,11 @@ impl LanguageServer for Backend {
         // Try to detect the crate for physical files.
         // The crate for virtual files is already known.
         if uri.scheme() == "file" {
-            let Ok(path) = uri.to_file_path() else {
-                return;
-            };
+            let Ok(path) = uri.to_file_path() else { return };
             self.detect_crate_for(&mut db, path).await;
         }
 
-        let file_id = db.file_for_url(&uri);
+        let Some(file_id) = db.file_for_url(&uri) else { return };
         self.state_mut().await.open_files.insert(uri);
         db.override_file_content(file_id, Some(Arc::new(params.text_document.text)));
         drop(db);
@@ -809,7 +805,7 @@ impl LanguageServer for Backend {
             };
         let mut db = self.db_mut().await;
         let uri = params.text_document.uri;
-        let file = db.file_for_url(&uri);
+        let Some(file) = db.file_for_url(&uri) else { return };
         db.override_file_content(file, Some(Arc::new(text.into())));
         drop(db);
         self.refresh_diagnostics().await.ok();
@@ -818,7 +814,7 @@ impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_save(&self, params: DidSaveTextDocumentParams) {
         let mut db = self.db_mut().await;
-        let file = db.file_for_url(&params.text_document.uri);
+        let Some(file) = db.file_for_url(&params.text_document.uri) else { return };
         PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
         db.override_file_content(file, None);
     }
@@ -827,7 +823,7 @@ impl LanguageServer for Backend {
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let mut db = self.db_mut().await;
         self.state_mut().await.open_files.remove(&params.text_document.uri);
-        let file = db.file_for_url(&params.text_document.uri);
+        let Some(file) = db.file_for_url(&params.text_document.uri) else { return };
         db.override_file_content(file, None);
         drop(db);
         self.refresh_diagnostics().await.ok();
@@ -876,19 +872,19 @@ impl LanguageServer for Backend {
 #[tracing::instrument(level = "trace", skip_all)]
 fn find_definition(
     db: &RootDatabase,
-    file: FileId,
     identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
 ) -> Option<SyntaxStablePtrId> {
     if let Some(parent) = identifier.as_syntax_node().parent() {
         if parent.kind(db) == SyntaxKind::ItemModule {
-            let containing_module_id =
-                find_node_module(db, file, parent.clone()).on_none(|| {
-                    error!("`find_definition` failed: could not find module");
-                })?;
+            let Some(containing_module_file_id) = db.find_module_file_containing_node(&parent)
+            else {
+                error!("`find_definition` failed: could not find module");
+                return None;
+            };
 
             let submodule_id = SubmoduleLongId(
-                ModuleFileId(containing_module_id, FileIndex(0)),
+                containing_module_file_id,
                 ast::ItemModule::from_syntax_node(db, parent).stable_ptr(),
             )
             .intern(db);
@@ -979,200 +975,6 @@ fn resolved_generic_item_def(
     }
 }
 
-/// If the ast node is a lookup item, return the corresponding id. Otherwise, return None.
-/// See [LookupItemId].
-#[tracing::instrument(level = "trace", skip_all)]
-fn lookup_item_from_ast(
-    db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
-    node: SyntaxNode,
-) -> Vec<LookupItemId> {
-    let syntax_db = db.upcast();
-    // TODO(spapini): Handle trait items.
-    match node.kind(syntax_db) {
-        SyntaxKind::ItemConstant => vec![LookupItemId::ModuleItem(ModuleItemId::Constant(
-            ConstantLongId(
-                module_file_id,
-                ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(),
-            )
-            .intern(db),
-        ))],
-        SyntaxKind::FunctionWithBody => {
-            if is_grandparent_of_kind(syntax_db, &node, SyntaxKind::ImplBody) {
-                vec![LookupItemId::ImplItem(ImplItemId::Function(
-                    ImplFunctionLongId(
-                        module_file_id,
-                        ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
-                    )
-                    .intern(db),
-                ))]
-            } else {
-                vec![LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
-                    FreeFunctionLongId(
-                        module_file_id,
-                        ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
-                    )
-                    .intern(db),
-                ))]
-            }
-        }
-        SyntaxKind::ItemExternFunction => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::ExternFunction(
-                ExternFunctionLongId(
-                    module_file_id,
-                    ast::ItemExternFunction::from_syntax_node(syntax_db, node).stable_ptr(),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemExternType => vec![LookupItemId::ModuleItem(ModuleItemId::ExternType(
-            ExternTypeLongId(
-                module_file_id,
-                ast::ItemExternType::from_syntax_node(syntax_db, node).stable_ptr(),
-            )
-            .intern(db),
-        ))],
-        SyntaxKind::ItemTrait => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Trait(
-                TraitLongId(
-                    module_file_id,
-                    ast::ItemTrait::from_syntax_node(syntax_db, node).stable_ptr(),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::TraitItemFunction => {
-            vec![LookupItemId::TraitItem(TraitItemId::Function(
-                TraitFunctionLongId(
-                    module_file_id,
-                    ast::TraitItemFunction::from_syntax_node(syntax_db, node).stable_ptr(),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemImpl => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Impl(
-                ImplDefLongId(
-                    module_file_id,
-                    ast::ItemImpl::from_syntax_node(syntax_db, node).stable_ptr(),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemStruct => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Struct(
-                StructLongId(
-                    module_file_id,
-                    ast::ItemStruct::from_syntax_node(syntax_db, node).stable_ptr(),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemEnum => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Enum(
-                EnumLongId(
-                    module_file_id,
-                    ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr(),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemUse => {
-            // Item use is not a lookup item, so we need to collect all UseLeaf, which are lookup
-            // items.
-            let item_use = ast::ItemUse::from_syntax_node(db.upcast(), node);
-            let path_leaves = get_all_path_leaves(db.upcast(), item_use.use_path(syntax_db));
-            let mut res = Vec::new();
-            for path_leaf in path_leaves {
-                let use_long_id = UseLongId(module_file_id, path_leaf.stable_ptr());
-                let lookup_item_id =
-                    LookupItemId::ModuleItem(ModuleItemId::Use(use_long_id.intern(db)));
-                res.push(lookup_item_id);
-            }
-            res
-        }
-        SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
-            ModuleTypeAliasLongId(
-                module_file_id,
-                ast::ItemTypeAlias::from_syntax_node(syntax_db, node).stable_ptr(),
-            )
-            .intern(db),
-        ))],
-        SyntaxKind::ItemImplAlias => vec![LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
-            ImplAliasLongId(
-                module_file_id,
-                ast::ItemImplAlias::from_syntax_node(syntax_db, node).stable_ptr(),
-            )
-            .intern(db),
-        ))],
-        _ => vec![],
-    }
-}
-
-/// Given a position in a file, return the syntax node for the token at that position, and all the
-/// lookup items above this node.
-#[tracing::instrument(level = "trace", skip_all)]
-fn get_node_and_lookup_items(
-    db: &(dyn SemanticGroup + 'static),
-    file: FileId,
-    position: TextPosition,
-) -> Option<(SyntaxNode, Vec<LookupItemId>)> {
-    let node = db.find_syntax_node_at_position(file, position)?;
-
-    // Find module.
-    let module_id = find_node_module(db, file, node.clone()).on_none(|| {
-        error!("`get_node_and_lookup_items` failed: failed to find module");
-    })?;
-    let file_index = FileIndex(0);
-    let module_file_id = ModuleFileId(module_id, file_index);
-
-    // Find containing function.
-    let mut res = Vec::new();
-    let mut item_node = node.clone();
-    loop {
-        for item in lookup_item_from_ast(db, module_file_id, item_node.clone()) {
-            res.push(item);
-        }
-        match item_node.parent() {
-            Some(next_node) => {
-                item_node = next_node;
-            }
-            None => return Some((node, res)),
-        }
-    }
-}
-
-#[tracing::instrument(level = "trace", skip_all)]
-fn find_node_module(
-    db: &dyn SemanticGroup,
-    main_file: FileId,
-    mut node: SyntaxNode,
-) -> Option<ModuleId> {
-    let mut module = db.file_modules(main_file).unwrap_or_default().iter().copied().next()?;
-    let syntax_db = db.upcast();
-
-    let mut inner_module_names = vec![];
-    while let Some(parent) = node.parent() {
-        node = parent;
-        if node.kind(syntax_db) == SyntaxKind::ItemModule {
-            inner_module_names.push(
-                ast::ItemModule::from_syntax_node(syntax_db, node.clone())
-                    .stable_ptr()
-                    .name_green(syntax_db)
-                    .identifier(syntax_db),
-            );
-        }
-    }
-    for name in inner_module_names.into_iter().rev() {
-        let submodule = try_extract_matches!(
-            db.module_item_by_name(module, name).ok()??,
-            ModuleItemId::Submodule
-        )?;
-        module = ModuleId::Submodule(submodule);
-    }
-    Some(module)
-}
-
 fn is_cairo_file_path(file_path: &Url) -> bool {
     file_path.path().ends_with(".cairo")
 }
@@ -1196,8 +998,9 @@ fn get_definition_location(
     let identifier = db.find_identifier_at_position(file, position)?;
 
     let syntax_db = db.upcast();
-    let (_, lookup_items) = get_node_and_lookup_items(db, file, position)?;
-    let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
+    let node = db.find_syntax_node_at_position(file, position)?;
+    let lookup_items = db.collect_lookup_items_stack(&node)?;
+    let stable_ptr = find_definition(db, &identifier, &lookup_items)?;
     let node = stable_ptr.lookup(syntax_db);
     let found_file = stable_ptr.file_id(syntax_db);
     let span = node.span_without_trivia(syntax_db);

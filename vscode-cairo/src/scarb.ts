@@ -107,9 +107,9 @@ export class Scarb implements LanguageServerExecutableProvider {
     args: readonly string[],
     ctx: Context,
   ): Promise<string> {
-    const execId = globalExecId++;
+    const log = ctx.log.span(`scarb[${globalExecId++}]`);
 
-    ctx.log.trace(`scarb[${execId}]: ${this.path} ${args.join(" ")}`.trimEnd());
+    log.trace(`${this.path} ${args.join(" ")}`.trimEnd());
 
     const child = spawn(this.path, args, {
       stdio: "pipe",
@@ -121,10 +121,10 @@ export class Scarb implements LanguageServerExecutableProvider {
       stdout += chunk;
     }
 
-    if (ctx.log.logLevel <= vscode.LogLevel.Trace) {
+    if (log.logLevel <= vscode.LogLevel.Trace) {
       if (stdout.length > 0) {
         for (const line of stdout.trimEnd().split("\n")) {
-          ctx.log.trace(`scarb[${execId}]:stdout: ${line}`);
+          log.trace(`stdout: ${line}`);
         }
       }
 
@@ -135,7 +135,7 @@ export class Scarb implements LanguageServerExecutableProvider {
 
       if (stderr.length > 0) {
         for (const line of stderr.trimEnd().split("\n")) {
-          ctx.log.trace(`scarb[${execId}]:stderr: ${line}`);
+          log.trace(`stderr: ${line}`);
         }
       }
     }
