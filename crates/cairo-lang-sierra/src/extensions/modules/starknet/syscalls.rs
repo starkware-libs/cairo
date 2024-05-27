@@ -12,7 +12,7 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::modules::get_u256_type;
-use crate::extensions::utils::{fixed_size_array_ty, reinterpret_cast_signature};
+use crate::extensions::utils::fixed_size_array_ty;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
@@ -207,9 +207,15 @@ impl NoGenericArgsGenericLibfunc for Sha256StateHandleInitLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(reinterpret_cast_signature(
-            sha256_state_handle_unwrapped_type(context)?,
-            context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(sha256_state_handle_unwrapped_type(context)?).with_allow_all(),
+            ],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }
@@ -224,9 +230,16 @@ impl NoGenericArgsGenericLibfunc for Sha256StateHandleDigestLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(reinterpret_cast_signature(
-            context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
-            sha256_state_handle_unwrapped_type(context)?,
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(context.get_concrete_type(Sha256StateHandleType::id(), &[])?)
+                    .with_allow_all(),
+            ],
+            vec![OutputVarInfo {
+                ty: sha256_state_handle_unwrapped_type(context)?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }
