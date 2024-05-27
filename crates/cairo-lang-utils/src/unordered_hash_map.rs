@@ -7,7 +7,9 @@ use alloc::vec;
 use core::borrow::Borrow;
 use core::hash::{BuildHasher, Hash};
 use core::ops::Index;
+#[cfg(feature = "serde")]
 use serde::ser::SerializeMap;
+#[cfg(feature = "serde")]
 use serde::{Serialize, Serializer};
 #[cfg(feature = "std")]
 pub use std::collections::hash_map::Entry;
@@ -347,6 +349,7 @@ impl<Key: Hash + Eq, Value, const N: usize, BH: BuildHasher + Default> From<[(Ke
     }
 }
 
+#[cfg(feature = "serde")]
 impl<Key, Value, BH> Serialize for UnorderedHashMap<Key, Value, BH>
 where
     Key: Serialize + Hash + Eq,

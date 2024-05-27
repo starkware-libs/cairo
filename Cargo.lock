@@ -3005,6 +3005,7 @@ dependencies = [
  "clap",
  "indoc",
  "log",
+ "serde",
  "serde_json",
 ]
 
