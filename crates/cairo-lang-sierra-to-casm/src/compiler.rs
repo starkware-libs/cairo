@@ -765,6 +765,17 @@ impl<'a> Serialize for CairoProgramWithSierraContext<'a> {
         map.serialize_entry("hints", &assembled_cairo_program.hints)?;
         map.serialize_entry("entry_point", &entry_point)?;
         map.serialize_entry("builtins", &builtins)?;
+        let debug_info = self.cairo_program.debug_info
+            .sierra_statement_info
+            .iter()
+            .map(|statement_debug_info| {
+                (
+                    statement_debug_info.start_offset,
+                    statement_debug_info.instruction_idx,
+                )
+            })
+            .collect::<Vec<(usize, usize)>>();
+        map.serialize_entry("debug_info", &debug_info)?;
         map.serialize_entry("consts_info", &self.cairo_program.consts_info)?;
         map.end()
     }
