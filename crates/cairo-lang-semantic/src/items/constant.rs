@@ -16,7 +16,6 @@ use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::{Num, ToPrimitive, Zero};
 
-use super::feature_kind::extract_allowed_features;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::structure::SemanticStructEx;
 use crate::corelib::{
@@ -182,11 +181,7 @@ pub fn constant_semantic_data_helper(
         }
         None => Resolver::new(db, element_id.module_file_id(db.upcast()), inference_id),
     };
-
-    // TODO(TomerStarkware): check if we should clone the allowed features instead of overiting
-    // them.
-    resolver.data.allowed_features =
-        extract_allowed_features(db.upcast(), element_id, constant_ast, &mut diagnostics);
+    resolver.set_allowed_features(element_id, constant_ast, &mut diagnostics);
 
     let constant_type = resolve_type(
         db,

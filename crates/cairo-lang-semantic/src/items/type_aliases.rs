@@ -43,6 +43,7 @@ pub fn type_alias_generic_params_data_helper(
         }
         None => Resolver::new(db, module_file_id, inference_id),
     };
+    resolver.set_allowed_features(&lookup_item_id, type_alias_ast, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
