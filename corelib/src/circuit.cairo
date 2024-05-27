@@ -2,10 +2,19 @@ use core::zeroable;
 
 /// Given two circuit elements, returns a new circuit element representing the circuit that applies
 /// the `addmod` operation to the two input circuits.
-pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>,>(
+pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>>(
     lhs: CircuitElement<Lhs>, rhs: CircuitElement<Rhs>
 ) -> CircuitElement::<AddModGate<Lhs, Rhs>> {
     CircuitElement::<AddModGate<Lhs, Rhs>> {}
+}
+
+
+/// Given a circuit element, returns a new circuit element representing the circuit that applies
+/// the inverse operation on the input circuit.
+pub fn circuit_inverse<Input, +CircuitElementTrait<Input>>(
+    input: CircuitElement<Input>
+) -> CircuitElement::<InverseGate<Input>> {
+    CircuitElement::<InverseGate<Input>> {}
 }
 
 /// A 384-bit unsigned integer, used for circuit values.
@@ -29,13 +38,16 @@ pub type ConstOne = core::internal::BoundedInt<1, 1>;
 /// A type that creates a circuit from a tuple of outputs.
 pub extern type Circuit<Outputs>;
 
-
 /// Defines an input for a circuit.
 #[phantom]
 pub extern type CircuitInput<const N: usize>;
 /// Represents the action of adding two fields elements in the circuits builtin.
 #[phantom]
 extern type AddModGate<Lhs, Rhs>;
+
+/// Represents the action of computing the inverse of a fields element in the circuits builtin.
+#[phantom]
+extern type InverseGate<Input>;
 
 /// Initializes the input data for running an instance of the circuit.
 extern fn init_circuit_data<C>() -> CircuitInputAccumulator<C> implicits(RangeCheck96) nopanic;

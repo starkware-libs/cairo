@@ -43,6 +43,7 @@ define_type_hierarchy! {
         CircuitDescriptor(CircuitDescriptor),
         CircuitInput(CircuitInput),
         CircuitInputAccumulator(CircuitInputAccumulator),
+        InverseGate(InverseGate),
     }, CircuitTypeConcrete
 }
 
@@ -66,7 +67,7 @@ fn is_circuit_component(
     };
 
     let long_id = context.get_type_info(ty.clone())?.long_id;
-    Ok([CircuitInput::ID, AddModGate::ID].contains(&long_id.generic_id))
+    Ok([CircuitInput::ID, AddModGate::ID, InverseGate::ID].contains(&long_id.generic_id))
 }
 
 /// Circuit input type.
@@ -176,6 +177,57 @@ impl ConcreteAddModGate {
 }
 
 impl ConcreteType for ConcreteAddModGate {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
+}
+
+/// Represents the action of computing the inverse of a fields element in the circuits builtin.
+#[derive(Default)]
+pub struct InverseGate {}
+impl NamedType for InverseGate {
+    type Concrete = ConcreteInverseGate;
+    const ID: GenericTypeId = GenericTypeId::new_inline("InverseGate");
+
+    fn specialize(
+        &self,
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Self::Concrete::new(context, args)
+    }
+}
+
+pub struct ConcreteInverseGate {
+    pub info: TypeInfo,
+}
+
+impl ConcreteInverseGate {
+    fn new(
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self, SpecializationError> {
+        if args.len() != 1 {
+            return Err(SpecializationError::WrongNumberOfGenericArgs);
+        }
+        validate_args_are_circuit_components(context, args.iter())?;
+
+        Ok(Self {
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId {
+                    generic_id: "InverseGate".into(),
+                    generic_args: args.to_vec(),
+                },
+                duplicatable: false,
+                droppable: false,
+                storable: false,
+                zero_sized: false,
+            },
+        })
+    }
+}
+
+impl ConcreteType for ConcreteInverseGate {
     fn info(&self) -> &TypeInfo {
         &self.info
     }
@@ -734,14 +786,17 @@ fn get_circuit_info(
     // Skip user type.
     let circ_outputs = ty_info.long_id.generic_args.iter().skip(1);
 
-    let ParsedInputs { mut values, mul_offsets } =
+    let ParsedInputs { mut values, mut mul_offsets } =
         parse_circuit_inputs(context, circ_outputs.clone())?;
     let n_inputs = values.len();
     let mut add_offsets = vec![];
 
     let mut stack = circ_outputs
-        .map(|garg| (extract_matches!(garg, GenericArg::Type).clone(), false))
+        .map(|garg| (extract_matches!(garg, GenericArg::Type).clone(), true))
         .collect::<Vec<_>>();
+
+    // The offset of the input that has the value `1`.
+    let one_offset = n_inputs;
 
     // We visit each gate in the circuit twice, in the first visit push all its inputs
     // and in the second visit we assume that all the inputs were already visited and we can
@@ -751,28 +806,40 @@ fn get_circuit_info(
         let generic_id = long_id.generic_id;
 
         if generic_id == CircuitInput::ID {
-        } else if generic_id == AddModGate::ID {
+        } else {
             let gate_inputs =
                 long_id.generic_args.iter().map(|garg| extract_matches!(garg, GenericArg::Type));
 
             if first_visit {
-                stack.push((ty, true));
-                stack.extend(gate_inputs.map(|ty| (ty.clone(), false)))
+                if ![AddModGate::ID, InverseGate::ID].contains(&generic_id) {
+                    return Err(SpecializationError::UnsupportedGenericArg);
+                }
+
+                stack.push((ty, false));
+                stack.extend(gate_inputs.map(|ty| (ty.clone(), true)))
             } else {
                 let output_offset = n_inputs + 1 + values.len();
                 let mut input_offsets = gate_inputs.map(|ty| *values.get(ty).unwrap());
 
-                add_offsets.push(GateOffsets {
-                    lhs: input_offsets.next().unwrap(),
-                    rhs: input_offsets.next().unwrap(),
-                    output: output_offset,
-                });
+                if generic_id == AddModGate::ID {
+                    add_offsets.push(GateOffsets {
+                        lhs: input_offsets.next().unwrap(),
+                        rhs: input_offsets.next().unwrap(),
+                        output: output_offset,
+                    });
 
-                values.insert(ty.clone(), output_offset);
-            };
-        } else {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        };
+                    values.insert(ty.clone(), output_offset);
+                } else if generic_id == InverseGate::ID {
+                    mul_offsets.push(GateOffsets {
+                        lhs: output_offset,
+                        rhs: input_offsets.next().unwrap(),
+                        output: one_offset,
+                    });
+                } else {
+                    return Err(SpecializationError::UnsupportedGenericArg);
+                };
+            }
+        }
     }
 
     Ok(CircuitInfo { n_inputs, values, add_offsets, mul_offsets })
@@ -798,7 +865,7 @@ fn parse_circuit_inputs<'a>(
                 .to_usize()
                 .ok_or(SpecializationError::UnsupportedGenericArg)?;
             inputs.insert(idx, ty);
-        } else if generic_id == AddModGate::ID {
+        } else if [AddModGate::ID, InverseGate::ID].contains(&generic_id) {
             stack.extend(
                 long_id
                     .generic_args
