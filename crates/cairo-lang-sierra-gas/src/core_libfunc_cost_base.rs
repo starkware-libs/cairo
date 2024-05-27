@@ -458,14 +458,14 @@ pub fn core_libfunc_cost(
             | BoundedIntConcreteLibfunc::Mul(_) => vec![ConstCost::steps(0).into()],
             BoundedIntConcreteLibfunc::DivRem(libfunc) => {
                 vec![
-                    match BoundedIntDivRemAlgorithm::new(&libfunc.lhs, &libfunc.rhs).unwrap() {
+                    match BoundedIntDivRemAlgorithm::try_new(&libfunc.lhs, &libfunc.rhs).unwrap() {
                         BoundedIntDivRemAlgorithm::KnownSmallRhs => {
                             ConstCost { steps: 7, holes: 0, range_checks: 3 }
                         }
-                        BoundedIntDivRemAlgorithm::KnownSmallQuotient(_) => {
+                        BoundedIntDivRemAlgorithm::KnownSmallQuotient { .. } => {
                             ConstCost { steps: 9, holes: 0, range_checks: 4 }
                         }
-                        BoundedIntDivRemAlgorithm::KnownSmallLhs(_) => {
+                        BoundedIntDivRemAlgorithm::KnownSmallLhs { .. } => {
                             ConstCost { steps: 11, holes: 0, range_checks: 4 }
                         }
                     }
