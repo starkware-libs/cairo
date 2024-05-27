@@ -535,16 +535,60 @@ fn deprecated_function_no_note() -> felt252 {
     0
 }
 
+#[unstable(feature: "unstable-trait")]
+trait UnstableTrait;
+
+impl BadUnstableImpl of UnstableTrait;
+
+#[feature("unstable-trait")]
+impl AllowedUnstableImpl of UnstableTrait;
+
+#[unstable(feature: "unstable-member")]
+struct DisallowedType {}
+
+struct BadStructMember {
+    member: DisallowedType,
+}
+
+#[feature("unstable-member")]
+struct AllowedStructMember {
+    member: DisallowedType,
+}
+
+enum BadEnumVariant {
+    variant: DisallowedType,
+}
+
+#[feature("unstable-member")]
+enum AllowedEnumMember {
+    variant: DisallowedType,
+}
+
 //! > function_body
 
 //! > expected_diagnostics
+error: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
+ --> lib.cairo:14:25
+impl BadUnstableImpl of UnstableTrait;
+                        ^***********^
+
+error: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
+ --> lib.cairo:23:13
+    member: DisallowedType,
+            ^************^
+
+error: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
+ --> lib.cairo:32:14
+    variant: DisallowedType,
+             ^************^
+
 error: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
- --> lib.cairo:12:15
+ --> lib.cairo:41:15
   let _fail = deprecated_function_with_note();
               ^***************************^
 
 error: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
- --> lib.cairo:15:15
+ --> lib.cairo:44:15
   let _fail = deprecated_function_no_note();
               ^*************************^
 

@@ -114,6 +114,7 @@ pub fn struct_generic_params_data(
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Struct(struct_id)));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    resolver.set_allowed_features(&struct_id, &struct_ast, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
