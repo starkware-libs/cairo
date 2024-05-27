@@ -388,7 +388,7 @@ fn build_multi_pop_front(
         deref arr_start;
         deref arr_end;
     };
-    let popped_size: i16 = libfunc.popped_values * element_size;
+    let popped_size: i16 = libfunc.n_popped_values * element_size;
     casm_build_extend!(casm_builder, let orig_range_check = range_check;);
     extend_multi_pop_failure_checks(
         &mut casm_builder,
@@ -436,7 +436,7 @@ fn build_multi_pop_back(
         deref arr_start;
         deref arr_end;
     };
-    let popped_size: i16 = libfunc.popped_values * element_size;
+    let popped_size: i16 = libfunc.n_popped_values * element_size;
     casm_build_extend!(casm_builder, let orig_range_check = range_check;);
     extend_multi_pop_failure_checks(
         &mut casm_builder,
@@ -477,7 +477,7 @@ fn extend_multi_pop_failure_checks(
     popped_size: i16,
 ) {
     casm_build_extend! {casm_builder,
-        const popped_size_plus_1 = popped_size + 1;
+        const popped_size_minus_1 = popped_size - 1;
         const popped_size = popped_size;
         let arr_start_popped = arr_start + popped_size;
         tempvar has_enough_elements;
@@ -485,10 +485,10 @@ fn extend_multi_pop_failure_checks(
             lhs: arr_start_popped, rhs: arr_end
         } into { dst: has_enough_elements };
         jump HasEnoughElements if has_enough_elements != 0;
-        // Proving that `arr_start - arr_end + popped_size + 1 >= 0` and therefore
-        // `popped_size + 1 >= arr_end - arr_start == arr.len()` ==> `arr.len() < popopped_size`.
+        // Proving that `arr_start - arr_end + popped_size - 1 >= 0` and therefore
+        // `popped_size - 1 >= arr_end - arr_start == arr.len()` ==> `arr.len() < popped_size`.
         tempvar minus_length = arr_start - arr_end;
-        tempvar rc = minus_length + popped_size_plus_1;
+        tempvar rc = minus_length + popped_size_minus_1;
         assert rc = *(range_check++);
         jump Failure;
         HasEnoughElements:

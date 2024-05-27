@@ -231,7 +231,9 @@ pub enum BoundedIntDivRemAlgorithm {
 }
 impl BoundedIntDivRemAlgorithm {
     /// Returns the algorithm to use for division and remainder of bounded integers.
-    /// Fails if the div_rem of the ranges is not supported.
+    /// Fails if the div_rem of the ranges is not supported yet.
+    ///
+    /// Assumption: `lhs` is non-negative and `rhs` is positive.
     pub fn new(lhs: &Range, rhs: &Range) -> Option<Self> {
         let prime = Felt252::prime().to_bigint().unwrap();
         let q_max = (&lhs.upper - 1) / &rhs.lower;
@@ -247,9 +249,9 @@ impl BoundedIntDivRemAlgorithm {
         if &q_upper_bound * &u128_limit < prime {
             return Some(Self::KnownSmallQuotient(q_upper_bound));
         }
-        let r = lhs.upper.sqrt();
-        if (&r + 1) * &u128_limit < prime {
-            return Some(Self::KnownSmallLhs(r));
+        let root = lhs.upper.sqrt();
+        if (&root + 1) * &u128_limit < prime {
+            return Some(Self::KnownSmallLhs(root));
         }
         // No algorithm found.
         None
@@ -257,7 +259,7 @@ impl BoundedIntDivRemAlgorithm {
 }
 
 /// Libfunc for constraining a BoundedInt<Min, Max> to one of two non-empty ranges: [Min, boundary)
-/// or [Boundary, max]. The libfunc is also applicable for standard types such as u* and i*.
+/// or [Boundary, Max]. The libfunc is also applicable for standard types such as u* and i*.
 #[derive(Default)]
 pub struct BoundedIntConstrainLibfunc {}
 impl NamedLibfunc for BoundedIntConstrainLibfunc {
@@ -333,7 +335,7 @@ impl SignatureBasedConcreteLibfunc for BoundedIntConstrainConcreteLibfunc {
     }
 }
 
-/// Helper function for specializing the signature of a simple operation bounded int libfunc.
+/// Helper function for specializing the signature of a simple bounded int operation libfunc.
 fn specialize_helper(
     context: &dyn SignatureSpecializationContext,
     args: &[GenericArg],
@@ -351,7 +353,7 @@ fn specialize_helper(
             ty: bounded_int_ty(context, min_result, max_result)?,
             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
         }],
-        SierraApChange::Known { new_vars_only: false },
+        SierraApChange::Known { new_vars_only: true },
     ))
 }
 

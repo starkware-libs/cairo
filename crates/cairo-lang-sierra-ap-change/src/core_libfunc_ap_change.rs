@@ -381,8 +381,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
             BoundedIntConcreteLibfunc::Constrain(libfunc) => {
                 vec![
-                    ApChange::Known(1 + usize::from(libfunc.boundary != BigInt::one().shl(128))),
-                    ApChange::Known(1 + usize::from(!libfunc.boundary.is_zero())),
+                    ApChange::Known(
+                        1 + if libfunc.boundary == BigInt::one().shl(128) { 0 } else { 1 },
+                    ),
+                    ApChange::Known(1 + if libfunc.boundary.is_zero() { 0 } else { 1 }),
                 ]
             }
         },

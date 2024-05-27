@@ -526,6 +526,17 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
         let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let snapshot_boxed_tuple = snapshot_ty(
+            context,
+            box_ty(
+                context,
+                fixed_size_array_ty(
+                    context,
+                    ty,
+                    count.to_i16().ok_or(SpecializationError::UnsupportedGenericArg)?,
+                )?,
+            )?,
+        )?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_ty.clone()).with_allow_add_const(),
@@ -542,19 +553,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
                             ),
                         },
                         OutputVarInfo {
-                            ty: snapshot_ty(
-                                context,
-                                box_ty(
-                                    context,
-                                    fixed_size_array_ty(
-                                        context,
-                                        ty,
-                                        count
-                                            .to_i16()
-                                            .ok_or(SpecializationError::UnsupportedGenericArg)?,
-                                    )?,
-                                )?,
-                            )?,
+                            ty: snapshot_boxed_tuple,
                             ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 1 },
                         },
                     ],
@@ -585,7 +584,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
             ty,
             signature: self.specialize_signature(context.upcast(), args)?,
             // Early failing on size, although the type itself would fail on definition.
-            popped_values: count.to_i16().ok_or(SpecializationError::UnsupportedGenericArg)?,
+            n_popped_values: count.to_i16().ok_or(SpecializationError::UnsupportedGenericArg)?,
         })
     }
 }
@@ -666,7 +665,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
             ty,
             signature: self.specialize_signature(context.upcast(), args)?,
             // Early failing on size, although the type itself would fail on definition.
-            popped_values: count.to_i16().ok_or(SpecializationError::UnsupportedGenericArg)?,
+            n_popped_values: count.to_i16().ok_or(SpecializationError::UnsupportedGenericArg)?,
         })
     }
 }
@@ -674,7 +673,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
 /// Struct the data for a multi pop action.
 pub struct ConcreteMultiPopLibfunc {
     pub ty: ConcreteTypeId,
-    pub popped_values: i16,
+    pub n_popped_values: i16,
     pub signature: LibfuncSignature,
 }
 impl SignatureBasedConcreteLibfunc for ConcreteMultiPopLibfunc {
