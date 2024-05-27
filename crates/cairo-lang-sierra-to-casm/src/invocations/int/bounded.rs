@@ -51,7 +51,7 @@ pub fn build_div_rem(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, a, b] = builder.try_get_single_cells()?;
 
-    let alg = BoundedIntDivRemAlgorithm::new(lhs, rhs).unwrap();
+    let alg = BoundedIntDivRemAlgorithm::try_new(lhs, rhs).unwrap();
 
     let mut casm_builder = CasmBuilder::default();
     let rc_slack = match &alg {

@@ -168,7 +168,7 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         // Making sure the algorithm is runnable.
-        if BoundedIntDivRemAlgorithm::new(&lhs_range, &rhs_range).is_none() {
+        if BoundedIntDivRemAlgorithm::try_new(&lhs_range, &rhs_range).is_none() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         let quotient_min = lhs_range.lower / (&rhs_range.upper - 1);
@@ -236,14 +236,15 @@ impl BoundedIntDivRemAlgorithm {
     /// Fails if the div_rem of the ranges is not supported yet.
     ///
     /// Assumption: `lhs` is non-negative and `rhs` is positive.
-    pub fn new(lhs: &Range, rhs: &Range) -> Option<Self> {
+    pub fn try_new(lhs: &Range, rhs: &Range) -> Option<Self> {
         let prime = Felt252::prime().to_bigint().unwrap();
         let q_max = (&lhs.upper - 1) / &rhs.lower;
         let u128_limit = BigInt::one().shl(128);
         // `q` is range checked in all algorithm variants, so `q_max` must be smaller than `2**128`.
         require(q_max < u128_limit)?;
-        // `r` is range checked in all algorithm variants, so `lhs.upper` must be at most `2**128`.
-        require(rhs.upper <= u128_limit)?;
+        // `r` is range checked in all algorithm variants, so `rhs.upper` must be at most `2**128 +
+        // 1`.
+        require(rhs.upper <= &u128_limit + 1)?;
         if &rhs.upper * &u128_limit < prime {
             return Some(Self::KnownSmallRhs);
         }
