@@ -367,3 +367,6 @@ pub mod metaprogramming;
 
 /// Preludes.
 mod prelude;
+
+/// Iterators.
+pub mod iter;
