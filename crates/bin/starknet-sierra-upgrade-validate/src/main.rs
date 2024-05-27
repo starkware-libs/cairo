@@ -13,8 +13,8 @@ use cairo_lang_starknet_classes::contract_class::{ContractClass, ContractEntryPo
 use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::{arg, Parser};
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
 
 const NUM_OF_PROCESSORS: usize = 32;
 
@@ -164,9 +164,10 @@ async fn main() -> anyhow::Result<()> {
     // If fullnode_url is provided, we retrieve the contract class info from the fullnode.
     // Otherwise, we read the contract class info from the input files.
     if let Some(fullnode_url) = args.fullnode_url {
+        let client = FullNodeClient::new(fullnode_url.clone());
         let fullnode_args = args.fullnode_args.unwrap();
         let (start_block, end_block) = if let Some(last_n_blocks) = fullnode_args.last_n_blocks {
-            let end_block = get_last_block_number(&fullnode_url).await? + 1;
+            let end_block = client.post::<_, u64>("starknet_blockNumber", {}).await? + 1;
             let start_block = end_block - last_n_blocks;
             (start_block, end_block)
         } else {
@@ -177,14 +178,14 @@ async fn main() -> anyhow::Result<()> {
         };
         let (class_hashes_tx, class_hashes_rx) = async_channel::bounded(128);
         spawn_block_class_hashes_retrievers(
+            &client,
             start_block,
             end_block,
             class_hashes_tx,
-            fullnode_url.clone(),
             reader_bar.clone(),
             classes_bar.clone(),
         );
-        spawn_classes_from_class_hashes(class_hashes_rx, classes_tx, fullnode_url);
+        spawn_classes_from_class_hashes(&client, class_hashes_rx, classes_tx);
     } else {
         spawn_input_file_readers(
             args.input_files,
@@ -465,38 +466,24 @@ pub struct ClassHashes {
     pub class_hash: BigUintAsHex,
     pub compiled_class_hash: BigUintAsHex,
 }
-#[derive(Deserialize, Debug)]
-struct RpcResponse<T> {
-    pub result: T,
-}
 
 /// Given a block number, retrieves the class hashes and compiled class hashes from the state
 /// update.
 async fn retrieve_block_class_hashes(
+    client: &FullNodeClient,
     block_number: u64,
-    id: i32,
     class_hashes_tx: &async_channel::Sender<ClassHashes>,
-    url: &str,
     class_hashes_bar: &ProgressBar,
 ) {
-    let method = "starknet_getStateUpdate";
-    let params =
-        serde_json::to_value(GetStateUpdateRequest { block_id: BlockId { block_number } }).unwrap();
-    let client = reqwest::Client::new();
-    let res = client
-        .post(url)
-        .json(&json!({
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params,
-            "id": id,
-        }))
-        .send()
-        .await;
-    if let Ok(res_response) = res {
-        let obj: RpcResponse<GetStateUpdateResponse> = res_response.json().await.unwrap();
-        class_hashes_bar.inc_length(obj.result.state_diff.declared_classes.len() as u64);
-        for class_hash in obj.result.state_diff.declared_classes {
+    if let Ok(response) = client
+        .post::<_, GetStateUpdateResponse>(
+            "starknet_getStateUpdate",
+            GetStateUpdateRequest { block_id: BlockId { block_number } },
+        )
+        .await
+    {
+        class_hashes_bar.inc_length(response.state_diff.declared_classes.len() as u64);
+        for class_hash in response.state_diff.declared_classes {
             class_hashes_tx.send(class_hash).await.unwrap();
         }
     }
@@ -504,10 +491,10 @@ async fn retrieve_block_class_hashes(
 
 /// Spawns tasks that retrieve the class hashes and compiled class hashes from the state update.
 fn spawn_block_class_hashes_retrievers(
+    client: &FullNodeClient,
     start_block: u64,
     end_block: u64,
     class_hashes_tx: async_channel::Sender<ClassHashes>,
-    url: String,
     blocks_bar: ProgressBar,
     class_hashes_bar: ProgressBar,
 ) {
@@ -516,7 +503,7 @@ fn spawn_block_class_hashes_retrievers(
     for _ in 0..NUM_OF_PROCESSORS {
         let class_hashes_tx = class_hashes_tx.clone();
         let block_number_global = block_number_global.clone();
-        let url = url.clone();
+        let client = client.clone();
         let blocks_bar = blocks_bar.clone();
         let class_hashes_bar = class_hashes_bar.clone();
         tokio::spawn(async move {
@@ -526,10 +513,9 @@ fn spawn_block_class_hashes_retrievers(
                     break;
                 }
                 retrieve_block_class_hashes(
+                    &client,
                     block_number,
-                    1,
                     &class_hashes_tx,
-                    &url,
                     &class_hashes_bar,
                 )
                 .await;
@@ -542,35 +528,26 @@ fn spawn_block_class_hashes_retrievers(
 
 /// Given a class hash, retrieves the matching ContractClassInfo.
 async fn retrieve_class_from_class_hash(
+    client: &FullNodeClient,
     class_hashes: ClassHashes,
     classes_tx: &async_channel::Sender<ContractClassInfo>,
-    url: &str,
 ) {
-    let method = "starknet_getClass";
-    let client = reqwest::Client::new();
-    let params = serde_json::to_value(GetStateClassRequest {
-        block_id: "latest".to_string(),
-        class_hash: class_hashes.class_hash.clone(),
-    })
-    .unwrap();
-    let res = client
-        .post(url)
-        .json(&json!({
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params,
-            "id": 1,
-        }))
-        .send()
-        .await;
-    if let Ok(res_response) = res {
-        let obj: RpcResponse<GetStateClassResponse> = res_response.json().await.unwrap();
+    if let Ok(response) = client
+        .post::<_, GetStateClassResponse>(
+            "starknet_getClass",
+            GetStateClassRequest {
+                block_id: "latest".to_string(),
+                class_hash: class_hashes.class_hash.clone(),
+            },
+        )
+        .await
+    {
         classes_tx
             .send(ContractClassInfo {
                 compiled_class_hash: class_hashes.compiled_class_hash,
                 class_hash: class_hashes.class_hash,
-                sierra_program: obj.result.sierra_program,
-                entry_points_by_type: obj.result.entry_points_by_type,
+                sierra_program: response.sierra_program,
+                entry_points_by_type: response.entry_points_by_type,
             })
             .await
             .unwrap();
@@ -579,17 +556,17 @@ async fn retrieve_class_from_class_hash(
 
 /// Spawns tasks that retrieve ContractClassInfos from a class hash.
 fn spawn_classes_from_class_hashes(
+    client: &FullNodeClient,
     class_hashes_rx: async_channel::Receiver<ClassHashes>,
     classes_tx: async_channel::Sender<ContractClassInfo>,
-    url: String,
 ) {
     for _ in 0..NUM_OF_PROCESSORS {
         let class_hashes_rx = class_hashes_rx.clone();
         let classes_tx = classes_tx.clone();
-        let url = url.clone();
+        let client = client.clone();
         tokio::spawn(async move {
             while let Ok(class_hashes) = class_hashes_rx.recv().await {
-                retrieve_class_from_class_hash(class_hashes, &classes_tx, &url).await;
+                retrieve_class_from_class_hash(&client, class_hashes, &classes_tx).await;
             }
         });
     }
@@ -612,27 +589,46 @@ async fn dump_class_infos_into_json(
     Ok(())
 }
 
-/// Given a fullnode url, retrieves the last block number.
-async fn get_last_block_number(node_url: &str) -> anyhow::Result<u64> {
-    let request_body = json!({
-        "jsonrpc": "2.0",
-        "id": 0,
-        "method": "starknet_blockNumber",
-        "params": {
-        }
-    });
-
-    let client = reqwest::Client::new();
-    let res = client
-        .post(node_url.to_string())
-        .header("Content-Type", "application/json")
-        .body(request_body.to_string())
-        .send()
-        .await?;
-
-    if !res.status().is_success() {
-        return Err(anyhow::anyhow!("Request failed."));
+/// The client for the fullnode.
+#[derive(Clone)]
+struct FullNodeClient {
+    /// The client connection pool.
+    client: reqwest::Client,
+    /// The fullnode url.
+    url: String,
+}
+impl FullNodeClient {
+    /// Creates a new FullNodeClient.
+    fn new(url: String) -> Self {
+        Self { client: reqwest::Client::new(), url }
     }
-    let res = res.json::<Value>().await?;
-    res["result"].as_u64().ok_or_else(|| anyhow::anyhow!("Couldn't parse json response."))
+    /// Sends a post request to the fullnode.
+    async fn post<Request: Serialize, Response: DeserializeOwned>(
+        &self,
+        method: &str,
+        params: Request,
+    ) -> anyhow::Result<Response> {
+        let res = self
+            .client
+            .post(&self.url)
+            .header("Content-Type", "application/json")
+            .json(&serde_json::json!({
+                "jsonrpc": "2.0",
+                "method": method,
+                "params": params,
+                "id": 1,
+            }))
+            .send()
+            .await?;
+        if !res.status().is_success() {
+            return Err(anyhow::anyhow!("Request failed."));
+        }
+        Ok(res.json::<RpcResponse<Response>>().await?.result)
+    }
+}
+
+/// The response from the fullnode rpc.
+#[derive(Deserialize, Debug)]
+struct RpcResponse<T> {
+    pub result: T,
 }
