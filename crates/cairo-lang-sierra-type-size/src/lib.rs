@@ -91,7 +91,8 @@ pub fn get_type_size_map(
             CoreTypeConcrete::Const(_)
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::Circuit(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitInput(_))
-            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::AddModGate(_)) => continue,
+            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::AddModGate(_))
+            | CoreTypeConcrete::Circuit(CircuitTypeConcrete::InverseGate(_)) => continue,
         }?;
         type_sizes.insert(declaration.id.clone(), size);
     }
