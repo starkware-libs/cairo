@@ -166,6 +166,12 @@ impl SpanIntoArray<T, +Drop<T>, +Clone<T>> of Into<Span<T>, Array<T>> {
     }
 }
 
+impl SpanIntoArraySnap<T> of Into<Span<T>, @Array<T>> {
+    fn into(self: Span<T>) -> @Array<T> {
+        self.snapshot
+    }
+}
+
 impl SpanFelt252Serde of Serde<Span<felt252>> {
     fn serialize(self: @Span<felt252>, ref output: Array<felt252>) {
         (*self).len().serialize(ref output);
