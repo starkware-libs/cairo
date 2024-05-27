@@ -153,9 +153,7 @@ impl ArrayIntoSpan<T, +Drop<T>> of Into<Array<T>, Span<T>> {
 impl SpanIntoArray<T, +Drop<T>, +Clone<T>> of Into<Span<T>, Array<T>> {
     fn into(mut self: Span<T>) -> Array<T> {
         let mut arr = array![];
-
         arr.append_span(self);
-
         arr
     }
 }
