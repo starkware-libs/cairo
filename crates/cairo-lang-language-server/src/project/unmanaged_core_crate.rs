@@ -26,10 +26,14 @@ pub fn find_unmanaged_core(config: &Config) -> Option<PathBuf> {
     //   The most reliable way to do this is to create an empty Scarb package, and run
     //   `scarb metadata` on it. The `core` package will be a component of this empty package.
     //   For minimal packages, `scarb metadata` should be pretty fast.
-    // TODO(mkaput): Shouldn't `fallback` actually be an `override`?
-    cairo_lang_filesystem::detect::detect_corelib()
-        .or_else(|| find_core_at_path(config.unmanaged_core_fallback_path.as_ref()?.as_path()))
+    find_core_at_config_path(config)
+        .or_else(cairo_lang_filesystem::detect::detect_corelib)
         .and_then(ensure_absolute)
+}
+
+/// Attempts to find the `core` crate source root at the path provided in the configuration.
+fn find_core_at_config_path(config: &Config) -> Option<PathBuf> {
+    find_core_at_path(config.unmanaged_core_path.as_ref()?.as_path())
 }
 
 /// Attempts to find the `core` crate source root at a given path.
