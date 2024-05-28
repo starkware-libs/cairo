@@ -1,7 +1,7 @@
 pub mod client_capabilities;
 pub mod cursor;
 pub mod fixture;
-mod jsonrpc;
+pub mod jsonrpc;
 mod mock_client;
 mod runtime;
 
@@ -11,13 +11,14 @@ pub use self::mock_client::MockClient;
 /// Create a sandboxed environment for testing language server features.
 ///
 /// This macro creates a [`fixture::Fixture`] first and sets it up according to the provided
-/// properties, and then runs a [`mock_client::MockClient`] on it.
+/// properties, and then runs a [`MockClient`] on it.
 ///
 /// See actual tests for usage examples.
 macro_rules! sandbox {
     (
         $(files { $($file:expr => $content:expr),* $(,)? })?
         $(client_capabilities = $client_capabilities:expr;)?
+        $(workspace_configuration = $workspace_configuration:expr;)?
     ) => {{
         use $crate::support::{
             client_capabilities,
@@ -29,12 +30,22 @@ macro_rules! sandbox {
 
         $($(fixture.add_file($file, $content);)*)?
 
-        let client_capabilities = client_capabilities::base();
+        #[allow(unused_mut)]
+        let mut client_capabilities = client_capabilities::base();
+
+        #[allow(unused_assignments, unused_mut)]
+        let mut workspace_configuration = serde_json::Value::default();
         $(
-            let client_capabilities = $client_capabilities(client_capabilities);
+            workspace_configuration = $workspace_configuration;
+            client_capabilities =
+                client_capabilities::with_workspace_configuration(client_capabilities, true);
         )?
 
-        MockClient::start(fixture, client_capabilities)
+        $(
+            client_capabilities = $client_capabilities(client_capabilities);
+        )?
+
+        MockClient::start(fixture, client_capabilities, workspace_configuration)
     }};
 }
 

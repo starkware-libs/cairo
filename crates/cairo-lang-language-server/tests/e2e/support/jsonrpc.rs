@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tower_lsp::jsonrpc::{Id, Request, Response};
+use tower_lsp::jsonrpc::{Id, Request, Response, Result};
 
 /// An incoming or outgoing JSON-RPC message.
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -15,12 +15,21 @@ pub enum Message {
 impl Message {
     /// Creates a JSON-RPC request message from untyped parts.
     pub fn request(method: &'static str, id: Id, params: Value) -> Message {
-        Message::Request(Request::build(method).id(id).params(params).finish())
+        let mut b = Request::build(method).id(id);
+        if !params.is_null() {
+            b = b.params(params);
+        }
+        Message::Request(b.finish())
     }
 
     /// Creates a JSON-RPC notification message from untyped parts.
     pub fn notification(method: &'static str, params: Value) -> Message {
         Message::Request(Request::build(method).params(params).finish())
+    }
+
+    /// Creates a JSON-RPC response message from untyped parts.
+    pub fn response(id: Id, result: Result<Value>) -> Message {
+        Message::Response(Response::from_parts(id, result))
     }
 }
 
