@@ -596,3 +596,25 @@ impl BodyItems for ast::ImplBody {
         self.items(db).elements(db)
     }
 }
+
+/// Helper trait for ast::UsePath.
+pub trait UsePathEx {
+    /// Retrieves the item of a use path.
+    fn get_item(&self, db: &dyn SyntaxGroup) -> ast::ItemUse;
+}
+impl UsePathEx for ast::UsePath {
+    fn get_item(&self, db: &dyn SyntaxGroup) -> ast::ItemUse {
+        let mut node = self.as_syntax_node();
+        loop {
+            let Some(parent) = node.parent() else {
+                unreachable!("UsePath is not under an ItemUse.");
+            };
+            match parent.kind(db) {
+                SyntaxKind::ItemUse => {
+                    break ast::ItemUse::from_syntax_node(db, parent);
+                }
+                _ => node = parent,
+            }
+        }
+    }
+}
