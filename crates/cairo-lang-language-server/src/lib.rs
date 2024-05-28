@@ -581,6 +581,10 @@ impl Backend {
             }
 
             Some(ProjectManifestPath::CairoProject(config_path)) => {
+                // The base path of ProjectConfig must be absolute to ensure that all paths in Salsa
+                // DB will also be absolute.
+                assert!(config_path.is_absolute());
+
                 try_to_init_unmanaged_core(&*self.config.read().await, db);
 
                 if let Ok(config) = ProjectConfig::from_file(&config_path) {

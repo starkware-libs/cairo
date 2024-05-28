@@ -112,6 +112,12 @@ fn validate_and_chop_source_path<'a>(
         );
     };
 
+    ensure!(
+        root.is_absolute(),
+        "source path must be absolute: {source_path}",
+        source_path = source_path.display()
+    );
+
     let Some(file_stem) = source_path.file_stem() else {
         bail!(
             "failed to get file stem for component `{crate_name}`: {source_path}",
