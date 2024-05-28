@@ -2086,6 +2086,7 @@ pub fn execute_core_hint(
                 insert_value_to_cellref!(vm, g0_or_no_inv, Felt252::from(0))?;
             }
         }
+        CoreHint::EvalCircuit { .. } => {}
     };
     Ok(())
 }

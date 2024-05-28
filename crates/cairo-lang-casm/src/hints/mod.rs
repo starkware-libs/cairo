@@ -284,6 +284,17 @@ pub enum CoreHint {
         t_or_k0: CellRef,
         t_or_k1: CellRef,
     },
+
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 28))]
+    EvalCircuit {
+        values_ptr: ResOperand,
+        n_add_mods: ResOperand,
+        add_mod_offsets: ResOperand,
+        n_mul_mods: ResOperand,
+        mul_mod_offsets: ResOperand,
+        // A ResOperand::Deref variant that points to the modulus
+        modulus: ResOperand,
+    },
 }
 
 /// Represents a deprecated hint which is kept for backward compatibility of previously deployed
@@ -803,6 +814,7 @@ impl PythonicHint for CoreHint {
                     "
                 )
             }
+            CoreHint::EvalCircuit { .. } => "raise NotImplementedError".into(),
         }
     }
 }
