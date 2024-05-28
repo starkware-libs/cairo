@@ -1,5 +1,6 @@
 use core::test::test_utils::{assert_eq, assert_ne};
-use core::iter::traits::iterator::Iterator;
+#[feature("collections-into-iter")]
+use core::iter::traits::iterator::{IntoIterator, Iterator};
 
 #[test]
 fn test_array() {
@@ -180,9 +181,7 @@ fn test_span_multi_pop() {
 
 #[test]
 fn test_span_iterator() {
-    let span = array![10, 11, 12, 13_felt252].span();
-    #[feature("collections-into-iter")]
-    let mut iter = core::iter::traits::iterator::IntoIterator::into_iter(span);
+    let mut iter = array![10, 11, 12, 13_felt252].span().into_iter();
     let mut i = 10;
     while let Option::Some(value) = iter.next() {
         assert_eq!(value, @i);
@@ -192,9 +191,7 @@ fn test_span_iterator() {
 
 #[test]
 fn test_array_iterator() {
-    let array = array![10, 11, 12, 13];
-    #[feature("collections-into-iter")]
-    let mut iter = core::iter::traits::iterator::IntoIterator::into_iter(array);
+    let mut iter = array![10, 11, 12, 13].into_iter();
     let mut i = 10;
     while let Option::Some(value) = iter.next() {
         assert_eq!(value, i);
