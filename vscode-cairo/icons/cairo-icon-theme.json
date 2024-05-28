@@ -1,19 +1,18 @@
 {
-    "iconDefinitions": {
-      "cairo-icon": {
-        "iconPath": "./cairo-icon.png"
-      }
-    },
-    "fileExtensions": {
-      "cairo": "cairo-icon"
-    },
-    "fileNames": {
-      "default": {
-        "iconPath": "./default-file-icon.png"
-      }
-    },
-    "languageIds": {
-      "cairo": "cairo-icon"
+  "iconDefinitions": {
+    "cairo-icon": {
+      "iconPath": "./cairo-icon.png"
     }
+  },
+  "fileExtensions": {
+    "cairo": "cairo-icon"
+  },
+  "fileNames": {
+    "default": {
+      "iconPath": "./default-file-icon.png"
+    }
+  },
+  "languageIds": {
+    "cairo": "cairo-icon"
+  }
 }
-  
