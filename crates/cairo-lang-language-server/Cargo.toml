@@ -39,6 +39,8 @@ cairo-lang-language-server = { path = ".", features = ["testing"] }
 assert_fs = "1.1"
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 futures = "0.3"
+indoc.workspace = true
 itertools.workspace = true
+pathdiff = "0.2"
 test-log.workspace = true
 tower-service = "0.3"
