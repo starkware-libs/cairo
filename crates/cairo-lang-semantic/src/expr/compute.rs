@@ -67,7 +67,8 @@ use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Varia
 use crate::substitution::SemanticRewriter;
 use crate::types::{
     add_type_based_diagnostics, are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots,
-    resolve_type, verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
+    peel_snapshots_ex, resolve_type, verify_fixed_size_array_size, wrap_in_snapshots,
+    ConcreteTypeId,
 };
 use crate::{
     ConcreteEnumId, GenericArgumentId, GenericParam, Member, Mutability, Parameter,
@@ -2271,7 +2272,7 @@ fn member_access_expr(
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
     let ty = ctx.reduce_ty(lexpr.ty());
-    let (n_snapshots, mut long_ty) = peel_snapshots(ctx.db, ty);
+    let (base_snapshots, mut long_ty) = peel_snapshots(ctx.db, ty);
     if let TypeLongId::ImplType(impl_type_id) = long_ty {
         let inference = &mut ctx.resolver.inference();
         let Ok(ty) = inference.reduce_impl_ty(impl_type_id) else {
@@ -2286,6 +2287,8 @@ fn member_access_expr(
         ctx.resolver.inference().solve().ok();
         long_ty = ctx.resolver.inference().rewrite(long_ty).no_err();
     }
+    let (additional_snapshots, long_ty) = peel_snapshots_ex(ctx.db, long_ty);
+    let n_snapshots = base_snapshots + additional_snapshots;
 
     match long_ty {
         TypeLongId::Concrete(concrete) => match concrete {
