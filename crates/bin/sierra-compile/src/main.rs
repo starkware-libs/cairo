@@ -1,4 +1,5 @@
 use std::fs;
+use cairo_lang_sierra::program::Function;
 use serde::Serialize;
 use serde::ser::Error;
 
@@ -33,9 +34,7 @@ impl<'a> Serialize for CairoProgramWithSierraContext<'a> {
     {
         use serde::ser::SerializeMap;
         let mut map = serializer.serialize_map(None)?;
-        let main_func = self
-            .sierra_program
-            .find_function("::main")
+        let main_func = find_function(self.sierra_program, "::main")
             .ok_or_else(|| S::Error::custom("Main function not found"))?;
         let entry_point = main_func.entry_point.0;
         let builtins = vec![
@@ -64,6 +63,17 @@ impl<'a> Serialize for CairoProgramWithSierraContext<'a> {
         map.serialize_entry("consts_info", &self.cairo_program.consts_info)?;
         map.end()
     }
+}
+
+/// Finds first function ending with `name_suffix`.
+pub fn find_function<'a>(sierra_program: &'a Program, name_suffix: &str) -> Option<&'a Function> {
+    sierra_program.funcs.iter().find(|f| {
+        if let Some(name) = &f.id.debug_name {
+            name.ends_with(name_suffix)
+        } else {
+            false
+        }
+    })
 }
 
 /// Compiles a Sierra file to CASM.
