@@ -1034,14 +1034,43 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
             }
             TypeLongId::ImplType(impl_type_id) => {
                 let impl_type_id_rewrite_result = self.internal_rewrite(impl_type_id)?;
-                return Ok(
-                    if let Ok(Some(ty)) = self.db.impl_type_concrete_implized(*impl_type_id) {
-                        *value = ty.lookup_intern(self.db);
-                        RewriteResult::Modified
-                    } else {
-                        impl_type_id_rewrite_result
-                    },
-                );
+                let impl_id = impl_type_id.impl_id();
+                let trait_ty = impl_type_id.ty();
+                return Ok(match impl_id {
+                    ImplId::GenericParameter(_) => impl_type_id_rewrite_result,
+                    ImplId::Concrete(_) => {
+                        if let Ok(Some(ty)) = self.db.impl_type_concrete_implized(ImplTypeId::new(
+                            impl_id, trait_ty, self.db,
+                        )) {
+                            *value = self.rewrite(ty).no_err().lookup_intern(self.db);
+                            RewriteResult::Modified
+                        } else {
+                            impl_type_id_rewrite_result
+                        }
+                    }
+                    ImplId::ImplVar(var) => {
+                        let var_id = var.id(self.db);
+                        if let Some(ty) = self
+                            .data
+                            .impl_vars_trait_types
+                            .get(&var_id)
+                            .and_then(|mapping| mapping.get(&trait_ty))
+                        {
+                            *value = self.rewrite(*ty).no_err().lookup_intern(self.db);
+                        } else {
+                            let ty = self.new_type_var(
+                                self.data.stable_ptrs.get(&InferenceVar::Impl(var_id)).cloned(),
+                            );
+                            self.data
+                                .impl_vars_trait_types
+                                .entry(var_id)
+                                .or_default()
+                                .insert(trait_ty, ty);
+                            *value = ty.lookup_intern(self.db);
+                        }
+                        return Ok(RewriteResult::Modified);
+                    }
+                });
             }
             _ => {}
         }
