@@ -73,7 +73,7 @@
           },
           "cairo1.corelibPath": {
             "type": "string",
-            "description": "Path to the Cairo core library, used as a fallback.",
+            "description": "Path to the Cairo core library, used in non-Scarb projects.",
             "scope": "window"
           },
           "cairo1.languageServerExtraEnv": {
