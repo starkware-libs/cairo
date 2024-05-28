@@ -338,6 +338,7 @@ impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
     }
 }
 
+/// An iterator struct over a span collection.
 pub struct SpanIter<T> {
     span: Span<T>,
 }
@@ -356,7 +357,35 @@ impl SpanIterator<T> of Iterator<SpanIter<T>> {
 impl SpanIntoIterator<T> of core::iter::traits::iterator::IntoIterator<Span<T>> {
     type IntoIter = SpanIter<T>;
 
-    fn into_iter(ref self: Span<T>) -> SpanIter<T> {
+    fn into_iter(self: Span<T>) -> SpanIter<T> {
         SpanIter { span: self }
+    }
+}
+
+/// An iterator struct over an array collection.
+#[derive(Drop)]
+pub struct ArrayIter<T> {
+    array: Array<T>,
+}
+
+impl ArrayIterClone<T, +core::clone::Clone<T>, +Drop<T>> of core::clone::Clone<ArrayIter<T>> {
+    fn clone(self: @ArrayIter<T>) -> ArrayIter<T> {
+        ArrayIter { array: core::clone::Clone::clone(self.array), }
+    }
+}
+
+impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
+    type Item = T;
+    fn next(ref self: ArrayIter<T>) -> Option<T> {
+        self.array.pop_front()
+    }
+}
+
+#[feature("collections-into-iter")]
+impl ArrayIntoIterator<T> of core::iter::traits::iterator::IntoIterator<Array<T>> {
+    type IntoIter = ArrayIter<T>;
+
+    fn into_iter(self: Array<T>) -> ArrayIter<T> {
+        ArrayIter { array: self }
     }
 }
