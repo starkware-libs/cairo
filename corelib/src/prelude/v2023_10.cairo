@@ -21,7 +21,18 @@ pub use core::{starknet, starknet::System};
 pub use core::to_byte_array;
 pub use core::traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivEq, DivRem, Drop,
-    Felt252DictValue, Index, IndexView, Into, Mul, MulEq, Neg, Not, PanicDestruct, PartialEq,
+    Felt252DictValue, Into, Mul, MulEq, Neg, Not, PanicDestruct, PartialEq,
     PartialOrd, Rem, RemEq, Sub, SubEq, TryInto
 };
+
+#[deprecated(
+    feature: "deprecated-index-traits", note: "Use `core::ops::index::Index`.", since: "2.7.0"
+)]
+#[feature("deprecated-index-traits")]
+pub use core::traits::Index;
+#[deprecated(
+    feature: "deprecated-index-traits", note: "Use `core::ops::index::IndexView`.", since: "2.7.0"
+)]
+#[feature("deprecated-index-traits")]
+pub use core::traits::IndexView;
 pub use core::zeroable::NonZero;
