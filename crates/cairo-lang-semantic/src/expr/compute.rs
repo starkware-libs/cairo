@@ -1361,7 +1361,7 @@ fn compute_expr_indexed_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     let candidate_traits: Vec<_> = ["Index", "IndexView"]
         .iter()
-        .map(|trait_name| get_core_trait(ctx.db, CoreTraitContext::TopLevel, (*trait_name).into()))
+        .map(|trait_name| get_core_trait(ctx.db, CoreTraitContext::Ops, (*trait_name).into()))
         .collect();
     let (function_id, fixed_expr, mutability) = compute_method_function_call_data(
         ctx,

@@ -651,12 +651,15 @@ fn get_core_concrete_trait(
 pub enum CoreTraitContext {
     /// The top level core library context.
     TopLevel,
+    /// The ops core library context.
+    Ops,
 }
 
 /// Given a core library context and trait name, returns [TraitId].
 pub fn get_core_trait(db: &dyn SemanticGroup, context: CoreTraitContext, name: SmolStr) -> TraitId {
     let base_module = match context {
         CoreTraitContext::TopLevel => db.core_module(),
+        CoreTraitContext::Ops => core_submodule(db, "ops"),
     };
     // This should not fail if the corelib is present.
     let use_id = extract_matches!(
