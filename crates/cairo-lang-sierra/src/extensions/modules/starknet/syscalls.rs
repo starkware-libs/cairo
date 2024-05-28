@@ -231,14 +231,14 @@ impl NoGenericArgsGenericLibfunc for Sha256StateHandleDigestLibfunc {
     }
 }
 
-/// The inner type of the Sha256StateHandle.
+/// The inner type of the Sha256StateHandle: `Box<[u32; 8]>`.
 pub fn sha256_state_handle_unwrapped_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
     boxed_u32_fixed_array_ty(context, 8)
 }
 
-/// Returns a fixed type array of the given type and size.
+/// Returns `Box<[u32; size]>` according to the given size.
 fn boxed_u32_fixed_array_ty(
     context: &dyn SignatureSpecializationContext,
     size: i16,

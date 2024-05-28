@@ -67,7 +67,8 @@ use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Varia
 use crate::substitution::SemanticRewriter;
 use crate::types::{
     add_type_based_diagnostics, are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots,
-    resolve_type, verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
+    peel_snapshots_ex, resolve_type, verify_fixed_size_array_size, wrap_in_snapshots,
+    ConcreteTypeId,
 };
 use crate::{
     ConcreteEnumId, GenericArgumentId, GenericParam, Member, Mutability, Parameter,
@@ -1360,7 +1361,7 @@ fn compute_expr_indexed_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     let candidate_traits: Vec<_> = ["Index", "IndexView"]
         .iter()
-        .map(|trait_name| get_core_trait(ctx.db, CoreTraitContext::TopLevel, (*trait_name).into()))
+        .map(|trait_name| get_core_trait(ctx.db, CoreTraitContext::Ops, (*trait_name).into()))
         .collect();
     let (function_id, fixed_expr, mutability) = compute_method_function_call_data(
         ctx,
@@ -2271,7 +2272,7 @@ fn member_access_expr(
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
     let ty = ctx.reduce_ty(lexpr.ty());
-    let (n_snapshots, mut long_ty) = peel_snapshots(ctx.db, ty);
+    let (base_snapshots, mut long_ty) = peel_snapshots(ctx.db, ty);
     if let TypeLongId::ImplType(impl_type_id) = long_ty {
         let inference = &mut ctx.resolver.inference();
         let Ok(ty) = inference.reduce_impl_ty(impl_type_id) else {
@@ -2286,6 +2287,8 @@ fn member_access_expr(
         ctx.resolver.inference().solve().ok();
         long_ty = ctx.resolver.inference().rewrite(long_ty).no_err();
     }
+    let (additional_snapshots, long_ty) = peel_snapshots_ex(ctx.db, long_ty);
+    let n_snapshots = base_snapshots + additional_snapshots;
 
     match long_ty {
         TypeLongId::Concrete(concrete) => match concrete {
@@ -2391,12 +2394,12 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
 
     match resolved_item {
         ResolvedConcreteItem::Constant(constant_id) => Ok(Expr::Constant(ExprConstant {
-            constant_id,
-            ty: db.constant_semantic_data(constant_id)?.ty(),
+            const_value_id: db.constant_const_value(constant_id)?.intern(db),
+            ty: db.constant_const_type(constant_id)?,
             stable_ptr: path.stable_ptr().into(),
         })),
         ResolvedConcreteItem::ConstGenericParameter(generic_param_id) => {
-            Ok(Expr::ParamConstant(ExprParamConstant {
+            Ok(Expr::Constant(ExprConstant {
                 const_value_id: ConstValue::Generic(generic_param_id).intern(db),
                 ty: extract_matches!(
                     db.generic_param_semantic(generic_param_id)?,

@@ -799,7 +799,11 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
 /// Peels all wrapping Snapshot (`@`) from the type.
 /// Returns the number of peeled snapshots and the inner type.
 pub fn peel_snapshots(db: &dyn SemanticGroup, ty: TypeId) -> (usize, TypeLongId) {
-    let mut long_ty = ty.lookup_intern(db);
+    peel_snapshots_ex(db, ty.lookup_intern(db))
+}
+
+/// Same as `peel_snapshots`, but takes a `TypeLongId` instead of a `TypeId`.
+pub fn peel_snapshots_ex(db: &dyn SemanticGroup, mut long_ty: TypeLongId) -> (usize, TypeLongId) {
     let mut n_snapshots = 0;
     while let TypeLongId::Snapshot(ty) = long_ty {
         long_ty = ty.lookup_intern(db);

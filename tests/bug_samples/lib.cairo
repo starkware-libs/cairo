@@ -40,6 +40,7 @@ mod issue4318;
 mod issue4380;
 mod issue4897;
 mod issue4937;
+mod issue5043;
 mod issue5411;
 mod issue5438;
 mod issue5629;

@@ -21,6 +21,7 @@
         "bounded_int_add",
         "bounded_int_constrain",
         "bounded_int_div_rem",
+        "bounded_int_is_zero",
         "bounded_int_mul",
         "bounded_int_sub",
         "box_forward_snapshot",

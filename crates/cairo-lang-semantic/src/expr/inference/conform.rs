@@ -100,12 +100,6 @@ impl<'db> InferenceConform for Inference<'db> {
                     }
                 }
             }
-            TypeLongId::ImplType(impl_type_id) => {
-                if !matches!(impl_type_id.impl_id(), ImplId::GenericParameter(_)) {
-                    let ty = self.reduce_impl_ty(impl_type_id)?;
-                    return self.conform_ty_ex(ty0, ty, ty0_is_self);
-                }
-            }
             _ => {}
         }
         let n_snapshots = 0;
@@ -168,13 +162,8 @@ impl<'db> InferenceConform for Inference<'db> {
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
             TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, n_snapshots)),
-            TypeLongId::ImplType(impl_type_id) => {
-                if !matches!(impl_type_id.impl_id(), ImplId::GenericParameter(_)) {
-                    let ty = self.reduce_impl_ty(impl_type_id)?;
-                    self.conform_ty_ex(ty, ty1, ty0_is_self)
-                } else {
-                    Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
-                }
+            TypeLongId::ImplType(_) => {
+                Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
             TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),
             TypeLongId::Coupon(function_id0) => {

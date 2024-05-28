@@ -278,6 +278,9 @@ pub mod math;
 /// Num.
 pub mod num;
 
+/// General operations.
+pub mod ops;
+
 /// Cmp.
 pub mod cmp;
 
@@ -367,3 +370,6 @@ pub mod metaprogramming;
 
 /// Preludes.
 mod prelude;
+
+/// Iterators.
+pub mod iter;
