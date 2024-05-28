@@ -1077,3 +1077,36 @@ error: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait:
  --> lib.cairo:5:31
     fn foo(x: u32, y: u32) -> u32 {
                               ^*^
+
+//! > ==========================================================================
+
+//! > Type in IntoIterator Trait implementation do not Have implementation for Iterator Trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+pub struct Foo {}
+pub struct FooIter {}
+
+#[feature("collections-into-iter")]
+impl FooIntoIterator of core::iter::IntoIterator<Foo> {
+    type IntoIter = FooIter;
+
+    fn into_iter(self: Foo) -> FooIter {
+        FooIter {}
+    }
+}
+
+//! > expected_diagnostics
+error: Invalid into iterator trait implementation, Trait has no implementation in context: core::iter::traits::iterator::Iterator::<test::FooIter>.
+ --> lib.cairo:7:5
+    type IntoIter = FooIter;
+    ^**********************^

@@ -52,7 +52,7 @@ use super::type_aliases::{
     type_alias_semantic_data_helper, TypeAliasData,
 };
 use super::{resolve_trait_path, TraitOrImplContext};
-use crate::corelib::{copy_trait, drop_trait};
+use crate::corelib::{concrete_iterator_trait, copy_trait, drop_trait, into_iterator_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -66,7 +66,7 @@ use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{add_type_based_diagnostics, resolve_type, ImplTypeId};
+use crate::types::{add_type_based_diagnostics, get_impl_at_context, resolve_type, ImplTypeId};
 use crate::{
     semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
     FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
@@ -513,9 +513,32 @@ pub fn impl_semantic_definition_diagnostics(
                 impl_item_type_id.stable_ptr(db.upcast()),
             );
         }
-    }
-    for impl_item_constant_id in data.item_constant_asts.keys() {
-        diagnostics.extend(db.impl_constant_def_semantic_diagnostics(*impl_item_constant_id));
+        for impl_item_constant_id in data.item_constant_asts.keys() {
+            diagnostics.extend(db.impl_constant_def_semantic_diagnostics(*impl_item_constant_id));
+        }
+        // TODO(Tomer-StarkWare) Remove when proper trait bounds are implemented.
+        if diagnostics.error_count == 0 {
+            let concrete_trait =
+                db.priv_impl_declaration_data(impl_def_id).unwrap().concrete_trait.unwrap();
+            // check into iterator impl type implement iterator
+            if concrete_trait.trait_id(db) == into_iterator_trait(db) {
+                let (impl_item_type_id, _) = data.item_type_asts.iter().next().unwrap();
+                let ty = db.impl_type_def_resolved_type(*impl_item_type_id).unwrap();
+                let module_file_id = impl_def_id.module_file_id(db.upcast());
+                let generic_params = db.impl_def_generic_params(impl_def_id).unwrap();
+                let generic_params_ids =
+                    generic_params.iter().map(|generic_param| generic_param.id()).collect();
+                let lookup_context = ImplLookupContext::new(module_file_id.0, generic_params_ids);
+                if let Err(err) =
+                    get_impl_at_context(db, lookup_context, concrete_iterator_trait(db, ty), None)
+                {
+                    diagnostics.report(
+                        impl_item_type_id.stable_ptr(db.upcast()),
+                        SemanticDiagnosticKind::InvalidIntoIteratorTraitImpl(err),
+                    );
+                }
+            }
+        }
     }
     diagnostics.build()
 }
