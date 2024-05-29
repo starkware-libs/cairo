@@ -20,10 +20,36 @@ pub use core::serde::Serde;
 pub use core::{starknet, starknet::System};
 pub use core::to_byte_array;
 pub use core::traits::{
-    Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivEq, DivRem, Drop,
-    Felt252DictValue, Into, Mul, MulEq, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, RemEq,
-    Sub, SubEq, TryInto
+    Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
+    Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto
 };
+
+
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0"
+)]
+#[feature("deprecated-op-assign-traits")]
+pub use core::traits::AddEq;
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::SubAssign`.", since: "2.7.0"
+)]
+#[feature("deprecated-op-assign-traits")]
+pub use core::traits::SubEq;
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::MulAssign`.", since: "2.7.0"
+)]
+#[feature("deprecated-op-assign-traits")]
+pub use core::traits::MulEq;
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::DivAssign`.", since: "2.7.0"
+)]
+#[feature("deprecated-op-assign-traits")]
+pub use core::traits::DivEq;
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::RemAssign`.", since: "2.7.0"
+)]
+#[feature("deprecated-op-assign-traits")]
+pub use core::traits::RemEq;
 
 #[deprecated(
     feature: "deprecated-index-traits", note: "Use `core::ops::index::Index`.", since: "2.7.0"
