@@ -66,13 +66,22 @@ extern fn init_circuit_data<C>() -> CircuitInputAccumulator<C> implicits(RangeCh
 /// Returns the descriptor for the circuit.
 extern fn get_circuit_descriptor<C>() -> CircuitDescriptor<C> nopanic;
 
+
+/// The result of filling an input in the circuit instance's data.
+pub enum EvalCircuitResult<C> {
+    /// The circuit evaluation failed.
+    Failure: CircuitFailureGuarantee,
+    /// The circuit was evaluated successfully.
+    Success: CircuitOutputs<C>,
+}
+
 extern fn eval_circuit<C>(
     descriptor: CircuitDescriptor<C>,
     data: CircuitData<C>,
     modulus: NonZero<u384>,
     zero: ConstZero,
     one: ConstOne,
-) -> CircuitOutputs<C> implicits(AddMod, MulMod) nopanic;
+) -> EvalCircuitResult<C> implicits(AddMod, MulMod) nopanic;
 
 /// Fill an input in the circuit instance's data.
 // TODO(ilya): Consider using RangeCheck96Guarantee for the inputs.
@@ -182,7 +191,7 @@ pub trait CircuitDescriptorTrait<Descriptor> {
     /// Evaluates the circuit with the given data and modulus.
     fn eval(
         self: Descriptor, data: CircuitData<Self::CircuitType>, modulus: NonZero<u384>
-    ) -> core::circuit::CircuitOutputs<Self::CircuitType>;
+    ) -> core::circuit::EvalCircuitResult<Self::CircuitType>;
 }
 
 impl CircuitDescriptorImpl<C> of CircuitDescriptorTrait<CircuitDescriptor<C>> {
@@ -190,7 +199,7 @@ impl CircuitDescriptorImpl<C> of CircuitDescriptorTrait<CircuitDescriptor<C>> {
 
     fn eval(
         self: CircuitDescriptor<C>, data: CircuitData<C>, modulus: NonZero<u384>
-    ) -> core::circuit::CircuitOutputs<C> {
+    ) -> core::circuit::EvalCircuitResult<C> {
         eval_circuit::<C>(self, data, modulus, 0, 1)
     }
 }
@@ -208,3 +217,10 @@ extern type CircuitFailureGuarantee;
 extern fn circuit_failure_guarantee_verify(
     guarantee: CircuitFailureGuarantee, zero: ConstZero, one: ConstOne,
 ) implicits(RangeCheck96, MulMod) nopanic;
+
+
+pub impl DestructFailureGuarantee of Destruct<CircuitFailureGuarantee> {
+    fn destruct(self: CircuitFailureGuarantee) nopanic {
+       circuit_failure_guarantee_verify(self, 0, 1)
+    }
+}
