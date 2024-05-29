@@ -41,10 +41,11 @@ define_type_hierarchy! {
         CircuitData(CircuitData),
         CircuitOutputs(CircuitOutputs),
         CircuitDescriptor(CircuitDescriptor),
+        CircuitFailureGuarantee(CircuitFailureGuarantee),
         CircuitInput(CircuitInput),
         CircuitInputAccumulator(CircuitInputAccumulator),
         InverseGate(InverseGate),
-         MulModGate(MulModGate),
+        MulModGate(MulModGate),
     }, CircuitTypeConcrete
 }
 
@@ -55,6 +56,7 @@ define_libfunc_hierarchy! {
          GetDescriptor(GetCircuitDescriptorLibFunc),
          InitCircuitData(InitCircuitDataLibFunc),
          U384IsZero(U384IsZeroLibfunc),
+         FailureGuaranteeVerify(CircuitFailureGuaranteeVerifyLibFuncWrappedLibFunc),
     }, CircuitConcreteLibfunc
 }
 
@@ -426,6 +428,54 @@ impl ConcreteType for ConcreteCircuitOutputs {
     }
 }
 
+/// A type whose destruction guarantees that the circuit instance invocation failed.
+#[derive(Default)]
+pub struct CircuitFailureGuarantee {}
+impl NamedType for CircuitFailureGuarantee {
+    type Concrete = ConcreteCircuitFailureGuarantee;
+    const ID: GenericTypeId = GenericTypeId::new_inline("CircuitFailureGuarantee");
+
+    fn specialize(
+        &self,
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Self::Concrete::new(context, args)
+    }
+}
+
+pub struct ConcreteCircuitFailureGuarantee {
+    pub info: TypeInfo,
+}
+
+impl ConcreteCircuitFailureGuarantee {
+    fn new(
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self, SpecializationError> {
+        let circ_ty = args_as_single_type(args)?;
+        validate_is_circuit(context, circ_ty)?;
+        Ok(Self {
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId {
+                    generic_id: "CircuitFailureGuarantee".into(),
+                    generic_args: args.to_vec(),
+                },
+                duplicatable: false,
+                droppable: false,
+                storable: true,
+                zero_sized: false,
+            },
+        })
+    }
+}
+
+impl ConcreteType for ConcreteCircuitFailureGuarantee {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
+}
+
 /// A type representing a circuit instance data with all the inputs filled.
 #[derive(Default)]
 pub struct CircuitDescriptor {}
@@ -766,6 +816,50 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
 }
 
 pub type EvalCircuitLibFunc = WrapSignatureAndTypeGenericLibfunc<EvalCircuitLibFuncWrapped>;
+
+/// Verifies the the circuit evaluation has failed.
+#[derive(Default)]
+pub struct CircuitFailureGuaranteeVerifyLibFuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for CircuitFailureGuaranteeVerifyLibFuncWrapped {
+    const STR_ID: &'static str = "circuit_failure_guarantee_verify";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let range_check96_type = context.get_concrete_type(RangeCheck96Type::id(), &[])?;
+        let mul_mod_builtin_ty = context.get_concrete_type(MulModType::id(), &[])?;
+
+        let guarantee_ty = context
+            .get_concrete_type(CircuitFailureGuarantee::id(), &[GenericArg::Type(ty.clone())])?;
+
+        let zero = bounded_int_ty(context, BigInt::zero(), BigInt::zero())?;
+        let one = bounded_int_ty(context, BigInt::one(), BigInt::one())?;
+
+        Ok(LibfuncSignature::new_non_branch(
+            vec![range_check96_type.clone(), mul_mod_builtin_ty.clone(), guarantee_ty, zero, one],
+            vec![
+                OutputVarInfo {
+                    ty: range_check96_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: mul_mod_builtin_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 1,
+                    }),
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+pub type CircuitFailureGuaranteeVerifyLibFuncWrappedLibFunc =
+    WrapSignatureAndTypeGenericLibfunc<CircuitFailureGuaranteeVerifyLibFuncWrapped>;
 
 /// Type for add mod builtin.
 #[derive(Default)]
