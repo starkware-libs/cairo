@@ -44,10 +44,9 @@ fn build_init_circuit_data(
     let [expr_rc96] = builder.try_get_refs()?;
     let rc96 = expr_rc96.try_unpack_single()?;
 
-    let CircuitInfo { n_inputs, values, .. } =
-        builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
-
-    let n_values = values.len() + 1;
+    let circ_info = builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
+    let n_inputs = circ_info.n_inputs;
+    let rc96_usage = circ_info.rc96_usage();
 
     let mut casm_builder = CasmBuilder::default();
 
@@ -58,10 +57,10 @@ fn build_init_circuit_data(
         const value_size = VALUE_SIZE;
         let inputs_start = rc96 + value_size;
         // This size of all the inputs including the input 1.
-        const inputs_size = (1+ n_inputs) * VALUE_SIZE;
+        const inputs_size = (1 + n_inputs) * VALUE_SIZE;
         let inputs_end = rc96 + inputs_size;
-        const values_size = n_values * VALUE_SIZE;
-        let vals_end = rc96 + values_size;
+        const rc96_usage = rc96_usage;
+        let vals_end = rc96 + rc96_usage;
     };
 
     Ok(builder.build_from_casm_builder(
@@ -186,14 +185,12 @@ fn build_circuit_eval(
         deref one;
     };
 
-    let CircuitInfo { add_offsets, mul_offsets, values, n_inputs } =
+    let CircuitInfo { add_offsets, mul_offsets, n_inputs, .. } =
         builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
-
-    let n_values = values.len() + 1;
 
     casm_build_extend! {casm_builder,
         // input size including the input 1.
-        const inputs_size = (n_inputs +1 ) * VALUE_SIZE;
+        const inputs_size = (n_inputs + 1) * VALUE_SIZE;
         tempvar values = inputs_end - inputs_size;
 
         // Add the input 1 at the end of the inputs.
@@ -201,52 +198,88 @@ fn build_circuit_eval(
         assert zero = values[1];
         assert zero = values[2];
         assert zero = values[3];
+    };
 
-
-        hint CoreHint::EvalCircuit {
-             values_ptr: values,
-             n_add_mods: n_adds, add_mod_offsets: add_mod_offsets,
-             n_mul_mods: n_muls, mul_mod_offsets: mul_mod_offsets,
-             modulus: modulus0
-        };
-    }
-
-    if !add_offsets.is_empty() {
-        casm_build_extend! {casm_builder,
-            assert modulus0 = add_mod[0];
-            assert modulus1 = add_mod[1];
-            assert modulus2 = add_mod[2];
-            assert modulus3 = add_mod[3];
-            assert values = add_mod[4];
-            assert add_mod_offsets = add_mod[5];
-            assert n_adds = add_mod[6];
-        };
-    }
-
-    if !mul_offsets.is_empty() {
-        casm_build_extend! {casm_builder,
-            assert modulus0 = mul_mod[0];
-            assert modulus1 = mul_mod[1];
-            assert modulus2 = mul_mod[2];
-            assert modulus3 = mul_mod[3];
-            assert values = mul_mod[4];
-            assert mul_mod_offsets = mul_mod[5];
-            assert n_muls = mul_mod[6];
-        };
-    }
     casm_build_extend! {casm_builder,
+        assert modulus0 = add_mod[0];
+        assert modulus1 = add_mod[1];
+        assert modulus2 = add_mod[2];
+        assert modulus3 = add_mod[3];
+        assert values = add_mod[4];
+        assert add_mod_offsets = add_mod[5];
+        assert n_adds = add_mod[6];
+
+
+
+        tempvar computed_gates;
+        hint CoreHint::EvalCircuit {
+            values_ptr: values,
+            n_add_mods: n_adds, add_mod_offsets: add_mod_offsets,
+            n_mul_mods: n_muls, mul_mod_offsets: mul_mod_offsets,
+            modulus: modulus0
+        } into {computed_gates_out: computed_gates};
+
+        assert modulus0 = mul_mod[0];
+        assert modulus1 = mul_mod[1];
+        assert modulus2 = mul_mod[2];
+        assert modulus3 = mul_mod[3];
+        assert values = mul_mod[4];
+        assert mul_mod_offsets = mul_mod[5];
+        assert computed_gates = mul_mod[6];
+
+
+
         const add_mod_usage = (BUILTIN_INSTANCE_SIZE * add_offsets.len());
         let new_add_mod = add_mod + add_mod_usage;
+
+
+        // Compute the number of mul gates that were not evaluated.
+        tempvar skipped_gates = n_muls - computed_gates;
+        jump Failure if skipped_gates != 0;
+
+
         const mul_mod_usage = (BUILTIN_INSTANCE_SIZE * mul_offsets.len());
         let new_mul_mod = mul_mod + mul_mod_usage;
 
-        const values_size = n_values * VALUE_SIZE;
-        let new_data = values + values_size;
+
+        jump Success;
     };
+
+    casm_build_extend! {casm_builder,
+        Failure:
+
+        const instance_size = BUILTIN_INSTANCE_SIZE;
+        tempvar mul_mod_usage = computed_gates * instance_size;
+        let failure_mul_mod = mul_mod + mul_mod_usage;
+
+    };
+
+    let success_handle = get_non_fallthrough_statement_id(&builder);
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[new_add_mod], &[new_mul_mod], &[new_data]], None)],
+        [
+            // Failure.
+            (
+                "Fallthrough",
+                &[
+                    &[new_add_mod],
+                    &[failure_mul_mod],
+                    &[
+                        mul_mod_offsets,
+                        n_muls,
+                        computed_gates,
+                        values,
+                        modulus0,
+                        modulus1,
+                        modulus2,
+                        modulus3,
+                    ],
+                ],
+                None,
+            ),
+            ("Success", &[&[new_add_mod], &[new_mul_mod], &[values]], Some(success_handle)),
+        ],
         Default::default(),
     ))
 }
@@ -293,11 +326,8 @@ fn build_failure_guarantee_verify(
 
     let instance_size = BUILTIN_INSTANCE_SIZE.into_or_panic();
     add_input_variables! {casm_builder,
-
         buffer(rc_usage) rc96;
         buffer(instance_size) mul_mod;
-
-
         deref orig_mul_mod_offsets;
 
         deref modulus0;
@@ -323,7 +353,6 @@ fn build_failure_guarantee_verify(
         assert zero = failing_gate_ptr[2];
 
         tempvar zero_offset = rc96 - values;
-
         // Write the value 0 to rc96.
         assert zero = *(rc96++);
         assert zero = *(rc96++);
@@ -342,9 +371,6 @@ fn build_failure_guarantee_verify(
         assert fail_idx = *(rc96++);
         tempvar diff = n_muls - fail_idx;
         assert diff = *(rc96++);
-
-
-
 
         assert modulus0 = mul_mod[0];
         assert modulus1 = mul_mod[1];

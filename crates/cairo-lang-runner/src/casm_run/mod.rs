@@ -2090,6 +2090,7 @@ pub fn execute_core_hint(
             n_mul_mods,
             mul_mod_offsets,
             modulus,
+            computed_gates_out,
         } => {
             let values_ptr = extract_relocatable(vm, values_ptr)?;
             let add_mod_offsets = extract_relocatable(vm, add_mod_offsets)?;
@@ -2099,7 +2100,7 @@ pub fn execute_core_hint(
             let modulus_ptr =
                 cell_ref_to_relocatable(extract_matches!(modulus, ResOperand::Deref), vm);
 
-            circuit::fill_values(
+            let n_computed_gates = circuit::fill_values(
                 vm,
                 values_ptr,
                 add_mod_offsets,
@@ -2108,6 +2109,8 @@ pub fn execute_core_hint(
                 n_mul_mods,
                 modulus_ptr,
             );
+
+            insert_value_to_cellref!(vm, computed_gates_out, Felt252::from(n_computed_gates))?;
         }
     };
     Ok(())
