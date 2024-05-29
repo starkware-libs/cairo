@@ -622,6 +622,12 @@ pub fn concrete_panic_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> Conc
     get_core_concrete_trait(db, "PanicDestruct".into(), vec![GenericArgumentId::Type(ty)])
 }
 
+pub fn concrete_iterator_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    let trait_id = get_core_trait(db, CoreTraitContext::Iterator, "Iterator".into());
+    semantic::ConcreteTraitLongId { trait_id, generic_args: vec![GenericArgumentId::Type(ty)] }
+        .intern(db)
+}
+
 pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, CoreTraitContext::TopLevel, "Copy".into())
 }
@@ -641,6 +647,10 @@ pub fn panic_destruct_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
         "PanicDestruct".into(),
         "panic_destruct".into(),
     )
+}
+
+pub fn into_iterator_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, CoreTraitContext::Iterator, "IntoIterator".into())
 }
 
 pub fn numeric_literal_trait(db: &dyn SemanticGroup) -> TraitId {
@@ -663,6 +673,8 @@ pub enum CoreTraitContext {
     TopLevel,
     /// The ops core library context.
     Ops,
+    /// The iterator core library context.
+    Iterator,
 }
 
 /// Given a core library context and trait name, returns [TraitId].
@@ -670,6 +682,7 @@ pub fn get_core_trait(db: &dyn SemanticGroup, context: CoreTraitContext, name: S
     let base_module = match context {
         CoreTraitContext::TopLevel => db.core_module(),
         CoreTraitContext::Ops => core_submodule(db, "ops"),
+        CoreTraitContext::Iterator => core_submodule(db, "iter"),
     };
     // This should not fail if the corelib is present.
     let use_id = extract_matches!(
