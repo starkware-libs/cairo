@@ -1,12 +1,13 @@
 use cairo_lang_defs::ids::{
-    ConstantId, GenericParamId, GenericTypeId, ImplAliasId, ImplDefId, ModuleId, ModuleItemId,
-    ModuleTypeAliasId, TopLevelLanguageElementId, TraitFunctionId, TraitId, VarId,
+    ConstantId, GenericTypeId, ImplAliasId, ImplDefId, ModuleId, ModuleItemId, ModuleTypeAliasId,
+    TopLevelLanguageElementId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_utils::LookupIntern;
 
 use crate::db::SemanticGroup;
+use crate::items::constant::ConstValueId;
 use crate::items::functions::GenericFunctionId;
 use crate::items::imp::ImplId;
 use crate::items::trt::ConcreteTraitGenericFunctionId;
@@ -20,7 +21,7 @@ use crate::{ConcreteTraitId, ConcreteVariant, FunctionId, TypeId, TypeLongId, Va
 #[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum ResolvedGenericItem {
-    Constant(ConstantId),
+    GenericConstant(ConstantId),
     Module(ModuleId),
     GenericFunction(GenericFunctionId),
     TraitFunction(TraitFunctionId),
@@ -39,7 +40,7 @@ impl ResolvedGenericItem {
         module_item: ModuleItemId,
     ) -> Maybe<ResolvedGenericItem> {
         Ok(match module_item {
-            ModuleItemId::Constant(id) => ResolvedGenericItem::Constant(id),
+            ModuleItemId::Constant(id) => ResolvedGenericItem::GenericConstant(id),
             ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
             ModuleItemId::Use(id) => {
                 // Note that `use_resolved_item` needs to be called before
@@ -67,7 +68,7 @@ impl ResolvedGenericItem {
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
         let defs_db = db.upcast();
         match self {
-            ResolvedGenericItem::Constant(id) => id.full_path(defs_db),
+            ResolvedGenericItem::GenericConstant(_) => "".into(),
             ResolvedGenericItem::Module(id) => id.full_path(defs_db),
             ResolvedGenericItem::GenericFunction(id) => id.format(db),
             ResolvedGenericItem::TraitFunction(id) => id.full_path(defs_db),
@@ -85,8 +86,7 @@ impl ResolvedGenericItem {
 #[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum ResolvedConcreteItem {
-    Constant(ConstantId),
-    ConstGenericParameter(GenericParamId),
+    Constant(ConstValueId),
     Module(ModuleId),
     Function(FunctionId),
     TraitFunction(ConcreteTraitGenericFunctionId),
@@ -99,8 +99,7 @@ pub enum ResolvedConcreteItem {
 impl ResolvedConcreteItem {
     pub fn generic(&self, db: &dyn SemanticGroup) -> Option<ResolvedGenericItem> {
         Some(match self {
-            ResolvedConcreteItem::Constant(id) => ResolvedGenericItem::Constant(*id),
-            ResolvedConcreteItem::ConstGenericParameter(_) => return None,
+            ResolvedConcreteItem::Constant(_) => return None,
             ResolvedConcreteItem::Module(item) => ResolvedGenericItem::Module(*item),
             ResolvedConcreteItem::Function(function) => ResolvedGenericItem::GenericFunction(
                 function.lookup_intern(db).function.generic_function,

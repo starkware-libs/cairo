@@ -728,7 +728,9 @@ impl<'db> Resolver<'db> {
         generic_args_syntax: Option<Vec<ast::GenericArg>>,
     ) -> Maybe<ResolvedConcreteItem> {
         Ok(match generic_item {
-            ResolvedGenericItem::Constant(id) => ResolvedConcreteItem::Constant(id),
+            ResolvedGenericItem::GenericConstant(id) => {
+                ResolvedConcreteItem::Constant(self.db.constant_const_value(id)?.intern(self.db))
+            }
             ResolvedGenericItem::Module(module_id) => {
                 if generic_args_syntax.is_some() {
                     return Err(diagnostics.report(identifier, UnexpectedGenericArgs));
@@ -850,9 +852,9 @@ impl<'db> Resolver<'db> {
                 GenericKind::Type => ResolvedConcreteItem::Type(
                     TypeLongId::GenericParameter(*generic_param_id).intern(self.db),
                 ),
-                GenericKind::Const => {
-                    ResolvedConcreteItem::ConstGenericParameter(*generic_param_id)
-                }
+                GenericKind::Const => ResolvedConcreteItem::Constant(
+                    ConstValue::Generic(*generic_param_id).intern(self.db),
+                ),
                 GenericKind::Impl => {
                     ResolvedConcreteItem::Impl(ImplId::GenericParameter(*generic_param_id))
                 }
@@ -1123,7 +1125,7 @@ impl<'db> Resolver<'db> {
                 );
                 let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
 
-                let (_, const_value) = resolve_const_expr_and_evaluate(
+                let const_value = resolve_const_expr_and_evaluate(
                     self.db,
                     &mut ctx,
                     &value,
@@ -1135,8 +1137,8 @@ impl<'db> Resolver<'db> {
                 std::mem::swap(&mut ctx.resolver.data, &mut self.data);
 
                 match const_value {
-                    ConstValue::Int(value) => {
-                        GenericArgumentId::Constant(ConstValue::Int(value).intern(self.db))
+                    ConstValue::Int(value, ty) => {
+                        GenericArgumentId::Constant(ConstValue::Int(value, ty).intern(self.db))
                     }
                     ConstValue::Generic(generic_param_id) => GenericArgumentId::Constant(
                         ConstValue::Generic(generic_param_id).intern(self.db),

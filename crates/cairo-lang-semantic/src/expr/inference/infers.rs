@@ -7,6 +7,7 @@ use super::canonic::ResultNoErrEx;
 use super::conform::InferenceConform;
 use super::{Inference, InferenceError, InferenceResult};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
+use crate::items::generics::GenericParamConst;
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitTypeId};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
@@ -341,8 +342,8 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
                     lookup_context,
                 )?))
             }
-            GenericParam::Const(_) => {
-                Ok(GenericArgumentId::Constant(self.new_const_var(stable_ptr)))
+            GenericParam::Const(GenericParamConst { ty, .. }) => {
+                Ok(GenericArgumentId::Constant(self.new_const_var(stable_ptr, *ty)))
             }
             GenericParam::NegImpl(_) => Ok(GenericArgumentId::NegImpl),
         }
