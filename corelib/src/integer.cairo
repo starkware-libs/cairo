@@ -2094,6 +2094,7 @@ impl U256Div = by_div_rem::DivImpl<u256>;
 impl U256Rem = by_div_rem::RemImpl<u256>;
 
 // Implementations for `*Eq` operations.
+#[feature("deprecated-op-assign-traits")]
 mod op_eq_by_op {
     pub impl AddEqImpl<T, +Add<T>> of AddEq<T> {
         fn add_eq(ref self: T, other: T) {
