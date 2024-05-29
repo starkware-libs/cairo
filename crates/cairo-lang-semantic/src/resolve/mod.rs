@@ -1110,12 +1110,12 @@ impl<'db> Resolver<'db> {
                 let mut resolver =
                     Resolver::new(self.db, self.module_file_id, InferenceId::Canonical);
 
-                for param in self.generic_params.iter() {
-                    resolver.add_generic_param(*param);
-                }
+                // using the resolver's data in the constant computation context, so impvars are
+                // added to the correct inference.
+                std::mem::swap(&mut resolver.data, &mut self.data);
 
                 let mut ctx =
-                    ComputationContext::new(self.db, diagnostics, resolver, None, environment);
+                    ComputationContext::new(resolver.db, diagnostics, resolver, None, environment);
                 let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
 
                 let (_, const_value) = resolve_const_expr_and_evaluate(
@@ -1125,6 +1125,8 @@ impl<'db> Resolver<'db> {
                     generic_arg_syntax.stable_ptr().untyped(),
                     const_param.ty,
                 );
+
+                std::mem::swap(&mut ctx.resolver.data, &mut self.data);
 
                 match const_value {
                     ConstValue::Int(value) => {
