@@ -532,6 +532,12 @@ pub fn core_libfunc_cost(
                 pre_cost: PreCost::n_builtins(CostTokenType::RangeCheck96, rc_usage),
             }]
         }
+        Circuit(CircuitConcreteLibfunc::FailureGuaranteeVerify(_)) => {
+            vec![BranchCost::Regular {
+                const_cost: ConstCost::steps(33),
+                pre_cost: PreCost::n_builtins(CostTokenType::RangeCheck96, 6),
+            }]
+        }
     }
 }
 
