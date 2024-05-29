@@ -29,6 +29,10 @@
         "extensions": [
           ".cairo"
         ],
+        "icon": {
+          "light": "./icons/cairo-light.svg",
+          "dark": "./icons/cairo-dark.svg"
+        },
         "configuration": "./language-configuration.json"
       }
     ],
