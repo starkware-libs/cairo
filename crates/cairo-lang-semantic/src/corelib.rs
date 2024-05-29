@@ -73,8 +73,9 @@ pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
 /// Returns the concrete type of a bounded int type with a given min and max.
 pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeId {
     let internal = core_submodule(db, "internal");
-    let lower_id = ConstValue::Int(min).intern(db);
-    let upper_id = ConstValue::Int(max).intern(db);
+    let size_ty = core_felt252_ty(db);
+    let lower_id = ConstValue::Int(min, size_ty).intern(db);
+    let upper_id = ConstValue::Int(max, size_ty).intern(db);
     try_get_ty_by_name(
         db,
         internal,
@@ -108,6 +109,15 @@ pub fn core_option_ty(db: &dyn SemanticGroup, some_type: TypeId) -> TypeId {
         core_submodule(db, "option"),
         "Option".into(),
         vec![GenericArgumentId::Type(some_type)],
+    )
+}
+
+pub fn core_box_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
+    get_ty_by_name(
+        db,
+        core_submodule(db, "box"),
+        "Box".into(),
+        vec![GenericArgumentId::Type(inner_type)],
     )
 }
 
@@ -831,6 +841,7 @@ fn try_extract_bounded_int_type_ranges(
     else {
         return None;
     };
-    let to_int = |id| try_extract_matches!(db.lookup_intern_const_value(id), ConstValue::Int);
+    let to_int = |id| db.lookup_intern_const_value(id).into_int();
+
     Some((to_int(min)?, to_int(max)?))
 }

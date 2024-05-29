@@ -136,7 +136,10 @@ fn create_panic_block(
                 location,
             }),
             Statement::Const(StatementConst {
-                value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes())),
+                value: ConstValue::Int(
+                    BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes()),
+                    core_felt252_ty(db.upcast()),
+                ),
                 output: out_of_gas_err_var,
             }),
             Statement::Call(StatementCall {

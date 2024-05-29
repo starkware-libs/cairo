@@ -6,7 +6,7 @@ use core::gas::withdraw_gas;
 use core::option::OptionTrait;
 use core::serde::Serde;
 use core::metaprogramming::TypeEqual;
-use core::iter::traits::iterator::Iterator;
+use core::iter::Iterator;
 
 #[derive(Drop)]
 pub extern type Array<T>;
@@ -355,7 +355,7 @@ impl SpanIterator<T> of Iterator<SpanIter<T>> {
 }
 
 #[feature("collections-into-iter")]
-impl SpanIntoIterator<T> of core::iter::traits::iterator::IntoIterator<Span<T>> {
+impl SpanIntoIterator<T> of core::iter::IntoIterator<Span<T>> {
     type IntoIter = SpanIter<T>;
 
     fn into_iter(self: Span<T>) -> SpanIter<T> {
@@ -383,7 +383,7 @@ impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
 }
 
 #[feature("collections-into-iter")]
-impl ArrayIntoIterator<T> of core::iter::traits::iterator::IntoIterator<Array<T>> {
+impl ArrayIntoIterator<T> of core::iter::IntoIterator<Array<T>> {
     type IntoIter = ArrayIter<T>;
 
     fn into_iter(self: Array<T>) -> ArrayIter<T> {
