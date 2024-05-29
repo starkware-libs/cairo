@@ -1,5 +1,6 @@
 use std::ops::{Shl, Shr};
 
+use cairo_lang_sierra::extensions::circuit::CircuitFailureGuaranteeVerifyLibFuncWrappedLibFunc;
 use cairo_lang_sierra::extensions::starknet::interoperability::ContractAddressTryFromFelt252Libfunc;
 use cairo_lang_sierra::extensions::starknet::secp256::Secp256GetPointFromXLibfunc;
 use cairo_lang_sierra::extensions::starknet::secp256k1::Secp256k1;
@@ -188,6 +189,7 @@ static SERDE_SUPPORTED_LONG_IDS: Lazy<OrderedHashSet<&'static str>> = Lazy::new(
         StorageAddressTryFromFelt252Trait::STR_ID,
         Secp256GetPointFromXLibfunc::<Secp256k1>::STR_ID,
         Secp256GetPointFromXLibfunc::<Secp256r1>::STR_ID,
+        CircuitFailureGuaranteeVerifyLibFuncWrappedLibFunc::STR_ID,
     ])
 });
 /// A mapping of all the long names when fixing them from the hashed keccak representation.
