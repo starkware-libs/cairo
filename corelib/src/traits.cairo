@@ -124,10 +124,16 @@ pub trait Not<T> {
 /// The following two traits are for implementing the [] operator. Only one should be implemented
 /// for each type. Both are not consuming of self, the first gets a snapshot of the object and
 /// the second gets ref.
+#[deprecated(
+    feature: "deprecated-index-traits", note: "Use `core::ops::index::IndexView`.", since: "2.7.0"
+)]
 pub trait IndexView<C, I, V> {
     fn index(self: @C, index: I) -> V;
 }
 
+#[deprecated(
+    feature: "deprecated-index-traits", note: "Use `core::ops::index::Index`.", since: "2.7.0"
+)]
 pub trait Index<C, I, V> {
     fn index(ref self: C, index: I) -> V;
 }

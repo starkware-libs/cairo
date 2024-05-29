@@ -1,3 +1,4 @@
+#[feature("deprecated-index-traits")]
 use core::traits::IndexView;
 
 use core::box::BoxTrait;
