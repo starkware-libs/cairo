@@ -194,3 +194,17 @@ impl CircuitDescriptorImpl<C> of CircuitDescriptorTrait<CircuitDescriptor<C>> {
         eval_circuit::<C>(self, data, modulus, 0, 1)
     }
 }
+
+
+/// A type that contain that is used to guarantee that the circuit evaluation has failed.
+///
+/// The guarantee is verified by `circuit_failure_guarantee_verify`, which is the only way to
+/// destruct this type. This way, one can trust that the guarantee holds although it has not yet
+/// been verified.
+extern type CircuitFailureGuarantee;
+
+
+/// Verifies the guarantee in order to drop it.
+extern fn circuit_failure_guarantee_verify(
+    guarantee: CircuitFailureGuarantee, zero: ConstZero, one: ConstOne,
+) implicits(RangeCheck96, MulMod) nopanic;
