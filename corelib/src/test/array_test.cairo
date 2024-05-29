@@ -176,3 +176,43 @@ fn test_span_multi_pop() {
     let mut span = array![10, 11, 12, 13].span();
     assert!(debox(span.multi_pop_back::<3>()) == Option::Some(@[11, 12, 13]));
 }
+
+mod into_trait_impls {
+    #[test]
+    fn array_into_span() {
+        let array = array![1, 2, 3];
+
+        let span: Span<_> = array.into();
+
+        assert_eq!(span, array![1, 2, 3].span())
+    }
+
+    
+    #[test]
+    fn span_into_array() {
+        let span = array![1, 2, 3].span();
+
+        let array: Array<_> = span.into();
+
+        assert_eq!(array, array![1, 2, 3]); 
+    }
+
+    
+    #[test]
+    fn array_snap_into_span() {
+        let array_snap = @array![1, 2, 3];
+
+        let span: Span<_> = array_snap.into();
+
+        assert_eq!(span, array![1, 2, 3].span())
+    }
+
+    #[test]
+    fn span_into_array_snap() {
+        let span = array![1, 2, 3].span();
+
+        let array_snap: @Array<_> = span.into();
+
+        assert_eq!(array_snap, @array![1, 2, 3]); 
+    }
+}
