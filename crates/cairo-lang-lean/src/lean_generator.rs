@@ -120,6 +120,12 @@ impl FuncBlock {
     fn has_args(&self) -> bool {
         0 < self.args.len()
     }
+
+    /// Returns true if the given AP offset points to a non-local variable for this
+    /// block, that is, a variable which was allocated before this block.
+    fn is_non_local_ap_offset(&self, ap_offset: i16) -> bool {
+        ap_offset < 0 || (ap_offset as usize) < self.start_local_ap
+    }
 }
 
 struct RetArgs {
@@ -1387,6 +1393,18 @@ impl<'a> LeanFuncInfo<'a> {
             |(name, expr)| (name.clone(), cell_expr_to_lean(expr, false, is_vm, use_ap).clone())
         ).collect_vec()
     }
+
+    /// Given an AP offset, this function returns the name of the block argument at the given offset.
+    fn get_arg_by_offset(&self, block: &FuncBlock, offset: i16) -> Option<String> {
+
+        for (arg_name, expr) in self.get_block_args_and_exprs(block) {
+            if offset == get_ref_from_deref(&expr).expect("Failed to find argument offset.").1 {
+                return Some(arg_name);
+            }
+        }
+
+        None
+    }
 }
 
 // Rebinding variables and assignments
@@ -1670,7 +1688,7 @@ trait LeanGenerator {
         pc: usize,
         op_size: usize,
         indent: usize,
-    );
+    ) -> usize;
 
     fn generate_label_block(
         &mut self,
@@ -1688,6 +1706,8 @@ trait LeanGenerator {
         cond_var: &(String, Var),
         is_eq: bool,
         lean_info: &LeanFuncInfo,
+        // The block in which the jnz statement was called.
+        calling_block: &FuncBlock,
         rebind: &mut VarRebind,
         pc: usize,
         indent: usize,
@@ -1947,8 +1967,9 @@ impl LeanGenerator for AutoSpecs {
         pc: usize,
         op_size: usize,
         indent: usize,
-    ) {
+    ) -> usize {
         // Do nothing.
+        indent
     }
 
     fn generate_branch_intro(
@@ -1956,6 +1977,7 @@ impl LeanGenerator for AutoSpecs {
         cond_var: &(String, Var),
         is_eq: bool,
         lean_info: &LeanFuncInfo,
+        calling_block: &FuncBlock,
         rebind: &mut VarRebind,
         pc: usize,
         indent: usize,
@@ -2698,11 +2720,12 @@ impl LeanGenerator for AutoProof {
         pc: usize,
         op_size: usize,
         indent: usize,
-    ) {
+    ) -> usize {
         let cond_var = rebind.get_var_name(cond_var);
         self.push_main(indent, &format!("-- jump to {label} if {cond_var} != 0"));
         self.push_main4_with_comma(indent, &format!("step_jnz {codes} with hcond{pc} hcond{pc}",
             codes = self.make_codes(pc, op_size)));
+        indent
     }
 
     fn generate_branch_intro(
@@ -2710,6 +2733,7 @@ impl LeanGenerator for AutoProof {
         cond_var: &(String, Var),
         is_eq: bool,
         lean_info: &LeanFuncInfo,
+        calling_block: &FuncBlock,
         rebind: &mut VarRebind,
         pc: usize,
         indent: usize,
@@ -3056,6 +3080,30 @@ impl CompletenessProof {
         }
     }
 
+    /// Returns the rewrite expressions for a non-local variable, that is, a variable
+    /// whose memory allocation is before the first local ap of the block. There are then
+    /// two possibilities, which this function resolves:
+    /// 1. The variable is an argument to the block.
+    /// 2. The variable is a 'let' variable assigned inside the block, but referring to
+    ///    an argument of the block.
+    /// In the first case, the only rewrite needed for the variable is htv_<arg name>.
+    /// In the second case, this function returns both the rewrite from the 'let' variable
+    /// to the argument (h_<var name>) and the rewrite for the argument (htv_<arg name>).
+    /// TO DO: this function assumes that there is at most one 'let' between the given variable
+    /// and the block argument. However, if we have two 'let' statement 'let b = a; let c = b;'
+    /// then we would need to add both rewrites (but the method used in this function cannot
+    /// detect the intermediate variable).
+    fn get_non_local_var_rws(var_name: &str, offset: i16, lean_info: &LeanFuncInfo, block: &FuncBlock) -> (String, String) {
+        if block.args.contains(&var_name.to_string()) {
+            // The variable is a block argument.
+            (format!("htv_{var_name}"), "".into())
+        } else if let Some(orig_arg_name) = lean_info.get_arg_by_offset(&block, offset) {
+            (format!("h_{var_name}"), format!("htv_{orig_arg_name}"))
+        } else {
+            (format!("h_{var_name}"), "".into())
+        }
+    }
+
     /// Adds the arguments and hypotheses of the completeness theorem for a block
     /// to the statement of the theorem.
     fn generate_args_and_hypotheses(
@@ -3201,6 +3249,7 @@ impl CompletenessProof {
 
     fn generate_assert_var_simp(
         &mut self,
+        lean_info: &LeanFuncInfo,
         block: &FuncBlock,
         var_name: &str,
         ap_offset: i16,
@@ -3216,8 +3265,14 @@ impl CompletenessProof {
             self.push_main(indent, &format!("simp only [h_ap_plus_{ap_offset}]"));
         }
 
-        if ap_offset < 0 || ap_offset.to_usize().unwrap() < block.start_local_ap {
-            self.push_main(indent, &format!("simp only [←htv_{var_name}]"));
+        if block.is_non_local_ap_offset(ap_offset) {
+            let (var_rw, orig_arg_rw) =
+                CompletenessProof::get_non_local_var_rws(var_name, ap_offset, lean_info, block);
+            if orig_arg_rw == "" {
+                self.push_main(indent, &format!("simp only [←{var_rw}]"));
+            } else {
+                self.push_main(indent, &format!("simp only [←{var_rw}, ←{orig_arg_rw}]"));
+            }
         } /*else if ap_offset == 0 {
             self.push_main(indent, "simp only [Int.sub_self]");
         } else {
@@ -3262,6 +3317,8 @@ impl CompletenessProof {
 
         if expr.op == "-" {
             simps.push(format!("rw [eq_sub_iff_add_eq] at {assert_hyp}"));
+        } else if expr.op == "+" || expr.op == "*" {
+            simps.push(format!("rw [eq_comm] at {assert_hyp}"));
         }
         if lean_info.is_const(&expr.var_a.name) {
             simps.push(format!("simp only [{const_name}] at {assert_hyp}", const_name = expr.var_a.name));
@@ -3299,7 +3356,7 @@ impl CompletenessProof {
         self.push_main(indent, &format!("vm_step_assert_eq {codes}", codes = self.make_codes(pc, op_size)));
         self.push_main(indent, "constructor");
         // Simplify numeric expressions.
-        self.push_main(indent, "· try simp only [neg_clip_checked', ←Int.sub_eq_add_neg]");
+        self.push_main(indent, "· try simp only [neg_clip_checked', ←Int.sub_eq_add_neg]"); // xxxxxxxxx remove ?
         let indent = indent + 2;
         self.push_main(indent, "try norm_num1");
         // Convert fp references to ap references (if needed).
@@ -3318,14 +3375,18 @@ impl CompletenessProof {
         }
 
         // Simplify the variables in this expression.
-        self.generate_assert_var_simp(block, lhs_name, lhs_ap_offset, indent);
+        self.generate_assert_var_simp(lean_info, block, lhs_name, lhs_ap_offset, indent);
         if let Some((var_a_name, var_a_offset)) = &rhs_var_a {
-            self.generate_assert_var_simp(block, var_a_name, *var_a_offset, indent);
+            if var_a_name != lhs_name {
+                self.generate_assert_var_simp(lean_info, block, var_a_name, *var_a_offset, indent);
+            }
         }
         if let Some((var_b_name, var_b_offset)) = &rhs_var_b {
-            match &rhs_var_a {
-                Some((var_a_name, var_a_offset)) if var_a_name == var_b_name => {},
-                _ => self.generate_assert_var_simp(block, var_b_name, *var_b_offset, indent)
+            if var_b_name != lhs_name {
+                match &rhs_var_a {
+                    Some((var_a_name, var_a_offset)) if var_a_name == var_b_name => {},
+                    _ => self.generate_assert_var_simp(lean_info, block, var_b_name, *var_b_offset, indent)
+                }
             }
         }
 
@@ -3676,10 +3737,17 @@ impl CompletenessProof {
                         var_ref = get_lean_ref_from_deref(&expr, true, false, true),
                     )
                 );
-                self.push_lean(
-                    indent + 2,
-                    &format!("(by use (Int.le_add_of_nonneg_right (by norm_num1)) ; apply Int.add_lt_add_left ; norm_num1)")
-                )
+                if calling_block.start_local_ap == 0 {
+                    self.push_lean(
+                        indent + 2,
+                        &format!("(by use (Int.le_add_of_nonneg_right (by norm_num1)) ; apply Int.add_lt_add_left ; norm_num1)")
+                    );
+                } else {
+                    self.push_lean(
+                        indent + 2,
+                        &format!("(by use (Int.add_le_add_left (by norm_num1) _) ; rw [add_assoc] ; apply Int.add_lt_add_left ; norm_num1)")
+                    );
+                }
             }
             self.push_lean(
                 indent,
@@ -3688,6 +3756,9 @@ impl CompletenessProof {
                     var_ref = get_lean_ref_from_deref(&expr, true, true, true),
                 )
             );
+
+            let (var_rw, orig_arg_rw) =
+                CompletenessProof::get_non_local_var_rws(&arg_name, offset, lean_info, calling_block);
 
             if offset < 0 { // outside the local assignment.
                 if calling_block.start_local_ap == 0 {
@@ -3712,21 +3783,32 @@ impl CompletenessProof {
                         indent + 4,
                         "(by apply lt_trans _ (Int.lt_add_of_pos_right σ.ap (by norm_num1)) ; apply Int.sub_lt_self ; norm_num1)",
                     );
-                    self.push_lean(indent + 2, &format!("simp only [this, htv_{arg_name}]"));
+                    self.push_lean(
+                        indent + 2,
+                        &format!(
+                                "simp only [this, {var_rw}{rw_sep}{orig_arg_rw}]",
+                                rw_sep = if orig_arg_rw == "" { "" } else { ", " },
+                            ));
                 }
             } else if (offset as usize) < calling_block.start_local_ap {
                 self.push_lean(
                     indent + 2,
                     &format!(
-                        "simp only [assign_exec_of_lt mem loc₀ {var_ref} (by apply {simp_lemma} ; norm_num1), htv_{arg_name}]",
+                        "simp only [assign_exec_of_lt mem loc₀ {var_ref} (by apply {simp_lemma} ; norm_num1), {var_rw}{rw_sep}{orig_arg_rw}]",
                         // Here we use the non-vm expression (as the theorem takes an offset in Z).
                         var_ref = get_lean_ref_from_deref(&expr, true, false, true),
                         simp_lemma = if offset == 0 { "Int.lt_add_of_pos_right" } else { "Int.add_lt_add_left" },
+                        rw_sep = if orig_arg_rw == "" { "" } else { ", " },
                     ),
                 );
             } else {
                 // Inside the local assignment.
-                self.push_lean(indent + 2, &format!("simp only [h_{arg_name}_exec_pos] ; dsimp [exec_vals] ; ring_nf ; rfl"))
+
+                // If the variable does not appear explicitly in the local assignment, it is a 'let' variable and we need to
+                // rewrite it to the target argument.
+                // TODO: As elsewhere, this does not support multiple consecutive lets ('let b = a; let c = b;').
+                let var_simp = if !self.ap_assignments.contains(&format!("val {arg_name}")) { format!(" rw [h_{arg_name}] ;") } else { "".into() };
+                self.push_lean(indent + 2, &format!("simp only [h_{arg_name}_exec_pos] ; dsimp [exec_vals] ; ring_nf ;{var_simp} rfl"))
             }
         }
     }
@@ -4135,19 +4217,19 @@ impl LeanGenerator for CompletenessProof {
         pc: usize,
         op_size: usize,
         indent: usize,
-    ) {
+    ) -> usize {
         self.spec_rcases.push("h_spec|h_spec".into());
 
         // Add the rcases for the spec up to the jnz.
-        self.generate_rcases(indent);
+        let indent = self.generate_rcases(indent);
 
         // Use 0 indentation (indentation is added later).
-        let indent = 0;
-
         self.push_main(
-            indent,
+            0,
             &format!("vm_step_jnz {codes}", codes = self.make_codes(pc, op_size))
         );
+
+        indent
     }
 
     fn generate_label_block(
@@ -4215,9 +4297,9 @@ impl LeanGenerator for CompletenessProof {
         self.push_lean(
             indent,
             &format!(
-                "have h_rc_concat : {rc1} = {rc0} + ↑loc₀.rc_num := by simp",
+                "have h_rc_concat : {rc1} = {rc0} + ↑loc₀.rc_num := by simp only [add_assoc] ; simp",
                 rc1 = self.make_start_rc_expr(lean_info, block, true),
-                rc0 = self.make_start_rc_expr(lean_info, calling_block, false),
+                rc0 = self.make_start_rc_expr(lean_info, calling_block, true),
             ));
         self.push_lean(
             indent,
@@ -4238,7 +4320,10 @@ impl LeanGenerator for CompletenessProof {
         self.push_main(0, "rw [assign_concat, concat_exec_num, concat_rc_num]");
         self.push_main(0, "simp only [Nat.cast_add]");
         self.push_main(0, "try simp only [Nat.cast_zero, Int.zero_add]");
-        self.push_main(0, "simp only [←add_assoc]");
+        self.push_main(0, "try simp only [←(Int.add_assoc _ _  ↑loc₁.exec_num)]");
+        self.push_main(0, "try simp only [←(Int.add_assoc _ _  ↑loc₁.rc_num)]");
+        self.push_main(0, "norm_num1");
+        self.push_main(0, "try simp only [←Int.add_assoc]");
         self.push_main(0, &format!("apply {block_hyp}"));
 
         // Begin actual proof
@@ -4255,6 +4340,7 @@ impl LeanGenerator for CompletenessProof {
         cond_var: &(String, Var),
         is_eq: bool,
         lean_info: &LeanFuncInfo,
+        calling_block: &FuncBlock,
         rebind: &mut VarRebind,
         pc: usize,
         indent: usize,
@@ -4267,7 +4353,7 @@ impl LeanGenerator for CompletenessProof {
         let cond_var_name = &cond_var.0;
 
         // Add the condition hypothesis to the rcases.
-        self.spec_rcases.push(format!("h_{cond_var_name}"));
+        self.spec_rcases.push(format!("hc_{cond_var_name}"));
 
         self.push_main(
             indent,
@@ -4287,26 +4373,44 @@ impl LeanGenerator for CompletenessProof {
         // Get the ap offset of the variable.
         let var_ap_offset = self.get_var_ap_offset(cond_var_name, rebind)
             .expect("Failed to find variable ap offset");
+        let is_block_arg = calling_block.is_non_local_ap_offset(var_ap_offset);
+
         if var_ap_offset == 0 {
             self.push_main(indent, "try simp only [add_zero]");
         }
         self.push_main(indent, &format!("simp only [h_ap_plus_{var_ap_offset}]"));
-        self.push_main(indent, "dsimp [exec_vals]");
-        if var_ap_offset == 0 {
-            self.push_main(indent, "simp only [Int.sub_self]");
+        if is_block_arg {
+            let (var_rw, orig_arg_rw) =
+                CompletenessProof::get_non_local_var_rws(&cond_var_name, var_ap_offset, lean_info, calling_block);
+            if orig_arg_rw == "" {
+                self.push_main(indent, &format!("simp only [←{var_rw}]"));
+            } else {
+                self.push_main(indent, &format!("simp only [←{var_rw}, ←{orig_arg_rw}]"));
+            }
         } else {
-            self.push_main(indent, &format!("simp only [Int.add_comm σ.ap {var_ap_offset}, Int.add_sub_cancel]"));
+            self.push_main(indent, "dsimp [exec_vals]");
+            if var_ap_offset == 0 {
+                self.push_main(indent, "simp only [Int.sub_self]");
+            } else {
+                self.push_main(indent, &format!("simp only [Int.add_comm σ.ap {var_ap_offset}, Int.add_sub_cancel]"));
+            }
         }
 
         if is_eq {
             // Prove the first goal (the not equal branch) by showing its condition is false.
-            self.push_main(indent, "rw [val_ne_iff]");
-            self.push_main(indent, &format!("simp only [h_{cond_var_name}]"));
-            self.push_main(indent, "simp only [not_true, false_implies]");
+            if is_block_arg {
+                self.push_main(indent, &format!("simp only [hc_{cond_var_name}]"));
+                self.push_main(indent, "simp only [ne_self_iff_false, false_implies]");
+            } else {
+                self.push_main(indent, "ring_nf ; simp only [val.injEq, Int.reduceNeg]");
+                self.push_main(indent, &format!("simp only [hc_{cond_var_name}]"));
+                self.push_main(indent, "simp only [not_true, false_implies]");
+            }
         } else {
             self.push_main(indent, "intro h_cond");
+            self.push_main(indent, "try ring_nf at h_cond");
             self.push_main(indent, "exfalso");
-            self.push_main(indent, &format!("apply h_{cond_var_name}"));
+            self.push_main(indent, &format!("apply hc_{cond_var_name}"));
             self.push_main(indent, "injection h_cond");
         }
 
@@ -4639,7 +4743,7 @@ fn generate_auto_block(
                 match &jump.cond_var {
                     Some(cond_var) => {
 
-                        lean_gen.generate_jnz(&cond_var.0, &jump.target, rebind, pc, op_size, indent);
+                        let indent = lean_gen.generate_jnz(&cond_var.0, &jump.target, rebind, pc, op_size, indent);
 
                         // Conditional jump, must generate both branches.
 
@@ -4648,7 +4752,7 @@ fn generate_auto_block(
                         let mut branch = lean_gen.branch();
 
                         let indent = branch.generate_branch_intro(
-                                cond_var, true, lean_info, rebind, pc, indent);
+                                cond_var, true, lean_info, block, rebind, pc, indent);
 
                         // Clone the rebind object before entering the branch, as the second branch
                         // should be independent of the rebinding accumulated in the first branch.
@@ -4670,7 +4774,7 @@ fn generate_auto_block(
                         // Second (not equals zero) branch
 
                         let indent = lean_gen.generate_branch_intro(
-                            cond_var, false, lean_info, rebind, pc, indent);
+                            cond_var, false, lean_info, block, rebind, pc, indent);
 
                         generate_jump_to_label(
                             lean_gen, lean_info, block, rebind, jump, block_start + i, casm_pos, pc, indent);
