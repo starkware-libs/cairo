@@ -51,6 +51,7 @@ use crate::{Arg, RunResultValue, SierraCasmRunner, StarknetExecutionResources};
 #[cfg(test)]
 mod test;
 
+mod circuit;
 mod contract_address;
 mod dict_manager;
 
@@ -2085,6 +2086,32 @@ pub fn execute_core_hint(
                 insert_value_to_cellref!(vm, t_or_k1, Felt252::from(limb1))?;
                 insert_value_to_cellref!(vm, g0_or_no_inv, Felt252::from(0))?;
             }
+        }
+        CoreHint::EvalCircuit {
+            values_ptr,
+            n_add_mods,
+            add_mod_offsets,
+            n_mul_mods,
+            mul_mod_offsets,
+            modulus,
+        } => {
+            let values_ptr = extract_relocatable(vm, values_ptr)?;
+            let add_mod_offsets = extract_relocatable(vm, add_mod_offsets)?;
+            let n_add_mods = get_val(vm, n_add_mods)?.to_usize().unwrap();
+            let mul_mod_offsets = extract_relocatable(vm, mul_mod_offsets)?;
+            let n_mul_mods = get_val(vm, n_mul_mods)?.to_usize().unwrap();
+            let modulus_ptr =
+                cell_ref_to_relocatable(extract_matches!(modulus, ResOperand::Deref), vm);
+
+            circuit::fill_values(
+                vm,
+                values_ptr,
+                add_mod_offsets,
+                n_add_mods,
+                mul_mod_offsets,
+                n_mul_mods,
+                modulus_ptr,
+            );
         }
     };
     Ok(())

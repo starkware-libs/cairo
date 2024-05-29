@@ -340,12 +340,12 @@ impl<'a> AbiBuilder<'a> {
         let impl_name = impl_def_id.name(self.db.upcast());
 
         let trt = self.db.impl_def_concrete_trait(impl_def_id)?;
-        let trt_path = trt.full_path(self.db);
 
         let trait_id = trt.trait_id(self.db);
+        let interface_name = trait_id.full_path(self.db.upcast());
 
         let abi_name = impl_alias_name.unwrap_or(impl_name.into());
-        let impl_item = Item::Impl(Imp { name: abi_name, interface_name: trt_path });
+        let impl_item = Item::Impl(Imp { name: abi_name, interface_name });
         self.add_abi_item(impl_item, true, source)?;
         self.add_interface(source, trait_id)?;
 

@@ -17,3 +17,17 @@ pub fn base() -> lsp_types::ClientCapabilities {
         ..Default::default()
     }
 }
+
+/// Sets `workspace.configuration` to the given value.
+pub fn with_workspace_configuration(
+    base: lsp_types::ClientCapabilities,
+    enabled: bool,
+) -> lsp_types::ClientCapabilities {
+    lsp_types::ClientCapabilities {
+        workspace: Some(lsp_types::WorkspaceClientCapabilities {
+            configuration: Some(enabled),
+            ..base.workspace.unwrap_or_default()
+        }),
+        ..base
+    }
+}

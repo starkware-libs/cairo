@@ -91,7 +91,7 @@ impl ConcreteTraitId {
         self.trait_id(db).name(db.upcast())
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
-        self.trait_id(db).full_path(db.upcast())
+        format!("{:?}", self.debug(db.elongate()))
     }
     pub fn filter(&self, db: &dyn SemanticGroup) -> TraitFilter {
         let generics_filter = match self.generic_args(db).first() {

@@ -1,16 +1,17 @@
 use std::ffi::OsStr;
 use std::path::Path;
+use std::sync::Arc;
 use std::time::Duration;
 use std::{future, process};
 
 use cairo_lang_language_server::build_service_for_e2e_tests;
 use futures::channel::mpsc;
 use futures::{join, stream, FutureExt, SinkExt, StreamExt, TryFutureExt};
+use lsp_types::request::Request as LspRequest;
 use lsp_types::{lsp_notification, lsp_request};
 use serde_json::Value;
-use tokio::time::error::Elapsed;
 use tokio::time::timeout;
-use tower_lsp::{lsp_types, ClientSocket, LanguageServer, LspService};
+use tower_lsp::{jsonrpc, lsp_types, ClientSocket, LanguageServer, LspService};
 use tower_service::Service;
 
 use crate::support::fixture::Fixture;
@@ -23,25 +24,35 @@ use crate::support::runtime::{AbortOnDrop, GuardedRuntime};
 ///
 /// The language server is terminated abruptly upon dropping of this struct.
 /// The `shutdown` request and `exit` notifications are not sent at all.
-/// Instead, the Tokio Runtime that is executing the server is being shut down and any running
+/// Instead, the Tokio Runtime executing the server is being shut down and any running
 /// blocking tasks are given a small period of time to complete.
 pub struct MockClient {
     fixture: Fixture,
-    rt: GuardedRuntime,
+    // NOTE: The runtime is wrapped in `Arc`, which is then cloned at usage places, so that we do
+    //   not have to reference `*self` while trying to block on it.
+    //   This enables `async` blocks (that are blocked on) to take that `*self` for themselves.
+    rt: Arc<GuardedRuntime>,
     req_id: RequestIdGenerator,
     input_tx: mpsc::Sender<Message>,
-    output: ServerOutput,
+    output_rx: mpsc::Receiver<Message>,
+    trace: Vec<Message>,
+    workspace_configuration: Value,
     _main_loop: AbortOnDrop,
 }
 
 impl MockClient {
-    /// Starts and initializes CairoLS in context of a given fixture and given client capabilities.
+    /// Starts and initializes CairoLS in the context of a given fixture and given client
+    /// capabilities.
     ///
-    /// Upon completion of this function the language server will be in the _initialized_ state
-    /// (i.e. the `initialize` request and `initialized` notification both will be completed).
+    /// Upon completion of this function, the language server will be in the _initialized_ state
+    /// (i.e., the `initialize` request and `initialized` notification both will be completed).
     #[must_use]
-    pub fn start(fixture: Fixture, capabilities: lsp_types::ClientCapabilities) -> Self {
-        let rt = GuardedRuntime::start();
+    pub fn start(
+        fixture: Fixture,
+        capabilities: lsp_types::ClientCapabilities,
+        workspace_configuration: Value,
+    ) -> Self {
+        let rt = Arc::new(GuardedRuntime::start());
         let (service, loopback) = build_service_for_e2e_tests();
 
         let (requests_tx, requests_rx) = mpsc::channel(0);
@@ -57,7 +68,9 @@ impl MockClient {
             rt,
             req_id: RequestIdGenerator::default(),
             input_tx: requests_tx,
-            output: ServerOutput::new(responses_rx),
+            output_rx: responses_rx,
+            trace: Vec::new(),
+            workspace_configuration,
             _main_loop: main_loop,
         };
 
@@ -157,11 +170,12 @@ impl MockClient {
     pub fn send_request_untyped(&mut self, method: &'static str, params: Value) -> Value {
         let id = self.req_id.next();
         let message = Message::request(method, id.clone(), params);
-        self.rt.block_on(async {
+        let rt = self.rt.clone();
+        rt.block_on(async {
             self.input_tx.send(message.clone()).await.expect("failed to send request");
 
             while let Some(response_message) =
-                self.output.recv().await.unwrap_or_else(|_| panic!("timeout: {message:?}"))
+                self.recv().await.unwrap_or_else(|err| panic!("{err:?}: {message:?}"))
             {
                 match response_message {
                     Message::Request(res) if res.id().is_none() => {
@@ -203,6 +217,97 @@ impl MockClient {
     }
 }
 
+/// Introspection.
+impl MockClient {
+    /// Gets a list of messages received from the server.
+    pub fn trace(&self) -> &[Message] {
+        &self.trace
+    }
+}
+
+#[derive(Debug)]
+enum RecvError {
+    Timeout,
+    NoMessage,
+}
+
+impl From<tokio::time::error::Elapsed> for RecvError {
+    fn from(_: tokio::time::error::Elapsed) -> Self {
+        RecvError::Timeout
+    }
+}
+
+/// Receiving messages.
+impl MockClient {
+    /// Receives a message from the server.
+    async fn recv(&mut self) -> Result<Option<Message>, RecvError> {
+        const TIMEOUT: Duration = Duration::from_secs(2 * 60);
+        let message = timeout(TIMEOUT, self.output_rx.next()).await?;
+
+        if let Some(message) = &message {
+            self.trace.push(message.clone());
+
+            if let Message::Request(request) = &message {
+                if request.method() == <lsp_request!("workspace/configuration")>::METHOD {
+                    self.auto_respond_to_workspace_configuration_request(request).await;
+                }
+            }
+        }
+
+        Ok(message)
+    }
+
+    /// Looks for a message that satisfies the given predicate in message trace or waits for a new
+    /// one.
+    async fn wait_for_message<T>(
+        &mut self,
+        predicate: impl Fn(&Message) -> Option<T>,
+    ) -> Result<T, RecvError> {
+        for message in &self.trace {
+            if let Some(ret) = predicate(message) {
+                return Ok(ret);
+            }
+        }
+
+        loop {
+            let message = self.recv().await?.ok_or(RecvError::NoMessage)?;
+            if let Some(ret) = predicate(&message) {
+                return Ok(ret);
+            }
+        }
+    }
+
+    /// Looks for a client JSON-RPC request that satisfies the given predicate in message trace
+    /// or waits for a new one.
+    fn wait_for_rpc_request<T>(&mut self, predicate: impl Fn(&jsonrpc::Request) -> Option<T>) -> T {
+        let rt = self.rt.clone();
+        rt.block_on(async {
+            self.wait_for_message(|message| {
+                let Message::Request(req) = message else { return None };
+                predicate(req)
+            })
+            .await
+            .unwrap_or_else(|err| panic!("waiting for request failed: {err:?}"))
+        })
+    }
+
+    /// Looks for a typed client notification that satisfies the given predicate in message trace
+    /// or waits for a new one.
+    pub fn wait_for_notification<N>(&mut self, predicate: impl Fn(&N::Params) -> bool) -> N::Params
+    where
+        N: lsp_types::notification::Notification,
+    {
+        self.wait_for_rpc_request(|req| {
+            if req.method() != N::METHOD {
+                return None;
+            }
+            let params = serde_json::from_value(req.params().cloned().unwrap_or_default())
+                .expect("failed to parse notification params");
+            predicate(&params).then_some(params)
+        })
+    }
+}
+
 /// Quality of life helpers for interacting with the server.
 impl MockClient {
     /// Returns a `TextDocumentIdentifier` for the given file.
@@ -233,29 +338,83 @@ impl MockClient {
             },
         )
     }
-}
 
-/// A wrapper over message receiver that keeps a trace of all received messages and times out
-/// long-running requests.
-struct ServerOutput {
-    output_rx: mpsc::Receiver<Message>,
-    trace: Vec<Message>,
-}
-
-impl ServerOutput {
-    /// Creates a new [`ServerOutput`].
-    fn new(output_rx: mpsc::Receiver<Message>) -> Self {
-        Self { output_rx, trace: Vec::new() }
+    /// Waits for `textDocument/publishDiagnostics` notification for the given file.
+    pub fn wait_for_diagnostics(
+        &mut self,
+        path: impl AsRef<Path>,
+    ) -> lsp_types::PublishDiagnosticsParams {
+        let uri = self.fixture.file_url(&path);
+        self.wait_for_notification::<lsp_notification!("textDocument/publishDiagnostics")>(
+            |params| params.uri == uri,
+        )
     }
 
-    /// Receives a message from the server.
-    async fn recv(&mut self) -> Result<Option<Message>, Elapsed> {
-        const TIMEOUT: Duration = Duration::from_secs(2 * 60);
+    /// Sends `textDocument/didOpen` notification to the server and then waits for matching
+    /// `textDocument/publishDiagnostics` notification.
+    pub fn open_and_wait_for_diagnostics(
+        &mut self,
+        path: impl AsRef<Path>,
+    ) -> lsp_types::PublishDiagnosticsParams {
+        let path = path.as_ref();
+        self.open(path);
+        self.wait_for_diagnostics(path)
+    }
+}
 
-        let r = timeout(TIMEOUT, self.output_rx.next()).await;
-        if let Ok(Some(msg)) = &r {
-            self.trace.push(msg.clone());
-        }
-        r
+/// Handling workspace configuration workflow.
+impl MockClient {
+    /// Assuming `request` is a `workspace/configuration` request, computes and sends a response to
+    /// it.
+    async fn auto_respond_to_workspace_configuration_request(
+        &mut self,
+        request: &jsonrpc::Request,
+    ) {
+        assert_eq!(
+            request.method(),
+            <lsp_request!("workspace/configuration") as LspRequest>::METHOD
+        );
+
+        let id = request.id().cloned().expect("request ID is missing");
+
+        let params =
+            serde_json::from_value(request.params().expect("request params are missing").clone())
+                .expect("failed to parse `workspace/configuration` params");
+
+        let result = self.compute_workspace_configuration(params);
+
+        let result = Ok(serde_json::to_value(result)
+            .expect("failed to serialize `workspace/configuration` response"));
+
+        let message = Message::response(id, result);
+        self.input_tx
+            .send(message)
+            .await
+            .expect("failed to send `workspace/configuration` response");
+    }
+
+    /// Computes response to `workspace/configuration` request.
+    fn compute_workspace_configuration(
+        &self,
+        params: <lsp_request!("workspace/configuration") as LspRequest>::Params,
+    ) -> Vec<Value> {
+        params
+            .items
+            .iter()
+            .map(|item| {
+                // NOTE: `scope_uri` is ignored.
+                match &item.section {
+                    Some(section) => {
+                        // Items may ask for nested entries, with dot being the path separator.
+                        section
+                            .split('.')
+                            .try_fold(&self.workspace_configuration, |config, key| config.get(key))
+                            .cloned()
+                            .unwrap_or(Value::Null)
+                    }
+                    None => self.workspace_configuration.clone(),
+                }
+            })
+            .collect()
     }
 }

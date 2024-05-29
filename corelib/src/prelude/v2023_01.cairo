@@ -60,10 +60,14 @@ use core::{
     traits,
     traits::{
         Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivEq, DivRem,
-        Drop, Felt252DictValue, Index, IndexView, Into, Mul, MulEq, Neg, Not, PanicDestruct,
-        PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TryInto, TupleSize0Copy, TupleSize0Drop
+        Drop, Felt252DictValue, Into, Mul, MulEq, Neg, Not, PanicDestruct, PartialEq, PartialOrd,
+        Rem, RemEq, Sub, SubEq, TryInto, TupleSize0Copy, TupleSize0Drop
     }
 };
+#[feature("deprecated-index-traits")]
+use core::traits::Index;
+#[feature("deprecated-index-traits")]
+use core::traits::IndexView;
 use core::{zeroable, zeroable::{NonZero, Zeroable}};
 
 #[cfg(test)]
