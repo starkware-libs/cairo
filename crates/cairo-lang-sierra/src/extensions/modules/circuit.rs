@@ -41,6 +41,7 @@ define_type_hierarchy! {
         CircuitData(CircuitData),
         CircuitOutputs(CircuitOutputs),
         CircuitDescriptor(CircuitDescriptor),
+        CircuitFailureGuarantee(CircuitFailureGuarantee),
         CircuitInput(CircuitInput),
         CircuitInputAccumulator(CircuitInputAccumulator),
         InverseGate(InverseGate),
@@ -55,6 +56,7 @@ define_libfunc_hierarchy! {
          GetDescriptor(GetCircuitDescriptorLibFunc),
          InitCircuitData(InitCircuitDataLibFunc),
          U384IsZero(U384IsZeroLibfunc),
+         FailureGuaranteeVerify(CircuitFailureGuaranteeVerifyLibFunc),
     }, CircuitConcreteLibfunc
 }
 
@@ -426,6 +428,17 @@ impl ConcreteType for ConcreteCircuitOutputs {
     }
 }
 
+/// A type whose destruction guarantees that the circuit instance invocation failed.
+#[derive(Default)]
+pub struct CircuitFailureGuarantee {}
+impl NoGenericArgsGenericType for CircuitFailureGuarantee {
+    const ID: GenericTypeId = GenericTypeId::new_inline("CircuitFailureGuarantee");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = false;
+    const DROPPABLE: bool = false;
+    const ZERO_SIZED: bool = false;
+}
+
 /// A type representing a circuit instance data with all the inputs filled.
 #[derive(Default)]
 pub struct CircuitDescriptor {}
@@ -766,6 +779,44 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
 }
 
 pub type EvalCircuitLibFunc = WrapSignatureAndTypeGenericLibfunc<EvalCircuitLibFuncWrapped>;
+
+/// Verifies the the circuit evaluation has failed.
+#[derive(Default)]
+pub struct CircuitFailureGuaranteeVerifyLibFunc {}
+impl NoGenericArgsGenericLibfunc for CircuitFailureGuaranteeVerifyLibFunc {
+    const STR_ID: &'static str = "circuit_failure_guarantee_verify";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let range_check96_type = context.get_concrete_type(RangeCheck96Type::id(), &[])?;
+        let mul_mod_builtin_ty = context.get_concrete_type(MulModType::id(), &[])?;
+        let guarantee_ty = context.get_concrete_type(CircuitFailureGuarantee::id(), &[])?;
+
+        let zero = bounded_int_ty(context, BigInt::zero(), BigInt::zero())?;
+        let one = bounded_int_ty(context, BigInt::one(), BigInt::one())?;
+
+        Ok(LibfuncSignature::new_non_branch(
+            vec![range_check96_type.clone(), mul_mod_builtin_ty.clone(), guarantee_ty, zero, one],
+            vec![
+                OutputVarInfo {
+                    ty: range_check96_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: mul_mod_builtin_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 1,
+                    }),
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
 
 /// Type for add mod builtin.
 #[derive(Default)]

@@ -29,6 +29,10 @@ pub fn build(
         CircuitConcreteLibfunc::InitCircuitData(libfunc) => {
             build_init_circuit_data(&libfunc.ty, builder)
         }
+
+        CircuitConcreteLibfunc::FailureGuaranteeVerify(_) => {
+            build_failure_guarantee_verify(builder)
+        }
     }
 }
 
@@ -266,6 +270,115 @@ fn build_u384_is_zero(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None), ("Target", &[&[l0, l1, l2, l3]], Some(target_statement_id))],
+        Default::default(),
+    ))
+}
+
+/// Builds instructions for `circuit_failure_guarantee_verify` libfunc.
+fn build_failure_guarantee_verify(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_rc96, expr_mul_mod, expr_guarantee, expr_zero, expr_one] = builder.try_get_refs()?;
+    let rc96 = expr_rc96.try_unpack_single()?;
+
+    let mul_mod = expr_mul_mod.try_unpack_single()?;
+    let [orig_mul_mod_offsets, n_muls, fail_idx, values, modulus0, modulus1, modulus2, modulus3] =
+        expr_guarantee.try_unpack()?;
+
+    let zero = expr_zero.try_unpack_single()?;
+    let one = expr_one.try_unpack_single()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    let rc_usage = (2 + VALUE_SIZE).into_or_panic();
+
+    let instance_size = BUILTIN_INSTANCE_SIZE.into_or_panic();
+    add_input_variables! {casm_builder,
+
+        buffer(rc_usage) rc96;
+        buffer(instance_size) mul_mod;
+
+
+        deref orig_mul_mod_offsets;
+
+        deref modulus0;
+        deref modulus1;
+        deref modulus2;
+        deref modulus3;
+
+        deref values;
+        deref zero;
+        deref one;
+        deref n_muls;
+        deref fail_idx;
+    };
+
+    casm_build_extend! {casm_builder,
+        const offsets_per_gate = OFFSETS_PER_GATE;
+        tempvar failing_gate_offset = fail_idx * offsets_per_gate;
+        tempvar failing_gate_ptr = orig_mul_mod_offsets + failing_gate_offset;
+
+        tempvar nullifier_offset = failing_gate_ptr[0];
+        tempvar zero_divisor_offset = failing_gate_ptr[1];
+
+        // The output of the failing gate points to the const zero.
+        assert zero = failing_gate_ptr;
+
+        tempvar zero_offset = rc96 - values;
+
+        // Write the value 0 to rc96.
+        assert zero = *(rc96++);
+        assert zero = *(rc96++);
+        assert zero = *(rc96++);
+        assert zero = *(rc96++);
+
+        tempvar mul_mod_offsets;
+        hint AllocSegment {} into {dst: mul_mod_offsets};
+
+        assert nullifier_offset = mul_mod_offsets[0];
+        assert zero_divisor_offset = mul_mod_offsets[1];
+        assert zero_offset = mul_mod_offsets[2];
+
+
+        // Check that 0 <= fail_idx <= n_muls;
+        assert fail_idx = *(rc96++);
+        tempvar diff = n_muls - fail_idx;
+        assert diff = *(rc96++);
+
+
+
+
+        assert modulus0 = mul_mod[0];
+        assert modulus1 = mul_mod[1];
+        assert modulus2 = mul_mod[2];
+        assert modulus3 = mul_mod[3];
+        assert values = mul_mod[4];
+        assert mul_mod_offsets = mul_mod[5];
+        assert one = mul_mod[6];
+
+        tempvar nullifier_ptr = values + nullifier_offset;
+        tempvar nullifier0 = nullifier_ptr[0];
+        tempvar nullifier1 = nullifier_ptr[1];
+        tempvar nullifier2 = nullifier_ptr[2];
+        tempvar nullifier3 = nullifier_ptr[3];
+        jump done if nullifier0 != 0;
+        jump done if nullifier1 != 0;
+        jump done if nullifier2 != 0;
+        jump done if nullifier3 != 0;
+
+        // If the nullifer is zero, enter an infinite loop.
+        infinite_loop:
+        jump infinite_loop;
+
+        done:
+        const mul_mod_usage = BUILTIN_INSTANCE_SIZE;
+        let new_mul_mod = mul_mod + mul_mod_usage;
+
+        // TODO: Verify that 0 nullifier < modulues.
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[rc96], &[new_mul_mod]], None)],
         Default::default(),
     ))
 }
