@@ -29,14 +29,11 @@
         "extensions": [
           ".cairo"
         ],
+        "icon": {
+          "light": "./icons/Cairo_logo.svg",
+          "dark": "./icons/Cairo_logo.svg"
+        },
         "configuration": "./language-configuration.json"
-      }
-    ],
-    "iconThemes": [
-      {
-        "id": "cairo-icon-theme",
-        "label": "Cairo Icon Theme",
-        "path": "./icons/cairo-icon-theme.json"
       }
     ],
     "commands": [
