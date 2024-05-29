@@ -1773,7 +1773,7 @@ fn maybe_compute_tuple_like_pattern_semantic(
     unexpected_pattern: fn(TypeId) -> SemanticDiagnosticKind,
     wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind,
 ) -> Maybe<Pattern> {
-    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+    let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, pattern_syntax)?;
     // Assert that the pattern is of the same type as the expr.
     match (pattern_syntax, &long_ty) {
         (ast::Pattern::Tuple(_), TypeLongId::Tuple(_))
@@ -2279,30 +2279,13 @@ fn member_access_expr(
 
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
-    let ty = ctx.reduce_ty(lexpr.ty());
-    let (base_snapshots, mut long_ty) = peel_snapshots(ctx.db, ty);
-    if let TypeLongId::ImplType(impl_type_id) = long_ty {
-        let inference = &mut ctx.resolver.inference();
-        let Ok(ty) = inference.reduce_impl_ty(impl_type_id) else {
-            return Err(ctx
-                .diagnostics
-                .report(&rhs_syntax, InternalInferenceError(InferenceError::TypeNotInferred(ty))));
-        };
-        long_ty = ty.lookup_intern(ctx.db);
-    }
-    if matches!(long_ty, TypeLongId::Var(_)) {
-        // Save some work. ignore the result. The error, if any, will be reported later.
-        ctx.resolver.inference().solve().ok();
-        long_ty = ctx.resolver.inference().rewrite(long_ty).no_err();
-    }
-    let (additional_snapshots, long_ty) = peel_snapshots_ex(ctx.db, long_ty);
-    let n_snapshots = base_snapshots + additional_snapshots;
+    let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, lexpr.ty(), &rhs_syntax)?;
 
-    match long_ty {
+    match &long_ty {
         TypeLongId::Concrete(concrete) => match concrete {
             ConcreteTypeId::Struct(concrete_struct_id) => {
                 // TODO(lior): Add a diagnostic test when accessing a member of a missing type.
-                let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
+                let members = ctx.db.concrete_struct_members(*concrete_struct_id)?;
                 let Some(member) = members.get(&member_name) else {
                     return Err(ctx.diagnostics.report(
                         &rhs_syntax,
@@ -2323,7 +2306,7 @@ fn member_access_expr(
                         parent: Box::new(parent),
                         member_id: member.id,
                         stable_ptr,
-                        concrete_struct_id,
+                        concrete_struct_id: *concrete_struct_id,
                         ty: member.ty,
                     })
                 } else {
@@ -2334,7 +2317,7 @@ fn member_access_expr(
                 let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                 Ok(Expr::MemberAccess(ExprMemberAccess {
                     expr: lexpr_id,
-                    concrete_struct_id,
+                    concrete_struct_id: *concrete_struct_id,
                     member: member.id,
                     ty,
                     member_path,
@@ -2342,7 +2325,9 @@ fn member_access_expr(
                     stable_ptr,
                 }))
             }
-            _ => Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name })),
+            _ => Err(ctx
+                .diagnostics
+                .report(&rhs_syntax, TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name })),
         },
         TypeLongId::Tuple(_) => {
             // TODO(spapini): Handle .0, .1, etc. .
@@ -2352,29 +2337,52 @@ fn member_access_expr(
             // TODO(spapini): Handle snapshot members.
             Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
         }
-        TypeLongId::GenericParameter(_) => {
-            Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name }))
-        }
         TypeLongId::ImplType(impl_type_id) => {
             unreachable!(
                 "Impl type should've been reduced {:?}.",
                 impl_type_id.debug(ctx.db.elongate())
             )
         }
-        TypeLongId::Var(_) => Err(ctx
+        TypeLongId::Var(_) => Err(ctx.diagnostics.report(
+            &rhs_syntax,
+            InternalInferenceError(InferenceError::TypeNotInferred(long_ty.intern(ctx.db))),
+        )),
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Coupon(_)
+        | TypeLongId::FixedSizeArray { .. } => Err(ctx
             .diagnostics
-            .report(&rhs_syntax, InternalInferenceError(InferenceError::TypeNotInferred(ty)))),
-        TypeLongId::Coupon(_) => {
-            Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name }))
-        }
-        TypeLongId::Missing(diag_added) => Err(diag_added),
-        TypeLongId::FixedSizeArray { .. } => {
-            Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name }))
-        }
+            .report(&rhs_syntax, TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name })),
+        TypeLongId::Missing(diag_added) => Err(*diag_added),
         TypeLongId::TraitType(_) => {
             panic!("Trait types should only appear in traits, where there are no function bodies.")
         }
     }
+}
+
+/// Peels snapshots from a type and making sure it is fully not a variable type.
+fn finalized_snapshot_peeled_ty(
+    ctx: &mut ComputationContext<'_>,
+    ty: TypeId,
+    stable_ptr: impl Into<SyntaxStablePtrId>,
+) -> Maybe<(usize, TypeLongId)> {
+    let ty = ctx.reduce_ty(ty);
+    let (base_snapshots, mut long_ty) = peel_snapshots(ctx.db, ty);
+    if let TypeLongId::ImplType(impl_type_id) = long_ty {
+        let inference = &mut ctx.resolver.inference();
+        let Ok(ty) = inference.reduce_impl_ty(impl_type_id) else {
+            return Err(ctx
+                .diagnostics
+                .report(stable_ptr, InternalInferenceError(InferenceError::TypeNotInferred(ty))));
+        };
+        long_ty = ty.lookup_intern(ctx.db);
+    }
+    if matches!(long_ty, TypeLongId::Var(_)) {
+        // Save some work. ignore the result. The error, if any, will be reported later.
+        ctx.resolver.inference().solve().ok();
+        long_ty = ctx.resolver.inference().rewrite(long_ty).no_err();
+    }
+    let (additional_snapshots, long_ty) = peel_snapshots_ex(ctx.db, long_ty);
+    Ok((base_snapshots + additional_snapshots, long_ty))
 }
 
 /// Resolves a variable or a constant given a context and a path expression.
