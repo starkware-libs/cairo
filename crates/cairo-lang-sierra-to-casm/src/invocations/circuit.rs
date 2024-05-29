@@ -197,8 +197,8 @@ fn build_circuit_eval(
 
         hint CoreHint::EvalCircuit {
              values_ptr: values,
-             n_add_mods: n_adds, add_mod_offsets: add_mod,
-             n_mul_mods: n_muls, mul_mod_offsets: mul_mod,
+             n_add_mods: n_adds, add_mod_offsets: add_mod_offsets,
+             n_mul_mods: n_muls, mul_mod_offsets: mul_mod_offsets,
              modulus: modulus0
         };
     }
