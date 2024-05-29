@@ -140,24 +140,17 @@ async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
     ctx.log.error(`${e}`);
   }
 
-  const serverExecutable = serverExecutableProvider?.languageServerExecutable();
-  if (serverExecutable == undefined) {
+  const run = serverExecutableProvider?.languageServerExecutable();
+  if (run == undefined) {
     ctx.log.error("failed to start CairoLS");
     throw new Error("failed to start CairoLS");
   }
 
-  insertLanguageServerExtraEnv(serverExecutable, ctx);
+  setupEnv(run, ctx);
 
-  ctx.log.debug(`using CairoLS: ${quoteServerExecutable(serverExecutable)}`);
+  ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
 
-  const run = serverExecutable;
-
-  const debug = structuredClone(serverExecutable);
-  debug.options ??= {};
-  debug.options.env ??= {};
-  debug.options.env["CAIRO_LS_LOG"] ??= "cairo_lang_language_server=debug";
-
-  return { run, debug };
+  return { run, debug: run };
 }
 
 async function determineLanguageServerExecutableProvider(
@@ -208,14 +201,39 @@ async function determineLanguageServerExecutableProvider(
   }
 }
 
-function insertLanguageServerExtraEnv(
-  serverExecutable: lc.Executable,
-  ctx: Context,
-) {
+function setupEnv(serverExecutable: lc.Executable, ctx: Context) {
+  const logEnv = {
+    CAIRO_LS_LOG: buildEnvFilter(ctx),
+    RUST_BACKTRACE: "1",
+  };
+
   const extraEnv = ctx.config.get("languageServerExtraEnv");
+
   serverExecutable.options ??= {};
   serverExecutable.options.env ??= {};
-  Object.assign(serverExecutable.options.env, extraEnv);
+  Object.assign(serverExecutable.options.env, logEnv, extraEnv);
+}
+
+function buildEnvFilter(ctx: Context): string {
+  const level = convertVscodeLogLevelToRust(ctx.log.logLevel);
+  return level ? `cairo_lang_language_server=${level}` : "";
+}
+
+function convertVscodeLogLevelToRust(logLevel: vscode.LogLevel): string | null {
+  switch (logLevel) {
+    case vscode.LogLevel.Trace:
+      return "trace";
+    case vscode.LogLevel.Debug:
+      return "debug";
+    case vscode.LogLevel.Info:
+      return "info";
+    case vscode.LogLevel.Warning:
+      return "warn";
+    case vscode.LogLevel.Error:
+      return "error";
+    case vscode.LogLevel.Off:
+      return null;
+  }
 }
 
 function quoteServerExecutable(serverExecutable: lc.Executable): string {
