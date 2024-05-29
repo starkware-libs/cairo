@@ -26,9 +26,10 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment, ExprAndId};
 use crate::expr::inference::conform::InferenceConform;
-use crate::expr::inference::{ConstVar, InferenceId};
+use crate::expr::inference::{ConstVar, InferenceId, LocalTypeVarId};
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
+use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 use crate::{
     semantic_object_for_id, ConcreteVariant, Expr, ExprBlock, ExprConstant, ExprFunctionCall,
@@ -202,6 +203,10 @@ pub fn constant_semantic_data_helper(
         constant_type,
     );
 
+    // Check fully resolved.
+    ctx.resolver.inference().finalize(ctx.diagnostics, constant_ast.stable_ptr().untyped());
+    ctx.apply_inference_rewriter_to_exprs();
+
     let resolver_data = Arc::new(ctx.resolver.data);
     let constant = Constant { value: value.id, exprs: Arc::new(ctx.exprs) };
     Ok(ConstantData {
@@ -256,8 +261,16 @@ pub fn resolve_const_expr_and_evaluate(
     if let Err(err_set) = inference.conform_ty(value.ty(), target_type) {
         inference.report_on_pending_error(err_set, ctx.diagnostics, const_stable_ptr);
     }
-    // Check fully resolved.
-    inference.finalize(ctx.diagnostics, const_stable_ptr);
+
+    if let Err(err_set) = inference.solve() {
+        let diag = inference.report_on_pending_error(err_set, ctx.diagnostics, const_stable_ptr);
+
+        let ty_missing = TypeId::missing(ctx.db, diag);
+        for id in 0..inference.type_vars.len() {
+            inference.type_assignment.entry(LocalTypeVarId(id)).or_insert(ty_missing);
+        }
+    }
+
     ctx.apply_inference_rewriter_to_exprs();
 
     match &value.expr {
