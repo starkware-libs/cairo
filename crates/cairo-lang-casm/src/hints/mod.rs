@@ -294,6 +294,11 @@ pub enum CoreHint {
         mul_mod_offsets: ResOperand,
         // A ResOperand::Deref variant that points to the modulus
         modulus: ResOperand,
+
+        // The number of mul mod that were actually computed.
+        // If computed_gates < n_mul_mods it means that the `computed_gates` is an inverse gate
+        // and the input is not invertible.
+        computed_gates_out: CellRef,
     },
 }
 
