@@ -758,8 +758,8 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
         let zero = bounded_int_ty(context, BigInt::zero(), BigInt::zero())?;
         let one = bounded_int_ty(context, BigInt::one(), BigInt::one())?;
 
-        Ok(LibfuncSignature::new_non_branch(
-            vec![
+        Ok(LibfuncSignature {
+            param_signatures: [
                 add_mod_builtin_ty.clone(),
                 mul_mod_builtin_ty.clone(),
                 circuit_descriptor_ty,
@@ -767,27 +767,42 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                 nonzero_ty(context, &get_u384_type(context)?)?,
                 zero,
                 one,
+            ]
+            .into_iter()
+            .map(|ty| ParamSignature::new(ty.clone()))
+            .collect(),
+            branch_signatures: vec![
+                // Failure.
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo::new_builtin(add_mod_builtin_ty.clone(), 0),
+                        OutputVarInfo::new_builtin(mul_mod_builtin_ty.clone(), 1),
+                        OutputVarInfo {
+                            ty: context.get_concrete_type(CircuitFailureGuarantee::id(), &[])?,
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                        },
+                        // TODO(ilya): Add CircuitFailedEvalOutputs.
+                    ],
+
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // Success.
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo::new_builtin(add_mod_builtin_ty, 0),
+                        OutputVarInfo::new_builtin(mul_mod_builtin_ty, 1),
+                        OutputVarInfo {
+                            ty: context
+                                .get_concrete_type(CircuitOutputs::id(), &[GenericArg::Type(ty)])?,
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                        },
+                    ],
+
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
             ],
-            vec![
-                OutputVarInfo {
-                    ty: add_mod_builtin_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
-                OutputVarInfo {
-                    ty: mul_mod_builtin_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 1,
-                    }),
-                },
-                OutputVarInfo {
-                    ty: context.get_concrete_type(CircuitOutputs::id(), &[GenericArg::Type(ty)])?,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                },
-            ],
-            SierraApChange::Known { new_vars_only: false },
-        ))
+            fallthrough: Some(0),
+        })
     }
 }
 
@@ -913,7 +928,7 @@ fn get_circuit_info(
         .collect::<Vec<_>>();
 
     // The offset of the input that has the value `1`.
-    let one_offset = n_inputs;
+    let one_offset = 0;
 
     // We visit each gate in the circuit twice, in the first visit push all its inputs
     // and in the second visit we assume that all the inputs were already visited and we can
@@ -1043,6 +1058,16 @@ pub struct CircuitInfo {
     pub add_offsets: Vec<GateOffsets>,
     /// The offsets for the mul gates.
     pub mul_offsets: Vec<GateOffsets>,
+}
+
+impl CircuitInfo {
+    /// Returns the number of 96bits range checks used by the circuit.
+    ///
+    /// We use 1 slot for the const 1, n_inputs slots for the original unreduced inputs
+    /// `self.values.len()` for all the intermediate values and outputs.
+    pub fn rc96_usage(&self) -> usize {
+        (1 + self.n_inputs + self.values.len()) * VALUE_SIZE
+    }
 }
 
 struct ParsedInputs {
