@@ -8,7 +8,6 @@ pub trait Iterator<T> {
 }
 
 /// Turn a collection of values into an iterator.
-#[unstable(feature: "collections-into-iter", note: "type bounds in traits not yet supported.")]
 pub trait IntoIterator<T> {
     /// The iterator type that will be created.
     type IntoIter;
