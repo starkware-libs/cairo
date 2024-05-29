@@ -1,5 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_casm::hints::CoreHint;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::circuit::{
@@ -186,7 +187,22 @@ fn build_circuit_eval(
     casm_build_extend! {casm_builder,
         const inputs_size = n_inputs * VALUE_SIZE;
         tempvar values = inputs_end - inputs_size;
+
+        // Add the input 1 at the end of the inputs.
+        assert one = inputs_end[0];
+        assert zero = inputs_end[1];
+        assert zero = inputs_end[2];
+        assert zero = inputs_end[3];
+
+
+        hint CoreHint::EvalCircuit {
+             values_ptr: values,
+             n_add_mods: n_adds, add_mod_offsets: add_mod,
+             n_mul_mods: n_muls, mul_mod_offsets: mul_mod,
+             modulus: modulus0
+        };
     }
+
     if !add_offsets.is_empty() {
         casm_build_extend! {casm_builder,
             assert modulus0 = add_mod[0];
@@ -211,12 +227,6 @@ fn build_circuit_eval(
         };
     }
     casm_build_extend! {casm_builder,
-        // Add the input 1 at the end of the inputs.
-        assert one = inputs_end[0];
-        assert zero = inputs_end[1];
-        assert zero = inputs_end[2];
-        assert zero = inputs_end[3];
-
         const add_mod_usage = (BUILTIN_INSTANCE_SIZE * add_offsets.len());
         let new_add_mod = add_mod + add_mod_usage;
         const mul_mod_usage = (BUILTIN_INSTANCE_SIZE * mul_offsets.len());
