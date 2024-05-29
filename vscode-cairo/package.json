@@ -30,8 +30,8 @@
           ".cairo"
         ],
         "icon": {
-          "light": "./icons/cairo-light.svg",
-          "dark": "./icons/cairo-dark.svg"
+          "light": "./icons/cairo-file.svg",
+          "dark": "./icons/cairo-file.svg"
         },
         "configuration": "./language-configuration.json"
       }
