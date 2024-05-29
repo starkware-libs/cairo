@@ -498,24 +498,31 @@ pub fn core_libfunc_cost(
         Circuit(CircuitConcreteLibfunc::Eval(libfunc)) => {
             let info = info_provider.circuit_info(&libfunc.ty);
 
-            let mut steps: i32 = 5;
             let instance_size: i32 = BUILTIN_INSTANCE_SIZE.into_or_panic();
+            let mut steps: i32 = 7 + instance_size;
 
             if !info.add_offsets.is_empty() {
                 steps += instance_size;
             }
 
-            if !info.mul_offsets.is_empty() {
-                steps += instance_size;
-            }
-
-            vec![BranchCost::Regular {
-                const_cost: ConstCost::steps(steps),
-                pre_cost: PreCost(OrderedHashMap::from_iter([
-                    (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
-                    (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
-                ])),
-            }]
+            vec![
+                // Failure.
+                BranchCost::Regular {
+                    const_cost: ConstCost::steps(steps + 1),
+                    pre_cost: PreCost(OrderedHashMap::from_iter([
+                        (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
+                        (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
+                    ])),
+                },
+                // Success.
+                BranchCost::Regular {
+                    const_cost: ConstCost::steps(steps + 1),
+                    pre_cost: PreCost(OrderedHashMap::from_iter([
+                        (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
+                        (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
+                    ])),
+                },
+            ]
         }
         Circuit(CircuitConcreteLibfunc::U384IsZero(_)) => {
             vec![ConstCost::steps(4).into(), ConstCost::steps(4).into()]
