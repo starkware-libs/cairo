@@ -7,8 +7,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use smol_str::SmolStr;
@@ -57,19 +57,7 @@ pub fn priv_module_semantic_data(
             }
             ModuleItemId::Use(item_id) => {
                 let use_ast = &def_db.module_uses(module_id)?[item_id];
-                let use_path = ast::UsePath::Leaf(use_ast.clone());
-                let mut node = use_path.as_syntax_node();
-                let item = loop {
-                    let Some(parent) = node.parent() else {
-                        unreachable!("UsePath is not under an ItemUse.");
-                    };
-                    match parent.kind(syntax_db) {
-                        SyntaxKind::ItemUse => {
-                            break ast::ItemUse::from_syntax_node(syntax_db, parent);
-                        }
-                        _ => node = parent,
-                    }
-                };
+                let item = ast::UsePath::Leaf(use_ast.clone()).get_item(syntax_db);
                 (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
             }
             ModuleItemId::FreeFunction(item_id) => {
