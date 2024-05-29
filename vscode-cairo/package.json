@@ -1,11 +1,31 @@
 {
   "name": "cairo1",
   "displayName": "Cairo 1.0",
-  "description": "Support Cairo syntax",
+  "description": "Cairo language support for Visual Studio Code.",
   "version": "2.6.3",
+  "publisher": "StarkWare",
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Snippets",
+    "Formatters"
   ],
+  "keywords": [
+    "cairo",
+    "starknet",
+    "scarb",
+    "starkware",
+    "blockchain"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/starkware-libs/cairo.git"
+  },
+  "license": "Apache-2.0",
+  "icon": "icons/marketplace.png",
+  "galleryBanner": {
+    "color": "#111011",
+    "theme": "dark"
+  },
   "activationEvents": [
     "onLanguage:cairo",
     "workspaceContains:**/cairo_project.toml",
@@ -67,7 +87,7 @@
           "cairo1.preferScarbLanguageServer": {
             "type": "boolean",
             "default": "true",
-            "description": "If the workspace contains a Scarb.toml file, prefer using `scarb cairo-language-server` over standalone `cairo-language-server` (e.g. one specified by `cairo1.languageServerPath`).",
+            "markdownDescription": "If the workspace contains a Scarb.toml file, prefer using `scarb cairo-language-server` over standalone `cairo-language-server` (e.g. one specified by `cairo1.languageServerPath`).",
             "scope": "window"
           },
           "cairo1.scarbPath": {
@@ -108,8 +128,6 @@
       }
     }
   },
-  "publisher": "StarkWare",
-  "repository": "https://github.com/starkware-libs/cairo/",
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
