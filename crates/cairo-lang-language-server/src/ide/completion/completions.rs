@@ -19,11 +19,12 @@ use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 use tracing::debug;
 
-use crate::find_node_module;
 use crate::lang::lsp::ToLsp;
+use crate::lang::semantic::LsSemanticGroup;
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn generic_completions(
@@ -35,7 +36,7 @@ pub fn generic_completions(
 
     // Crates.
     completions.extend(db.crate_configs().keys().map(|crate_id| CompletionItem {
-        label: db.lookup_intern_crate(*crate_id).name().into(),
+        label: crate_id.lookup_intern(db).name().into(),
         kind: Some(CompletionItemKind::MODULE),
         ..CompletionItem::default()
     }));
@@ -94,7 +95,7 @@ pub fn generic_completions(
 
 fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> CompletionItemKind {
     match item {
-        ResolvedGenericItem::Constant(_) => CompletionItemKind::CONSTANT,
+        ResolvedGenericItem::GenericConstant(_) => CompletionItemKind::CONSTANT,
         ResolvedGenericItem::Module(_) => CompletionItemKind::MODULE,
         ResolvedGenericItem::GenericFunction(_) | ResolvedGenericItem::TraitFunction(_) => {
             CompletionItemKind::FUNCTION
@@ -107,7 +108,7 @@ fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> Completio
         }
         ResolvedGenericItem::Variant(_) => CompletionItemKind::ENUM_MEMBER,
         ResolvedGenericItem::Trait(_) => CompletionItemKind::INTERFACE,
-        ResolvedGenericItem::Variable(_, _) => CompletionItemKind::VARIABLE,
+        ResolvedGenericItem::Variable(_) => CompletionItemKind::VARIABLE,
     }
 }
 
@@ -127,7 +128,7 @@ pub fn colon_colon_completions(
     };
     let mut resolver = Resolver::with_data(db, resolver_data);
 
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast()).ok()?);
+    let mut diagnostics = SemanticDiagnostics::default();
     let item = resolver
         .resolve_concrete_path(&mut diagnostics, segments, NotFoundItemType::Identifier)
         .ok()?;
@@ -169,7 +170,7 @@ pub fn colon_colon_completions(
                     .collect()
             })
             .unwrap_or_default(),
-        ResolvedConcreteItem::Type(ty) => match db.lookup_intern_type(ty) {
+        ResolvedConcreteItem::Type(ty) => match ty.lookup_intern(db) {
             TypeLongId::Concrete(ConcreteTypeId::Enum(enum_id)) => db
                 .enum_variants(enum_id.enum_id(db))
                 .unwrap_or_default()
@@ -188,7 +189,7 @@ pub fn colon_colon_completions(
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn dot_completions(
-    db: &dyn SemanticGroup,
+    db: &(dyn SemanticGroup + 'static),
     file_id: FileId,
     lookup_items: Vec<LookupItemId>,
     expr: ast::ExprBinary,
@@ -219,7 +220,7 @@ pub fn dot_completions(
 
     // Find relevant methods for type.
     let offset = if let Some(ModuleId::Submodule(submodule_id)) =
-        find_node_module(db, file_id, expr.as_syntax_node())
+        db.find_module_containing_node(&expr.as_syntax_node())
     {
         let module_def_ast = submodule_id.stable_ptr(db.upcast()).lookup(syntax_db);
         if let ast::MaybeModuleBody::Some(body) = module_def_ast.body(syntax_db) {
@@ -342,7 +343,6 @@ fn find_methods_for_type(
                 trait_function,
                 ty,
                 &lookup_context,
-                None,
                 Some(stable_ptr),
                 |_| {},
             ) else {

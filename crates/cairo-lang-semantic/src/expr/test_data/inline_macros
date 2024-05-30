@@ -96,11 +96,6 @@ error: Plugin diagnostic: Macro `array` does not support this bracket type.
     let _x = array!(0);
                    ^
 
-error: Unexpected expression type. Expected: "core::felt252", found: "core::integer::u8".
- --> lib.cairo:3:32
-    let _x = array![0_felt252, 1_u8];
-                               ^**^
-
 error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
  --> lib.cairo:3:32
     let _x = array![0_felt252, 1_u8];
@@ -297,10 +292,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?3.
- --> lib.cairo:21:17
+error: Type annotations needed. Failed to infer ?2.
+ --> lib.cairo:21:5
     write!(f, "{non_existing}").unwrap();
-                ^**********^
+    ^*************************^
 
 //! > ==========================================================================
 
@@ -493,10 +488,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?3.
- --> lib.cairo:21:19
+error: Type annotations needed. Failed to infer ?2.
+ --> lib.cairo:21:5
     writeln!(f, "{non_existing}").unwrap();
-                  ^**********^
+    ^***************************^
 
 //! > ==========================================================================
 
@@ -535,6 +530,9 @@ fn foo() {
 
     // Unused arguments.
     format!("{2}{0}", ba, 2, 1);
+
+    // No parens.
+    format!;
 }
 
 //! > function_name
@@ -543,6 +541,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:32:12
+    format!;
+           ^
+
 error: Plugin diagnostic: Macro `write` does not support this bracket type.
  --> lib.cairo:5:12
     format!["{}", ba];
@@ -588,15 +591,25 @@ error: Plugin diagnostic: Unused argument.
     format!("{2}{0}", ba, 2, 1);
                           ^
 
+error: Plugin diagnostic: Macro `write` does not support this bracket type.
+ --> lib.cairo:32:12
+    format!;
+           ^
+
+error: Wrong number of arguments. Expected 1, found: 2
+ --> lib.cairo:32:5
+    format!;
+    ^*****^
+
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?6.
- --> lib.cairo:14:15
+error: Type annotations needed. Failed to infer ?5.
+ --> lib.cairo:14:5
     format!("{non_existing}");
-              ^**********^
+    ^***********************^
 
 //! > ==========================================================================
 
@@ -635,6 +648,9 @@ fn foo() {
 
     // Unused arguments.
     print!("{2}{0}", ba, 2, 1);
+
+    // Missing parens.
+    print!;
 }
 
 //! > function_name
@@ -643,6 +659,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:32:11
+    print!;
+          ^
+
 error: Plugin diagnostic: Macro `write` does not support this bracket type.
  --> lib.cairo:5:11
     print!["{}", ba];
@@ -688,15 +709,25 @@ error: Plugin diagnostic: Unused argument.
     print!("{2}{0}", ba, 2, 1);
                          ^
 
+error: Plugin diagnostic: Macro `write` does not support this bracket type.
+ --> lib.cairo:32:11
+    print!;
+          ^
+
+error: Wrong number of arguments. Expected 1, found: 2
+ --> lib.cairo:32:5
+    print!;
+    ^****^
+
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?9.
- --> lib.cairo:14:14
+error: Type annotations needed. Failed to infer ?5.
+ --> lib.cairo:14:5
     print!("{non_existing}");
-             ^**********^
+    ^**********************^
 
 //! > ==========================================================================
 
@@ -735,6 +766,9 @@ fn foo() {
 
     // Unused arguments.
     println!("{2}{0}", ba, 2, 1);
+    
+    // Missing parens.
+    println!;
 }
 
 //! > function_name
@@ -743,6 +777,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:32:13
+    println!;
+            ^
+
 error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
  --> lib.cairo:5:13
     println!["{}", ba];
@@ -788,15 +827,25 @@ error: Plugin diagnostic: Unused argument.
     println!("{2}{0}", ba, 2, 1);
                            ^
 
+error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
+ --> lib.cairo:32:13
+    println!;
+            ^
+
+error: Wrong number of arguments. Expected 1, found: 2
+ --> lib.cairo:32:5
+    println!;
+    ^******^
+
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?9.
- --> lib.cairo:14:16
+error: Type annotations needed. Failed to infer ?5.
+ --> lib.cairo:14:5
     println!("{non_existing}");
-               ^**********^
+    ^************************^
 
 //! > ==========================================================================
 
@@ -888,10 +937,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?7.
- --> lib.cairo:14:14
+error: Type annotations needed. Failed to infer ?4.
+ --> lib.cairo:14:5
     panic!("{non_existing}");
-             ^**********^
+    ^**********************^
 
 //! > ==========================================================================
 

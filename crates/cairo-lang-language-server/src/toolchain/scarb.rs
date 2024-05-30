@@ -9,6 +9,8 @@ use tracing::warn;
 use crate::env_config;
 use crate::server::notifier::Notifier;
 
+pub const SCARB_TOML: &str = "Scarb.toml";
+
 // TODO(mkaput): Collect `scarb --version` and display it in the editor UI.
 /// The ultimate object for invoking Scarb.
 ///

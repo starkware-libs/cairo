@@ -4,7 +4,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::require;
+use cairo_lang_utils::{require, Intern, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
 use semantic::items::structure::SemanticStructEx;
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
@@ -15,7 +15,7 @@ use super::generators::StatementsBuilder;
 use super::refs::{SemanticLoweringMapping, StructRecomposer};
 use super::usage::MemberPath;
 use crate::db::LoweringGroup;
-use crate::diagnostic::LoweringDiagnosticKind;
+use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
@@ -172,7 +172,7 @@ impl BlockBuilder {
             .collect::<Option<Vec<_>>>()
             .ok_or_else(|| {
                 ctx.diagnostics.report_by_location(
-                    location.get(ctx.db),
+                    location.lookup_intern(ctx.db),
                     LoweringDiagnosticKind::UnexpectedError,
                 )
             })?;
@@ -383,10 +383,8 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
         concrete_struct_id: semantic::ConcreteStructId,
         members: Vec<VariableId>,
     ) -> VariableId {
-        let ty = self
-            .ctx
-            .db
-            .intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)));
+        let ty =
+            TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)).intern(self.ctx.db);
         // TODO(ilya): Is using the `self.location` correct here?
         generators::StructConstruct {
             inputs: members

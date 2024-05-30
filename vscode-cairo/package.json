@@ -29,6 +29,10 @@
         "extensions": [
           ".cairo"
         ],
+        "icon": {
+          "light": "./icons/cairo-file.svg",
+          "dark": "./icons/cairo-file.svg"
+        },
         "configuration": "./language-configuration.json"
       }
     ],
@@ -60,6 +64,12 @@
             "description": "Enable the use of Scarb package manager.",
             "scope": "window"
           },
+          "cairo1.preferScarbLanguageServer": {
+            "type": "boolean",
+            "default": "true",
+            "description": "If the workspace contains a Scarb.toml file, prefer using `scarb cairo-language-server` over standalone `cairo-language-server` (e.g. one specified by `cairo1.languageServerPath`).",
+            "scope": "window"
+          },
           "cairo1.scarbPath": {
             "type": "string",
             "description": "Path to the Scarb package manager binary.",
@@ -67,7 +77,7 @@
           },
           "cairo1.corelibPath": {
             "type": "string",
-            "description": "Path to the Cairo core library, used as a fallback.",
+            "description": "Path to the Cairo core library, used in non-Scarb projects.",
             "scope": "window"
           },
           "cairo1.languageServerExtraEnv": {

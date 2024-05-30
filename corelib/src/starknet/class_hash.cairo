@@ -55,10 +55,6 @@ impl ClassHashPartialEq of PartialEq<ClassHash> {
     fn eq(lhs: @ClassHash, rhs: @ClassHash) -> bool {
         class_hash_to_felt252(*lhs) == class_hash_to_felt252(*rhs)
     }
-    #[inline(always)]
-    fn ne(lhs: @ClassHash, rhs: @ClassHash) -> bool {
-        !(lhs == rhs)
-    }
 }
 
 impl HashClassHash<S, +HashStateTrait<S>, +Drop<S>> =

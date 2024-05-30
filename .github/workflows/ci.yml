@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2024-03-09
+          toolchain: nightly-2024-04-23
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - run: |
@@ -62,7 +62,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
-          toolchain: nightly-2024-03-09
+          toolchain: nightly-2024-04-23
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Install nextest
@@ -85,7 +85,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
-          toolchain: nightly-2024-03-09
+          toolchain: nightly-2024-04-23
       - uses: Swatinem/rust-cache@v2
       - run: scripts/rust_fmt.sh --check
 
@@ -115,16 +115,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Machete
-        uses: vsuryamurthy/cargo-machete-action@v1
+        uses: bnjbvr/cargo-machete@main
 
   clippy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
         with:
           components: clippy
-          toolchain: nightly-2024-03-09
+          toolchain: nightly-2024-04-23
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/clippy.sh
@@ -139,7 +139,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2024-04-23
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/docs.sh

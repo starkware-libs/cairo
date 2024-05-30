@@ -4,13 +4,13 @@
 
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::corelib::{get_core_trait, unit_ty};
+use cairo_lang_semantic::corelib::unit_ty;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::ConcreteFunction;
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
-use semantic::corelib::{core_module, get_ty_by_name};
+use semantic::corelib::{core_module, destruct_trait_fn, get_ty_by_name, panic_destruct_trait_fn};
 use semantic::{TypeId, TypeLongId};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
@@ -100,7 +100,7 @@ impl<'a> DestructAdder<'a> {
         if let [err_var] = introduced_vars[..] {
             let var = &self.lowered.variables[err_var];
 
-            let long_ty = self.db.lookup_intern_type(var.ty);
+            let long_ty = var.ty.lookup_intern(self.db);
             let TypeLongId::Tuple(tys) = long_ty else {
                 return;
             };
@@ -292,14 +292,8 @@ pub fn add_destructs(
     )
     .unwrap();
 
-    let destruct_trait_id = get_core_trait(db.upcast(), "Destruct".into());
-    let plain_trait_function =
-        db.trait_function_by_name(destruct_trait_id, "destruct".into()).unwrap().unwrap();
-    let panic_destruct_trait_id = get_core_trait(db.upcast(), "PanicDestruct".into());
-    let panic_trait_function = db
-        .trait_function_by_name(panic_destruct_trait_id, "panic_destruct".into())
-        .unwrap()
-        .unwrap();
+    let plain_trait_function = destruct_trait_fn(db.upcast());
+    let panic_trait_function = panic_destruct_trait_fn(db.upcast());
 
     // Add destructions.
     let stable_ptr = function_id
@@ -344,7 +338,7 @@ pub fn add_destructs(
 
             match destruction {
                 DestructionEntry::Plain(plain_destruct) => {
-                    let semantic_function = db.intern_function(semantic::FunctionLongId {
+                    let semantic_function = semantic::FunctionLongId {
                         function: ConcreteFunction {
                             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
                                 impl_id: plain_destruct.impl_id,
@@ -352,7 +346,8 @@ pub fn add_destructs(
                             }),
                             generic_args: vec![],
                         },
-                    });
+                    }
+                    .intern(db);
 
                     stmts.push(StatementCall {
                         function: semantic_function.lowered(db),
@@ -364,7 +359,7 @@ pub fn add_destructs(
                 }
 
                 DestructionEntry::Panic(panic_destruct) => {
-                    let semantic_function = db.intern_function(semantic::FunctionLongId {
+                    let semantic_function = semantic::FunctionLongId {
                         function: ConcreteFunction {
                             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
                                 impl_id: panic_destruct.impl_id,
@@ -372,7 +367,8 @@ pub fn add_destructs(
                             }),
                             generic_args: vec![],
                         },
-                    });
+                    }
+                    .intern(db);
 
                     let new_panic_var = variables.new_var(VarRequest { ty: panic_ty, location });
 
@@ -410,7 +406,7 @@ pub fn add_destructs(
                 let new_tuple_var = variables.new_var(VarRequest { ty: tuple_ty, location });
                 let orig_tuple_var = *tuple_var;
                 *tuple_var = new_tuple_var;
-                let long_ty = db.lookup_intern_type(tuple_ty);
+                let long_ty = tuple_ty.lookup_intern(db);
                 let TypeLongId::Tuple(tys) = long_ty else { unreachable!() };
 
                 let vars = tys

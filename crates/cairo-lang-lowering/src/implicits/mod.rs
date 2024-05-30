@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use itertools::{chain, zip_eq, Itertools};
 use semantic::TypeId;
 
@@ -123,7 +123,7 @@ fn block_body_implicits(
     for (i, statement) in ctx.lowered.blocks[block_id].statements.iter_mut().enumerate() {
         if let Statement::Call(stmt) = statement {
             if matches!(
-                stmt.function.lookup(ctx.db),
+                stmt.function.lookup_intern(ctx.db),
                 FunctionLongId::Semantic(func_id)
                     if func_id.get_concrete(ctx.db.upcast()).generic_function == require_implicits_libfunc_id
             ) {

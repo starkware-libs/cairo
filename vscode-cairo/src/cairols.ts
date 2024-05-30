@@ -39,6 +39,26 @@ export async function setupLanguageServer(
     clientOptions,
   );
 
+  // Notify the server when client configuration changes.
+  // CairoLS pulls configuration properties it is interested in by itself, so it
+  // is not needed to attach any details in the notification payload.
+  const weakClient = new WeakRef(client);
+  vscode.workspace.onDidChangeConfiguration(
+    async () => {
+      const client = weakClient.deref();
+      if (client != undefined) {
+        await client.sendNotification(
+          lc.DidChangeConfigurationNotification.type,
+          {
+            settings: "",
+          },
+        );
+      }
+    },
+    null,
+    ctx.extension.subscriptions,
+  );
+
   client.registerFeature(new SemanticTokensFeature(client));
 
   const myProvider = new (class implements vscode.TextDocumentContentProvider {
@@ -120,24 +140,17 @@ async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
     ctx.log.error(`${e}`);
   }
 
-  const serverExecutable = serverExecutableProvider?.languageServerExecutable();
-  if (serverExecutable == undefined) {
+  const run = serverExecutableProvider?.languageServerExecutable();
+  if (run == undefined) {
     ctx.log.error("failed to start CairoLS");
     throw new Error("failed to start CairoLS");
   }
 
-  insertLanguageServerExtraEnv(serverExecutable, ctx);
+  setupEnv(run, ctx);
 
-  ctx.log.debug(`using CairoLS: ${quoteServerExecutable(serverExecutable)}`);
+  ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
 
-  const run = serverExecutable;
-
-  const debug = structuredClone(serverExecutable);
-  debug.options ??= {};
-  debug.options.env ??= {};
-  debug.options.env["CAIRO_LS_LOG"] ??= "cairo_lang_language_server=debug";
-
-  return { run, debug };
+  return { run, debug: run };
 }
 
 async function determineLanguageServerExecutableProvider(
@@ -145,34 +158,82 @@ async function determineLanguageServerExecutableProvider(
   scarb: Scarb | undefined,
   ctx: Context,
 ): Promise<LanguageServerExecutableProvider> {
+  const log = ctx.log.span("determineLanguageServerExecutableProvider");
   const standalone = () => StandaloneLS.find(workspaceFolder, scarb, ctx);
 
-  // If Scarb is missing or is disabled, always fallback to standalone CairoLS.
   if (!scarb) {
+    log.trace("determineLanguageServerExecutableProvider: Scarb is missing");
     return await standalone();
   }
 
-  // If Scarb manifest is missing, and standalone CairoLS path is explicit.
-  if (!(await isScarbProject()) && ctx.config.has("languageServerPath")) {
+  if (await isScarbProject()) {
+    log.trace("this is a Scarb project");
+
+    if (!ctx.config.get("preferScarbLanguageServer", true)) {
+      log.trace("`preferScarbLanguageServer` is false, using standalone LS");
+      return await standalone();
+    }
+
+    if (await scarb.hasCairoLS(ctx)) {
+      log.trace("using Scarb LS");
+      return scarb;
+    }
+
+    log.trace("Scarb has no LS extension, falling back to standalone");
     return await standalone();
-  }
+  } else {
+    log.trace("this is *not* a Scarb project, looking for standalone LS");
 
-  // Otherwise, always prefer Scarb CairoLS.
-  if (await scarb.hasCairoLS(ctx)) {
-    return scarb;
-  }
+    try {
+      return await standalone();
+    } catch (e) {
+      log.trace("could not find standalone LS, trying Scarb LS");
+      if (await scarb.hasCairoLS(ctx)) {
+        log.trace("using Scarb LS");
+        return scarb;
+      }
 
-  return await standalone();
+      log.trace(
+        "could not find standalone LS and Scarb has no LS extension, will error out",
+      );
+      throw e;
+    }
+  }
 }
 
-function insertLanguageServerExtraEnv(
-  serverExecutable: lc.Executable,
-  ctx: Context,
-) {
+function setupEnv(serverExecutable: lc.Executable, ctx: Context) {
+  const logEnv = {
+    CAIRO_LS_LOG: buildEnvFilter(ctx),
+    RUST_BACKTRACE: "1",
+  };
+
   const extraEnv = ctx.config.get("languageServerExtraEnv");
+
   serverExecutable.options ??= {};
   serverExecutable.options.env ??= {};
-  Object.assign(serverExecutable.options.env, extraEnv);
+  Object.assign(serverExecutable.options.env, logEnv, extraEnv);
+}
+
+function buildEnvFilter(ctx: Context): string {
+  const level = convertVscodeLogLevelToRust(ctx.log.logLevel);
+  return level ? `cairo_lang_language_server=${level}` : "";
+}
+
+function convertVscodeLogLevelToRust(logLevel: vscode.LogLevel): string | null {
+  switch (logLevel) {
+    case vscode.LogLevel.Trace:
+      return "trace";
+    case vscode.LogLevel.Debug:
+      return "debug";
+    case vscode.LogLevel.Info:
+      return "info";
+    case vscode.LogLevel.Warning:
+      return "warn";
+    case vscode.LogLevel.Error:
+      return "error";
+    case vscode.LogLevel.Off:
+      return null;
+  }
 }
 
 function quoteServerExecutable(serverExecutable: lc.Executable): string {

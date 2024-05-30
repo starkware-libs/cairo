@@ -33,8 +33,8 @@ impl ComponentSpecificGenerationData {
         RewriteNode::interpolate_patched(
             indoc! {"
             use starknet::storage::{
-                StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-                StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+                StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+                StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
             };
             $has_component_trait$
 
@@ -101,7 +101,7 @@ fn get_embeddable_as_attr_value(db: &dyn SyntaxGroup, attr: &ast::Attribute) -> 
     let [arg] = &attribute_args.arguments(db).elements(db)[..] else {
         return None;
     };
-    let AttributeArgVariant::Unnamed { value: attr_arg_value, .. } =
+    let AttributeArgVariant::Unnamed(attr_arg_value) =
         AttributeArg::from_ast(arg.clone(), db).variant
     else {
         return None;

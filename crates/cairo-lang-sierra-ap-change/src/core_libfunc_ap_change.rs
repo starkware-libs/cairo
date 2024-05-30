@@ -1,3 +1,5 @@
+use std::ops::Shl;
+
 use cairo_lang_sierra::extensions::ap_tracking::ApTrackingConcreteLibfunc;
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
@@ -7,6 +9,7 @@ use cairo_lang_sierra::extensions::bounded_int::{
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
+use cairo_lang_sierra::extensions::circuit::CircuitConcreteLibfunc;
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
@@ -35,7 +38,8 @@ use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
-use num_traits::Zero;
+use num_bigint::BigInt;
+use num_traits::{One, Zero};
 
 use crate::ApChange;
 
@@ -67,12 +71,17 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         Array(libfunc) => match libfunc {
             ArrayConcreteLibfunc::New(_) => vec![ApChange::Known(1)],
             ArrayConcreteLibfunc::SpanFromTuple(_) => vec![ApChange::Known(0)],
+            ArrayConcreteLibfunc::TupleFromSpan(_) => vec![ApChange::Known(2), ApChange::Known(2)],
             ArrayConcreteLibfunc::Append(_) => vec![ApChange::Known(0)],
             ArrayConcreteLibfunc::PopFront(_)
             | ArrayConcreteLibfunc::PopFrontConsume(_)
             | ArrayConcreteLibfunc::SnapshotPopFront(_)
             | ArrayConcreteLibfunc::SnapshotPopBack(_) => {
                 vec![ApChange::Known(1), ApChange::Known(1)]
+            }
+            ArrayConcreteLibfunc::SnapshotMultiPopFront(_)
+            | ArrayConcreteLibfunc::SnapshotMultiPopBack(_) => {
+                vec![ApChange::Known(3), ApChange::Known(3)]
             }
             ArrayConcreteLibfunc::Get(libfunc) => {
                 if info_provider.type_size(&libfunc.ty) == 1 { [4, 3] } else { [5, 4] }
@@ -370,7 +379,25 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                     },
                 )]
             }
+            BoundedIntConcreteLibfunc::Constrain(libfunc) => {
+                vec![
+                    ApChange::Known(
+                        1 + if libfunc.boundary == BigInt::one().shl(128) { 0 } else { 1 },
+                    ),
+                    ApChange::Known(1 + if libfunc.boundary.is_zero() { 0 } else { 1 }),
+                ]
+            }
+            BoundedIntConcreteLibfunc::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         },
+        Circuit(CircuitConcreteLibfunc::U384IsZero(_)) => {
+            vec![ApChange::Known(0), ApChange::Known(0)]
+        }
+        Circuit(CircuitConcreteLibfunc::FillInput(_)) => {
+            vec![ApChange::Known(2), ApChange::Known(2)]
+        }
+        Circuit(CircuitConcreteLibfunc::Eval(_)) => vec![ApChange::Known(1)],
+        Circuit(CircuitConcreteLibfunc::GetDescriptor(_)) => vec![ApChange::Known(6)],
+        Circuit(CircuitConcreteLibfunc::InitCircuitData(_)) => vec![ApChange::Known(0)],
     }
 }
 

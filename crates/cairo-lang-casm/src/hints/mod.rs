@@ -124,6 +124,9 @@ pub enum CoreHint {
     TestLessThan { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
     TestLessThanOrEqual { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
+    /// Variant of TestLessThanOrEqual that compares addresses.
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 28))]
+    TestLessThanOrEqualAddress { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
     /// Multiplies two 128-bit integers and returns two 128-bit integers: the high and low parts of
     /// the product.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 3))]
@@ -280,6 +283,17 @@ pub enum CoreHint {
         s_or_r1: CellRef,
         t_or_k0: CellRef,
         t_or_k1: CellRef,
+    },
+
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 28))]
+    EvalCircuit {
+        values_ptr: ResOperand,
+        n_add_mods: ResOperand,
+        add_mod_offsets: ResOperand,
+        n_mul_mods: ResOperand,
+        mul_mod_offsets: ResOperand,
+        // A ResOperand::Deref variant that points to the modulus
+        modulus: ResOperand,
     },
 }
 
@@ -451,6 +465,11 @@ impl PythonicHint for CoreHint {
                 "memory{dst} = {} <= {}",
                 ResOperandAsIntegerFormatter(lhs),
                 ResOperandAsIntegerFormatter(rhs)
+            ),
+            CoreHint::TestLessThanOrEqualAddress { lhs, rhs, dst } => format!(
+                "memory{dst} = {} <= {}",
+                ResOperandAsAddressFormatter(lhs),
+                ResOperandAsAddressFormatter(rhs)
             ),
             CoreHint::WideMul128 { lhs, rhs, high, low } => format!(
                 "(memory{high}, memory{low}) = divmod({} * {}, 2**128)",
@@ -795,6 +814,7 @@ impl PythonicHint for CoreHint {
                     "
                 )
             }
+            CoreHint::EvalCircuit { .. } => "raise NotImplementedError".into(),
         }
     }
 }

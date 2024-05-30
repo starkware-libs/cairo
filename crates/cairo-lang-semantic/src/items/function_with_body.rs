@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::FunctionWithBodyId;
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::consts::{IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
@@ -14,7 +14,7 @@ use itertools::Itertools;
 use super::functions::InlineConfiguration;
 use crate::corelib::try_get_core_ty_by_name;
 use crate::db::SemanticGroup;
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::ResolverData;
 use crate::{semantic, ExprId, PatternId, SemanticDiagnostic, TypeId};
@@ -35,6 +35,9 @@ pub fn function_declaration_diagnostics(
         FunctionWithBodyId::Impl(impl_function_id) => db
             .priv_impl_function_declaration_data(impl_function_id)
             .map(|x| x.function_declaration_data),
+        FunctionWithBodyId::Trait(trait_function_id) => {
+            db.priv_trait_function_declaration_data(trait_function_id)
+        }
     };
     declaration_data.map(|data| data.diagnostics).unwrap_or_default()
 }
@@ -51,6 +54,9 @@ pub fn function_declaration_inline_config(
         FunctionWithBodyId::Impl(impl_function_id) => {
             db.impl_function_declaration_inline_config(impl_function_id)
         }
+        FunctionWithBodyId::Trait(trait_function_id) => {
+            db.trait_function_declaration_inline_config(trait_function_id)
+        }
     }
 }
 
@@ -66,6 +72,9 @@ pub fn function_declaration_implicit_precedence(
         FunctionWithBodyId::Impl(impl_function_id) => {
             db.impl_function_declaration_implicit_precedence(impl_function_id)
         }
+        FunctionWithBodyId::Trait(trait_function_id) => {
+            db.trait_function_declaration_implicit_precedence(trait_function_id)
+        }
     }
 }
 
@@ -77,6 +86,9 @@ pub fn function_with_body_signature(
     match function_id {
         FunctionWithBodyId::Free(free_function_id) => db.free_function_signature(free_function_id),
         FunctionWithBodyId::Impl(impl_function_id) => db.impl_function_signature(impl_function_id),
+        FunctionWithBodyId::Trait(trait_function_id) => {
+            db.trait_function_signature(trait_function_id)
+        }
     }
 }
 
@@ -95,6 +107,11 @@ pub fn function_with_body_generic_params(
             res.extend(db.impl_function_generic_params(impl_function_id)?);
             Ok(res)
         }
+        FunctionWithBodyId::Trait(trait_function_id) => {
+            let mut res = db.trait_generic_params(trait_function_id.trait_id(db.upcast()))?;
+            res.extend(db.trait_function_generic_params(trait_function_id)?);
+            Ok(res)
+        }
     }
 }
 
@@ -111,6 +128,9 @@ pub fn function_with_body_attributes(
             .priv_impl_function_declaration_data(impl_function_id)?
             .function_declaration_data
             .attributes),
+        FunctionWithBodyId::Trait(trait_function_id) => {
+            Ok(db.priv_trait_function_declaration_data(trait_function_id)?.attributes)
+        }
     }
 }
 
@@ -143,11 +163,10 @@ pub fn function_body_diagnostics(
     function_id: FunctionWithBodyId,
 ) -> Diagnostics<SemanticDiagnostic> {
     let body_data = match function_id {
-        FunctionWithBodyId::Free(free_function_id) => {
-            db.priv_free_function_body_data(free_function_id)
-        }
-        FunctionWithBodyId::Impl(impl_function_id) => {
-            db.priv_impl_function_body_data(impl_function_id)
+        FunctionWithBodyId::Free(id) => db.priv_free_function_body_data(id),
+        FunctionWithBodyId::Impl(id) => db.priv_impl_function_body_data(id),
+        FunctionWithBodyId::Trait(id) => {
+            db.priv_trait_function_body_data(id).and_then(|x| x.ok_or(DiagnosticAdded))
         }
     };
     body_data.map(|data| data.diagnostics).unwrap_or_default()
@@ -166,14 +185,13 @@ pub fn function_body(
     db: &dyn SemanticGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<FunctionBody>> {
-    match function_id {
-        FunctionWithBodyId::Free(free_function_id) => {
-            Ok(db.priv_free_function_body_data(free_function_id)?.body)
+    Ok(match function_id {
+        FunctionWithBodyId::Free(id) => db.priv_free_function_body_data(id)?.body,
+        FunctionWithBodyId::Impl(id) => db.priv_impl_function_body_data(id)?.body,
+        FunctionWithBodyId::Trait(id) => {
+            db.priv_trait_function_body_data(id)?.ok_or(DiagnosticAdded)?.body
         }
-        FunctionWithBodyId::Impl(impl_function_id) => {
-            Ok(db.priv_impl_function_body_data(impl_function_id)?.body)
-        }
-    }
+    })
 }
 
 // =========================================================
@@ -212,14 +230,13 @@ pub trait SemanticExprLookup<'a>: Upcast<dyn SemanticGroup + 'a> {
         ptr: ast::ExprPtr,
     ) -> Maybe<ExprId> {
         let body_data = match function_id {
-            FunctionWithBodyId::Free(free_function_id) => {
-                self.upcast().priv_free_function_body_data(free_function_id)
-            }
-            FunctionWithBodyId::Impl(impl_function_id) => {
-                self.upcast().priv_impl_function_body_data(impl_function_id)
+            FunctionWithBodyId::Free(id) => self.upcast().priv_free_function_body_data(id)?,
+            FunctionWithBodyId::Impl(id) => self.upcast().priv_impl_function_body_data(id)?,
+            FunctionWithBodyId::Trait(id) => {
+                self.upcast().priv_trait_function_body_data(id)?.ok_or(DiagnosticAdded)?
             }
         };
-        body_data?.expr_lookup.get(&ptr).copied().to_maybe()
+        body_data.expr_lookup.get(&ptr).copied().to_maybe()
     }
     fn lookup_pattern_by_ptr(
         &self,
@@ -227,14 +244,13 @@ pub trait SemanticExprLookup<'a>: Upcast<dyn SemanticGroup + 'a> {
         ptr: ast::PatternPtr,
     ) -> Maybe<PatternId> {
         let body_data = match function_id {
-            FunctionWithBodyId::Free(free_function_id) => {
-                self.upcast().priv_free_function_body_data(free_function_id)
-            }
-            FunctionWithBodyId::Impl(impl_function_id) => {
-                self.upcast().priv_impl_function_body_data(impl_function_id)
+            FunctionWithBodyId::Free(id) => self.upcast().priv_free_function_body_data(id)?,
+            FunctionWithBodyId::Impl(id) => self.upcast().priv_impl_function_body_data(id)?,
+            FunctionWithBodyId::Trait(id) => {
+                self.upcast().priv_trait_function_body_data(id)?.ok_or(DiagnosticAdded)?
             }
         };
-        body_data?.pattern_lookup.get(&ptr).copied().to_maybe()
+        body_data.pattern_lookup.get(&ptr).copied().to_maybe()
     }
 }
 impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticExprLookup<'a> for T {}
@@ -255,16 +271,14 @@ pub fn get_inline_config(
         match &attr.args[..] {
             [
                 AttributeArg {
-                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
-                    ..
+                    variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
             ] if &path.node.get_text(db.upcast()) == "always" => {
                 config = InlineConfiguration::Always(attr.clone());
             }
             [
                 AttributeArg {
-                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
-                    ..
+                    variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
             ] if &path.node.get_text(db.upcast()) == "never" => {
                 config = InlineConfiguration::Never(attr.clone());
@@ -273,7 +287,7 @@ pub fn get_inline_config(
                 config = InlineConfiguration::Should(attr.clone());
             }
             _ => {
-                diagnostics.report_by_ptr(
+                diagnostics.report(
                     attr.args_stable_ptr.untyped(),
                     SemanticDiagnosticKind::UnsupportedInlineArguments,
                 );
@@ -281,7 +295,7 @@ pub fn get_inline_config(
         }
 
         if seen_inline_attr {
-            diagnostics.report_by_ptr(
+            diagnostics.report(
                 attr.id_stable_ptr.untyped(),
                 SemanticDiagnosticKind::RedundantInlineAttribute,
             );
@@ -313,7 +327,7 @@ pub fn get_implicit_precedence<'a>(
 
     // Report warnings for overridden attributes if any.
     for attr in attributes {
-        diagnostics.report_by_ptr(
+        diagnostics.report(
             attr.id_stable_ptr.untyped(),
             SemanticDiagnosticKind::RedundantImplicitPrecedenceAttribute,
         );
@@ -323,7 +337,7 @@ pub fn get_implicit_precedence<'a>(
         .args
         .iter()
         .map(|arg| match &arg.variant {
-            AttributeArgVariant::Unnamed { value, .. } => {
+            AttributeArgVariant::Unnamed(value) => {
                 let ast::Expr::Path(path) = value else {
                     return Err(diagnostics.report(
                         value,
@@ -336,10 +350,8 @@ pub fn get_implicit_precedence<'a>(
                     .map_err(|kind| diagnostics.report(value, kind))
             }
 
-            _ => Err(diagnostics.report_by_ptr(
-                arg.arg_stable_ptr.untyped(),
-                SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments,
-            )),
+            _ => Err(diagnostics
+                .report(&arg.arg, SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments)),
         })
         .try_collect()?;
     let precedence = ImplicitPrecedence::from_iter(types);

@@ -1,9 +1,10 @@
 use cairo_lang_defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, VarId,
-    VariantId,
+    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, TraitTypeId,
+    VarId, VariantId,
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::LookupIntern;
 
 use super::{
     ConstVar, ImplVar, ImplVarId, Inference, InferenceId, InferenceVar, LocalConstVarId,
@@ -13,7 +14,8 @@ use crate::db::SemanticGroup;
 use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
-    GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
+    GenericFunctionWithBodyId, ImplFunctionBodyId, ImplGenericFunctionId,
+    ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{ImplId, UninferredImpl};
@@ -202,17 +204,20 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
 }
 impl<'a> SemanticRewriter<ConstValue, NoError> for Canonicalizer<'a> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, NoError> {
-        let ConstValue::Var(var) = value else {
+        let ConstValue::Var(var, ty) = value else {
             return value.default_rewrite(self);
         };
         if var.inference_id != self.to_canonic.source_inference_id {
             return value.default_rewrite(self);
         }
         let next_id = LocalConstVarId(self.to_canonic.const_var_mapping.len());
-        *value = ConstValue::Var(ConstVar {
-            id: *self.to_canonic.const_var_mapping.entry(var.id).or_insert(next_id),
-            inference_id: InferenceId::Canonical,
-        });
+        *value = ConstValue::Var(
+            ConstVar {
+                id: *self.to_canonic.const_var_mapping.entry(var.id).or_insert(next_id),
+                inference_id: InferenceId::Canonical,
+            },
+            *ty,
+        );
         Ok(RewriteResult::Modified)
     }
 }
@@ -224,7 +229,7 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Canonicalizer<'a> {
             }
             return value.default_rewrite(self);
         };
-        let var = var_id.get(self.db);
+        let var = var_id.lookup_intern(self.db);
         if var.inference_id != self.to_canonic.source_inference_id {
             return value.default_rewrite(self);
         }
@@ -296,7 +301,7 @@ impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
             }
             return value.default_rewrite(self);
         };
-        let var = var_id.get(self.get_db());
+        let var = var_id.lookup_intern(self.get_db());
         if var.inference_id != InferenceId::Canonical {
             return value.default_rewrite(self);
         }
@@ -361,7 +366,7 @@ impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
 }
 impl<'db> SemanticRewriter<ConstValue, MapperError> for Mapper<'db> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, MapperError> {
-        let ConstValue::Var(var) = value else {
+        let ConstValue::Var(var, ty) = value else {
             return value.default_rewrite(self);
         };
         let id = self
@@ -370,7 +375,8 @@ impl<'db> SemanticRewriter<ConstValue, MapperError> for Mapper<'db> {
             .get(&var.id)
             .copied()
             .ok_or(MapperError(InferenceVar::Const(var.id)))?;
-        *value = ConstValue::Var(ConstVar { id, inference_id: self.mapping.target_inference_id });
+        *value =
+            ConstValue::Var(ConstVar { id, inference_id: self.mapping.target_inference_id }, *ty);
         Ok(RewriteResult::Modified)
     }
 }
@@ -383,7 +389,7 @@ impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {
             }
             return value.default_rewrite(self);
         };
-        let var = var_id.get(self.get_db());
+        let var = var_id.lookup_intern(self.get_db());
         let id = self
             .mapping
             .impl_var_mapping

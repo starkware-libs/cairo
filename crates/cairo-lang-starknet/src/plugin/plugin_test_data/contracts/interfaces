@@ -74,6 +74,9 @@ mod counter_contract {
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 Interface1DispatcherTrait:
 
 trait Interface1DispatcherTrait<T> {
@@ -167,6 +170,9 @@ impl Interface1SafeDispatcherImpl of Interface1SafeDispatcherTrait<Interface1Saf
 }
 
 
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
 Interface2DispatcherTrait:
 
 trait Interface2DispatcherTrait<T> {
@@ -276,6 +282,9 @@ impl Interface1DispatcherSerde of core::serde::Serde::<Interface1Dispatcher> {
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreInterface1Dispatcher of starknet::Store::<Interface1Dispatcher> {
@@ -327,6 +336,9 @@ impl Interface1LibraryDispatcherSerde of core::serde::Serde::<Interface1LibraryD
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreInterface1LibraryDispatcher of starknet::Store::<Interface1LibraryDispatcher> {
@@ -378,6 +390,9 @@ impl Interface1SafeLibraryDispatcherSerde of core::serde::Serde::<Interface1Safe
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreInterface1SafeLibraryDispatcher of starknet::Store::<Interface1SafeLibraryDispatcher> {
@@ -429,6 +444,9 @@ impl Interface1SafeDispatcherSerde of core::serde::Serde::<Interface1SafeDispatc
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreInterface1SafeDispatcher of starknet::Store::<Interface1SafeDispatcher> {
@@ -480,6 +498,9 @@ impl Interface2DispatcherSerde of core::serde::Serde::<Interface2Dispatcher> {
 }
 
 
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreInterface2Dispatcher of starknet::Store::<Interface2Dispatcher> {
@@ -531,6 +552,9 @@ impl Interface2LibraryDispatcherSerde of core::serde::Serde::<Interface2LibraryD
 }
 
 
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreInterface2LibraryDispatcher of starknet::Store::<Interface2LibraryDispatcher> {
@@ -582,6 +606,9 @@ impl Interface2SafeLibraryDispatcherSerde of core::serde::Serde::<Interface2Safe
 }
 
 
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreInterface2SafeLibraryDispatcher of starknet::Store::<Interface2SafeLibraryDispatcher> {
@@ -633,6 +660,9 @@ impl Interface2SafeDispatcherSerde of core::serde::Serde::<Interface2SafeDispatc
 }
 
 
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreInterface2SafeDispatcher of starknet::Store::<Interface2SafeDispatcher> {
@@ -668,6 +698,9 @@ impl StoreInterface2SafeDispatcher of starknet::Store::<Interface2SafeDispatcher
 }
 
 
+lib.cairo:11:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -691,8 +724,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -739,6 +772,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:11:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -758,6 +794,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:16:5
+    #[embeddable_as(I1I1)]
+    ^********************^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForI1I1<
@@ -798,6 +837,9 @@ pub mod __constructor_I1I1 {
 }
 
 
+lib.cairo:23:5
+    #[embeddable_as(I1I2)]
+    ^********************^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForI1I2<
@@ -838,6 +880,9 @@ pub mod __constructor_I1I2 {
 }
 
 
+lib.cairo:30:5
+    #[embeddable_as(I2I)]
+    ^*******************^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForI2I<
@@ -878,6 +923,9 @@ pub mod __constructor_I2I {
 }
 
 
+lib.cairo:38:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -899,8 +947,8 @@ contract:
     }
     
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x1086dfc31bbcf268e659eae270c18772df580a79d61a03d56056059861c874a;
@@ -994,6 +1042,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:49:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {

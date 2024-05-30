@@ -1,4 +1,6 @@
 use core::test::test_utils::{assert_eq, assert_ne};
+#[feature("collections-into-iter")]
+use core::iter::{IntoIterator, Iterator};
 
 #[test]
 fn test_array() {
@@ -144,4 +146,55 @@ fn test_fixed_size_array_copy() {
     let arr = [10, 11, 12];
     consume(arr);
     consume(arr);
+}
+
+/// Helper for tests removing the box wrapping a fixed sized array wrapped by an option.
+fn debox<T, const SIZE: usize>(value: Option<@Box<[T; SIZE]>>) -> Option<@[T; SIZE]> {
+    Option::Some(value?.as_snapshot().unbox())
+}
+
+#[test]
+fn test_span_into_fixed_size_array() {
+    assert!(debox::<felt252, 2>([10, 11, 12].span().try_into()).is_none());
+    assert!(debox::<felt252, 3>([10, 11, 12].span().try_into()) == Option::Some(@[10, 11, 12]));
+    assert!(debox::<felt252, 4>([10, 11, 12].span().try_into()).is_none());
+    assert!(debox::<u256, 2>([10, 11, 12].span().try_into()).is_none());
+    assert!(debox::<u256, 3>([10, 11, 12].span().try_into()) == Option::Some(@[10, 11, 12]));
+    assert!(debox::<u256, 4>([10, 11, 12].span().try_into()).is_none());
+    assert!(debox::<felt252, 1>([].span().try_into()).is_none());
+    assert!(debox::<felt252, 0>([].span().try_into()) == Option::Some(@[]));
+}
+
+#[test]
+fn test_span_multi_pop() {
+    let mut span = array![10, 11, 12, 13].span();
+    assert!(span.multi_pop_front::<5>().is_none());
+    assert!(debox(span.multi_pop_front::<4>()) == Option::Some(@[10, 11, 12, 13]));
+    let mut span = array![10, 11, 12, 13].span();
+    assert!(debox(span.multi_pop_front::<3>()) == Option::Some(@[10, 11, 12]));
+    let mut span = array![10, 11, 12, 13].span();
+    assert!(span.multi_pop_back::<5>().is_none());
+    assert!(debox(span.multi_pop_back::<4>()) == Option::Some(@[10, 11, 12, 13]));
+    let mut span = array![10, 11, 12, 13].span();
+    assert!(debox(span.multi_pop_back::<3>()) == Option::Some(@[11, 12, 13]));
+}
+
+#[test]
+fn test_span_iterator() {
+    let mut iter = array![10, 11, 12, 13_felt252].span().into_iter();
+    let mut i = 10;
+    while let Option::Some(value) = iter.next() {
+        assert_eq!(value, @i);
+        i += 1;
+    }
+}
+
+#[test]
+fn test_array_iterator() {
+    let mut iter = array![10, 11, 12, 13].into_iter();
+    let mut i = 10;
+    while let Option::Some(value) = iter.next() {
+        assert_eq!(value, i);
+        i += 1;
+    }
 }

@@ -1,23 +1,25 @@
 use std::ops::Shl;
 
-use cairo_felt::Felt252;
 use cairo_lang_utils::require;
 use itertools::Itertools;
 use num_bigint::{BigInt, ToBigInt};
 use num_traits::{One, Signed};
+use starknet_types_core::felt::Felt as Felt252;
 
+use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
 use super::utils::Range;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureOnlyGenericLibfunc, SignatureSpecializationContext, SpecializationContext,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
+    SpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    args_as_two_types, ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo,
-    SignatureBasedConcreteLibfunc, SpecializationError,
+    args_as_single_type, args_as_two_types, ConcreteType, NamedLibfunc, NamedType,
+    OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
@@ -76,6 +78,8 @@ define_libfunc_hierarchy! {
         Sub(BoundedIntSubLibfunc),
         Mul(BoundedIntMulLibfunc),
         DivRem(BoundedIntDivRemLibfunc),
+        Constrain(BoundedIntConstrainLibfunc),
+        IsZero(BoundedIntIsZeroLibfunc),
     }, BoundedIntConcreteLibfunc
 }
 
@@ -229,7 +233,9 @@ pub enum BoundedIntDivRemAlgorithm {
 }
 impl BoundedIntDivRemAlgorithm {
     /// Returns the algorithm to use for division and remainder of bounded integers.
-    /// Fails if the div_rem of the ranges is not supported.
+    /// Fails if the div_rem of the ranges is not supported yet.
+    ///
+    /// Assumption: `lhs` is non-negative and `rhs` is positive.
     pub fn new(lhs: &Range, rhs: &Range) -> Option<Self> {
         let prime = Felt252::prime().to_bigint().unwrap();
         let q_max = (&lhs.upper - 1) / &rhs.lower;
@@ -245,16 +251,93 @@ impl BoundedIntDivRemAlgorithm {
         if &q_upper_bound * &u128_limit < prime {
             return Some(Self::KnownSmallQuotient(q_upper_bound));
         }
-        let r = lhs.upper.sqrt();
-        if (&r + 1) * &u128_limit < prime {
-            return Some(Self::KnownSmallLhs(r));
+        let root = lhs.upper.sqrt();
+        if (&root + 1) * &u128_limit < prime {
+            return Some(Self::KnownSmallLhs(root));
         }
         // No algorithm found.
         None
     }
 }
 
-/// Helper function for specializing the signature of a simple operation bounded int libfunc.
+/// Libfunc for constraining a BoundedInt<Min, Max> to one of two non-empty ranges: [Min, boundary)
+/// or [Boundary, Max]. The libfunc is also applicable for standard types such as u* and i*.
+#[derive(Default)]
+pub struct BoundedIntConstrainLibfunc {}
+impl NamedLibfunc for BoundedIntConstrainLibfunc {
+    type Concrete = BoundedIntConstrainConcreteLibfunc;
+
+    const STR_ID: &'static str = "bounded_int_constrain";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let (ty, boundary) = match args {
+            [GenericArg::Type(ty), GenericArg::Value(boundary)] => Ok((ty, boundary)),
+            [_, _] => Err(SpecializationError::UnsupportedGenericArg),
+            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+        }?;
+        let range = Range::from_type(context, ty.clone())?;
+        let under_range = Range::half_open(range.lower, boundary.clone());
+        let over_range = Range::half_open(boundary.clone(), range.upper);
+        require(
+            under_range.size() >= BigInt::one()
+                && over_range.size() >= BigInt::one()
+                && under_range.is_small_range()
+                && over_range.is_small_range(),
+        )
+        .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let branch_signature = |rng: Range| {
+            Ok(BranchSignature {
+                vars: vec![
+                    OutputVarInfo::new_builtin(range_check_type.clone(), 0),
+                    OutputVarInfo {
+                        ty: bounded_int_ty(context, rng.lower, rng.upper - 1)?,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                    },
+                ],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            })
+        };
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(ty.clone()),
+            ],
+            branch_signatures: vec![branch_signature(under_range)?, branch_signature(over_range)?],
+            fallthrough: Some(0),
+        })
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let boundary = match args {
+            [GenericArg::Type(_), GenericArg::Value(boundary)] => Ok(boundary.clone()),
+            [_, _] => Err(SpecializationError::UnsupportedGenericArg),
+            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+        }?;
+        let context = context.upcast();
+        Ok(Self::Concrete { boundary, signature: self.specialize_signature(context, args)? })
+    }
+}
+
+pub struct BoundedIntConstrainConcreteLibfunc {
+    pub boundary: BigInt,
+    signature: LibfuncSignature,
+}
+impl SignatureBasedConcreteLibfunc for BoundedIntConstrainConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
+
+/// Helper function for specializing the signature of a simple bounded int operation libfunc.
 fn specialize_helper(
     context: &dyn SignatureSpecializationContext,
     args: &[GenericArg],
@@ -272,12 +355,51 @@ fn specialize_helper(
             ty: bounded_int_ty(context, min_result, max_result)?,
             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
         }],
-        SierraApChange::Known { new_vars_only: false },
+        SierraApChange::Known { new_vars_only: true },
     ))
 }
 
-/// Returns the concrete type for a BoundedInt with the given range.
-fn bounded_int_ty(
+/// Libfunc for checking whether the given bounded int is zero or not, and returning a non-zero
+/// wrapped value in case of success.
+#[derive(Default)]
+pub struct BoundedIntIsZeroLibfunc;
+impl SignatureOnlyGenericLibfunc for BoundedIntIsZeroLibfunc {
+    const STR_ID: &'static str = "bounded_int_is_zero";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let range = Range::from_type(context, ty.clone())?;
+        // Making sure 0 is actually in the given range.
+        require(!range.lower.is_positive() && range.upper.is_positive())
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(ty.clone())],
+            branch_signatures: vec![
+                // Zero.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+                // NonZero.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: nonzero_ty(context, &ty)?,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+/// Returns the concrete type for a BoundedInt<min, max>.
+pub fn bounded_int_ty(
     context: &dyn SignatureSpecializationContext,
     min: BigInt,
     max: BigInt,

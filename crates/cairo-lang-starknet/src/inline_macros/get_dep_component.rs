@@ -72,19 +72,20 @@ fn get_dep_component_generate_code_helper(
             return InlinePluginResult { code: None, diagnostics };
         };
     }
-    let mut builder = PatchBuilder::new(db);
+    let mut builder = PatchBuilder::new(db, syntax);
     let (let_part, maybe_mut, maybe_ref) =
         if is_mut { ("let mut", "_mut", "ref ") } else { ("let", "", "") };
     builder.add_modified(RewriteNode::interpolate_patched(
         &format!(
-        "
+            "
             {{
                 {let_part} __get_dep_component_macro_temp_contract__ = \
          HasComponent::get_contract{maybe_mut}({maybe_ref}$contract_path$);
                 $component_impl_path$::get_component{maybe_mut}({maybe_ref}\
          __get_dep_component_macro_temp_contract__)
             }}
-            "),
+            "
+        ),
         &[
             ("contract_path".to_string(), RewriteNode::new_trimmed(contract_arg.as_syntax_node())),
             (
@@ -95,11 +96,12 @@ fn get_dep_component_generate_code_helper(
         .into(),
     ));
 
+    let (content, code_mappings) = builder.build();
     InlinePluginResult {
         code: Some(PluginGeneratedFile {
             name: "get_dep_component_inline_macro".into(),
-            content: builder.code,
-            code_mappings: builder.code_mappings,
+            content,
+            code_mappings,
             aux_data: None,
         }),
         diagnostics: vec![],

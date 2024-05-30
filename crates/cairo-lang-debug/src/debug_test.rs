@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_utils::{define_short_id, Upcast};
+use cairo_lang_utils::{define_short_id, Intern, Upcast};
 use test_log::test;
 
 use crate::debug as cairo_lang_debug;
@@ -31,7 +31,7 @@ impl Upcast<dyn TestGroup> for DatabaseForTesting {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct DummyLongId(usize);
 
-define_short_id!(DummyShortId, DummyLongId, TestGroup, lookup_intern_b);
+define_short_id!(DummyShortId, DummyLongId, TestGroup, lookup_intern_b, intern_b);
 
 #[derive(DebugWithDb)]
 #[debug_db(dyn TestGroup + 'static)]
@@ -47,6 +47,6 @@ struct ComplexStruct {
 #[test]
 fn test_debug() {
     let db = DatabaseForTesting::default();
-    let a = ComplexStruct { a: Some(5), b: db.intern_b(DummyLongId(6)), c: 7, d: 8 };
+    let a = ComplexStruct { a: Some(5), b: DummyLongId(6).intern(&db), c: 7, d: 8 };
     assert_eq!(format!("{:?}", a.debug(&db)), "ComplexStruct { a: Some(5), b: DummyLongId(6) }");
 }

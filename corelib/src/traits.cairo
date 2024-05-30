@@ -54,14 +54,13 @@ pub trait DivRem<T> {
 
 pub trait PartialEq<T> {
     fn eq(lhs: @T, rhs: @T) -> bool;
-    fn ne(lhs: @T, rhs: @T) -> bool;
+    fn ne(lhs: @T, rhs: @T) -> bool {
+        !Self::eq(lhs, rhs)
+    }
 }
 impl PartialEqSnap<T, +PartialEq<T>> of PartialEq<@T> {
     fn eq(lhs: @@T, rhs: @@T) -> bool {
         PartialEq::<T>::eq(*lhs, *rhs)
-    }
-    fn ne(lhs: @@T, rhs: @@T) -> bool {
-        PartialEq::<T>::ne(*lhs, *rhs)
     }
 }
 
@@ -125,10 +124,16 @@ pub trait Not<T> {
 /// The following two traits are for implementing the [] operator. Only one should be implemented
 /// for each type. Both are not consuming of self, the first gets a snapshot of the object and
 /// the second gets ref.
+#[deprecated(
+    feature: "deprecated-index-traits", note: "Use `core::ops::index::IndexView`.", since: "2.7.0"
+)]
 pub trait IndexView<C, I, V> {
     fn index(self: @C, index: I) -> V;
 }
 
+#[deprecated(
+    feature: "deprecated-index-traits", note: "Use `core::ops::index::Index`.", since: "2.7.0"
+)]
 pub trait Index<C, I, V> {
     fn index(ref self: C, index: I) -> V;
 }
@@ -217,10 +222,6 @@ impl TupleSize1PartialEq<E0, +PartialEq<E0>> of PartialEq<(E0,)> {
         let (rhs,) = rhs;
         lhs == rhs
     }
-    #[inline(always)]
-    fn ne(lhs: @(E0,), rhs: @(E0,)) -> bool {
-        !(rhs == lhs)
-    }
 }
 
 impl TupleSize2PartialEq<E0, E1, +PartialEq<E0>, +PartialEq<E1>> of PartialEq<(E0, E1)> {
@@ -229,10 +230,6 @@ impl TupleSize2PartialEq<E0, E1, +PartialEq<E0>, +PartialEq<E1>> of PartialEq<(E
         let (lhs0, lhs1) = lhs;
         let (rhs0, rhs1) = rhs;
         lhs0 == rhs0 && lhs1 == rhs1
-    }
-    #[inline(always)]
-    fn ne(lhs: @(E0, E1), rhs: @(E0, E1)) -> bool {
-        !(rhs == lhs)
     }
 }
 
@@ -245,10 +242,6 @@ impl TupleSize3PartialEq<
         let (rhs0, rhs1, rhs2) = rhs;
         lhs0 == rhs0 && lhs1 == rhs1 && lhs2 == rhs2
     }
-    #[inline(always)]
-    fn ne(lhs: @(E0, E1, E2), rhs: @(E0, E1, E2)) -> bool {
-        !(rhs == lhs)
-    }
 }
 
 impl TupleSize4PartialEq<
@@ -259,10 +252,6 @@ impl TupleSize4PartialEq<
         let (lhs0, lhs1, lhs2, lhs3) = lhs;
         let (rhs0, rhs1, rhs2, rhs3) = rhs;
         lhs0 == rhs0 && lhs1 == rhs1 && lhs2 == rhs2 && lhs3 == rhs3
-    }
-    #[inline(always)]
-    fn ne(lhs: @(E0, E1, E2, E3), rhs: @(E0, E1, E2, E3)) -> bool {
-        !(rhs == lhs)
     }
 }
 
@@ -313,3 +302,41 @@ impl TupleSize4Default<
 
 impl FixedSizedArrayDrop<T, +Drop<T>, const N: u32> of Drop<[T; N]>;
 impl FixedSizedArrayCopy<T, +Copy<T>, const N: u32> of Copy<[T; N]>;
+
+impl FixedSizedArraySize0PartialEq<T, +PartialEq<T>> of PartialEq<[T; 0]> {
+    fn eq(lhs: @[T; 0], rhs: @[T; 0]) -> bool {
+        true
+    }
+}
+
+impl FixedSizedArraySize1PartialEq<T, +PartialEq<T>> of PartialEq<[T; 1]> {
+    fn eq(lhs: @[T; 1], rhs: @[T; 1]) -> bool {
+        let [lhs] = lhs;
+        let [rhs] = rhs;
+        rhs == lhs
+    }
+}
+
+impl FixedSizedArraySize2PartialEq<T, +PartialEq<T>> of PartialEq<[T; 2]> {
+    fn eq(lhs: @[T; 2], rhs: @[T; 2]) -> bool {
+        let [lhs0, lhs1] = lhs;
+        let [rhs0, rhs1] = rhs;
+        (lhs0, lhs1) == (rhs0, rhs1)
+    }
+}
+
+impl FixedSizedArraySize3PartialEq<T, +PartialEq<T>> of PartialEq<[T; 3]> {
+    fn eq(lhs: @[T; 3], rhs: @[T; 3]) -> bool {
+        let [lhs0, lhs1, lhs2] = lhs;
+        let [rhs0, rhs1, rhs2] = rhs;
+        (lhs0, lhs1, lhs2) == (rhs0, rhs1, rhs2)
+    }
+}
+
+impl FixedSizedArraySize4PartialEq<T, +PartialEq<T>> of PartialEq<[T; 4]> {
+    fn eq(lhs: @[T; 4], rhs: @[T; 4]) -> bool {
+        let [lhs0, lhs1, lhs2, lhs3] = lhs;
+        let [rhs0, rhs1, rhs2, rhs3] = rhs;
+        (lhs0, lhs1, lhs2, lhs3) == (rhs0, rhs1, rhs2, rhs3)
+    }
+}

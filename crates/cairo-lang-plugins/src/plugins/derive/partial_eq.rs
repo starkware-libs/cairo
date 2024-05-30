@@ -60,10 +60,6 @@ pub fn handle_partial_eq(
             fn eq(lhs: @{full_typename}, rhs: @{full_typename}) -> bool {{
                 {body}
             }}
-            #[inline(always)]
-            fn ne(lhs: @{full_typename}, rhs: @{full_typename}) -> bool {{
-                !(lhs == rhs)
-            }}
         }}
     "});
 }

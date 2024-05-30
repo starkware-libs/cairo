@@ -19,11 +19,6 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt252>>".
- --> lib.cairo:6:30
-    let _bad: A::<A<bool>> = res;
-                             ^*^
-
 error: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt252>>".
  --> lib.cairo:6:30
     let _bad: A::<A<bool>> = res;
@@ -120,11 +115,6 @@ error: Expected variable or constant, found type.
  --> lib.cairo:4:20
     bar::<felt252, felt252>();
                    ^*****^
-
-error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>.
- --> lib.cairo:7:18
-    bar::<usize, -1, A>();
-                 ^^
 
 error: The value does not fit within the range of type core::integer::u32.
  --> lib.cairo:7:18
@@ -272,11 +262,6 @@ extern fn bar<S, T>() -> MyStruct<S, T> nopanic;
 foo
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "test::MyStruct::<core::felt252, core::integer::u8>", found: "test::MyStruct::<core::integer::u16, core::integer::u32>".
- --> lib.cairo:8:5
-    x = bar::<u16, u32>();
-    ^
-
 error: Unexpected argument type. Expected: "test::MyStruct::<core::felt252, core::integer::u8>", found: "test::MyStruct::<core::integer::u16, core::integer::u32>".
  --> lib.cairo:8:9
     x = bar::<u16, u32>();
@@ -555,9 +540,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-    bar::<{
-        1 + 2
-    }>();
+    bar::<{ 1 + 2 }>();
 }
 
 //! > function_name
@@ -579,9 +562,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let _s: S<{
-        1 - 2
-    }> = bar();
+    let _s: S<{ 1 - 2 }> = bar();
 }
 
 //! > function_name
@@ -589,40 +570,26 @@ foo
 
 //! > module_code
 extern type S<const N: felt252>;
-extern fn bar() -> S<{
-    3 + 8
-}> nopanic;
+extern fn bar() -> S<{ 3 + 8 }> nopanic;
 const K: felt252 = 98;
 mod A {
     fn f() {
-        let _x: super::S<{
-            super::K + 9
-        }> = super::bar();
+        let _x: super::S<{ super::K + 9 }> = super::bar();
     }
 }
 
 //! > function_body
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "test::S::<-1>", found: "test::S::<11>".
- --> lib.cairo:16:10
-    }> = bar();
-         ^***^
-
 error: Unexpected argument type. Expected: "test::S::<-1>", found: "test::S::<11>".
- --> lib.cairo:16:10
-    }> = bar();
-         ^***^
-
-error: Unexpected expression type. Expected: "test::S::<107>", found: "test::S::<11>".
- --> lib.cairo:10:14
-        }> = super::bar();
-             ^**********^
+ --> lib.cairo:10:28
+    let _s: S<{ 1 - 2 }> = bar();
+                           ^***^
 
 error: Unexpected argument type. Expected: "test::S::<107>", found: "test::S::<11>".
- --> lib.cairo:10:14
-        }> = super::bar();
-             ^**********^
+ --> lib.cairo:6:46
+        let _x: super::S<{ super::K + 9 }> = super::bar();
+                                             ^**********^
 
 //! > ==========================================================================
 
@@ -664,9 +631,7 @@ fn foo() -> S<1> {
 foo
 
 //! > module_code
-fn bar<const N: felt252>() -> S<{
-    3 - 2
-}> {
+fn bar<const N: felt252>() -> S<{ 3 - 2 }> {
     S::<N> { field: 1 }
 }
 struct S<const N: felt252> {
@@ -676,15 +641,10 @@ struct S<const N: felt252> {
 //! > function_body
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "test::S::<1>", found: "test::S::<N>".
- --> lib.cairo:3:4
-}> {
-   ^
-
 error: Unexpected return type. Expected: "test::S::<1>", found: "test::S::<N>".
- --> lib.cairo:3:4
-}> {
-   ^
+ --> lib.cairo:1:44
+fn bar<const N: felt252>() -> S<{ 3 - 2 }> {
+                                           ^
 
 //! > ==========================================================================
 
@@ -716,11 +676,6 @@ fn bar2(s: MyStruct::<2>) {}
 //! > function_body
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "test::MyStruct::<2>", found: "test::MyStruct::<1>".
- --> lib.cairo:11:10
-    bar2(s);
-         ^
-
 error: Unexpected argument type. Expected: "test::MyStruct::<2>", found: "test::MyStruct::<1>".
  --> lib.cairo:11:10
     bar2(s);

@@ -5,9 +5,9 @@ use core::traits::Into;
 use core::traits::TryInto;
 use core::zeroable::Zeroable;
 
-/// Re-imports
-/// Store
+/// Store trait and implementations for various types.
 pub mod storage_access;
+/// Re-imports
 pub use storage_access::{Store, StorageAddress};
 use storage_access::{
     StorePacking, StorageBaseAddress, storage_base_address_const, storage_base_address_from_felt252,
@@ -69,11 +69,16 @@ pub use event::Event;
 pub mod account;
 pub use account::AccountContract;
 
+/// Storage members interfaces.
 pub mod storage;
 
 pub extern type System;
 
 /// An Helper function to force the inclusion of `System` in the list of implicits.
+#[deprecated(
+    feature: "use_system_implicit",
+    note: "Use `core::internal::require_implicit::<System>` instead."
+)]
 fn use_system_implicit() implicits(System) {}
 
 /// The result type for a syscall.

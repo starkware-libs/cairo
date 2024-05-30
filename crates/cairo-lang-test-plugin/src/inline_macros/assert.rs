@@ -7,7 +7,7 @@ use cairo_lang_defs::plugin_utils::{
 };
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
 
 /// A trait for compare assertion plugin.
@@ -27,7 +27,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    arguments_syntax.lparen(db).stable_ptr().untyped(),
+                    &arguments_syntax.lparen(db),
                     format!("Macro `{}` requires at least 2 arguments.", Self::NAME),
                 )],
             };
@@ -38,7 +38,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    lhs.stable_ptr().untyped(),
+                    lhs,
                     format!("Macro `{}` requires the first argument to be unnamed.", Self::NAME),
                 )],
             };
@@ -47,7 +47,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    rhs.stable_ptr().untyped(),
+                    rhs,
                     format!("Macro `{}` requires the second argument to be unnamed.", Self::NAME),
                 )],
             };
@@ -55,7 +55,7 @@ trait CompareAssertionPlugin: NamedPlugin {
         let f = format!("__formatter_for_{}_macro_", Self::NAME);
         let lhs_escaped = escape_node(db, lhs.as_syntax_node());
         let rhs_escaped = escape_node(db, rhs.as_syntax_node());
-        let mut builder = PatchBuilder::new(db);
+        let mut builder = PatchBuilder::new(db, syntax);
         let (lhs_value, maybe_assign_lhs) = if matches!(lhs, ast::Expr::Path(_)) {
             (RewriteNode::new_trimmed(lhs.as_syntax_node()), "")
         } else {
@@ -157,11 +157,12 @@ trait CompareAssertionPlugin: NamedPlugin {
                 }}
             ",
         });
+        let (content, code_mappings) = builder.build();
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
                 name: format!("{}_macro", Self::NAME).into(),
-                content: builder.code,
-                code_mappings: builder.code_mappings,
+                content,
+                code_mappings,
                 aux_data: None,
             }),
             diagnostics: vec![],

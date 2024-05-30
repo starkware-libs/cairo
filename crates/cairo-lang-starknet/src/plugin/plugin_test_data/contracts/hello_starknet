@@ -43,49 +43,23 @@ pub enum Event {}
         }
     }
     
-    pub use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
-    pub mod __member_module_balance {
-        use super::HelloStarknetImpl;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> usize;
-            fn write(ref self: ContractMemberState, value: usize);
-        }
 
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+        pub mod __member_module_balance {
+        use super::HelloStarknetImpl;
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = usize;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+                }
             }
-            fn read(self: @ContractMemberState) -> usize {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<usize>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
-                )
-            }
-            fn write(ref self: ContractMemberState, value: usize) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<usize>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
-                )
-            }
-        }
 impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
 impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-    }
+        }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -538,49 +512,23 @@ pub enum Event {}
         }
     }
     
-    pub use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
-    pub mod __member_module_balance {
-        use super::HelloStarknetImpl;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> usize;
-            fn write(ref self: ContractMemberState, value: usize);
-        }
 
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+        pub mod __member_module_balance {
+        use super::HelloStarknetImpl;
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = usize;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+                }
             }
-            fn read(self: @ContractMemberState) -> usize {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<usize>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
-                )
-            }
-            fn write(ref self: ContractMemberState, value: usize) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<usize>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
-                )
-            }
-        }
 impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
 impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-    }
+        }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]

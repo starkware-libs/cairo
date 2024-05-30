@@ -47,6 +47,9 @@ trait MyTrait<T> {
     fn do_nothing(self: @T);
 }
 
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
 MyTraitDispatcherTrait:
 
 trait MyTraitDispatcherTrait<T> {
@@ -156,6 +159,9 @@ impl MyTraitDispatcherSerde of core::serde::Serde::<MyTraitDispatcher> {
 }
 
 
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreMyTraitDispatcher of starknet::Store::<MyTraitDispatcher> {
@@ -207,6 +213,9 @@ impl MyTraitLibraryDispatcherSerde of core::serde::Serde::<MyTraitLibraryDispatc
 }
 
 
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreMyTraitLibraryDispatcher of starknet::Store::<MyTraitLibraryDispatcher> {
@@ -258,6 +267,9 @@ impl MyTraitSafeLibraryDispatcherSerde of core::serde::Serde::<MyTraitSafeLibrar
 }
 
 
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreMyTraitSafeLibraryDispatcher of starknet::Store::<MyTraitSafeLibraryDispatcher> {
@@ -309,6 +321,9 @@ impl MyTraitSafeDispatcherSerde of core::serde::Serde::<MyTraitSafeDispatcher> {
 }
 
 
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
 starknet_derive:
 
 impl StoreMyTraitSafeDispatcher of starknet::Store::<MyTraitSafeDispatcher> {
@@ -344,6 +359,9 @@ impl StoreMyTraitSafeDispatcher of starknet::Store::<MyTraitSafeDispatcher> {
 }
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 component:
 
 #[event]
@@ -367,8 +385,8 @@ pub enum Event {}
     
 
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -395,6 +413,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -414,6 +435,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:8:5
+    #[embeddable_as(MyImpl)]
+    ^**********************^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForMyImpl<

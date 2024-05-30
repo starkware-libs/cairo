@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_proc_macros::SemanticObject;
+use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
@@ -33,9 +34,7 @@ pub enum Ambiguity {
         #[dont_rewrite]
         var: InferenceVar,
     },
-    WillNotInfer {
-        concrete_trait_id: ConcreteTraitId,
-    },
+    WillNotInfer(ConcreteTraitId),
     NegativeImplWithUnresolvedGenericArgs {
         impl_id: ImplId,
         ty: TypeId,
@@ -55,7 +54,7 @@ impl Ambiguity {
             Ambiguity::FreeVariable { impl_id, var: _ } => {
                 format!("Candidate impl {:?} has an unused generic parameter.", impl_id.debug(db),)
             }
-            Ambiguity::WillNotInfer { concrete_trait_id } => {
+            Ambiguity::WillNotInfer(concrete_trait_id) => {
                 format!(
                     "Cannot infer trait {:?}. First generic argument must be known.",
                     concrete_trait_id.debug(db)
@@ -63,7 +62,7 @@ impl Ambiguity {
             }
             Ambiguity::NegativeImplWithUnresolvedGenericArgs { impl_id, ty } => format!(
                 "Cannot infer negative impl in `{}` as it contains the unresolved type `{}`",
-                { impl_id }.format(db),
+                impl_id.format(db),
                 ty.format(db)
             ),
         }
@@ -88,7 +87,7 @@ pub fn canonic_trait_solutions_cycle(
     _canonical_trait: &CanonicalTrait,
     _lookup_context: &ImplLookupContext,
 ) -> Result<SolutionSet<CanonicalImpl>, InferenceError> {
-    Err(InferenceError::Cycle { var: InferenceVar::Impl(LocalImplVarId(0)) })
+    Err(InferenceError::Cycle(InferenceVar::Impl(LocalImplVarId(0))))
 }
 
 /// Adds the defining module of the trait and the generic arguments to the lookup context.
@@ -102,7 +101,7 @@ pub fn enrich_lookup_context(
     // Add the defining module of the generic args to the lookup.
     for generic_arg in &generic_args {
         if let GenericArgumentId::Type(ty) = generic_arg {
-            match db.lookup_intern_type(*ty) {
+            match ty.lookup_intern(db) {
                 TypeLongId::Concrete(concrete) => {
                     lookup_context
                         .insert_module(concrete.generic_type(db).module_file_id(db.upcast()).0);

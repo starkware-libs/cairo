@@ -10,24 +10,7 @@ use super::{
 
 #[test]
 fn all_list_includes_all_supported() {
-    let blocked_libfuncs = [
-        "print",
-        "cheatcode",
-        "set_block_timestamp",
-        "set_caller_address",
-        "set_contract_address",
-        "set_sequencer_address",
-        "set_version",
-        "set_account_contract_address",
-        "set_max_fee",
-        "set_transaction_hash",
-        "set_chain_id",
-        "set_nonce",
-        "set_signature",
-        "pop_log",
-        "pop_l2_to_l1_message",
-        "get_available_gas",
-    ];
+    let blocked_libfuncs = ["print", "cheatcode", "get_available_gas"];
     pretty_assertions::assert_eq!(
         lookup_allowed_libfuncs_list(ListSelector::ListName(BUILTIN_ALL_LIBFUNCS_LIST.to_string()))
             .unwrap()

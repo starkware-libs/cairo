@@ -1,4 +1,5 @@
 pub mod traits;
+#[feature("deprecated-index-traits")]
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
     PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop, Not, Neg, Into,
@@ -99,6 +100,8 @@ impl BoolIntoFelt252 of Into<bool, felt252> {
 }
 pub mod boolean;
 
+pub mod circuit;
+
 /// General purpose implicits.
 pub extern type RangeCheck;
 pub extern type SegmentArena;
@@ -190,10 +193,6 @@ impl Felt252PartialEq of PartialEq<felt252> {
             _ => false,
         }
     }
-    #[inline(always)]
-    fn ne(lhs: @felt252, rhs: @felt252) -> bool {
-        !(*lhs == *rhs)
-    }
 }
 
 extern fn felt252_is_zero(lhs: felt252) -> zeroable::IsZeroResult<felt252> nopanic;
@@ -279,6 +278,9 @@ pub mod math;
 
 /// Num.
 pub mod num;
+
+/// General operations.
+pub mod ops;
 
 /// Cmp.
 pub mod cmp;
@@ -369,3 +371,6 @@ pub mod metaprogramming;
 
 /// Preludes.
 mod prelude;
+
+/// Iterators.
+pub mod iter;

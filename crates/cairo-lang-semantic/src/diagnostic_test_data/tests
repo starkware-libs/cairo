@@ -25,6 +25,11 @@ error: Function not found.
 1 + foo()
     ^*^
 
+error: Type annotations needed. Failed to infer ?0.
+ --> lib.cairo:3:1
+1 + foo()
+^*******^
+
 //! > ==========================================================================
 
 //! > Test function lookup
@@ -486,6 +491,9 @@ test_expr_diagnostics(expect_diagnostics: true)
   let _fail = unstable_function();
   #[feature("testing")]
   let _work = unstable_function();
+  let _fail = unstable_function_with_note();
+  #[feature("testing")]
+  let _work = unstable_function_with_note();
 }
 
 //! > module_code
@@ -494,13 +502,23 @@ fn unstable_function() -> felt252 {
     0
 }
 
+#[unstable(feature: "testing", note: "Some reason", since: "1.0.0")]
+fn unstable_function_with_note() -> felt252 {
+    0
+}
+
 //! > function_body
 
 //! > expected_diagnostics
 error: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
- --> lib.cairo:7:15
+ --> lib.cairo:12:15
   let _fail = unstable_function();
               ^***************^
+
+error: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute. Note: "Some reason"
+ --> lib.cairo:15:15
+  let _fail = unstable_function_with_note();
+              ^*************************^
 
 //! > ==========================================================================
 
@@ -530,16 +548,60 @@ fn deprecated_function_no_note() -> felt252 {
     0
 }
 
+#[unstable(feature: "unstable-trait")]
+trait UnstableTrait;
+
+impl BadUnstableImpl of UnstableTrait;
+
+#[feature("unstable-trait")]
+impl AllowedUnstableImpl of UnstableTrait;
+
+#[unstable(feature: "unstable-member")]
+struct DisallowedType {}
+
+struct BadStructMember {
+    member: DisallowedType,
+}
+
+#[feature("unstable-member")]
+struct AllowedStructMember {
+    member: DisallowedType,
+}
+
+enum BadEnumVariant {
+    variant: DisallowedType,
+}
+
+#[feature("unstable-member")]
+enum AllowedEnumMember {
+    variant: DisallowedType,
+}
+
 //! > function_body
 
 //! > expected_diagnostics
+error: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
+ --> lib.cairo:14:25
+impl BadUnstableImpl of UnstableTrait;
+                        ^***********^
+
+error: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
+ --> lib.cairo:23:13
+    member: DisallowedType,
+            ^************^
+
+error: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
+ --> lib.cairo:32:14
+    variant: DisallowedType,
+             ^************^
+
 error: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
- --> lib.cairo:12:15
+ --> lib.cairo:41:15
   let _fail = deprecated_function_with_note();
               ^***************************^
 
 error: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
- --> lib.cairo:15:15
+ --> lib.cairo:44:15
   let _fail = deprecated_function_no_note();
               ^*************************^
 
@@ -607,11 +669,6 @@ error: Unsupported argument for feature marker attribute.
 #[unstable(feature: "testing", extra)]
                                ^***^
 
-error: Unsupported argument for feature marker attribute.
- --> lib.cairo:7:32
-#[unstable(feature: "testing", note: "extra")]
-                               ^**^
-
 error: Duplicated argument for feature marker attribute.
  --> lib.cairo:10:32
 #[unstable(feature: "testing", feature: "other")]
@@ -651,3 +708,25 @@ error: Multiple feature marker attributes.
  --> lib.cairo:32:1
 #[deprecated(feature: "testing1")]
 ^********************************^
+
+//! > ==========================================================================
+
+//! > Test bad type usage.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let _fail = array![()];
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Cannot have array of type "()" that is zero sized.
+ --> lib.cairo:3:15
+  let _fail = array![()];
+              ^********^

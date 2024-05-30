@@ -1,6 +1,5 @@
 use std::cmp::Ordering;
 
-use cairo_felt::Felt252;
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
 use cairo_lang_sierra::extensions::array::ArrayType;
@@ -19,7 +18,9 @@ use cairo_lang_sierra::extensions::structure::StructType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
-use cairo_lang_sierra_to_casm::compiler::{CompilationError, SierraToCasmConfig};
+use cairo_lang_sierra_to_casm::compiler::{
+    CairoProgramDebugInfo, CompilationError, SierraToCasmConfig,
+};
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
@@ -36,6 +37,7 @@ use num_traits::Signed;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use starknet_crypto::{poseidon_hash_many, FieldElement};
+use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
@@ -327,13 +329,26 @@ impl TypeResolver<'_> {
 }
 
 impl CasmContractClass {
-    // TODO(ilya): Reduce the size of CompilationError.
-    #[allow(clippy::result_large_err)]
     pub fn from_contract_class(
         contract_class: ContractClass,
         add_pythonic_hints: bool,
         max_bytecode_size: usize,
     ) -> Result<Self, StarknetSierraCompilationError> {
+        Ok(Self::from_contract_class_with_debug_info(
+            contract_class,
+            add_pythonic_hints,
+            max_bytecode_size,
+        )?
+        .0)
+    }
+
+    // TODO(ilya): Reduce the size of CompilationError.
+    #[allow(clippy::result_large_err)]
+    pub fn from_contract_class_with_debug_info(
+        contract_class: ContractClass,
+        add_pythonic_hints: bool,
+        max_bytecode_size: usize,
+    ) -> Result<(Self, CairoProgramDebugInfo), StarknetSierraCompilationError> {
         let prime = Felt252::prime();
         for felt252 in &contract_class.sierra_program {
             if felt252.value >= prime {
@@ -540,7 +555,7 @@ impl CasmContractClass {
         };
 
         let compiler_version = current_compiler_version_id().to_string();
-        Ok(Self {
+        let casm_contract_class = Self {
             prime,
             compiler_version,
             bytecode,
@@ -552,7 +567,9 @@ impl CasmContractClass {
                 l1_handler: as_casm_entry_points(contract_class.entry_points_by_type.l1_handler)?,
                 constructor: as_casm_entry_points(contract_class.entry_points_by_type.constructor)?,
             },
-        })
+        };
+
+        Ok((casm_contract_class, cairo_program.debug_info))
     }
 }
 

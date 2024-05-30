@@ -1,4 +1,5 @@
 use std::iter;
+use std::ops::Shl;
 
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
@@ -8,6 +9,9 @@ use cairo_lang_sierra::extensions::bounded_int::{
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
+use cairo_lang_sierra::extensions::circuit::{
+    CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE, VALUE_SIZE,
+};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
@@ -44,7 +48,8 @@ use cairo_lang_sierra::program::Function;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, Itertools};
-use num_traits::Zero;
+use num_bigint::BigInt;
+use num_traits::{One, Zero};
 
 use crate::objects::{
     BranchCost, BranchCostSign, ConstCost, CostInfoProvider, PreCost, WithdrawGasBranchInfo,
@@ -107,11 +112,17 @@ pub trait InvocationCostInfoProvider {
     fn token_usages(&self, token_type: CostTokenType) -> usize;
     /// Provides the ap change variable value of the current statement.
     fn ap_change_var_value(&self) -> usize;
+    /// Provides the info for the circuit.
+    fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo;
 }
 
 impl<InfoProvider: InvocationCostInfoProvider> CostInfoProvider for InfoProvider {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
         self.type_size(ty)
+    }
+
+    fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo {
+        self.circuit_info(ty)
     }
 }
 
@@ -237,6 +248,9 @@ pub fn core_libfunc_cost(
         Array(libfunc) => match libfunc {
             ArrayConcreteLibfunc::New(_) => vec![ConstCost::steps(1).into()],
             ArrayConcreteLibfunc::SpanFromTuple(_) => vec![ConstCost::steps(0).into()],
+            ArrayConcreteLibfunc::TupleFromSpan(_) => {
+                vec![ConstCost::steps(3).into(), ConstCost::steps(3).into()]
+            }
             ArrayConcreteLibfunc::Append(libfunc) => {
                 vec![ConstCost::steps(info_provider.type_size(&libfunc.ty) as i32).into()]
             }
@@ -245,6 +259,13 @@ pub fn core_libfunc_cost(
             | ArrayConcreteLibfunc::SnapshotPopFront(_)
             | ArrayConcreteLibfunc::SnapshotPopBack(_) => {
                 vec![ConstCost::steps(2).into(), ConstCost::steps(3).into()]
+            }
+            ArrayConcreteLibfunc::SnapshotMultiPopFront(_)
+            | ArrayConcreteLibfunc::SnapshotMultiPopBack(_) => {
+                vec![
+                    (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
+                    (ConstCost::steps(5) + ConstCost::range_checks(1)).into(),
+                ]
             }
             ArrayConcreteLibfunc::Get(libfunc) => {
                 if info_provider.type_size(&libfunc.ty) == 1 {
@@ -451,7 +472,66 @@ pub fn core_libfunc_cost(
                     .into(),
                 ]
             }
+            BoundedIntConcreteLibfunc::Constrain(libfunc) => {
+                vec![
+                    (ConstCost {
+                        steps: 2 + if libfunc.boundary == BigInt::one().shl(128) { 0 } else { 1 },
+                        holes: 0,
+                        range_checks: 1,
+                    })
+                    .into(),
+                    (ConstCost {
+                        steps: 3 + if libfunc.boundary.is_zero() { 0 } else { 1 },
+                        holes: 0,
+                        range_checks: 1,
+                    })
+                    .into(),
+                ]
+            }
+            BoundedIntConcreteLibfunc::IsZero(_) => {
+                vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
+            }
         },
+        Circuit(CircuitConcreteLibfunc::FillInput(_)) => {
+            vec![ConstCost::steps(7).into(), ConstCost::steps(7).into()]
+        }
+        Circuit(CircuitConcreteLibfunc::Eval(libfunc)) => {
+            let info = info_provider.circuit_info(&libfunc.ty);
+
+            let mut steps: i32 = 5;
+            let instance_size: i32 = BUILTIN_INSTANCE_SIZE.into_or_panic();
+
+            if !info.add_offsets.is_empty() {
+                steps += instance_size;
+            }
+
+            if !info.mul_offsets.is_empty() {
+                steps += instance_size;
+            }
+
+            vec![BranchCost::Regular {
+                const_cost: ConstCost::steps(steps),
+                pre_cost: PreCost(OrderedHashMap::from_iter([
+                    (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
+                    (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
+                ])),
+            }]
+        }
+        Circuit(CircuitConcreteLibfunc::U384IsZero(_)) => {
+            vec![ConstCost::steps(4).into(), ConstCost::steps(4).into()]
+        }
+        Circuit(CircuitConcreteLibfunc::GetDescriptor(_)) => {
+            vec![ConstCost::steps(6).into()]
+        }
+        Circuit(CircuitConcreteLibfunc::InitCircuitData(libfunc)) => {
+            let info = info_provider.circuit_info(&libfunc.ty);
+            let rc_usage: i32 = (info.values.len() * VALUE_SIZE).into_or_panic();
+
+            vec![BranchCost::Regular {
+                const_cost: ConstCost::steps(0),
+                pre_cost: PreCost::n_builtins(CostTokenType::RangeCheck96, rc_usage),
+            }]
+        }
     }
 }
 
@@ -520,23 +600,15 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         .collect()
 }
 
-// TODO(lior): Remove this struct once it is not needed.
-struct DummyCostInfoProvider {}
-
-impl CostInfoProvider for DummyCostInfoProvider {
-    fn type_size(&self, _ty: &ConcreteTypeId) -> usize {
-        0
-    }
-}
-
 /// Returns a precost value for a libfunc - the cost of non-step tokens.
 /// This is a helper function to implement costing both for creating
 /// gas equations and getting actual gas cost after having a solution.
-pub fn core_libfunc_precost<Ops: CostOperations>(
+pub fn core_libfunc_precost<Ops: CostOperations, InfoProvider: CostInfoProvider>(
     ops: &mut Ops,
     libfunc: &CoreConcreteLibfunc,
+    info_provider: &InfoProvider,
 ) -> Vec<Ops::CostType> {
-    let res = core_libfunc_cost(libfunc, &DummyCostInfoProvider {});
+    let res = core_libfunc_cost(libfunc, info_provider);
 
     res.into_iter()
         .map(|cost| match cost {

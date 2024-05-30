@@ -107,6 +107,9 @@ mod test_contract {
     ) {}
 }
 
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 contract:
 
 
@@ -126,8 +129,8 @@ contract:
     }
     
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x2cd967636a47442d438bb2596f3c9848f0a831f916f4bb50d807e6eb90df576;
@@ -280,6 +283,9 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
+lib.cairo:29:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -338,6 +344,9 @@ impls:
 impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
 
 
+lib.cairo:34:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
@@ -366,6 +375,9 @@ impls:
 impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;
 
 
+lib.cairo:39:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
 starknet_derive:
 
 impl BestEventEverIsEvent of starknet::Event<BestEventEver> {

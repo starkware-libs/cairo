@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::{extract_matches, try_extract_matches, ResultHelper};
+use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern};
 use defs::ids::TopLevelLanguageElementId;
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
@@ -39,7 +39,7 @@ use self::lower_match::lower_expr_match;
 use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
-use crate::diagnostic::{MatchDiagnostic, MatchError, MatchKind};
+use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::{
     FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction, LocationId,
     SemanticFunctionIdEx, Signature,
@@ -85,8 +85,7 @@ pub fn lower_semantic_function(
     check_error_free_or_warn(db, body_diagnostics, semantic_function_id, "body")?;
 
     let mut encapsulating_ctx = EncapsulatingLoweringContext::new(db, semantic_function_id)?;
-    let function_id = db
-        .intern_lowering_function_with_body(FunctionWithBodyLongId::Semantic(semantic_function_id));
+    let function_id = FunctionWithBodyLongId::Semantic(semantic_function_id).intern(db);
     let signature = db.function_with_body_signature(semantic_function_id)?;
 
     // TODO(spapini): Build semantic_defs in semantic model.
@@ -316,7 +315,7 @@ pub fn lower_loop_function(
     loop_expr_id: semantic::ExprId,
 ) -> Maybe<FlatLowered> {
     let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, loop_signature.clone())?;
-    ctx.current_loop_expr_id = Some(loop_expr_id);
+    let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
 
     // Initialize builder.
     let root_block_id = alloc_empty_block(&mut ctx);
@@ -370,6 +369,7 @@ pub fn lower_loop_function(
 
         Ok(root_block_id)
     })();
+    ctx.current_loop_expr_id = old_loop_expr_id;
 
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
@@ -398,7 +398,7 @@ fn wrap_sealed_block_as_function(
             // If the expression is of type never, then the block is unreachable, so add a match on
             // never to make it a viable block end.
             let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
-                ctx.db.lookup_intern_type(ctx.variables[expr.var_id].ty)
+                ctx.variables[expr.var_id].ty.lookup_intern(ctx.db)
             else {
                 unreachable!("Never type must be a concrete enum.");
             };
@@ -461,7 +461,7 @@ fn lower_expr_block(
                 // Emit diagnostic for the rest of the statements with unreachable.
                 ctx.diagnostics.report(
                     start_stmt.stable_ptr().untyped(),
-                    Unreachable { last_statement_ptr: end_stmt.stable_ptr().untyped() },
+                    Unreachable { last_statement_ptr: end_stmt.into() },
                 );
             }
         }
@@ -572,7 +572,7 @@ fn lower_single_pattern(
         | semantic::Pattern::StringLiteral(_)
         | semantic::Pattern::EnumVariant(_) => {
             return Err(LoweringFlowError::Failed(
-                ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedPattern),
+                ctx.diagnostics.report(&pattern, UnsupportedPattern),
             ));
         }
         semantic::Pattern::Variable(semantic::PatternVariable {
@@ -663,10 +663,12 @@ fn lower_tuple_like_pattern_helper(
             let tys = match long_type_id {
                 TypeLongId::Tuple(tys) => tys,
                 TypeLongId::FixedSizeArray { type_id, size } => {
-                    let size =
-                        extract_matches!(ctx.db.lookup_intern_const_value(size), ConstValue::Int)
-                            .to_usize()
-                            .unwrap();
+                    let size = size
+                        .lookup_intern(ctx.db)
+                        .into_int()
+                        .expect("Expected ConstValue::Int for size")
+                        .to_usize()
+                        .unwrap();
                     vec![type_id; size]
                 }
                 _ => unreachable!("Tuple-like pattern must be a tuple or fixed size array."),
@@ -725,7 +727,6 @@ fn lower_expr(
     let expr = ctx.function_body.exprs[expr_id].clone();
     match &expr {
         semantic::Expr::Constant(expr) => lower_expr_constant(ctx, expr, builder),
-        semantic::Expr::ParamConstant(expr) => lower_expr_param_constant(ctx, expr, builder),
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, builder),
         semantic::Expr::Snapshot(expr) => lower_expr_snapshot(ctx, expr, builder),
         semantic::Expr::Desnap(expr) => lower_expr_desnap(ctx, expr, builder),
@@ -799,20 +800,20 @@ fn lower_expr_string_literal(
     let byte_array_ty = get_core_ty_by_name(semantic_db, "ByteArray".into(), vec![]);
 
     let array_submodule = core_submodule(semantic_db, "array");
-    let data_array_new_function =
-        ctx.db.intern_lowering_function(FunctionLongId::Semantic(get_function_id(
-            semantic_db,
-            array_submodule,
-            "array_new".into(),
-            vec![GenericArgumentId::Type(bytes31_ty)],
-        )));
-    let data_array_append_function =
-        ctx.db.intern_lowering_function(FunctionLongId::Semantic(get_function_id(
-            semantic_db,
-            array_submodule,
-            "array_append".into(),
-            vec![GenericArgumentId::Type(bytes31_ty)],
-        )));
+    let data_array_new_function = FunctionLongId::Semantic(get_function_id(
+        semantic_db,
+        array_submodule,
+        "array_new".into(),
+        vec![GenericArgumentId::Type(bytes31_ty)],
+    ))
+    .intern(ctx.db);
+    let data_array_append_function = FunctionLongId::Semantic(get_function_id(
+        semantic_db,
+        array_submodule,
+        "array_append".into(),
+        vec![GenericArgumentId::Type(bytes31_ty)],
+    ))
+    .intern(ctx.db);
 
     // Emit lowering statements to build the ByteArray struct components.
     let mut data_array_usage =
@@ -876,7 +877,7 @@ fn add_chunks_to_data_array<'a>(
     let remainder = chunks.remainder();
     for chunk in chunks {
         let chunk_usage = generators::Const {
-            value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, chunk)),
+            value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, chunk), bytes31_ty),
             ty: bytes31_ty,
             location: ctx.get_location(expr_stable_ptr),
         }
@@ -910,7 +911,7 @@ fn add_pending_word(
     let felt252_ty = core_felt252_ty(ctx.db.upcast());
 
     let pending_word_usage = generators::Const {
-        value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes)),
+        value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes), felt252_ty),
         ty: felt252_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
@@ -918,7 +919,7 @@ fn add_pending_word(
 
     let pending_word_len = expr.value.len() % 31;
     let pending_word_len_usage = generators::Const {
-        value: ConstValue::Int(pending_word_len.into()),
+        value: ConstValue::Int(pending_word_len.into(), u32_ty),
         ty: u32_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
@@ -932,33 +933,12 @@ fn lower_expr_constant(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a constant: {:?}", expr.debug(&ctx.expr_formatter));
-    let (value, ty) = ctx
-        .db
-        .constant_const_value(expr.constant_id)
-        .map(|value| {
-            (
-                value,
-                ctx.db.constant_const_type(expr.constant_id).expect("Constant must have a type."),
-            )
-        })
-        .map_err(LoweringFlowError::Failed)?;
+    let value = expr.const_value_id.lookup_intern(ctx.db);
+    let ty = expr.ty;
+
     let location = ctx.get_location(expr.stable_ptr.untyped());
     Ok(LoweredExpr::AtVariable(
         generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
-    ))
-}
-
-/// Lowers an expression of type [semantic::ExprParamConstant].
-fn lower_expr_param_constant(
-    ctx: &mut LoweringContext<'_, '_>,
-    expr: &semantic::ExprParamConstant,
-    builder: &mut BlockBuilder,
-) -> LoweringResult<LoweredExpr> {
-    log::trace!("Lowering a constant parameter: {:?}", expr.debug(&ctx.expr_formatter));
-    let value = ctx.db.lookup_intern_const_value(expr.const_value_id);
-    let location = ctx.get_location(expr.stable_ptr.untyped());
-    Ok(LoweredExpr::AtVariable(
-        generators::Const { value, ty: expr.ty, location }.add(ctx, &mut builder.statements),
     ))
 }
 
@@ -994,7 +974,10 @@ fn lower_expr_fixed_size_array(
         semantic::FixedSizeArrayItems::ValueAndSize(value, size) => {
             let lowered_value = lower_expr(ctx, builder, *value)?;
             let var_usage = lowered_value.as_var_usage(ctx, builder)?;
-            let size = extract_matches!(ctx.db.lookup_intern_const_value(*size), ConstValue::Int)
+            let size = size
+                .lookup_intern(ctx.db)
+                .into_int()
+                .expect("Expected ConstValue::Int for size")
                 .to_usize()
                 .unwrap();
             if size == 0 {
@@ -1086,7 +1069,7 @@ fn lower_expr_function_call(
     // The following is relevant only to extern functions.
     if expr.function.try_get_extern_function_id(ctx.db.upcast()).is_some() {
         if let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
-            ctx.db.lookup_intern_type(expr.ty)
+            expr.ty.lookup_intern(ctx.db)
         {
             let lowered_expr = LoweredExprExternEnum {
                 function: expr.function,
@@ -1172,10 +1155,7 @@ fn perform_function_call(
 
             return Err(LoweringFlowError::Match(MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id: extract_matches!(
-                    extract_matches!(
-                        ctx.db.lookup_intern_type(ret_ty),
-                        semantic::TypeLongId::Concrete
-                    ),
+                    extract_matches!(ret_ty.lookup_intern(ctx.db), semantic::TypeLongId::Concrete),
                     semantic::ConcreteTypeId::Enum
                 ),
                 input: VarUsage { var_id: call_result.returns[0].var_id, location },
@@ -1240,10 +1220,11 @@ fn lower_expr_loop(
     };
 
     // Get the function id.
-    let function = ctx.db.intern_lowering_function_with_body(FunctionWithBodyLongId::Generated {
+    let function = FunctionWithBodyLongId::Generated {
         parent: ctx.semantic_function_id,
         element: loop_expr_id,
-    });
+    }
+    .intern(ctx.db);
 
     // Generate the function.
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
@@ -1254,9 +1235,10 @@ fn lower_expr_loop(
     encapsulating_ctx.lowerings.insert(loop_expr_id, lowered);
 
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
-    ctx.current_loop_expr_id = Some(loop_expr_id);
-
-    call_loop_func(ctx, loop_signature, builder, loop_expr_id, stable_ptr.untyped())
+    let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
+    let call = call_loop_func(ctx, loop_signature, builder, loop_expr_id, stable_ptr.untyped());
+    ctx.current_loop_expr_id = old_loop_expr_id;
+    call
 }
 
 /// Adds a call to an inner loop-generated function.
@@ -1270,10 +1252,11 @@ fn call_loop_func(
     let location = ctx.get_location(stable_ptr);
 
     // Call it.
-    let function = ctx.db.intern_lowering_function(FunctionLongId::Generated(GeneratedFunction {
+    let function = FunctionLongId::Generated(GeneratedFunction {
         parent: ctx.concrete_function_id.base_semantic_function(ctx.db),
         element: loop_expr_id,
-    }));
+    })
+    .intern(ctx.db);
     let inputs = loop_signature
         .params
         .into_iter()
@@ -1409,23 +1392,40 @@ fn lower_expr_struct_ctor(
         }));
     if members.len() != member_expr_usages.len() {
         // Semantic model should have made sure base struct exist if some members are missing.
-        let base_struct_usage = lower_expr_to_var_usage(ctx, builder, expr.base_struct.unwrap())?;
-
-        for (base_member, (_, member)) in izip!(
-            StructDestructure {
-                input: base_struct_usage.var_id,
-                var_reqs: members
-                    .iter()
-                    .map(|(_, member)| VarRequest { ty: member.ty, location })
-                    .collect(),
+        let base_struct = lower_expr(ctx, builder, expr.base_struct.unwrap())?;
+        if let LoweredExpr::Member(path, location) = base_struct {
+            for (_, member) in members.iter() {
+                let Entry::Vacant(entry) = member_expr_usages.entry(member.id) else {
+                    continue;
+                };
+                let member_path = ExprVarMemberPath::Member {
+                    parent: Box::new(path.clone()),
+                    member_id: member.id,
+                    stable_ptr: path.stable_ptr(),
+                    concrete_struct_id: expr.concrete_struct_id,
+                    ty: member.ty,
+                };
+                entry.insert(Ok(
+                    LoweredExpr::Member(member_path, location).as_var_usage(ctx, builder)?
+                ));
             }
-            .add(ctx, &mut builder.statements),
-            members.iter()
-        ) {
-            match member_expr_usages.entry(member.id) {
-                Entry::Occupied(_) => {}
-                Entry::Vacant(entry) => {
-                    entry.insert(Ok(VarUsage { var_id: base_member, location }));
+        } else {
+            for (base_member, (_, member)) in izip!(
+                StructDestructure {
+                    input: base_struct.as_var_usage(ctx, builder)?.var_id,
+                    var_reqs: members
+                        .iter()
+                        .map(|(_, member)| VarRequest { ty: member.ty, location })
+                        .collect(),
+                }
+                .add(ctx, &mut builder.statements),
+                members.iter()
+            ) {
+                match member_expr_usages.entry(member.id) {
+                    Entry::Occupied(_) => {}
+                    Entry::Vacant(entry) => {
+                        entry.insert(Ok(VarUsage { var_id: base_member, location }));
+                    }
                 }
             }
         }
@@ -1647,7 +1647,7 @@ fn check_error_free_or_warn(
     diagnostics_description: &str,
 ) -> Maybe<()> {
     let declaration_error_free = diagnostics.check_error_free();
-    declaration_error_free.on_err(|_| {
+    declaration_error_free.inspect_err(|_| {
         log::warn!(
             "Function `{function_path}` has semantic diagnostics in its \
              {diagnostics_description}:\n{diagnostics_format}",

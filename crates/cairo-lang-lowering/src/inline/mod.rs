@@ -11,13 +11,16 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::items::functions::InlineConfiguration;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::LookupIntern;
 use itertools::{izip, zip_eq};
 use statements_weights::InlineWeight;
 
 use self::statements_weights::ApproxCasmInlineWeight;
 use crate::blocks::{FlatBlocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
-use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
+use crate::diagnostic::{
+    LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder,
+};
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::utils::{Rebuilder, RebuilderEx};
@@ -31,9 +34,7 @@ pub fn get_inline_diagnostics(
     function_id: FunctionWithBodyId,
 ) -> Maybe<Diagnostics<LoweringDiagnostic>> {
     let semantic_function_id = function_id.base_semantic_function(db);
-    let mut diagnostics = LoweringDiagnostics::new(
-        semantic_function_id.module_file_id(db.upcast()).file_id(db.upcast())?,
-    );
+    let mut diagnostics = LoweringDiagnostics::default();
 
     if let InlineConfiguration::Always(_) =
         db.function_declaration_inline_config(semantic_function_id)?
@@ -317,7 +318,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         ));
 
         let db = self.variables.db;
-        let inlining_location = db.lookup_intern_location(call_stmt.location).stable_location;
+        let inlining_location = call_stmt.location.lookup_intern(db).stable_location;
 
         let mut mapper = Mapper {
             variables: &mut self.variables,

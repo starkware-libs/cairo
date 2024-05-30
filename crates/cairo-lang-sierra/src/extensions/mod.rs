@@ -15,6 +15,7 @@ pub use self::lib_func::{
     OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
 };
 pub use self::modules::*;
+use self::type_specialization_context::TypeSpecializationContext;
 pub use self::types::{
     ConcreteType, GenericType, GenericTypeEx, NamedType, NoGenericArgsGenericType,
 };
@@ -31,7 +32,7 @@ fn args_as_single_value(args: &[GenericArg]) -> Result<BigInt, SpecializationErr
 }
 
 /// Helper for extracting the type from the template arguments.
-fn args_as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
+pub fn args_as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
     match args {
         [GenericArg::Type(ty)] => Ok(ty.clone()),
         [_] => Err(SpecializationError::UnsupportedGenericArg),
@@ -50,12 +51,36 @@ fn args_as_two_types(
     }
 }
 
+/// Helper for extracting a type and a value from the template arguments.
+fn args_as_type_and_value(
+    args: &[GenericArg],
+) -> Result<(ConcreteTypeId, BigInt), SpecializationError> {
+    match args {
+        [GenericArg::Type(ty), GenericArg::Value(value)] => Ok((ty.clone(), value.clone())),
+        [_, _] => Err(SpecializationError::UnsupportedGenericArg),
+        _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+    }
+}
+
 /// Helper for extracting the type from the template arguments.
 fn args_as_single_user_func(args: &[GenericArg]) -> Result<FunctionId, SpecializationError> {
     match args {
         [GenericArg::UserFunc(function_id)] => Ok(function_id.clone()),
         [_] => Err(SpecializationError::UnsupportedGenericArg),
         _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+    }
+}
+
+/// Extracts the generic args of `ty`, additionally validates it is of generic type `T`.
+fn extract_type_generic_args<T: NamedType>(
+    context: &dyn TypeSpecializationContext,
+    ty: &ConcreteTypeId,
+) -> Result<Vec<GenericArg>, SpecializationError> {
+    let long_id = context.get_type_info(ty.clone())?.long_id;
+    if long_id.generic_id != T::ID {
+        Err(SpecializationError::UnsupportedGenericArg)
+    } else {
+        Ok(long_id.generic_args)
     }
 }
 

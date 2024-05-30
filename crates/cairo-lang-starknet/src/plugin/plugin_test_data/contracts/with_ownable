@@ -58,53 +58,27 @@ mod ownable_balance {
         }
     }
     
-    pub use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
-    pub mod __member_module_balance {
+
+        pub mod __member_module_balance {
         use super::ownable_comp;
         use super::TransferTrait;
         use super::ContractAddress;
         use super::Event;
         use super::OwnableBalanceImpl;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> u128;
-            fn write(ref self: ContractMemberState, value: u128);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = u128;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+                }
             }
-            fn read(self: @ContractMemberState) -> u128 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<u128>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
-                )
-            }
-            fn write(ref self: ContractMemberState, value: u128) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<u128>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
-                )
-            }
-        }
 impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
 impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-    }
+        }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 
 impl ContractStateTransfer of
@@ -316,53 +290,27 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         }
     }
     
-    pub use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
-    pub mod __member_module_balance {
+
+        pub mod __member_module_balance {
         use super::ownable_comp;
         use super::TransferTrait;
         use super::ContractAddress;
         use super::Event;
         use super::OwnableBalanceImpl;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-        pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> u128;
-            fn write(ref self: ContractMemberState, value: u128);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+            #[derive(Copy, Drop)]
+            pub struct ContractMemberState {}
+            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
+                type Value = u128;
+                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                    starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+                }
             }
-            fn read(self: @ContractMemberState) -> u128 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<u128>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
-                )
-            }
-            fn write(ref self: ContractMemberState, value: u128) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::Store::<u128>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
-                )
-            }
-        }
 impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
 impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-    }
+        }
 use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 
 impl ContractStateTransfer of

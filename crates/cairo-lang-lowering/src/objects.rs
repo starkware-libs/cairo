@@ -11,6 +11,7 @@ use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{Intern, LookupIntern};
 use id_arena::{Arena, Id};
 
 pub mod blocks;
@@ -67,7 +68,7 @@ impl Location {
     ) -> Self {
         self.with_note(DiagnosticNote::with_location(
             text.into(),
-            location.get(db).stable_location.diagnostic_location(db.upcast()),
+            location.lookup_intern(db).stable_location.diagnostic_location(db.upcast()),
         ))
     }
 }
@@ -88,13 +89,13 @@ impl DebugWithDb<dyn LoweringGroup> for Location {
 impl LocationId {
     /// Returns the location with the added inlining location of it.
     pub fn inlined(self, db: &dyn LoweringGroup, inlining_location: StableLocation) -> Self {
-        let mut location = db.lookup_intern_location(self);
+        let mut location = self.lookup_intern(db);
         location.inline_locations.push(inlining_location);
-        db.intern_location(location)
+        location.intern(db)
     }
     /// Returns all relevant stable pointers of the location.
     pub fn all_locations(self, db: &dyn LoweringGroup) -> Vec<StableLocation> {
-        let location = db.lookup_intern_location(self);
+        let location = self.lookup_intern(db);
         let mut all_locations = vec![location.stable_location];
         all_locations.extend(location.inline_locations.iter().cloned());
         all_locations

@@ -29,6 +29,7 @@ pub impl Bytes31Impl of Bytes31Trait {
     }
 }
 
+#[feature("deprecated-index-traits")]
 pub(crate) impl Bytes31IndexView of IndexView<bytes31, usize, u8> {
     fn index(self: @bytes31, index: usize) -> u8 {
         self.at(index)
@@ -179,8 +180,5 @@ impl Bytes31PartialEq of PartialEq<bytes31> {
         let lhs_as_felt252: felt252 = (*lhs).into();
         let rhs_as_felt252: felt252 = (*rhs).into();
         lhs_as_felt252 == rhs_as_felt252
-    }
-    fn ne(lhs: @bytes31, rhs: @bytes31) -> bool {
-        !(lhs == rhs)
     }
 }
