@@ -110,7 +110,7 @@ error: Type "test::bar::<core::integer::u8, core::integer::u16>::Coupon" has no 
     x.a;
       ^
 
-error: Type "@test::bar::<core::integer::u8, core::integer::u16>::Coupon" has no members.
+error: Type "test::bar::<core::integer::u8, core::integer::u16>::Coupon" has no members.
  --> lib.cairo:20:12
     x_snap.a;
            ^
