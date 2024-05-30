@@ -152,12 +152,6 @@ impl ArrayIntoSpan<T, +Drop<T>> of Into<Array<T>, Span<T>> {
     }
 }
 
-impl ArraySnapIntoSpan<T> of Into<@Array<T>, Span<T>> {
-    fn into(self: @Array<T>) -> Span<T> {
-        ArrayTrait::span(self)
-    }
-}
-
 impl SpanIntoArray<T, +Drop<T>, +Clone<T>> of Into<Span<T>, Array<T>> {
     fn into(mut self: Span<T>) -> Array<T> {
         let mut arr = array![];
@@ -276,6 +270,12 @@ impl ArrayToSpan<T> of ToSpanTrait<Array<T>, T> {
         ArrayTrait::span(self)
     }
 }
+
+impl SnapIntoSpanWhereToSpanTrait<C, T, +ToSpanTrait<C, T>> of Into<@C, Span<T>> {
+    fn into(self: @C) -> Span<T> {
+        self.span()
+    }
+} 
 
 /// Returns a span from a box of struct of members of the same type.
 /// The additional `+Copy<@T>` arg is to prevent later stages from propagating the `S` type Sierra
