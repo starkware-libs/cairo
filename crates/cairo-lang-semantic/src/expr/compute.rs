@@ -47,7 +47,7 @@ use super::pattern::{
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
     get_usize_ty, never_ty, numeric_literal_trait, true_literal_expr, try_get_core_ty_by_name,
-    unit_expr, unit_ty, unwrap_error_propagation_type, CoreTraitContext,
+    unit_expr, unit_ty, unwrap_error_propagation_type, CoreTraitContext, ErrorPropagationType,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -114,6 +114,8 @@ enum LoopContext {
     Loop { type_merger: FlowMergeTypeHelper },
     /// Context inside a `while` loop
     While,
+    /// Context inside a `for` loop
+    For,
 }
 
 /// Context for computing the semantic model of expression trees.
@@ -335,7 +337,7 @@ pub fn maybe_compute_expr_semantic(
         }
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
-        ast::Expr::For(expr) => Err(ctx.diagnostics.report(expr.stable_ptr(), Unsupported)),
+        ast::Expr::For(expr) => compute_expr_for_semantic(ctx, expr),
     }
 }
 
@@ -1238,6 +1240,93 @@ fn compute_expr_while_semantic(
     Ok(Expr::While(ExprWhile {
         condition,
         body,
+        ty: unit_ty(ctx.db),
+        stable_ptr: syntax.stable_ptr().into(),
+    }))
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprFor].
+fn compute_expr_for_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprFor,
+) -> Maybe<Expr> {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+    let expr_ptr = syntax.expr(syntax_db).stable_ptr();
+
+    if syntax.identifier(syntax_db).text(syntax_db) != "in" {
+        ctx.diagnostics.report(syntax, ExpectedInIdentifier);
+    }
+
+    let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+
+    let into_iterator_trait =
+        get_core_trait(ctx.db, CoreTraitContext::Iterator, "IntoIterator".into());
+
+    let (iterator_function_id, fixed_into_iter_var, into_iter_mutability) =
+        compute_method_function_call_data(
+            ctx,
+            &[into_iterator_trait],
+            "into_iter".into(),
+            expr,
+            expr_ptr.into(),
+            None,
+            |_, _, _| NoImplementationForTrait { trait_name: "IntoIterator".into() },
+            |_, _, _| MultipleImplementationForTrait { trait_name: "IntoIterator".into() },
+        )?;
+    let into_iter_call = expr_function_call(
+        ctx,
+        iterator_function_id,
+        vec![NamedArg(fixed_into_iter_var, None, into_iter_mutability)],
+        expr_ptr,
+        expr_ptr,
+    )?;
+    let into_iter_call_id = ctx.exprs.alloc(into_iter_call.clone());
+
+    let iterator_trait = get_core_trait(ctx.db, CoreTraitContext::Iterator, "Iterator".into());
+
+    let (next_function_id, _, _) = compute_method_function_call_data(
+        ctx,
+        &[iterator_trait],
+        "next".into(),
+        ExprAndId { expr: into_iter_call, id: into_iter_call_id },
+        expr_ptr.into(),
+        None,
+        |_, _, _| NoImplementationForTrait { trait_name: "Iterator".into() },
+        |_, _, _| MultipleImplementationForTrait { trait_name: "Iterator".into() },
+    )?;
+
+    let Some(ErrorPropagationType::Option { some_variant, .. }) = unwrap_error_propagation_type(
+        ctx.db,
+        db.concrete_function_signature(next_function_id)?.return_type,
+    ) else {
+        // TODO(Tomer-StarWare): Remove.
+        return Err(ctx.diagnostics.report(syntax, ExpectedOptionErrorPropagationType));
+    };
+    // TODO(Tomer-StarWare): consider treating this like while let.
+    let (body_id, pattern) = ctx.run_in_subscope(|new_ctx| {
+        let pattern = compute_pattern_semantic(
+            new_ctx,
+            &syntax.pattern(syntax_db),
+            some_variant.ty,
+            &mut UnorderedHashMap::default(),
+        );
+        let variables = pattern.variables(&new_ctx.patterns);
+        for v in variables {
+            let var_def = Variable::Local(v.var.clone());
+            new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
+            new_ctx.semantic_defs.insert(var_def.id(), var_def);
+        }
+        let (body, _loop_ctx) =
+            compute_loop_body_semantic(new_ctx, syntax.body(syntax_db), LoopContext::For);
+        (body, pattern.id)
+    });
+
+    Ok(Expr::For(ExprFor {
+        into_iter: into_iter_call_id,
+        next_function_id,
+        pattern,
+        body: body_id,
         ty: unit_ty(ctx.db),
         stable_ptr: syntax.stable_ptr().into(),
     }))
@@ -2815,7 +2904,7 @@ pub fn compute_statement_semantic(
                         stable_ptr,
                     );
                 }
-                Some(LoopContext::While) => {
+                Some(LoopContext::While | LoopContext::For) => {
                     if expr_option.is_some() {
                         ctx.diagnostics.report(break_syntax, BreakWithValueOnlyAllowedInsideALoop);
                     };

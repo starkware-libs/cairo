@@ -208,6 +208,8 @@ impl BlockUsages {
 
                 self.block_usages.insert(expr_id, usage);
             }
+            // TODO(Tomer-StarkWare): Add For loop to lowering
+            Expr::For(_expr) => {}
             Expr::FunctionCall(expr) => {
                 for arg in &expr.args {
                     match arg {

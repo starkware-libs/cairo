@@ -703,6 +703,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NegativeImplsOnlyOnImpls => {
                 "Negative impls supported only in impl definitions.".into()
             }
+            SemanticDiagnosticKind::ExpectedInIdentifier => {
+                "Identifier is not 'in' as it should be.".into()
+            }
             SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
                 "`implicit_precedence` attribute is not allowed for extern functions.".into()
             }
@@ -795,6 +798,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NonPhantomTypeContainingPhantomType => {
                 "Non-phantom type containing phantom type.".into()
             }
+            SemanticDiagnosticKind::ExpectedIdentifierPattern => todo!(),
+            SemanticDiagnosticKind::ExpectedOptionErrorPropagationType => todo!(),
+            SemanticDiagnosticKind::NoImplementationForTrait { trait_name } => {
+                format!("No implementation for trait {trait_name}.")
+            }
+            SemanticDiagnosticKind::MultipleImplementationForTrait { trait_name } => {
+                format!("Multiple implementation for trait {trait_name}.")
+            }
         }
     }
 
@@ -829,6 +840,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SemanticDiagnosticKind {
     ModuleFileNotFound(String),
+    ExpectedIdentifierPattern,
+    ExpectedOptionErrorPropagationType,
     Unsupported,
     UnknownLiteral,
     UnknownBinaryOperator,
@@ -1003,6 +1016,7 @@ pub enum SemanticDiagnosticKind {
     ConstGenericParamNotSupported,
     NegativeImplsNotEnabled,
     NegativeImplsOnlyOnImpls,
+    ExpectedInIdentifier,
     RefArgNotAVariable,
     RefArgNotMutable,
     RefArgNotExplicit,
@@ -1074,6 +1088,12 @@ pub enum SemanticDiagnosticKind {
     NoImplementationOfIndexOperator {
         ty: semantic::TypeId,
         inference_errors: TraitInferenceErrors,
+    },
+    NoImplementationForTrait {
+        trait_name: SmolStr,
+    },
+    MultipleImplementationForTrait {
+        trait_name: SmolStr,
     },
     MultipleImplementationOfIndexOperator(semantic::TypeId),
     UnsupportedInlineArguments,
