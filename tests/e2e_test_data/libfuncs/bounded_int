@@ -169,9 +169,9 @@ type DivRemType = (
     BoundedInt<0, 7>,
 );
 
-extern fn bounded_int_div_rem<T1, T2>(a: T1, b: T2) -> DivRemType implicits(RangeCheck) nopanic;
+extern fn bounded_int_div_rem<T1, T2>(a: T1, b: NonZero<T2>) -> DivRemType implicits(RangeCheck) nopanic;
 
-fn foo(a: BoundedInt<128, 255>, b: BoundedInt<3, 8>) -> DivRemType {
+fn foo(a: BoundedInt<128, 255>, b: NonZero<BoundedInt<3, 8>>) -> DivRemType {
     bounded_int_div_rem(a, b)
 }
 
@@ -198,6 +198,7 @@ type BoundedInt<16, 85> = BoundedInt<16, 85> [storable: true, drop: true, dup: t
 type BoundedInt<0, 7> = BoundedInt<0, 7> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>> = Struct<ut@Tuple, BoundedInt<16, 85>, BoundedInt<0, 7>> [storable: true, drop: true, dup: true, zero_sized: false];
 type BoundedInt<3, 8> = BoundedInt<3, 8> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<3, 8>> = NonZero<BoundedInt<3, 8>> [storable: true, drop: true, dup: true, zero_sized: false];
 type BoundedInt<128, 255> = BoundedInt<128, 255> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc bounded_int_div_rem<BoundedInt<128, 255>, BoundedInt<3, 8>> = bounded_int_div_rem<BoundedInt<128, 255>, BoundedInt<3, 8>>;
@@ -211,7 +212,7 @@ store_temp<RangeCheck>([3]) -> ([3]); // 2
 store_temp<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>>([6]) -> ([6]); // 3
 return([3], [6]); // 4
 
-test::foo@0([0]: RangeCheck, [1]: BoundedInt<128, 255>, [2]: BoundedInt<3, 8>) -> (RangeCheck, Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>);
+test::foo@0([0]: RangeCheck, [1]: BoundedInt<128, 255>, [2]: NonZero<BoundedInt<3, 8>>) -> (RangeCheck, Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>);
 
 //! > ==========================================================================
 
@@ -227,9 +228,9 @@ type DivRemType = (
     BoundedInt<0, 0xfffffffffffffffffffffffffffffffe>,
 );
 
-extern fn bounded_int_div_rem<T1, T2>(a: T1, b: T2) -> DivRemType implicits(RangeCheck) nopanic;
+extern fn bounded_int_div_rem<T1, T2>(a: T1, b: NonZero<T2>) -> DivRemType implicits(RangeCheck) nopanic;
 
-fn foo(a: u128, b: BoundedInt<1, 0xffffffffffffffffffffffffffffffff>) -> DivRemType {
+fn foo(a: u128, b: NonZero<BoundedInt<1, 0xffffffffffffffffffffffffffffffff>>) -> DivRemType {
     bounded_int_div_rem(a, b)
 }
 
@@ -262,6 +263,7 @@ type BoundedInt<0, 340282366920938463463374607431768211455> = BoundedInt<0, 3402
 type BoundedInt<0, 340282366920938463463374607431768211454> = BoundedInt<0, 340282366920938463463374607431768211454> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>> = Struct<ut@Tuple, BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>> [storable: true, drop: true, dup: true, zero_sized: false];
 type BoundedInt<1, 340282366920938463463374607431768211455> = BoundedInt<1, 340282366920938463463374607431768211455> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<1, 340282366920938463463374607431768211455>> = NonZero<BoundedInt<1, 340282366920938463463374607431768211455>> [storable: true, drop: true, dup: true, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc bounded_int_div_rem<u128, BoundedInt<1, 340282366920938463463374607431768211455>> = bounded_int_div_rem<u128, BoundedInt<1, 340282366920938463463374607431768211455>>;
@@ -275,7 +277,7 @@ store_temp<RangeCheck>([3]) -> ([3]); // 2
 store_temp<Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>>([6]) -> ([6]); // 3
 return([3], [6]); // 4
 
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: BoundedInt<1, 340282366920938463463374607431768211455>) -> (RangeCheck, Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>);
+test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<1, 340282366920938463463374607431768211455>>) -> (RangeCheck, Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>);
 
 //! > ==========================================================================
 
@@ -291,9 +293,9 @@ type DivRemType = (
     BoundedInt<0, 0xfffffffffffffffffffffffffffffff>,
 );
 
-extern fn bounded_int_div_rem<T1, T2>(a: T1, b: T2) -> DivRemType implicits(RangeCheck) nopanic;
+extern fn bounded_int_div_rem<T1, T2>(a: T1, b: NonZero<T2>) -> DivRemType implicits(RangeCheck) nopanic;
 
-fn foo(a: u128, b: BoundedInt<0x10000000000000000000000000000000, 0x10000000000000000000000000000000>) -> DivRemType {
+fn foo(a: u128, b: NonZero<BoundedInt<0x10000000000000000000000000000000, 0x10000000000000000000000000000000>>) -> DivRemType {
     bounded_int_div_rem(a, b)
 }
 
@@ -322,6 +324,7 @@ type BoundedInt<0, 15> = BoundedInt<0, 15> [storable: true, drop: true, dup: tru
 type BoundedInt<0, 21267647932558653966460912964485513215> = BoundedInt<0, 21267647932558653966460912964485513215> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>> = Struct<ut@Tuple, BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>> [storable: true, drop: true, dup: true, zero_sized: false];
 type BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216> = BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>> = NonZero<BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>> [storable: true, drop: true, dup: true, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc bounded_int_div_rem<u128, BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>> = bounded_int_div_rem<u128, BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>>;
@@ -335,7 +338,7 @@ store_temp<RangeCheck>([3]) -> ([3]); // 2
 store_temp<Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>>([6]) -> ([6]); // 3
 return([3], [6]); // 4
 
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>) -> (RangeCheck, Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>);
+test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>>) -> (RangeCheck, Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>);
 
 //! > ==========================================================================
 

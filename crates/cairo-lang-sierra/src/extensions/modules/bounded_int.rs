@@ -163,9 +163,10 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
         let (lhs, rhs) = args_as_two_types(args)?;
         let lhs_range = Range::from_type(context, lhs.clone())?;
         let rhs_range = Range::from_type(context, rhs.clone())?;
-        // Supporting only division of a non-negative number by a positive number.
+        // Supporting only division of a non-negative number by a positive number (non zero + and
+        // non negative).
         // TODO(orizi): Consider relaxing the constraint, and defining the div_rem of negatives.
-        if lhs_range.lower.is_negative() || !rhs_range.lower.is_positive() {
+        if lhs_range.lower.is_negative() || rhs_range.lower.is_negative() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         // Making sure the algorithm is runnable.
@@ -173,13 +174,13 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         let quotient_min = lhs_range.lower / (&rhs_range.upper - 1);
-        let quotient_max = (&lhs_range.upper - 1) / rhs_range.lower;
+        let quotient_max = (&lhs_range.upper - 1) / std::cmp::max(rhs_range.lower, BigInt::one());
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(lhs.clone()),
-                ParamSignature::new(rhs.clone()),
+                ParamSignature::new(nonzero_ty(context, &rhs)?),
             ],
             vec![
                 OutputVarInfo::new_builtin(range_check_type.clone(), 0),
