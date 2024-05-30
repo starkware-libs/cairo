@@ -17,6 +17,14 @@ pub fn circuit_inverse<Input, +CircuitElementTrait<Input>>(
     CircuitElement::<InverseGate<Input>> {}
 }
 
+/// Given two circuit elements, returns a new circuit element representing the circuit that applies
+/// the `mul` operation to the two input circuits.
+pub fn circuit_mul<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>,>(
+    lhs: CircuitElement<Lhs>, rhs: CircuitElement<Rhs>
+) -> CircuitElement::<MulModGate<Lhs, Rhs>> {
+    CircuitElement::<MulModGate<Lhs, Rhs>> {}
+}
+
 /// A 384-bit unsigned integer, used for circuit values.
 #[derive(Copy, Drop)]
 pub struct u384 {
@@ -44,6 +52,9 @@ pub extern type CircuitInput<const N: usize>;
 /// Represents the action of adding two fields elements in the circuits builtin.
 #[phantom]
 extern type AddModGate<Lhs, Rhs>;
+/// Represents the action of multiplying two fields elements in the circuits builtin.
+#[phantom]
+extern type MulModGate<Lhs, Rhs>;
 
 /// Represents the action of computing the inverse of a fields element in the circuits builtin.
 #[phantom]
@@ -107,6 +118,12 @@ impl InputCircuitElement<const N: usize> of CircuitElementTrait<CircuitInput<N>>
 impl AddModCircuitElement<
     Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>
 > of CircuitElementTrait<AddModGate<Lhs, Rhs>> {}
+impl InverseCircuitElement<
+    Input, +CircuitElementTrait<Input>
+> of CircuitElementTrait<InverseGate<Input>> {}
+impl MulModCircuitElement<
+    Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>
+> of CircuitElementTrait<MulModGate<Lhs, Rhs>> {}
 
 
 /// A trait for initializtion instances of a circuit defined using CircuitElements.
