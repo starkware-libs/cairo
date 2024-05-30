@@ -36,8 +36,8 @@ use num_integer::Integer;
 use num_traits::Signed;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use starknet_crypto::{poseidon_hash_many, FieldElement};
 use starknet_types_core::felt::Felt as Felt252;
+use starknet_types_core::hash::{Poseidon, StarkHash};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
@@ -131,16 +131,13 @@ impl CasmContractClass {
         let bytecode_hash = self.compute_bytecode_hash();
 
         // Compute total hash by hashing each component on top of the previous one.
-        Felt252::from_bytes_be(
-            &poseidon_hash_many(&[
-                FieldElement::from_byte_slice_be(b"COMPILED_CLASS_V1").unwrap(),
-                external_funcs_hash,
-                l1_handlers_hash,
-                constructors_hash,
-                bytecode_hash,
-            ])
-            .to_bytes_be(),
-        )
+        Poseidon::hash_array(&[
+            Felt252::from_bytes_be_slice(b"COMPILED_CLASS_V1"),
+            external_funcs_hash,
+            l1_handlers_hash,
+            constructors_hash,
+            bytecode_hash,
+        ])
     }
 
     /// Returns the lengths of the bytecode segments.
@@ -151,29 +148,25 @@ impl CasmContractClass {
     }
 
     /// Returns the hash for a set of entry points.
-    fn entry_points_hash(&self, entry_points: &[CasmContractEntryPoint]) -> FieldElement {
+    fn entry_points_hash(&self, entry_points: &[CasmContractEntryPoint]) -> Felt252 {
         let mut entry_point_hash_elements = vec![];
         for entry_point in entry_points {
-            entry_point_hash_elements.push(
-                FieldElement::from_byte_slice_be(&entry_point.selector.to_bytes_be()).unwrap(),
-            );
-            entry_point_hash_elements.push(FieldElement::from(entry_point.offset));
-            entry_point_hash_elements.push(poseidon_hash_many(
+            entry_point_hash_elements.push(Felt252::from(&entry_point.selector));
+            entry_point_hash_elements.push(Felt252::from(entry_point.offset));
+            entry_point_hash_elements.push(Poseidon::hash_array(
                 &entry_point
                     .builtins
                     .iter()
-                    .map(|builtin| FieldElement::from_byte_slice_be(builtin.as_bytes()).unwrap())
+                    .map(|builtin| Felt252::from_bytes_be_slice(builtin.as_bytes()))
                     .collect_vec(),
             ));
         }
-        poseidon_hash_many(&entry_point_hash_elements)
+        Poseidon::hash_array(&entry_point_hash_elements)
     }
 
     /// Returns the bytecode hash.
-    fn compute_bytecode_hash(&self) -> FieldElement {
-        let mut bytecode_iter = self.bytecode.iter().map(|big_uint| {
-            FieldElement::from_byte_slice_be(&big_uint.value.to_bytes_be()).unwrap()
-        });
+    fn compute_bytecode_hash(&self) -> Felt252 {
+        let mut bytecode_iter = self.bytecode.iter().map(|big_uint| Felt252::from(&big_uint.value));
 
         let (len, bytecode_hash) =
             bytecode_hash_node(&mut bytecode_iter, &self.get_bytecode_segment_lengths());
@@ -188,21 +181,21 @@ impl CasmContractClass {
 ///
 /// Returns the length of the processed segment and its hash.
 fn bytecode_hash_node(
-    iter: &mut impl Iterator<Item = FieldElement>,
+    iter: &mut impl Iterator<Item = Felt252>,
     node: &NestedIntList,
-) -> (usize, FieldElement) {
+) -> (usize, Felt252) {
     match node {
         NestedIntList::Leaf(len) => {
             let data = &iter.take(*len).collect_vec();
             assert_eq!(data.len(), *len);
-            (*len, poseidon_hash_many(data))
+            (*len, Poseidon::hash_array(data))
         }
         NestedIntList::Node(nodes) => {
             // Compute `1 + poseidon(len0, hash0, len1, hash1, ...)`.
             let inner_nodes = nodes.iter().map(|node| bytecode_hash_node(iter, node)).collect_vec();
-            let hash = poseidon_hash_many(
+            let hash = Poseidon::hash_array(
                 &inner_nodes.iter().flat_map(|(len, hash)| [(*len).into(), *hash]).collect_vec(),
-            ) + 1u32.into();
+            ) + 1;
             (inner_nodes.iter().map(|(len, _)| len).sum(), hash)
         }
     }
