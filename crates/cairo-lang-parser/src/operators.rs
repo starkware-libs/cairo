@@ -16,25 +16,27 @@ pub fn get_post_operator_precedence(kind: SyntaxKind) -> Option<usize> {
         SyntaxKind::TerminalQuestionMark
         // [] Operator.
         | SyntaxKind::TerminalLBrack => Some(1),
-        SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv | SyntaxKind::TerminalMod => Some(2),
-        SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => Some(3),
-        SyntaxKind::TerminalAnd => Some(4),
-        SyntaxKind::TerminalXor => Some(5),
-        SyntaxKind::TerminalOr => Some(6),
+        // TODO: 2 is a placeholder for << and >>.
+        SyntaxKind::TerminalAnd => Some(3),
+        SyntaxKind::TerminalXor => Some(4),
+        SyntaxKind::TerminalOr => Some(5),
+        SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv | SyntaxKind::TerminalMod => Some(6),
+        SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => Some(7),
         SyntaxKind::TerminalEqEq
         | SyntaxKind::TerminalNeq
         | SyntaxKind::TerminalLT
         | SyntaxKind::TerminalGT
         | SyntaxKind::TerminalLE
-        | SyntaxKind::TerminalGE => Some(7),
-        SyntaxKind::TerminalAndAnd => Some(8),
-        SyntaxKind::TerminalOrOr => Some(9),
+        | SyntaxKind::TerminalGE => Some(8),
+        SyntaxKind::TerminalAndAnd => Some(9),
+        SyntaxKind::TerminalOrOr => Some(10),
         SyntaxKind::TerminalEq
         | SyntaxKind::TerminalPlusEq
         | SyntaxKind::TerminalMinusEq
         | SyntaxKind::TerminalMulEq
         | SyntaxKind::TerminalDivEq
-        | SyntaxKind::TerminalModEq => Some(10),
+        | SyntaxKind::TerminalModEq => Some(11),
+        // TODO: Add <<= >>= &= ^= |= with 11.
         _ => None,
     }
 }
