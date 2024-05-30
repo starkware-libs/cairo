@@ -6,7 +6,7 @@ use num_bigint::{BigInt, ToBigInt};
 use num_traits::{One, Signed};
 use starknet_types_core::felt::Felt as Felt252;
 
-use super::non_zero::nonzero_ty;
+use super::non_zero::{nonzero_ty, NonZeroType};
 use super::range_check::RangeCheckType;
 use super::utils::{reinterpret_cast_signature, Range};
 use crate::define_libfunc_hierarchy;
@@ -291,7 +291,14 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
             [_, _] => Err(SpecializationError::UnsupportedGenericArg),
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
         }?;
-        let range = Range::from_type(context, ty.clone())?;
+        let ty_info = context.get_type_info(ty.clone())?;
+        let is_nz = ty_info.long_id.generic_id == NonZeroType::ID;
+        let range = if is_nz {
+            let inner_ty = args_as_single_type(&ty_info.long_id.generic_args)?;
+            Range::from_type(context, inner_ty)?
+        } else {
+            Range::from_type_info(&ty_info)?
+        };
         require(&range.lower < boundary && boundary < &range.upper)
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let low_range = Range::half_open(range.lower, boundary.clone());
@@ -300,11 +307,12 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let branch_signature = |rng: Range| {
+            let ty = bounded_int_ty(context, rng.lower, rng.upper - 1)?;
             Ok(BranchSignature {
                 vars: vec![
                     OutputVarInfo::new_builtin(range_check_type.clone(), 0),
                     OutputVarInfo {
-                        ty: bounded_int_ty(context, rng.lower, rng.upper - 1)?,
+                        ty: if is_nz { nonzero_ty(context, &ty)? } else { ty },
                         ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
                     },
                 ],
