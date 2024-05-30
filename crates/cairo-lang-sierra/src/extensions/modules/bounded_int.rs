@@ -8,7 +8,7 @@ use starknet_types_core::felt::Felt as Felt252;
 
 use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
-use super::utils::Range;
+use super::utils::{reinterpret_cast_signature, Range};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -80,6 +80,7 @@ define_libfunc_hierarchy! {
         DivRem(BoundedIntDivRemLibfunc),
         Constrain(BoundedIntConstrainLibfunc),
         IsZero(BoundedIntIsZeroLibfunc),
+        WrapNonZero(BoundedIntWrapNonZeroLibfunc),
     }, BoundedIntConcreteLibfunc
 }
 
@@ -401,6 +402,30 @@ impl SignatureOnlyGenericLibfunc for BoundedIntIsZeroLibfunc {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+/// Libfunc for wrapping a given bounded int with non-zero, given 0 is not in the range.
+#[derive(Default)]
+pub struct BoundedIntWrapNonZeroLibfunc {}
+impl SignatureOnlyGenericLibfunc for BoundedIntWrapNonZeroLibfunc {
+    const STR_ID: &'static str = "bounded_int_wrap_non_zero";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let range = Range::from_type(context, ty.clone())?;
+        // Making sure 0 is not in the given range.
+        require(range.lower.is_positive() || !range.upper.is_positive())
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let prime: BigInt = Felt252::prime().to_bigint().unwrap();
+        require(range.upper <= prime && range.lower > -prime)
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let nz_ty = nonzero_ty(context, &ty)?;
+        Ok(reinterpret_cast_signature(ty, nz_ty))
     }
 }
 
