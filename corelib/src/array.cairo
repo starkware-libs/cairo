@@ -154,7 +154,7 @@ impl ArrayIntoSpan<T, +Drop<T>> of Into<Array<T>, Span<T>> {
 
 impl ArraySnapIntoSpan<T> of Into<@Array<T>, Span<T>> {
     fn into(self: @Array<T>) -> Span<T> {
-        self.span()
+        ArrayTrait::span(self)
     }
 }
 
