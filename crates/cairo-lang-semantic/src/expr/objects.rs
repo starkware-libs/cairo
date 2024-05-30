@@ -131,6 +131,7 @@ pub enum Expr {
     Block(ExprBlock),
     Loop(ExprLoop),
     While(ExprWhile),
+    For(ExprFor),
     FunctionCall(ExprFunctionCall),
     Match(ExprMatch),
     If(ExprIf),
@@ -156,6 +157,7 @@ impl Expr {
             Expr::Block(expr) => expr.ty,
             Expr::Loop(expr) => expr.ty,
             Expr::While(expr) => expr.ty,
+            Expr::For(expr) => expr.ty,
             Expr::FunctionCall(expr) => expr.ty,
             Expr::Match(expr) => expr.ty,
             Expr::If(expr) => expr.ty,
@@ -181,6 +183,7 @@ impl Expr {
             Expr::Block(expr) => expr.stable_ptr,
             Expr::Loop(expr) => expr.stable_ptr,
             Expr::While(expr) => expr.stable_ptr,
+            Expr::For(expr) => expr.stable_ptr,
             Expr::FunctionCall(expr) => expr.stable_ptr,
             Expr::Match(expr) => expr.stable_ptr,
             Expr::If(expr) => expr.stable_ptr,
@@ -290,6 +293,19 @@ pub struct ExprLoop {
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprWhile {
     pub condition: Condition,
+    pub body: ExprId,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprFor {
+    pub into_iter: ExprId,
+    pub next_function_id: FunctionId,
+    pub pattern: PatternId,
     pub body: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]

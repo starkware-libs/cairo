@@ -795,6 +795,28 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NonPhantomTypeContainingPhantomType => {
                 "Non-phantom type containing phantom type.".into()
             }
+            SemanticDiagnosticKind::NoImplementationOfTrait {
+                ty,
+                trait_name,
+                inference_errors,
+            } => {
+                if inference_errors.is_empty() {
+                    format!(
+                        "Implementation of trait `{}` not found on type `{}`. Did you import the \
+                         correct trait and impl?",
+                        trait_name,
+                        ty.format(db)
+                    )
+                } else {
+                    format!(
+                        "Multiple implementations of trait `{}` on type `{}`, no explicit \
+                         implementation found.\n{}",
+                        trait_name,
+                        ty.format(db),
+                        inference_errors.format(db)
+                    )
+                }
+            }
         }
     }
 
@@ -1073,6 +1095,11 @@ pub enum SemanticDiagnosticKind {
     InternalInferenceError(InferenceError),
     NoImplementationOfIndexOperator {
         ty: semantic::TypeId,
+        inference_errors: TraitInferenceErrors,
+    },
+    NoImplementationOfTrait {
+        ty: semantic::TypeId,
+        trait_name: SmolStr,
         inference_errors: TraitInferenceErrors,
     },
     MultipleImplementationOfIndexOperator(semantic::TypeId),
