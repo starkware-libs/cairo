@@ -1193,6 +1193,9 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalWhile if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.expect_while_expr().into())
             }
+            SyntaxKind::TerminalFor if lbrace_allowed == LbraceAllowed::Allow => {
+                Ok(self.expect_for_expr().into())
+            }
 
             _ => {
                 // TODO(yuval): report to diagnostics.
@@ -1685,6 +1688,18 @@ impl<'a> Parser<'a> {
         let body = self.parse_block();
 
         ExprWhile::new_green(self.db, while_kw, condition, body)
+    }
+
+    /// Assumes the current token is `For`.
+    /// Expected pattern: `for <pattern> <identifier> <expression> <block>`.
+    fn expect_for_expr(&mut self) -> ExprForGreen {
+        let for_kw = self.take::<TerminalFor>();
+        let pattern = self.parse_pattern();
+        let identifier = self.parse_identifier();
+        let expression = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let body = self.parse_block();
+
+        ExprFor::new_green(self.db, for_kw, pattern, identifier, expression, body)
     }
 
     /// Assumes the current token is LBrack.
