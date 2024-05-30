@@ -238,6 +238,7 @@ pub enum Expr {
     If(ExprIf),
     Loop(ExprLoop),
     While(ExprWhile),
+    For(ExprFor),
     ErrorPropagate(ExprErrorPropagate),
     FieldInitShorthand(ExprFieldInitShorthand),
     Indexed(ExprIndexed),
@@ -343,6 +344,11 @@ impl From<ExprLoopPtr> for ExprPtr {
 }
 impl From<ExprWhilePtr> for ExprPtr {
     fn from(value: ExprWhilePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprForPtr> for ExprPtr {
+    fn from(value: ExprForPtr) -> Self {
         Self(value.0)
     }
 }
@@ -461,6 +467,11 @@ impl From<ExprWhileGreen> for ExprGreen {
         Self(value.0)
     }
 }
+impl From<ExprForGreen> for ExprGreen {
+    fn from(value: ExprForGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprErrorPropagateGreen> for ExprGreen {
     fn from(value: ExprErrorPropagateGreen) -> Self {
         Self(value.0)
@@ -532,6 +543,7 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::ExprIf => Expr::If(ExprIf::from_syntax_node(db, node)),
             SyntaxKind::ExprLoop => Expr::Loop(ExprLoop::from_syntax_node(db, node)),
             SyntaxKind::ExprWhile => Expr::While(ExprWhile::from_syntax_node(db, node)),
+            SyntaxKind::ExprFor => Expr::For(ExprFor::from_syntax_node(db, node)),
             SyntaxKind::ExprErrorPropagate => {
                 Expr::ErrorPropagate(ExprErrorPropagate::from_syntax_node(db, node))
             }
@@ -568,6 +580,7 @@ impl TypedSyntaxNode for Expr {
             Expr::If(x) => x.as_syntax_node(),
             Expr::Loop(x) => x.as_syntax_node(),
             Expr::While(x) => x.as_syntax_node(),
+            Expr::For(x) => x.as_syntax_node(),
             Expr::ErrorPropagate(x) => x.as_syntax_node(),
             Expr::FieldInitShorthand(x) => x.as_syntax_node(),
             Expr::Indexed(x) => x.as_syntax_node(),
@@ -606,6 +619,7 @@ impl Expr {
             SyntaxKind::ExprIf => true,
             SyntaxKind::ExprLoop => true,
             SyntaxKind::ExprWhile => true,
+            SyntaxKind::ExprFor => true,
             SyntaxKind::ExprErrorPropagate => true,
             SyntaxKind::ExprFieldInitShorthand => true,
             SyntaxKind::ExprIndexed => true,
@@ -4509,6 +4523,135 @@ impl TypedSyntaxNode for ExprWhile {
 }
 impl From<&ExprWhile> for SyntaxStablePtrId {
     fn from(node: &ExprWhile) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprFor {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl ExprFor {
+    pub const INDEX_FOR_KW: usize = 0;
+    pub const INDEX_PATTERN: usize = 1;
+    pub const INDEX_IDENTIFIER: usize = 2;
+    pub const INDEX_EXPR: usize = 3;
+    pub const INDEX_BODY: usize = 4;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        for_kw: TerminalForGreen,
+        pattern: PatternGreen,
+        identifier: TerminalIdentifierGreen,
+        expr: ExprGreen,
+        body: ExprBlockGreen,
+    ) -> ExprForGreen {
+        let children: Vec<GreenId> = vec![for_kw.0, pattern.0, identifier.0, expr.0, body.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        ExprForGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprFor,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl ExprFor {
+    pub fn for_kw(&self, db: &dyn SyntaxGroup) -> TerminalFor {
+        TerminalFor::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
+        Pattern::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn identifier(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
+        ExprBlock::from_syntax_node(db, self.children[4].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprForPtr(pub SyntaxStablePtrId);
+impl ExprForPtr {
+    pub fn pattern_green(self, db: &dyn SyntaxGroup) -> PatternGreen {
+        let ptr = self.0.lookup_intern(db);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            PatternGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn identifier_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = self.0.lookup_intern(db);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[1])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
+impl TypedStablePtr for ExprForPtr {
+    type SyntaxNode = ExprFor;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ExprFor {
+        ExprFor::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ExprForPtr> for SyntaxStablePtrId {
+    fn from(ptr: ExprForPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprForGreen(pub GreenId);
+impl TypedSyntaxNode for ExprFor {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprFor);
+    type StablePtr = ExprForPtr;
+    type Green = ExprForGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprForGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprFor,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalFor::missing(db).0,
+                        Pattern::missing(db).0,
+                        TerminalIdentifier::missing(db).0,
+                        Expr::missing(db).0,
+                        ExprBlock::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprFor,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprFor
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprForPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&ExprFor> for SyntaxStablePtrId {
+    fn from(node: &ExprFor) -> Self {
         node.stable_ptr().untyped()
     }
 }
@@ -20776,6 +20919,183 @@ impl TypedSyntaxNode for TerminalWhile {
 }
 impl From<&TerminalWhile> for SyntaxStablePtrId {
     fn from(node: &TerminalWhile) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenFor {
+    node: SyntaxNode,
+}
+impl Token for TokenFor {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenForGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenFor,
+                details: GreenNodeDetails::Token(text),
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
+            .clone()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenForPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for TokenForPtr {
+    type SyntaxNode = TokenFor;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenFor {
+        TokenFor::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenForPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenForPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenForGreen(pub GreenId);
+impl TokenForGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.0.lookup_intern(db).details, GreenNodeDetails::Token).clone()
+    }
+}
+impl TypedSyntaxNode for TokenFor {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenFor);
+    type StablePtr = TokenForPtr;
+    type Green = TokenForGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenForGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenFor)
+            }
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenForPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenFor> for SyntaxStablePtrId {
+    fn from(node: &TokenFor) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalFor {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl Terminal for TerminalFor {
+    const KIND: SyntaxKind = SyntaxKind::TerminalFor;
+    type TokenType = TokenFor;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalFor as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        TerminalForGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TerminalFor,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalFor {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenFor {
+        TokenFor::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalForPtr(pub SyntaxStablePtrId);
+impl TerminalForPtr {}
+impl TypedStablePtr for TerminalForPtr {
+    type SyntaxNode = TerminalFor;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TerminalFor {
+        TerminalFor::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TerminalForPtr> for SyntaxStablePtrId {
+    fn from(ptr: TerminalForPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalForGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalFor {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFor);
+    type StablePtr = TerminalForPtr;
+    type Green = TerminalForGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalForGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TerminalFor,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        Trivia::missing(db).0,
+                        TokenFor::missing(db).0,
+                        Trivia::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalFor,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalFor
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalForPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TerminalFor> for SyntaxStablePtrId {
+    fn from(node: &TerminalFor) -> Self {
         node.stable_ptr().untyped()
     }
 }
