@@ -1696,6 +1696,7 @@ impl<'a> Parser<'a> {
     fn expect_for_expr(&mut self) -> ExprForGreen {
         let for_kw = self.take::<TerminalFor>();
         let pattern = self.parse_pattern();
+        // TODO(Tomer-StarkWare): Check identifier is 'in'.
         let identifier = self.parse_identifier();
         let expression = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
         let body = self.parse_block();
