@@ -35,6 +35,7 @@ cairo_lang_test_utils::test_file_test!(
         coupon: "coupon",
         enum_: "enum",
         error_propagate: "error_propagate",
+        for_: "for",
         fixed_size_array: "fixed_size_array",
         function_call: "function_call",
         generics: "generics",
@@ -77,6 +78,7 @@ cairo_lang_test_utils::test_file_test!(
         structure: "structure",
         tuple: "tuple",
         while_: "while",
+        for_: "for",
     },
     test_expr_semantics
 );
