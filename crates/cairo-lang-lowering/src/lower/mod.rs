@@ -2,7 +2,7 @@ use std::vec;
 
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_diagnostics::{DiagnosticAdded, Diagnostics, Maybe};
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
@@ -739,6 +739,7 @@ fn lower_expr(
         semantic::Expr::Loop(_) | semantic::Expr::While(_) => {
             lower_expr_loop(ctx, builder, expr_id)
         }
+        semantic::Expr::For(_) => Err(LoweringFlowError::Failed(DiagnosticAdded)),
         semantic::Expr::Var(expr) => {
             let member_path = ExprVarMemberPath::Var(expr.clone());
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
