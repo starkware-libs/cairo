@@ -459,15 +459,20 @@ impl Inference<'_> {
             let var_id = var.id(self.db);
             if let Some(ty) = self
                 .data
-                .impl_vars_trait_types
+                .impl_vars_trait_item_mappings
                 .get(&var_id)
-                .and_then(|mapping| mapping.get(&trait_ty))
+                .and_then(|mappings| mappings.types.get(&trait_ty))
             {
                 Ok(*ty)
             } else {
                 let ty = self
                     .new_type_var(self.data.stable_ptrs.get(&InferenceVar::Impl(var_id)).cloned());
-                self.data.impl_vars_trait_types.entry(var_id).or_default().insert(trait_ty, ty);
+                self.data
+                    .impl_vars_trait_item_mappings
+                    .entry(var_id)
+                    .or_default()
+                    .types
+                    .insert(trait_ty, ty);
                 Ok(ty)
             }
         } else if let Ok(Some(ty)) =

@@ -265,6 +265,10 @@ pub enum InferenceErrorStatus {
     Pending,
     Consumed,
 }
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
+pub struct ImplVarTraitItemMappings {
+    types: HashMap<TraitTypeId, TypeId>,
+}
 
 /// State of inference.
 #[derive(Debug, DebugWithDb, PartialEq, Eq)]
@@ -277,9 +281,9 @@ pub struct InferenceData {
     pub const_assignment: HashMap<LocalConstVarId, ConstValueId>,
     /// Current inferred assignment for impl variables.
     pub impl_assignment: HashMap<LocalImplVarId, ImplId>,
-    /// Unsolved impl variables mapping to a map of trait types to a corresponding type variable.
-    /// Upon solution of the trait conforms the fully known type to the variable.
-    pub impl_vars_trait_types: HashMap<LocalImplVarId, HashMap<TraitTypeId, TypeId>>,
+    /// Unsolved impl variables mapping to a maps of trait items to a corresponding item variable.
+    /// Upon solution of the trait conforms the fully known item to the variable.
+    pub impl_vars_trait_item_mappings: HashMap<LocalImplVarId, ImplVarTraitItemMappings>,
     /// Type variables.
     pub type_vars: Vec<TypeVar>,
     /// Const variables.
@@ -313,7 +317,7 @@ impl InferenceData {
             type_assignment: HashMap::new(),
             impl_assignment: HashMap::new(),
             const_assignment: HashMap::new(),
-            impl_vars_trait_types: HashMap::new(),
+            impl_vars_trait_item_mappings: HashMap::new(),
             type_vars: Vec::new(),
             impl_vars: Vec::new(),
             const_vars: Vec::new(),
@@ -354,16 +358,19 @@ impl InferenceData {
                 .iter()
                 .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
                 .collect(),
-            impl_vars_trait_types: self
-                .impl_vars_trait_types
+            impl_vars_trait_item_mappings: self
+                .impl_vars_trait_item_mappings
                 .iter()
-                .map(|(k, mapping)| {
+                .map(|(k, mappings)| {
                     (
                         *k,
-                        mapping
-                            .iter()
-                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                            .collect(),
+                        ImplVarTraitItemMappings {
+                            types: mappings
+                                .types
+                                .iter()
+                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                                .collect(),
+                        },
                     )
                 })
                 .collect(),
@@ -386,7 +393,7 @@ impl InferenceData {
             type_assignment: self.type_assignment.clone(),
             const_assignment: self.const_assignment.clone(),
             impl_assignment: self.impl_assignment.clone(),
-            impl_vars_trait_types: self.impl_vars_trait_types.clone(),
+            impl_vars_trait_item_mappings: self.impl_vars_trait_item_mappings.clone(),
             type_vars: self.type_vars.clone(),
             const_vars: self.const_vars.clone(),
             impl_vars: self.impl_vars.clone(),
@@ -700,8 +707,8 @@ impl<'db> Inference<'db> {
             return Err(self.set_error(InferenceError::Cycle(InferenceVar::Impl(var))));
         }
         self.impl_assignment.insert(var, impl_id);
-        if let Some(mapping) = self.impl_vars_trait_types.remove(&var) {
-            for (trait_ty, ty) in mapping {
+        if let Some(mappings) = self.impl_vars_trait_item_mappings.remove(&var) {
+            for (trait_ty, ty) in mappings.types {
                 self.conform_ty(
                     ty,
                     self.db
@@ -1057,9 +1064,9 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
                         let var_id = var.id(self.db);
                         if let Some(ty) = self
                             .data
-                            .impl_vars_trait_types
+                            .impl_vars_trait_item_mappings
                             .get(&var_id)
-                            .and_then(|mapping| mapping.get(&trait_ty))
+                            .and_then(|mappings| mappings.types.get(&trait_ty))
                         {
                             *value = self.rewrite(*ty).no_err().lookup_intern(self.db);
                         } else {
@@ -1067,9 +1074,10 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
                                 self.data.stable_ptrs.get(&InferenceVar::Impl(var_id)).cloned(),
                             );
                             self.data
-                                .impl_vars_trait_types
+                                .impl_vars_trait_item_mappings
                                 .entry(var_id)
                                 .or_default()
+                                .types
                                 .insert(trait_ty, ty);
                             *value = ty.lookup_intern(self.db);
                         }
