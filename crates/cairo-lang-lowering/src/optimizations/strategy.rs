@@ -37,7 +37,7 @@ pub enum OptimizationPhase {
 impl OptimizationPhase {
     /// Applies the optimization phase to the lowering.
     ///
-    /// Assumes `lowered` is a a lowering of `function`.
+    /// Assumes `lowered` is a lowering of `function`.
     pub fn apply(
         self,
         db: &dyn LoweringGroup,
@@ -76,7 +76,7 @@ pub struct OptimizationStrategy(pub Vec<OptimizationPhase>);
 impl OptimizationStrategyId {
     /// Applies the optimization strategy phase to the lowering.
     ///
-    /// Assumes `lowered` is a a lowering of `function`.
+    /// Assumes `lowered` is a lowering of `function`.
     pub fn apply_strategy(
         self,
         db: &dyn LoweringGroup,
