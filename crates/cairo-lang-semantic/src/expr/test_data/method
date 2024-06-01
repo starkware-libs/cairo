@@ -263,7 +263,7 @@ mod callable {
 
 //! > ==========================================================================
 
-//! > Test calling a a trait method from an impl alias in the module that is not the relevant impl.
+//! > Test calling a trait method from an impl alias in the module that is not the relevant impl.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)

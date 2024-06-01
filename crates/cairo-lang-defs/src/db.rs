@@ -110,7 +110,7 @@ pub trait DefsGroup:
     /// Gets the documentation above an item definition.
     fn get_item_documentation(&self, item_id: LookupItemId) -> Option<String>;
     // TODO(mkaput): Add tests.
-    /// Gets the the definition of an item.
+    /// Gets the definition of an item.
     fn get_item_definition(&self, item_id: LookupItemId) -> String;
 
     // File to module.
@@ -312,7 +312,7 @@ fn get_item_documentation(db: &dyn DefsGroup, item_id: LookupItemId) -> Option<S
     (!doc.is_empty()).then(|| doc.join("\n"))
 }
 
-/// Gets the the definition of an item.
+/// Gets the definition of an item.
 fn get_item_definition(db: &dyn DefsGroup, item_id: LookupItemId) -> String {
     let syntax_node = item_id.stable_location(db).syntax_node(db);
     let definition = match syntax_node.green_node(db.upcast()).kind {

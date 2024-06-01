@@ -1055,7 +1055,7 @@ fn group_match_arms(
                 .map_err(LoweringFlowError::Failed);
             }
 
-            // A parent block builder where the the variables of each pattern are introduced.
+            // A parent block builder where the variables of each pattern are introduced.
             // The parent block should have the same semantics and changed_member_paths as any of
             // the child blocks.
             let mut outer_subscope = lowering_inner_pattern_results_and_subscopes[0]

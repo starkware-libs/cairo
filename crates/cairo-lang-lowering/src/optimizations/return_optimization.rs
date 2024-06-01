@@ -312,7 +312,7 @@ pub struct AnalyzerInfo {
 }
 
 impl AnalyzerInfo {
-    /// Creates a state of the analyzer where the the return optimization is not applicable.
+    /// Creates a state of the analyzer where the return optimization is not applicable.
     fn invalidated() -> Self {
         AnalyzerInfo { opt_return_info: None }
     }
