@@ -22,7 +22,7 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
-use crate::items::constant::{ConstValue, Constant};
+use crate::items::constant::{ConstValue, ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
@@ -686,6 +686,14 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
     ) -> Maybe<Arc<OrderedHashMap<ImplConstantDefId, ast::ItemConstant>>>;
 
+    /// Returns the impl constant item that matches the given trait constant item, if exists.
+    #[salsa::invoke(items::imp::impl_constant_by_trait_constant)]
+    fn impl_constant_by_trait_constant(
+        &self,
+        impl_def_id: ImplDefId,
+        trait_constant_id: TraitConstantId,
+    ) -> Maybe<ImplConstantDefId>;
+
     /// Returns the functions in the impl.
     #[salsa::invoke(items::imp::impl_functions)]
     fn impl_functions(
@@ -789,8 +797,10 @@ pub trait SemanticGroup:
     /// Returns the resolved constant value of an impl item constant.
     #[salsa::invoke(items::imp::impl_constant_def_value)]
     #[salsa::cycle(items::imp::impl_constant_def_value_cycle)]
-    fn impl_constant_def_value(&self, impl_constant_def_id: ImplConstantDefId)
-    -> Maybe<ConstValue>;
+    fn impl_constant_def_value(
+        &self,
+        impl_constant_def_id: ImplConstantDefId,
+    ) -> Maybe<ConstValueId>;
     /// Returns the resolution resolved_items of an impl item constant.
     #[salsa::invoke(items::imp::impl_constant_def_resolver_data)]
     fn impl_constant_def_resolver_data(
@@ -811,6 +821,31 @@ pub trait SemanticGroup:
         &self,
         impl_constant_def_id: ImplConstantDefId,
     ) -> Maybe<items::imp::ImplItemConstantData>;
+
+    // Impl constant.
+    // ================
+    /// Returns the given impl constant, implized by the given impl context.
+    #[salsa::invoke(items::imp::impl_constant_implized_by_context)]
+    #[salsa::cycle(items::imp::impl_constant_implized_by_context_cycle)]
+    fn impl_constant_implized_by_context(
+        &self,
+        impl_constant_id: ImplConstantId,
+        impl_def_id: ImplDefId,
+    ) -> Maybe<ConstValueId>;
+    /// Returns the implized impl constant value if the impl is concrete.
+    #[salsa::invoke(items::imp::impl_constant_concrete_implized_value)]
+    #[salsa::cycle(items::imp::impl_constant_concrete_implized_value_cycle)]
+    fn impl_constant_concrete_implized_value(
+        &self,
+        impl_constant_id: ImplConstantId,
+    ) -> Maybe<ConstValueId>;
+    /// Returns the implized impl constant type if the impl is concrete.
+    #[salsa::invoke(items::imp::impl_constant_concrete_implized_type)]
+    #[salsa::cycle(items::imp::impl_constant_concrete_implized_type_cycle)]
+    fn impl_constant_concrete_implized_type(
+        &self,
+        impl_constant_id: ImplConstantId,
+    ) -> Maybe<TypeId>;
 
     // Impl function.
     // ================
