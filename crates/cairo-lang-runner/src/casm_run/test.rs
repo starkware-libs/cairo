@@ -4,12 +4,14 @@ use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_vm::vm::runners::cairo_runner::RunResources;
 use indoc::indoc;
 use itertools::Itertools;
-use num_bigint::BigInt;
+use num_bigint::{BigInt, BigUint};
+use num_integer::Integer;
 use num_traits::ToPrimitive;
 use starknet_types_core::felt::Felt as Felt252;
 use test_case::test_case;
 
 use super::format_for_debug;
+use crate::casm_run::circuit::invert_or_nullify;
 use crate::casm_run::contract_address::calculate_contract_address;
 use crate::casm_run::{run_function, RunFunctionResult};
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
@@ -472,4 +474,58 @@ fn test_calculate_contract_address() {
         .unwrap(),
         deployed_contract_address
     );
+}
+#[test_case(
+    0_u32,
+    8_u32,
+    1_u32;
+    "invert_or_nullify(0, 8)"
+)]
+#[test_case(
+    1_u32,
+    8_u32,
+    1_u32;
+    "invert_or_nullify(1, 8)"
+)]
+#[test_case(
+    2_u32,
+    8_u32,
+    4_u32;
+    "invert_or_nullify(2, 8)"
+)]
+#[test_case(
+    3_u32,
+    8_u32,
+    3_u32;
+    "invert_or_nullify(3, 8)"
+)]
+#[test_case(
+    4_u32,
+    8_u32,
+    2_u32;
+    "invert_or_nullify(4, 8)"
+)]
+#[test_case(
+    5_u32,
+    8_u32,
+    5_u32;
+    "invert_or_nullify(5, 8)"
+)]
+#[test_case(
+    6_u32,
+    8_u32,
+    4_u32;
+    "invert_or_nullify(6, 8)"
+)]
+#[test_case(
+    7_u32,
+    8_u32,
+    7_u32;
+    "invert_or_nullify(7, 8)"
+)]
+
+fn test_invert_or_nullify(input: u32, modules: u32, output: u32) {
+    let (success, nullifier) = invert_or_nullify(BigUint::from(input), &BigUint::from(modules));
+    assert_eq!(success, (input * output).mod_floor(&modules) == 1_u32);
+    assert_eq!(nullifier, BigUint::from(output));
 }
