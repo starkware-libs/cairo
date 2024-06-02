@@ -90,7 +90,9 @@ pub fn compile_test_prepared_db(
     let all_tests = find_all_tests(db, test_crate_ids.clone());
     let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
         db.get_sierra_program_for_functions(
+            // TODO(all_tests): Remove test entrypoints after migration to executable attr.
             chain!(
+                executable_functions.clone().into_keys(),
                 all_entry_points.into_iter(),
                 all_tests.iter().flat_map(|(func_id, _cfg)| {
                     ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
