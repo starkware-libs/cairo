@@ -39,8 +39,7 @@ use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
 use num_traits::{Signed, ToPrimitive, Zero};
 use rand::Rng;
-use starknet_crypto::FieldElement;
-use starknet_types_core::felt::Felt as Felt252;
+use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::contract_address::calculate_contract_address;
@@ -1791,13 +1790,13 @@ pub fn execute_core_hint(
             )?;
         }
         CoreHint::LinearSplit { value, scalar, max_x, x, y } => {
-            let value = get_val(vm, value)?.to_biguint();
-            let scalar = get_val(vm, scalar)?.to_biguint();
-            let max_x = get_val(vm, max_x)?.to_biguint();
-            let x_value = (value.clone() / scalar.clone()).min(max_x);
-            let y_value = value - x_value.clone() * scalar;
-            insert_value_to_cellref!(vm, x, Felt252::from(x_value))?;
-            insert_value_to_cellref!(vm, y, Felt252::from(y_value))?;
+            let value = get_val(vm, value)?;
+            let scalar = get_val(vm, scalar)?;
+            let max_x = get_val(vm, max_x)?;
+            let x_value = value.floor_div(&NonZeroFelt::from_felt_unchecked(scalar)).min(max_x);
+            let y_value = value - x_value * scalar;
+            insert_value_to_cellref!(vm, x, x_value)?;
+            insert_value_to_cellref!(vm, y, y_value)?;
         }
         CoreHint::RandomEcPoint { x, y } => {
             // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
@@ -1805,28 +1804,25 @@ pub fn execute_core_hint(
             let mut rng = rand::thread_rng();
             let (random_x, random_y) = loop {
                 // Randominzing 31 bytes to make sure is in range.
-                // TODO(orizi): Use `FieldElement` random implementation when exists.
+                // TODO(orizi): Use `Felt252` random implementation when exists.
                 let x_bytes: [u8; 31] = rng.gen();
-                let random_x = FieldElement::from_byte_slice_be(&x_bytes).unwrap();
-                let random_y_squared = random_x * random_x * random_x + random_x + ec::BETA;
+                let random_x = Felt252::from_bytes_be_slice(&x_bytes);
+                /// The Beta value of the Starkware elliptic curve.
+                pub const BETA: Felt252 = Felt252::from_hex_unchecked(
+                    "0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89",
+                );
+                let random_y_squared = random_x * random_x * random_x + random_x + BETA;
                 if let Some(random_y) = random_y_squared.sqrt() {
                     break (random_x, random_y);
                 }
             };
-            let x_bigint: BigUint = BigUint::from_bytes_be(&random_x.to_bytes_be());
-            let y_bigint: BigUint = BigUint::from_bytes_be(&random_y.to_bytes_be());
-            insert_value_to_cellref!(vm, x, Felt252::from(x_bigint))?;
-            insert_value_to_cellref!(vm, y, Felt252::from(y_bigint))?;
+            insert_value_to_cellref!(vm, x, random_x)?;
+            insert_value_to_cellref!(vm, y, random_y)?;
         }
         CoreHint::FieldSqrt { val, sqrt } => {
-            let val = FieldElement::from_bytes_be(&get_val(vm, val)?.to_bytes_be()).unwrap();
-            insert_value_to_cellref!(vm, sqrt, {
-                let res = val.sqrt().unwrap_or_else(|| (val * FieldElement::THREE).sqrt().unwrap());
-                let root0 = BigUint::from_bytes_be(&res.to_bytes_be());
-                let root1 = BigUint::from_bytes_be(&(-res).to_bytes_be());
-                let res_big_uint = std::cmp::min(root0, root1);
-                Felt252::from(res_big_uint)
-            })?;
+            let val = get_val(vm, val)?;
+            let res = val.sqrt().unwrap_or_else(|| (val * Felt252::THREE).sqrt().unwrap());
+            insert_value_to_cellref!(vm, sqrt, std::cmp::min(res, -res))?;
         }
         CoreHint::AllocFelt252Dict { segment_arena_ptr } => {
             let dict_manager_address = extract_relocatable(vm, segment_arena_ptr)?;
@@ -2361,30 +2357,4 @@ where
     *values = cloned_values_iter;
 
     Some(format!("{full_words_string}{pending_word_string}"))
-}
-
-// TODO(orizi): Remove when const not from montgomery is supported.
-mod ec {
-    use starknet_crypto::FieldElement;
-
-    /// Returns the Beta value of the Starkware elliptic curve.
-    pub const BETA: FieldElement = FieldElement::from_mont([
-        3863487492851900874,
-        7432612994240712710,
-        12360725113329547591,
-        88155977965380735,
-    ]);
-
-    #[cfg(test)]
-    #[test]
-    fn constant_validation() {
-        assert_eq!(
-            BETA.into_mont(),
-            FieldElement::from_dec_str(
-                "3141592653589793238462643383279502884197169399375105820974944592307816406665"
-            )
-            .unwrap()
-            .into_mont()
-        );
-    }
 }
