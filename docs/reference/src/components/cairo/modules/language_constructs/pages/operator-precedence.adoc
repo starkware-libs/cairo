@@ -1,3 +1,5 @@
+= Operator precedence
+
 Below is the table of operator precedence.
 
 The higher an operator is in the table, the earlier it is evaluated.
