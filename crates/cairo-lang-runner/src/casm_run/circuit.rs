@@ -3,10 +3,14 @@ use std::ops::Shl;
 use cairo_lang_sierra::extensions::circuit::VALUE_SIZE;
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::vm_core::VirtualMachine;
-use num_bigint::BigUint;
+use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_integer::{ExtendedGcd, Integer};
-use num_traits::{One, Zero};
+use num_traits::{One, Signed, Zero};
 use starknet_types_core::felt::Felt as Felt252;
+
+#[cfg(test)]
+#[path = "circuit_test.rs"]
+mod test;
 
 struct CircuitInstance<'a> {
     vm: &'a mut VirtualMachine,
@@ -86,13 +90,14 @@ impl CircuitInstance<'_> {
                 true
             }
             (None, Some(rhs)) => {
-                let ExtendedGcd::<_> { gcd, x, y: _ } = rhs.extended_gcd(&self.modulus);
-
-                let (success, res) = if gcd.is_one() && !self.modulus.is_one() {
-                    (true, x)
-                } else {
+                let (success, res) = if self.modulus.is_one() {
+                    // if modulus is 1, we need to fail as the builtin cannot prove that
+                    // 0 * 0 === 1 (modulo 1)
                     (false, BigUint::zero())
+                } else {
+                    invert_or_nullify(rhs, &self.modulus)
                 };
+
                 self.write_mulmod_value(index, res);
                 success
             }
@@ -158,4 +163,32 @@ pub fn fill_values(
     }
 
     first_failure_idx
+}
+
+/// Returns (value % modulus).
+fn positive_modulus(value: &BigInt, modulus: &BigUint) -> BigUint {
+    let value_mod = value.magnitude().mod_floor(modulus);
+    if value.is_negative() { modulus - value_mod } else { value_mod }
+}
+
+/// Given a value and a modulus, either finds its inverse or finds a non-zero value that nullifies
+/// the value.
+///
+/// If the value is invertible, returns (true, inverse), otherwise returns (false, nullifier).
+fn invert_or_nullify(value: BigUint, modulus: &BigUint) -> (bool, BigUint) {
+    let ExtendedGcd::<_> { gcd, x, y: _ } =
+        value.to_bigint().unwrap().extended_gcd(&modulus.to_bigint().unwrap());
+
+    let x = positive_modulus(&x, modulus);
+    let gcd = gcd.to_biguint().unwrap();
+    if gcd.is_one() {
+        return (true, x);
+    }
+
+    if x.is_zero() {
+        return (false, BigUint::one());
+    }
+
+    let nullifier = (x * (modulus / gcd)).mod_floor(modulus);
+    (false, nullifier)
 }
