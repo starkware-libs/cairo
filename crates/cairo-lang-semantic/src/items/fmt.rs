@@ -41,6 +41,8 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
             ConstValue::Generic(param) => write!(f, "{}", param.debug_name(db.upcast())),
             ConstValue::Var(var, _) => write!(f, "?{}", var.id.0),
             ConstValue::Missing(_) => write!(f, "missing"),
+            ConstValue::ImplConstant(id) => id.fmt(f, db),
+            ConstValue::TraitConstant(id) => id.fmt(f, db),
         }
     }
 }

@@ -219,7 +219,11 @@ fn const_type_id(
                 ConstValue::Boxed(_) => {
                     unreachable!("Should be handled by `const_libfunc_id_by_type`.")
                 }
-                ConstValue::Generic(_) | ConstValue::Var(_, _) | ConstValue::Missing(_) => {
+                ConstValue::Generic(_)
+                | ConstValue::Var(_, _)
+                | ConstValue::Missing(_)
+                | ConstValue::ImplConstant(_)
+                | ConstValue::TraitConstant(_) => {
                     unreachable!("Should be caught by the lowering.")
                 }
             },

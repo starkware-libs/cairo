@@ -12,6 +12,7 @@ cairo_lang_test_utils::test_file_test!(
         struct_: "struct",
         trait_: "trait",
         trait_type: "trait_type",
+        trait_const: "trait_const",
         trait_default_fn: "trait_default_fn",
         type_alias: "type_alias",
         use_: "use_",
