@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
-    NamedLanguageElementId,
+    NamedLanguageElementId, TraitConstantId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -17,8 +17,10 @@ use id_arena::Arena;
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::{Num, ToPrimitive, Zero};
+use smol_str::SmolStr;
 
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
+use super::imp::ImplId;
 use super::structure::SemanticStructEx;
 use crate::corelib::{
     core_box_ty, core_felt252_ty, core_nonzero_ty, get_core_trait, get_core_ty_by_name,
@@ -80,12 +82,12 @@ impl ConstValueId {
 
     /// Returns true if the const does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
-        self.lookup_intern(db).is_fully_concrete()
+        self.lookup_intern(db).is_fully_concrete(db)
     }
 
     /// Returns true if the const does not contain any inference variables.
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
-        self.lookup_intern(db).is_var_free()
+        self.lookup_intern(db).is_var_free(db)
     }
 
     /// Returns the type of the const.
@@ -103,35 +105,47 @@ pub enum ConstValue {
     NonZero(Box<ConstValue>),
     Boxed(Box<ConstValue>),
     Generic(#[dont_rewrite] GenericParamId),
+    ImplConstant(ImplConstantId),
+    TraitConstant(TraitConstantId),
     Var(ConstVar, TypeId),
     /// A missing value, used in cases where the value is not known due to diagnostics.
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl ConstValue {
     /// Returns true if the const does not depend on any generics.
-    pub fn is_fully_concrete(&self) -> bool {
-        match self {
-            ConstValue::Int(_, _) => true,
-            ConstValue::Struct(members, _) => {
-                members.iter().all(|member| member.is_fully_concrete())
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        self.ty(db).unwrap().is_fully_concrete(db)
+            && match self {
+                ConstValue::Int(_, _) => true,
+                ConstValue::Struct(members, _) => {
+                    members.iter().all(|member: &ConstValue| member.is_fully_concrete(db))
+                }
+                ConstValue::Enum(_, value)
+                | ConstValue::NonZero(value)
+                | ConstValue::Boxed(value) => value.is_fully_concrete(db),
+                ConstValue::Generic(_)
+                | ConstValue::Var(_, _)
+                | ConstValue::Missing(_)
+                | ConstValue::ImplConstant(_)
+                | ConstValue::TraitConstant(_) => false,
             }
-            ConstValue::Enum(_, value) | ConstValue::NonZero(value) | ConstValue::Boxed(value) => {
-                value.is_fully_concrete()
-            }
-            ConstValue::Generic(_) | ConstValue::Var(_, _) | ConstValue::Missing(_) => false,
-        }
     }
 
     /// Returns true if the const does not contain any inference variables.
-    pub fn is_var_free(&self) -> bool {
-        match self {
-            ConstValue::Int(_, _) | ConstValue::Generic(_) | ConstValue::Missing(_) => true,
-            ConstValue::Struct(members, _) => members.iter().all(|member| member.is_var_free()),
-            ConstValue::Enum(_, value) | ConstValue::NonZero(value) | ConstValue::Boxed(value) => {
-                value.is_var_free()
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        self.ty(db).unwrap().is_var_free(db)
+            && match self {
+                ConstValue::Int(_, _) | ConstValue::Generic(_) | ConstValue::Missing(_) => true,
+                ConstValue::Struct(members, _) => {
+                    members.iter().all(|member| member.is_var_free(db))
+                }
+                ConstValue::Enum(_, value)
+                | ConstValue::NonZero(value)
+                | ConstValue::Boxed(value) => value.is_var_free(db),
+                ConstValue::Var(_, _)
+                | ConstValue::ImplConstant(_)
+                | ConstValue::TraitConstant(_) => false,
             }
-            ConstValue::Var(_, _) => false,
-        }
     }
 
     /// Returns the type of the const.
@@ -147,17 +161,67 @@ impl ConstValue {
             ConstValue::Generic(param) => {
                 extract_matches!(db.generic_param_semantic(*param)?, GenericParam::Const).ty
             }
-            ConstValue::Var(_var, ty) => *ty,
+            ConstValue::Var(_, ty) => *ty,
             ConstValue::Missing(_) => TypeId::missing(db, skip_diagnostic()),
+            ConstValue::ImplConstant(impl_constant_id) => {
+                db.impl_constant_concrete_implized_type(*impl_constant_id)?
+            }
+            ConstValue::TraitConstant(trait_constant) => db.trait_constant_type(*trait_constant)?,
         })
     }
 
     /// Returns the value of an int const as a BigInt.
     pub fn into_int(self) -> Option<BigInt> {
         match self {
-            ConstValue::Int(value, _) => Some(value),
+            ConstValue::Int(value, _) => Some(value.clone()),
             _ => None,
         }
+    }
+}
+
+/// An impl item of kind const.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct ImplConstantId {
+    /// The impl the item const is in.
+    impl_id: ImplId,
+    /// The trait const this impl const "implements".
+    trait_constant_id: TraitConstantId,
+}
+
+impl ImplConstantId {
+    /// Creates a new impl constant id. For an impl constamt of a concrete impl, asserts that the
+    /// trait constant belongs to the same trait that the impl implements (panics if not).
+    pub fn new(
+        impl_id: ImplId,
+        trait_constant_id: TraitConstantId,
+        db: &dyn SemanticGroup,
+    ) -> Self {
+        if let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_id {
+            let impl_def_id = concrete_impl.impl_def_id(db);
+            assert_eq!(Ok(trait_constant_id.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
+        }
+
+        ImplConstantId { impl_id, trait_constant_id }
+    }
+    pub fn impl_id(&self) -> ImplId {
+        self.impl_id
+    }
+    pub fn trait_constant_id(&self) -> TraitConstantId {
+        self.trait_constant_id
+    }
+
+    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("{}::{}", self.impl_id.name(db.upcast()), self.trait_constant_id.name(db.upcast()))
+            .into()
+    }
+}
+impl DebugWithDb<dyn SemanticGroup> for ImplConstantId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
     }
 }
 
