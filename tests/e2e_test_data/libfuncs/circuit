@@ -13,8 +13,8 @@ fn foo() -> CircuitInputAccumulator<MyCircuit> {
 
 //! > casm
 [ap + 0] = [fp + -3] + 20, ap++;
-[ap + 0] = [fp + -3], ap++;
-[ap + 0] = [fp + -3] + 12, ap++;
+[ap + 0] = [fp + -3] + 4, ap++;
+[ap + 0] = [fp + -3] + 16, ap++;
 ret;
 
 //! > function_costs
@@ -143,14 +143,14 @@ ret;
 dw 16;
 dw 20;
 dw 40;
-dw 12;
 dw 0;
-dw 16;
-dw 12;
 dw 4;
-dw 20;
-dw 12;
+dw 16;
+dw 0;
 dw 8;
+dw 20;
+dw 0;
+dw 12;
 dw 24;
 dw 20;
 dw 24;
@@ -266,11 +266,11 @@ fn foo(
 //! > casm
 [ap + 0] = 0, ap++;
 [ap + 0] = 1, ap++;
-[fp + -7] = [ap + 0] + 12, ap++;
-[ap + -2] = [[fp + -7] + 0];
-[ap + -3] = [[fp + -7] + 1];
-[ap + -3] = [[fp + -7] + 2];
-[ap + -3] = [[fp + -7] + 3];
+[fp + -7] = [ap + 0] + 16, ap++;
+[ap + -2] = [[ap + -1] + 0];
+[ap + -3] = [[ap + -1] + 1];
+[ap + -3] = [[ap + -1] + 2];
+[ap + -3] = [[ap + -1] + 3];
 %{ raise NotImplementedError %}
 [fp + -6] = [[fp + -13] + 0];
 [fp + -5] = [[fp + -13] + 1];

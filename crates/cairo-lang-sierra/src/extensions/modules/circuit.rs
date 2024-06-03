@@ -44,7 +44,7 @@ define_type_hierarchy! {
         CircuitInput(CircuitInput),
         CircuitInputAccumulator(CircuitInputAccumulator),
         InverseGate(InverseGate),
-         MulModGate(MulModGate),
+        MulModGate(MulModGate),
     }, CircuitTypeConcrete
 }
 
@@ -932,23 +932,19 @@ fn parse_circuit_inputs<'a>(
     let mut values: UnorderedHashMap<ConcreteTypeId, usize> = Default::default();
     let n_inputs = inputs.len();
 
-    // The reduced_inputs start at n_inputs + 1 since we need to reserve a slot for the value 1.
+    // The reduced_inputs start at n_inputs + 1 since we need to reserve slot 0 for the value 1.
     let mut reduced_input_offset = n_inputs + 1;
     let mut mul_offsets = vec![];
 
     for (input_idx, ty) in inputs.iter_sorted() {
         // Add the gate result = 1 * input to reduce the input module the modulus.
-        mul_offsets.push(GateOffsets {
-            lhs: n_inputs,
-            rhs: *input_idx,
-            output: reduced_input_offset,
-        });
+        mul_offsets.push(GateOffsets { lhs: 0, rhs: 1 + input_idx, output: reduced_input_offset });
         values.insert(ty.clone(), reduced_input_offset);
         reduced_input_offset += 1;
     }
 
     // Validate that the inputs are [0, 1, .., n_inputs - 1]
-    let max_input = mul_offsets.last().unwrap().rhs;
+    let max_input = mul_offsets.last().unwrap().rhs - 1;
     if max_input != n_inputs - 1 {
         return Err(SpecializationError::UnsupportedGenericArg);
     }
@@ -973,7 +969,7 @@ pub struct CircuitInfo {
     /// Maps a concrete type to it's offset in the values array.
     /// The values mapping does not include the optional 1 input which is stored at the
     /// the index n_inputs.
-    /// The input 1 is located at offset n_inputs and is not part of this mapping.
+    /// The input 1 is located at offset 0 and is not part of this mapping.
     pub values: UnorderedHashMap<ConcreteTypeId, usize>,
     /// The offsets for the add gates.
     pub add_offsets: Vec<GateOffsets>,
