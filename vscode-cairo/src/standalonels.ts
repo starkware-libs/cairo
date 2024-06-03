@@ -33,9 +33,7 @@ export class StandaloneLS implements LanguageServerExecutableProvider {
           ctx.log.debug(`using CairoLS from config: ${configPath}`);
           return configPath;
         }
-        throw new Error(
-          `configured CairoLS path does not exist: ${configPath}`,
-        );
+        throw new Error(`configured CairoLS path does not exist: ${configPath}`);
       }
       return undefined;
     }

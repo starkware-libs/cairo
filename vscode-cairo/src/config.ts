@@ -18,10 +18,7 @@ export class Config {
   //  multi-root workspaces.
 
   get<K extends keyof ConfigProps>(prop: K): ConfigProps[K] | undefined;
-  get<K extends keyof ConfigProps>(
-    prop: K,
-    defaultValue: ConfigProps[K],
-  ): ConfigProps[K];
+  get<K extends keyof ConfigProps>(prop: K, defaultValue: ConfigProps[K]): ConfigProps[K];
   public get(prop: keyof ConfigProps, defaultValue?: unknown): unknown {
     const config = vscode.workspace.getConfiguration(Config.ROOT);
     const value = config.get(prop, defaultValue);
