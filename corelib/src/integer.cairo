@@ -2065,6 +2065,289 @@ impl I128PartialOrd of PartialOrd<i128> {
     }
 }
 
+mod signed_div_rem {
+    use core::internal::BoundedInt;
+    trait ConstrainHelper<T, const BOUNDARY: felt252> {
+        type LowT;
+        type HighT;
+    }
+    impl NonZeroHelper<
+        T, const BOUNDARY: felt252, impl H: ConstrainHelper<T, BOUNDARY>
+    > of ConstrainHelper<NonZero<T>, BOUNDARY> {
+        type LowT = NonZero<H::LowT>;
+        type HighT = NonZero<H::HighT>;
+    }
+    extern fn bounded_int_constrain<
+        T, const BOUNDARY: felt252, impl H: ConstrainHelper<T, BOUNDARY>
+    >(
+        value: T
+    ) -> Result<H::LowT, H::HighT> implicits(RangeCheck) nopanic;
+
+    trait MulHelper<Lhs, Rhs> {
+        type Result;
+    }
+    impl NonZeroMulHelper<
+        Lhs, Rhs, impl H: MulHelper<Lhs, Rhs>
+    > of MulHelper<NonZero<Lhs>, NonZero<Rhs>> {
+        type Result = NonZero<H::Result>;
+    }
+    extern fn bounded_int_mul<Lhs, Rhs, impl H: MulHelper<Lhs, Rhs>>(
+        lhs: Lhs, rhs: Rhs
+    ) -> H::Result nopanic;
+    type MinusOne = BoundedInt<-1, -1>;
+    mod minus_1 {
+        pub extern type Const<T, const VALUE: felt252>;
+        pub extern fn const_as_immediate<C>() -> super::BoundedInt::<-1, -1> nopanic;
+    }
+    mod nz_minus_1 {
+        pub extern type Const<T, C>;
+        pub extern fn const_as_immediate<C>() -> NonZero<super::MinusOne> nopanic;
+    }
+    fn minus<T, impl H: MulHelper<T, MinusOne>>(a: T) -> H::Result {
+        bounded_int_mul(a, minus_1::const_as_immediate::<minus_1::Const<MinusOne, -1>>())
+    }
+    fn nz_minus<T, impl H: MulHelper<T, MinusOne>>(a: NonZero<T>) -> NonZero<H::Result> {
+        bounded_int_mul(
+            a,
+            nz_minus_1::const_as_immediate::<
+                nz_minus_1::Const<NonZero<MinusOne>, minus_1::Const<MinusOne, -1>,>
+            >()
+        )
+    }
+
+    trait DivRemHelper<Lhs, Rhs> {
+        type DivT;
+        type RemT;
+    }
+    extern fn bounded_int_div_rem<Lhs, Rhs, impl H: DivRemHelper<Lhs, Rhs>>(
+        lhs: Lhs, rhs: NonZero<Rhs>,
+    ) -> (H::DivT, H::RemT) implicits(RangeCheck) nopanic;
+
+    pub impl DivRemImpl<
+        T,
+        impl CH: ConstrainHelper<T, 0>,
+        impl MH: MulHelper<CH::LowT, MinusOne>,
+        impl PPDR: DivRemHelper<CH::HighT, CH::HighT>,
+        impl NPDR: DivRemHelper<MH::Result, CH::HighT>,
+        impl PNDR: DivRemHelper<CH::HighT, MH::Result>,
+        impl NNDR: DivRemHelper<MH::Result, MH::Result>,
+        +MulHelper<NNDR::RemT, MinusOne>,
+        +MulHelper<NPDR::DivT, MinusOne>,
+        +MulHelper<NPDR::RemT, MinusOne>,
+        +MulHelper<PNDR::DivT, MinusOne>,
+        +Drop<T>,
+        +Drop<MH::Result>,
+        +Drop<CH::LowT>,
+        +Drop<CH::HighT>,
+        +Drop<PNDR::RemT>,
+        +Drop<NPDR::RemT>,
+        +Drop<NNDR::RemT>,
+    > of DivRem<T> {
+        fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T) {
+            match bounded_int_constrain::<T, 0>(lhs) {
+                Result::Ok(lhs_lt0) => {
+                    match bounded_int_constrain::<NonZero<T>, 0>(rhs) {
+                        Result::Ok(rhs_lt0) => {
+                            let (q, r) = bounded_int_div_rem(minus(lhs_lt0), nz_minus(rhs_lt0));
+                            (
+                                super::downcast(q).expect('attempt to divide with overflow'),
+                                super::upcast(minus(r))
+                            )
+                        },
+                        Result::Err(rhs_ge0) => {
+                            let (q, r) = bounded_int_div_rem(minus(lhs_lt0), rhs_ge0);
+                            (super::upcast(minus(q)), super::upcast(minus(r)))
+                        },
+                    }
+                },
+                Result::Err(lhs_ge0) => {
+                    match bounded_int_constrain::<NonZero<T>, 0>(rhs) {
+                        Result::Ok(rhs_lt0) => {
+                            let (q, r) = bounded_int_div_rem(lhs_ge0, nz_minus(rhs_lt0));
+                            (super::upcast(minus(q)), super::upcast(r))
+                        },
+                        Result::Err(rhs_ge0) => {
+                            let (q, r) = bounded_int_div_rem(lhs_ge0, rhs_ge0);
+                            (super::upcast(q), super::upcast(r))
+                        },
+                    }
+                },
+            }
+        }
+    }
+
+    mod impls {
+        pub impl Constrain0<
+            T, const MIN: felt252, const MAX: felt252
+        > of super::ConstrainHelper<T, 0> {
+            type LowT = super::BoundedInt<MIN, -1>;
+            type HighT = super::BoundedInt<0, MAX>;
+        }
+        pub impl Minus<T, MinusT> of super::MulHelper<T, super::MinusOne> {
+            type Result = MinusT;
+        }
+        pub impl DivRem<Lhs, Rhs, DivT, RemT> of super::DivRemHelper<Lhs, Rhs> {
+            type DivT = DivT;
+            type RemT = RemT;
+        }
+    }
+    impl I8C0 = impls::Constrain0<i8, -0x80, 0x7f>;
+    impl I8MH = impls::Minus<I8C0::LowT, BoundedInt<1, 0x80>>;
+    impl I8PPDR = impls::DivRem<I8C0::HighT, I8C0::HighT, BoundedInt<0, 0x7f>, BoundedInt<0, 0x7e>>;
+    impl I8NPDR =
+        impls::DivRem<I8MH::Result, I8C0::HighT, BoundedInt<0, 0x80>, BoundedInt<0, 0x7e>>;
+    impl I8PNDR =
+        impls::DivRem<I8C0::HighT, I8MH::Result, BoundedInt<0, 0x7f>, BoundedInt<0, 0x7f>>;
+    impl I8NNDR =
+        impls::DivRem<I8MH::Result, I8MH::Result, BoundedInt<0, 0x80>, BoundedInt<0, 0x7f>>;
+    impl I8MHUC0 = impls::Minus<BoundedInt<0, 0x7e>, BoundedInt<-0x7e, 0>>;
+    impl I8MHUC1 = impls::Minus<BoundedInt<0, 0x7f>, BoundedInt<-0x7f, 0>>;
+    impl I8MHUC2 = impls::Minus<BoundedInt<0, 0x80>, BoundedInt<-0x80, 0>>;
+
+    impl I16C0 = impls::Constrain0<i16, -0x8000, 0x7fff>;
+    impl I16MH = impls::Minus<I16C0::LowT, BoundedInt<1, 0x8000>>;
+    impl I16PPDR =
+        impls::DivRem<I16C0::HighT, I16C0::HighT, BoundedInt<0, 0x7fff>, BoundedInt<0, 0x7ffe>>;
+    impl I16NPDR =
+        impls::DivRem<I16MH::Result, I16C0::HighT, BoundedInt<0, 0x8000>, BoundedInt<0, 0x7ffe>>;
+    impl I16PNDR =
+        impls::DivRem<I16C0::HighT, I16MH::Result, BoundedInt<0, 0x7fff>, BoundedInt<0, 0x7fff>>;
+    impl I16NNDR =
+        impls::DivRem<I16MH::Result, I16MH::Result, BoundedInt<0, 0x8000>, BoundedInt<0, 0x7fff>>;
+    impl I16MHUC0 = impls::Minus<BoundedInt<0, 0x7ffe>, BoundedInt<-0x7ffe, 0>>;
+    impl I16MHUC1 = impls::Minus<BoundedInt<0, 0x7fff>, BoundedInt<-0x7fff, 0>>;
+    impl I16MHUC2 = impls::Minus<BoundedInt<0, 0x8000>, BoundedInt<-0x8000, 0>>;
+
+    impl I32C0 = impls::Constrain0<i32, -0x80000000, 0x7fffffff>;
+    impl I32MH = impls::Minus<I32C0::LowT, BoundedInt<1, 0x80000000>>;
+    impl I32PPDR =
+        impls::DivRem<
+            I32C0::HighT, I32C0::HighT, BoundedInt<0, 0x7fffffff>, BoundedInt<0, 0x7ffffffe>
+        >;
+    impl I32NPDR =
+        impls::DivRem<
+            I32MH::Result, I32C0::HighT, BoundedInt<0, 0x80000000>, BoundedInt<0, 0x7ffffffe>
+        >;
+    impl I32PNDR =
+        impls::DivRem<
+            I32C0::HighT, I32MH::Result, BoundedInt<0, 0x7fffffff>, BoundedInt<0, 0x7fffffff>
+        >;
+    impl I32NNDR =
+        impls::DivRem<
+            I32MH::Result, I32MH::Result, BoundedInt<0, 0x80000000>, BoundedInt<0, 0x7fffffff>
+        >;
+    impl I32MHUC0 = impls::Minus<BoundedInt<0, 0x7ffffffe>, BoundedInt<-0x7ffffffe, 0>>;
+    impl I32MHUC1 = impls::Minus<BoundedInt<0, 0x7fffffff>, BoundedInt<-0x7fffffff, 0>>;
+    impl I32MHUC2 = impls::Minus<BoundedInt<0, 0x80000000>, BoundedInt<-0x80000000, 0>>;
+
+    impl I64C0 = impls::Constrain0<i64, -0x8000000000000000, 0x7fffffffffffffff>;
+    impl I64MH = impls::Minus<I64C0::LowT, BoundedInt<1, 0x8000000000000000>>;
+    impl I64PPDR =
+        impls::DivRem<
+            I64C0::HighT,
+            I64C0::HighT,
+            BoundedInt<0, 0x7fffffffffffffff>,
+            BoundedInt<0, 0x7ffffffffffffffe>
+        >;
+    impl I64NPDR =
+        impls::DivRem<
+            I64MH::Result,
+            I64C0::HighT,
+            BoundedInt<0, 0x8000000000000000>,
+            BoundedInt<0, 0x7ffffffffffffffe>
+        >;
+    impl I64PNDR =
+        impls::DivRem<
+            I64C0::HighT,
+            I64MH::Result,
+            BoundedInt<0, 0x7fffffffffffffff>,
+            BoundedInt<0, 0x7fffffffffffffff>
+        >;
+    impl I64NNDR =
+        impls::DivRem<
+            I64MH::Result,
+            I64MH::Result,
+            BoundedInt<0, 0x8000000000000000>,
+            BoundedInt<0, 0x7fffffffffffffff>
+        >;
+    impl I64MHUC0 =
+        impls::Minus<BoundedInt<0, 0x7ffffffffffffffe>, BoundedInt<-0x7ffffffffffffffe, 0>>;
+    impl I64MHUC1 =
+        impls::Minus<BoundedInt<0, 0x7fffffffffffffff>, BoundedInt<-0x7fffffffffffffff, 0>>;
+    impl I64MHUC2 =
+        impls::Minus<BoundedInt<0, 0x8000000000000000>, BoundedInt<-0x8000000000000000, 0>>;
+
+    impl I128C0 =
+        impls::Constrain0<
+            i128, -0x80000000000000000000000000000000, 0x7fffffffffffffffffffffffffffffff
+        >;
+    impl I128MH = impls::Minus<I128C0::LowT, BoundedInt<1, 0x80000000000000000000000000000000>>;
+    impl I128PPDR =
+        impls::DivRem<
+            I128C0::HighT,
+            I128C0::HighT,
+            BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>,
+            BoundedInt<0, 0x7ffffffffffffffffffffffffffffffe>
+        >;
+    impl I128NPDR =
+        impls::DivRem<
+            I128MH::Result,
+            I128C0::HighT,
+            BoundedInt<0, 0x80000000000000000000000000000000>,
+            BoundedInt<0, 0x7ffffffffffffffffffffffffffffffe>
+        >;
+    impl I128PNDR =
+        impls::DivRem<
+            I128C0::HighT,
+            I128MH::Result,
+            BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>,
+            BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>
+        >;
+    impl I128NNDR =
+        impls::DivRem<
+            I128MH::Result,
+            I128MH::Result,
+            BoundedInt<0, 0x80000000000000000000000000000000>,
+            BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>
+        >;
+    impl I128MHUC0 =
+        impls::Minus<
+            BoundedInt<0, 0x7ffffffffffffffffffffffffffffffe>,
+            BoundedInt<-0x7ffffffffffffffffffffffffffffffe, 0>
+        >;
+    impl I128MHUC1 =
+        impls::Minus<
+            BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>,
+            BoundedInt<-0x7fffffffffffffffffffffffffffffff, 0>
+        >;
+    impl I128MHUC2 =
+        impls::Minus<
+            BoundedInt<0, 0x80000000000000000000000000000000>,
+            BoundedInt<-0x80000000000000000000000000000000, 0>
+        >;
+
+    extern fn bounded_int_is_zero<T>(value: T) -> super::IsZeroResult<T> implicits() nopanic;
+    pub impl TryIntoNonZero<T> of TryInto<T, NonZero<T>> {
+        fn try_into(self: T) -> Option<NonZero<T>> {
+            match bounded_int_is_zero(self) {
+                super::IsZeroResult::Zero => Option::None,
+                super::IsZeroResult::NonZero(x) => Option::Some(x),
+            }
+        }
+    }
+}
+
+impl I8DivRem = signed_div_rem::DivRemImpl<i8>;
+impl I8TryIntoNonZero = signed_div_rem::TryIntoNonZero<i8>;
+impl I16DivRem = signed_div_rem::DivRemImpl<i16>;
+impl I16TryIntoNonZero = signed_div_rem::TryIntoNonZero<i16>;
+impl I32DivRem = signed_div_rem::DivRemImpl<i32>;
+impl I32TryIntoNonZero = signed_div_rem::TryIntoNonZero<i32>;
+impl I64DivRem = signed_div_rem::DivRemImpl<i64>;
+impl I64TryIntoNonZero = signed_div_rem::TryIntoNonZero<i64>;
+impl I128DivRem = signed_div_rem::DivRemImpl<i128>;
+impl I128TryIntoNonZero = signed_div_rem::TryIntoNonZero<i128>;
+
 // Implementations for `Div` and `Rem` given `DivRem`.
 mod by_div_rem {
     pub impl DivImpl<T, +DivRem<T>, +TryInto<T, NonZero<T>>, +Drop<T>> of Div<T> {
@@ -2092,6 +2375,17 @@ impl U128Div = by_div_rem::DivImpl<u128>;
 impl U128Rem = by_div_rem::RemImpl<u128>;
 impl U256Div = by_div_rem::DivImpl<u256>;
 impl U256Rem = by_div_rem::RemImpl<u256>;
+
+impl I8Div = by_div_rem::DivImpl<i8>;
+impl I8Rem = by_div_rem::RemImpl<i8>;
+impl I16Div = by_div_rem::DivImpl<i16>;
+impl I16Rem = by_div_rem::RemImpl<i16>;
+impl I32Div = by_div_rem::DivImpl<i32>;
+impl I32Rem = by_div_rem::RemImpl<i32>;
+impl I64Div = by_div_rem::DivImpl<i64>;
+impl I64Rem = by_div_rem::RemImpl<i64>;
+impl I128Div = by_div_rem::DivImpl<i128>;
+impl I128Rem = by_div_rem::RemImpl<i128>;
 
 // Implementations for `*Eq` operations.
 #[feature("deprecated-op-assign-traits")]
@@ -2125,9 +2419,13 @@ mod op_eq_by_op {
 impl I8AddEq = op_eq_by_op::AddEqImpl<i8>;
 impl I8SubEq = op_eq_by_op::SubEqImpl<i8>;
 impl I8MulEq = op_eq_by_op::MulEqImpl<i8>;
+impl I8DivEq = op_eq_by_op::DivEqImpl<i8>;
+impl I8RemEq = op_eq_by_op::RemEqImpl<i8>;
 impl I16AddEq = op_eq_by_op::AddEqImpl<i16>;
 impl I16SubEq = op_eq_by_op::SubEqImpl<i16>;
 impl I16MulEq = op_eq_by_op::MulEqImpl<i16>;
+impl I16DivEq = op_eq_by_op::DivEqImpl<i16>;
+impl I16RemEq = op_eq_by_op::RemEqImpl<i16>;
 impl I32AddEq = op_eq_by_op::AddEqImpl<i32>;
 impl I32SubEq = op_eq_by_op::SubEqImpl<i32>;
 impl I32MulEq = op_eq_by_op::MulEqImpl<i32>;
