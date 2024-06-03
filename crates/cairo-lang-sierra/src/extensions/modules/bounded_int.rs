@@ -132,17 +132,41 @@ impl SignatureOnlyGenericLibfunc for BoundedIntMulLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
-        specialize_helper(context, args, |lhs_range, rhs_range| {
-            // The result is the minimum and maximum of the four possible extremes.
-            // Done to properly handle multiplication by negative values.
-            let extremes = [
-                &lhs_range.lower * &rhs_range.lower,
-                lhs_range.lower * (&rhs_range.upper - 1),
-                (&lhs_range.upper - 1) * rhs_range.lower,
-                (lhs_range.upper - 1) * (rhs_range.upper - 1),
-            ];
-            extremes.into_iter().minmax().into_option().unwrap()
-        })
+        let (lhs, rhs) = args_as_two_types(args)?;
+        let lhs_info = context.get_type_info(lhs.clone())?;
+        let rhs_info = context.get_type_info(rhs.clone())?;
+        let is_nz = lhs_info.long_id.generic_id == NonZeroType::ID;
+        if is_nz != (rhs_info.long_id.generic_id == NonZeroType::ID) {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+
+        let [lhs_range, rhs_range] = if is_nz {
+            [lhs_info, rhs_info].map(|info| {
+                let inner_ty = args_as_single_type(&info.long_id.generic_args)?;
+                Range::from_type(context, inner_ty)
+            })
+        } else {
+            [lhs_info, rhs_info].map(|info| Range::from_type_info(&info))
+        };
+        let (lhs_range, rhs_range) = (lhs_range?, rhs_range?);
+        // The result is the minimum and maximum of the four possible extremes.
+        // Done to properly handle multiplication by negative values.
+        let extremes = [
+            &lhs_range.lower * &rhs_range.lower,
+            lhs_range.lower * (&rhs_range.upper - 1),
+            (&lhs_range.upper - 1) * rhs_range.lower,
+            (lhs_range.upper - 1) * (rhs_range.upper - 1),
+        ];
+        let (min_result, max_result) = extremes.into_iter().minmax().into_option().unwrap();
+        let res_ty = bounded_int_ty(context, min_result, max_result)?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature::new(lhs), ParamSignature::new(rhs).with_allow_const()],
+            vec![OutputVarInfo {
+                ty: if is_nz { nonzero_ty(context, &res_ty)? } else { res_ty },
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
     }
 }
 
