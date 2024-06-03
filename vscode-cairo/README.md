@@ -25,14 +25,16 @@ Expect bugs and crashes from time to time.**
 Gm! 👋
 
 Whether you are new to Cairo or an experienced Cairo Pharaoh,
-we hope you will find this extension fitting your needs and making your Cairo development experience more enjoyable.
+we hope you will find this extension fitting your needs and making your Cairo development experience
+more enjoyable.
 
 1. Install latest [Scarb][scarb-dl], preferably via [asdf][scarb-asdf].
 2. Install the [VS Code Cairo extension][vscode-marketplace].
-3. Open a workspace containing Scarb.toml or just open any Cairo file to automatically activate the extension.
-4. The extension depends on the Cairo Language Server, which comes bundled with Scarb.
-   The version of Scarb used in the workspace determines the version of Cairo and Cairo Language Server used by the
+3. Open a workspace containing Scarb.toml or just open any Cairo file to automatically activate the
    extension.
+4. The extension depends on the Cairo Language Server, which comes bundled with Scarb.
+   The version of Scarb used in the workspace determines the version of Cairo and Cairo Language
+   Server used by the extension.
 
 Happy coding!
 
@@ -44,7 +46,8 @@ Consult the settings UI in VS Code for more documentation.
 
 ## Support
 
-For questions or inquiries about Cairo, Cairo Language Server and this extension, reach out to us on [Discord].
+For questions or inquiries about Cairo, Cairo Language Server and this extension, reach out to us
+on [Discord].
 
 ## Troubleshooting
 
@@ -62,12 +65,13 @@ If you run into issues with the extension, try these debugging steps:
    And restart VS Code.
 5. Check out debug logs for hints on what could go wrong.
 
-In normal operation mode, both this extension and Cairo Language Server are pretty silent in their logs.
+In normal operation mode, both this extension and Cairo Language Server are pretty silent in their
+logs.
 Logs are emitted to the _Output_ panel in VS Code.
 
 You can enable debug logging to learn more about what's going on.
-By default, the extension is trying to start the language server with the same logging level as the extension is running
-itself.
+By default, the extension is trying to start the language server with the same logging level as the
+extension is running itself.
 To change the logging level, do the following:
 
 1. Open the Command Palette (`F1` or `Ctrl+Shift+P`).
@@ -78,24 +82,13 @@ To change the logging level, do the following:
 
 When sending logs to developers to debug,
 please include full logs from both the extension and the language server.
-
-You can also enable more [granular][env-filter-directives] logging by configuring environment variables for the language
-server.
-To do so, paste the following into your `.vscode/settings.json`:
-
-```json
-{
-  "cairo1.languageServerExtraEnv": {
-    "CAIRO_LS_LOG": "cairo_lang_language_server=debug",
-    "RUST_BACKTRACE": "1"
-  }
-}
-```
+If you feel brave enough, you can try some of the more advanced debugging techniques described in
+[CairoLS contribution guidelines][debugging].
 
 [cairo]: https://www.cairo-lang.org/
+[debugging]: https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-language-server/CONTRIBUTING.md#debugging
 [discord]: https://discord.gg/QypNMzkHbc
 [dojo engine]: https://book.dojoengine.org/
-[env-filter-directives]: https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#directives
 [scarb]: https://docs.swmansion.com/scarb
 [scarb-asdf]: https://docs.swmansion.com/scarb/download.html#install-via-asdf
 [scarb-dl]: https://docs.swmansion.com/scarb/download.html

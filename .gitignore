@@ -1,5 +1,5 @@
 /target
-.vscode/
+/.vscode
 .idea/
 .spr.yml
 node_modules
@@ -9,4 +9,3 @@ flamegraph.svg
 
 ensure-no_std/Cargo.lock
 ensure-no_std/target/
-
