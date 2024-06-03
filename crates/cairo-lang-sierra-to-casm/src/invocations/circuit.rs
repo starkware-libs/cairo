@@ -51,7 +51,10 @@ fn build_init_circuit_data(
         buffer(1) rc96;
     };
     casm_build_extend! {casm_builder,
-        const inputs_size = n_inputs * VALUE_SIZE;
+        const value_size = VALUE_SIZE;
+        let inputs_start = rc96 + value_size;
+        // This size of all the inputs including the input 1.
+        const inputs_size = (1+ n_inputs) * VALUE_SIZE;
         let inputs_end = rc96 + inputs_size;
         const values_size = n_values * VALUE_SIZE;
         let vals_end = rc96 + values_size;
@@ -59,7 +62,7 @@ fn build_init_circuit_data(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[vals_end], &[rc96, inputs_end]], None)],
+        [("Fallthrough", &[&[vals_end], &[inputs_start, inputs_end]], None)],
         Default::default(),
     ))
 }
@@ -185,14 +188,15 @@ fn build_circuit_eval(
     let n_values = values.len() + 1;
 
     casm_build_extend! {casm_builder,
-        const inputs_size = n_inputs * VALUE_SIZE;
+        // input size including the input 1.
+        const inputs_size = (n_inputs +1 ) * VALUE_SIZE;
         tempvar values = inputs_end - inputs_size;
 
         // Add the input 1 at the end of the inputs.
-        assert one = inputs_end[0];
-        assert zero = inputs_end[1];
-        assert zero = inputs_end[2];
-        assert zero = inputs_end[3];
+        assert one = values[0];
+        assert zero = values[1];
+        assert zero = values[2];
+        assert zero = values[3];
 
 
         hint CoreHint::EvalCircuit {
