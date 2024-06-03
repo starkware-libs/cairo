@@ -59,7 +59,7 @@ impl Location {
         self
     }
 
-    /// Creates a new Location with the a note from the given text and location.
+    /// Creates a new Location with a note from the given text and location.
     pub fn add_note_with_location(
         self,
         db: &dyn LoweringGroup,
