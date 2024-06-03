@@ -393,7 +393,7 @@ impl AnalyzerInfo {
         }
     }
 
-    /// Returns true if the an early return is possible according to 'self'.
+    /// Returns true if an early return is possible according to 'self'.
     fn early_return_possible(&self) -> bool {
         let Some(ReturnInfo { ref returned_vars, .. }) = self.opt_return_info else { return false };
 
