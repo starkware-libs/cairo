@@ -1,8 +1,5 @@
 {
-  "extends": [
-    "@tsconfig/strictest/tsconfig.json",
-    "@tsconfig/node18/tsconfig.json",
-  ],
+  "extends": ["@tsconfig/strictest/tsconfig.json", "@tsconfig/node18/tsconfig.json"],
   "compilerOptions": {
     "outDir": "out",
     "sourceMap": true,

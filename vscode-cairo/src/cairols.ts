@@ -20,9 +20,7 @@ function notifyScarbMissing(ctx: Context) {
   ctx.log.error(errorMessage);
 }
 
-export async function setupLanguageServer(
-  ctx: Context,
-): Promise<lc.LanguageClient> {
+export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {
   const serverOptions = await getServerOptions(ctx);
 
   const clientOptions: lc.LanguageClientOptions = {
@@ -47,12 +45,9 @@ export async function setupLanguageServer(
     async () => {
       const client = weakClient.deref();
       if (client != undefined) {
-        await client.sendNotification(
-          lc.DidChangeConfigurationNotification.type,
-          {
-            settings: "",
-          },
-        );
+        await client.sendNotification(lc.DidChangeConfigurationNotification.type, {
+          settings: "",
+        });
       }
     },
     null,
@@ -67,12 +62,9 @@ export async function setupLanguageServer(
         content?: string;
       }
 
-      const res = await client.sendRequest<ProvideVirtualFileResponse>(
-        "vfs/provide",
-        {
-          uri: uri.toString(),
-        },
-      );
+      const res = await client.sendRequest<ProvideVirtualFileResponse>("vfs/provide", {
+        uri: uri.toString(),
+      });
 
       return res.content ?? "";
     }
@@ -85,9 +77,7 @@ export async function setupLanguageServer(
   });
   vscode.workspace.registerTextDocumentContentProvider("vfs", myProvider);
 
-  client.onNotification("scarb/could-not-find-scarb-executable", () =>
-    notifyScarbMissing(ctx),
-  );
+  client.onNotification("scarb/could-not-find-scarb-executable", () => notifyScarbMissing(ctx));
 
   client.onNotification("scarb/resolving-start", () => {
     vscode.window.withProgress(
@@ -193,9 +183,7 @@ async function determineLanguageServerExecutableProvider(
         return scarb;
       }
 
-      log.trace(
-        "could not find standalone LS and Scarb has no LS extension, will error out",
-      );
+      log.trace("could not find standalone LS and Scarb has no LS extension, will error out");
       throw e;
     }
   }
