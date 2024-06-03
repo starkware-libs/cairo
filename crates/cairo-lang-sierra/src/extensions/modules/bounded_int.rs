@@ -168,7 +168,7 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         // Making sure the algorithm is runnable.
-        if BoundedIntDivRemAlgorithm::new(&lhs_range, &rhs_range).is_none() {
+        if BoundedIntDivRemAlgorithm::try_new(&lhs_range, &rhs_range).is_none() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         let quotient_min = lhs_range.lower / (&rhs_range.upper - 1);
@@ -226,34 +226,43 @@ pub enum BoundedIntDivRemAlgorithm {
     /// The rhs is small enough to be multiplied by `2**128` without wraparound.
     KnownSmallRhs,
     /// The quotient is small enough to be multiplied by `2**128` without wraparound.
-    KnownSmallQuotient(BigInt),
+    KnownSmallQuotient { q_upper_bound: BigInt },
     /// The lhs is small enough so that its square root plus 1 can be multiplied by `2**128`
     /// without wraparound.
-    KnownSmallLhs(BigInt),
+    /// `lhs_upper_sqrt` is the square root of the upper bound of the lhs, rounded up.
+    KnownSmallLhs { lhs_upper_sqrt: BigInt },
 }
 impl BoundedIntDivRemAlgorithm {
     /// Returns the algorithm to use for division and remainder of bounded integers.
     /// Fails if the div_rem of the ranges is not supported yet.
     ///
     /// Assumption: `lhs` is non-negative and `rhs` is positive.
-    pub fn new(lhs: &Range, rhs: &Range) -> Option<Self> {
+    pub fn try_new(lhs: &Range, rhs: &Range) -> Option<Self> {
         let prime = Felt252::prime().to_bigint().unwrap();
         let q_max = (&lhs.upper - 1) / &rhs.lower;
         let u128_limit = BigInt::one().shl(128);
         // `q` is range checked in all algorithm variants, so `q_max` must be smaller than `2**128`.
         require(q_max < u128_limit)?;
-        // `r` is range checked in all algorithm variants, so `lhs.upper` must be at most `2**128`.
-        require(rhs.upper <= u128_limit)?;
+        // `r` is range checked in all algorithm variants, so `rhs.upper` must be at most
+        // `2**128 + 1`.
+        require(rhs.upper <= &u128_limit + 1)?;
         if &rhs.upper * &u128_limit < prime {
             return Some(Self::KnownSmallRhs);
         }
         let q_upper_bound = q_max + 1;
         if &q_upper_bound * &u128_limit < prime {
-            return Some(Self::KnownSmallQuotient(q_upper_bound));
+            return Some(Self::KnownSmallQuotient { q_upper_bound });
         }
-        let root = lhs.upper.sqrt();
-        if (&root + 1) * &u128_limit < prime {
-            return Some(Self::KnownSmallLhs(root));
+        let mut lhs_upper_sqrt = lhs.upper.sqrt();
+        // Round lhs_upper_sqrt up.
+        if lhs_upper_sqrt.pow(2) != lhs.upper {
+            lhs_upper_sqrt += 1;
+        }
+        if &lhs_upper_sqrt * &u128_limit < prime {
+            // Make sure `lhs_upper_sqrt < 2**128`, since the value bounded by root is range
+            // checked.
+            require(lhs_upper_sqrt < u128_limit)?;
+            return Some(Self::KnownSmallLhs { lhs_upper_sqrt });
         }
         // No algorithm found.
         None
@@ -280,15 +289,12 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
         }?;
         let range = Range::from_type(context, ty.clone())?;
-        let under_range = Range::half_open(range.lower, boundary.clone());
-        let over_range = Range::half_open(boundary.clone(), range.upper);
-        require(
-            under_range.size() >= BigInt::one()
-                && over_range.size() >= BigInt::one()
-                && under_range.is_small_range()
-                && over_range.is_small_range(),
-        )
-        .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        require(&range.lower < boundary && boundary < &range.upper)
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let low_range = Range::half_open(range.lower, boundary.clone());
+        let high_range = Range::half_open(boundary.clone(), range.upper);
+        require(low_range.is_small_range() && high_range.is_small_range())
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let branch_signature = |rng: Range| {
             Ok(BranchSignature {
@@ -307,7 +313,7 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(ty.clone()),
             ],
-            branch_signatures: vec![branch_signature(under_range)?, branch_signature(over_range)?],
+            branch_signatures: vec![branch_signature(low_range)?, branch_signature(high_range)?],
             fallthrough: Some(0),
         })
     }
@@ -349,8 +355,8 @@ fn specialize_helper(
         Range::from_type(context, lhs.clone())?,
         Range::from_type(context, rhs.clone())?,
     );
-    Ok(LibfuncSignature::new_non_branch(
-        vec![lhs, rhs],
+    Ok(LibfuncSignature::new_non_branch_ex(
+        vec![ParamSignature::new(lhs), ParamSignature::new(rhs).with_allow_const()],
         vec![OutputVarInfo {
             ty: bounded_int_ty(context, min_result, max_result)?,
             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
