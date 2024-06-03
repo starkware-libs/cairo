@@ -947,6 +947,12 @@ fn parse_circuit_inputs<'a>(
         reduced_input_offset += 1;
     }
 
+    // Validate that the inputs are [0, 1, .., n_inputs - 1]
+    let max_input = mul_offsets.last().unwrap().rhs;
+    if max_input != n_inputs - 1 {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
+
     Ok(ParsedInputs { values, mul_offsets })
 }
 
