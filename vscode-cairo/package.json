@@ -31,7 +31,7 @@
     "workspaceContains:**/cairo_project.toml",
     "workspaceContains:**/Scarb.toml"
   ],
-  "main": "./out/extension",
+  "main": "./dist/extension",
   "contributes": {
     "snippets": [
       {
@@ -130,11 +130,13 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "compile-watch": "npm run compile -- --watch",
+    "compile-test": "tsc -p ./",
     "fmt": "prettier --write .",
-    "fmt:check": "prettier --check .",
-    "lint": "eslint . src --ext .ts,.tsx"
+    "lint": "npm run lint-fmt && npm run lint-eslint",
+    "lint-eslint": "eslint . src --ext .ts,.tsx",
+    "lint-fmt": "prettier --check ."
   },
   "engines": {
     "vscode": "^1.84.0"
@@ -149,6 +151,7 @@
     "@types/vscode": "^1.84.0",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@vscode/test-electron": "^2.3.9",
+    "esbuild": "^0.21.4",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "3.2.4",
