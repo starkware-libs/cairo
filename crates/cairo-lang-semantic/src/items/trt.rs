@@ -388,7 +388,7 @@ pub struct TraitDefinitionData {
     // AST maps.
     function_asts: OrderedHashMap<TraitFunctionId, ast::TraitItemFunction>,
     item_type_asts: OrderedHashMap<TraitTypeId, ast::TraitItemType>,
-    item_constants_asts: OrderedHashMap<TraitConstantId, ast::TraitItemConstant>,
+    item_constant_asts: OrderedHashMap<TraitConstantId, ast::TraitItemConstant>,
 
     /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
     item_id_by_name: Arc<OrderedHashMap<SmolStr, TraitItemId>>,
@@ -417,7 +417,7 @@ pub fn trait_semantic_definition_diagnostics(
     for trait_type_id in data.item_type_asts.keys() {
         diagnostics.extend(db.trait_type_diagnostics(*trait_type_id));
     }
-    for trait_constant in data.item_constants_asts.keys() {
+    for trait_constant in data.item_constant_asts.keys() {
         diagnostics.extend(db.trait_constant_diagnostics(*trait_constant));
     }
 
@@ -510,7 +510,7 @@ pub fn trait_constants(
 ) -> Maybe<OrderedHashMap<SmolStr, TraitConstantId>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
-        .item_constants_asts
+        .item_constant_asts
         .keys()
         .map(|constant_id| {
             let constant_long_id = constant_id.lookup_intern(db);
@@ -614,7 +614,7 @@ pub fn priv_trait_definition_data(
         diagnostics: diagnostics.build(),
         function_asts,
         item_type_asts,
-        item_constants_asts: item_constant_asts,
+        item_constant_asts,
         item_id_by_name: item_id_by_name.into(),
     })
 }
@@ -758,6 +758,7 @@ pub struct TraitItemConstantData {
 
 // --- Selectors ---
 
+/// Query implementation of [crate::db::SemanticGroup::trait_constant_diagnostics].
 pub fn trait_constant_diagnostics(
     db: &dyn SemanticGroup,
     trait_constant: TraitConstantId,
@@ -800,7 +801,7 @@ pub fn priv_trait_constant_data(
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_constant.trait_id(db.upcast());
     let data = db.priv_trait_definition_data(trait_id)?;
-    let constant_syntax = &data.item_constants_asts[&trait_constant];
+    let constant_syntax = &data.item_constant_asts[&trait_constant];
 
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::TraitItem(
         TraitItemId::Constant(trait_constant),
