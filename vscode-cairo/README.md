@@ -78,24 +78,13 @@ To change the logging level, do the following:
 
 When sending logs to developers to debug,
 please include full logs from both the extension and the language server.
-
-You can also enable more [granular][env-filter-directives] logging by configuring environment variables for the language
-server.
-To do so, paste the following into your `.vscode/settings.json`:
-
-```json
-{
-  "cairo1.languageServerExtraEnv": {
-    "CAIRO_LS_LOG": "cairo_lang_language_server=debug",
-    "RUST_BACKTRACE": "1"
-  }
-}
-```
+If you feel brave enough, you can try some of the more advanced debugging techniques described in
+[CairoLS contribution guidelines][debugging].
 
 [cairo]: https://www.cairo-lang.org/
+[debugging]: https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-language-server/CONTRIBUTING.md#debugging
 [discord]: https://discord.gg/QypNMzkHbc
 [dojo engine]: https://book.dojoengine.org/
-[env-filter-directives]: https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#directives
 [scarb]: https://docs.swmansion.com/scarb
 [scarb-asdf]: https://docs.swmansion.com/scarb/download.html#install-via-asdf
 [scarb-dl]: https://docs.swmansion.com/scarb/download.html
