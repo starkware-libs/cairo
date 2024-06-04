@@ -2,8 +2,10 @@ use std::ops::Shl;
 
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use num_bigint::BigInt;
 use num_traits::{One, ToPrimitive, Zero};
+use once_cell::sync::Lazy;
 
 use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheck96Type;
@@ -24,6 +26,13 @@ use crate::extensions::{
 use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
+
+/// The set of types that are considered circuit components.
+/// A circuit it defined as Circuit<(Output0, Output1, ...) Where all the outputs are made
+/// of circuit components.
+static CIRCUIT_COMPONENTS: Lazy<UnorderedHashSet<GenericTypeId>> = Lazy::new(|| {
+    UnorderedHashSet::from_iter([CircuitInput::ID, AddModGate::ID, InverseGate::ID, MulModGate::ID])
+});
 
 /// The number of limbs used to represent a single value in the circuit.
 pub const VALUE_SIZE: usize = 4;
@@ -72,8 +81,7 @@ fn is_circuit_component(
     };
 
     let long_id = context.get_type_info(ty.clone())?.long_id;
-    Ok([CircuitInput::ID, AddModGate::ID, InverseGate::ID, MulModGate::ID]
-        .contains(&long_id.generic_id))
+    Ok(CIRCUIT_COMPONENTS.contains(&long_id.generic_id))
 }
 
 /// Circuit input type.
@@ -1062,7 +1070,7 @@ fn parse_circuit_inputs<'a>(
                 .to_usize()
                 .ok_or(SpecializationError::UnsupportedGenericArg)?;
             inputs.insert(idx, ty);
-        } else if [AddModGate::ID, InverseGate::ID, MulModGate::ID].contains(&generic_id) {
+        } else if CIRCUIT_COMPONENTS.contains(&generic_id) {
             stack.extend(
                 long_id
                     .generic_args
