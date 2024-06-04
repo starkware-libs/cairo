@@ -1810,10 +1810,14 @@ impl AutoSpecs {
             let var_name = rebind.get_rebind_name(&var.name, &var.var_expr);
 
             if op == "" {
-                (var_name, String::from(""), String::from(""))
-            } else if self.is_completeness && op == "/" {
-                // Convert into a multiplication.
-                (var_name.clone(), var_a, format!("{var_name} * {var_b}"))
+                (var_name.clone(), var_name, var_a)
+            } else if self.is_completeness {
+                if op == "/" {
+                    // Convert into a multiplication.
+                    (var_name.clone(), format!("{var_a} % PRIME"), format!("({var_name} * {var_b}) % PRIME"))
+                } else {
+                    (var_name.clone(), format!("{var_name} % PRIME"), format!("({var_a} {op} {var_b}) % PRIME"))
+                }
             } else {
                 (var_name.clone(), var_name, format!("{var_a} {op} {var_b}"))
             }
@@ -1987,13 +1991,13 @@ impl LeanGenerator for AutoSpecs {
                 if assert.expr.op == "/" {
                     self.push_spec(
                         indent,
-                        &format!("{var_a_name} = {lhs_name} * {var_b_name}"),
+                        &format!("{var_a_name} % PRIME = ({lhs_name} * {var_b_name}) % PRIME"),
                     );
                 } else {
                     self.push_spec(
                         indent,
                         &format!(
-                            "{lhs_name} = {var_a_name} {op} {var_b_name}",
+                            "{lhs_name} % PRIME = ({var_a_name} {op} {var_b_name}) % PRIME",
                             op = assert.expr.op,
                         )
                     );
@@ -3297,7 +3301,7 @@ impl CompletenessProof {
                 get_ref_from_deref(&var.var_expr).expect("Failed to find variable AP offset").1,
                 rhs_var_a,
                 rhs_var_b,
-                String::from("+-*/").find(&expr.op).is_some(),
+                expr.op != "" && String::from("+-*/").find(&expr.op).is_some(),
                 None,
                 &assert_hyp,
                 Some(&simps),
@@ -3382,9 +3386,11 @@ impl CompletenessProof {
         let mut simps: Vec<String> = Vec::new();
 
         if expr.op == "-" {
-            simps.push(format!("rw [eq_sub_iff_add_eq] at {assert_hyp}"));
-        } else if expr.op == "+" || expr.op == "*" {
-            simps.push(format!("rw [eq_comm] at {assert_hyp}"));
+            simps.push(format!("rw [Int.eq_sub_emod_iff_add_emod_eq] at {assert_hyp}"));
+            simps.push(String::from("dsimp [Mrel.Equiv]"));
+        } else if expr.op == "+" || expr.op == "*" || expr.op == "/" {
+            // simps.push(format!("rw [eq_comm] at {assert_hyp}"));
+            simps.push(String::from("dsimp [Mrel.Equiv]"));
         }
         if lean_info.is_const(&expr.var_a.name) {
             simps.push(format!("simp only [{const_name}] at {assert_hyp}", const_name = expr.var_a.name));
@@ -3504,9 +3510,10 @@ impl CompletenessProof {
 
         if is_rc_var {
             self.push_main(indent, "apply Mrel.Equiv.refl_rc");
-        } else {
+        } else if !rhs_binary_op {
             self.push_main(indent, "apply Mrel.Equiv.refl_val");
         }
+
     }
 
     /// Add the return block variables (and the associated hypotheses) to the list
@@ -4267,7 +4274,7 @@ impl LeanGenerator for CompletenessProof {
             get_ref_from_deref(&assign.lhs.var_expr).expect("Failed to find variable AP offset").1,
             rhs_var_a,
             rhs_var_b,
-            String::from("+-*/").find(&assign.expr.op).is_some(),
+            assign.expr.op != "" && String::from("+-*/").find(&assign.expr.op).is_some(),
             rc_offset,
             &assert_hyp,
             Some(&simps),
