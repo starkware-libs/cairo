@@ -440,7 +440,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 trait MyTrait {
-    impl MyImpl of OtherTrait;
+    impl MyImpl: OtherTrait;
 }
 
 //! > top_level_kind
@@ -458,7 +458,7 @@ TraitBody
     │       ├── attributes (kind: AttributeList) []
     │       ├── impl_kw (kind: TokenImpl): 'impl'
     │       ├── name (kind: TokenIdentifier): 'MyImpl'
-    │       ├── of_kw (kind: TokenOf): 'of'
+    │       ├── colon (kind: TokenColon): ':'
     │       ├── trait_path (kind: ExprPath)
     │       │   └── item #0 (kind: PathSegmentSimple)
     │       │       └── ident (kind: TokenIdentifier): 'OtherTrait'
