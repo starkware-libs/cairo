@@ -371,12 +371,22 @@ fn build_failure_guarantee_verify(
         const mul_mod_usage = BUILTIN_INSTANCE_SIZE;
         let new_mul_mod = mul_mod + mul_mod_usage;
 
-        // TODO(ilya): Verify that 0 nullifier < modules.
     };
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[rc96], &[new_mul_mod]], None)],
+        [(
+            "Fallthrough",
+            &[
+                &[rc96],
+                &[new_mul_mod],
+                &[
+                    nullifier0, nullifier1, nullifier2, nullifier3, modulus0, modulus1, modulus2,
+                    modulus3,
+                ],
+            ],
+            None,
+        )],
         Default::default(),
     ))
 }
