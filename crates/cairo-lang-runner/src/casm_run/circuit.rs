@@ -179,16 +179,12 @@ fn invert_or_nullify(value: BigUint, modulus: &BigUint) -> (bool, BigUint) {
     let ExtendedGcd::<_> { gcd, x, y: _ } =
         value.to_bigint().unwrap().extended_gcd(&modulus.to_bigint().unwrap());
 
-    let x = positive_modulus(&x, modulus);
     let gcd = gcd.to_biguint().unwrap();
     if gcd.is_one() {
-        return (true, x);
+        return (true, positive_modulus(&x, modulus));
     }
-
-    if x.is_zero() {
-        return (false, BigUint::one());
-    }
-
-    let nullifier = (x * (modulus / gcd)).mod_floor(modulus);
+    let nullifier = modulus / gcd;
+    // Note that gcd divides the value, so value * nullifier = value * (modulus / gcd) =
+    // (value // gcd) * modulus = 0 (mod modulus)
     (false, nullifier)
 }
