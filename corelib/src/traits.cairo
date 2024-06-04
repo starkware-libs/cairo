@@ -10,6 +10,9 @@ impl SnapshotDrop<T> of Drop<@T>;
 pub trait Add<T> {
     fn add(lhs: T, rhs: T) -> T;
 }
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0"
+)]
 pub trait AddEq<T> {
     fn add_eq(ref self: T, other: T);
 }
@@ -18,6 +21,9 @@ pub trait AddEq<T> {
 pub trait Sub<T> {
     fn sub(lhs: T, rhs: T) -> T;
 }
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::SubAssign`.", since: "2.7.0"
+)]
 pub trait SubEq<T> {
     fn sub_eq(ref self: T, other: T);
 }
@@ -26,6 +32,9 @@ pub trait SubEq<T> {
 pub trait Mul<T> {
     fn mul(lhs: T, rhs: T) -> T;
 }
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::MulAssign`.", since: "2.7.0"
+)]
 pub trait MulEq<T> {
     fn mul_eq(ref self: T, other: T);
 }
@@ -34,6 +43,9 @@ pub trait MulEq<T> {
 pub trait Div<T> {
     fn div(lhs: T, rhs: T) -> T;
 }
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::DivAssign`.", since: "2.7.0"
+)]
 pub trait DivEq<T> {
     fn div_eq(ref self: T, other: T);
 }
@@ -42,6 +54,9 @@ pub trait DivEq<T> {
 pub trait Rem<T> {
     fn rem(lhs: T, rhs: T) -> T;
 }
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::RemAssign`.", since: "2.7.0"
+)]
 pub trait RemEq<T> {
     fn rem_eq(ref self: T, other: T);
 }

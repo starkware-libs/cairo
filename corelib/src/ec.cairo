@@ -193,6 +193,7 @@ impl EcPointAdd of Add<EcPoint> {
     }
 }
 
+#[feature("deprecated-op-assign-traits")]
 impl EcPointAddEq of AddEq<EcPoint> {
     #[inline(always)]
     fn add_eq(ref self: EcPoint, other: EcPoint) {
@@ -213,6 +214,7 @@ impl EcPointSub of Sub<EcPoint> {
     }
 }
 
+#[feature("deprecated-op-assign-traits")]
 impl EcPointSubEq of SubEq<EcPoint> {
     #[inline(always)]
     fn sub_eq(ref self: EcPoint, other: EcPoint) {

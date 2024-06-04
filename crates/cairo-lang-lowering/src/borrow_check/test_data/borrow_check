@@ -782,7 +782,7 @@ Statements:
   (v1: core::felt252) <- 17
   (v2: core::felt252, v3: test::NonCopy) <- struct_destructure(v0{`x`})
   (v4: core::felt252) <- 1
-  (v6: core::felt252, v5: ()) <- core::Felt252AddEq::add_eq(v1{`x.a`}, v4{`1`})
+  (v6: core::felt252, v5: ()) <- core::ops::arith::DeprecatedAddAssign::<core::felt252, core::Felt252AddEq>::add_assign(v1{`x.a`}, v4{`1`})
   (v7: test::MyStruct) <- struct_construct(v6{`x`}, v3{`x`})
 End:
   Return(v7)
@@ -899,7 +899,7 @@ Statements:
   (v2: core::felt252) <- 17
   (v3: core::felt252, v4: test::NonCopy) <- struct_destructure(v0{`x`})
   (v5: core::felt252) <- 1
-  (v7: core::felt252, v6: ()) <- core::Felt252AddEq::add_eq(v2{`x.a`}, v5{`1`})
+  (v7: core::felt252, v6: ()) <- core::ops::arith::DeprecatedAddAssign::<core::felt252, core::Felt252AddEq>::add_assign(v2{`x.a`}, v5{`1`})
   (v8: core::felt252) <- 5
   (v10: core::array::Array::<core::felt252>, v9: ()) <- core::array::ArrayImpl::<core::felt252>::append(v1{`__array_builder_macro_result__`}, v8{`5`})
   (v11: test::MyStruct) <- struct_construct(v7{`x`}, v4{`x`})
