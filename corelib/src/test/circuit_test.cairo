@@ -1,7 +1,7 @@
 use core::circuit::{
     RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, CircuitDefinition, circuit_add,
     circuit_mul, circuit_inverse, EvalCircuitResult, FillInputResult, InputAccumulatorTrait,
-    CircuitDescriptorTrait, u384,
+    CircuitDescriptorTrait, u384, CircuitOutputsTrait,
 };
 
 
@@ -53,6 +53,6 @@ fn test_circuit() {
 
     match circ.get_descriptor().eval(data, modulus) {
         EvalCircuitResult::Failure(_) => {},
-        EvalCircuitResult::Success(_outputs) => {}
+        EvalCircuitResult::Success(outputs) => { outputs.get_output(out1); }
     }
 }
