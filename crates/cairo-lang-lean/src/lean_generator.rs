@@ -1797,6 +1797,41 @@ impl AutoSpecs {
         rebind: &mut VarRebind,
         indent: usize,
     ) {
+        // We must first determine the bindings of the lhs variables before incrementing
+        // the rebinding for the lhs.
+        let (var_name, lhs_name, expr_str) = if let Some(expr) = &var.expr {
+            let var_a = rebind.get_var_name(&expr.var_a.name);
+            let (op, var_b) = if let Some(var_b) = &expr.var_b {
+                (&expr.op[..],  rebind.get_var_name(&var_b.name))
+            } else {
+                ("", String::from(""))
+            };
+
+            let var_name = rebind.get_rebind_name(&var.name, &var.var_expr);
+
+            if op == "" {
+                (var_name, String::from(""), String::from(""))
+            } else if self.is_completeness && op == "/" {
+                // Convert into a multiplication.
+                (var_name.clone(), var_a, format!("{var_name} * {var_b}"))
+            } else {
+                (var_name.clone(), var_name, format!("{var_a} {op} {var_b}"))
+            }
+        } else {
+            (rebind.get_rebind_name(&var.name, &var.var_expr), String::from(""), String::from(""))
+        };
+
+        self.push_spec(
+            indent,
+            &format!("∃ {var_name} : {var_type},{expr}",
+                var_type = self.var_type(),
+                expr = if expr_str != "" {
+                    format!(" {lhs_name} = {expr_str}")
+                } else { String::new() }
+            )
+        );
+
+        /*
         let (var_name, expr) = rebind_var_assignment(var, rebind);
         self.push_spec(
             indent,
@@ -1804,7 +1839,7 @@ impl AutoSpecs {
                 var_type = self.var_type(),
                 expr = if let Some(expr_str) = &expr {
                     format!(" {var_name} = {expr_str}")
-                } else { String::new() }));
+                } else { String::new() }));*/
     }
 }
 
@@ -1943,8 +1978,31 @@ impl LeanGenerator for AutoSpecs {
                 &format!("{is_range_checked} {var_name}",
                     is_range_checked = self.is_range_checked(),
                     var_name = rebind.get_var_name(&assert.lhs.name)));
+        } else if self.is_completeness {
+            // Split the expression into its parts.
+            let lhs_name = rebind.get_var_name(&assert.lhs.name);
+            let var_a_name = rebind.get_var_name(&assert.expr.var_a.name);
+            if let Some(var_b) = &assert.expr.var_b {
+                let var_b_name = rebind.get_var_name(&var_b.name);
+                if assert.expr.op == "/" {
+                    self.push_spec(
+                        indent,
+                        &format!("{var_a_name} = {lhs_name} * {var_b_name}"),
+                    );
+                } else {
+                    self.push_spec(
+                        indent,
+                        &format!(
+                            "{lhs_name} = {var_a_name} {op} {var_b_name}",
+                            op = assert.expr.op,
+                        )
+                    );
+                }
+            } else {
+                self.push_spec(indent, &format!("{lhs_name} = {var_a_name}"));
+            }
         } else {
-            self.push_spec( indent, &format!("{var_name} = {expr}",
+            self.push_spec(indent, &format!("{var_name} = {expr}",
                     var_name = rebind.get_var_name(&assert.lhs.name),
                     expr = rebind.replace_var_names_in_expr(&assert.expr.expr)));
         }
@@ -2981,13 +3039,11 @@ struct CompletenessProof {
     statement: Vec<String>,
 
     /// For each positive offset from the initial ap, the name of the variable
-    /// stored at that ap offset. When a position is skipped, we use the string "0".
+    /// stored at that ap offset. When a position is skipped, we use the string "val 0".
     ap_assignments: Vec<String>,
     /// The variables which were ranged checked at different offsets from the rc pointer.
     rc_vals: Vec<String>,
 
-    /// Number of local variables allocated so far.
-    num_local_vars: usize,
     /// The rcases statment(s) that prepare the the specs to be used for constructing
     /// the local assignment.
     spec_rcases: Vec<String>,
@@ -3006,7 +3062,6 @@ impl CompletenessProof {
             statement: Vec::new(),
             ap_assignments: Vec::new(),
             rc_vals: Vec::new(),
-            num_local_vars: 0,
             spec_rcases: Vec::new(),
             main_proof: Vec::new(),
             lean_code: Vec::new(),
@@ -3023,6 +3078,24 @@ impl CompletenessProof {
 
     fn push_lean(&mut self, indent: usize, str: &str) {
         self.lean_code.push(" ".repeat(indent) + str);
+    }
+
+    /// Adds a variable assignment to the list of ap assignments (variables
+    /// assigned locally in the current block). The offset must be non-negative
+    /// (as it is a newly assigned variable in the current block).
+    fn add_ap_assignment(&mut self, var_name: &str, ap_offset: usize) {
+        let to_add = format!("val {var_name}");
+        if self.ap_assignments.len() < ap_offset {
+            self.ap_assignments.extend(
+                iter::repeat(String::from("val 0"))
+                .take(ap_offset - self.ap_assignments.len())
+            );
+        }
+        if self.ap_assignments.len() == ap_offset {
+            self.ap_assignments.push(to_add);
+        } else {
+            self.ap_assignments[ap_offset] = to_add;
+        }
     }
 
     fn get_full_proof(&self) -> Vec<String> {
@@ -3202,33 +3275,21 @@ impl CompletenessProof {
         // for all statements).
         let indent = 0;
 
-        let (var_name, expr) = rebind_var_assignment(var, rebind);
+        let (var_name, _) = rebind_var_assignment(var, rebind);
         let (_, var_offset) = get_ref_from_deref(&var.var_expr).expect("Failed to find var offset");
 
-        // TODO: Below, should use the var_offset instead of guessing the location.
-        // Moreover, local variable assignment is problematic here (because it can be before
-        // the beginning of the block start ap).
-        let ap_pos = if !is_local {
-                // Allocate the next ap position for this variable.
-                self.ap_assignments.push(format!("val {var_name}"));
-                self.ap_assignments.len() - 1
+        // The variable is assigned in this block.
+        assert!(0 <= var_offset && block.start_local_ap <= var_offset as usize, "Unexpected ap offset for allocated variable.");
+        let var_local_offset = var_offset as usize - block.start_local_ap;
 
-            } else {
-                if self.ap_assignments.len() <= self.num_local_vars {
-                    self.ap_assignments.push(format!("val {var_name}"));
-                } else {
-                    self.ap_assignments[self.num_local_vars] = format!("val {var_name}");
-                }
-                self.num_local_vars += 1;
-                self.num_local_vars - 1
-            };
+        self.add_ap_assignment(&var_name, var_local_offset);
 
         self.spec_rcases.push(var_name.clone());
         if let Some(expr) = &var.expr {
             let assert_hyp = format!("h_{var_name}");
             self.spec_rcases.push(assert_hyp.clone());
             let (rhs_var_a, rhs_var_b, simps) =
-                CompletenessProof::get_rhs_vars_and_simps(&expr, lean_info, &assert_hyp);
+                self.get_rhs_vars_and_simps(&expr, lean_info, &assert_hyp);
             self.generate_assert_main(
                 lean_info,
                 block,
@@ -3245,6 +3306,10 @@ impl CompletenessProof {
                 indent
             );
         }
+    }
+
+    fn is_local_let_var(&self, block: &FuncBlock, var_name: &str, ap_offset: i16) -> bool {
+        !block.is_non_local_ap_offset(ap_offset) && !self.ap_assignments.contains(&format!("val {var_name}"))
     }
 
     fn generate_assert_var_simp(
@@ -3283,6 +3348,7 @@ impl CompletenessProof {
     /// Generates the description of the rhs variables of an assert or variable assignment. Also generates
     /// any special simplifications that need to be applied to the assert hypothesis for this expression.
     fn get_rhs_vars_and_simps(
+        &self,
         expr: &ExprDesc,
         lean_info: &LeanFuncInfo,
         assert_hyp: &str,
@@ -3374,18 +3440,32 @@ impl CompletenessProof {
             );
         }
 
+        // Simplifications which rewrite a let variable into the allocated variables it points at.
+        let mut let_simps: Vec<String> = Vec::new();
+
         // Simplify the variables in this expression.
         self.generate_assert_var_simp(lean_info, block, lhs_name, lhs_ap_offset, indent);
+        if self.is_local_let_var(block, lhs_name, lhs_ap_offset) {
+            let_simps.push(format!("h_{lhs_name}"));
+        }
         if let Some((var_a_name, var_a_offset)) = &rhs_var_a {
             if var_a_name != lhs_name {
                 self.generate_assert_var_simp(lean_info, block, var_a_name, *var_a_offset, indent);
+                if self.is_local_let_var(block, var_a_name, *var_a_offset) {
+                    let_simps.push(format!("h_{var_a_name}"));
+                }
             }
         }
         if let Some((var_b_name, var_b_offset)) = &rhs_var_b {
             if var_b_name != lhs_name {
                 match &rhs_var_a {
                     Some((var_a_name, var_a_offset)) if var_a_name == var_b_name => {},
-                    _ => self.generate_assert_var_simp(lean_info, block, var_b_name, *var_b_offset, indent)
+                    _ => {
+                        self.generate_assert_var_simp(lean_info, block, var_b_name, *var_b_offset, indent);
+                        if self.is_local_let_var(block, var_b_name, *var_b_offset) {
+                            let_simps.push(format!("h_{var_b_name}"));
+                        }
+                    }
                 }
             }
         }
@@ -3400,22 +3480,26 @@ impl CompletenessProof {
             self.push_main(indent, "try simp only [add_sub_add_comm, add_sub_right_comm, sub_add_cancel', sub_self] ; try norm_num1");
             // self.push_main(indent, "try ring_nf");
             // self.push_main(indent, &format!("simp only [Int.add_comm _ {offset}, Int.add_sub_cancel]"));
-        } else if !is_rc_var {
-            self.push_main(indent, "try dsimp [exec_vals, rc_vals]");
-            self.push_main(indent, "try simp only [add_sub_add_comm, add_sub_right_comm, sub_add_cancel', sub_self] ; try norm_num1");
-            // self.push_main(indent, "try ring_nf");
-            if let Some(simps) = assert_simps {
-                for simp in simps {
-                    self.push_main(indent, simp);
-                }
-            }
-            if assert_hyp.len() > 0 {
-                self.push_main(indent, &format!("simp only [{assert_hyp}]"));
+            if 0 < let_simps.len() {
+                self.push_main(indent, &format!("try simp only [{simps}]", simps = let_simps.join(", ")));
             }
         } else {
             self.push_main(indent, "try dsimp [exec_vals, rc_vals]");
             self.push_main(indent, "try simp only [add_sub_add_comm, add_sub_right_comm, sub_add_cancel', sub_self] ; try norm_num1");
             // self.push_main(indent, "try ring_nf");
+            if !is_rc_var {
+                if let Some(simps) = assert_simps {
+                    for simp in simps {
+                        self.push_main(indent, simp);
+                    }
+                }
+                if assert_hyp.len() > 0 {
+                    if 0 < let_simps.len() {
+                        self.push_main(indent, &format!("try simp only [{simps}] at {assert_hyp}", simps = let_simps.join(", ")));
+                    }
+                    self.push_main(indent, &format!("simp only [{assert_hyp}]"));
+                }
+            }
         }
 
         if is_rc_var {
@@ -3737,17 +3821,16 @@ impl CompletenessProof {
                         var_ref = get_lean_ref_from_deref(&expr, true, false, true),
                     )
                 );
-                if calling_block.start_local_ap == 0 {
-                    self.push_lean(
-                        indent + 2,
-                        &format!("(by use (Int.le_add_of_nonneg_right (by norm_num1)) ; apply Int.add_lt_add_left ; norm_num1)")
-                    );
-                } else {
-                    self.push_lean(
-                        indent + 2,
-                        &format!("(by use (Int.add_le_add_left (by norm_num1) _) ; rw [add_assoc] ; apply Int.add_lt_add_left ; norm_num1)")
-                    );
-                }
+                self.push_lean(
+                    indent + 2,
+                    if calling_block.start_local_ap == 0 && offset == 0 {
+                        "(by use le_refl _ ; apply Int.lt_add_of_pos_right ; norm_num1)"
+                    } else if calling_block.start_local_ap == 0 {
+                        "(by use (Int.le_add_of_nonneg_right (by norm_num1)) ; apply Int.add_lt_add_left ; norm_num1)"
+                    } else {
+                        "(by use (Int.add_le_add_left (by norm_num1) _) ; rw [add_assoc] ; apply Int.add_lt_add_left ; norm_num1)"
+                    }
+                );
             }
             self.push_lean(
                 indent,
@@ -4176,7 +4259,7 @@ impl LeanGenerator for CompletenessProof {
         self.spec_rcases.push(assert_hyp.clone());
 
         let (rhs_var_a, rhs_var_b, simps) =
-            CompletenessProof::get_rhs_vars_and_simps(&assign.expr, lean_info, &assert_hyp);
+            self.get_rhs_vars_and_simps(&assign.expr, lean_info, &assert_hyp);
         self.generate_assert_main(
             lean_info,
             block,
@@ -4299,7 +4382,8 @@ impl LeanGenerator for CompletenessProof {
             &format!(
                 "have h_rc_concat : {rc1} = {rc0} + ↑loc₀.rc_num := by simp only [add_assoc] ; simp",
                 rc1 = self.make_start_rc_expr(lean_info, block, true),
-                rc0 = self.make_start_rc_expr(lean_info, calling_block, true),
+                // The + 0 offset must appear explicitly for blocks which are not the main block.
+                rc0 = self.make_start_rc_expr(lean_info, calling_block, calling_block.pc_start_pos != 0),
             ));
         self.push_lean(
             indent,
@@ -4501,9 +4585,9 @@ impl LeanGenerator for CompletenessProof {
         let indent = 0;
 
         // As the AP is advanced without allocating a variable, these locations remain empty.
-        for count in 0..*step {
+        /*for count in 0..*step {
             self.ap_assignments.push("val 0".into());
-        }
+        }*/
 
         self.push_main(indent, &format!("vm_step_advance_ap {codes}", codes = self.make_codes(pc, op_size)));
     }
