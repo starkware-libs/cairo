@@ -12,14 +12,14 @@ use crate::extensions::bounded_int::bounded_int_ty;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureAndTypeGenericLibfunc, SignatureSpecializationContext,
-    WrapSignatureAndTypeGenericLibfunc,
+    SpecializationContext, WrapSignatureAndTypeGenericLibfunc,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    args_as_single_type, args_as_single_value, extract_type_generic_args, ConcreteType, NamedType,
-    NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
-    SpecializationError,
+    args_as_single_type, args_as_single_value, args_as_two_types, extract_type_generic_args,
+    ConcreteType, NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
+    OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -56,6 +56,7 @@ define_libfunc_hierarchy! {
          Eval(EvalCircuitLibFunc),
          GetDescriptor(GetCircuitDescriptorLibFunc),
          InitCircuitData(InitCircuitDataLibFunc),
+         GetOutput(GetOutputLibFunc),
          U384IsZero(U384IsZeroLibfunc),
          FailureGuaranteeVerify(CircuitFailureGuaranteeVerifyLibFunc),
     }, CircuitConcreteLibfunc
@@ -807,6 +808,67 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
 }
 
 pub type EvalCircuitLibFunc = WrapSignatureAndTypeGenericLibfunc<EvalCircuitLibFuncWrapped>;
+
+/// Libfunc for getting an output of a circuit.
+#[derive(Default)]
+pub struct GetOutputLibFunc {}
+impl NamedLibfunc for GetOutputLibFunc {
+    const STR_ID: &'static str = "get_circuit_output";
+
+    type Concrete = ConcreteGetOutputLibFunc;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let (circ_ty, _output_ty) = args_as_two_types(args)?;
+
+        let outputs_ty =
+            context.get_concrete_type(CircuitOutputs::id(), &[GenericArg::Type(circ_ty)])?;
+
+        let u384_ty = get_u384_type(context)?;
+        let guarantee_ty = context.get_concrete_type(U384LessThanGuarantee::id(), &[])?;
+
+        context.get_concrete_type(U384LessThanGuarantee::id(), &[])?;
+
+        Ok(LibfuncSignature::new_non_branch(
+            vec![outputs_ty],
+            vec![
+                OutputVarInfo { ty: u384_ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
+                OutputVarInfo { ty: guarantee_ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let (circuit_ty, output_ty) = args_as_two_types(args)?;
+
+        // TODO(ilya): Fail if `circuit_ty` does not contain output_ty.
+        Ok(ConcreteGetOutputLibFunc {
+            signature: self.specialize_signature(context.upcast(), args)?,
+            circuit_ty,
+            output_ty,
+        })
+    }
+}
+
+/// Struct the data for a multi pop action.
+pub struct ConcreteGetOutputLibFunc {
+    pub signature: LibfuncSignature,
+    pub circuit_ty: ConcreteTypeId,
+    pub output_ty: ConcreteTypeId,
+}
+impl SignatureBasedConcreteLibfunc for ConcreteGetOutputLibFunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
 
 /// Verifies the the circuit evaluation has failed.
 #[derive(Default)]
