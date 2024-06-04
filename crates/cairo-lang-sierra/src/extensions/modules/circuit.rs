@@ -46,6 +46,7 @@ define_type_hierarchy! {
         CircuitInputAccumulator(CircuitInputAccumulator),
         InverseGate(InverseGate),
         MulModGate(MulModGate),
+        U384LessThanGuarantee(U384LessThanGuarantee),
     }, CircuitTypeConcrete
 }
 
@@ -439,6 +440,18 @@ impl NoGenericArgsGenericType for CircuitFailureGuarantee {
     const ZERO_SIZED: bool = false;
 }
 
+/// A type whose destruction guarantees that one u384 value is smaller than another.
+#[derive(Default)]
+pub struct U384LessThanGuarantee {}
+impl NoGenericArgsGenericType for U384LessThanGuarantee {
+    const ID: GenericTypeId = GenericTypeId::new_inline("U384LessThanGuarantee");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = false;
+    // TODO(ilya): add a libfunc to destory the Guarantee.
+    const DROPPABLE: bool = true;
+    const ZERO_SIZED: bool = false;
+}
+
 /// A type representing a circuit instance data with all the inputs filled.
 #[derive(Default)]
 pub struct CircuitDescriptor {}
@@ -811,6 +824,10 @@ impl NoGenericArgsGenericLibfunc for CircuitFailureGuaranteeVerifyLibFunc {
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
                         param_idx: 1,
                     }),
+                },
+                OutputVarInfo {
+                    ty: context.get_concrete_type(U384LessThanGuarantee::id(), &[])?,
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
                 },
             ],
             SierraApChange::Known { new_vars_only: false },
