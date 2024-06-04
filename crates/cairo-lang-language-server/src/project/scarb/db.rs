@@ -37,6 +37,11 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut dyn SemanticGroup) {
 
     let mut crate_roots = Vec::<Root<'_>>::new();
     for compilation_unit in &metadata.compilation_units {
+        if compilation_unit.target.kind == "cairo-plugin" {
+            debug!("skipping cairo plugin compilation unit: {}", compilation_unit.id);
+            continue;
+        }
+
         for component in &compilation_unit.components {
             let crate_name = component.name.as_str();
             let crate_long_id = CrateLongId::Real(crate_name.into());
