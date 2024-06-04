@@ -6,8 +6,8 @@ use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplConstantDefId, ImplDefId,
     ImplFunctionId, ImplItemId, ImplTypeDefId, LookupItemId, ModuleId, ModuleItemId,
-    ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId, TraitItemId,
-    TraitTypeId, UseId, VariantId,
+    ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId, TraitImplId,
+    TraitItemId, TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -29,7 +29,8 @@ use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
 use crate::items::trt::{
-    ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemTypeData,
+    ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemImplData,
+    TraitItemTypeData,
 };
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
@@ -101,6 +102,11 @@ pub trait SemanticGroup:
         &self,
         id: items::imp::ConcreteImplLongId,
     ) -> items::imp::ConcreteImplId;
+    #[salsa::interned]
+    fn intern_concrete_trait_impl(
+        &self,
+        id: items::trt::ConcreteTraitImplLongId,
+    ) -> items::trt::ConcreteTraitImplId;
     #[salsa::interned]
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
     #[salsa::interned]
@@ -463,11 +469,9 @@ pub trait SemanticGroup:
     /// Returns the attributes of a trait constants.
     #[salsa::invoke(items::trt::trait_constant_attributes)]
     fn trait_constant_attributes(&self, trait_constant: TraitConstantId) -> Maybe<Vec<Attribute>>;
-
     /// Returns the type of a trait constant.
     #[salsa::invoke(items::trt::trait_constant_type)]
     fn trait_constant_type(&self, trait_type_id: TraitConstantId) -> Maybe<TypeId>;
-
     /// Returns the resolution resolved_items of a trait constants.
     #[salsa::invoke(items::trt::trait_constant_resolver_data)]
     fn trait_constant_resolver_data(
@@ -486,6 +490,30 @@ pub trait SemanticGroup:
         &self,
         concrete_trait_constant_id: items::trt::ConcreteTraitConstantId,
     ) -> Maybe<TypeId>;
+
+    // Trait impls.
+    // ================
+    /// Returns the semantic diagnostics of a trait impls.
+    #[salsa::invoke(items::trt::trait_impl_diagnostics)]
+    fn trait_impl_diagnostics(&self, trait_impl: TraitImplId) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the attributes of a trait impls.
+    #[salsa::invoke(items::trt::trait_impl_attributes)]
+    fn trait_impl_attributes(&self, trait_impl: TraitImplId) -> Maybe<Vec<Attribute>>;
+    /// Returns the concrete trait of a trait impl.
+    #[salsa::invoke(items::trt::trait_impl_concrete_trait)]
+    fn trait_impl_concrete_trait(&self, trait_type_id: TraitImplId) -> Maybe<ConcreteTraitId>;
+    /// Returns the resolution resolved_items of a trait impls.
+    #[salsa::invoke(items::trt::trait_impl_resolver_data)]
+    fn trait_impl_resolver_data(&self, trait_impl: TraitImplId) -> Maybe<Arc<ResolverData>>;
+    /// Private query to compute data about a trait impl.
+    #[salsa::invoke(items::trt::priv_trait_impl_data)]
+    fn priv_trait_impl_data(&self, trait_impl: TraitImplId) -> Maybe<TraitItemImplData>;
+    /// Returns the concrete trait of a concrete trait impl.
+    #[salsa::invoke(items::trt::concrete_trait_impl_concrete_trait)]
+    fn concrete_trait_impl_concrete_trait(
+        &self,
+        concrete_trait_impl_id: items::trt::ConcreteTraitImplId,
+    ) -> Maybe<ConcreteTraitId>;
 
     // Trait function.
     // ================
@@ -1500,6 +1528,7 @@ fn get_resolver_data_options(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Ar
             cairo_lang_defs::ids::TraitItemId::Constant(id) => {
                 vec![db.trait_constant_resolver_data(id)]
             }
+            cairo_lang_defs::ids::TraitItemId::Impl(id) => vec![db.trait_impl_resolver_data(id)],
         },
         LookupItemId::ImplItem(id) => match id {
             cairo_lang_defs::ids::ImplItemId::Function(id) => {
