@@ -545,6 +545,28 @@ impl TopLevelLanguageElementId for TraitConstantId {
     }
 }
 
+// --- Trait impl items ---
+define_named_language_element_id!(
+    TraitImplId,
+    TraitImplLongId,
+    ast::TraitItemImpl,
+    lookup_intern_trait_impl,
+    intern_trait_impl
+);
+impl TraitImplId {
+    pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
+        let TraitImplLongId(module_file_id, ptr) = self.lookup_intern(db);
+        // Trait impl ast lies 3 levels below the trait ast.
+        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        TraitLongId(module_file_id, trait_ptr).intern(db)
+    }
+}
+impl TopLevelLanguageElementId for TraitImplId {
+    fn full_path(&self, db: &dyn DefsGroup) -> String {
+        format!("{}::{}", self.trait_id(db).name(db), self.name(db))
+    }
+}
+
 // --- Trait functions ---
 define_named_language_element_id!(
     TraitFunctionId,
@@ -988,6 +1010,7 @@ define_language_element_id_as_enum! {
         Function(TraitFunctionId),
         Type(TraitTypeId),
         Constant(TraitConstantId),
+        Impl(TraitImplId),
     }
 }
 impl TraitItemId {
@@ -996,6 +1019,7 @@ impl TraitItemId {
             TraitItemId::Function(id) => id.name(db),
             TraitItemId::Type(id) => id.name(db),
             TraitItemId::Constant(id) => id.name(db),
+            TraitItemId::Impl(id) => id.name(db),
         }
     }
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
@@ -1003,6 +1027,7 @@ impl TraitItemId {
             TraitItemId::Function(id) => id.trait_id(db),
             TraitItemId::Type(id) => id.trait_id(db),
             TraitItemId::Constant(id) => id.trait_id(db),
+            TraitItemId::Impl(id) => id.trait_id(db),
         }
     }
 }

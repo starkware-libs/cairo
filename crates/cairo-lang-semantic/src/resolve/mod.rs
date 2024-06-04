@@ -704,6 +704,9 @@ impl<'db> Resolver<'db> {
                             ConstValue::ImplConstant(imp_constant_id).intern(self.db),
                         ))
                     }
+                    TraitItemId::Impl(imp) => {
+                        Err(diagnostics.report(imp.stable_ptr(self.db.upcast()), Unsupported))
+                    }
                 }
             }
             ResolvedConcreteItem::Impl(impl_id) => {
@@ -745,6 +748,9 @@ impl<'db> Resolver<'db> {
                             );
 
                         Ok(ResolvedConcreteItem::Constant(constant))
+                    }
+                    TraitItemId::Impl(imp) => {
+                        Err(diagnostics.report(imp.stable_ptr(self.db.upcast()), Unsupported))
                     }
                 }
             }
