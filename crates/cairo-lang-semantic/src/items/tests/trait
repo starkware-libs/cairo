@@ -449,7 +449,7 @@ trait MyTrait {
     fn foo2();
     type X;
     const C: u32;
-    impl Z of Self;
+    impl Z: Self;
 }
 impl MyImpl of MyTrait;
 
@@ -481,8 +481,8 @@ trait MyTrait {
     type Y;
     const C: u32;
     const D: u32;
-    impl E of Self;
-    impl F of Self;
+    impl E: Self;
+    impl F: Self;
 }
 impl MyImpl of MyTrait {
     type X = u32;
@@ -749,15 +749,15 @@ bla
 
 //! > module_code
 trait MyTrait<T> {
-    impl X of MyTrait<u32>;
-    impl X of MyTrait<i32>;
+    impl X: MyTrait<u32>;
+    impl X: MyTrait<i32>;
 }
 ///TODO(TomerStarkware): add multiple impls of the same impl when it is supported.
 
 //! > expected_diagnostics
 error: The name `X` is defined multiple times.
  --> lib.cairo:3:10
-    impl X of MyTrait<i32>;
+    impl X: MyTrait<i32>;
          ^
 
 //! > ==========================================================================
@@ -857,7 +857,7 @@ foo
 //! > module_code
 trait MyTrait {
     type X<T>;
-    impl Z of OtherTrait;
+    impl Z: OtherTrait;
     const Y: u32;
 }
 impl MyImpl of MyTrait {

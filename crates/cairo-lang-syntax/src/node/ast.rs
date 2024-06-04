@@ -14302,7 +14302,7 @@ impl TraitItemImpl {
     pub const INDEX_ATTRIBUTES: usize = 0;
     pub const INDEX_IMPL_KW: usize = 1;
     pub const INDEX_NAME: usize = 2;
-    pub const INDEX_OF_KW: usize = 3;
+    pub const INDEX_COLON: usize = 3;
     pub const INDEX_TRAIT_PATH: usize = 4;
     pub const INDEX_SEMICOLON: usize = 5;
     pub fn new_green(
@@ -14310,12 +14310,12 @@ impl TraitItemImpl {
         attributes: AttributeListGreen,
         impl_kw: TerminalImplGreen,
         name: TerminalIdentifierGreen,
-        of_kw: TerminalOfGreen,
+        colon: TerminalColonGreen,
         trait_path: ExprPathGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> TraitItemImplGreen {
         let children: Vec<GreenId> =
-            vec![attributes.0, impl_kw.0, name.0, of_kw.0, trait_path.0, semicolon.0];
+            vec![attributes.0, impl_kw.0, name.0, colon.0, trait_path.0, semicolon.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         TraitItemImplGreen(
             Arc::new(GreenNode {
@@ -14336,8 +14336,8 @@ impl TraitItemImpl {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn of_kw(&self, db: &dyn SyntaxGroup) -> TerminalOf {
-        TerminalOf::from_syntax_node(db, self.children[3].clone())
+    pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
+        TerminalColon::from_syntax_node(db, self.children[3].clone())
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[4].clone())
@@ -14387,7 +14387,7 @@ impl TypedSyntaxNode for TraitItemImpl {
                         AttributeList::missing(db).0,
                         TerminalImpl::missing(db).0,
                         TerminalIdentifier::missing(db).0,
-                        TerminalOf::missing(db).0,
+                        TerminalColon::missing(db).0,
                         ExprPath::missing(db).0,
                         TerminalSemicolon::missing(db).0,
                     ],
