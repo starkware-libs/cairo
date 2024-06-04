@@ -26,6 +26,9 @@ pub fn build(
         CircuitConcreteLibfunc::GetDescriptor(libfunc) => {
             build_get_descriptor(&libfunc.ty, builder)
         }
+        CircuitConcreteLibfunc::GetOuput(libfunc) => {
+            build_get_output(&libfunc.circuit_ty, &libfunc.output_ty, builder)
+        }
         CircuitConcreteLibfunc::InitCircuitData(libfunc) => {
             build_init_circuit_data(&libfunc.ty, builder)
         }
@@ -279,7 +282,15 @@ fn build_circuit_eval(
                 ],
                 None,
             ),
-            ("Success", &[&[new_add_mod], &[new_mul_mod], &[values]], Some(success_handle)),
+            (
+                "Success",
+                &[
+                    &[new_add_mod],
+                    &[new_mul_mod],
+                    &[values, modulus0, modulus1, modulus2, modulus3],
+                ],
+                Some(success_handle),
+            ),
         ],
         Default::default(),
     ))
@@ -411,6 +422,59 @@ fn build_failure_guarantee_verify(
                     nullifier0, nullifier1, nullifier2, nullifier3, modulus0, modulus1, modulus2,
                     modulus3,
                 ],
+            ],
+            None,
+        )],
+        Default::default(),
+    ))
+}
+
+/// Builds instructions for `get_output` libfunc.
+fn build_get_output(
+    circuit_ty: &ConcreteTypeId,
+    output_ty: &ConcreteTypeId,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_outputs] = builder.try_get_refs()?;
+    let [values_ptr, modulus0, modulus1, modulus2, modulus3] = expr_outputs.try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+
+    let CircuitInfo { values, .. } =
+        builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
+
+    let output_offset = values.get(output_ty).unwrap();
+
+    add_input_variables! {casm_builder,
+
+        deref values_ptr;
+
+        deref modulus0;
+        deref modulus1;
+        deref modulus2;
+        deref modulus3;
+
+
+    };
+
+    casm_build_extend! {casm_builder,
+
+        const output_offset = output_offset * VALUE_SIZE;
+        tempvar output_ptr = values_ptr + output_offset;
+
+        tempvar output0 = output_ptr[0];
+        tempvar output1 = output_ptr[1];
+        tempvar output2 = output_ptr[2];
+        tempvar output3 = output_ptr[3];
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [(
+            "Fallthrough",
+            &[
+                &[output0, output1, output2, output3],
+                &[output0, output1, output2, output3, modulus0, modulus1, modulus2, modulus3],
             ],
             None,
         )],
