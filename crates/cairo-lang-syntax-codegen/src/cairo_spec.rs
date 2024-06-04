@@ -575,7 +575,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("attributes" ,"AttributeList")
         .node("impl_kw", "TerminalImpl")
         .key_node("name", "TerminalIdentifier")
-        .node("of_kw", "TerminalOf")
+        .node("colon", "TerminalColon")
         .node("trait_path", "ExprPath")
         .node("semicolon", "TerminalSemicolon")
     )
