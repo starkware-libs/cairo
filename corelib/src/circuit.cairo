@@ -55,6 +55,10 @@ extern type AddModGate<Lhs, Rhs>;
 /// Represents the action of multiplying two fields elements in the circuits builtin.
 #[phantom]
 extern type MulModGate<Lhs, Rhs>;
+/// Represents the action of computing the difference between two fields elements in the circuits
+/// builtin.
+#[phantom]
+extern type SubModGate<Lhs, Rhs>;
 
 /// Represents the action of computing the inverse of a fields element in the circuits builtin.
 #[phantom]

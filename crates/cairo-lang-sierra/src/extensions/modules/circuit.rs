@@ -31,7 +31,13 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 /// A circuit it defined as Circuit<(Output0, Output1, ...) Where all the outputs are made
 /// of circuit components.
 static CIRCUIT_COMPONENTS: Lazy<UnorderedHashSet<GenericTypeId>> = Lazy::new(|| {
-    UnorderedHashSet::from_iter([CircuitInput::ID, AddModGate::ID, InverseGate::ID, MulModGate::ID])
+    UnorderedHashSet::from_iter([
+        CircuitInput::ID,
+        AddModGate::ID,
+        InverseGate::ID,
+        MulModGate::ID,
+        SubModGate::ID,
+    ])
 });
 
 /// The number of limbs used to represent a single value in the circuit.
@@ -55,6 +61,7 @@ define_type_hierarchy! {
         CircuitInputAccumulator(CircuitInputAccumulator),
         InverseGate(InverseGate),
         MulModGate(MulModGate),
+        SubModGate(SubModGate),
         U384LessThanGuarantee(U384LessThanGuarantee),
     }, CircuitTypeConcrete
 }
@@ -191,6 +198,53 @@ impl ConcreteAddModGate {
 }
 
 impl ConcreteType for ConcreteAddModGate {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
+}
+
+// Represents the action of adding two fields elements in the circuits builtin.
+#[derive(Default)]
+pub struct SubModGate {}
+impl NamedType for SubModGate {
+    type Concrete = ConcreteSubModGate;
+    const ID: GenericTypeId = GenericTypeId::new_inline("SubModGate");
+
+    fn specialize(
+        &self,
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Self::Concrete::new(context, args)
+    }
+}
+
+pub struct ConcreteSubModGate {
+    pub info: TypeInfo,
+}
+
+impl ConcreteSubModGate {
+    fn new(
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self, SpecializationError> {
+        validate_gate_generic_args(context, args)?;
+        Ok(Self {
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId {
+                    generic_id: "SubModGate".into(),
+                    generic_args: args.to_vec(),
+                },
+                duplicatable: false,
+                droppable: false,
+                storable: false,
+                zero_sized: false,
+            },
+        })
+    }
+}
+
+impl ConcreteType for ConcreteSubModGate {
     fn info(&self) -> &TypeInfo {
         &self.info
     }
@@ -1040,6 +1094,11 @@ fn get_circuit_info(
                     rhs: input_offsets.next().unwrap(),
                     output: output_offset,
                 });
+            } else if generic_id == SubModGate::ID {
+                // lhs + rhs = res => lhs = res - rhs
+                let sub_lhs = input_offsets.next().unwrap();
+                let sub_rhs = input_offsets.next().unwrap();
+                add_offsets.push(GateOffsets { lhs: output_offset, rhs: sub_rhs, output: sub_lhs });
             } else {
                 return Err(SpecializationError::UnsupportedGenericArg);
             };

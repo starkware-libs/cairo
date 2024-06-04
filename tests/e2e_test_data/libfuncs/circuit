@@ -122,11 +122,12 @@ SmallE2ETestRunner
 //! > cairo
 use core::circuit::{
     AddModGate, get_circuit_descriptor, CircuitInput, CircuitDescriptor, Circuit, InverseGate,
-    MulModGate,
+    MulModGate, SubModGate,
 };
 type MyCircuit =
     Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, InverseGate<CircuitInput<2>>,
-        MulModGate<CircuitInput<1>, CircuitInput<2>>)>;
+        MulModGate<CircuitInput<1>, CircuitInput<2>>,
+        SubModGate<CircuitInput<2>, CircuitInput<0>>)>;
 
 fn foo() -> CircuitDescriptor<MyCircuit> {
     get_circuit_descriptor::<MyCircuit>()
@@ -135,14 +136,17 @@ fn foo() -> CircuitDescriptor<MyCircuit> {
 //! > casm
 call rel 11;
 [ap + 0] = [ap + -1] + 10, ap++;
-[ap + 0] = 1, ap++;
-[ap + 0] = [ap + -2] + 3, ap++;
+[ap + 0] = 2, ap++;
+[ap + 0] = [ap + -2] + 6, ap++;
 [ap + 0] = 5, ap++;
 ret;
 ret;
+dw 32;
+dw 16;
+dw 24;
 dw 16;
 dw 20;
-dw 40;
+dw 44;
 dw 0;
 dw 4;
 dw 16;
@@ -154,28 +158,29 @@ dw 12;
 dw 24;
 dw 20;
 dw 24;
-dw 32;
 dw 36;
+dw 40;
 dw 24;
 dw 0;
 
 //! > sierra_code
-type CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>)>> = CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>)>> [storable: true, drop: true, dup: true, zero_sized: false];
-type Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>)> = Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>)> [storable: true, drop: true, dup: true, zero_sized: false];
+type CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>, core::circuit::SubModGate::<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>>)>> = CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>, core::circuit::SubModGate::<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>>)>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>, core::circuit::SubModGate::<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>>)> = Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>, core::circuit::SubModGate::<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>>)> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> = AddModGate<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::InverseGate::<core::circuit::CircuitInput::<2>> = InverseGate<core::circuit::CircuitInput::<2>> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>> = MulModGate<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>> [storable: false, drop: false, dup: false, zero_sized: false];
-type (core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>) = Struct<ut@Tuple, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::circuit::SubModGate::<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>> = SubModGate<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>> [storable: false, drop: false, dup: false, zero_sized: false];
+type (core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>, core::circuit::SubModGate::<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>>) = Struct<ut@Tuple, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>, core::circuit::SubModGate::<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>>> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<2> = CircuitInput<2> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<1> = CircuitInput<1> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc get_circuit_descriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>)>> = get_circuit_descriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>)>>;
+libfunc get_circuit_descriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>, core::circuit::SubModGate::<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>>)>> = get_circuit_descriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>, core::circuit::SubModGate::<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>>)>>;
 
-get_circuit_descriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>)>>() -> ([0]); // 0
+get_circuit_descriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>, core::circuit::SubModGate::<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>>)>>() -> ([0]); // 0
 return([0]); // 1
 
-test::foo@0() -> (CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>)>>);
+test::foo@0() -> (CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::CircuitInput::<2>>, core::circuit::MulModGate::<core::circuit::CircuitInput::<1>, core::circuit::CircuitInput::<2>>, core::circuit::SubModGate::<core::circuit::CircuitInput::<2>, core::circuit::CircuitInput::<0>>)>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 600})
