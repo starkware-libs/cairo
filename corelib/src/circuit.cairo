@@ -204,7 +204,10 @@ impl CircuitDescriptorImpl<C> of CircuitDescriptorTrait<CircuitDescriptor<C>> {
 extern type CircuitFailureGuarantee;
 
 
+extern type U384LessThanGuarantee;
+
+
 /// Verifies the guarantee in order to drop it.
 extern fn circuit_failure_guarantee_verify(
     guarantee: CircuitFailureGuarantee, zero: ConstZero, one: ConstOne,
-) implicits(RangeCheck96, MulMod) nopanic;
+) -> U384LessThanGuarantee implicits(RangeCheck96, MulMod) nopanic;

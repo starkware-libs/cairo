@@ -343,11 +343,12 @@ test::foo: OrderedHashMap({AddMod: 1, MulMod: 3, Const: 2400})
 SmallE2ETestRunner
 
 //! > cairo
-use core::circuit::{CircuitFailureGuarantee, circuit_failure_guarantee_verify};
+use core::circuit::{CircuitFailureGuarantee, U384LessThanGuarantee,
+    circuit_failure_guarantee_verify};
 
 fn foo(
     guarantee: CircuitFailureGuarantee,
-) {
+) -> U384LessThanGuarantee {
     circuit_failure_guarantee_verify(guarantee, 0, 1)
 }
 
@@ -390,11 +391,19 @@ jmp rel 3 if [ap + -1] != 0;
 [ap + -13] = [ap + -14];
 [ap + 0] = [fp + -12] + 7, ap++;
 [ap + 0] = [fp + -11] + 6, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
 ret;
 
 //! > sierra_code
 type BoundedInt<0, 0> = BoundedInt<0, 0> [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type U384LessThanGuarantee = U384LessThanGuarantee [storable: true, drop: true, dup: false, zero_sized: false];
 type CircuitFailureGuarantee = CircuitFailureGuarantee [storable: true, drop: false, dup: false, zero_sized: false];
 type MulMod = MulMod [storable: true, drop: false, dup: false, zero_sized: false];
 type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
@@ -409,17 +418,19 @@ libfunc store_temp<BoundedInt<1, 1>> = store_temp<BoundedInt<1, 1>>;
 libfunc circuit_failure_guarantee_verify = circuit_failure_guarantee_verify;
 libfunc store_temp<MulMod> = store_temp<MulMod>;
 libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
+libfunc store_temp<U384LessThanGuarantee> = store_temp<U384LessThanGuarantee>;
 
 const_as_immediate<Const<BoundedInt<0, 0>, 0>>() -> ([3]); // 0
 const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([4]); // 1
 store_temp<BoundedInt<0, 0>>([3]) -> ([3]); // 2
 store_temp<BoundedInt<1, 1>>([4]) -> ([4]); // 3
-circuit_failure_guarantee_verify([1], [0], [2], [3], [4]) -> ([5], [6]); // 4
+circuit_failure_guarantee_verify([1], [0], [2], [3], [4]) -> ([5], [6], [7]); // 4
 store_temp<MulMod>([6]) -> ([6]); // 5
 store_temp<RangeCheck96>([5]) -> ([5]); // 6
-return([6], [5]); // 7
+store_temp<U384LessThanGuarantee>([7]) -> ([7]); // 7
+return([6], [5], [7]); // 8
 
-test::foo@0([0]: MulMod, [1]: RangeCheck96, [2]: CircuitFailureGuarantee) -> (MulMod, RangeCheck96);
+test::foo@0([0]: MulMod, [1]: RangeCheck96, [2]: CircuitFailureGuarantee) -> (MulMod, RangeCheck96, U384LessThanGuarantee);
 
 //! > function_costs
-test::foo: OrderedHashMap({RangeCheck96: 6, Const: 3700})
+test::foo: OrderedHashMap({RangeCheck96: 6, Const: 4500})
