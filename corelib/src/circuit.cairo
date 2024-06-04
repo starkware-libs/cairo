@@ -229,3 +229,7 @@ pub impl DestructFailureGuarantee of Destruct<CircuitFailureGuarantee> {
         circuit_failure_guarantee_verify(self, 0, 1);
     }
 }
+
+extern fn get_circuit_output<C, Output>(
+    outputs: CircuitOutputs<C>
+) -> (u384, U384LessThanGuarantee) nopanic;
