@@ -118,7 +118,6 @@ impl PartialOrdSnap<T, +PartialOrd<T>, +Copy<T>> of PartialOrd<@T> {
     fn gt(lhs: @T, rhs: @T) -> bool {
         PartialOrd::<T>::gt(*lhs, *rhs)
     }
-    
 }
 
 /// Trait for conversion between types.
