@@ -836,6 +836,7 @@ dependencies = [
  "lalrpop-util",
  "num-bigint",
  "num-traits 0.2.19",
+ "once_cell",
  "pretty_assertions",
  "regex",
  "salsa",
