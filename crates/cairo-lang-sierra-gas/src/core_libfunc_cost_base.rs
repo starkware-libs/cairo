@@ -536,6 +536,9 @@ pub fn core_libfunc_cost(
         Circuit(CircuitConcreteLibfunc::GetDescriptor(_)) => {
             vec![ConstCost::steps(6).into()]
         }
+        Circuit(CircuitConcreteLibfunc::IntoU96Guarantee(_)) => {
+            vec![ConstCost::steps(0).into()]
+        }
         Circuit(CircuitConcreteLibfunc::InitCircuitData(libfunc)) => {
             let info = info_provider.circuit_info(&libfunc.ty);
 
