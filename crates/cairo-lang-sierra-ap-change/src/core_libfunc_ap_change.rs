@@ -403,6 +403,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         Circuit(CircuitConcreteLibfunc::GetOutput(_)) => vec![ApChange::Known(5)],
         Circuit(CircuitConcreteLibfunc::InitCircuitData(_)) => vec![ApChange::Known(0)],
         Circuit(CircuitConcreteLibfunc::FailureGuaranteeVerify(_)) => vec![ApChange::Known(12)],
+        Circuit(CircuitConcreteLibfunc::IntoU96Guarantee(_)) => vec![ApChange::Known(0)],
     }
 }
 

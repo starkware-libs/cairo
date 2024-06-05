@@ -560,3 +560,66 @@ test::foo@0([0]: CircuitOutputs<Circuit<(core::circuit::AddModGate::<core::circu
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 1700})
+
+
+//! > ==========================================================================
+
+//! > into_u96_guarantee
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::circuit::{U96Guarantee, into_u96_guarantee};
+
+
+fn foo(val: u8) -> U96Guarantee {
+    into_u96_guarantee(val)
+}
+
+//! > casm
+[ap + 0] = [fp + -7] + 20, ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -2] + 1], ap++;
+[ap + 0] = [[ap + -3] + 2], ap++;
+[ap + 0] = [[ap + -4] + 3], ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type CircuitOutputs<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = CircuitOutputs<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> [storable: true, drop: true, dup: false, zero_sized: false];
+type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::circuit::u384 = Struct<ut@core::circuit::u384, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: true, dup: true, zero_sized: false];
+type U384LessThanGuarantee = U384LessThanGuarantee [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<core::circuit::u384, U384LessThanGuarantee> = Struct<ut@Tuple, core::circuit::u384, U384LessThanGuarantee> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::circuit::CircuitInput::<1> = CircuitInput<1> [storable: false, drop: false, dup: false, zero_sized: false];
+type Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> = Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> = AddModGate<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::circuit::CircuitInput::<2> = CircuitInput<2> [storable: false, drop: false, dup: false, zero_sized: false];
+type (core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>) = Struct<ut@Tuple, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc get_circuit_output<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>, core::circuit::CircuitInput::<1>> = get_circuit_output<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>, core::circuit::CircuitInput::<1>>;
+libfunc struct_construct<Tuple<core::circuit::u384, U384LessThanGuarantee>> = struct_construct<Tuple<core::circuit::u384, U384LessThanGuarantee>>;
+libfunc store_temp<Tuple<core::circuit::u384, U384LessThanGuarantee>> = store_temp<Tuple<core::circuit::u384, U384LessThanGuarantee>>;
+
+get_circuit_output<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>, core::circuit::CircuitInput::<1>>([0]) -> ([1], [2]); // 0
+struct_construct<Tuple<core::circuit::u384, U384LessThanGuarantee>>([1], [2]) -> ([3]); // 1
+store_temp<Tuple<core::circuit::u384, U384LessThanGuarantee>>([3]) -> ([3]); // 2
+return([3]); // 3
+
+test::foo@0([0]: CircuitOutputs<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>) -> (Tuple<core::circuit::u384, U384LessThanGuarantee>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1700})

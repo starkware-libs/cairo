@@ -4,12 +4,13 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use num_bigint::BigInt;
-use num_traits::{One, ToPrimitive, Zero};
+use num_traits::{One, Signed, ToPrimitive, Zero};
 use once_cell::sync::Lazy;
 
 use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheck96Type;
 use super::structure::StructType;
+use super::utils::{reinterpret_cast_signature, Range};
 use crate::extensions::bounded_int::bounded_int_ty;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -64,6 +65,7 @@ define_type_hierarchy! {
         MulModGate(MulModGate),
         SubModGate(SubModGate),
         U384LessThanGuarantee(U384LessThanGuarantee),
+        U96Guarantee(U96Guarantee),
     }, CircuitTypeConcrete
 }
 
@@ -76,6 +78,7 @@ define_libfunc_hierarchy! {
          GetOutput(GetOutputLibFunc),
          U384IsZero(U384IsZeroLibfunc),
          FailureGuaranteeVerify(CircuitFailureGuaranteeVerifyLibFunc),
+         IntoU96Guarantee(IntoU96GuaranteeLibFunc),
     }, CircuitConcreteLibfunc
 }
 
@@ -565,6 +568,17 @@ impl NoGenericArgsGenericType for U384LessThanGuarantee {
     const ZERO_SIZED: bool = false;
 }
 
+/// A guaranteed that a value can fit in a u96.
+#[derive(Default)]
+pub struct U96Guarantee {}
+impl NoGenericArgsGenericType for U96Guarantee {
+    const ID: GenericTypeId = GenericTypeId::new_inline("U96Guarantee");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = false;
+    const DROPPABLE: bool = false;
+    const ZERO_SIZED: bool = false;
+}
+
 /// A type representing a circuit instance data with all the inputs filled.
 #[derive(Default)]
 pub struct CircuitDescriptor {}
@@ -926,6 +940,34 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
 }
 
 pub type EvalCircuitLibFunc = WrapSignatureAndTypeGenericLibfunc<EvalCircuitLibFuncWrapped>;
+
+/// Converts 'T' into a 'U96Guarantee'.
+/// 'T' must be a a value that fits inside a u96, for example: u8, u96 or BoundedInt<0, 12>.
+#[derive(Default)]
+pub struct IntoU96GuaranteeLibFuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for IntoU96GuaranteeLibFuncWrapped {
+    const STR_ID: &'static str = "into_u96_guarantee";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let range = Range::from_type(context, ty.clone())?;
+        if range.lower.is_negative() {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+        if range.upper >= BigInt::one().shl(96) {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+
+        let guarantee_ty = context.get_concrete_type(U96Guarantee::id(), &[])?;
+        Ok(reinterpret_cast_signature(ty, guarantee_ty))
+    }
+}
+
+pub type IntoU96GuaranteeLibFunc =
+    WrapSignatureAndTypeGenericLibfunc<IntoU96GuaranteeLibFuncWrapped>;
 
 /// Libfunc for getting an output of a circuit.
 #[derive(Default)]
