@@ -205,6 +205,22 @@ impl CircuitDescriptorImpl<C> of CircuitDescriptorTrait<CircuitDescriptor<C>> {
 }
 
 
+/// A trait for evaluating a circuit.
+pub trait CircuitOutputsTrait<Outputs, OutputElement> {
+    /// Evaluates the circuit with the given data and modulus.
+    fn get_output(self: Outputs, output: OutputElement,) -> u384;
+}
+
+impl CircuitOutputsImpl<
+    C, Output
+> of CircuitOutputsTrait<CircuitOutputs<C>, CircuitElement<Output>> {
+    fn get_output(self: CircuitOutputs<C>, output: CircuitElement<Output>) -> u384 {
+        let (res, _) = get_circuit_output::<C, Output>(self);
+        res
+    }
+}
+
+
 /// A type that contain that is used to guarantee that the circuit evaluation has failed.
 ///
 /// The guarantee is verified by `circuit_failure_guarantee_verify`, which is the only way to
