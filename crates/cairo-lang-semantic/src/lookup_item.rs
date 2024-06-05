@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
     FunctionWithBodyId, ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId,
     ImplTypeDefId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
     ModuleTypeAliasId, StructId, SubmoduleId, TraitConstantId, TraitFunctionId, TraitId,
-    TraitItemId, TraitTypeId, UseId,
+    TraitImplId, TraitItemId, TraitTypeId, UseId,
 };
 use cairo_lang_diagnostics::Maybe;
 
@@ -178,6 +178,7 @@ impl HasResolverData for TraitItemId {
             TraitItemId::Function(item) => item.resolver_data(db),
             TraitItemId::Type(item) => item.resolver_data(db),
             TraitItemId::Constant(item) => item.resolver_data(db),
+            TraitItemId::Impl(item) => item.resolver_data(db),
         }
     }
 }
@@ -191,6 +192,12 @@ impl HasResolverData for TraitTypeId {
 impl HasResolverData for TraitConstantId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.trait_constant_resolver_data(*self)
+    }
+}
+
+impl HasResolverData for TraitImplId {
+    fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
+        db.trait_impl_resolver_data(*self)
     }
 }
 

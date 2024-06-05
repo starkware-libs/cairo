@@ -449,12 +449,13 @@ trait MyTrait {
     fn foo2();
     type X;
     const C: u32;
+    impl Z of Self;
 }
 impl MyImpl of MyTrait;
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X', 'C'.
- --> lib.cairo:7:6
+error: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X', 'C', 'Z'.
+ --> lib.cairo:8:6
 impl MyImpl of MyTrait;
      ^****^
 
@@ -480,16 +481,19 @@ trait MyTrait {
     type Y;
     const C: u32;
     const D: u32;
+    impl E of Self;
+    impl F of Self;
 }
 impl MyImpl of MyTrait {
-    fn foo2() {}
     type X = u32;
     const C: u32 = 3;
+    // TODO(TomerStarkware): add one impl when it is supported.
+    fn foo2() {}
 }
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D'.
- --> lib.cairo:10:6
+error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D', 'E', 'F'.
+ --> lib.cairo:12:6
 impl MyImpl of MyTrait {
      ^****^
 
@@ -509,24 +513,25 @@ foo
 //! > module_code
 trait MyTrait {}
 impl MyImpl of MyTrait {
-    fn bar() {}
     type X = u32;
     const C: u32 = 3;
+    // TODO(TomerStarkware): add one impl when it is supported.
+    fn bar() {}
 }
 
 //! > expected_diagnostics
 error: Impl item function `MyImpl::bar` is not a member of trait `MyTrait`.
- --> lib.cairo:3:5
+ --> lib.cairo:6:5
     fn bar() {}
     ^*********^
 
 error: Impl item type `MyImpl::X` is not a member of trait `MyTrait`.
- --> lib.cairo:4:5
+ --> lib.cairo:3:5
     type X = u32;
     ^***********^
 
 error: Impl item const `MyImpl::C` is not a member of trait `MyTrait`.
- --> lib.cairo:5:5
+ --> lib.cairo:4:5
     const C: u32 = 3;
     ^***************^
 
@@ -731,6 +736,32 @@ error: The name `X` is defined multiple times.
 
 //! > ==========================================================================
 
+//! > trait/impl impl declared twice.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bla() {}
+
+//! > function_name
+bla
+
+//! > module_code
+trait MyTrait<T> {
+    impl X of MyTrait<u32>;
+    impl X of MyTrait<i32>;
+}
+///TODO(TomerStarkware): add multiple impls of the same impl when it is supported.
+
+//! > expected_diagnostics
+error: The name `X` is defined multiple times.
+ --> lib.cairo:3:10
+    impl X of MyTrait<i32>;
+         ^
+
+//! > ==========================================================================
+
 //! > trait/impl function declared twice.
 
 //! > test_runner_name
@@ -839,11 +870,6 @@ trait OtherTrait {}
 impl OtherImpl of OtherTrait {}
 
 //! > expected_diagnostics
-error: Impl items are not yet supported in traits.
- --> lib.cairo:3:5
-    impl Z of OtherTrait;
-    ^**^
-
 error: Generic parameters are not supported in Trait item type.
  --> lib.cairo:2:11
     type X<T>;
@@ -854,7 +880,7 @@ error: Impl items are not yet supported in impls.
     impl Z = OtherImpl;
     ^**^
 
-error: Not all trait items are implemented. Missing: 'Y'.
+error: Not all trait items are implemented. Missing: 'Z', 'Y'.
  --> lib.cairo:6:6
 impl MyImpl of MyTrait {
      ^****^
