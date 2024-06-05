@@ -40,6 +40,7 @@ define_type_hierarchy! {
         Circuit(Circuit),
         CircuitData(CircuitData),
         CircuitOutputs(CircuitOutputs),
+        CircuitPartialOutputs(CircuitPartialOutputs),
         CircuitDescriptor(CircuitDescriptor),
         CircuitFailureGuarantee(CircuitFailureGuarantee),
         CircuitInput(CircuitInput),
@@ -430,6 +431,55 @@ impl ConcreteType for ConcreteCircuitOutputs {
     }
 }
 
+/// A type representing a circuit instance where the outputs are partially filled as
+/// the evaluation of one of the inverse gates failed.
+#[derive(Default)]
+pub struct CircuitPartialOutputs {}
+impl NamedType for CircuitPartialOutputs {
+    type Concrete = ConcreteCircuitPartialOutputs;
+    const ID: GenericTypeId = GenericTypeId::new_inline("CircuitPartialOutputs");
+
+    fn specialize(
+        &self,
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Self::Concrete::new(context, args)
+    }
+}
+
+pub struct ConcreteCircuitPartialOutputs {
+    pub info: TypeInfo,
+}
+
+impl ConcreteCircuitPartialOutputs {
+    fn new(
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self, SpecializationError> {
+        let circ_ty = args_as_single_type(args)?;
+        validate_is_circuit(context, circ_ty)?;
+        Ok(Self {
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId {
+                    generic_id: "CircuitPartialOutputs".into(),
+                    generic_args: args.to_vec(),
+                },
+                duplicatable: false,
+                droppable: true,
+                storable: true,
+                zero_sized: false,
+            },
+        })
+    }
+}
+
+impl ConcreteType for ConcreteCircuitPartialOutputs {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
+}
+
 /// A type whose destruction guarantees that the circuit instance invocation failed.
 #[derive(Default)]
 pub struct CircuitFailureGuarantee {}
@@ -779,10 +829,16 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                         OutputVarInfo::new_builtin(add_mod_builtin_ty.clone(), 0),
                         OutputVarInfo::new_builtin(mul_mod_builtin_ty.clone(), 1),
                         OutputVarInfo {
+                            ty: context.get_concrete_type(
+                                CircuitPartialOutputs::id(),
+                                &[GenericArg::Type(ty.clone())],
+                            )?,
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                        },
+                        OutputVarInfo {
                             ty: context.get_concrete_type(CircuitFailureGuarantee::id(), &[])?,
                             ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
-                        // TODO(ilya): Add CircuitFailedEvalOutputs.
                     ],
 
                     ap_change: SierraApChange::Known { new_vars_only: false },
