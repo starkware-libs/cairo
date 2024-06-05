@@ -1,8 +1,8 @@
 use std::ops::Shl;
 
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_lang_utils::{extract_matches, require};
 use num_bigint::BigInt;
 use num_traits::{One, Signed, ToPrimitive, Zero};
 use once_cell::sync::Lazy;
@@ -64,8 +64,8 @@ define_type_hierarchy! {
         InverseGate(InverseGate),
         MulModGate(MulModGate),
         SubModGate(SubModGate),
-        U384LessThanGuarantee(U384LessThanGuarantee),
         U96Guarantee(U96Guarantee),
+        U96LimbsLessThanGuarantee(U96LimbsLessThanGuarantee),
     }, CircuitTypeConcrete
 }
 
@@ -80,6 +80,7 @@ define_libfunc_hierarchy! {
         FailureGuaranteeVerify(CircuitFailureGuaranteeVerifyLibFunc),
         IntoU96Guarantee(IntoU96GuaranteeLibFunc),
         U96GuaranteeVerify(U96GuaranteeVerifyLibFunc),
+        U96LimbsLessThanGuaranteeVerify(U96LimbsLessThanGuaranteeVerifyLibfunc),
     }, CircuitConcreteLibfunc
 }
 
@@ -557,16 +558,49 @@ impl NoGenericArgsGenericType for CircuitFailureGuarantee {
     const ZERO_SIZED: bool = false;
 }
 
-/// A type whose destruction guarantees that one u384 value is smaller than another.
+/// A type whose destruction guarantees that u96-limbs based value is smaller than another.
 #[derive(Default)]
-pub struct U384LessThanGuarantee {}
-impl NoGenericArgsGenericType for U384LessThanGuarantee {
-    const ID: GenericTypeId = GenericTypeId::new_inline("U384LessThanGuarantee");
-    const STORABLE: bool = true;
-    const DUPLICATABLE: bool = false;
-    // TODO(ilya): add a libfunc to destroy the Guarantee.
-    const DROPPABLE: bool = true;
-    const ZERO_SIZED: bool = false;
+pub struct U96LimbsLessThanGuarantee {}
+impl NamedType for U96LimbsLessThanGuarantee {
+    type Concrete = ConcreteU96LimbsLessThanGuarantee;
+    // Shortened name to fit in the 23 bytes limit.
+    const ID: GenericTypeId = GenericTypeId::new_inline("U96LimbsLTGuarantee");
+
+    fn specialize(
+        &self,
+        _context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let limb_count = args_as_single_value(args)?
+            .to_usize()
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        // The guarantee is only useful if there are at least two limbs.
+        require(limb_count >= 1).ok_or(SpecializationError::UnsupportedGenericArg)?;
+        Ok(Self::Concrete {
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId {
+                    generic_id: <Self as NamedType>::ID,
+                    generic_args: args.to_vec(),
+                },
+                duplicatable: false,
+                droppable: false,
+                storable: true,
+                zero_sized: false,
+            },
+            limb_count,
+        })
+    }
+}
+
+pub struct ConcreteU96LimbsLessThanGuarantee {
+    pub info: TypeInfo,
+    pub limb_count: usize,
+}
+
+impl ConcreteType for ConcreteU96LimbsLessThanGuarantee {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
 }
 
 /// A value that is guaranteed to fit in a u96.
@@ -1012,10 +1046,7 @@ impl NamedLibfunc for GetOutputLibFunc {
             context.get_concrete_type(CircuitOutputs::id(), &[GenericArg::Type(circ_ty)])?;
 
         let u384_ty = get_u384_type(context)?;
-        let guarantee_ty = context.get_concrete_type(U384LessThanGuarantee::id(), &[])?;
-
-        context.get_concrete_type(U384LessThanGuarantee::id(), &[])?;
-
+        let guarantee_ty = u384_less_than_guarantee_ty(context)?;
         Ok(LibfuncSignature::new_non_branch(
             vec![outputs_ty],
             vec![
@@ -1087,12 +1118,90 @@ impl NoGenericArgsGenericLibfunc for CircuitFailureGuaranteeVerifyLibFunc {
                     }),
                 },
                 OutputVarInfo {
-                    ty: context.get_concrete_type(U384LessThanGuarantee::id(), &[])?,
+                    ty: u384_less_than_guarantee_ty(context)?,
                     ref_info: OutputVarReferenceInfo::SimpleDerefs,
                 },
             ],
             SierraApChange::Known { new_vars_only: false },
         ))
+    }
+}
+
+/// Verifies that numbers with u96 limbs are one larger than the other.
+#[derive(Default)]
+pub struct U96LimbsLessThanGuaranteeVerifyLibfunc {}
+impl NamedLibfunc for U96LimbsLessThanGuaranteeVerifyLibfunc {
+    const STR_ID: &'static str = "u96_limbs_less_than_guarantee_verify";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let limb_count = args_as_single_value(args)?
+            .to_usize()
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        require(limb_count > 0).ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let in_guarantee_ty = u96_limbs_less_than_guarantee_ty(context, limb_count)?;
+        let u96_lt_guarantee_ty = context.get_concrete_type(U96Guarantee::id(), &[])?;
+        if limb_count == 1 {
+            return Ok(LibfuncSignature::new_non_branch(
+                vec![in_guarantee_ty],
+                vec![OutputVarInfo {
+                    ty: u96_lt_guarantee_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                }],
+                SierraApChange::Known { new_vars_only: true },
+            ));
+        }
+        let eq_guarantee_ty = u96_limbs_less_than_guarantee_ty(context, limb_count - 1)?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(in_guarantee_ty)],
+            branch_signatures: vec![
+                // Limbs are equal - move to the next smaller guarantee.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: eq_guarantee_ty,
+                        ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // Limbs different - checking the diff is in u96 range.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: u96_lt_guarantee_ty,
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+
+    type Concrete = ConcreteU96LimbsLessThanGuaranteeVerifyLibfunc;
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let limb_count = args_as_single_value(args)?
+            .to_usize()
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        Ok(Self::Concrete {
+            signature: self.specialize_signature(context.upcast(), args)?,
+            limb_count,
+        })
+    }
+}
+pub struct ConcreteU96LimbsLessThanGuaranteeVerifyLibfunc {
+    signature: LibfuncSignature,
+    pub limb_count: usize,
+}
+impl SignatureBasedConcreteLibfunc for ConcreteU96LimbsLessThanGuaranteeVerifyLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
     }
 }
 
@@ -1326,4 +1435,20 @@ struct ParsedInputs {
     values: UnorderedHashMap<ConcreteTypeId, usize>,
     /// The offsets for the mul gates that are used to reduce the inputs.
     mul_offsets: Vec<GateOffsets>,
+}
+
+/// Returns the guarantee type for u384 values comparison.
+fn u384_less_than_guarantee_ty(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    u96_limbs_less_than_guarantee_ty(context, 4)
+}
+
+/// Returns the guarantee type for a number with u96 limbs values comparison.
+fn u96_limbs_less_than_guarantee_ty(
+    context: &dyn SignatureSpecializationContext,
+    limb_count: usize,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context
+        .get_concrete_type(U96LimbsLessThanGuarantee::id(), &[GenericArg::Value(limb_count.into())])
 }

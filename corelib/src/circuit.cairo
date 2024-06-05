@@ -259,15 +259,67 @@ impl CircuitOutputsImpl<
 extern type CircuitFailureGuarantee;
 
 /// A type that contain that is used to guarantee that a u384 is less than another u384.
-extern type U384LessThanGuarantee;
+extern type U96LimbsLTGuarantee<const LIMB_COUNT: usize>;
 
-// TODO(ilya): Use a destructor.
-pub impl DropU384LessThanGuarantee of Drop<U384LessThanGuarantee>;
+/// Helper trait for finding the value of a const minus 1.
+trait MinusOne<const NUM: usize> {
+    const VALUE: usize;
+}
+impl MinusOneImpl4 of MinusOne<4> {
+    const VALUE: usize = 3;
+}
+impl MinusOneImpl3 of MinusOne<3> {
+    const VALUE: usize = 2;
+}
+impl MinusOneImpl2 of MinusOne<2> {
+    const VALUE: usize = 1;
+}
+
+/// Trait helper to convert a multi limb guarantee to a `U96Guarantee`.
+trait IntoU96Guarantee<const LIMB_COUNT: usize> {
+    fn into_u96_guarantee(self: U96LimbsLTGuarantee<LIMB_COUNT>) -> U96Guarantee nopanic;
+}
+impl IntoU96GuaranteeImplByNext<
+    const LIMB_COUNT: usize, impl MO: MinusOne<LIMB_COUNT>, +IntoU96Guarantee<MO::VALUE>,
+> of IntoU96Guarantee<LIMB_COUNT> {
+    fn into_u96_guarantee(self: U96LimbsLTGuarantee<LIMB_COUNT>) -> U96Guarantee nopanic {
+        match multi_limb::u96_limbs_less_than_guarantee_verify(self) {
+            Result::Ok(next) => next.into_u96_guarantee(),
+            Result::Err(guarantee) => guarantee,
+        }
+    }
+}
+
+impl IntoU96GuaranteeImplFinal of IntoU96Guarantee<1> {
+    fn into_u96_guarantee(self: U96LimbsLTGuarantee<1>) -> U96Guarantee nopanic {
+        single_limb::u96_limbs_less_than_guarantee_verify(self)
+    }
+}
+
+mod multi_limb {
+    pub extern fn u96_limbs_less_than_guarantee_verify<
+        const LIMB_COUNT: usize, impl MO: super::MinusOne<LIMB_COUNT>
+    >(
+        guarantee: super::U96LimbsLTGuarantee<LIMB_COUNT>
+    ) -> Result<super::U96LimbsLTGuarantee<MO::VALUE>, super::U96Guarantee> nopanic;
+}
+
+mod single_limb {
+    pub extern fn u96_limbs_less_than_guarantee_verify<const LIMB_COUNT: usize>(
+        guarantee: super::U96LimbsLTGuarantee<LIMB_COUNT>
+    ) -> super::U96Guarantee nopanic;
+}
+
+impl DestructDestructU96LimbsLTGuarantee4 of Destruct<U96LimbsLTGuarantee<4>> {
+    fn destruct(self: U96LimbsLTGuarantee<4>) nopanic {
+        self.into_u96_guarantee().destruct()
+    }
+}
 
 /// Verifies the guarantee in order to drop it.
 extern fn circuit_failure_guarantee_verify(
     guarantee: CircuitFailureGuarantee, zero: ConstZero, one: ConstOne,
-) -> U384LessThanGuarantee implicits(RangeCheck96, MulMod) nopanic;
+) -> U96LimbsLTGuarantee<4> implicits(RangeCheck96, MulMod) nopanic;
 
 
 pub impl DestructFailureGuarantee of Destruct<CircuitFailureGuarantee> {
@@ -278,4 +330,4 @@ pub impl DestructFailureGuarantee of Destruct<CircuitFailureGuarantee> {
 
 extern fn get_circuit_output<C, Output>(
     outputs: CircuitOutputs<C>
-) -> (u384, U384LessThanGuarantee) nopanic;
+) -> (u384, U96LimbsLTGuarantee<4>) nopanic;
