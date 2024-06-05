@@ -199,21 +199,21 @@ fn test_array_iterator() {
     }
 }
 
-fn tets_array_into_span() {
+fn test_array_into_span() {
     assert_eq!(array![1, 2, 3].span(), array![1, 2, 3].into())
 }
 
 #[test]
-fn tets_span_into_array() {
+fn test_span_into_array() {
     assert_eq!(array![1, 2, 3], array![1, 2, 3].span().into()); 
 }
 
 #[test]
-fn tets_array_snap_into_span() {
+fn test_array_snap_into_span() {
     assert_eq!(array![1, 2, 3].span(), (@array![1, 2, 3]).into());
 }
 
 #[test]
-fn tets_span_into_array_snap() {
+fn test_span_into_array_snap() {
     assert_eq!(@array![1, 2, 3], array![1, 2, 3].span().into()); 
 }
