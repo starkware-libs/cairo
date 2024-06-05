@@ -2003,14 +2003,15 @@ mod bounded_int {
         type RemT;
     }
     extern fn bounded_int_div_rem<T1, T2, impl DRR: DivRemRes<T1, T2>>(
-        a: T1, b: T2
+        a: T1, b: NonZero<T2>
     ) -> (DRR::DivT, DRR::RemT) implicits(RangeCheck) nopanic;
+    extern fn bounded_int_wrap_non_zero<T>(v: T) -> NonZero<T> nopanic;
 
     /// Same as `bounded_int_div_rem`, but unwraps the result into felt252s.
     fn bounded_int_div_rem_unwrapped<T1, T2, impl DRR: DivRemRes<T1, T2>>(
         a: T1, b: T2
     ) -> (felt252, felt252) {
-        let (q, r) = bounded_int_div_rem(a, b);
+        let (q, r) = bounded_int_div_rem(a, bounded_int_wrap_non_zero(b));
         (upcast(q), upcast(r))
     }
 

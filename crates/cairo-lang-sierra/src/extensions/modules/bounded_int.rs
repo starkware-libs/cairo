@@ -146,8 +146,7 @@ impl SignatureOnlyGenericLibfunc for BoundedIntMulLibfunc {
     }
 }
 
-/// Libfunc for multiplying two BoundedInts.
-/// The result is a BoundedInt.
+/// Libfunc for dividing two non negative BoundedInts and getting the quotient and remainder.
 #[derive(Default)]
 pub struct BoundedIntDivRemLibfunc {}
 impl NamedLibfunc for BoundedIntDivRemLibfunc {
@@ -163,9 +162,10 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
         let (lhs, rhs) = args_as_two_types(args)?;
         let lhs_range = Range::from_type(context, lhs.clone())?;
         let rhs_range = Range::from_type(context, rhs.clone())?;
-        // Supporting only division of a non-negative number by a positive number.
-        // TODO(orizi): Consider relaxing the constraint, and defining the div_rem of negatives.
-        if lhs_range.lower.is_negative() || !rhs_range.lower.is_positive() {
+        // Supporting only division of a non-negative number by a positive number (non zero and non
+        // negative). TODO(orizi): Consider relaxing the constraint, and defining the
+        // div_rem of negatives.
+        if lhs_range.lower.is_negative() || rhs_range.lower.is_negative() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         // Making sure the algorithm is runnable.
@@ -173,13 +173,13 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         let quotient_min = lhs_range.lower / (&rhs_range.upper - 1);
-        let quotient_max = (&lhs_range.upper - 1) / rhs_range.lower;
+        let quotient_max = (&lhs_range.upper - 1) / std::cmp::max(rhs_range.lower, BigInt::one());
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(lhs.clone()),
-                ParamSignature::new(rhs.clone()),
+                ParamSignature::new(nonzero_ty(context, &rhs)?),
             ],
             vec![
                 OutputVarInfo::new_builtin(range_check_type.clone(), 0),
@@ -240,7 +240,9 @@ impl BoundedIntDivRemAlgorithm {
     /// Assumption: `lhs` is non-negative and `rhs` is positive.
     pub fn try_new(lhs: &Range, rhs: &Range) -> Option<Self> {
         let prime = Felt252::prime().to_bigint().unwrap();
-        let q_max = (&lhs.upper - 1) / &rhs.lower;
+        // Note that `rhs.lower` may be 0 - but since it is a non-zero type, it is guaranteed to be
+        // at least 1.
+        let q_max = (&lhs.upper - 1) / std::cmp::max(&rhs.lower, &BigInt::one());
         let u128_limit = BigInt::one().shl(128);
         // `q` is range checked in all algorithm variants, so `q_max` must be smaller than `2**128`.
         require(q_max < u128_limit)?;
