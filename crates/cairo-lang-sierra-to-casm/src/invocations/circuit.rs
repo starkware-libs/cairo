@@ -269,6 +269,9 @@ fn build_circuit_eval(
                 &[
                     &[new_add_mod],
                     &[failure_mul_mod],
+                    // CircuitPartialOutputs
+                    &[values, modulus0, modulus1, modulus2, modulus3, computed_gates],
+                    // CircuitFailureGuarantee
                     &[
                         mul_mod_offsets,
                         n_muls,
