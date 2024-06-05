@@ -52,7 +52,7 @@ fn test_circuit() {
         .unwrap();
 
     match circ.get_descriptor().eval(data, modulus) {
-        EvalCircuitResult::Failure(_) => {},
+        EvalCircuitResult::Failure((_, _)) => {},
         EvalCircuitResult::Success(outputs) => { outputs.get_output(out1); }
     }
 }
