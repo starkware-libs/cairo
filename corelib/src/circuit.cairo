@@ -42,6 +42,13 @@ pub extern type MulMod;
 /// Converts 'T' into a 'U96Guarantee'.
 /// 'T' must be a a value that fits inside a u96, for example: u8, u96 or BoundedInt<0, 12>.
 extern fn into_u96_guarantee<T>(val: T) -> U96Guarantee nopanic;
+extern fn u96_guarantee_verify(guarantee: U96Guarantee) implicits(RangeCheck96) nopanic;
+
+impl DestructU96Guarantee of Destruct<U96Guarantee> {
+    fn destruct(self: U96Guarantee) nopanic {
+        u96_guarantee_verify(self);
+    }
+}
 
 /// A value that is guaranteed to fit in a u96.
 extern type U96Guarantee;

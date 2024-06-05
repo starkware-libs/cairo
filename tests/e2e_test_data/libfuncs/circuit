@@ -595,3 +595,40 @@ test::foo@0([0]: u8) -> (U96Guarantee);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 100})
+
+//! > ==========================================================================
+
+//! > u96_guarantee_verify
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::circuit::{U96Guarantee, u96_guarantee_verify};
+
+
+fn foo(guarantee: U96Guarantee) {
+    u96_guarantee_verify(guarantee)
+}
+
+//! > casm
+[fp + -3] = [[fp + -4] + 0];
+[ap + 0] = [fp + -4] + 1, ap++;
+ret;
+
+//! > sierra_code
+type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type U96Guarantee = U96Guarantee [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc u96_guarantee_verify = u96_guarantee_verify;
+libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
+
+u96_guarantee_verify([0], [1]) -> ([2]); // 0
+store_temp<RangeCheck96>([2]) -> ([2]); // 1
+return([2]); // 2
+
+test::foo@0([0]: RangeCheck96, [1]: U96Guarantee) -> (RangeCheck96);
+
+//! > function_costs
+test::foo: OrderedHashMap({RangeCheck96: 1, Const: 200})
