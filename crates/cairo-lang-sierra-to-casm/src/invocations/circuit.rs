@@ -383,6 +383,7 @@ fn build_failure_guarantee_verify(
 
 
         // Check that 0 <= fail_idx <= n_muls;
+        // Note that since we are in the failure case we know that fail_idx != n_muls.
         assert fail_idx = *(rc96++);
         tempvar diff = n_muls - fail_idx;
         assert diff = *(rc96++);
