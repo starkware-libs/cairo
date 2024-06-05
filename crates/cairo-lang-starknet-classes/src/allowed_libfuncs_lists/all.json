@@ -240,6 +240,7 @@
         "u8_to_felt252",
         "u8_try_from_felt252",
         "u8_wide_mul",
+        "u96_guarantee_verify",
         "unbox",
         "unwrap_non_zero",
         "upcast",
