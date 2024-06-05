@@ -62,3 +62,4 @@ pub use core::traits::Index;
 #[feature("deprecated-index-traits")]
 pub use core::traits::IndexView;
 pub use core::zeroable::NonZero;
+pub use core::ops::deref::Deref;

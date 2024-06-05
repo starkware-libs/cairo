@@ -8,6 +8,8 @@ use traits::{
 };
 use serde::Serde;
 
+use ops::deref::Deref;
+
 pub type usize = u32;
 
 #[derive(Copy, Drop, Default)]

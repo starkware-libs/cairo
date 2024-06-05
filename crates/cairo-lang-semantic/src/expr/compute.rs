@@ -13,7 +13,7 @@ use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, MemberId,
     TraitFunctionId, TraitId,
 };
-use cairo_lang_diagnostics::{Maybe, ToOption};
+use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::{
     BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
@@ -1375,8 +1375,8 @@ fn compute_expr_indexed_semantic(
         expr,
         syntax.into(),
         None,
-        |ty, _, inference_errors| NoImplementationOfIndexOperator { ty, inference_errors },
-        |ty, _, _| MultipleImplementationOfIndexOperator(ty),
+        |ty, _, inference_errors| Some(NoImplementationOfIndexOperator { ty, inference_errors }),
+        |ty, _, _| Some(MultipleImplementationOfIndexOperator(ty)),
     )?;
 
     let index_expr_syntax = &syntax.index_expr(syntax_db);
@@ -1409,12 +1409,12 @@ fn compute_method_function_call_data(
         TypeId,
         SmolStr,
         TraitInferenceErrors,
-    ) -> SemanticDiagnosticKind,
+    ) -> Option<SemanticDiagnosticKind>,
     multiple_trait_diagnostic: fn(
         TypeId,
         TraitFunctionId,
         TraitFunctionId,
-    ) -> SemanticDiagnosticKind,
+    ) -> Option<SemanticDiagnosticKind>,
 ) -> Maybe<(FunctionId, ExprAndId, Mutability)> {
     let self_ty = ctx.reduce_ty(self_expr.ty());
     // Inference errors found when looking for candidates. Only relevant in the case of 0 candidates
@@ -1431,21 +1431,19 @@ fn compute_method_function_call_data(
     );
     let trait_function_id = match candidates[..] {
         [] => {
-            return Err(ctx.diagnostics.report(
-                method_syntax,
-                no_implementation_diagnostic(
-                    self_ty,
-                    func_name,
-                    TraitInferenceErrors { traits_and_errors: inference_errors },
-                ),
-            ));
+            return Err(no_implementation_diagnostic(
+                self_ty,
+                func_name,
+                TraitInferenceErrors { traits_and_errors: inference_errors },
+            )
+            .map(|diag| ctx.diagnostics.report(method_syntax, diag))
+            .unwrap_or_else(skip_diagnostic));
         }
         [trait_function_id] => trait_function_id,
         [trait_function_id0, trait_function_id1, ..] => {
-            return Err(ctx.diagnostics.report(
-                method_syntax,
-                multiple_trait_diagnostic(self_ty, trait_function_id0, trait_function_id1),
-            ));
+            return Err(multiple_trait_diagnostic(self_ty, trait_function_id0, trait_function_id1)
+                .map(|diag| ctx.diagnostics.report(method_syntax, diag))
+                .unwrap_or_else(skip_diagnostic));
         }
     };
     let (function_id, n_snapshots) =
@@ -2236,10 +2234,11 @@ fn method_call_expr(
         lexpr,
         path.stable_ptr().untyped(),
         generic_args_syntax,
-        |ty, method_name, inference_errors| CannotCallMethod { ty, method_name, inference_errors },
-        |_, trait_function_id0, trait_function_id1| AmbiguousTrait {
-            trait_function_id0,
-            trait_function_id1,
+        |ty, method_name, inference_errors| {
+            Some(CannotCallMethod { ty, method_name, inference_errors })
+        },
+        |_, trait_function_id0, trait_function_id1| {
+            Some(AmbiguousTrait { trait_function_id0, trait_function_id1 })
         },
     )?;
     ctx.resolver.data.resolved_items.mark_concrete(
@@ -2286,8 +2285,9 @@ fn member_access_expr(
         TypeLongId::Concrete(concrete) => match concrete {
             ConcreteTypeId::Struct(concrete_struct_id) => {
                 // TODO(lior): Add a diagnostic test when accessing a member of a missing type.
-                let members = ctx.db.concrete_struct_members(*concrete_struct_id)?;
-                let Some(member) = members.get(&member_name) else {
+                let EnrichedMembers { members, deref_functions } =
+                    enriched_members(ctx, lexpr.clone(), stable_ptr)?;
+                let Some((member, n_derefs)) = members.get(&member_name) else {
                     return Err(ctx.diagnostics.report(
                         &rhs_syntax,
                         NoSuchMember {
@@ -2313,12 +2313,33 @@ fn member_access_expr(
                 } else {
                     None
                 };
-                let lexpr_id = lexpr.id;
+                let mut derefed_expr: ExprAndId = lexpr;
+                for deref_function in deref_functions.iter().take(*n_derefs) {
+                    let cur_expr = expr_function_call(
+                        ctx,
+                        *deref_function,
+                        vec![NamedArg(derefed_expr, None, Mutability::Immutable)],
+                        stable_ptr,
+                        stable_ptr,
+                    )
+                    .unwrap();
 
-                let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
+                    derefed_expr =
+                        ExprAndId { expr: cur_expr.clone(), id: ctx.exprs.alloc(cur_expr) };
+                }
+                let (_, long_ty) =
+                    finalized_snapshot_peeled_ty(ctx, derefed_expr.ty(), &rhs_syntax)?;
+                let derefed_expr_concrete_struct_id = match long_ty {
+                    TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
+                        concrete_struct_id
+                    }
+                    _ => unreachable!(),
+                };
+                let ty = member.ty;
+                let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
                 Ok(Expr::MemberAccess(ExprMemberAccess {
-                    expr: lexpr_id,
-                    concrete_struct_id: *concrete_struct_id,
+                    expr: derefed_expr.id,
+                    concrete_struct_id: derefed_expr_concrete_struct_id,
                     member: member.id,
                     ty,
                     member_path,
@@ -2358,6 +2379,80 @@ fn member_access_expr(
             panic!("Trait types should only appear in traits, where there are no function bodies.")
         }
     }
+}
+
+/// The result of enriched_members lookup.
+struct EnrichedMembers {
+    /// A map from member names to their semantic representation and the number of deref operations
+    /// needed to access them.
+    members: OrderedHashMap<SmolStr, (semantic::Member, usize)>,
+    /// The sequence of deref functions needed to access the members.
+    deref_functions: Vec<FunctionId>,
+}
+
+/// Enriched members include both direct members (in case of a struct), and members of derefed types
+/// if the type implements the Deref trait into a struct. Returns a map from member names to the
+/// semantic representation, and the number of deref operations needed for each member.
+fn enriched_members(
+    ctx: &mut ComputationContext<'_>,
+    mut expr: ExprAndId,
+    stable_ptr: ast::ExprPtr,
+) -> Maybe<EnrichedMembers> {
+    // TODO(Gil): Use this function for LS completions.
+    let mut ty = expr.ty();
+    let mut res = OrderedHashMap::default();
+    let mut deref_functions = vec![];
+    // Add direct members.
+    let (_, mut long_ty) = peel_snapshots(ctx.db, ty);
+    if matches!(long_ty, TypeLongId::Var(_)) {
+        // Save some work. ignore the result. The error, if any, will be reported later.
+        ctx.resolver.inference().solve().ok();
+        long_ty = ctx.resolver.inference().rewrite(long_ty).no_err();
+    }
+    let (_, long_ty) = peel_snapshots_ex(ctx.db, long_ty);
+
+    if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
+        let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
+        for (member_name, member) in members.iter() {
+            res.insert(member_name.clone(), (member.clone(), 0));
+        }
+    }
+    // Add members of derefed types.
+    let mut n_deref = 0;
+    let deref_trait = get_core_trait(ctx.db, CoreTraitContext::Ops, "Deref".into());
+
+    while let Ok((function_id, cur_expr, mutability)) = compute_method_function_call_data(
+        ctx,
+        &[deref_trait],
+        "deref".into(),
+        expr,
+        stable_ptr.0,
+        None,
+        |_, _, _| None,
+        |_, _, _| None,
+    ) {
+        n_deref += 1;
+        expr = cur_expr;
+        let derefed_expr = expr_function_call(
+            ctx,
+            function_id,
+            vec![NamedArg(expr, None, mutability)],
+            stable_ptr,
+            stable_ptr,
+        )?;
+        ty = derefed_expr.ty();
+        ty = ctx.reduce_ty(ty);
+        let (_, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, stable_ptr)?;
+        expr = ExprAndId { expr: derefed_expr.clone(), id: ctx.exprs.alloc(derefed_expr) };
+        if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
+            let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
+            for (member_name, member) in members.iter() {
+                res.insert(member_name.clone(), (member.clone(), n_deref));
+            }
+        }
+        deref_functions.push(function_id);
+    }
+    Ok(EnrichedMembers { members: res, deref_functions })
 }
 
 /// Peels snapshots from a type and making sure it is fully not a variable type.

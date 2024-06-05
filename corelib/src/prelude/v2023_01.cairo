@@ -99,3 +99,4 @@ use core::{zeroable, zeroable::{NonZero, Zeroable}};
 
 #[cfg(test)]
 use core::test;
+pub use core::ops::deref::Deref;
