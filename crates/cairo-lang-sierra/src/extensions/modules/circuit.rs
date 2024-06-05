@@ -776,16 +776,16 @@ impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
         let circuit_data_ty =
             context.get_concrete_type(CircuitData::id(), &[GenericArg::Type(ty)])?;
 
-        let u96_ty = bounded_int_ty(context, BigInt::zero(), BigInt::one().shl(96) - 1)?;
+        let u96_guarntee_ty = context.get_concrete_type(U96Guarantee::id(), &[])?;
 
         let val_ty = context.get_concrete_type(
             StructType::id(),
             &[
                 GenericArg::UserType(UserTypeId::from_string("Tuple")),
-                GenericArg::Type(u96_ty.clone()),
-                GenericArg::Type(u96_ty.clone()),
-                GenericArg::Type(u96_ty.clone()),
-                GenericArg::Type(u96_ty),
+                GenericArg::Type(u96_guarntee_ty.clone()),
+                GenericArg::Type(u96_guarntee_ty.clone()),
+                GenericArg::Type(u96_guarntee_ty.clone()),
+                GenericArg::Type(u96_guarntee_ty),
             ],
         )?;
         Ok(LibfuncSignature {
