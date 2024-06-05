@@ -21,7 +21,7 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::{
     LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder,
 };
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId, LocationId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
@@ -195,6 +195,11 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
         BlockId(self.block_id_offset.0 + orig_block_id.0)
     }
 
+    /// Adds the inlining location to a location.
+    fn map_location(&mut self, location: LocationId) -> LocationId {
+        location.inlined(self.variables.db, self.inlining_location)
+    }
+
     fn transform_end(&mut self, end: &mut FlatBlockEnd) {
         match end {
             FlatBlockEnd::Return(returns, _location) => {
@@ -206,18 +211,8 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
                 };
                 *end = FlatBlockEnd::Goto(self.return_block_id, remapping);
             }
-            FlatBlockEnd::Panic(_) | FlatBlockEnd::Goto(_, _) => {}
-            FlatBlockEnd::Match { info } => {
-                let location = info.location_mut();
-                *location = location.inlined(self.variables.db, self.inlining_location);
-            }
+            FlatBlockEnd::Panic(_) | FlatBlockEnd::Goto(_, _) | FlatBlockEnd::Match { .. } => {}
             FlatBlockEnd::NotSet => unreachable!(),
-        }
-    }
-
-    fn transform_statement(&mut self, statement: &mut Statement) {
-        if let Some(location) = statement.location_mut() {
-            *location = location.inlined(self.variables.db, self.inlining_location);
         }
     }
 }

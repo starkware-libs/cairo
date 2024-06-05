@@ -311,16 +311,40 @@ Originating location:
     fn expect(self: Option<T>, err: felt252) -> T {
                                                   ^
 In function: core::option::OptionTraitImpl::expect
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^********************************************************^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^*****^
+In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([21]) -> ([21])
 Originating location:
     fn expect(self: Option<T>, err: felt252) -> T {
                                                   ^
 In function: core::option::OptionTraitImpl::expect
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^********************************************************^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^*****^
+In function: lib.cairo::foo
 return([17], [21])
 Originating location:
     fn expect(self: Option<T>, err: felt252) -> T {
                                                   ^
 In function: core::option::OptionTraitImpl::expect
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^********************************************************^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^*****^
+In function: lib.cairo::foo
 label_test::foo::7:
 Originating location:
         downcast(self)
@@ -491,21 +515,53 @@ Originating location:
             Option::None => core::panic_with_felt252(err),
                             ^***************************^
 In function: core::option::OptionTraitImpl::expect
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^********************************************************^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^*****^
+In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([27]) -> ([27])
 Originating location:
             Option::None => core::panic_with_felt252(err),
                             ^***************************^
 In function: core::option::OptionTraitImpl::expect
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^********************************************************^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^*****^
+In function: lib.cairo::foo
 return([19], [27])
 Originating location:
             Option::None => core::panic_with_felt252(err),
                             ^***************************^
 In function: core::option::OptionTraitImpl::expect
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^********************************************************^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^*****^
+In function: lib.cairo::foo
 label_test::foo::8:
 Originating location:
             Option::None => core::panic_with_felt252(err),
                             ^***************************^
 In function: core::option::OptionTraitImpl::expect
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^********************************************************^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^*****^
+In function: lib.cairo::foo
 label_test::foo::5:
 Originating location:
         u8_overflowing_sub(rhs, lhs).into_is_err()
@@ -578,16 +634,40 @@ Originating location:
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
                                                                ^
 In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^*****^
+In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([33]) -> ([33])
 Originating location:
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
                                                                ^
 In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^*****^
+In function: lib.cairo::foo
 return([28], [33])
 Originating location:
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
                                                                ^
 In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^*****^
+In function: lib.cairo::foo
 label_test::foo::9:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -759,31 +839,79 @@ Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
 In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^*****^
+In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([39]) -> ([39])
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
 In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^*****^
+In function: lib.cairo::foo
 return([30], [39])
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
 In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^*****^
+In function: lib.cairo::foo
 label_test::foo::10:
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
 In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^*****^
+In function: lib.cairo::foo
 label_test::foo::6:
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
 In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^*****^
+In function: lib.cairo::foo
 label_test::foo::3:
 Originating location:
             Result::Err(_) => core::panic_with_felt252(err),
                               ^***************************^
 In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^*****^
+In function: lib.cairo::foo
 
 //! > ==========================================================================
 
@@ -1080,16 +1208,28 @@ Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
 store_temp<u8>([26]) -> ([28])
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
 jump() { label_test::main::7() }
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
 label_test::main::3:
 Originating location:
     match a {
@@ -1131,16 +1271,28 @@ Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
 store_temp<u8>([31]) -> ([28])
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
 label_test::main::7:
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
 u8_overflowing_add([0], [27], [28]) { fallthrough([32], [33]) label_test::main::8([34], [35]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -1342,16 +1494,28 @@ Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 store_temp<u8>([44]) -> ([46])
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 jump() { label_test::main::16() }
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 label_test::main::12:
 Originating location:
     match a {
@@ -1393,16 +1557,28 @@ Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 store_temp<u8>([49]) -> ([46])
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 label_test::main::16:
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
 u8_overflowing_add([23], [45], [46]) { fallthrough([50], [51]) label_test::main::17([52], [53]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -1604,16 +1780,28 @@ Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 store_temp<u8>([62]) -> ([64])
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 jump() { label_test::main::25() }
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 label_test::main::21:
 Originating location:
     match a {
@@ -1655,16 +1843,28 @@ Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 store_temp<u8>([67]) -> ([64])
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 label_test::main::25:
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
 u8_overflowing_add([41], [63], [64]) { fallthrough([68], [69]) label_test::main::26([70], [71]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -1866,16 +2066,28 @@ Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 store_temp<u8>([80]) -> ([82])
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 jump() { label_test::main::34() }
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 label_test::main::30:
 Originating location:
     match a {
@@ -1917,16 +2129,28 @@ Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 store_temp<u8>([85]) -> ([82])
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 label_test::main::34:
 Originating location:
     match a {
     ^*******^
 In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
 u8_overflowing_add([59], [81], [82]) { fallthrough([86], [87]) label_test::main::35([88], [89]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -5269,11 +5493,47 @@ Originating location:
         u32_eq(*lhs, *rhs)
         ^****************^
 In function: core::integer::U32PartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^****************^
+Inlined at:
+        if (*lhs).len() != (*rhs).len() {
+           ^**************************^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^**********************^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^****************^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^**************************^
+In function: assert_macro::assert_macro
 jump() { label_test::some_array_checks::3() }
 Originating location:
         u32_eq(*lhs, *rhs)
         ^****************^
 In function: core::integer::U32PartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^****************^
+Inlined at:
+        if (*lhs).len() != (*rhs).len() {
+           ^**************************^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^**********************^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^****************^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^**************************^
+In function: assert_macro::assert_macro
 label_test::some_array_checks::1:
 Originating location:
         u32_eq(*lhs, *rhs)
@@ -5371,11 +5631,47 @@ Originating location:
         u32_eq(*lhs, *rhs)
         ^****************^
 In function: core::integer::U32PartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^****************^
+Inlined at:
+        if (*lhs).len() != (*rhs).len() {
+           ^**************************^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^**********************^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^****************^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^**************************^
+In function: assert_macro::assert_macro
 label_test::some_array_checks::3:
 Originating location:
         u32_eq(*lhs, *rhs)
         ^****************^
 In function: core::integer::U32PartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^****************^
+Inlined at:
+        if (*lhs).len() != (*rhs).len() {
+           ^**************************^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^**********************^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^****************^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^**************************^
+In function: assert_macro::assert_macro
 dup<core::bool>([24]) -> ([24], [27])
 Originating location:
         let (r,) = bool_not_impl(a);
@@ -5585,6 +5881,10 @@ In function: core::array::ArrayPartialEq::eq
 Inlined at:
         !Self::eq(lhs, rhs)
          ^****************^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^**************************^
+In function: assert_macro::assert_macro
 jump() { label_test::some_array_checks::6() }
 Originating location:
             return false;
@@ -5597,6 +5897,10 @@ In function: core::array::ArrayPartialEq::eq
 Inlined at:
         !Self::eq(lhs, rhs)
          ^****************^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^**************************^
+In function: assert_macro::assert_macro
 label_test::some_array_checks::4:
 Originating location:
         if (*lhs).len() != (*rhs).len() {
@@ -5801,6 +6105,10 @@ In function: core::array::ArrayPartialEq::eq
 Inlined at:
         !Self::eq(lhs, rhs)
          ^****************^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^**************************^
+In function: assert_macro::assert_macro
 label_test::some_array_checks::6:
 Originating location:
     fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
@@ -5813,6 +6121,10 @@ In function: core::array::ArrayPartialEq::eq
 Inlined at:
         !Self::eq(lhs, rhs)
          ^****************^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^**************************^
+In function: assert_macro::assert_macro
 bool_not_impl([33]) -> ([40])
 Originating location:
         let (r,) = bool_not_impl(a);
