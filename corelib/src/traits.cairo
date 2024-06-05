@@ -105,6 +105,21 @@ pub trait PartialOrd<T> {
     fn gt(lhs: T, rhs: T) -> bool;
 }
 
+impl PartialOrdSnap<T, +PartialOrd<T>, +Copy<T>> of PartialOrd<@T> {
+    fn le(lhs: @T, rhs: @T) -> bool {
+        PartialOrd::<T>::le(*lhs, *rhs)
+    }
+    fn ge(lhs: @T, rhs: @T) -> bool {
+        PartialOrd::<T>::ge(*lhs, *rhs)
+    }
+    fn lt(lhs: @T, rhs: @T) -> bool {
+        PartialOrd::<T>::lt(*lhs, *rhs)
+    }
+    fn gt(lhs: @T, rhs: @T) -> bool {
+        PartialOrd::<T>::gt(*lhs, *rhs)
+    }
+}
+
 /// Trait for conversion between types.
 pub trait Into<T, S> {
     #[must_use]
