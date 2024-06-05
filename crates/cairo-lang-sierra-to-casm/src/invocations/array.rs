@@ -380,7 +380,7 @@ fn build_multi_pop_front(
     let [expr_range_check, expr_arr] = builder.try_get_refs()?;
     let range_check = expr_range_check.try_unpack_single()?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
-    let element_size = builder.program_info.type_sizes[&libfunc.ty];
+    let popped_size = builder.program_info.type_sizes[&libfunc.popped_ty];
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
@@ -388,7 +388,6 @@ fn build_multi_pop_front(
         deref arr_start;
         deref arr_end;
     };
-    let popped_size: i16 = libfunc.n_popped_values * element_size;
     casm_build_extend!(casm_builder, let orig_range_check = range_check;);
     extend_multi_pop_failure_checks(
         &mut casm_builder,
@@ -428,7 +427,7 @@ fn build_multi_pop_back(
     let [expr_range_check, expr_arr] = builder.try_get_refs()?;
     let range_check = expr_range_check.try_unpack_single()?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
-    let element_size = builder.program_info.type_sizes[&libfunc.ty];
+    let popped_size = builder.program_info.type_sizes[&libfunc.popped_ty];
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
@@ -436,7 +435,6 @@ fn build_multi_pop_back(
         deref arr_start;
         deref arr_end;
     };
-    let popped_size: i16 = libfunc.n_popped_values * element_size;
     casm_build_extend!(casm_builder, let orig_range_check = range_check;);
     extend_multi_pop_failure_checks(
         &mut casm_builder,

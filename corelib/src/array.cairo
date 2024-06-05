@@ -17,12 +17,12 @@ extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
 extern fn array_pop_front_consume<T>(arr: Array<T>) -> Option<(Array<T>, Box<T>)> nopanic;
 pub(crate) extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 extern fn array_snapshot_pop_back<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
-extern fn array_snapshot_multi_pop_front<T, const SIZE: usize>(
+extern fn array_snapshot_multi_pop_front<T, PoppedT>(
     ref arr: @Array<T>
-) -> Option<@Box<[T; SIZE]>> implicits(RangeCheck) nopanic;
-extern fn array_snapshot_multi_pop_back<T, const SIZE: usize>(
+) -> Option<@Box<PoppedT>> implicits(RangeCheck) nopanic;
+extern fn array_snapshot_multi_pop_back<T, PoppedT>(
     ref arr: @Array<T>
-) -> Option<@Box<[T; SIZE]>> implicits(RangeCheck) nopanic;
+) -> Option<@Box<PoppedT>> implicits(RangeCheck) nopanic;
 #[panic_with('Index out of bounds', array_at)]
 extern fn array_get<T>(
     arr: @Array<T>, index: usize
