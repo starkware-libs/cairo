@@ -66,11 +66,10 @@ extern fn init_circuit_data<C>() -> CircuitInputAccumulator<C> implicits(RangeCh
 /// Returns the descriptor for the circuit.
 extern fn get_circuit_descriptor<C>() -> CircuitDescriptor<C> nopanic;
 
-
 /// The result of filling an input in the circuit instance's data.
 pub enum EvalCircuitResult<C> {
     /// The circuit evaluation failed.
-    Failure: CircuitFailureGuarantee,
+    Failure: (CircuitPartialOutputs<C>, CircuitFailureGuarantee),
     /// The circuit was evaluated successfully.
     Success: CircuitOutputs<C>,
 }
@@ -106,6 +105,12 @@ extern type CircuitData<C>;
 /// A type representing a circuit instance where the outputs are filled.
 extern type CircuitOutputs<C>;
 
+/// A type representing a circuit instance where the outputs are partially filled as
+/// the evaluation of one of the inverse gates failed.
+/// The type is defined for future-compatibility, there is currently no libfunc to extract
+/// the partial outputs.
+extern type CircuitPartialOutputs<C>;
+
 /// A type representing a circuit descriptor.
 extern type CircuitDescriptor<C>;
 
@@ -113,6 +118,7 @@ impl CircuitInputAccumulatorDrop<C> of Drop<CircuitInputAccumulator<C>>;
 impl CircuitDataDrop<C> of Drop<CircuitData<C>>;
 impl CircuitDescriptorDrop<C> of Drop<CircuitDescriptor<C>>;
 impl CircuitOutputsDrop<C> of Drop<CircuitOutputs<C>>;
+impl CircuitPartialOutputsDrop<C> of Drop<CircuitPartialOutputs<C>>;
 
 
 /// A wrapper for circuit elements, used to construct circuits..
