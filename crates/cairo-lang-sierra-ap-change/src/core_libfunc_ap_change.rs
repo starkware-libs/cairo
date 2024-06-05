@@ -405,6 +405,13 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         Circuit(CircuitConcreteLibfunc::FailureGuaranteeVerify(_)) => vec![ApChange::Known(12)],
         Circuit(CircuitConcreteLibfunc::IntoU96Guarantee(_)) => vec![ApChange::Known(0)],
         Circuit(CircuitConcreteLibfunc::U96GuaranteeVerify(_)) => vec![ApChange::Known(0)],
+        Circuit(CircuitConcreteLibfunc::U96LimbsLessThanGuaranteeVerify(libfunc)) => {
+            if libfunc.limb_count == 1 {
+                vec![ApChange::Known(0)]
+            } else {
+                vec![ApChange::Known(1), ApChange::Known(1)]
+            }
+        }
     }
 }
 

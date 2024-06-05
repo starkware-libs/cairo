@@ -241,6 +241,7 @@
         "u8_try_from_felt252",
         "u8_wide_mul",
         "u96_guarantee_verify",
+        "u96_limbs_less_than_guarantee_verify",
         "unbox",
         "unwrap_non_zero",
         "upcast",
