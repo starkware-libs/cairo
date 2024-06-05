@@ -135,6 +135,7 @@
         "i8_wide_mul",
         "init_circuit_data",
         "into_box",
+        "into_u96_guarantee",
         "jump",
         "keccak_syscall",
         "sha256_state_handle_init",
