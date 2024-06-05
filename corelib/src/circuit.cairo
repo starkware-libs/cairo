@@ -39,6 +39,13 @@ pub extern type RangeCheck96;
 pub extern type AddMod;
 pub extern type MulMod;
 
+/// Converts 'T' into a 'U96Guarantee'.
+/// 'T' must be a a value that fits inside a u96, for example: u8, u96 or BoundedInt<0, 12>.
+extern fn into_u96_guarantee<T>(val: T) -> U96Guarantee nopanic;
+
+/// A value that is guaranteed to fit in a u96.
+extern type U96Guarantee;
+
 /// Expose the const required by the libfunc to allow the compiler const reusage.
 pub type ConstZero = core::internal::BoundedInt<0, 0>;
 pub type ConstOne = core::internal::BoundedInt<1, 1>;

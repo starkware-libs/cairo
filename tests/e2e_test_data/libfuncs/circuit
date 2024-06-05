@@ -560,3 +560,38 @@ test::foo@0([0]: CircuitOutputs<Circuit<(core::circuit::AddModGate::<core::circu
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 1700})
+
+//! > ==========================================================================
+
+//! > into_u96_guarantee
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::circuit::{U96Guarantee, into_u96_guarantee};
+
+
+fn foo(val: u8) -> U96Guarantee {
+    into_u96_guarantee(val)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type U96Guarantee = U96Guarantee [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc into_u96_guarantee<u8> = into_u96_guarantee<u8>;
+libfunc store_temp<U96Guarantee> = store_temp<U96Guarantee>;
+
+into_u96_guarantee<u8>([0]) -> ([1]); // 0
+store_temp<U96Guarantee>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: u8) -> (U96Guarantee);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})

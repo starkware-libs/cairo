@@ -9,6 +9,7 @@ use cairo_lang_sierra::extensions::circuit::{
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::casts::IntoOrPanic;
 
+use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
@@ -32,10 +33,10 @@ pub fn build(
         CircuitConcreteLibfunc::InitCircuitData(libfunc) => {
             build_init_circuit_data(&libfunc.ty, builder)
         }
-
         CircuitConcreteLibfunc::FailureGuaranteeVerify(_) => {
             build_failure_guarantee_verify(builder)
         }
+        CircuitConcreteLibfunc::IntoU96Guarantee(_) => build_identity(builder),
     }
 }
 
