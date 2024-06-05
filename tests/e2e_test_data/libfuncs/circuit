@@ -50,13 +50,13 @@ SmallE2ETestRunner
 
 //! > cairo
 use core::circuit::{
-    u96, AddModGate, fill_circuit_input, FillInputResult, CircuitInput, CircuitInputAccumulator,
+    U96Guarantee, AddModGate, fill_circuit_input, FillInputResult, CircuitInput, CircuitInputAccumulator,
     init_circuit_data, Circuit
 };
 type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>,)>;
 
 fn foo(
-    accumulator: CircuitInputAccumulator<MyCircuit>, val: [u96; 4]
+    accumulator: CircuitInputAccumulator<MyCircuit>, val: [U96Guarantee; 4]
 ) -> FillInputResult<MyCircuit> {
     fill_circuit_input(accumulator, val)
 }
@@ -86,8 +86,8 @@ type Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core
 type core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> = AddModGate<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<2> = CircuitInput<2> [storable: false, drop: false, dup: false, zero_sized: false];
 type (core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>) = Struct<ut@Tuple, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>> [storable: false, drop: false, dup: false, zero_sized: false];
-type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
-type Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> = Struct<ut@Tuple, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: true, dup: true, zero_sized: false];
+type U96Guarantee = U96Guarantee [storable: true, drop: false, dup: false, zero_sized: false];
+type Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee> = Struct<ut@Tuple, U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee> [storable: true, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<1> = CircuitInput<1> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: false];
 
@@ -107,7 +107,7 @@ enum_init<core::circuit::FillInputResult::<core::circuit::Circuit::<(core::circu
 store_temp<core::circuit::FillInputResult::<core::circuit::Circuit::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>>([5]) -> ([5]); // 7
 return([5]); // 8
 
-test::foo@0([0]: CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [1]: Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>) -> (core::circuit::FillInputResult::<core::circuit::Circuit::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>);
+test::foo@0([0]: CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [1]: Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>) -> (core::circuit::FillInputResult::<core::circuit::Circuit::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 1000})

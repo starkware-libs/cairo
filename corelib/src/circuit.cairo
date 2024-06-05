@@ -96,7 +96,7 @@ extern fn eval_circuit<C>(
 /// Fill an input in the circuit instance's data.
 // TODO(ilya): Consider using RangeCheck96Guarantee for the inputs.
 extern fn fill_circuit_input<C>(
-    accumulator: CircuitInputAccumulator<C>, value: [u96; 4]
+    accumulator: CircuitInputAccumulator<C>, value: [U96Guarantee; 4]
 ) -> FillInputResult<C> nopanic;
 
 /// The result of filling an input in the circuit instance's data.
@@ -186,6 +186,13 @@ impl InputAccumulatorTraitImpl<C> of InputAccumulatorTrait<CircuitInputAccumulat
     type CircuitType = C;
 
     fn fill_input(self: CircuitInputAccumulator<C>, value: [u96; 4]) -> FillInputResult<C> {
+        let [val0, val1, val2, val3] = value;
+        let value = [
+            into_u96_guarantee(val0),
+            into_u96_guarantee(val1),
+            into_u96_guarantee(val2),
+            into_u96_guarantee(val3),
+        ];
         fill_circuit_input::<C>(self, value)
     }
 }
