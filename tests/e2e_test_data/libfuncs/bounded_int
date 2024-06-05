@@ -641,3 +641,73 @@ store_temp<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 6805647338418769
 return([4]); // 9
 
 test::foo@0([0]: BoundedInt<0, 680564733841876926926749214863536422911>) -> (core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>);
+
+//! > ==========================================================================
+
+//! > bounded_int_wrap_non_zero libfunc positive.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern fn bounded_int_wrap_non_zero<T>(value: T) -> NonZero<T> implicits() nopanic;
+
+fn foo(value: BoundedInt<1, 0x1ffffffffffffffffffffffffffffffff>) -> NonZero<BoundedInt<1, 0x1ffffffffffffffffffffffffffffffff>> {
+    bounded_int_wrap_non_zero(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type BoundedInt<1, 680564733841876926926749214863536422911> = BoundedInt<1, 680564733841876926926749214863536422911> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<1, 680564733841876926926749214863536422911>> = NonZero<BoundedInt<1, 680564733841876926926749214863536422911>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_wrap_non_zero<BoundedInt<1, 680564733841876926926749214863536422911>> = bounded_int_wrap_non_zero<BoundedInt<1, 680564733841876926926749214863536422911>>;
+libfunc store_temp<NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>> = store_temp<NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>>;
+
+bounded_int_wrap_non_zero<BoundedInt<1, 680564733841876926926749214863536422911>>([0]) -> ([1]); // 0
+store_temp<NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: BoundedInt<1, 680564733841876926926749214863536422911>) -> (NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>);
+
+//! > ==========================================================================
+
+//! > bounded_int_wrap_non_zero libfunc negative.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern fn bounded_int_wrap_non_zero<T>(value: T) -> NonZero<T> implicits() nopanic;
+
+fn foo(value: BoundedInt<-0x1ffffffffffffffffffffffffffffffff, -1>) -> NonZero<BoundedInt<-0x1ffffffffffffffffffffffffffffffff, -1>> {
+    bounded_int_wrap_non_zero(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type BoundedInt<-680564733841876926926749214863536422911, -1> = BoundedInt<-680564733841876926926749214863536422911, -1> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>> = NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_wrap_non_zero<BoundedInt<-680564733841876926926749214863536422911, -1>> = bounded_int_wrap_non_zero<BoundedInt<-680564733841876926926749214863536422911, -1>>;
+libfunc store_temp<NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>> = store_temp<NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>>;
+
+bounded_int_wrap_non_zero<BoundedInt<-680564733841876926926749214863536422911, -1>>([0]) -> ([1]); // 0
+store_temp<NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: BoundedInt<-680564733841876926926749214863536422911, -1>) -> (NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>);
