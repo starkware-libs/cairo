@@ -190,7 +190,7 @@ fn build_circuit_eval(
         deref one;
     };
 
-    let CircuitInfo { add_offsets, mul_offsets, n_inputs, .. } =
+    let CircuitInfo { add_offsets, n_inputs, .. } =
         builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
 
     casm_build_extend! {casm_builder,
@@ -237,40 +237,35 @@ fn build_circuit_eval(
         const add_mod_usage = (BUILTIN_INSTANCE_SIZE * add_offsets.len());
         let new_add_mod = add_mod + add_mod_usage;
 
+        const instance_size = BUILTIN_INSTANCE_SIZE;
+        tempvar mul_mod_usage = computed_gates * instance_size;
+        let new_mul_mod = mul_mod + mul_mod_usage;
 
         // Compute the number of mul gates that were not evaluated.
         tempvar skipped_gates = n_muls - computed_gates;
         jump Failure if skipped_gates != 0;
-
-
-        const mul_mod_usage = (BUILTIN_INSTANCE_SIZE * mul_offsets.len());
-        let new_mul_mod = mul_mod + mul_mod_usage;
-
-
-        jump Success;
     };
 
-    casm_build_extend! {casm_builder,
-        Failure:
-
-        // TODO(ilya): Consider always consuming `mul_offsets.len()` mulmod instances.
-        const instance_size = BUILTIN_INSTANCE_SIZE;
-        tempvar mul_mod_usage = computed_gates * instance_size;
-        let failure_mul_mod = mul_mod + mul_mod_usage;
-
-    };
-
-    let success_handle = get_non_fallthrough_statement_id(&builder);
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            // Failure.
+            // Success.
             (
                 "Fallthrough",
                 &[
                     &[new_add_mod],
-                    &[failure_mul_mod],
+                    &[new_mul_mod],
+                    &[values, modulus0, modulus1, modulus2, modulus3],
+                ],
+                None,
+            ),
+            (
+                "Failure",
+                &[
+                    &[new_add_mod],
+                    &[new_mul_mod],
                     // CircuitPartialOutputs
                     &[values, modulus0, modulus1, modulus2, modulus3, computed_gates],
                     // CircuitFailureGuarantee
@@ -285,16 +280,7 @@ fn build_circuit_eval(
                         modulus3,
                     ],
                 ],
-                None,
-            ),
-            (
-                "Success",
-                &[
-                    &[new_add_mod],
-                    &[new_mul_mod],
-                    &[values, modulus0, modulus1, modulus2, modulus3],
-                ],
-                Some(success_handle),
+                Some(failure_handle),
             ),
         ],
         Default::default(),

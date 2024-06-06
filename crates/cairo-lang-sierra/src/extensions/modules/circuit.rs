@@ -901,34 +901,36 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
             .map(|ty| ParamSignature::new(ty.clone()))
             .collect(),
             branch_signatures: vec![
-                // Failure.
+                // Success.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(add_mod_builtin_ty.clone(), 0),
                         OutputVarInfo::new_builtin(mul_mod_builtin_ty.clone(), 1),
                         OutputVarInfo {
                             ty: context.get_concrete_type(
-                                CircuitPartialOutputs::id(),
+                                CircuitOutputs::id(),
                                 &[GenericArg::Type(ty.clone())],
                             )?,
-                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
-                        },
-                        OutputVarInfo {
-                            ty: context.get_concrete_type(CircuitFailureGuarantee::id(), &[])?,
                             ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                     ],
 
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
-                // Success.
+                // Failure.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(add_mod_builtin_ty, 0),
                         OutputVarInfo::new_builtin(mul_mod_builtin_ty, 1),
                         OutputVarInfo {
-                            ty: context
-                                .get_concrete_type(CircuitOutputs::id(), &[GenericArg::Type(ty)])?,
+                            ty: context.get_concrete_type(
+                                CircuitPartialOutputs::id(),
+                                &[GenericArg::Type(ty)],
+                            )?,
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                        },
+                        OutputVarInfo {
+                            ty: context.get_concrete_type(CircuitFailureGuarantee::id(), &[])?,
                             ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                     ],

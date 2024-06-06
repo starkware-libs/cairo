@@ -86,10 +86,10 @@ extern fn get_circuit_descriptor<C>() -> CircuitDescriptor<C> nopanic;
 
 /// The result of filling an input in the circuit instance's data.
 pub enum EvalCircuitResult<C> {
-    /// The circuit evaluation failed.
-    Failure: (CircuitPartialOutputs<C>, CircuitFailureGuarantee),
     /// The circuit was evaluated successfully.
     Success: CircuitOutputs<C>,
+    /// The circuit evaluation failed.
+    Failure: (CircuitPartialOutputs<C>, CircuitFailureGuarantee),
 }
 
 extern fn eval_circuit<C>(
