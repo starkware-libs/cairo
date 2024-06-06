@@ -146,6 +146,26 @@ pub struct Span<T> {
 impl SpanCopy<T> of Copy<Span<T>>;
 impl SpanDrop<T> of Drop<Span<T>>;
 
+impl ArrayIntoSpan<T, +Drop<T>> of Into<Array<T>, Span<T>> {
+    fn into(self: Array<T>) -> Span<T> {
+        self.span()
+    }
+}
+
+impl SpanIntoArray<T, +Drop<T>, +Clone<T>> of Into<Span<T>, Array<T>> {
+    fn into(self: Span<T>) -> Array<T> {
+        let mut arr = array![];
+        arr.append_span(self);
+        arr
+    }
+}
+
+impl SpanIntoArraySnap<T> of Into<Span<T>, @Array<T>> {
+    fn into(self: Span<T>) -> @Array<T> {
+        self.snapshot
+    }
+}
+
 impl SpanFelt252Serde of Serde<Span<felt252>> {
     fn serialize(self: @Span<felt252>, ref output: Array<felt252>) {
         (*self).len().serialize(ref output);
@@ -248,6 +268,12 @@ impl ArrayToSpan<T> of ToSpanTrait<Array<T>, T> {
     #[inline(always)]
     fn span(self: @Array<T>) -> Span<T> {
         ArrayTrait::span(self)
+    }
+}
+
+impl SnapIntoSpanWhereToSpanTrait<C, T, +ToSpanTrait<C, T>> of Into<@C, Span<T>> {
+    fn into(self: @C) -> Span<T> {
+        self.span()
     }
 }
 
