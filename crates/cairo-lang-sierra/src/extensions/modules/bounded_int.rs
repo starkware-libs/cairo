@@ -135,10 +135,14 @@ impl SignatureOnlyGenericLibfunc for BoundedIntMulLibfunc {
         let (lhs, rhs) = args_as_two_types(args)?;
         let lhs_info = context.get_type_info(lhs.clone())?;
         let rhs_info = context.get_type_info(rhs.clone())?;
-        let is_nz = lhs_info.long_id.generic_id == NonZeroType::ID;
-        if is_nz != (rhs_info.long_id.generic_id == NonZeroType::ID) {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
+        let is_nz = {
+            let lhs_is_nz = lhs_info.long_id.generic_id == NonZeroType::ID;
+            let rhs_is_nz = rhs_info.long_id.generic_id == NonZeroType::ID;
+            if lhs_is_nz != rhs_is_nz {
+                return Err(SpecializationError::UnsupportedGenericArg);
+            }
+            lhs_is_nz
+        };
 
         let [lhs_range, rhs_range] = if is_nz {
             [lhs_info, rhs_info].map(|info| {
@@ -296,7 +300,7 @@ impl BoundedIntDivRemAlgorithm {
     }
 }
 
-/// Libfunc for constraining a BoundedInt<Min, Max> to one of two non-empty ranges: [Min, boundary)
+/// Libfunc for constraining a BoundedInt<Min, Max> to one of two non-empty ranges: [Min, Boundary)
 /// or [Boundary, Max]. The libfunc is also applicable for standard types such as u* and i*.
 #[derive(Default)]
 pub struct BoundedIntConstrainLibfunc {}
@@ -331,12 +335,13 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let branch_signature = |rng: Range| {
-            let ty = bounded_int_ty(context, rng.lower, rng.upper - 1)?;
+            let inner_res_ty = bounded_int_ty(context, rng.lower, rng.upper - 1)?;
+            let res_ty = if is_nz { nonzero_ty(context, &inner_res_ty)? } else { inner_res_ty };
             Ok(BranchSignature {
                 vars: vec![
                     OutputVarInfo::new_builtin(range_check_type.clone(), 0),
                     OutputVarInfo {
-                        ty: if is_nz { nonzero_ty(context, &ty)? } else { ty },
+                        ty: res_ty,
                         ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
                     },
                 ],
@@ -414,7 +419,7 @@ impl SignatureOnlyGenericLibfunc for BoundedIntIsZeroLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
         let range = Range::from_type(context, ty.clone())?;
-        // Making sure 0 is actually in the given range.
+        // Make sure 0 is actually in the given range.
         require(!range.lower.is_positive() && range.upper.is_positive())
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         Ok(LibfuncSignature {
@@ -452,7 +457,7 @@ impl SignatureOnlyGenericLibfunc for BoundedIntWrapNonZeroLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
         let range = Range::from_type(context, ty.clone())?;
-        // Making sure 0 is not in the given range.
+        // Make sure 0 is not in the given range.
         require(range.lower.is_positive() || !range.upper.is_positive())
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let prime: BigInt = Felt252::prime().to_bigint().unwrap();

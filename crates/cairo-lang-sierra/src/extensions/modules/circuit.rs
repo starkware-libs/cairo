@@ -1,8 +1,8 @@
 use std::ops::Shl;
 
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_lang_utils::{extract_matches, require};
 use num_bigint::BigInt;
 use num_traits::{One, Signed, ToPrimitive, Zero};
 use once_cell::sync::Lazy;
@@ -29,8 +29,8 @@ use crate::program::{ConcreteTypeLongId, GenericArg};
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 /// The set of types that are considered circuit components.
-/// A circuit it defined as Circuit<(Output0, Output1, ...) Where all the outputs are made
-/// of circuit components.
+/// A circuit it defined as Circuit<(Output0, Output1, ...)> where all the outputs are
+/// circuit components (recursively).
 static CIRCUIT_COMPONENTS: Lazy<UnorderedHashSet<GenericTypeId>> = Lazy::new(|| {
     UnorderedHashSet::from_iter([
         CircuitInput::ID,
@@ -83,12 +83,12 @@ define_libfunc_hierarchy! {
     }, CircuitConcreteLibfunc
 }
 
-/// Returns true if `garg` is a type that is considered a circuit component.
+/// Returns true if `generic_arg` is a type that is considered a circuit component.
 fn is_circuit_component(
     context: &dyn TypeSpecializationContext,
-    garg: &GenericArg,
+    generic_arg: &GenericArg,
 ) -> Result<bool, SpecializationError> {
-    let GenericArg::Type(ty) = garg else {
+    let GenericArg::Type(ty) = generic_arg else {
         return Err(SpecializationError::UnsupportedGenericArg);
     };
 
@@ -655,20 +655,20 @@ impl ConcreteCircuit {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self, SpecializationError> {
-        let outputs_tuple = args_as_single_type(args)?;
-        validate_outputs_tuple(context, outputs_tuple.clone())?;
+        let output_tuple = args_as_single_type(args)?;
+        validate_output_tuple(context, output_tuple.clone())?;
         Ok(Self {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId {
                     generic_id: "Circuit".into(),
                     generic_args: args.to_vec(),
                 },
-                duplicatable: true,
-                droppable: true,
-                storable: true,
+                duplicatable: false,
+                droppable: false,
+                storable: false,
                 zero_sized: false,
             },
-            circuit_info: get_circuit_info(context, &outputs_tuple)?,
+            circuit_info: get_circuit_info(context, &output_tuple)?,
         })
     }
 }
@@ -691,33 +691,32 @@ fn validate_is_circuit(
 }
 
 /// Validate that `outputs_tuple_ty` is a tuple of circuit components.
-fn validate_outputs_tuple(
+fn validate_output_tuple(
     context: &dyn TypeSpecializationContext,
     outputs_tuple_ty: ConcreteTypeId,
 ) -> Result<(), SpecializationError> {
     let struct_generic_args = extract_type_generic_args::<StructType>(context, &outputs_tuple_ty)?;
 
-    let mut gargs = struct_generic_args.iter();
+    let mut generic_args = struct_generic_args.iter();
     if !matches!(
-        gargs.next(),
+        generic_args.next(),
         Some(GenericArg::UserType(ut))
         if (*ut == UserTypeId::from_string("Tuple"))
-
     ) {
         return Err(SpecializationError::UnsupportedGenericArg);
     }
 
-    validate_args_are_circuit_components(context, gargs)
+    validate_args_are_circuit_components(context, generic_args)
 }
 
 /// Validate that all the generic arguments are circuit components.
 fn validate_args_are_circuit_components<'a>(
     context: &dyn TypeSpecializationContext,
-    gargs: impl Iterator<Item = &'a GenericArg>,
+    generic_args: impl Iterator<Item = &'a GenericArg>,
 ) -> Result<(), SpecializationError> {
-    for garg in gargs {
+    for generic_arg in generic_args {
         // Note that its enough to check the topmost types as they validate their children.
-        if !is_circuit_component(context, garg)? {
+        if !is_circuit_component(context, generic_arg)? {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
     }
@@ -958,9 +957,8 @@ impl SignatureAndTypeGenericLibfunc for IntoU96GuaranteeLibFuncWrapped {
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let range = Range::from_type(context, ty.clone())?;
-        if range.lower.is_negative() || range.upper > BigInt::one().shl(96) {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
+        require(!range.lower.is_negative() && range.upper <= BigInt::one().shl(96))
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
 
         let guarantee_ty = context.get_concrete_type(U96Guarantee::id(), &[])?;
         Ok(reinterpret_cast_signature(ty, guarantee_ty))
@@ -1118,7 +1116,7 @@ impl NoGenericArgsGenericType for MulModType {
     const ZERO_SIZED: bool = false;
 }
 
-/// Libfunc for checking whether the given `u384` is the zero point.
+/// Libfunc for checking whether the given `u384` (given as 4 limbs of `u96`) is zero.
 #[derive(Default)]
 pub struct U384IsZeroLibfunc {}
 impl NoGenericArgsGenericLibfunc for U384IsZeroLibfunc {
@@ -1157,28 +1155,31 @@ impl NoGenericArgsGenericLibfunc for U384IsZeroLibfunc {
 /// the const segment.
 fn get_circuit_info(
     context: &dyn TypeSpecializationContext,
-    ty: &ConcreteTypeId,
+    output_tuple_ty: &ConcreteTypeId,
 ) -> Result<CircuitInfo, SpecializationError> {
-    let ty_info = context.get_type_info(ty.clone())?;
+    let output_tuple_ty_info = context.get_type_info(output_tuple_ty.clone())?;
 
-    // Skip user type.
-    let circ_outputs = ty_info.long_id.generic_args.iter().skip(1);
+    // Skip the user type.
+    let circ_outputs = output_tuple_ty_info.long_id.generic_args.iter().skip(1);
 
     let ParsedInputs { mut values, mut mul_offsets } =
         parse_circuit_inputs(context, circ_outputs.clone())?;
     let n_inputs = values.len();
     let mut add_offsets = vec![];
 
-    let mut stack = circ_outputs
-        .map(|garg| (extract_matches!(garg, GenericArg::Type).clone(), true))
-        .collect::<Vec<_>>();
+    // We visit each gate in the circuit twice.
+    // In the first visit of a gate, push all its inputs to the stack.
+    // In the second visit of a gate, we assume that all the inputs were already visited (twice)
+    // and we can allocate a value for the output and update `add_offsets` or `mul_offsets`.
+    //
+    // The stack contains pairs of (type, first_visit).
+    let mut stack: Vec<(ConcreteTypeId, bool)> = circ_outputs
+        .map(|generic_arg| (extract_matches!(generic_arg, GenericArg::Type).clone(), true))
+        .collect();
 
     // The offset of the input that has the value `1`.
     let one_offset = 0;
 
-    // We visit each gate in the circuit twice, in the first visit push all its inputs
-    // and in the second visit we assume that all the inputs were already visited and we can
-    // allocate a value for the outputs and prepare the offsets in the relevant builtin.
     while let Some((ty, first_visit)) = stack.pop() {
         let long_id = context.get_type_info(ty.clone())?.long_id;
         let generic_id = long_id.generic_id;
@@ -1188,15 +1189,17 @@ fn get_circuit_info(
             continue;
         }
 
-        let gate_inputs =
-            long_id.generic_args.iter().map(|garg| extract_matches!(garg, GenericArg::Type));
+        let gate_inputs = long_id
+            .generic_args
+            .iter()
+            .map(|generic_arg| extract_matches!(generic_arg, GenericArg::Type));
 
         if first_visit {
             stack.push((ty, false));
             stack.extend(gate_inputs.map(|ty| (ty.clone(), true)))
         } else {
             let output_offset = 1 + n_inputs + values.len();
-            let mut input_offsets = gate_inputs.map(|ty| *values.get(ty).unwrap());
+            let mut input_offsets = gate_inputs.map(|ty| values[ty]);
 
             if generic_id == AddModGate::ID {
                 add_offsets.push(GateOffsets {
@@ -1204,23 +1207,26 @@ fn get_circuit_info(
                     rhs: input_offsets.next().unwrap(),
                     output: output_offset,
                 });
-            } else if generic_id == InverseGate::ID {
-                mul_offsets.push(GateOffsets {
-                    lhs: output_offset,
-                    rhs: input_offsets.next().unwrap(),
-                    output: one_offset,
-                });
+            } else if generic_id == SubModGate::ID {
+                // output = sub_lhs - sub_rhs => output + sub_rhs = sub_lhs.
+                let sub_lhs = input_offsets.next().unwrap();
+                let sub_rhs = input_offsets.next().unwrap();
+                add_offsets.push(GateOffsets { lhs: output_offset, rhs: sub_rhs, output: sub_lhs });
             } else if generic_id == MulModGate::ID {
                 mul_offsets.push(GateOffsets {
                     lhs: input_offsets.next().unwrap(),
                     rhs: input_offsets.next().unwrap(),
                     output: output_offset,
                 });
-            } else if generic_id == SubModGate::ID {
-                // lhs + rhs = res => lhs = res - rhs
-                let sub_lhs = input_offsets.next().unwrap();
-                let sub_rhs = input_offsets.next().unwrap();
-                add_offsets.push(GateOffsets { lhs: output_offset, rhs: sub_rhs, output: sub_lhs });
+            } else if generic_id == InverseGate::ID {
+                // output = 1 / input => 1 = output * input.
+                // Note that the gate will fail if the input is not invertible.
+                // Evaluating this gate successfully implies that input is invertible.
+                mul_offsets.push(GateOffsets {
+                    lhs: output_offset,
+                    rhs: input_offsets.next().unwrap(),
+                    output: one_offset,
+                });
             } else {
                 return Err(SpecializationError::UnsupportedGenericArg);
             };
@@ -1232,14 +1238,13 @@ fn get_circuit_info(
 }
 
 /// Parses the circuit inputs and returns `ParsedInputs`.
-/// Inputs that feed a addmod gate are require reduction and are fed to a mul gate.
 fn parse_circuit_inputs<'a>(
     context: &dyn TypeSpecializationContext,
     circuit_outputs: impl Iterator<Item = &'a GenericArg>,
 ) -> Result<ParsedInputs, SpecializationError> {
-    let mut stack = circuit_outputs
-        .map(|garg| extract_matches!(garg, GenericArg::Type).clone())
-        .collect::<Vec<_>>();
+    let mut stack: Vec<ConcreteTypeId> = circuit_outputs
+        .map(|generic_arg| extract_matches!(generic_arg, GenericArg::Type).clone())
+        .collect();
 
     let mut inputs: UnorderedHashMap<usize, ConcreteTypeId> = Default::default();
 
@@ -1251,36 +1256,36 @@ fn parse_circuit_inputs<'a>(
                 .to_usize()
                 .ok_or(SpecializationError::UnsupportedGenericArg)?;
             inputs.insert(idx, ty);
-        } else if CIRCUIT_COMPONENTS.contains(&generic_id) {
+        } else {
+            // generic_id must be a gate. This was validated in `validate_output_tuple`.
             stack.extend(
                 long_id
                     .generic_args
                     .iter()
-                    .map(|garg| extract_matches!(garg, GenericArg::Type).clone()),
+                    .map(|generic_arg| extract_matches!(generic_arg, GenericArg::Type).clone()),
             );
-        } else {
-            return Err(SpecializationError::UnsupportedGenericArg);
         }
     }
 
     let mut values: UnorderedHashMap<ConcreteTypeId, usize> = Default::default();
     let n_inputs = inputs.len();
+    let one_offset = 0;
 
-    // The reduced_inputs start at n_inputs + 1 since we need to reserve slot 0 for the value 1.
-    let mut reduced_input_offset = n_inputs + 1;
+    // The reduced_inputs start at n_inputs + 1 since we need to reserve slot 0 for the constant
+    // value 1.
+    let reduced_input_start = n_inputs + 1;
     let mut mul_offsets = vec![];
 
-    for (input_idx, ty) in inputs.iter_sorted() {
-        // Add the gate result = 1 * input to reduce the input module the modulus.
-        mul_offsets.push(GateOffsets { lhs: 0, rhs: 1 + input_idx, output: reduced_input_offset });
-        values.insert(ty.clone(), reduced_input_offset);
-        reduced_input_offset += 1;
-    }
-
-    // Validate that the inputs are [0, 1, .., n_inputs - 1]
-    let max_input = mul_offsets.last().unwrap().rhs - 1;
-    if max_input != n_inputs - 1 {
-        return Err(SpecializationError::UnsupportedGenericArg);
+    for (idx, (input_idx, ty)) in inputs.iter_sorted().enumerate() {
+        // Validate that the input indices are `[0, 1, ..., n_inputs - 1]`.
+        require(idx == *input_idx).ok_or(SpecializationError::UnsupportedGenericArg)?;
+        values.insert(ty.clone(), reduced_input_start + idx);
+        // Add the gate `1 * input = result` to reduce the input module the modulus.
+        mul_offsets.push(GateOffsets {
+            lhs: one_offset,
+            rhs: 1 + idx,
+            output: reduced_input_start + idx,
+        });
     }
 
     Ok(ParsedInputs { values, mul_offsets })
@@ -1300,29 +1305,30 @@ pub struct CircuitInfo {
     /// The number of circuit inputs.
     pub n_inputs: usize,
 
-    /// Maps a concrete type to it's offset in the values array.
-    /// The values mapping does not include the optional 1 input which is stored at the
-    /// the index n_inputs.
-    /// The input 1 is located at offset 0 and is not part of this mapping.
+    /// Maps a concrete type to its offset (measured in number of elements) in the values array.
+    /// The values mapping does not include the constant input `1` which is stored at offset `0`.
     pub values: UnorderedHashMap<ConcreteTypeId, usize>,
-    /// The offsets for the add gates.
+    /// The offsets for the add gates. This includes AddModGate and SubModGate.
     pub add_offsets: Vec<GateOffsets>,
-    /// The offsets for the mul gates.
+    /// The offsets for the mul gates. This includes MulModGate, InverseGate, and input reductions.
     pub mul_offsets: Vec<GateOffsets>,
 }
 
 impl CircuitInfo {
-    /// Returns the number of 96bits range checks used by the circuit.
+    /// Returns the number of 96-bit range checks used by the circuit.
     ///
-    /// We use 1 slot for the const 1, n_inputs slots for the original unreduced inputs
-    /// `self.values.len()` for all the intermediate values and outputs.
+    /// We use:
+    /// * 1 slot for the const 1,
+    /// * `n_inputs` slots for the original unreduced inputs,
+    /// * `self.values.len()` for all the intermediate values and outputs (including the reduced
+    ///   inputs).
     pub fn rc96_usage(&self) -> usize {
         (1 + self.n_inputs + self.values.len()) * VALUE_SIZE
     }
 }
 
 struct ParsedInputs {
-    /// Maps a concrete type to it's offset in the values array.
+    /// Maps a concrete input type to its offset in the values array.
     values: UnorderedHashMap<ConcreteTypeId, usize>,
     /// The offsets for the mul gates that are used to reduce the inputs.
     mul_offsets: Vec<GateOffsets>,
