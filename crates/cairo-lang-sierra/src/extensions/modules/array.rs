@@ -593,6 +593,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let (ty, popped_ty) = args_as_two_types(args)?;
         let member_type = validate_tuple_and_fetch_ty(context, &popped_ty)?;
+        // Given the following line, do we still need the type as a generic arg?
         require(member_type == ty).ok_or(SpecializationError::UnsupportedGenericArg)?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;

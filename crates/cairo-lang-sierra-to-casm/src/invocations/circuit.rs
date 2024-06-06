@@ -493,6 +493,10 @@ fn build_u96_guarantee_verify(
     casm_build_extend! {casm_builder,
         assert guarantee = *(rc96++);
     }
+    // TODO: Check why the automatic cost verification is not working (?). Is it becaues rc96 is like
+    // a generic builtin and not like rc128?
+    // Probably need to add rc96 to CostValidationInfo.
+    // Consider changing rc96 to be priced like rc128 (hard-coded pricing).
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[rc96]], None)],

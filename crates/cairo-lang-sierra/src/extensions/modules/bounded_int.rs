@@ -200,6 +200,7 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
         if BoundedIntDivRemAlgorithm::try_new(&lhs_range, &rhs_range).is_none() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
+        // Add a require that rhs_range.upper >= 2 (also assumed below).
         let quotient_min = lhs_range.lower / (&rhs_range.upper - 1);
         let quotient_max = (&lhs_range.upper - 1) / std::cmp::max(rhs_range.lower, BigInt::one());
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
@@ -461,6 +462,9 @@ impl SignatureOnlyGenericLibfunc for BoundedIntWrapNonZeroLibfunc {
         require(range.lower.is_positive() || !range.upper.is_positive())
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let prime: BigInt = Felt252::prime().to_bigint().unwrap();
+        // The following is not really necessary for this function. Once we support ranges
+        // such as `[prime, prime + 3)` you can still cast it to a non-zero type (even if the
+        // internal representation is zero).
         require(range.upper <= prime && range.lower > -prime)
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let nz_ty = nonzero_ty(context, &ty)?;

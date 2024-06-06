@@ -128,6 +128,7 @@ impl ConcreteCircuitInput {
         let idx = args_as_single_value(args)?
             .to_usize()
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        // TODO: Refactor TypeInfo{...} into a function and use in the other 4 gates.
         Ok(Self {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId {
@@ -137,7 +138,7 @@ impl ConcreteCircuitInput {
                 duplicatable: false,
                 droppable: false,
                 storable: false,
-                zero_sized: false,
+                zero_sized: false, // TODO: Should be true?
             },
             idx,
         })
@@ -209,6 +210,7 @@ impl ConcreteType for ConcreteAddModGate {
 }
 
 // Represents the action of adding two fields elements in the circuits builtin.
+// TODO: Can we share code between gates? (including inv?)
 #[derive(Default)]
 pub struct SubModGate {}
 impl NamedType for SubModGate {
@@ -666,7 +668,7 @@ impl ConcreteCircuit {
                 duplicatable: false,
                 droppable: false,
                 storable: false,
-                zero_sized: false,
+                zero_sized: false, // TODO: true?
             },
             circuit_info: get_circuit_info(context, &output_tuple)?,
         })
@@ -1157,6 +1159,7 @@ fn get_circuit_info(
     context: &dyn TypeSpecializationContext,
     output_tuple_ty: &ConcreteTypeId,
 ) -> Result<CircuitInfo, SpecializationError> {
+    // TODO: Consider moving the validate_output_tuple logic here.
     let output_tuple_ty_info = context.get_type_info(output_tuple_ty.clone())?;
 
     // Skip the user type.
@@ -1178,12 +1181,15 @@ fn get_circuit_info(
         .collect();
 
     // The offset of the input that has the value `1`.
+    // TODO: Consider making this a constant in the file.
     let one_offset = 0;
 
+    // TODO: Add `seen` set + test that each gate is constructed once.
     while let Some((ty, first_visit)) = stack.pop() {
         let long_id = context.get_type_info(ty.clone())?.long_id;
         let generic_id = long_id.generic_id;
 
+        // TODO: Consider using the seen set for this `if` as well.
         if generic_id == CircuitInput::ID {
             // 'ty' is a circuit input, it was already processed in `parse_circuit_inputs`.
             continue;
@@ -1230,6 +1236,7 @@ fn get_circuit_info(
             } else {
                 return Err(SpecializationError::UnsupportedGenericArg);
             };
+            // TODO: Check input_offsets is now empty.
             values.insert(ty.clone(), output_offset);
         }
     }
@@ -1248,6 +1255,7 @@ fn parse_circuit_inputs<'a>(
 
     let mut inputs: UnorderedHashMap<usize, ConcreteTypeId> = Default::default();
 
+    // TODO: Add "seen" set to avoid visiting the same gate twice.
     while let Some(ty) = stack.pop() {
         let long_id = context.get_type_info(ty.clone())?.long_id;
         let generic_id = long_id.generic_id;
@@ -1255,6 +1263,7 @@ fn parse_circuit_inputs<'a>(
             let idx = args_as_single_value(&long_id.generic_args)?
                 .to_usize()
                 .ok_or(SpecializationError::UnsupportedGenericArg)?;
+            // TODO: panic if idx is already in inputs.
             inputs.insert(idx, ty);
         } else {
             // generic_id must be a gate. This was validated in `validate_output_tuple`.
