@@ -391,12 +391,23 @@ fn build_failure_guarantee_verify(
         tempvar nullifier1 = nullifier_ptr[1];
         tempvar nullifier2 = nullifier_ptr[2];
         tempvar nullifier3 = nullifier_ptr[3];
+        tempvar modulus0_minus_one = modulus0 - one;
+
+        // If the nullifier is not zero we are done.
         jump Done if nullifier0 != 0;
         jump Done if nullifier1 != 0;
         jump Done if nullifier2 != 0;
         jump Done if nullifier3 != 0;
 
-        // If the nullifer is zero, add an unsatisfiable constraint.
+        // If the modulus is not one we should fail.
+        jump Fail if modulus0_minus_one != 0;
+        jump Fail if modulus1 != 0;
+        jump Fail if modulus2 != 0;
+        jump Fail if modulus3 != 0;
+        jump Done;
+
+        Fail:
+        // If the nullifer is zero and the modulus is not1, add an unsatisfiable constraint.
         assert one = zero;
 
         Done:

@@ -56,3 +56,26 @@ fn test_circuit() {
         EvalCircuitResult::Success(outputs) => { outputs.get_output(out1); }
     }
 }
+
+
+#[test]
+fn test_modulus_is_one() {
+    let in1 = CircuitElement::<CircuitInput<0>> {};
+    let out1 = circuit_inverse(in1);
+    let circ = (out1,);
+    let inputs = circ.init();
+
+    let data = match inputs.fill_input([1, 2, 3, 4]) {
+        FillInputResult::More(_new_inputs) => panic!("Expected Done"),
+        FillInputResult::Done(data) => data
+    };
+
+    let modulus: NonZero::<u384> = u384 { limb0: 1, limb1: 0, limb2: 0, limb3: 0 }
+        .try_into()
+        .unwrap();
+
+    match circ.get_descriptor().eval(data, modulus) {
+        EvalCircuitResult::Failure((_, _)) => {},
+        EvalCircuitResult::Success(_outputs) => { panic!("Expected failure"); }
+    }
+}

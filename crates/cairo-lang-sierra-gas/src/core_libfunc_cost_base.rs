@@ -558,7 +558,7 @@ pub fn core_libfunc_cost(
             // The libfunc also costs 1 mulmod instance, however, in the failure case `eval_circuit`
             // uses less mulmod gates then it actaually uses, so the mulmod is already paid for.
             vec![BranchCost::Regular {
-                const_cost: ConstCost::steps(33),
+                const_cost: ConstCost::steps(38),
                 pre_cost: PreCost::n_builtins(CostTokenType::RangeCheck96, 6),
             }]
         }
