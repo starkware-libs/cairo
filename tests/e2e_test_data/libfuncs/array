@@ -956,7 +956,9 @@ test::foo@0([0]: Snapshot<Array<felt252>>) -> (core::option::Option::<@core::box
 SmallE2ETestRunner
 
 //! > cairo
-extern fn array_snapshot_multi_pop_front<T, const SIZE: usize>(ref arr: @Array::<T>) -> Option<@Box<[T; SIZE]>> implicits(RangeCheck) nopanic;
+extern fn array_snapshot_multi_pop_front<T, PoppedT>(
+    ref arr: @Array::<T>
+) -> Option<@Box<PoppedT>> implicits(RangeCheck) nopanic;
 fn foo(ref arr: @Array::<felt252>) -> Option::<@Box<[felt252; 2]>> {
     array_snapshot_multi_pop_front(ref arr)
 }
@@ -997,7 +999,7 @@ type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252> [storable: tru
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc array_snapshot_multi_pop_front<felt252, 2> = array_snapshot_multi_pop_front<felt252, 2>;
+libfunc array_snapshot_multi_pop_front<felt252, Tuple<felt252, felt252>> = array_snapshot_multi_pop_front<felt252, Tuple<felt252, felt252>>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<@core::box::Box::<[core::felt252; 2]>>, 0> = enum_init<core::option::Option::<@core::box::Box::<[core::felt252; 2]>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -1006,7 +1008,7 @@ libfunc store_temp<core::option::Option::<@core::box::Box::<[core::felt252; 2]>>
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<@core::box::Box::<[core::felt252; 2]>>, 1> = enum_init<core::option::Option::<@core::box::Box::<[core::felt252; 2]>>, 1>;
 
-array_snapshot_multi_pop_front<felt252, 2>([0], [1]) { fallthrough([2], [3], [4]) 7([5], [6]) }; // 0
+array_snapshot_multi_pop_front<felt252, Tuple<felt252, felt252>>([0], [1]) { fallthrough([2], [3], [4]) 7([5], [6]) }; // 0
 branch_align() -> (); // 1
 enum_init<core::option::Option::<@core::box::Box::<[core::felt252; 2]>>, 0>([4]) -> ([7]); // 2
 store_temp<RangeCheck>([2]) -> ([2]); // 3
@@ -1031,7 +1033,9 @@ test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<felt252>>) -> (RangeCheck, Snap
 SmallE2ETestRunner
 
 //! > cairo
-extern fn array_snapshot_multi_pop_back<T, const SIZE: usize>(ref arr: @Array::<T>) -> Option<@Box<[T; SIZE]>> implicits(RangeCheck) nopanic;
+extern fn array_snapshot_multi_pop_back<T, PoppedT>(
+    ref arr: @Array::<T>
+) -> Option<@Box<PoppedT>> implicits(RangeCheck) nopanic;
 fn foo(ref arr: @Array::<felt252>) -> Option::<@Box<[felt252; 2]>> {
     array_snapshot_multi_pop_back(ref arr)
 }
@@ -1072,7 +1076,7 @@ type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252> [storable: tru
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc array_snapshot_multi_pop_back<felt252, 2> = array_snapshot_multi_pop_back<felt252, 2>;
+libfunc array_snapshot_multi_pop_back<felt252, Tuple<felt252, felt252>> = array_snapshot_multi_pop_back<felt252, Tuple<felt252, felt252>>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<@core::box::Box::<[core::felt252; 2]>>, 0> = enum_init<core::option::Option::<@core::box::Box::<[core::felt252; 2]>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -1081,7 +1085,7 @@ libfunc store_temp<core::option::Option::<@core::box::Box::<[core::felt252; 2]>>
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<@core::box::Box::<[core::felt252; 2]>>, 1> = enum_init<core::option::Option::<@core::box::Box::<[core::felt252; 2]>>, 1>;
 
-array_snapshot_multi_pop_back<felt252, 2>([0], [1]) { fallthrough([2], [3], [4]) 7([5], [6]) }; // 0
+array_snapshot_multi_pop_back<felt252, Tuple<felt252, felt252>>([0], [1]) { fallthrough([2], [3], [4]) 7([5], [6]) }; // 0
 branch_align() -> (); // 1
 enum_init<core::option::Option::<@core::box::Box::<[core::felt252; 2]>>, 0>([4]) -> ([7]); // 2
 store_temp<RangeCheck>([2]) -> ([2]); // 3
