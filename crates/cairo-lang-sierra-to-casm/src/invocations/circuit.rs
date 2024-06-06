@@ -205,17 +205,19 @@ fn build_circuit_eval(
         assert zero = values[3];
     };
 
+    if !add_offsets.is_empty() {
+        casm_build_extend! {casm_builder,
+            assert modulus0 = add_mod[0];
+            assert modulus1 = add_mod[1];
+            assert modulus2 = add_mod[2];
+            assert modulus3 = add_mod[3];
+            assert values = add_mod[4];
+            assert add_mod_offsets = add_mod[5];
+            assert n_adds = add_mod[6];
+        }
+    }
+
     casm_build_extend! {casm_builder,
-        assert modulus0 = add_mod[0];
-        assert modulus1 = add_mod[1];
-        assert modulus2 = add_mod[2];
-        assert modulus3 = add_mod[3];
-        assert values = add_mod[4];
-        assert add_mod_offsets = add_mod[5];
-        assert n_adds = add_mod[6];
-
-
-
         tempvar computed_gates;
         hint CoreHint::EvalCircuit {
             values_ptr: values,
