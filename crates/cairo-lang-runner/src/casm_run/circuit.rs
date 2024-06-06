@@ -75,7 +75,10 @@ impl CircuitInstance<'_> {
             (None, Some(rhs)) => {
                 // lhs + rhs = res => lhs = res - rhs
                 if let Some(res) = self.read_addmod_value(index + 2) {
-                    self.write_addmod_value(index, (res - rhs).mod_floor(&self.modulus));
+                    self.write_addmod_value(
+                        index,
+                        (res + &self.modulus - rhs).mod_floor(&self.modulus),
+                    );
                     true
                 } else {
                     false

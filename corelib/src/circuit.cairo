@@ -32,7 +32,7 @@ pub fn circuit_mul<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs
 }
 
 /// A 384-bit unsigned integer, used for circuit values.
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, Debug, PartialEq)]
 pub struct u384 {
     pub limb0: u96,
     pub limb1: u96,
@@ -156,6 +156,8 @@ impl CircuitInputAccumulatorDrop<C> of Drop<CircuitInputAccumulator<C>>;
 impl CircuitModulusDrop of Drop<CircuitModulus>;
 impl CircuitOutputsDrop<C> of Drop<CircuitOutputs<C>>;
 impl CircuitPartialOutputsDrop<C> of Drop<CircuitPartialOutputs<C>>;
+
+impl CircuitOutputsCopy<C> of Copy<CircuitOutputs<C>>;
 
 /// A wrapper for circuit elements, used to construct circuits..
 pub struct CircuitElement<T> {}
