@@ -160,7 +160,7 @@ impl SignatureAndTypeGenericLibfunc for TupleFromSpanLibfuncWrapped {
 
 /// Validates that the given type is a tuple with all members of the same type, and returns the type
 /// of the members.
-/// Any user type with such members is considered a tuple.
+/// Any user type with such members is also considered a tuple.
 fn validate_tuple_and_fetch_ty(
     context: &dyn SignatureSpecializationContext,
     ty: &ConcreteTypeId,
@@ -533,14 +533,13 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
                 ParamSignature::new(arr_snapshot_ty.clone()),
             ],
             branch_signatures: vec![
+                // Success.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(range_check_ty.clone(), 0),
                         OutputVarInfo {
                             ty: arr_snapshot_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 1 },
-                            ),
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                         OutputVarInfo {
                             ty: snapshot_ty(context, box_ty(context, popped_ty)?)?,
@@ -549,6 +548,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Failure.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(range_check_ty, 0),
@@ -603,22 +603,22 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
                 ParamSignature::new(arr_snapshot_ty.clone()),
             ],
             branch_signatures: vec![
+                // Success.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(range_check_ty.clone(), 0),
                         OutputVarInfo {
                             ty: arr_snapshot_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 1 },
-                            ),
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                         OutputVarInfo {
                             ty: snapshot_ty(context, box_ty(context, popped_ty)?)?,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Failure.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(range_check_ty, 0),

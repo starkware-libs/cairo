@@ -483,10 +483,11 @@ fn extend_multi_pop_failure_checks(
             lhs: arr_start_popped, rhs: arr_end
         } into { dst: has_enough_elements };
         jump HasEnoughElements if has_enough_elements != 0;
-        // Proving that `arr_start - arr_end + popped_size - 1 >= 0` and therefore
-        // `popped_size - 1 >= arr_end - arr_start == arr.len()` ==> `arr.len() < popped_size`.
-        tempvar minus_length = arr_start - arr_end;
-        tempvar rc = minus_length + popped_size_minus_1;
+        // Check that `arr_start - arr_end + popped_size - 1 >= 0`.
+        // This implies `popped_size - 1 >= arr_end - arr_start = arr_size` ==>
+        // `arr_size < popped_size`.
+        tempvar minus_size = arr_start - arr_end;
+        tempvar rc = minus_size + popped_size_minus_1;
         assert rc = *(range_check++);
         jump Failure;
         HasEnoughElements:
