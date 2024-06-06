@@ -275,7 +275,7 @@ impl SnapIntoSpanWhereToSpanTrait<C, T, +ToSpanTrait<C, T>> of Into<@C, Span<T>>
     fn into(self: @C) -> Span<T> {
         self.span()
     }
-} 
+}
 
 /// Returns a span from a box of struct of members of the same type.
 /// The additional `+Copy<@T>` arg is to prevent later stages from propagating the `S` type Sierra
