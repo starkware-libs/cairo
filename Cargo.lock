@@ -835,6 +835,7 @@ dependencies = [
  "lalrpop",
  "lalrpop-util",
  "num-bigint",
+ "num-integer",
  "num-traits 0.2.19",
  "once_cell",
  "pretty_assertions",
