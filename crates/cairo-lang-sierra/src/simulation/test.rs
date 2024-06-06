@@ -3,10 +3,10 @@ use num_bigint::BigInt;
 use test_case::test_case;
 
 use super::value::CoreValue::{
-    self, Array, GasBuiltin, NonZero, RangeCheck, Uint128, Uint64, Uninitialized,
+    self, Array, GasBuiltin, RangeCheck, Uint128, Uint32, Uninitialized,
 };
 use super::LibfuncSimulationError::{
-    self, FunctionSimulationError, MemoryLayoutMismatch, WrongNumberOfArgs,
+    self, FunctionSimulationError, WrongArgType, WrongNumberOfArgs,
 };
 use super::{core, SimulationError};
 use crate::extensions::core::CoreLibfunc;
@@ -145,7 +145,7 @@ fn simulate(
 #[test_case("withdraw_gas", vec![], vec![RangeCheck, GasBuiltin(2)]
              => Ok((vec![RangeCheck, GasBuiltin(2)], 1)); "withdraw_gas(2)")]
 #[test_case("u128_is_zero", vec![], vec![Uint128(2)]
-             => Ok((vec![NonZero(Box::new(Uint128(2)))], 1)); "u128_is_zero(2)")]
+             => Ok((vec![Uint128(2)], 1)); "u128_is_zero(2)")]
 #[test_case("u128_is_zero", vec![], vec![Uint128(0)] => Ok((vec![], 0)); "u128_is_zero(0)")]
 #[test_case("jump", vec![], vec![] => Ok((vec![], 0)); "jump()")]
 #[test_case("u128_overflowing_add", vec![], vec![RangeCheck, Uint128(2), Uint128(3)]
@@ -170,18 +170,18 @@ fn simulate_branch(
 #[test_case("array_new", vec![type_arg("u128")], vec![] => Ok(vec![Array(vec![])]); "array_new()")]
 #[test_case("array_append", vec![type_arg("u128")], vec![Array(vec![]), Uint128(4)] =>
             Ok(vec![Array(vec![Uint128(4)])]); "array_append([], 4)")]
-#[test_case("array_get", vec![type_arg("u128")], vec![RangeCheck, Array(vec![Uint128(5)]), Uint64(0)]
+#[test_case("array_get", vec![type_arg("u128")], vec![RangeCheck, Array(vec![Uint128(5)]), Uint32(0)]
              => Ok(vec![RangeCheck, Uint128(5)]); "array_get([5], 0)")]
 #[test_case("array_len", vec![type_arg("u128")], vec![Array(vec![])] =>
-            Ok(vec![Uint64(0)]); "array_len([])")]
-#[test_case("u128_safe_divmod", vec![], vec![RangeCheck, Uint128(32), NonZero(Box::new(Uint128(5)))]
+            Ok(vec![Uint32(0)]); "array_len([])")]
+#[test_case("u128_safe_divmod", vec![], vec![RangeCheck, Uint128(32), Uint128(5)]
              => Ok(vec![RangeCheck, Uint128(6), Uint128(2)]); "u128_safe_divmod(32, 5)")]
 #[test_case("u128_const", vec![value_arg(3)], vec![] => Ok(vec![Uint128(3)]);
             "u128_const<3>()")]
 #[test_case("dup", vec![type_arg("u128")], vec![Uint128(24)]
              => Ok(vec![Uint128(24), Uint128(24)]); "dup<u128>(24)")]
 #[test_case("drop", vec![type_arg("u128")], vec![Uint128(2)] => Ok(vec![]); "drop<u128>(2)")]
-#[test_case("unwrap_non_zero", vec![type_arg("u128")], vec![NonZero(Box::new(Uint128(6)))]
+#[test_case("unwrap_non_zero", vec![type_arg("u128")], vec![Uint128(6)]
              => Ok(vec![Uint128(6)]); "unwrap_non_zero<u128>(6)")]
 #[test_case("store_temp", vec![type_arg("u128")], vec![Uint128(6)] => Ok(vec![Uint128(6)]);
             "store_temp<u128>(6)")]
@@ -205,10 +205,10 @@ fn simulate_none_branch(
     })
 }
 
-#[test_case("withdraw_gas", vec![], vec![RangeCheck, Uninitialized] => MemoryLayoutMismatch;
+#[test_case("withdraw_gas", vec![], vec![RangeCheck, Uninitialized] => WrongArgType;
             "withdraw_gas(empty)")]
 #[test_case("withdraw_gas", vec![], vec![] => WrongNumberOfArgs; "withdraw_gas()")]
-#[test_case("redeposit_gas", vec![], vec![Uninitialized] => MemoryLayoutMismatch;
+#[test_case("redeposit_gas", vec![], vec![Uninitialized] => WrongArgType;
             "redeposit_gas(empty)")]
 #[test_case("redeposit_gas", vec![], vec![] => WrongNumberOfArgs; "redeposit_gas()")]
 #[test_case("u128_overflowing_add", vec![], vec![RangeCheck, Uint128(1)] => WrongNumberOfArgs;
@@ -222,8 +222,6 @@ fn simulate_none_branch(
 #[test_case("dup", vec![type_arg("u128")], vec![] => WrongNumberOfArgs; "dup<u128>()")]
 #[test_case("drop", vec![type_arg("u128")], vec![] => WrongNumberOfArgs; "drop<u128>()")]
 #[test_case("u128_is_zero", vec![], vec![] => WrongNumberOfArgs; "u128_is_zero()")]
-#[test_case("unwrap_non_zero", vec![type_arg("u128")], vec![] => WrongNumberOfArgs;
-            "unwrap_non_zero<u128>()")]
 #[test_case("store_temp", vec![type_arg("u128")], vec![] => WrongNumberOfArgs;
             "store_temp<u128>()")]
 #[test_case("store_local", vec![type_arg("u128")], vec![] => WrongNumberOfArgs;
