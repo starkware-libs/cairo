@@ -1195,7 +1195,7 @@ fn get_circuit_info(
             stack.push((ty, false));
             stack.extend(gate_inputs.map(|ty| (ty.clone(), true)))
         } else {
-            let output_offset = n_inputs + 1 + values.len() + 1;
+            let output_offset = 1 + n_inputs + values.len();
             let mut input_offsets = gate_inputs.map(|ty| *values.get(ty).unwrap());
 
             if generic_id == AddModGate::ID {
