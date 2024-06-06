@@ -497,7 +497,7 @@ impl ConcreteCircuitOutputs {
                     generic_id: "CircuitOutputs".into(),
                     generic_args: args.to_vec(),
                 },
-                duplicatable: false,
+                duplicatable: true,
                 droppable: true,
                 storable: true,
                 zero_sized: false,
