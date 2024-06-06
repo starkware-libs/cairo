@@ -539,6 +539,10 @@ pub fn core_libfunc_cost(
         Circuit(CircuitConcreteLibfunc::IntoU96Guarantee(_)) => {
             vec![ConstCost::steps(0).into()]
         }
+        Circuit(CircuitConcreteLibfunc::U96GuaranteeVerify(_)) => vec![BranchCost::Regular {
+            const_cost: ConstCost::steps(1),
+            pre_cost: PreCost::n_builtins(CostTokenType::RangeCheck96, 1),
+        }],
         Circuit(CircuitConcreteLibfunc::InitCircuitData(libfunc)) => {
             let info = info_provider.circuit_info(&libfunc.ty);
 

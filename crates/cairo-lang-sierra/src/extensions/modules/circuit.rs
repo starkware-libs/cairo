@@ -71,14 +71,15 @@ define_type_hierarchy! {
 
 define_libfunc_hierarchy! {
     pub enum CircuitLibFunc {
-         FillInput(FillCircuitInputLibFunc),
-         Eval(EvalCircuitLibFunc),
-         GetDescriptor(GetCircuitDescriptorLibFunc),
-         InitCircuitData(InitCircuitDataLibFunc),
-         GetOutput(GetOutputLibFunc),
-         U384IsZero(U384IsZeroLibfunc),
-         FailureGuaranteeVerify(CircuitFailureGuaranteeVerifyLibFunc),
-         IntoU96Guarantee(IntoU96GuaranteeLibFunc),
+        FillInput(FillCircuitInputLibFunc),
+        Eval(EvalCircuitLibFunc),
+        GetDescriptor(GetCircuitDescriptorLibFunc),
+        InitCircuitData(InitCircuitDataLibFunc),
+        GetOutput(GetOutputLibFunc),
+        U384IsZero(U384IsZeroLibfunc),
+        FailureGuaranteeVerify(CircuitFailureGuaranteeVerifyLibFunc),
+        IntoU96Guarantee(IntoU96GuaranteeLibFunc),
+        U96GuaranteeVerify(U96GuaranteeVerifyLibFunc),
     }, CircuitConcreteLibfunc
 }
 
@@ -966,6 +967,29 @@ impl SignatureAndTypeGenericLibfunc for IntoU96GuaranteeLibFuncWrapped {
 
 pub type IntoU96GuaranteeLibFunc =
     WrapSignatureAndTypeGenericLibfunc<IntoU96GuaranteeLibFuncWrapped>;
+
+/// Libfunc for verifying and dropping a `U96Guarantee`.
+#[derive(Default)]
+pub struct U96GuaranteeVerifyLibFunc {}
+impl NoGenericArgsGenericLibfunc for U96GuaranteeVerifyLibFunc {
+    const STR_ID: &'static str = "u96_guarantee_verify";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let range_check96_type = context.get_concrete_type(RangeCheck96Type::id(), &[])?;
+        let guarantee_ty = context.get_concrete_type(U96Guarantee::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(range_check96_type.clone()).with_allow_add_const(),
+                ParamSignature::new(guarantee_ty),
+            ],
+            vec![OutputVarInfo::new_builtin(range_check96_type, 0)],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
 
 /// Libfunc for getting an output of a circuit.
 #[derive(Default)]

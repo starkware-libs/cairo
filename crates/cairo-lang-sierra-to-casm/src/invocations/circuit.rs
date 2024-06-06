@@ -37,6 +37,7 @@ pub fn build(
             build_failure_guarantee_verify(builder)
         }
         CircuitConcreteLibfunc::IntoU96Guarantee(_) => build_identity(builder),
+        CircuitConcreteLibfunc::U96GuaranteeVerify(_) => build_u96_guarantee_verify(builder),
     }
 }
 
@@ -484,6 +485,26 @@ fn build_get_output(
             ],
             None,
         )],
+        Default::default(),
+    ))
+}
+
+/// Builds instructions for `u96_guarantee_verify` libfunc.
+fn build_u96_guarantee_verify(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [rc96, guarantee] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(0) rc96;
+        deref guarantee;
+    };
+    casm_build_extend! {casm_builder,
+        assert guarantee = *(rc96++);
+    }
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[rc96]], None)],
         Default::default(),
     ))
 }
