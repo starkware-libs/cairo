@@ -102,6 +102,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::InverseGate(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::MulModGate(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::SubModGate(_)) => continue,
+            // TODO: What's the difference between using continue and setting their size to 0?
         }?;
         type_sizes.insert(declaration.id.clone(), size);
     }
