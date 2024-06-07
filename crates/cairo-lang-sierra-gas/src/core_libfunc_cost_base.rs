@@ -495,73 +495,78 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(0).into()]
             }
         },
-        Circuit(CircuitConcreteLibfunc::FillInput(_)) => {
-            vec![ConstCost::steps(7).into(), ConstCost::steps(7).into()]
-        }
-        Circuit(CircuitConcreteLibfunc::Eval(libfunc)) => {
-            let info = info_provider.circuit_info(&libfunc.ty);
-
-            let instance_size: i32 = BUILTIN_INSTANCE_SIZE.into_or_panic();
-            let mut steps: i32 = 8 + instance_size;
-
-            if !info.add_offsets.is_empty() {
-                steps += instance_size;
+        Circuit(libfunc) => match libfunc {
+            CircuitConcreteLibfunc::FillInput(_) => {
+                vec![ConstCost::steps(7).into(), ConstCost::steps(7).into()]
             }
+            CircuitConcreteLibfunc::Eval(libfunc) => {
+                let info = info_provider.circuit_info(&libfunc.ty);
 
-            vec![
-                // Failure.
-                BranchCost::Regular {
-                    const_cost: ConstCost::steps(steps),
-                    pre_cost: PreCost(OrderedHashMap::from_iter([
-                        (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
-                        (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
-                    ])),
-                },
-                // Success.
-                BranchCost::Regular {
-                    const_cost: ConstCost::steps(steps),
-                    pre_cost: PreCost(OrderedHashMap::from_iter([
-                        (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
-                        (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
-                    ])),
-                },
-            ]
-        }
-        Circuit(CircuitConcreteLibfunc::GetOutput(_)) => {
-            vec![ConstCost::steps(5).into()]
-        }
-        Circuit(CircuitConcreteLibfunc::U384IsZero(_)) => {
-            vec![ConstCost::steps(4).into(), ConstCost::steps(4).into()]
-        }
-        Circuit(CircuitConcreteLibfunc::GetDescriptor(_)) => {
-            vec![ConstCost::steps(6).into()]
-        }
-        Circuit(CircuitConcreteLibfunc::IntoU96Guarantee(_)) => {
-            vec![ConstCost::steps(0).into()]
-        }
-        Circuit(CircuitConcreteLibfunc::U96GuaranteeVerify(_)) => vec![BranchCost::Regular {
-            const_cost: ConstCost::steps(1),
-            pre_cost: PreCost::n_builtins(CostTokenType::RangeCheck96, 1),
-        }],
-        Circuit(CircuitConcreteLibfunc::InitCircuitData(libfunc)) => {
-            let info = info_provider.circuit_info(&libfunc.ty);
+                let instance_size: i32 = BUILTIN_INSTANCE_SIZE.into_or_panic();
+                let mut steps: i32 = 8 + instance_size;
 
-            vec![BranchCost::Regular {
-                const_cost: ConstCost::steps(0),
-                pre_cost: PreCost::n_builtins(
-                    CostTokenType::RangeCheck96,
-                    info.rc96_usage().into_or_panic(),
-                ),
-            }]
-        }
-        Circuit(CircuitConcreteLibfunc::FailureGuaranteeVerify(_)) => {
-            // The libfunc also costs 1 mulmod instance, however, in the failure case `eval_circuit`
-            // uses less mulmod gates then it actaually uses, so the mulmod is already paid for.
-            vec![BranchCost::Regular {
-                const_cost: ConstCost::steps(33),
-                pre_cost: PreCost::n_builtins(CostTokenType::RangeCheck96, 6),
-            }]
-        }
+                if !info.add_offsets.is_empty() {
+                    steps += instance_size;
+                }
+
+                vec![
+                    // Failure.
+                    BranchCost::Regular {
+                        const_cost: ConstCost::steps(steps),
+                        pre_cost: PreCost(OrderedHashMap::from_iter([
+                            (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
+                            (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
+                        ])),
+                    },
+                    // Success.
+                    BranchCost::Regular {
+                        const_cost: ConstCost::steps(steps),
+                        pre_cost: PreCost(OrderedHashMap::from_iter([
+                            (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
+                            (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
+                        ])),
+                    },
+                ]
+            }
+            CircuitConcreteLibfunc::GetOutput(_) => {
+                vec![ConstCost::steps(5).into()]
+            }
+            CircuitConcreteLibfunc::U384IsZero(_) => {
+                vec![ConstCost::steps(4).into(), ConstCost::steps(4).into()]
+            }
+            CircuitConcreteLibfunc::GetDescriptor(_) => {
+                vec![ConstCost::steps(6).into()]
+            }
+            CircuitConcreteLibfunc::IntoU96Guarantee(_) => {
+                vec![ConstCost::steps(0).into()]
+            }
+            CircuitConcreteLibfunc::U96GuaranteeVerify(_) => {
+                vec![BranchCost::Regular {
+                    const_cost: ConstCost::steps(1),
+                    pre_cost: PreCost::n_builtins(CostTokenType::RangeCheck96, 1),
+                }]
+            }
+            CircuitConcreteLibfunc::InitCircuitData(libfunc) => {
+                let info = info_provider.circuit_info(&libfunc.ty);
+
+                vec![BranchCost::Regular {
+                    const_cost: ConstCost::steps(0),
+                    pre_cost: PreCost::n_builtins(
+                        CostTokenType::RangeCheck96,
+                        info.rc96_usage().into_or_panic(),
+                    ),
+                }]
+            }
+            CircuitConcreteLibfunc::FailureGuaranteeVerify(_) => {
+                // The libfunc also costs 1 mulmod instance, however, in the failure case
+                // `eval_circuit` uses less mulmod gates then it actaually uses, so
+                // the mulmod is already paid for.
+                vec![BranchCost::Regular {
+                    const_cost: ConstCost::steps(33),
+                    pre_cost: PreCost::n_builtins(CostTokenType::RangeCheck96, 6),
+                }]
+            }
+        },
     }
 }
 
