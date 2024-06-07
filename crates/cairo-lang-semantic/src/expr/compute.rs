@@ -1837,7 +1837,7 @@ fn extract_concrete_enum_from_pattern_and_validate(
     enum_id: EnumId,
 ) -> Maybe<(ConcreteEnumId, usize)> {
     // Peel all snapshot wrappers.
-    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+    let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, pattern)?;
 
     // Check that type is an enum, and get the concrete enum from it.
     let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
