@@ -795,6 +795,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NonPhantomTypeContainingPhantomType => {
                 "Non-phantom type containing phantom type.".into()
             }
+            SemanticDiagnosticKind::DerefCycle { deref_chain } => {
+                format!("Deref impls cycle detected:\n{}", deref_chain)
+            }
         }
     }
 
@@ -1115,6 +1118,9 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArraySizeTooBig,
     SelfNotSupportedInContext,
     SelfMustBeFirst,
+    DerefCycle {
+        deref_chain: String,
+    },
 }
 
 /// The kind of an expression with multiple possible return types.
