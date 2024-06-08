@@ -22,7 +22,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{
     define_short_id, extract_matches, try_extract_matches, Intern, LookupIntern,
 };
-use itertools::{chain, izip};
+use itertools::{chain, izip, Itertools};
 use smol_str::SmolStr;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use syntax::node::ast::{self, GenericArg, ImplItem, MaybeImplBody, OptionReturnTypeClause};
@@ -53,7 +53,9 @@ use super::type_aliases::{
     type_alias_semantic_data_helper, TypeAliasData,
 };
 use super::{resolve_trait_path, TraitOrImplContext};
-use crate::corelib::{concrete_iterator_trait, copy_trait, drop_trait, into_iterator_trait};
+use crate::corelib::{
+    concrete_iterator_trait, copy_trait, deref_trait, drop_trait, into_iterator_trait,
+};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -514,34 +516,121 @@ pub fn impl_semantic_definition_diagnostics(
                 impl_item_type_id.stable_ptr(db.upcast()),
             );
         }
-        // TODO(Tomer-StarkWare) Remove when proper trait bounds are implemented.
-        if diagnostics.error_count == 0 {
-            let concrete_trait =
-                db.priv_impl_declaration_data(impl_def_id).unwrap().concrete_trait.unwrap();
-            // check into iterator impl type implement iterator
-            if concrete_trait.trait_id(db) == into_iterator_trait(db) {
-                let (impl_item_type_id, _) = data.item_type_asts.iter().next().unwrap();
-                let ty = db.impl_type_def_resolved_type(*impl_item_type_id).unwrap();
-                let module_file_id = impl_def_id.module_file_id(db.upcast());
-                let generic_params = db.impl_def_generic_params(impl_def_id).unwrap();
-                let generic_params_ids =
-                    generic_params.iter().map(|generic_param| generic_param.id()).collect();
-                let lookup_context = ImplLookupContext::new(module_file_id.0, generic_params_ids);
-                if let Err(err) =
-                    get_impl_at_context(db, lookup_context, concrete_iterator_trait(db, ty), None)
-                {
-                    diagnostics.report(
-                        impl_item_type_id.stable_ptr(db.upcast()),
-                        SemanticDiagnosticKind::InvalidIntoIteratorTraitImpl(err),
-                    );
-                }
-            }
-        }
     }
     for impl_item_constant_id in data.item_constant_asts.keys() {
         diagnostics.extend(db.impl_constant_def_semantic_diagnostics(*impl_item_constant_id));
     }
+    // Diagnostics for special traits.
+    if diagnostics.error_count == 0 {
+        let trait_id = db
+            .priv_impl_declaration_data(impl_def_id)
+            .unwrap()
+            .concrete_trait
+            .unwrap()
+            .trait_id(db);
+        // check that into iterator impl type implements Iterator.
+        // TODO(Tomer-StarkWare) Remove when proper trait bounds are implemented.
+        if trait_id == into_iterator_trait(db) {
+            handle_into_iterator_impl(db, impl_def_id, &mut diagnostics);
+        }
+        if trait_id == deref_trait(db) {
+            handle_deref_impl(db, impl_def_id, &mut diagnostics);
+        }
+    }
     diagnostics.build()
+}
+
+/// Validates that the IntoIterator impl type implements Iterator.
+fn handle_into_iterator_impl(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
+) {
+    let (impl_item_type_id, ty) = try_get_single_impl_type(db, impl_def_id).unwrap();
+    let lookup_context = get_impl_lookup_context(db, impl_def_id);
+    if let Err(err) = get_impl_at_context(db, lookup_context, concrete_iterator_trait(db, ty), None)
+    {
+        diagnostics.report(
+            impl_item_type_id.stable_ptr(db.upcast()),
+            SemanticDiagnosticKind::InvalidIntoIteratorTraitImpl(err),
+        );
+    }
+}
+
+/// Checks that there are no cycles of Deref impls.
+fn handle_deref_impl(
+    db: &dyn SemanticGroup,
+    mut impl_def_id: ImplDefId,
+    diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
+) {
+    let mut visited_impls: OrderedHashSet<ImplDefId> = OrderedHashSet::default();
+
+    let deref_trait_id = deref_trait(db);
+
+    loop {
+        let (_, derefed_type) = try_get_single_impl_type(db, impl_def_id).unwrap();
+        let next_concrete_trait = ConcreteTraitLongId {
+            trait_id: deref_trait_id,
+            generic_args: vec![GenericArgumentId::Type(derefed_type)],
+        }
+        .intern(db);
+        let lookup_context = get_impl_lookup_context(db, impl_def_id);
+
+        let Ok(impl_id) =
+            get_impl_at_context(db, lookup_context.clone(), next_concrete_trait, None)
+        else {
+            // Inference errors are handled when the impl is in actual use. In here we only check
+            // for cycles.
+            return;
+        };
+        impl_def_id = match impl_id {
+            ImplId::Concrete(concrete_impl_id) => concrete_impl_id.impl_def_id(db),
+            _ => return,
+        };
+
+        if !visited_impls.insert(impl_def_id) {
+            let deref_chain = visited_impls
+                .iter()
+                .map(|visited_impl| {
+                    format!(
+                        "{:?}",
+                        db.impl_def_concrete_trait(*visited_impl).unwrap().debug(db.elongate())
+                    )
+                })
+                .join(" -> ");
+            diagnostics.report(
+                impl_def_id.stable_ptr(db.upcast()),
+                SemanticDiagnosticKind::DerefCycle { deref_chain },
+            );
+            return;
+        }
+    }
+}
+
+/// Assuming that an impl has a single impl type, returns the id of the impl type and the resolved
+/// type.
+fn try_get_single_impl_type(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+) -> Option<(ImplTypeDefId, TypeId)> {
+    let data = db.priv_impl_definition_data(impl_def_id).ok()?;
+    // Check that `data.item_type_asts` contains exactly one item, and extract it.
+    let mut types_iter = data.item_type_asts.iter();
+    let (impl_item_type_id, _) = types_iter.next()?;
+    if types_iter.next().is_some() {
+        return None;
+    }
+    let ty = db.impl_type_def_resolved_type(*impl_item_type_id).ok()?;
+    Some((*impl_item_type_id, ty))
+}
+
+/// Returns the lookup context for an impl.
+fn get_impl_lookup_context(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> ImplLookupContext {
+    let module_file_id = impl_def_id.module_file_id(db.upcast());
+    let generic_params = db.impl_def_generic_params(impl_def_id).unwrap();
+    let generic_params_ids =
+        generic_params.iter().map(|generic_param| generic_param.id()).collect();
+    ImplLookupContext::new(module_file_id.0, generic_params_ids)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_functions].
