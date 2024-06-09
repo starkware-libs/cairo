@@ -7,7 +7,6 @@ use num_bigint::BigInt;
 use num_traits::{One, Signed, ToPrimitive, Zero};
 use once_cell::sync::Lazy;
 
-use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheck96Type;
 use super::structure::StructType;
 use super::utils::{reinterpret_cast_signature, Range};
@@ -61,6 +60,7 @@ define_type_hierarchy! {
         CircuitFailureGuarantee(CircuitFailureGuarantee),
         CircuitInput(CircuitInput),
         CircuitInputAccumulator(CircuitInputAccumulator),
+        CircuitModulus(CircuitModulus),
         InverseGate(InverseGate),
         MulModGate(MulModGate),
         SubModGate(SubModGate),
@@ -76,7 +76,7 @@ define_libfunc_hierarchy! {
         GetDescriptor(GetCircuitDescriptorLibFunc),
         InitCircuitData(InitCircuitDataLibFunc),
         GetOutput(GetOutputLibFunc),
-        U384IsZero(U384IsZeroLibfunc),
+        TryIntoCircuitModulus(TryIntoCircuitModulusLibFunc),
         FailureGuaranteeVerify(CircuitFailureGuaranteeVerifyLibFunc),
         IntoU96Guarantee(IntoU96GuaranteeLibFunc),
         U96GuaranteeVerify(U96GuaranteeVerifyLibFunc),
@@ -399,6 +399,17 @@ impl ConcreteType for ConcreteCircuitInputAccumulator {
     fn info(&self) -> &TypeInfo {
         &self.info
     }
+}
+
+/// A type that can be used as a circuit modulus (a u384 that is not zero or on
+#[derive(Default)]
+pub struct CircuitModulus {}
+impl NoGenericArgsGenericType for CircuitModulus {
+    const ID: GenericTypeId = GenericTypeId::new_inline("CircuitModulus");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = true;
+    const DROPPABLE: bool = true;
+    const ZERO_SIZED: bool = false;
 }
 
 /// A type representing a circuit instance data with all the inputs filled.
@@ -844,11 +855,18 @@ impl SignatureAndTypeGenericLibfunc for GetCircuitDescriptorLibFuncWrapped {
     }
 }
 
+/// Helper for u96 type def.
+fn get_u96_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    bounded_int_ty(context, BigInt::zero(), BigInt::one().shl(96) - 1)
+}
+
 /// Helper for u384 type def.
 fn get_u384_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
-    let u96_ty = bounded_int_ty(context, BigInt::zero(), BigInt::one().shl(96) - 1)?;
+    let u96_ty = get_u96_type(context)?;
     context.get_concrete_type(
         StructType::id(),
         &[
@@ -892,7 +910,7 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                 mul_mod_builtin_ty.clone(),
                 circuit_descriptor_ty,
                 circuit_data_ty,
-                nonzero_ty(context, &get_u384_type(context)?)?,
+                context.get_concrete_type(CircuitModulus::id(), &[])?,
                 zero,
                 one,
             ]
@@ -1118,32 +1136,41 @@ impl NoGenericArgsGenericType for MulModType {
 
 /// Libfunc for checking whether the given `u384` (given as 4 limbs of `u96`) is zero.
 #[derive(Default)]
-pub struct U384IsZeroLibfunc {}
-impl NoGenericArgsGenericLibfunc for U384IsZeroLibfunc {
-    const STR_ID: &'static str = "u384_is_zero";
+pub struct TryIntoCircuitModulusLibFunc {}
+impl NoGenericArgsGenericLibfunc for TryIntoCircuitModulusLibFunc {
+    const STR_ID: &'static str = "try_into_circuit_modulus";
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let u384_ty = get_u384_type(context)?;
-        let nonzero_u384_ty = nonzero_ty(context, &u384_ty)?;
+        let u96_ty = get_u96_type(context)?;
+        let value_type = context.get_concrete_type(
+            StructType::id(),
+            &[
+                GenericArg::UserType(UserTypeId::from_string("Tuple")),
+                GenericArg::Type(u96_ty.clone()),
+                GenericArg::Type(u96_ty.clone()),
+                GenericArg::Type(u96_ty.clone()),
+                GenericArg::Type(u96_ty),
+            ],
+        )?;
 
         Ok(LibfuncSignature {
-            param_signatures: vec![ParamSignature::new(u384_ty.clone())],
+            param_signatures: vec![ParamSignature::new(value_type)],
             branch_signatures: vec![
                 // Zero.
                 BranchSignature {
                     vars: vec![],
-                    ap_change: SierraApChange::Known { new_vars_only: true },
+                    ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // NonZero.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: nonzero_u384_ty,
+                        ty: context.get_concrete_type(CircuitModulus::id(), &[])?,
                         ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                     }],
-                    ap_change: SierraApChange::Known { new_vars_only: true },
+                    ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],
             fallthrough: Some(0),
