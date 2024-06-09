@@ -586,6 +586,31 @@ pub fn trait_constant_by_name(
     Ok(db.trait_constants(trait_id)?.get(&name).copied())
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_impls].
+pub fn trait_impls(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+) -> Maybe<OrderedHashMap<SmolStr, TraitImplId>> {
+    Ok(db
+        .priv_trait_definition_data(trait_id)?
+        .item_impl_asts
+        .keys()
+        .map(|impl_id| {
+            let impl_long_id = impl_id.lookup_intern(db);
+            (impl_long_id.name(db.upcast()), *impl_id)
+        })
+        .collect())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_impl_by_name].
+pub fn trait_impl_by_name(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+    name: SmolStr,
+) -> Maybe<Option<TraitImplId>> {
+    Ok(db.trait_impls(trait_id)?.get(&name).copied())
+}
+
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_definition_data].
