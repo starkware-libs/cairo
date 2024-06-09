@@ -1736,7 +1736,7 @@ fn maybe_compute_pattern_semantic(
                         if used_members.contains(&member_name) {
                             StructMemberRedefinition { struct_id, member_name: member_name.clone() }
                         } else {
-                            NoSuchMember { struct_id, member_name: member_name.clone() }
+                            NoSuchStructMember { struct_id, member_name: member_name.clone() }
                         },
                     );
                 })?;
@@ -2383,27 +2383,25 @@ fn member_access_expr(
     let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, lexpr.ty(), &rhs_syntax)?;
 
     match &long_ty {
-        TypeLongId::Concrete(concrete) => match concrete {
-            ConcreteTypeId::Struct(concrete_struct_id) => {
-                // TODO(lior): Add a diagnostic test when accessing a member of a missing type.
-                let EnrichedMembers { members, deref_functions } =
-                    enriched_members(ctx, lexpr.clone(), stable_ptr)?;
-                let Some((member, n_derefs)) = members.get(&member_name) else {
-                    return Err(ctx.diagnostics.report(
-                        &rhs_syntax,
-                        NoSuchMember {
-                            struct_id: concrete_struct_id.struct_id(ctx.db),
-                            member_name,
-                        },
-                    ));
-                };
-                check_struct_member_is_visible(
-                    ctx,
-                    member,
-                    rhs_syntax.stable_ptr().untyped(),
-                    &member_name,
-                );
-                let member_path = if n_snapshots == 0 && *n_derefs == 0 {
+        TypeLongId::Concrete(_) | TypeLongId::Tuple(_) | TypeLongId::FixedSizeArray { .. } => {
+            let EnrichedMembers { members, deref_functions } =
+                enriched_members(ctx, lexpr.clone(), stable_ptr)?;
+            let Some((member, n_derefs)) = members.get(&member_name) else {
+                return Err(ctx.diagnostics.report(
+                    &rhs_syntax,
+                    NoSuchTypeMember { ty: long_ty.intern(ctx.db), member_name },
+                ));
+            };
+            check_struct_member_is_visible(
+                ctx,
+                member,
+                rhs_syntax.stable_ptr().untyped(),
+                &member_name,
+            );
+            let member_path = match &long_ty {
+                TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))
+                    if n_snapshots == 0 && *n_derefs == 0 =>
+                {
                     lexpr.as_member_path().map(|parent| ExprVarMemberPath::Member {
                         parent: Box::new(parent),
                         member_id: member.id,
@@ -2411,51 +2409,42 @@ fn member_access_expr(
                         concrete_struct_id: *concrete_struct_id,
                         ty: member.ty,
                     })
-                } else {
-                    None
-                };
-                let mut derefed_expr: ExprAndId = lexpr;
-                for deref_function in deref_functions.iter().take(*n_derefs) {
-                    let cur_expr = expr_function_call(
-                        ctx,
-                        *deref_function,
-                        vec![NamedArg(derefed_expr, None, Mutability::Immutable)],
-                        stable_ptr,
-                        stable_ptr,
-                    )
-                    .unwrap();
-
-                    derefed_expr =
-                        ExprAndId { expr: cur_expr.clone(), id: ctx.exprs.alloc(cur_expr) };
                 }
-                let (_, long_ty) =
-                    finalized_snapshot_peeled_ty(ctx, derefed_expr.ty(), &rhs_syntax)?;
-                let derefed_expr_concrete_struct_id = match long_ty {
-                    TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
-                        concrete_struct_id
-                    }
-                    _ => unreachable!(),
-                };
-                let ty = member.ty;
-                let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
-                Ok(Expr::MemberAccess(ExprMemberAccess {
-                    expr: derefed_expr.id,
-                    concrete_struct_id: derefed_expr_concrete_struct_id,
-                    member: member.id,
-                    ty,
-                    member_path,
-                    n_snapshots,
+                _ => None,
+            };
+            let mut derefed_expr: ExprAndId = lexpr;
+            for deref_function in deref_functions.iter().take(*n_derefs) {
+                let cur_expr = expr_function_call(
+                    ctx,
+                    *deref_function,
+                    vec![NamedArg(derefed_expr, None, Mutability::Immutable)],
                     stable_ptr,
-                }))
+                    stable_ptr,
+                )
+                .unwrap();
+
+                derefed_expr = ExprAndId { expr: cur_expr.clone(), id: ctx.exprs.alloc(cur_expr) };
             }
-            _ => Err(ctx
-                .diagnostics
-                .report(&rhs_syntax, TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name })),
-        },
-        TypeLongId::Tuple(_) => {
-            // TODO(spapini): Handle .0, .1, etc. .
-            Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
+            let (_, long_ty) = finalized_snapshot_peeled_ty(ctx, derefed_expr.ty(), &rhs_syntax)?;
+            let derefed_expr_concrete_struct_id = match long_ty {
+                TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
+                    concrete_struct_id
+                }
+                _ => unreachable!(),
+            };
+            let ty = member.ty;
+            let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
+            Ok(Expr::MemberAccess(ExprMemberAccess {
+                expr: derefed_expr.id,
+                concrete_struct_id: derefed_expr_concrete_struct_id,
+                member: member.id,
+                ty,
+                member_path,
+                n_snapshots,
+                stable_ptr,
+            }))
         }
+
         TypeLongId::Snapshot(_) => {
             // TODO(spapini): Handle snapshot members.
             Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
@@ -2470,9 +2459,7 @@ fn member_access_expr(
             &rhs_syntax,
             InternalInferenceError(InferenceError::TypeNotInferred(long_ty.intern(ctx.db))),
         )),
-        TypeLongId::GenericParameter(_)
-        | TypeLongId::Coupon(_)
-        | TypeLongId::FixedSizeArray { .. } => Err(ctx
+        TypeLongId::GenericParameter(_) | TypeLongId::Coupon(_) => Err(ctx
             .diagnostics
             .report(&rhs_syntax, TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name })),
         TypeLongId::Missing(diag_added) => Err(*diag_added),
