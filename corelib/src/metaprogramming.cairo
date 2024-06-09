@@ -294,3 +294,180 @@ impl TupleSplitFixedSizedArraySized10<T> of TupleSplit<[T; 10]> {
         [head, e1, e2, e3, e4, e5, e6, e7, e8, e9]
     }
 }
+
+/// A trait for forwarding a wrapping snapshot from a tuple style struct into a tuple style struct
+/// of the snapshots.
+pub(crate) trait TupleSnapForward<T> {
+    type SnapForward;
+    fn snap_forward(self: @T) -> Self::SnapForward nopanic;
+}
+impl TupleSnapForwardTupleSize0 of TupleSnapForward<()> {
+    type SnapForward = ();
+    fn snap_forward(self: @()) -> () nopanic {
+        ()
+    }
+}
+impl TupleSnapForwardTupleSize1<E0> of TupleSnapForward<(E0,)> {
+    type SnapForward = (@E0,);
+    fn snap_forward(self: @(E0,)) -> (@E0,) nopanic {
+        let (e0,) = self;
+        (e0,)
+    }
+}
+impl TupleSnapForwardTupleSize2<E0, E1> of TupleSnapForward<(E0, E1)> {
+    type SnapForward = (@E0, @E1);
+    fn snap_forward(self: @(E0, E1)) -> (@E0, @E1) nopanic {
+        let (e0, e1) = self;
+        (e0, e1)
+    }
+}
+impl TupleSnapForwardTupleSize3<E0, E1, E2> of TupleSnapForward<(E0, E1, E2)> {
+    type SnapForward = (@E0, @E1, @E2);
+    fn snap_forward(self: @(E0, E1, E2)) -> (@E0, @E1, @E2) nopanic {
+        let (e0, e1, e2) = self;
+        (e0, e1, e2)
+    }
+}
+impl TupleSnapForwardTupleSize4<E0, E1, E2, E3> of TupleSnapForward<(E0, E1, E2, E3)> {
+    type SnapForward = (@E0, @E1, @E2, @E3);
+    fn snap_forward(self: @(E0, E1, E2, E3)) -> (@E0, @E1, @E2, @E3) nopanic {
+        let (e0, e1, e2, e3) = self;
+        (e0, e1, e2, e3)
+    }
+}
+impl TupleSnapForwardTupleSize5<E0, E1, E2, E3, E4> of TupleSnapForward<(E0, E1, E2, E3, E4)> {
+    type SnapForward = (@E0, @E1, @E2, @E3, @E4);
+    fn snap_forward(self: @(E0, E1, E2, E3, E4)) -> (@E0, @E1, @E2, @E3, @E4) nopanic {
+        let (e0, e1, e2, e3, e4) = self;
+        (e0, e1, e2, e3, e4)
+    }
+}
+impl TupleSnapForwardTupleSize6<
+    E0, E1, E2, E3, E4, E5
+> of TupleSnapForward<(E0, E1, E2, E3, E4, E5)> {
+    type SnapForward = (@E0, @E1, @E2, @E3, @E4, @E5);
+    fn snap_forward(self: @(E0, E1, E2, E3, E4, E5)) -> (@E0, @E1, @E2, @E3, @E4, @E5) nopanic {
+        let (e0, e1, e2, e3, e4, e5) = self;
+        (e0, e1, e2, e3, e4, e5)
+    }
+}
+impl TupleSnapForwardTupleSize7<
+    E0, E1, E2, E3, E4, E5, E6
+> of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6)> {
+    type SnapForward = (@E0, @E1, @E2, @E3, @E4, @E5, @E6);
+    fn snap_forward(
+        self: @(E0, E1, E2, E3, E4, E5, E6)
+    ) -> (@E0, @E1, @E2, @E3, @E4, @E5, @E6) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6) = self;
+        (e0, e1, e2, e3, e4, e5, e6)
+    }
+}
+impl TupleSnapForwardTupleSize8<
+    E0, E1, E2, E3, E4, E5, E6, E7
+> of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7)> {
+    type SnapForward = (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7);
+    fn snap_forward(
+        self: @(E0, E1, E2, E3, E4, E5, E6, E7)
+    ) -> (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7) = self;
+        (e0, e1, e2, e3, e4, e5, e6, e7)
+    }
+}
+impl TupleSnapForwardTupleSize9<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8
+> of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8)> {
+    type SnapForward = (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8);
+    fn snap_forward(
+        self: @(E0, E1, E2, E3, E4, E5, E6, E7, E8)
+    ) -> (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8) = self;
+        (e0, e1, e2, e3, e4, e5, e6, e7, e8)
+    }
+}
+impl TupleSnapForwardTupleSize10<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9
+> of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9)> {
+    type SnapForward = (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9);
+    fn snap_forward(
+        self: @(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9)
+    ) -> (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9) = self;
+        (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9)
+    }
+}
+impl TupleSnapForwardFixedSizedArraySized0<T> of TupleSnapForward<[T; 0]> {
+    type SnapForward = [@T; 0];
+    fn snap_forward(self: @[T; 0]) -> [@T; 0] nopanic {
+        []
+    }
+}
+impl TupleSnapForwardFixedSizedArraySized1<T> of TupleSnapForward<[T; 1]> {
+    type SnapForward = [@T; 1];
+    fn snap_forward(self: @[T; 1]) -> [@T; 1] nopanic {
+        let [e0] = self;
+        [e0]
+    }
+}
+impl TupleSnapForwardFixedSizedArraySized2<T> of TupleSnapForward<[T; 2]> {
+    type SnapForward = [@T; 2];
+    fn snap_forward(self: @[T; 2]) -> [@T; 2] nopanic {
+        let [e0, e1] = self;
+        [e0, e1]
+    }
+}
+impl TupleSnapForwardFixedSizedArraySized3<T> of TupleSnapForward<[T; 3]> {
+    type SnapForward = [@T; 3];
+    fn snap_forward(self: @[T; 3]) -> [@T; 3] nopanic {
+        let [e0, e1, e2] = self;
+        [e0, e1, e2]
+    }
+}
+impl TupleSnapForwardFixedSizedArraySized4<T> of TupleSnapForward<[T; 4]> {
+    type SnapForward = [@T; 4];
+    fn snap_forward(self: @[T; 4]) -> [@T; 4] nopanic {
+        let [e0, e1, e2, e3] = self;
+        [e0, e1, e2, e3]
+    }
+}
+impl TupleSnapForwardFixedSizedArraySized5<T> of TupleSnapForward<[T; 5]> {
+    type SnapForward = [@T; 5];
+    fn snap_forward(self: @[T; 5]) -> [@T; 5] nopanic {
+        let [e0, e1, e2, e3, e4] = self;
+        [e0, e1, e2, e3, e4]
+    }
+}
+impl TupleSnapForwardFixedSizedArraySized6<T> of TupleSnapForward<[T; 6]> {
+    type SnapForward = [@T; 6];
+    fn snap_forward(self: @[T; 6]) -> [@T; 6] nopanic {
+        let [e0, e1, e2, e3, e4, e5] = self;
+        [e0, e1, e2, e3, e4, e5]
+    }
+}
+impl TupleSnapForwardFixedSizedArraySized7<T> of TupleSnapForward<[T; 7]> {
+    type SnapForward = [@T; 7];
+    fn snap_forward(self: @[T; 7]) -> [@T; 7] nopanic {
+        let [e0, e1, e2, e3, e4, e5, e6] = self;
+        [e0, e1, e2, e3, e4, e5, e6]
+    }
+}
+impl TupleSnapForwardFixedSizedArraySized8<T> of TupleSnapForward<[T; 8]> {
+    type SnapForward = [@T; 8];
+    fn snap_forward(self: @[T; 8]) -> [@T; 8] nopanic {
+        let [e0, e1, e2, e3, e4, e5, e6, e7] = self;
+        [e0, e1, e2, e3, e4, e5, e6, e7]
+    }
+}
+impl TupleSnapForwardFixedSizedArraySized9<T> of TupleSnapForward<[T; 9]> {
+    type SnapForward = [@T; 9];
+    fn snap_forward(self: @[T; 9]) -> [@T; 9] nopanic {
+        let [e0, e1, e2, e3, e4, e5, e6, e7, e8] = self;
+        [e0, e1, e2, e3, e4, e5, e6, e7, e8]
+    }
+}
+impl TupleSnapForwardFixedSizedArraySized10<T> of TupleSnapForward<[T; 10]> {
+    type SnapForward = [@T; 10];
+    fn snap_forward(self: @[T; 10]) -> [@T; 10] nopanic {
+        let [e0, e1, e2, e3, e4, e5, e6, e7, e8, e9] = self;
+        [e0, e1, e2, e3, e4, e5, e6, e7, e8, e9]
+    }
+}
