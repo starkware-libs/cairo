@@ -546,6 +546,12 @@ pub fn core_libfunc_cost(
                     pre_cost: PreCost::n_builtins(CostTokenType::RangeCheck96, 1),
                 }]
             }
+            CircuitConcreteLibfunc::U96LimbsLessThanGuaranteeVerify(_) => {
+                vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
+            }
+            CircuitConcreteLibfunc::U96SingleLimbLessThanGuaranteeVerify(_) => {
+                vec![ConstCost::steps(0).into()]
+            }
             CircuitConcreteLibfunc::InitCircuitData(libfunc) => {
                 let info = info_provider.circuit_info(&libfunc.ty);
 

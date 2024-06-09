@@ -8,6 +8,7 @@ use cairo_lang_sierra::extensions::circuit::{
 };
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::casts::IntoOrPanic;
+use itertools::chain;
 
 use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -38,6 +39,12 @@ pub fn build(
         }
         CircuitConcreteLibfunc::IntoU96Guarantee(_) => build_identity(builder),
         CircuitConcreteLibfunc::U96GuaranteeVerify(_) => build_u96_guarantee_verify(builder),
+        CircuitConcreteLibfunc::U96LimbsLessThanGuaranteeVerify(libfunc) => {
+            build_u96_limbs_less_than_guarantee_verify(libfunc.limb_count, builder)
+        }
+        CircuitConcreteLibfunc::U96SingleLimbLessThanGuaranteeVerify(_) => {
+            build_u96_single_limb_less_than_guarantee_verify(builder)
+        }
     }
 }
 
@@ -496,6 +503,57 @@ fn build_u96_guarantee_verify(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[rc96]], None)],
+        Default::default(),
+    ))
+}
+
+/// Builds instructions for `u96_limbs_less_than_guarantee_verify` libfunc.
+fn build_u96_limbs_less_than_guarantee_verify(
+    limb_count: usize,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_guarantee] = builder.try_get_refs()?;
+    let guarantee = &expr_guarantee.cells;
+    assert_eq!(guarantee.len(), limb_count * 2);
+    let mut casm_builder = CasmBuilder::default();
+    let lhs_high_limb_idx = limb_count - 1;
+    let rhs_high_limb_idx = 2 * limb_count - 1;
+    let lhs_high_limb = casm_builder.add_var(guarantee[lhs_high_limb_idx].clone());
+    let rhs_high_limb = casm_builder.add_var(guarantee[rhs_high_limb_idx].clone());
+    let next_guarantee: Vec<_> =
+        chain!(&guarantee[..lhs_high_limb_idx], &guarantee[limb_count..rhs_high_limb_idx])
+            .map(|cell| casm_builder.add_var(cell.clone()))
+            .collect();
+    casm_build_extend! {casm_builder,
+        tempvar diff = rhs_high_limb - lhs_high_limb;
+        jump CheckLimb if diff != 0;
+    };
+    let check_limb_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&next_guarantee], None),
+            ("CheckLimb", &[&[diff]], Some(check_limb_handle)),
+        ],
+        Default::default(),
+    ))
+}
+
+/// Builds instructions for `u96_single_limb_less_than_guarantee_verify` libfunc.
+fn build_u96_single_limb_less_than_guarantee_verify(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_guarantee] = builder.try_get_refs()?;
+    let [lhs, rhs] = expr_guarantee.try_unpack()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref lhs;
+        deref rhs;
+    };
+    casm_build_extend!(casm_builder, let diff = rhs - lhs;);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[diff]], None)],
         Default::default(),
     ))
 }
