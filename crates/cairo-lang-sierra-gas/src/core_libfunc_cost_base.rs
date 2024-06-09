@@ -531,8 +531,8 @@ pub fn core_libfunc_cost(
             CircuitConcreteLibfunc::GetOutput(_) => {
                 vec![ConstCost::steps(5).into()]
             }
-            CircuitConcreteLibfunc::U384IsZero(_) => {
-                vec![ConstCost::steps(4).into(), ConstCost::steps(4).into()]
+            CircuitConcreteLibfunc::TryIntoCircuitModulus(_) => {
+                vec![ConstCost::steps(6).into(), ConstCost::steps(7).into()]
             }
             CircuitConcreteLibfunc::GetDescriptor(_) => {
                 vec![ConstCost::steps(6).into()]

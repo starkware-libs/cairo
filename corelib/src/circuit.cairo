@@ -1,5 +1,3 @@
-use core::zeroable;
-
 /// Given two circuit elements, returns a new circuit element representing the circuit that applies
 /// the `addmod` operation to the two input circuits.
 pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>>(
@@ -38,6 +36,12 @@ pub type u96 = core::internal::BoundedInt<0, 79228162514264337593543950335>;
 pub extern type RangeCheck96;
 pub extern type AddMod;
 pub extern type MulMod;
+
+
+/// A type that can be used as a circuit modulus (a u384 that is not zero or one).
+extern type CircuitModulus;
+
+pub extern fn try_into_circuit_modulus(val: [u96; 4]) -> Option<CircuitModulus> nopanic;
 
 /// Converts 'T' into a 'U96Guarantee'.
 /// 'T' must be a a value that fits inside a u96, for example: u8, u96 or BoundedInt<0, 12>.
@@ -95,7 +99,7 @@ pub enum EvalCircuitResult<C> {
 extern fn eval_circuit<C>(
     descriptor: CircuitDescriptor<C>,
     data: CircuitData<C>,
-    modulus: NonZero<u384>,
+    modulus: CircuitModulus,
     zero: ConstZero,
     one: ConstOne,
 ) -> EvalCircuitResult<C> implicits(AddMod, MulMod) nopanic;
@@ -131,12 +135,12 @@ extern type CircuitPartialOutputs<C>;
 /// A type representing a circuit descriptor.
 extern type CircuitDescriptor<C>;
 
-impl CircuitInputAccumulatorDrop<C> of Drop<CircuitInputAccumulator<C>>;
 impl CircuitDataDrop<C> of Drop<CircuitData<C>>;
 impl CircuitDescriptorDrop<C> of Drop<CircuitDescriptor<C>>;
+impl CircuitInputAccumulatorDrop<C> of Drop<CircuitInputAccumulator<C>>;
+impl CircuitModulusDrop of Drop<CircuitModulus>;
 impl CircuitOutputsDrop<C> of Drop<CircuitOutputs<C>>;
 impl CircuitPartialOutputsDrop<C> of Drop<CircuitPartialOutputs<C>>;
-
 
 /// A wrapper for circuit elements, used to construct circuits..
 pub struct CircuitElement<T> {}
@@ -203,24 +207,13 @@ impl InputAccumulatorTraitImpl<C> of InputAccumulatorTrait<CircuitInputAccumulat
     }
 }
 
-extern fn u384_is_zero(a: u384) -> zeroable::IsZeroResult<u384> implicits() nopanic;
-
-impl U384TryIntoNonZero of TryInto<u384, NonZero<u384>> {
-    fn try_into(self: u384) -> Option<NonZero<u384>> {
-        match u384_is_zero(self) {
-            zeroable::IsZeroResult::Zero => Option::None,
-            zeroable::IsZeroResult::NonZero(x) => Option::Some(x),
-        }
-    }
-}
-
 /// A trait for evaluating a circuit.
 pub trait CircuitDescriptorTrait<Descriptor> {
     type CircuitType;
 
     /// Evaluates the circuit with the given data and modulus.
     fn eval(
-        self: Descriptor, data: CircuitData<Self::CircuitType>, modulus: NonZero<u384>
+        self: Descriptor, data: CircuitData<Self::CircuitType>, modulus: CircuitModulus
     ) -> core::circuit::EvalCircuitResult<Self::CircuitType>;
 }
 
@@ -228,7 +221,7 @@ impl CircuitDescriptorImpl<C> of CircuitDescriptorTrait<CircuitDescriptor<C>> {
     type CircuitType = C;
 
     fn eval(
-        self: CircuitDescriptor<C>, data: CircuitData<C>, modulus: NonZero<u384>
+        self: CircuitDescriptor<C>, data: CircuitData<C>, modulus: CircuitModulus
     ) -> core::circuit::EvalCircuitResult<C> {
         eval_circuit::<C>(self, data, modulus, 0, 1)
     }
