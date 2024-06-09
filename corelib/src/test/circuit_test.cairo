@@ -1,7 +1,7 @@
 use core::circuit::{
     RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, CircuitDefinition, circuit_add,
     circuit_mul, circuit_inverse, EvalCircuitResult, FillInputResult, InputAccumulatorTrait,
-    CircuitDescriptorTrait, u384, CircuitOutputsTrait,
+    CircuitDescriptorTrait, u384, CircuitOutputsTrait, try_into_circuit_modulus
 };
 
 
@@ -10,17 +10,6 @@ use core::traits::TryInto;
 #[test]
 fn test_u96() {
     let _a: u96 = 0x123;
-}
-
-/// Helpr function to test if a u384 is zero
-fn try_into_nz(val: u384) -> Option<NonZero<u384>> {
-    val.try_into()
-}
-
-#[test]
-fn test_u384_is_zero() {
-    assert!(try_into_nz(u384 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 }).is_none(),);
-    assert!(try_into_nz(u384 { limb0: 0, limb1: 17, limb2: 0, limb3: 0 }).is_some(),);
 }
 
 #[test]
@@ -47,10 +36,7 @@ fn test_circuit() {
         FillInputResult::Done(data) => data
     };
 
-    let modulus: NonZero::<u384> = u384 { limb0: 1, limb1: 2, limb2: 3, limb3: 4 }
-        .try_into()
-        .unwrap();
-
+    let modulus = try_into_circuit_modulus([1, 2, 3, 4]).unwrap();
     match circ.get_descriptor().eval(data, modulus) {
         EvalCircuitResult::Failure((_, _)) => {},
         EvalCircuitResult::Success(outputs) => { outputs.get_output(out1); }

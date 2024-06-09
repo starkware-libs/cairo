@@ -87,6 +87,7 @@ pub fn get_type_size_map(
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::U96Guarantee(_)) => Some(1),
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitOutputs(_)) => Some(5),
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitPartialOutputs(_)) => Some(6),
+            CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitModulus(_)) => Some(4),
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitData(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::AddMod(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::MulMod(_)) => Some(1),
