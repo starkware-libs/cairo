@@ -4,8 +4,28 @@ pub trait TypeEqual<S, T> {}
 
 impl TypeEqualImpl<T> of TypeEqual<T, T>;
 
-/// A trait to help with implementation for traits of tuple like objects.
-pub(crate) trait TupleHelper<T, const IS_TUPLE: bool> {
+/// Marker trait for types that are tuples.
+/// Currently supports tuples of size 0 to 10.
+pub(crate) trait IsTuple<T>;
+impl IsTupleTupleSize0 of IsTuple<()>;
+impl IsTupleTupleSize1<E0> of IsTuple<(E0,)>;
+impl IsTupleTupleSize2<E0, E1> of IsTuple<(E0, E1)>;
+impl IsTupleTupleSize3<E0, E1, E2> of IsTuple<(E0, E1, E2)>;
+impl IsTupleTupleSize4<E0, E1, E2, E3> of IsTuple<(E0, E1, E2, E3)>;
+impl IsTupleTupleSize5<E0, E1, E2, E3, E4> of IsTuple<(E0, E1, E2, E3, E4)>;
+impl IsTupleTupleSize6<E0, E1, E2, E3, E4, E5> of IsTuple<(E0, E1, E2, E3, E4, E5)>;
+impl IsTupleTupleSize7<E0, E1, E2, E3, E4, E5, E6> of IsTuple<(E0, E1, E2, E3, E4, E5, E6)>;
+impl IsTupleTupleSize8<E0, E1, E2, E3, E4, E5, E6, E7> of IsTuple<(E0, E1, E2, E3, E4, E5, E6, E7)>;
+impl IsTupleTupleSize9<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8
+> of IsTuple<(E0, E1, E2, E3, E4, E5, E6, E7, E8)>;
+impl IsTupleTupleSize10<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9
+> of IsTuple<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9)>;
+
+/// A trait for splitting a tuple into head element and a tail tuple, as well as reconstructing from
+/// them.
+pub(crate) trait TupleSplit<T> {
     /// The type of the first element of the tuple.
     type Head;
     /// The type of the rest of the tuple.
@@ -15,7 +35,7 @@ pub(crate) trait TupleHelper<T, const IS_TUPLE: bool> {
     /// Reconstructs the tuple from the head and the rest.
     fn reconstruct(head: Self::Head, rest: Self::Rest) -> T nopanic;
 }
-impl TupleHelperForTupleSize1<E0> of TupleHelper<(E0,), true> {
+impl TupleSplitTupleSize1<E0> of TupleSplit<(E0,)> {
     type Head = E0;
     type Rest = ();
     fn split_head(self: (E0,)) -> (E0, ()) nopanic {
@@ -26,7 +46,7 @@ impl TupleHelperForTupleSize1<E0> of TupleHelper<(E0,), true> {
         (head,)
     }
 }
-impl TupleHelperForTupleSize2<E0, E1> of TupleHelper<(E0, E1), true> {
+impl TupleSplitTupleSize2<E0, E1> of TupleSplit<(E0, E1)> {
     type Head = E0;
     type Rest = (E1,);
     fn split_head(self: (E0, E1)) -> (E0, (E1,)) nopanic {
@@ -38,7 +58,7 @@ impl TupleHelperForTupleSize2<E0, E1> of TupleHelper<(E0, E1), true> {
         (head, e1)
     }
 }
-impl TupleHelperForTupleSize3<E0, E1, E2> of TupleHelper<(E0, E1, E2), true> {
+impl TupleSplitTupleSize3<E0, E1, E2> of TupleSplit<(E0, E1, E2)> {
     type Head = E0;
     type Rest = (E1, E2);
     fn split_head(self: (E0, E1, E2)) -> (E0, (E1, E2)) nopanic {
@@ -50,7 +70,7 @@ impl TupleHelperForTupleSize3<E0, E1, E2> of TupleHelper<(E0, E1, E2), true> {
         (head, e1, e2)
     }
 }
-impl TupleHelperForTupleSize4<E0, E1, E2, E3> of TupleHelper<(E0, E1, E2, E3), true> {
+impl TupleSplitTupleSize4<E0, E1, E2, E3> of TupleSplit<(E0, E1, E2, E3)> {
     type Head = E0;
     type Rest = (E1, E2, E3);
     fn split_head(self: (E0, E1, E2, E3)) -> (E0, (E1, E2, E3)) nopanic {
@@ -62,7 +82,7 @@ impl TupleHelperForTupleSize4<E0, E1, E2, E3> of TupleHelper<(E0, E1, E2, E3), t
         (head, e1, e2, e3)
     }
 }
-impl TupleHelperForTupleSize5<E0, E1, E2, E3, E4> of TupleHelper<(E0, E1, E2, E3, E4), true> {
+impl TupleSplitTupleSize5<E0, E1, E2, E3, E4> of TupleSplit<(E0, E1, E2, E3, E4)> {
     type Head = E0;
     type Rest = (E1, E2, E3, E4);
     fn split_head(self: (E0, E1, E2, E3, E4)) -> (E0, (E1, E2, E3, E4)) nopanic {
@@ -74,9 +94,7 @@ impl TupleHelperForTupleSize5<E0, E1, E2, E3, E4> of TupleHelper<(E0, E1, E2, E3
         (head, e1, e2, e3, e4)
     }
 }
-impl TupleHelperForTupleSize6<
-    E0, E1, E2, E3, E4, E5
-> of TupleHelper<(E0, E1, E2, E3, E4, E5), true> {
+impl TupleSplitTupleSize6<E0, E1, E2, E3, E4, E5> of TupleSplit<(E0, E1, E2, E3, E4, E5)> {
     type Head = E0;
     type Rest = (E1, E2, E3, E4, E5);
     fn split_head(self: (E0, E1, E2, E3, E4, E5)) -> (E0, (E1, E2, E3, E4, E5)) nopanic {
@@ -88,9 +106,7 @@ impl TupleHelperForTupleSize6<
         (head, e1, e2, e3, e4, e5)
     }
 }
-impl TupleHelperForTupleSize7<
-    E0, E1, E2, E3, E4, E5, E6
-> of TupleHelper<(E0, E1, E2, E3, E4, E5, E6), true> {
+impl TupleSplitTupleSize7<E0, E1, E2, E3, E4, E5, E6> of TupleSplit<(E0, E1, E2, E3, E4, E5, E6)> {
     type Head = E0;
     type Rest = (E1, E2, E3, E4, E5, E6);
     fn split_head(self: (E0, E1, E2, E3, E4, E5, E6)) -> (E0, (E1, E2, E3, E4, E5, E6)) nopanic {
@@ -104,9 +120,9 @@ impl TupleHelperForTupleSize7<
         (head, e1, e2, e3, e4, e5, e6)
     }
 }
-impl TupleHelperForTupleSize8<
+impl TupleSplitTupleSize8<
     E0, E1, E2, E3, E4, E5, E6, E7
-> of TupleHelper<(E0, E1, E2, E3, E4, E5, E6, E7), true> {
+> of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7)> {
     type Head = E0;
     type Rest = (E1, E2, E3, E4, E5, E6, E7);
     fn split_head(
@@ -122,9 +138,9 @@ impl TupleHelperForTupleSize8<
         (head, e1, e2, e3, e4, e5, e6, e7)
     }
 }
-impl TupleHelperForTupleSize9<
+impl TupleSplitTupleSize9<
     E0, E1, E2, E3, E4, E5, E6, E7, E8
-> of TupleHelper<(E0, E1, E2, E3, E4, E5, E6, E7, E8), true> {
+> of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8)> {
     type Head = E0;
     type Rest = (E1, E2, E3, E4, E5, E6, E7, E8);
     fn split_head(
@@ -140,9 +156,9 @@ impl TupleHelperForTupleSize9<
         (head, e1, e2, e3, e4, e5, e6, e7, e8)
     }
 }
-impl TupleHelperForTupleSize10<
+impl TupleSplitTupleSize10<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9
-> of TupleHelper<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9), true> {
+> of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9)> {
     type Head = E0;
     type Rest = (E1, E2, E3, E4, E5, E6, E7, E8, E9);
     fn split_head(
@@ -158,7 +174,7 @@ impl TupleHelperForTupleSize10<
         (head, e1, e2, e3, e4, e5, e6, e7, e8, e9)
     }
 }
-impl TupleHelperForFixedSizedArraySized1<T> of TupleHelper<[T; 1], false> {
+impl TupleSplitFixedSizedArraySized1<T> of TupleSplit<[T; 1]> {
     type Head = T;
     type Rest = [T; 0];
     fn split_head(self: [T; 1]) -> (T, [T; 0]) nopanic {
@@ -170,7 +186,7 @@ impl TupleHelperForFixedSizedArraySized1<T> of TupleHelper<[T; 1], false> {
         [head]
     }
 }
-impl TupleHelperForFixedSizedArraySized2<T> of TupleHelper<[T; 2], false> {
+impl TupleSplitFixedSizedArraySized2<T> of TupleSplit<[T; 2]> {
     type Head = T;
     type Rest = [T; 1];
     fn split_head(self: [T; 2]) -> (T, [T; 1]) nopanic {
@@ -182,7 +198,7 @@ impl TupleHelperForFixedSizedArraySized2<T> of TupleHelper<[T; 2], false> {
         [head, e1]
     }
 }
-impl TupleHelperForFixedSizedArraySized3<T> of TupleHelper<[T; 3], false> {
+impl TupleSplitFixedSizedArraySized3<T> of TupleSplit<[T; 3]> {
     type Head = T;
     type Rest = [T; 2];
     fn split_head(self: [T; 3]) -> (T, [T; 2]) nopanic {
@@ -194,7 +210,7 @@ impl TupleHelperForFixedSizedArraySized3<T> of TupleHelper<[T; 3], false> {
         [head, e1, e2]
     }
 }
-impl TupleHelperForFixedSizedArraySized4<T> of TupleHelper<[T; 4], false> {
+impl TupleSplitFixedSizedArraySized4<T> of TupleSplit<[T; 4]> {
     type Head = T;
     type Rest = [T; 3];
     fn split_head(self: [T; 4]) -> (T, [T; 3]) nopanic {
@@ -206,7 +222,7 @@ impl TupleHelperForFixedSizedArraySized4<T> of TupleHelper<[T; 4], false> {
         [head, e1, e2, e3]
     }
 }
-impl TupleHelperForFixedSizedArraySized5<T> of TupleHelper<[T; 5], false> {
+impl TupleSplitFixedSizedArraySized5<T> of TupleSplit<[T; 5]> {
     type Head = T;
     type Rest = [T; 4];
     fn split_head(self: [T; 5]) -> (T, [T; 4]) nopanic {
@@ -218,7 +234,7 @@ impl TupleHelperForFixedSizedArraySized5<T> of TupleHelper<[T; 5], false> {
         [head, e1, e2, e3, e4]
     }
 }
-impl TupleHelperForFixedSizedArraySized6<T> of TupleHelper<[T; 6], false> {
+impl TupleSplitFixedSizedArraySized6<T> of TupleSplit<[T; 6]> {
     type Head = T;
     type Rest = [T; 5];
     fn split_head(self: [T; 6]) -> (T, [T; 5]) nopanic {
@@ -230,7 +246,7 @@ impl TupleHelperForFixedSizedArraySized6<T> of TupleHelper<[T; 6], false> {
         [head, e1, e2, e3, e4, e5]
     }
 }
-impl TupleHelperForFixedSizedArraySized7<T> of TupleHelper<[T; 7], false> {
+impl TupleSplitFixedSizedArraySized7<T> of TupleSplit<[T; 7]> {
     type Head = T;
     type Rest = [T; 6];
     fn split_head(self: [T; 7]) -> (T, [T; 6]) nopanic {
@@ -242,7 +258,7 @@ impl TupleHelperForFixedSizedArraySized7<T> of TupleHelper<[T; 7], false> {
         [head, e1, e2, e3, e4, e5, e6]
     }
 }
-impl TupleHelperForFixedSizedArraySized8<T> of TupleHelper<[T; 8], false> {
+impl TupleSplitFixedSizedArraySized8<T> of TupleSplit<[T; 8]> {
     type Head = T;
     type Rest = [T; 7];
     fn split_head(self: [T; 8]) -> (T, [T; 7]) nopanic {
@@ -254,7 +270,7 @@ impl TupleHelperForFixedSizedArraySized8<T> of TupleHelper<[T; 8], false> {
         [head, e1, e2, e3, e4, e5, e6, e7]
     }
 }
-impl TupleHelperForFixedSizedArraySized9<T> of TupleHelper<[T; 9], false> {
+impl TupleSplitFixedSizedArraySized9<T> of TupleSplit<[T; 9]> {
     type Head = T;
     type Rest = [T; 8];
     fn split_head(self: [T; 9]) -> (T, [T; 8]) nopanic {
@@ -266,7 +282,7 @@ impl TupleHelperForFixedSizedArraySized9<T> of TupleHelper<[T; 9], false> {
         [head, e1, e2, e3, e4, e5, e6, e7, e8]
     }
 }
-impl TupleHelperForFixedSizedArraySized10<T> of TupleHelper<[T; 10], false> {
+impl TupleSplitFixedSizedArraySized10<T> of TupleSplit<[T; 10]> {
     type Head = T;
     type Rest = [T; 9];
     fn split_head(self: [T; 10]) -> (T, [T; 9]) nopanic {

@@ -356,8 +356,7 @@ impl StorePackingEmptyFixedSizedArray<T> of StorePacking<[T; 0], ()> {
 
 impl TupleNextStore<
     T,
-    const IS_TUPLE: bool,
-    impl TH: core::metaprogramming::TupleHelper<T, IS_TUPLE>,
+    impl TH: core::metaprogramming::TupleSplit<T>,
     impl HeadStore: Store<TH::Head>,
     impl RestStore: Store<TH::Rest>,
     +Drop<TH::Head>,
