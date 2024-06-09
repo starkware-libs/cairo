@@ -743,12 +743,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
                 "Only `_` is valid as a negative impl argument.".into()
             }
-            SemanticDiagnosticKind::UnsupportedTraitItem(kind) => {
-                format!("{kind} items are not yet supported in traits.")
-            }
-            SemanticDiagnosticKind::UnsupportedImplItem(kind) => {
-                format!("{kind} items are not yet supported in impls.")
-            }
             SemanticDiagnosticKind::CouponForExternFunctionNotAllowed => {
                 "Coupon cannot be used with extern functions.".into()
             }
@@ -1102,8 +1096,6 @@ pub enum SemanticDiagnosticKind {
         actual: usize,
     },
     GenericArgOutOfOrder(SmolStr),
-    UnsupportedTraitItem(SmolStr),
-    UnsupportedImplItem(SmolStr),
     CouponForExternFunctionNotAllowed,
     CouponArgumentNoModifiers,
     /// Coupons are disabled in the current crate.

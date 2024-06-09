@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FileIndex, FreeFunctionId,
-    FunctionWithBodyId, ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId,
-    ImplTypeDefId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
-    ModuleTypeAliasId, StructId, SubmoduleId, TraitConstantId, TraitFunctionId, TraitId,
-    TraitImplId, TraitItemId, TraitTypeId, UseId,
+    FunctionWithBodyId, ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplImplDefId,
+    ImplItemId, ImplTypeDefId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
+    ModuleItemId, ModuleTypeAliasId, StructId, SubmoduleId, TraitConstantId, TraitFunctionId,
+    TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
 };
 use cairo_lang_diagnostics::Maybe;
 
@@ -215,6 +215,7 @@ impl HasResolverData for ImplItemId {
             ImplItemId::Function(item) => item.resolver_data(db),
             ImplItemId::Type(item) => item.resolver_data(db),
             ImplItemId::Constant(item) => item.resolver_data(db),
+            ImplItemId::Impl(item) => item.resolver_data(db),
         }
     }
 }
@@ -228,6 +229,12 @@ impl HasResolverData for ImplTypeDefId {
 impl HasResolverData for ImplConstantDefId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.impl_constant_def_resolver_data(*self)
+    }
+}
+
+impl HasResolverData for ImplImplDefId {
+    fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
+        db.impl_impl_def_resolver_data(*self)
     }
 }
 
