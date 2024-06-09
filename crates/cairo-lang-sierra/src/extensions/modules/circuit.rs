@@ -46,6 +46,8 @@ pub const VALUE_SIZE: usize = 4;
 pub const BUILTIN_INSTANCE_SIZE: usize = 7;
 /// A gate is defined by 3 offsets, the first two are the inputs and the third is the output.
 pub const OFFSETS_PER_GATE: usize = 3;
+/// The offset of the values in in the values array.
+pub const ONE_OFFSET: usize = 0;
 
 define_type_hierarchy! {
     pub enum CircuitType {
@@ -702,7 +704,8 @@ impl ConcreteCircuit {
         args: &[GenericArg],
     ) -> Result<Self, SpecializationError> {
         let output_tuple = args_as_single_type(args)?;
-        validate_output_tuple(context, output_tuple.clone())?;
+
+        let circuit_info = get_circuit_info(context, &output_tuple)?;
         Ok(Self {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId {
@@ -714,7 +717,7 @@ impl ConcreteCircuit {
                 storable: false,
                 zero_sized: true,
             },
-            circuit_info: get_circuit_info(context, &output_tuple)?,
+            circuit_info,
         })
     }
 }
@@ -734,25 +737,6 @@ fn validate_is_circuit(
         return Err(SpecializationError::UnsupportedGenericArg);
     }
     Ok(())
-}
-
-/// Validate that `outputs_tuple_ty` is a tuple of circuit components.
-fn validate_output_tuple(
-    context: &dyn TypeSpecializationContext,
-    outputs_tuple_ty: ConcreteTypeId,
-) -> Result<(), SpecializationError> {
-    let struct_generic_args = extract_type_generic_args::<StructType>(context, &outputs_tuple_ty)?;
-
-    let mut generic_args = struct_generic_args.iter();
-    if !matches!(
-        generic_args.next(),
-        Some(GenericArg::UserType(ut))
-        if (*ut == UserTypeId::from_string("Tuple"))
-    ) {
-        return Err(SpecializationError::UnsupportedGenericArg);
-    }
-
-    validate_args_are_circuit_components(context, generic_args)
 }
 
 /// Validate that all the generic arguments are circuit components.
@@ -1305,12 +1289,21 @@ impl NoGenericArgsGenericLibfunc for TryIntoCircuitModulusLibFunc {
 /// the const segment.
 fn get_circuit_info(
     context: &dyn TypeSpecializationContext,
-    output_tuple_ty: &ConcreteTypeId,
+    outputs_tuple_ty: &ConcreteTypeId,
 ) -> Result<CircuitInfo, SpecializationError> {
-    let output_tuple_ty_info = context.get_type_info(output_tuple_ty.clone())?;
+    let struct_generic_args = extract_type_generic_args::<StructType>(context, outputs_tuple_ty)?;
+    let mut generic_args = struct_generic_args.iter();
+    if !matches!(
+        generic_args.next(),
+        Some(GenericArg::UserType(ut))
+        if (*ut == UserTypeId::from_string("Tuple"))
+    ) {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
 
-    // Skip the user type.
-    let circ_outputs = output_tuple_ty_info.long_id.generic_args.iter().skip(1);
+    let circ_outputs = generic_args;
+
+    validate_args_are_circuit_components(context, circ_outputs.clone())?;
 
     let ParsedInputs { mut values, mut mul_offsets } =
         parse_circuit_inputs(context, circ_outputs.clone())?;
@@ -1327,15 +1320,12 @@ fn get_circuit_info(
         .map(|generic_arg| (extract_matches!(generic_arg, GenericArg::Type).clone(), true))
         .collect();
 
-    // The offset of the input that has the value `1`.
-    let one_offset = 0;
-
     while let Some((ty, first_visit)) = stack.pop() {
         let long_id = context.get_type_info(ty.clone())?.long_id;
         let generic_id = long_id.generic_id;
 
-        if generic_id == CircuitInput::ID {
-            // 'ty' is a circuit input, it was already processed in `parse_circuit_inputs`.
+        if values.contains_key(&ty) {
+            // The value was already processed.
             continue;
         }
 
@@ -1375,11 +1365,14 @@ fn get_circuit_info(
                 mul_offsets.push(GateOffsets {
                     lhs: output_offset,
                     rhs: input_offsets.next().unwrap(),
-                    output: one_offset,
+                    output: ONE_OFFSET,
                 });
             } else {
                 return Err(SpecializationError::UnsupportedGenericArg);
             };
+
+            // Make sure all the gate inputs were consumed.
+            assert!(input_offsets.next().is_none());
             values.insert(ty.clone(), output_offset);
         }
     }
@@ -1398,14 +1391,21 @@ fn parse_circuit_inputs<'a>(
 
     let mut inputs: UnorderedHashMap<usize, ConcreteTypeId> = Default::default();
 
+    let mut visited = UnorderedHashSet::<_>::default();
+
     while let Some(ty) = stack.pop() {
+        if !visited.insert(ty.clone()) {
+            // Already visited.
+            continue;
+        }
+
         let long_id = context.get_type_info(ty.clone())?.long_id;
         let generic_id = long_id.generic_id;
         if generic_id == CircuitInput::ID {
             let idx = args_as_single_value(&long_id.generic_args)?
                 .to_usize()
                 .ok_or(SpecializationError::UnsupportedGenericArg)?;
-            inputs.insert(idx, ty);
+            assert!(inputs.insert(idx, ty).is_none());
         } else {
             // generic_id must be a gate. This was validated in `validate_output_tuple`.
             stack.extend(
@@ -1419,7 +1419,6 @@ fn parse_circuit_inputs<'a>(
 
     let mut values: UnorderedHashMap<ConcreteTypeId, usize> = Default::default();
     let n_inputs = inputs.len();
-    let one_offset = 0;
 
     // The reduced_inputs start at n_inputs + 1 since we need to reserve slot 0 for the constant
     // value 1.
@@ -1429,10 +1428,10 @@ fn parse_circuit_inputs<'a>(
     for (idx, (input_idx, ty)) in inputs.iter_sorted().enumerate() {
         // Validate that the input indices are `[0, 1, ..., n_inputs - 1]`.
         require(idx == *input_idx).ok_or(SpecializationError::UnsupportedGenericArg)?;
-        values.insert(ty.clone(), reduced_input_start + idx);
+        assert!(values.insert(ty.clone(), reduced_input_start + idx).is_none());
         // Add the gate `1 * input = result` to reduce the input module the modulus.
         mul_offsets.push(GateOffsets {
-            lhs: one_offset,
+            lhs: ONE_OFFSET,
             rhs: 1 + idx,
             output: reduced_input_start + idx,
         });
