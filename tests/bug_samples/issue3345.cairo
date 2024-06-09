@@ -13,6 +13,7 @@ trait ITree<TContractState> {
 mod example_failure {
     use super::Node;
     use super::ITree;
+    use starknet::storage::LegacyMap;
 
     #[storage]
     struct Storage {

@@ -84,6 +84,8 @@ impl ProposalStore of Store<Proposal> {
 #[starknet::contract]
 mod test_contract {
     use super::Proposal;
+    use starknet::storage::LegacyMap;
+
     #[storage]
     struct Storage {
         _proposals: LegacyMap<u32, Proposal>,

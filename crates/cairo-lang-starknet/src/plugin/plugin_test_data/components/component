@@ -13,6 +13,7 @@ struct MyType {
 mod component {
     use starknet::ContractAddress;
     use super::MyTrait;
+    use starknet::storage::LegacyMap;
 
     #[storage]
     struct Storage {
@@ -62,6 +63,7 @@ struct MyType {
 mod component {
     use starknet::ContractAddress;
     use super::MyTrait;
+    use starknet::storage::LegacyMap;
 
     #[storage]
     struct Storage {
@@ -142,7 +144,7 @@ impl StoreMyType of starknet::Store::<MyType> {
 }
 
 
-lib.cairo:41:1
+lib.cairo:42:1
 #[starknet::interface]
 ^********************^
 MyTraitDispatcherTrait:
@@ -329,7 +331,7 @@ impl MyTraitDispatcherSerde of core::serde::Serde::<MyTraitDispatcher> {
 }
 
 
-lib.cairo:41:1
+lib.cairo:42:1
 #[starknet::interface]
 ^********************^
 starknet_derive:
@@ -383,7 +385,7 @@ impl MyTraitLibraryDispatcherSerde of core::serde::Serde::<MyTraitLibraryDispatc
 }
 
 
-lib.cairo:41:1
+lib.cairo:42:1
 #[starknet::interface]
 ^********************^
 starknet_derive:
@@ -437,7 +439,7 @@ impl MyTraitSafeLibraryDispatcherSerde of core::serde::Serde::<MyTraitSafeLibrar
 }
 
 
-lib.cairo:41:1
+lib.cairo:42:1
 #[starknet::interface]
 ^********************^
 starknet_derive:
@@ -491,7 +493,7 @@ impl MyTraitSafeDispatcherSerde of core::serde::Serde::<MyTraitSafeDispatcher> {
 }
 
 
-lib.cairo:41:1
+lib.cairo:42:1
 #[starknet::interface]
 ^********************^
 starknet_derive:
@@ -536,80 +538,43 @@ component:
 
 
 
-    pub struct ComponentState<TContractState> {
-        pub data: __member_module_data::ComponentMemberState,
-        pub map: __member_module_map::ComponentMemberState,
-        pub my_type_var: __member_module_my_type_var::ComponentMemberState,
-    }
-    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
-    #[inline(always)]
-    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
-        ComponentState::<TContractState> {
-            data: __member_module_data::ComponentMemberState {},
-            map: __member_module_map::ComponentMemberState {},
-            my_type_var: __member_module_my_type_var::ComponentMemberState {},
+#[derive(Drop, Copy)]
+struct ComponentStorageBase {
+    data: starknet::storage::StorageBase<u32>,
+    map: starknet::storage::StorageBase<LegacyMap<u32, u32>>,
+    my_type_var: starknet::storage::StorageBase<super::MyType>,
+}
+impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+    type BaseType = ComponentStorageBase;
+    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+        ComponentStorageBase {
+           data: starknet::storage::StorageBase{ address: selector!("data") },
+           map: starknet::storage::StorageBase{ address: selector!("map") },
+           my_type_var: starknet::storage::StorageBase{ address: selector!("my_type_var") },
         }
     }
-    #[cfg(test)]
-    #[inline(always)]
-    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
-        unsafe_new_component_state::<TContractState>()
-    }
-    
+}
+pub struct ComponentState<TContractState> {
+}
 
-        pub mod __member_module_data {
-        use super::ContractAddress;
-        use super::MyTrait;
-        use super::Event;
-        use super::Log;
-        use super::MyInnerImpl;
-            #[derive(Copy, Drop)]
-            pub struct ComponentMemberState {}
-            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
-                type Value = u32;
-                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
-                }
-            }
-        }
-    pub mod __member_module_map {
-        use super::ContractAddress;
-        use super::MyTrait;
-        use super::Event;
-        use super::Log;
-        use super::MyInnerImpl;
-        #[derive(Copy, Drop)]
-        pub struct ComponentMemberState {}
-
-        impl StorageLegacyMapComponentMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ComponentMemberState> {
-            type Key = u32;
-            type Value = u32;
-            fn address(self: @ComponentMemberState, key: u32) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_from_felt252(
-                    core::hash::LegacyHash::<u32>::hash(0x1af9e30ee4fed507d9432e0f1308eb5bd12221bef97071a48d86951102231be, key))
-            }
-        }
+impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+impl ComponentStateCopy<TContractState> of Copy<ComponentState<TContractState>> {}
+ 
+impl ComponentStateDeref<TContractState> of core::ops::Deref<ComponentState<TContractState>> {
+    type Target = ComponentStorageBase;
+    fn deref(self: ComponentState<TContractState>) -> ComponentStorageBase {
+        self.storage_base()
     }
+}
+pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    ComponentState::<TContractState> {
+    }
+}
 
-        pub mod __member_module_my_type_var {
-        use super::ContractAddress;
-        use super::MyTrait;
-        use super::Event;
-        use super::Log;
-        use super::MyInnerImpl;
-            #[derive(Copy, Drop)]
-            pub struct ComponentMemberState {}
-            impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState> {
-                type Value = super::super::MyType;
-                fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x1d7ac842e8e2a1c4fd94662d0a812cd378294e5156fee62dafbd49a010246c7>()
-                }
-            }
-        }
 
 use starknet::storage::{
     StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapAccessTrait, StorageAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -641,7 +606,7 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:19:20
+lib.cairo:20:20
     #[derive(Drop, starknet::Event)]
                    ^*************^
 starknet_derive:
@@ -685,7 +650,7 @@ impls:
 impl LogDrop of core::traits::Drop::<Log>;
 
 
-lib.cairo:23:20
+lib.cairo:24:20
     #[derive(Drop, starknet::Event)]
                    ^*************^
 starknet_derive:
@@ -703,7 +668,13 @@ impl LogIsEvent of starknet::Event<Log> {
 }
 
 
-lib.cairo:26:5
+impls:
+
+impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
+impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+
+
+lib.cairo:27:5
     #[embeddable_as(MyImpl)]
     ^**********************^
 embeddable:

@@ -10,6 +10,7 @@ trait ITestContract<T> {}
 #[starknet::contract]
 mod test_contract {
     use starknet::StorageAddress;
+    use starknet::storage::LegacyMap;
 
     #[storage]
     struct Storage {

@@ -369,24 +369,37 @@ component:
 pub enum Event {}
 
 
-    pub struct ComponentState<TContractState> {
-    }
-    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
-    #[inline(always)]
-    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
-        ComponentState::<TContractState> {
+#[derive(Drop, Copy)]
+struct ComponentStorageBase {
+}
+impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+    type BaseType = ComponentStorageBase;
+    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+        ComponentStorageBase {
         }
     }
-    #[cfg(test)]
-    #[inline(always)]
-    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
-        unsafe_new_component_state::<TContractState>()
+}
+pub struct ComponentState<TContractState> {
+}
+
+impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+impl ComponentStateCopy<TContractState> of Copy<ComponentState<TContractState>> {}
+ 
+impl ComponentStateDeref<TContractState> of core::ops::Deref<ComponentState<TContractState>> {
+    type Target = ComponentStorageBase;
+    fn deref(self: ComponentState<TContractState>) -> ComponentStorageBase {
+        self.storage_base()
     }
-    
+}
+pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    ComponentState::<TContractState> {
+    }
+}
+
 
 use starknet::storage::{
     StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapAccessTrait, StorageAccessTrait,
 };
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -433,6 +446,12 @@ impl EventIsEvent of starknet::Event<Event> {
     }
 }
 
+
+
+impls:
+
+impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
+impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
 lib.cairo:8:5

@@ -69,6 +69,8 @@
     "0x753332",
     "0x53746f7261676541646472657373",
     "0x53746f726167654261736541646472657373",
+    "0x6a7b2c29970a80ed27aece9988bb1cc827ae461f12e0c42853cc84fb9ac77",
+    "0x1275130f95dda36bcbb6e9d28796c1d7e10b6e9fd5ed083e0ede4b12f613528",
     "0x4275696c74696e436f737473",
     "0x53797374656d",
     "0x16a4c8d7c05909052238a862d8cc3e7975bf05a07b3a69c6b28951083a6d672",
@@ -107,8 +109,10 @@
     "0x6765745f6275696c74696e5f636f737473",
     "0x28",
     "0x77697468647261775f6761735f616c6c",
-    "0x73746f726167655f626173655f616464726573735f636f6e7374",
-    "0x1275130f95dda36bcbb6e9d28796c1d7e10b6e9fd5ed083e0ede4b12f613528",
+    "0x21",
+    "0x20",
+    "0x736e617073686f745f74616b65",
+    "0xad292db4ff05a993c318438c1b6c8a8303266af2da151aa28ccece6726f1f1",
     "0x73746f726167655f616464726573735f66726f6d5f62617365",
     "0x24",
     "0x26",
@@ -152,6 +156,7 @@
     "0x4",
     "0x581",
     "0xffffffffffffffff",
+    "0xd9",
     "0xc9",
     "0xb9",
     "0xa8",
@@ -166,7 +171,7 @@
     "0x36",
     "0x37",
     "0x38",
-    "0x88",
+    "0x98",
     "0x39",
     "0x3a",
     "0x3b",
@@ -175,18 +180,17 @@
     "0x3e",
     "0x3f",
     "0x40",
-    "0x7a",
     "0x41",
     "0x42",
     "0x43",
     "0x44",
     "0x45",
     "0x46",
+    "0x89",
     "0x48",
     "0x49",
     "0x4a",
     "0x4b",
-    "0x73",
     "0x4c",
     "0x4d",
     "0x4e",
@@ -201,6 +205,7 @@
     "0x57",
     "0x58",
     "0x59",
+    "0x80",
     "0x5a",
     "0x5b",
     "0x7f",
@@ -208,7 +213,6 @@
     "0x5d",
     "0x5e",
     "0x5f",
-    "0x60",
     "0x61",
     "0x62",
     "0x63",
@@ -219,6 +223,7 @@
     "0x68",
     "0x69",
     "0x6a",
+    "0x90",
     "0x6b",
     "0x6c",
     "0x6d",
@@ -227,34 +232,51 @@
     "0x70",
     "0x71",
     "0x72",
+    "0x73",
     "0x74",
     "0x75",
     "0x76",
     "0x77",
     "0x79",
+    "0x7a",
     "0x7b",
     "0x7c",
-    "0x15c",
-    "0xe5",
-    "0xea",
-    "0x115",
-    "0xf2",
-    "0xf7",
-    "0x10d",
+    "0x7d",
+    "0x7e",
+    "0x7f",
+    "0x81",
+    "0x82",
+    "0x83",
+    "0x84",
+    "0x85",
+    "0x86",
+    "0x87",
+    "0x88",
+    "0x8a",
+    "0x8b",
+    "0x16c",
+    "0xf5",
+    "0xfa",
+    "0x125",
     "0x102",
     "0x107",
-    "0x119",
-    "0x14c",
-    "0x12d",
-    "0x13f",
-    "0x233",
-    "0x178",
-    "0x17d",
-    "0x222",
-    "0x21e",
+    "0x11d",
+    "0x112",
+    "0x117",
+    "0x129",
+    "0x15c",
+    "0x13d",
+    "0x14f",
+    "0x243",
     "0x188",
     "0x18d",
-    "0x20c",
+    "0x232",
+    "0x22e",
+    "0x198",
+    "0x19d",
+    "0x21c",
+    "0x215",
+    "0x1b8",
     "0x205",
     "0x1a8",
     "0x1f5",
@@ -1106,227 +1128,227 @@
       ],
       [
         33,
-        "storage_base_address_const<521780245902522698637863835114646400086704280925471510886115468919502353704>"
+        "const_as_immediate<Const<felt252, 521780245902522698637863835114646400086704280925471510886115468919502353704>>"
       ],
       [
         34,
-        "storage_address_from_base"
+        "struct_construct<core::starknet::storage::StorageBase::<core::felt252>>"
       ],
       [
         35,
-        "const_as_immediate<Const<u32, 0>>"
+        "snapshot_take<core::starknet::storage::StorageBase::<core::felt252>>"
       ],
       [
         36,
-        "store_temp<u32>"
+        "drop<core::starknet::storage::StorageBase::<core::felt252>>"
       ],
       [
         37,
-        "store_temp<StorageAddress>"
+        "struct_deconstruct<core::starknet::storage::StorageBase::<core::felt252>>"
       ],
       [
         38,
-        "storage_read_syscall"
+        "storage_base_address_from_felt252"
       ],
       [
         39,
-        "const_as_immediate<Const<felt252, 1>>"
+        "storage_address_from_base"
       ],
       [
         40,
-        "felt252_add"
+        "const_as_immediate<Const<u32, 0>>"
       ],
       [
         41,
-        "dup<felt252>"
+        "store_temp<u32>"
       ],
       [
         42,
-        "storage_write_syscall"
+        "storage_read_syscall"
       ],
       [
         43,
-        "const_as_immediate<Const<felt252, -1>>"
+        "const_as_immediate<Const<felt252, 1>>"
       ],
       [
         44,
-        "snapshot_take<Array<felt252>>"
+        "felt252_add"
       ],
       [
         45,
-        "drop<Array<felt252>>"
+        "dup<felt252>"
       ],
       [
         46,
-        "struct_construct<core::array::Span::<core::felt252>>"
+        "storage_write_syscall"
       ],
       [
         47,
-        "struct_construct<Tuple<core::array::Span::<core::felt252>>>"
+        "const_as_immediate<Const<felt252, -1>>"
       ],
       [
         48,
-        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
+        "snapshot_take<Array<felt252>>"
       ],
       [
         49,
-        "store_temp<Array<felt252>>"
+        "drop<Array<felt252>>"
       ],
       [
         50,
-        "const_as_immediate<Const<felt252, 375233589013918064796019>>"
+        "struct_construct<core::array::Span::<core::felt252>>"
       ],
       [
         51,
-        "drop<Unit>"
+        "struct_construct<Tuple<core::array::Span::<core::felt252>>>"
       ],
       [
         52,
-        "const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492915>>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
       ],
       [
         53,
-        "const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>>"
+        "store_temp<Array<felt252>>"
       ],
       [
         54,
-        "const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>"
+        "const_as_immediate<Const<felt252, 375233589013918064796019>>"
       ],
       [
         55,
-        "drop<core::array::Span::<core::felt252>>"
+        "drop<Unit>"
       ],
       [
         56,
-        "enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>"
+        "const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492915>>"
       ],
       [
         57,
-        "store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>"
+        "const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>>"
       ],
       [
         58,
-        "enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>"
+        "const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>"
       ],
       [
         59,
-        "enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>"
+        "drop<core::array::Span::<core::felt252>>"
       ],
       [
         60,
-        "felt252_is_zero"
+        "enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>"
       ],
       [
         61,
-        "enum_init<core::bool, 1>"
+        "store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>"
       ],
       [
         62,
-        "store_temp<core::bool>"
+        "enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>"
       ],
       [
         63,
-        "drop<NonZero<felt252>>"
+        "enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>"
       ],
       [
         64,
-        "enum_init<core::bool, 0>"
+        "felt252_is_zero"
       ],
       [
         65,
-        "bool_not_impl"
+        "enum_init<core::bool, 1>"
       ],
       [
         66,
-        "struct_construct<cairo_level_tests::contracts::test_contract::MyType>"
+        "store_temp<core::bool>"
       ],
       [
         67,
-        "enum_init<core::option::Option::<cairo_level_tests::contracts::test_contract::MyType>, 0>"
+        "drop<NonZero<felt252>>"
       ],
       [
         68,
-        "store_temp<core::option::Option::<cairo_level_tests::contracts::test_contract::MyType>>"
+        "enum_init<core::bool, 0>"
       ],
       [
         69,
-        "enum_init<core::option::Option::<cairo_level_tests::contracts::test_contract::MyType>, 1>"
+        "bool_not_impl"
       ],
       [
         70,
-        "enum_match<core::option::Option::<cairo_level_tests::contracts::test_contract::MyType>>"
+        "struct_construct<cairo_level_tests::contracts::test_contract::MyType>"
       ],
       [
         71,
-        "drop<cairo_level_tests::contracts::test_contract::MyType>"
+        "enum_init<core::option::Option::<cairo_level_tests::contracts::test_contract::MyType>, 0>"
       ],
       [
         72,
-        "contract_address_try_from_felt252"
+        "store_temp<core::option::Option::<cairo_level_tests::contracts::test_contract::MyType>>"
       ],
       [
         73,
-        "u128s_from_felt252"
+        "enum_init<core::option::Option::<cairo_level_tests::contracts::test_contract::MyType>, 1>"
       ],
       [
         74,
-        "drop<u128>"
+        "enum_match<core::option::Option::<cairo_level_tests::contracts::test_contract::MyType>>"
       ],
       [
         75,
-        "drop<ContractAddress>"
+        "drop<cairo_level_tests::contracts::test_contract::MyType>"
       ],
       [
         76,
-        "u128_to_felt252"
+        "contract_address_try_from_felt252"
       ],
       [
         77,
-        "const_as_immediate<Const<felt252, 766151770395363889994273252081996607712327869204808632459022800692259163213>>"
+        "u128s_from_felt252"
       ],
       [
         78,
-        "store_temp<core::array::Span::<core::felt252>>"
+        "drop<u128>"
       ],
       [
         79,
-        "call_contract_syscall"
+        "drop<ContractAddress>"
       ],
       [
         80,
-        "const_as_immediate<Const<felt252, 7891998437966260601762371672023996916393715052535837300>>"
+        "u128_to_felt252"
       ],
       [
         81,
-        "class_hash_const<0>"
+        "const_as_immediate<Const<felt252, 766151770395363889994273252081996607712327869204808632459022800692259163213>>"
       ],
       [
         82,
-        "store_temp<ClassHash>"
+        "store_temp<core::array::Span::<core::felt252>>"
       ],
       [
         83,
-        "library_call_syscall"
+        "call_contract_syscall"
       ],
       [
         84,
-        "store_temp<SegmentArena>"
+        "const_as_immediate<Const<felt252, 7891998437966260601762371672023996916393715052535837300>>"
       ],
       [
         85,
-        "felt252_dict_new<felt252>"
+        "class_hash_const<0>"
       ],
       [
         86,
-        "store_temp<Felt252Dict<felt252>>"
+        "store_temp<ClassHash>"
       ],
       [
         87,
-        "function_call<user@core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash>"
+        "library_call_syscall"
       ],
       [
         88,
-        "drop<SquashedFelt252Dict<felt252>>"
+        "store_temp<SegmentArena>"
       ],
       [
         89,

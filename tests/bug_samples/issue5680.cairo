@@ -1,5 +1,7 @@
 #[starknet::contract]
 mod c1 {
+    use starknet::storage::LegacyMap;
+
     #[starknet::interface]
     trait IMy<T> {
         fn a(self: @T);
