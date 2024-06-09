@@ -41,12 +41,19 @@ pub extern type MulMod;
 /// A type that can be used as a circuit modulus (a u384 that is not zero or one).
 extern type CircuitModulus;
 
-pub extern fn try_into_circuit_modulus(val: [u96; 4]) -> Option<CircuitModulus> nopanic;
+extern fn try_into_circuit_modulus(val: [u96; 4]) -> Option<CircuitModulus> nopanic;
+
+impl U384TryIntoCircuitModulus of TryInto<[u96; 4], CircuitModulus> {
+    fn try_into(self: [u96; 4]) -> Option<CircuitModulus> {
+        try_into_circuit_modulus(self)
+    }
+}
 
 /// Converts 'T' into a 'U96Guarantee'.
 /// 'T' must be a a value that fits inside a u96, for example: u8, u96 or BoundedInt<0, 12>.
 extern fn into_u96_guarantee<T>(val: T) -> U96Guarantee nopanic;
 extern fn u96_guarantee_verify(guarantee: U96Guarantee) implicits(RangeCheck96) nopanic;
+
 
 impl DestructU96Guarantee of Destruct<U96Guarantee> {
     fn destruct(self: U96Guarantee) nopanic {

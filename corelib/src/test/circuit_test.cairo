@@ -1,7 +1,7 @@
 use core::circuit::{
     RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, CircuitDefinition, circuit_add,
     circuit_mul, circuit_inverse, EvalCircuitResult, FillInputResult, InputAccumulatorTrait,
-    CircuitDescriptorTrait, u384, CircuitOutputsTrait, try_into_circuit_modulus
+    CircuitDescriptorTrait, u384, CircuitOutputsTrait, CircuitModulus
 };
 
 
@@ -36,7 +36,7 @@ fn test_circuit() {
         FillInputResult::Done(data) => data
     };
 
-    let modulus = try_into_circuit_modulus([1, 2, 3, 4]).unwrap();
+    let modulus = TryInto::<_, CircuitModulus>::try_into([1, 2, 3, 4]).unwrap();
     match circ.get_descriptor().eval(data, modulus) {
         EvalCircuitResult::Failure((_, _)) => {},
         EvalCircuitResult::Success(outputs) => { outputs.get_output(out1); }
