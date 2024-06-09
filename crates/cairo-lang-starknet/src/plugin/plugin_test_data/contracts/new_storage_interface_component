@@ -1,0 +1,332 @@
+//! > Test expansion of StarkNet storage logic.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[starknet::component]
+mod test_component {
+    #[storage]
+    struct Storage {
+        data: u32
+    }
+}
+
+#[starknet::contract]
+mod hello_starknet {
+    use starknet::storage::{
+        StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map,
+    };
+    use super::test_component::StorageBaseImpl as CompStoreageBaseImpl;
+
+    #[storage]
+    component!(path: super::test_component, storage: test_component_storage, event: ABC);
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        test_component_storage: super::test_component::Storage,
+        member: u32,
+    }
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        ABC: super::test_component::Event,
+    }
+
+    #[external(v0)]
+    fn get_data(self: @ContractState) -> u32 {
+        // self.test_component_storage.data.read()
+        1
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::component]
+mod test_component {
+    #[storage]
+    struct Storage {
+        data: u32
+    }
+}
+
+#[starknet::contract]
+mod hello_starknet {
+    use starknet::storage::{
+        StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map,
+    };
+    use super::test_component::StorageBaseImpl as CompStoreageBaseImpl;
+
+    #[storage]
+    component!(path: super::test_component, storage: test_component_storage, event: ABC);
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        test_component_storage: super::test_component::Storage,
+        member: u32,
+    }
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        ABC: super::test_component::Event,
+    }
+
+    #[external(v0)]
+    fn get_data(self: @ContractState) -> u32 {
+        // self.test_component_storage.data.read()
+        1
+    }
+}
+
+lib.cairo:1:1
+#[starknet::component]
+^********************^
+component:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
+
+
+#[derive(Drop, Copy)]
+struct ComponentStorageBase {
+    data: starknet::storage::StorageBase<u32>,
+}
+impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+    type BaseType = ComponentStorageBase;
+    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+        ComponentStorageBase {
+           data: starknet::storage::StorageBase{ address: selector!("data") },
+        }
+    }
+}
+pub struct ComponentState<TContractState> {
+}
+
+impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+impl ComponentStateCopy<TContractState> of Copy<ComponentState<TContractState>> {}
+ 
+impl ComponentStateDeref<TContractState> of core::ops::Deref<ComponentState<TContractState>> {
+    type Target = ComponentStorageBase;
+    fn deref(self: ComponentState<TContractState>) -> ComponentStorageBase {
+        self.storage_base()
+    }
+}
+pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    ComponentState::<TContractState> {
+    }
+}
+
+
+use starknet::storage::{
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapAccessTrait, StorageAccessTrait,
+};
+pub trait HasComponent<TContractState> {
+    fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
+    fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
+    fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
+    fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
+    fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+}
+
+
+
+impls:
+
+impl EventDrop of core::traits::Drop::<Event>;
+
+
+lib.cairo:1:1
+#[starknet::component]
+^********************^
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
+
+
+impls:
+
+impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
+impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+
+
+lib.cairo:9:1
+#[starknet::contract]
+^*******************^
+contract:
+
+
+
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    member: starknet::storage::StorageBase<u32>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           member: starknet::storage::StorageBase{ address: selector!("member") },
+        }
+    }
+}
+pub struct ContractState {
+        pub test_component_storage: super::test_component::ComponentState<ContractState>,
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+impl ContractStateCopy of Copy<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::Deref<ContractState> {
+    type Target = ContractStorageBase;
+    fn deref(self: ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+            test_component_storage: super::test_component::unsafe_new_component_state::<ContractState>(),
+    }
+}
+
+use starknet::storage::{
+    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapAccessTrait, StorageAccessTrait,
+};
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: felt252 = 0x2729608196e6584ce1a9573352ca9dfdbc7de6b1a59baf76cec5a5d870a3d78;
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = get_data(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<u32>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+
+pub mod __external {
+    pub use super::__wrapper__get_data as get_data;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+impl HasComponentImpl_test_component of super::test_component::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @super::test_component::ComponentState<ContractState> {
+                 @super::test_component::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_component_mut(ref self: ContractState) -> super::test_component::ComponentState<ContractState> {
+        super::test_component::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @super::test_component::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: super::test_component::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: core::traits::Into<S, super::test_component::Event>>(ref self: super::test_component::ComponentState<ContractState>, event: S) {
+        let event: super::test_component::Event = core::traits::Into::into(event);
+        let mut contract = super::test_component::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::ABC(event));
+    }
+}
+
+
+impls:
+
+impl EventDrop of core::traits::Drop::<Event>;
+
+
+lib.cairo:26:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+            Event::ABC(val) => {
+                core::array::ArrayTrait::append(ref keys, selector!("ABC"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ABC") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::ABC(val));
+        }
+        Option::None
+    }
+}
+impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
+    fn into(self: super::test_component::Event) -> Event {
+        Event::ABC(self)
+    }
+}
+
+
+
+impls:
+
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+
+//! > expected_diagnostics

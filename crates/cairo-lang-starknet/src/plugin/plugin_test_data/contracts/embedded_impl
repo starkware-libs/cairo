@@ -540,36 +540,38 @@ contract:
 pub enum Event {}
 
 
-    pub struct ContractState {
-        pub value: __member_module_value::ContractMemberState,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            value: __member_module_value::ContractMemberState {},
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    value: starknet::storage::StorageBase<felt252>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           value: starknet::storage::StorageBase{ address: selector!("value") },
         }
     }
-    #[cfg(test)]
-    #[inline(always)]
-    pub fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-    
+}
+pub struct ContractState {
+}
 
-        pub mod __member_module_value {
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = felt252;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x1afeeaff0ed5cee7d05a21078399c2f56226b0cd5657062500cef4c4e736f85>()
-                }
-            }
-        }
+impl ContractStateDrop of Drop<ContractState> {}
+impl ContractStateCopy of Copy<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::Deref<ContractState> {
+    type Target = ContractStorageBase;
+    fn deref(self: ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+
 use starknet::storage::{
     StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapAccessTrait, StorageAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x24989c51cc02d16815c925171e8167063fde5b6487bb15a58d126a7bc4f3591;
@@ -632,6 +634,13 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+
+
+
+impls:
+
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 //! > expected_diagnostics
 
@@ -1478,23 +1487,36 @@ contract:
 pub enum Event {}
 
 
-    pub struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
         }
     }
-    #[cfg(test)]
-    #[inline(always)]
-    pub fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
+}
+pub struct ContractState {
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+impl ContractStateCopy of Copy<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::Deref<ContractState> {
+    type Target = ContractStorageBase;
+    fn deref(self: ContractState) -> ContractStorageBase {
+        self.storage_base()
     }
-    
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+
 use starknet::storage::{
     StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapAccessTrait, StorageAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b;
@@ -1563,6 +1585,13 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+
+
+
+impls:
+
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
@@ -2013,23 +2042,36 @@ contract:
 pub enum Event {}
 
 
-    pub struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
         }
     }
-    #[cfg(test)]
-    #[inline(always)]
-    pub fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
+}
+pub struct ContractState {
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+impl ContractStateCopy of Copy<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::Deref<ContractState> {
+    type Target = ContractStorageBase;
+    fn deref(self: ContractState) -> ContractStorageBase {
+        self.storage_base()
     }
-    
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+
 use starknet::storage::{
     StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapAccessTrait, StorageAccessTrait,
 };
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47;
@@ -2092,5 +2134,12 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+
+
+
+impls:
+
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 //! > expected_diagnostics

@@ -1,5 +1,5 @@
 use core::traits::Into;
-use core::poseidon::HashState;
+use core::pedersen::HashState;
 use core::hash::HashStateTrait;
 use starknet::storage_access::StorageBaseAddress;
 use starknet::SyscallResult;
@@ -13,19 +13,28 @@ pub trait StorageMemberAddressTrait<TMemberState> {
 }
 
 /// Trait for accessing any contract/component storage member.
+#[deprecated(feature: "StorageMemberAccessTrait", note: "Use `StorageAccessTrait` instead.")]
 pub trait StorageMemberAccessTrait<TMemberState> {
     type Value;
-    fn read(self: @TMemberState) -> Self::Value;
-    fn write(ref self: TMemberState, value: Self::Value);
+    fn read(member: @TMemberState) -> Self::Value;
+    fn write(ref member: @TMemberState, value: Self::Value);
 }
 
-/// Implementation of StorageMemberAccessTrait for types that implement StorageMemberAddressTrait.
+/// Trait for accessing any contract/component storage member.
+pub trait StorageAccessTrait<TMemberState> {
+    type Value;
+    fn read(self: @TMemberState) -> Self::Value;
+    fn write(self: @TMemberState, value: Self::Value);
+}
+
+
+/// Implementation of StorageAccessTrait for types that implement StorageMemberAddressTrait.
 pub impl StorageMemberAccessImpl<
     TMemberState,
     +StorageMemberAddressTrait<TMemberState>,
     +starknet::Store<StorageMemberAddressTrait::<TMemberState>::Value>,
     +Drop<TMemberState>,
-> of StorageMemberAccessTrait<TMemberState> {
+> of StorageAccessTrait<TMemberState> {
     type Value = StorageMemberAddressTrait::<TMemberState>::Value;
     fn read(self: @TMemberState) -> Self::Value {
         // Only address_domain 0 is currently supported.
@@ -34,7 +43,7 @@ pub impl StorageMemberAccessImpl<
             starknet::Store::<Self::Value>::read(address_domain, self.address())
         )
     }
-    fn write(ref self: TMemberState, value: Self::Value) {
+    fn write(self: @TMemberState, value: Self::Value) {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
         let write_result = starknet::Store::<
@@ -52,12 +61,24 @@ pub trait StorageLegacyMapMemberAddressTrait<TMemberState> {
 }
 
 /// Trait for accessing any contract/component storage member.
+#[deprecated(
+    feature: "StorageLegacyMapMemberAccessTrait", note: "Use `StorageMapAccessTrait` instead."
+)]
 pub trait StorageLegacyMapMemberAccessTrait<TMemberState> {
     type Key;
     type Value;
-    fn read(self: @TMemberState, key: Self::Key) -> Self::Value;
-    fn write(ref self: TMemberState, key: Self::Key, value: Self::Value);
+    fn read(member: @TMemberState, key: Self::Key) -> Self::Value;
+    fn write(ref member: @TMemberState, key: Self::Key, value: Self::Value);
 }
+
+/// Trait for accessing any contract/component storage member.
+pub trait StorageMapAccessTrait<TMemberState> {
+    type Key;
+    type Value;
+    fn read(self: @TMemberState, key: Self::Key) -> Self::Value;
+    fn write(self: @TMemberState, key: Self::Key, value: Self::Value);
+}
+
 
 /// Trait for getting the address of a contract/component map storage member.
 pub trait StorageMapMemberAddressTrait<TMemberState> {
@@ -66,7 +87,7 @@ pub trait StorageMapMemberAddressTrait<TMemberState> {
     fn address(self: @TMemberState) -> starknet::StorageBaseAddress;
 }
 
-/// Implementation of StorageLegacyMapMemberAccessTrait for types that implement
+/// Implementation of StorageMapAccessTrait for types that implement
 /// StorageLegacyMapMemberAddressTrait.
 pub impl StorageLegacyMapMemberAccessImpl<
     TMemberState,
@@ -74,7 +95,7 @@ pub impl StorageLegacyMapMemberAccessImpl<
     +starknet::Store<StorageLegacyMapMemberAddressTrait::<TMemberState>::Value>,
     +Drop<TMemberState>,
     +PanicDestruct<StorageLegacyMapMemberAddressTrait::<TMemberState>::Value>,
-> of StorageLegacyMapMemberAccessTrait<TMemberState> {
+> of StorageMapAccessTrait<TMemberState> {
     type Key = StorageLegacyMapMemberAddressTrait::<TMemberState>::Key;
     type Value = StorageLegacyMapMemberAddressTrait::<TMemberState>::Value;
     fn read(self: @TMemberState, key: Self::Key) -> Self::Value {
@@ -84,7 +105,7 @@ pub impl StorageLegacyMapMemberAccessImpl<
             starknet::Store::<Self::Value>::read(address_domain, self.address(key))
         )
     }
-    fn write(ref self: TMemberState, key: Self::Key, value: Self::Value) {
+    fn write(self: @TMemberState, key: Self::Key, value: Self::Value) {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
         starknet::SyscallResultTrait::unwrap_syscall(
@@ -170,7 +191,7 @@ pub struct StoragePath<T> {
 }
 
 /// The hash state of a storage path.
-type StoragePathHashState = core::poseidon::HashState;
+type StoragePathHashState = core::pedersen::HashState;
 
 impl StoragePathCopy<T> of core::traits::Copy<StoragePath<T>> {}
 impl StoragePathDrop<T> of core::traits::Drop<StoragePath<T>> {}
@@ -184,11 +205,7 @@ trait StoragePathTrait<T> {
 
 impl StoragePathImpl<T> of StoragePathTrait<T> {
     fn new(init_value: felt252) -> StoragePath<T> {
-        StoragePath {
-            hash_state: core::hash::HashStateTrait::update(
-                core::poseidon::PoseidonTrait::new(), init_value
-            )
-        }
+        StoragePath { hash_state: core::pedersen::PedersenTrait::new(init_value) }
     }
     fn finalize(self: StoragePath<T>) -> StorageBaseAddress {
         storage_base_address_from_felt252(self.hash_state.finalize())
@@ -211,7 +228,7 @@ impl StorableStoragePathAsPointer<T, +starknet::Store<T>> of StorageAsPointer<St
     }
 }
 
-/// An implementation of `StorageAsPointer` for any type that implements `StorageMemberAccessTrait`
+/// An implementation of `StorageAsPointer` for any type that implements `StorageAccessTrait`
 /// and `Store`.
 impl StorageMemberStateAsPointer<
     TMemberState,
@@ -225,19 +242,22 @@ impl StorageMemberStateAsPointer<
 }
 
 /// Trait for updating the hash state with a value, using an `entry` method.
+// TODO(Gil): Once associated types are stabilized, make `K` and `V` associated types of this trait.
 pub trait StoragePathEntry<C> {
     type Key;
     type Value;
-    fn entry(self: StoragePath<C>, key: Self::Key) -> StoragePath<Self::Value>;
+    fn entry(self: C, key: Self::Key) -> StoragePath<Self::Value>;
 }
 
 /// A struct that represents a map in a contract storage.
-#[phantom]
+// #[phantom]
 pub struct Map<K, V> {}
+
+type LegacyMap<K, V> = Map<K, V>;
 
 impl StoragePathEntryMap<
     K, V, +core::hash::Hash<K, StoragePathHashState>
-> of StoragePathEntry<Map<K, V>> {
+> of StoragePathEntry<StoragePath<Map<K, V>>> {
     type Key = K;
     type Value = V;
     #[inline(always)]
@@ -254,18 +274,26 @@ impl StoragePathEntryMap<
 
 /// A trait that binds a storage path to a struct, and the struct storage node (a storage node is a
 /// struct that all its fields are storage paths, one for each member of the original struct).
-trait StorageNodeTrait<T> {
+pub trait StorageNode<T> {
     type NodeType;
     fn storage_node(self: StoragePath<T>) -> Self::NodeType;
 }
 
+impl StorageNodeDeref<T, +StorageNode<T>> of core::ops::Deref<StoragePath<T>> {
+    type Target = StorageNode::<T>::NodeType;
+    fn deref(self: StoragePath<T>) -> Self::Target {
+        self.storage_node()
+    }
+}
 
 /// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
-#[derive(Copy, Drop)]
 struct PendingStoragePath<T> {
     hash_state: StoragePathHashState,
     pending_key: felt252
 }
+
+impl PendingStoragePathDrop<T> of Drop<PendingStoragePath<T>> {}
+impl PendingStoragePathCopy<T> of Copy<PendingStoragePath<T>> {}
 
 /// An implementation of 'StorageAsPath' for `PendingStoragePath`.
 impl PendingStoragePathAsPath<T> of StorageAsPath<PendingStoragePath<T>> {
@@ -277,16 +305,15 @@ impl PendingStoragePathAsPath<T> of StorageAsPath<PendingStoragePath<T>> {
     }
 }
 
-
-/// An implementation of `StorageAsPath` for any type that implements StorageNodeTrait.
-impl StorageNodeAsPath<
+pub impl StorageMemberDeref<
     TMemberState,
     +StorageMemberAddressTrait<TMemberState>,
-    +StorageNodeTrait<StorageMemberAddressTrait::<TMemberState>::Value>,
-> of StorageAsPath<TMemberState> {
-    type Value = StorageMemberAddressTrait::<TMemberState>::Value;
-    fn as_path(self: @TMemberState) -> StoragePath<Self::Value> {
-        StoragePathTrait::new(self.address().into())
+    +StorageNode<StorageMemberAddressTrait::<TMemberState>::Value>,
+    +Drop<TMemberState>,
+> of core::ops::Deref<TMemberState> {
+    type Target = StoragePath<StorageMemberAddressTrait::<TMemberState>::Value>;
+    fn deref(self: TMemberState) -> Self::Target {
+        self.as_path()
     }
 }
 
@@ -301,6 +328,114 @@ impl MapAsPath<
         >;
     fn as_path(self: @TMemberState) -> StoragePath<Self::Value> {
         StoragePathTrait::new(self.address().into())
+    }
+}
+
+
+pub struct StorageBase<T> {
+    pub address: felt252,
+}
+
+pub trait StorageBaseTrait<T> {
+    type BaseType;
+    fn storage_base(self: @T) -> Self::BaseType;
+}
+
+impl StorageBaseDrop<T> of Drop<StorageBase<T>> {}
+impl StorageBaseCopy<T> of Copy<StorageBase<T>> {}
+
+impl StorageBaseAsPath<T> of StorageAsPath<StorageBase<T>> {
+    type Value = T;
+    fn as_path(self: @StorageBase<T>) -> StoragePath<T> {
+        StoragePathTrait::new(*self.address)
+    }
+}
+
+impl StorageBaseDeref<T> of core::ops::Deref<StorageBase<T>> {
+    type Target = StoragePath<T>;
+    fn deref(self: StorageBase<T>) -> Self::Target {
+        self.as_path()
+    }
+}
+
+
+/// Shortcut impls. These are not necessary, but they allow for less method call in the code.
+
+/// An implementation of `StorageAsPath` for any type that implements StorageNode.
+impl StorageNodeAsPath<
+    TMemberState,
+    +StorageMemberAddressTrait<TMemberState>,
+    +StorageNode<StorageMemberAddressTrait::<TMemberState>::Value>,
+> of StorageAsPath<TMemberState> {
+    type Value = StorageMemberAddressTrait::<TMemberState>::Value;
+    fn as_path(self: @TMemberState) -> StoragePath<Self::Value> {
+        StoragePathTrait::new(self.address().into())
+    }
+}
+
+/// Implement as_ptr for any type that implements StorageAsPath and Store.
+impl StorablePathableStorageAsPointer<
+    T, +StorageAsPath<T>, +starknet::Store<StorageAsPath::<T>::Value>,
+> of StorageAsPointer<T> {
+    type Value = StorageAsPath::<T>::Value;
+    fn as_ptr(self: @T) -> StoragePointer0Offset<StorageAsPath::<T>::Value> {
+        let path = self.as_path();
+        path.as_ptr()
+    }
+}
+
+/// Implement StorageMemberAccessImpl for any type that implements StorageAsPointer and Store.
+impl StorablePointerMemberAccessImpl<
+    T,
+    +StorageAsPointer<T>,
+    +starknet::Store<StorageAsPointer::<T>::Value>,
+    +Drop<T>,
+    +Drop<StorageAsPointer::<T>::Value>,
+    +Copy<StorageAsPointer::<T>::Value>,
+> of StorageAccessTrait<T> {
+    type Value = StorageAsPointer::<T>::Value;
+    fn read(self: @T) -> Self::Value {
+        self.as_ptr().read()
+    }
+    fn write(self: @T, value: Self::Value) {
+        self.as_ptr().write(value)
+    }
+}
+
+/// Implement StoragePathEntry for any type that implements StoragePath and StoragePathEntry.
+impl PathableStorageEntryImpl<
+    T,
+    impl PathImpl: StorageAsPath<T>,
+    impl EntryImpl: StoragePathEntry<StoragePath<StorageAsPath::<T>::Value>>,
+    +Drop<T>,
+    +Drop<EntryImpl::Key>,
+> of StoragePathEntry<T> {
+    type Key = EntryImpl::Key;
+    type Value = EntryImpl::Value;
+    fn entry(self: T, key: Self::Key) -> StoragePath<Self::Value> {
+        let path = PathImpl::as_path(@self);
+        EntryImpl::entry(path, key)
+    }
+}
+
+/// Implement StorageMapAccessTrait for any type that implements StoragePathEntry and Store.
+impl StorableEntryAccess<
+    T,
+    impl EntryImpl: StoragePathEntry<T>,
+    +starknet::Store<EntryImpl::Value>,
+    +Drop<T>,
+    +Copy<T>,
+    +Drop<EntryImpl::Value>
+> of StorageMapAccessTrait<T> {
+    type Key = EntryImpl::Key;
+    type Value = EntryImpl::Value;
+    #[inline(always)]
+    fn read(self: @T, key: EntryImpl::Key) -> EntryImpl::Value {
+        (*self).entry(key).as_ptr().read()
+    }
+    #[inline(always)]
+    fn write(self: @T, key: EntryImpl::Key, value: EntryImpl::Value) {
+        (*self).entry(key).as_ptr().write(value)
     }
 }
 

@@ -75,7 +75,7 @@ impl ComponentsGenerationData {
                      $component_path$::{HAS_COMPONENT_TRAIT}<{CONTRACT_STATE_NAME}> {{
            fn get_component(self: @{CONTRACT_STATE_NAME}) -> \
                      @$component_path$::{CONCRETE_COMPONENT_STATE_NAME} {{
-               self.$storage_name$
+                        @$component_path$::unsafe_new_component_state::<{CONTRACT_STATE_NAME}>()
            }}
            fn get_component_mut(ref self: {CONTRACT_STATE_NAME}) -> \
                      $component_path$::{CONCRETE_COMPONENT_STATE_NAME} {{
@@ -206,7 +206,7 @@ impl ContractSpecificGenerationData {
             &formatdoc! {"
                 use starknet::storage::{{
                     StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-                    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+                    StorageMapAccessTrait, StorageAccessTrait,
                 }};
                 $test_config$
                 $entry_points_code$

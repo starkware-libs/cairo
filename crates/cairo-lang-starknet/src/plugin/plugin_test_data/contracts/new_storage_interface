@@ -12,6 +12,8 @@ trait HelloStarknetTrait<TContractState> {
     fn get_balance(self: @TContractState) -> usize;
 
     fn get_user_balance(self: @TContractState, user_id: usize) -> usize;
+    fn set_user_balance(self: @TContractState, user_id: usize, balance: usize);
+    fn get_legacy_user_balance(self: @TContractState, user_id: usize) -> usize;
 
     fn get_user_balance_subbalance(
         self: @TContractState, user_id: usize, subbalance_id: usize
@@ -29,8 +31,7 @@ struct BalancePair {
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
-        StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map,
-        StorageNodeTrait
+        StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map, LegacyMap,
     };
     use super::BalancePair;
     #[storage]
@@ -38,6 +39,7 @@ mod hello_starknet {
         balance: usize,
         user_balance: Map<usize, usize>,
         user_balance_subbalance: Map<usize, Map<usize, usize>>,
+        legacy_map_balace: LegacyMap<usize, usize>,
         balance_pair: BalancePair,
     }
 
@@ -49,27 +51,27 @@ mod hello_starknet {
             balance_ptr.write(balance_ptr.read() + amount);
         }
         fn get_balance(self: @ContractState) -> usize {
-            self.balance.as_ptr().read()
+            self.balance.read()
         }
         fn get_user_balance(self: @ContractState, user_id: usize) -> usize {
-            self.user_balance.as_path().entry(user_id).as_ptr().read()
+            self.user_balance.entry(user_id).read()
+        }
+        fn get_legacy_user_balance(self: @ContractState, user_id: usize) -> usize {
+            self.legacy_map_balace.read(user_id)
+        }
+        fn set_user_balance(self: @ContractState, user_id: usize, balance: usize) {
+            self.user_balance.entry(user_id).write(balance);
         }
         fn get_user_balance_subbalance(
             self: @ContractState, user_id: usize, subbalance_id: usize
         ) -> usize {
-            self
-                .user_balance_subbalance
-                .as_path()
-                .entry(user_id)
-                .entry(subbalance_id)
-                .as_ptr()
-                .read()
+            self.user_balance_subbalance.as_path().entry(user_id).entry(subbalance_id).read()
         }
         fn get_balance_pair_balance1(self: @ContractState) -> u256 {
-            self.balance_pair.as_path().storage_node().balance1.as_path().as_ptr().read()
+            self.balance_pair.balance1.read()
         }
         fn get_balance_pair_balance2(self: @ContractState) -> felt252 {
-            self.balance_pair.as_path().storage_node().balance2.as_path().as_ptr().read()
+            self.balance_pair.balance2.read()
         }
     }
 }
@@ -85,6 +87,8 @@ trait HelloStarknetTrait<TContractState> {
     fn get_balance(self: @TContractState) -> usize;
 
     fn get_user_balance(self: @TContractState, user_id: usize) -> usize;
+    fn set_user_balance(self: @TContractState, user_id: usize, balance: usize);
+    fn get_legacy_user_balance(self: @TContractState, user_id: usize) -> usize;
 
     fn get_user_balance_subbalance(
         self: @TContractState, user_id: usize, subbalance_id: usize
@@ -102,8 +106,7 @@ struct BalancePair {
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
-        StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map,
-        StorageNodeTrait
+        StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map, LegacyMap,
     };
     use super::BalancePair;
     #[storage]
@@ -111,6 +114,7 @@ mod hello_starknet {
         balance: usize,
         user_balance: Map<usize, usize>,
         user_balance_subbalance: Map<usize, Map<usize, usize>>,
+        legacy_map_balace: LegacyMap<usize, usize>,
         balance_pair: BalancePair,
     }
 
@@ -122,27 +126,27 @@ mod hello_starknet {
             balance_ptr.write(balance_ptr.read() + amount);
         }
         fn get_balance(self: @ContractState) -> usize {
-            self.balance.as_ptr().read()
+            self.balance.read()
         }
         fn get_user_balance(self: @ContractState, user_id: usize) -> usize {
-            self.user_balance.as_path().entry(user_id).as_ptr().read()
+            self.user_balance.entry(user_id).read()
+        }
+        fn get_legacy_user_balance(self: @ContractState, user_id: usize) -> usize {
+            self.legacy_map_balace.read(user_id)
+        }
+        fn set_user_balance(self: @ContractState, user_id: usize, balance: usize) {
+            self.user_balance.entry(user_id).write(balance);
         }
         fn get_user_balance_subbalance(
             self: @ContractState, user_id: usize, subbalance_id: usize
         ) -> usize {
-            self
-                .user_balance_subbalance
-                .as_path()
-                .entry(user_id)
-                .entry(subbalance_id)
-                .as_ptr()
-                .read()
+            self.user_balance_subbalance.as_path().entry(user_id).entry(subbalance_id).read()
         }
         fn get_balance_pair_balance1(self: @ContractState) -> u256 {
-            self.balance_pair.as_path().storage_node().balance1.as_path().as_ptr().read()
+            self.balance_pair.balance1.read()
         }
         fn get_balance_pair_balance2(self: @ContractState) -> felt252 {
-            self.balance_pair.as_path().storage_node().balance2.as_path().as_ptr().read()
+            self.balance_pair.balance2.read()
         }
     }
 }
@@ -159,6 +163,8 @@ trait HelloStarknetTraitDispatcherTrait<T> {
     fn get_balance(self: T) -> usize;
 
     fn get_user_balance(self: T, user_id: usize) -> usize;
+    fn set_user_balance(self: T, user_id: usize, balance: usize);
+    fn get_legacy_user_balance(self: T, user_id: usize) -> usize;
 
     fn get_user_balance_subbalance(
 self: T, user_id: usize, subbalance_id: usize
@@ -209,6 +215,34 @@ impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<Hello
         let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get_user_balance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn set_user_balance(self: HelloStarknetTraitDispatcher, user_id: usize, balance: usize) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<usize>::serialize(@user_id, ref __calldata__);
+        core::serde::Serde::<usize>::serialize(@balance, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("set_user_balance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+    fn get_legacy_user_balance(self: HelloStarknetTraitDispatcher, user_id: usize) -> usize {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<usize>::serialize(@user_id, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_legacy_user_balance"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
@@ -318,6 +352,34 @@ impl HelloStarknetTraitLibraryDispatcherImpl of HelloStarknetTraitDispatcherTrai
             'Returned data too short',
         )
     }
+    fn set_user_balance(self: HelloStarknetTraitLibraryDispatcher, user_id: usize, balance: usize) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<usize>::serialize(@user_id, ref __calldata__);
+        core::serde::Serde::<usize>::serialize(@balance, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("set_user_balance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+    fn get_legacy_user_balance(self: HelloStarknetTraitLibraryDispatcher, user_id: usize) -> usize {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<usize>::serialize(@user_id, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_legacy_user_balance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
 
     fn get_user_balance_subbalance(
 self: HelloStarknetTraitLibraryDispatcher, user_id: usize, subbalance_id: usize
@@ -380,6 +442,10 @@ trait HelloStarknetTraitSafeDispatcherTrait<T> {
 
     fn get_user_balance(self: T, user_id: usize) -> starknet::SyscallResult<usize>;
     #[unstable(feature: "safe_dispatcher")]
+    fn set_user_balance(self: T, user_id: usize, balance: usize) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn get_legacy_user_balance(self: T, user_id: usize) -> starknet::SyscallResult<usize>;
+    #[unstable(feature: "safe_dispatcher")]
 
     fn get_user_balance_subbalance(
 self: T, user_id: usize, subbalance_id: usize
@@ -434,6 +500,36 @@ impl HelloStarknetTraitSafeLibraryDispatcherImpl of HelloStarknetTraitSafeDispat
         let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("get_user_balance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn set_user_balance(self: HelloStarknetTraitSafeLibraryDispatcher, user_id: usize, balance: usize) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<usize>::serialize(@user_id, ref __calldata__);
+        core::serde::Serde::<usize>::serialize(@balance, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("set_user_balance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+    fn get_legacy_user_balance(self: HelloStarknetTraitSafeLibraryDispatcher, user_id: usize) -> starknet::SyscallResult<usize> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<usize>::serialize(@user_id, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_legacy_user_balance"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
@@ -556,6 +652,36 @@ impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTra
             )
         )
     }
+    fn set_user_balance(self: HelloStarknetTraitSafeDispatcher, user_id: usize, balance: usize) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<usize>::serialize(@user_id, ref __calldata__);
+        core::serde::Serde::<usize>::serialize(@balance, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("set_user_balance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+    fn get_legacy_user_balance(self: HelloStarknetTraitSafeDispatcher, user_id: usize) -> starknet::SyscallResult<usize> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<usize>::serialize(@user_id, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_legacy_user_balance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
 
     fn get_user_balance_subbalance(
 self: HelloStarknetTraitSafeDispatcher, user_id: usize, subbalance_id: usize
@@ -614,16 +740,17 @@ self: HelloStarknetTraitSafeDispatcher, user_id: usize, subbalance_id: usize
 }
 
 
-lib.cairo:17:1
+lib.cairo:19:1
 #[starknet::storage_node]
 ^***********************^
 storage_node:
 
+#[derive(Drop, Copy)]
 struct BalancePairStorageNode {
     balance1: starknet::storage::PendingStoragePath<u256>,
     balance2: starknet::storage::PendingStoragePath<felt252>,
 }
-impl BalancePairStorageNodeTrait of starknet::storage::StorageNodeTrait<BalancePair> {
+impl BalancePairStorageNodeImpl of starknet::storage::StorageNode<BalancePair> {
     type NodeType = BalancePairStorageNode;
     fn storage_node(self: starknet::storage::StoragePath<BalancePair>) -> BalancePairStorageNode {
         BalancePairStorageNode {
@@ -850,7 +977,13 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
 }
 
 
-lib.cairo:23:1
+impls:
+
+impl BalancePairStorageNodeDrop of core::traits::Drop::<BalancePairStorageNode>;
+impl BalancePairStorageNodeCopy of core::traits::Copy::<BalancePairStorageNode>;
+
+
+lib.cairo:25:1
 #[starknet::contract]
 ^*******************^
 contract:
@@ -860,112 +993,49 @@ contract:
 pub enum Event {}
 
 
-    pub struct ContractState {
-        pub balance: __member_module_balance::ContractMemberState,
-        pub user_balance: __member_module_user_balance::ContractMemberState,
-        pub user_balance_subbalance: __member_module_user_balance_subbalance::ContractMemberState,
-        pub balance_pair: __member_module_balance_pair::ContractMemberState,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            balance: __member_module_balance::ContractMemberState {},
-            user_balance: __member_module_user_balance::ContractMemberState {},
-            user_balance_subbalance: __member_module_user_balance_subbalance::ContractMemberState {},
-            balance_pair: __member_module_balance_pair::ContractMemberState {},
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    balance: starknet::storage::StorageBase<usize>,
+    user_balance: starknet::storage::StorageBase<Map<usize, usize>>,
+    user_balance_subbalance: starknet::storage::StorageBase<Map<usize, Map<usize, usize>>>,
+    legacy_map_balace: starknet::storage::StorageBase<LegacyMap<usize, usize>>,
+    balance_pair: starknet::storage::StorageBase<BalancePair>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           balance: starknet::storage::StorageBase{ address: selector!("balance") },
+           user_balance: starknet::storage::StorageBase{ address: selector!("user_balance") },
+           user_balance_subbalance: starknet::storage::StorageBase{ address: selector!("user_balance_subbalance") },
+           legacy_map_balace: starknet::storage::StorageBase{ address: selector!("legacy_map_balace") },
+           balance_pair: starknet::storage::StorageBase{ address: selector!("balance_pair") },
         }
     }
-    #[cfg(test)]
-    #[inline(always)]
-    pub fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-    
+}
+pub struct ContractState {
+}
 
-        pub mod __member_module_balance {
-        use super::StorageAsPointer;
-        use super::StoragePointerAccess;
-        use super::StorageAsPath;
-        use super::StoragePathEntry;
-        use super::Map;
-        use super::StorageNodeTrait;
-        use super::BalancePair;
-        use super::HelloStarknetImpl;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = usize;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
-                }
-            }
-        }
-        pub mod __member_module_user_balance {
-        use super::StorageAsPointer;
-        use super::StoragePointerAccess;
-        use super::StorageAsPath;
-        use super::StoragePathEntry;
-        use super::Map;
-        use super::StorageNodeTrait;
-        use super::BalancePair;
-        use super::HelloStarknetImpl;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-    
-            impl StorageMapContractMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ContractMemberState> {
-                type Key = usize;
-                type Value = usize;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0xc5a566230e3a7722a65829b4868470051f6f82a8a0bc97d1b254e9876ef5b3>()
-                }
-            }
-        }
-        pub mod __member_module_user_balance_subbalance {
-        use super::StorageAsPointer;
-        use super::StoragePointerAccess;
-        use super::StorageAsPath;
-        use super::StoragePathEntry;
-        use super::Map;
-        use super::StorageNodeTrait;
-        use super::BalancePair;
-        use super::HelloStarknetImpl;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-    
-            impl StorageMapContractMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ContractMemberState> {
-                type Key = usize;
-                type Value = Map<usize, usize>;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x1279e804763fd83118748d323345bc6af6f8237e6e55bfb0642e54f439c2262>()
-                }
-            }
-        }
+impl ContractStateDrop of Drop<ContractState> {}
+impl ContractStateCopy of Copy<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::Deref<ContractState> {
+    type Target = ContractStorageBase;
+    fn deref(self: ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
 
-        pub mod __member_module_balance_pair {
-        use super::StorageAsPointer;
-        use super::StoragePointerAccess;
-        use super::StorageAsPath;
-        use super::StoragePathEntry;
-        use super::Map;
-        use super::StorageNodeTrait;
-        use super::BalancePair;
-        use super::HelloStarknetImpl;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = BalancePair;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x27ef4b1fa737d3be32f556f58263a305e651a9db1e8965baae26640c39727f1>()
-                }
-            }
-        }
 use starknet::storage::{
     StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapAccessTrait, StorageAccessTrait,
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x33d804d2d34b3a3b1cad31ad6a6cb1e50a0d3e8e1bf3f344dbeafa8db462c05;
+pub const TEST_CLASS_HASH: felt252 = 0xbb14e1da754261cf1b0998245f275562de756ade46a3f91935e3a7de8ba78;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -1026,6 +1096,53 @@ fn __wrapper__HelloStarknetImpl__get_user_balance(mut data: Span::<felt252>) -> 
     // References.
     // Result.
     core::serde::Serde::<usize>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+fn __wrapper__HelloStarknetImpl__get_legacy_user_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_user_id = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<usize>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = HelloStarknetImpl::get_legacy_user_balance(@contract_state, __arg_user_id);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<usize>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+fn __wrapper__HelloStarknetImpl__set_user_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_user_id = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<usize>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_balance = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<usize>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    HelloStarknetImpl::set_user_balance(@contract_state, __arg_user_id, __arg_balance);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
@@ -1098,6 +1215,8 @@ pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
     pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
     pub use super::__wrapper__HelloStarknetImpl__get_user_balance as get_user_balance;
+    pub use super::__wrapper__HelloStarknetImpl__get_legacy_user_balance as get_legacy_user_balance;
+    pub use super::__wrapper__HelloStarknetImpl__set_user_balance as set_user_balance;
     pub use super::__wrapper__HelloStarknetImpl__get_user_balance_subbalance as get_user_balance_subbalance;
     pub use super::__wrapper__HelloStarknetImpl__get_balance_pair_balance1 as get_balance_pair_balance1;
     pub use super::__wrapper__HelloStarknetImpl__get_balance_pair_balance2 as get_balance_pair_balance2;
@@ -1132,7 +1251,7 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:23:1
+lib.cairo:25:1
 #[starknet::contract]
 ^*******************^
 starknet_derive:
@@ -1152,4 +1271,34 @@ impl EventIsEvent of starknet::Event<Event> {
     }
 }
 
+
+
+impls:
+
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+
 //! > expected_diagnostics
+error: Method `entry` could not be called on type `@core::starknet::storage::StorageBase::<core::starknet::storage::Map::<core::integer::u32, core::integer::u32>>`.
+Candidate `StoragePathEntry::entry` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePathEntry::<@core::starknet::storage::StorageBase::<core::starknet::storage::Map::<core::integer::u32, core::integer::u32>>>.
+Candidate `Felt252DictTrait::entry` inference failed with: Type mismatch: `core::starknet::storage::StorageBase::<core::starknet::storage::Map::<core::integer::u32, core::integer::u32>>` and `core::dict::Felt252Dict::<?4>`.
+ --> lib.cairo:51:31
+            self.user_balance.entry(user_id).read()
+                              ^***^
+
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: StoragePointerAccess::read and StorageMapAccessTrait::read. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:51:46
+            self.user_balance.entry(user_id).read()
+                                             ^**^
+
+error: Method `entry` could not be called on type `@core::starknet::storage::StorageBase::<core::starknet::storage::Map::<core::integer::u32, core::integer::u32>>`.
+Candidate `StoragePathEntry::entry` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePathEntry::<@core::starknet::storage::StorageBase::<core::starknet::storage::Map::<core::integer::u32, core::integer::u32>>>.
+Candidate `Felt252DictTrait::entry` inference failed with: Type mismatch: `core::starknet::storage::StorageBase::<core::starknet::storage::Map::<core::integer::u32, core::integer::u32>>` and `core::dict::Felt252Dict::<?4>`.
+ --> lib.cairo:57:31
+            self.user_balance.entry(user_id).write(balance);
+                              ^***^
+
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: StoragePointerAccess::write and StorageMapAccessTrait::write. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:57:46
+            self.user_balance.entry(user_id).write(balance);
+                                             ^***^

@@ -17,6 +17,10 @@ trait HelloStarknetTrait<TContractState> {
 
 #[starknet::contract]
 mod hello_starknet {
+    #[storage]
+    struct Storage {
+        balance: usize,
+    }
 
     #[abi(embed_v0)]
     impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
@@ -32,34 +36,38 @@ mod hello_starknet {
 pub enum Event {}
 
 
-    pub struct ContractState {
-        pub balance: __member_module_balance::ContractMemberState,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            balance: __member_module_balance::ContractMemberState {},
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    balance: starknet::storage::StorageBase<usize>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           balance: starknet::storage::StorageBase{ address: selector!("balance") },
         }
     }
-    
+}
+pub struct ContractState {
+}
 
-        pub mod __member_module_balance {
-        use super::HelloStarknetImpl;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = usize;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
-                }
-            }
-impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-        }
+impl ContractStateDrop of Drop<ContractState> {}
+impl ContractStateCopy of Copy<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::Deref<ContractState> {
+    type Target = ContractStorageBase;
+    fn deref(self: ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+
 use starknet::storage::{
     StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapAccessTrait, StorageAccessTrait,
 };
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
@@ -144,6 +152,8 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 }
 trait HelloStarknetTraitDispatcherTrait<T> {
     // Increases the balance by the given amount.
@@ -486,6 +496,10 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
     }
 }
 
+    #[storage]
+    struct Storage {
+        balance: usize,
+    }
 
     #[abi(embed_v0)]
     impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
@@ -501,34 +515,38 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
 pub enum Event {}
 
 
-    pub struct ContractState {
-        pub balance: __member_module_balance::ContractMemberState,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            balance: __member_module_balance::ContractMemberState {},
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    balance: starknet::storage::StorageBase<usize>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           balance: starknet::storage::StorageBase{ address: selector!("balance") },
         }
     }
-    
+}
+pub struct ContractState {
+}
 
-        pub mod __member_module_balance {
-        use super::HelloStarknetImpl;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = usize;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
-                }
-            }
-impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-        }
+impl ContractStateDrop of Drop<ContractState> {}
+impl ContractStateCopy of Copy<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::Deref<ContractState> {
+    type Target = ContractStorageBase;
+    fn deref(self: ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+
 use starknet::storage::{
     StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapAccessTrait, StorageAccessTrait,
 };
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
@@ -613,5 +631,7 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 //! > expected_diagnostics
