@@ -211,10 +211,10 @@ pub trait Felt252DictValue<T> {
 pub(crate) impl TupleSize0Copy of Copy<()>;
 pub(crate) impl TupleSize0Drop of Drop<()>;
 impl TupleNextDrop<
-    T, impl TH: core::metaprogramming::TupleHelper<T, { true }>, +Drop<TH::Head>, +Drop<TH::Rest>
+    T, impl TH: core::metaprogramming::TupleHelper<T, true>, +Drop<TH::Head>, +Drop<TH::Rest>
 > of Drop<T>;
 impl TupleNextCopy<
-    T, impl TH: core::metaprogramming::TupleHelper<T, { true }>, +Copy<TH::Head>, +Copy<TH::Rest>
+    T, impl TH: core::metaprogramming::TupleHelper<T, true>, +Copy<TH::Head>, +Copy<TH::Rest>
 > of Copy<T>;
 
 // Tuple PartialEq impls.

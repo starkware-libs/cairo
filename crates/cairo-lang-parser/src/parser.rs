@@ -2295,6 +2295,8 @@ impl<'a> Parser<'a> {
                 ExprUnary::new_green(self.db, op, expr).into()
             }
             SyntaxKind::TerminalShortString => self.take_terminal_short_string().into(),
+            SyntaxKind::TerminalTrue => self.take::<TerminalTrue>().into(),
+            SyntaxKind::TerminalFalse => self.take::<TerminalFalse>().into(),
             SyntaxKind::TerminalLBrace => self.parse_block().into(),
             _ => self.try_parse_type_expr()?,
         };
