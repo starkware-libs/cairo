@@ -208,6 +208,7 @@ impl BlockUsages {
 
                 self.block_usages.insert(expr_id, usage);
             }
+            Expr::For(_expr) => todo!("Handle usages of `for` loop expression"),
             Expr::FunctionCall(expr) => {
                 for arg in &expr.args {
                     match arg {
