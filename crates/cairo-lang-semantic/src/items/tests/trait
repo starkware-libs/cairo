@@ -102,16 +102,6 @@ error: `trait` is not allowed inside impl.
     trait DummyTrait;
     ^***^
 
-error: Impl items are not yet supported in impls.
- --> lib.cairo:15:5
-    impl DummyImpl1 = MyImpl;
-    ^**^
-
-error: Impl items are not yet supported in impls.
- --> lib.cairo:16:5
-    impl DummyImpl2 of MyTrait::<T>;
-    ^**^
-
 error: `struct` is not allowed inside impl.
  --> lib.cairo:18:5
     struct DummyStruct {}
@@ -166,6 +156,21 @@ error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `M
  --> lib.cairo:30:31
     fn no_ret_ty(ref a: u128) {
                               ^
+
+error: Impl item impl `MyImpl2::DummyImpl1` is not a member of trait `MyTrait`.
+ --> lib.cairo:15:5
+    impl DummyImpl1 = MyImpl;
+    ^***********************^
+
+error: Impl item impl `MyImpl2::DummyImpl2` is not a member of trait `MyTrait`.
+ --> lib.cairo:16:5
+    impl DummyImpl2 of MyTrait::<T>;
+    ^*************^
+
+error: Impl not found.
+ --> lib.cairo:16:21
+    impl DummyImpl2 of MyTrait::<T>;
+                    ^
 
 error: Not a trait.
  --> lib.cairo:35:13
@@ -487,12 +492,12 @@ trait MyTrait {
 impl MyImpl of MyTrait {
     type X = u32;
     const C: u32 = 3;
-    // TODO(TomerStarkware): add one impl when it is supported.
+    impl E = Self;
     fn foo2() {}
 }
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D', 'E', 'F'.
+error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D', 'F'.
  --> lib.cairo:12:6
 impl MyImpl of MyTrait {
      ^****^
@@ -515,7 +520,7 @@ trait MyTrait {}
 impl MyImpl of MyTrait {
     type X = u32;
     const C: u32 = 3;
-    // TODO(TomerStarkware): add one impl when it is supported.
+    impl E = Self;
     fn bar() {}
 }
 
@@ -534,6 +539,11 @@ error: Impl item const `MyImpl::C` is not a member of trait `MyTrait`.
  --> lib.cairo:4:5
     const C: u32 = 3;
     ^***************^
+
+error: Impl item impl `MyImpl::E` is not a member of trait `MyTrait`.
+ --> lib.cairo:5:5
+    impl E = Self;
+    ^************^
 
 //! > ==========================================================================
 
@@ -752,13 +762,26 @@ trait MyTrait<T> {
     impl X: MyTrait<u32>;
     impl X: MyTrait<i32>;
 }
-///TODO(TomerStarkware): add multiple impls of the same impl when it is supported.
+impl MyImpl<T> of MyTrait<T> {
+    impl X = MyImpl<u32>;
+    impl X = MyImpl<i32>;
+}
 
 //! > expected_diagnostics
 error: The name `X` is defined multiple times.
  --> lib.cairo:3:10
     impl X: MyTrait<i32>;
          ^
+
+error: The name `X` is defined multiple times.
+ --> lib.cairo:7:10
+    impl X = MyImpl<i32>;
+         ^
+
+error: Expected an impl of `test::MyTrait::<core::integer::i32>`. Got an impl of `test::MyTrait::<core::integer::u32>`.
+ --> lib.cairo:6:5
+    impl X = MyImpl<u32>;
+    ^*******************^
 
 //! > ==========================================================================
 
@@ -840,55 +863,6 @@ error: Not a trait.
  --> lib.cairo:10:14
 impl imp4 of inner_imp {}
              ^*******^
-
-//! > ==========================================================================
-
-//! > Test unsupported items in trait/impl.
-
-//! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
-
-//! > function
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type X<T>;
-    impl Z: OtherTrait;
-    const Y: u32;
-}
-impl MyImpl of MyTrait {
-    type X = u32;
-    type XX<T> = Array<T>;
-    impl Z = OtherImpl;
-}
-
-trait OtherTrait {}
-impl OtherImpl of OtherTrait {}
-
-//! > expected_diagnostics
-error: Generic parameters are not supported in Trait item type.
- --> lib.cairo:2:11
-    type X<T>;
-          ^*^
-
-error: Impl items are not yet supported in impls.
- --> lib.cairo:9:5
-    impl Z = OtherImpl;
-    ^**^
-
-error: Not all trait items are implemented. Missing: 'Z', 'Y'.
- --> lib.cairo:6:6
-impl MyImpl of MyTrait {
-     ^****^
-
-error: Impl item type `MyImpl::XX` is not a member of trait `MyTrait`.
- --> lib.cairo:8:5
-    type XX<T> = Array<T>;
-    ^********************^
 
 //! > ==========================================================================
 
