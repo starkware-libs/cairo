@@ -385,11 +385,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!(r#"Type "{}" has no members."#, ty.format(db))
             }
-            SemanticDiagnosticKind::NoSuchMember { struct_id, member_name } => {
+            SemanticDiagnosticKind::NoSuchStructMember { struct_id, member_name } => {
                 format!(
                     r#"Struct "{}" has no member "{member_name}""#,
                     struct_id.full_path(db.upcast())
                 )
+            }
+            SemanticDiagnosticKind::NoSuchTypeMember { ty, member_name } => {
+                format!(r#"Type "{}" has no member "{member_name}""#, ty.format(db))
             }
             SemanticDiagnosticKind::MemberNotVisible(member_name) => {
                 format!(r#"Member "{member_name}" is not visible in this context."#)
@@ -976,8 +979,12 @@ pub enum SemanticDiagnosticKind {
         method_name: SmolStr,
         inference_errors: TraitInferenceErrors,
     },
-    NoSuchMember {
+    NoSuchStructMember {
         struct_id: StructId,
+        member_name: SmolStr,
+    },
+    NoSuchTypeMember {
+        ty: semantic::TypeId,
         member_name: SmolStr,
     },
     MemberNotVisible(SmolStr),
