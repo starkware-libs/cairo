@@ -34,7 +34,7 @@ impl ComponentSpecificGenerationData {
             indoc! {"
             use starknet::storage::{
                 StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-                StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+                StorageMapAccessTrait, StorageAccessTrait,
             };
             $has_component_trait$
 

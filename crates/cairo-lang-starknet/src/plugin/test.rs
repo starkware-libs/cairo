@@ -87,6 +87,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         raw_output: "raw_output",
         storage: "storage",
         new_storage_interface: "new_storage_interface",
+        new_storage_interface_component: "new_storage_interface_component",
         dispatcher: "dispatcher",
         user_defined_types: "user_defined_types",
         l1_handler: "l1_handler",

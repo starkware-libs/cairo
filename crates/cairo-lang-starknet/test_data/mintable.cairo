@@ -71,6 +71,8 @@ trait ERC20Trait<TCS> {
 mod erc20 {
     use core::num::traits::Zero;
     use starknet::{ContractAddress, get_caller_address, contract_address_const};
+    use starknet::storage::LegacyMap;
+
     #[storage]
     struct Storage {
         name: felt252,

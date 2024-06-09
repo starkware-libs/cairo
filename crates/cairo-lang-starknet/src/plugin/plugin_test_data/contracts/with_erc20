@@ -13,6 +13,11 @@ use starknet::ContractAddress;
 mod erc20_contract {
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use starknet::ContractAddress;
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        erc20_token: erc20_comp::Storage,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -42,20 +47,38 @@ mod erc20_contract {
     }
 
 
-    pub struct ContractState {
-        pub erc20_token: erc20_comp::ComponentState<ContractState>,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            erc20_token: erc20_comp::unsafe_new_component_state::<ContractState>(),
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
         }
     }
-    
+}
+pub struct ContractState {
+        pub erc20_token: erc20_comp::ComponentState<ContractState>,
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+impl ContractStateCopy of Copy<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::Deref<ContractState> {
+    type Target = ContractStorageBase;
+    fn deref(self: ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+            erc20_token: erc20_comp::unsafe_new_component_state::<ContractState>(),
+    }
+}
+
 use starknet::storage::{
     StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapAccessTrait, StorageAccessTrait,
 };
 
 impl ContractStateIERC20 of
@@ -130,7 +153,7 @@ pub mod __constructor {
 
 impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @erc20_comp::ComponentState<ContractState> {
-        self.erc20_token
+                 @erc20_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> erc20_comp::ComponentState<ContractState> {
         erc20_comp::unsafe_new_component_state::<ContractState>()
@@ -190,10 +213,17 @@ impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
             recipient: ContractAddress
         );
     }
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 }
 
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use starknet::ContractAddress;
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        erc20_token: erc20_comp::Storage,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -223,20 +253,38 @@ impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
     }
 
 
-    pub struct ContractState {
-        pub erc20_token: erc20_comp::ComponentState<ContractState>,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            erc20_token: erc20_comp::unsafe_new_component_state::<ContractState>(),
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
         }
     }
-    
+}
+pub struct ContractState {
+        pub erc20_token: erc20_comp::ComponentState<ContractState>,
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+impl ContractStateCopy of Copy<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::Deref<ContractState> {
+    type Target = ContractStorageBase;
+    fn deref(self: ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+            erc20_token: erc20_comp::unsafe_new_component_state::<ContractState>(),
+    }
+}
+
 use starknet::storage::{
     StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapAccessTrait, StorageAccessTrait,
 };
 
 impl ContractStateIERC20 of
@@ -311,7 +359,7 @@ pub mod __constructor {
 
 impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @erc20_comp::ComponentState<ContractState> {
-        self.erc20_token
+                 @erc20_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> erc20_comp::ComponentState<ContractState> {
         erc20_comp::unsafe_new_component_state::<ContractState>()
@@ -371,5 +419,7 @@ impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
             recipient: ContractAddress
         );
     }
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 //! > expected_diagnostics
