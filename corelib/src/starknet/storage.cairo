@@ -208,6 +208,13 @@ trait StorageNodeTrait<T> {
     fn storage_node(self: StoragePath<T>) -> Self::NodeType;
 }
 
+impl StorageNodeDeref<T, +StorageNodeTrait<T>> of core::ops::Deref<StoragePath<T>> {
+    type Target = StorageNodeTrait::<T>::NodeType;
+    fn deref(self: StoragePath<T>) -> Self::Target {
+        self.storage_node()
+    }
+}
+
 
 /// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
 #[derive(Copy, Drop)]
@@ -243,6 +250,18 @@ impl StorageNodeAsPath<
                 core::poseidon::PoseidonTrait::new(), address
             )
         }
+    }
+}
+
+impl StorageMemberDeref<
+    TMemberState,
+    +StorageMemberAddressTrait<TMemberState>,
+    +StorageNodeTrait<StorageMemberAddressTrait::<TMemberState>::Value>,
+    +Drop<TMemberState>,
+> of core::ops::Deref<TMemberState> {
+    type Target = StoragePath<StorageMemberAddressTrait::<TMemberState>::Value>;
+    fn deref(self: TMemberState) -> Self::Target {
+        self.as_path()
     }
 }
 
