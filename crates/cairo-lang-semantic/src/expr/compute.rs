@@ -45,9 +45,9 @@ use super::pattern::{
     PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
-    get_usize_ty, never_ty, numeric_literal_trait, true_literal_expr, try_get_core_ty_by_name,
-    unit_expr, unit_ty, unwrap_error_propagation_type, CoreTraitContext,
+    core_binary_operator, core_bool_ty, core_unary_operator, deref_trait, false_literal_expr,
+    get_core_trait, get_usize_ty, never_ty, numeric_literal_trait, true_literal_expr,
+    try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type, CoreTraitContext,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -2503,6 +2503,7 @@ fn enriched_members(
     let mut ty = expr.ty();
     let mut res = OrderedHashMap::default();
     let mut deref_functions = vec![];
+    let mut visited_types: OrderedHashSet<TypeId> = OrderedHashSet::default();
     // Add direct members.
     let (_, mut long_ty) = peel_snapshots(ctx.db, ty);
     if matches!(long_ty, TypeLongId::Var(_)) {
@@ -2520,7 +2521,7 @@ fn enriched_members(
     }
     // Add members of derefed types.
     let mut n_deref = 0;
-    let deref_trait = get_core_trait(ctx.db, CoreTraitContext::Ops, "Deref".into());
+    let deref_trait = deref_trait(ctx.db);
 
     while let Ok((function_id, cur_expr, mutability)) = compute_method_function_call_data(
         ctx,
@@ -2559,6 +2560,11 @@ fn enriched_members(
             }
         }
         deref_functions.push(function_id);
+        if !visited_types.insert(long_ty.intern(ctx.db)) {
+            // Break if we have a cycle. A diagnostic will be reported from the impl and not from
+            // member access.
+            break;
+        }
     }
     Ok(EnrichedMembers { members: res, deref_functions })
 }
