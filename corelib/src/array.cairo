@@ -17,11 +17,11 @@ extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
 extern fn array_pop_front_consume<T>(arr: Array<T>) -> Option<(Array<T>, Box<T>)> nopanic;
 pub(crate) extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 extern fn array_snapshot_pop_back<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
-extern fn array_snapshot_multi_pop_front<T, PoppedT>(
-    ref arr: @Array<T>
+extern fn array_snapshot_multi_pop_front<PoppedT, impl Info: FixedSizedArrayInfo<PoppedT>>(
+    ref arr: @Array<Info::Element>
 ) -> Option<@Box<PoppedT>> implicits(RangeCheck) nopanic;
-extern fn array_snapshot_multi_pop_back<T, PoppedT>(
-    ref arr: @Array<T>
+extern fn array_snapshot_multi_pop_back<PoppedT, impl Info: FixedSizedArrayInfo<PoppedT>>(
+    ref arr: @Array<Info::Element>
 ) -> Option<@Box<PoppedT>> implicits(RangeCheck) nopanic;
 #[panic_with('Index out of bounds', array_at)]
 extern fn array_get<T>(
@@ -280,7 +280,9 @@ impl SnapIntoSpanWhereToSpanTrait<C, T, +ToSpanTrait<C, T>> of Into<@C, Span<T>>
 /// Returns a span from a box of struct of members of the same type.
 /// The additional `+Copy<@T>` arg is to prevent later stages from propagating the `S` type Sierra
 /// level, where it is deduced by the `T` type.
-extern fn span_from_tuple<T, +Copy<@T>, S>(struct_like: Box<@T>) -> @Array<S> nopanic;
+extern fn span_from_tuple<T, impl Info: FixedSizedArrayInfo<T>>(
+    struct_like: Box<@T>
+) -> @Array<Info::Element> nopanic;
 
 impl FixedSizeArrayToSpan<
     T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
@@ -301,7 +303,9 @@ impl EmptyFixedSizeArrayImpl<T, +Drop<T>> of ToSpanTrait<[T; 0], T> {
 /// Returns a box of struct of members of the same type from a span.
 /// The additional `+Copy<@T>` arg is to prevent later stages from propagating the `S` type Sierra
 /// level, where it is deduced by the `T` type.
-extern fn tuple_from_span<T, +Copy<@T>, S>(span: @Array<S>) -> Option<@Box<T>> nopanic;
+extern fn tuple_from_span<T, impl Info: FixedSizedArrayInfo<T>>(
+    span: @Array<Info::Element>
+) -> Option<@Box<T>> nopanic;
 
 /// Implements `TryInto` for only copyable types
 impl SpanTryIntoFixedSizedArray<
@@ -415,4 +419,16 @@ impl ArrayIntoIterator<T> of core::iter::IntoIterator<Array<T>> {
     fn into_iter(self: Array<T>) -> ArrayIter<T> {
         ArrayIter { array: self }
     }
+}
+
+/// Information about a fixed-sized array.
+trait FixedSizedArrayInfo<S> {
+    /// The type of the elements in the array.
+    type Element;
+    /// The size of the array.
+    const SIZE: usize;
+}
+impl FixedSizedArrayInfoImpl<T, const SIZE: usize> of FixedSizedArrayInfo<[T; SIZE]> {
+    type Element = T;
+    const SIZE: usize = SIZE;
 }

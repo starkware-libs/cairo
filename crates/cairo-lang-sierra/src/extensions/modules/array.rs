@@ -1,5 +1,3 @@
-use cairo_lang_utils::require;
-
 use super::boxing::box_ty;
 use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
@@ -15,7 +13,7 @@ use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
 use crate::extensions::{
-    args_as_single_type, args_as_two_types, NamedLibfunc, NamedType, OutputVarReferenceInfo,
+    args_as_single_type, NamedLibfunc, NamedType, OutputVarReferenceInfo,
     SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
@@ -521,9 +519,8 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let (ty, popped_ty) = args_as_two_types(args)?;
-        let member_type = validate_tuple_and_fetch_ty(context, &popped_ty)?;
-        require(member_type == ty).ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let popped_ty = args_as_single_type(args)?;
+        let ty = validate_tuple_and_fetch_ty(context, &popped_ty)?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
         let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
@@ -569,9 +566,8 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let (ty, popped_ty) = args_as_two_types(args)?;
+        let popped_ty = args_as_single_type(args)?;
         Ok(ConcreteMultiPopLibfunc {
-            ty,
             popped_ty,
             signature: self.specialize_signature(context.upcast(), args)?,
         })
@@ -591,9 +587,8 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let (ty, popped_ty) = args_as_two_types(args)?;
-        let member_type = validate_tuple_and_fetch_ty(context, &popped_ty)?;
-        require(member_type == ty).ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let popped_ty = args_as_single_type(args)?;
+        let ty = validate_tuple_and_fetch_ty(context, &popped_ty)?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
         let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
@@ -639,9 +634,8 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let (ty, popped_ty) = args_as_two_types(args)?;
+        let popped_ty = args_as_single_type(args)?;
         Ok(ConcreteMultiPopLibfunc {
-            ty,
             popped_ty,
             signature: self.specialize_signature(context.upcast(), args)?,
         })
@@ -650,7 +644,6 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
 
 /// Struct the data for a multi pop action.
 pub struct ConcreteMultiPopLibfunc {
-    pub ty: ConcreteTypeId,
     pub popped_ty: ConcreteTypeId,
     pub signature: LibfuncSignature,
 }
