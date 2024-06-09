@@ -68,7 +68,11 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
     let mut builder = PatchBuilder::new(db, &struct_ast);
 
     builder.add_modified(RewriteNode::interpolate_patched(
-        "struct $name$StorageNode {\n",
+        &formatdoc!(
+            "#[derive(Drop, Copy)]
+            struct $name$StorageNode {{
+"
+        ),
         &[("name".to_string(), RewriteNode::new_trimmed(struct_name_syntax.clone()))].into(),
     ));
 

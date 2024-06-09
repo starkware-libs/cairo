@@ -30,7 +30,7 @@ struct BalancePair {
 mod hello_starknet {
     use starknet::storage::{
         StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map,
-        StorageNodeTrait
+        StorageNodeTrait, StorageMemberDeref
     };
     use super::BalancePair;
     #[storage]
@@ -66,10 +66,10 @@ mod hello_starknet {
                 .read()
         }
         fn get_balance_pair_balance1(self: @ContractState) -> u256 {
-            self.balance_pair.as_path().storage_node().balance1.as_path().as_ptr().read()
+            self.balance_pair.balance1.as_path().as_ptr().read()
         }
         fn get_balance_pair_balance2(self: @ContractState) -> felt252 {
-            self.balance_pair.as_path().storage_node().balance2.as_path().as_ptr().read()
+            self.balance_pair.balance2.as_path().as_ptr().read()
         }
     }
 }
@@ -103,7 +103,7 @@ struct BalancePair {
 mod hello_starknet {
     use starknet::storage::{
         StorageAsPointer, StoragePointerAccess, StorageAsPath, StoragePathEntry, Map,
-        StorageNodeTrait
+        StorageNodeTrait, StorageMemberDeref
     };
     use super::BalancePair;
     #[storage]
@@ -139,10 +139,10 @@ mod hello_starknet {
                 .read()
         }
         fn get_balance_pair_balance1(self: @ContractState) -> u256 {
-            self.balance_pair.as_path().storage_node().balance1.as_path().as_ptr().read()
+            self.balance_pair.balance1.as_path().as_ptr().read()
         }
         fn get_balance_pair_balance2(self: @ContractState) -> felt252 {
-            self.balance_pair.as_path().storage_node().balance2.as_path().as_ptr().read()
+            self.balance_pair.balance2.as_path().as_ptr().read()
         }
     }
 }
@@ -619,6 +619,7 @@ lib.cairo:17:1
 ^***********************^
 storage_node:
 
+#[derive(Drop, Copy)]
 struct BalancePairStorageNode {
     balance1: starknet::storage::PendingStoragePath<u256>,
     balance2: starknet::storage::PendingStoragePath<felt252>,
@@ -850,6 +851,12 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
 }
 
 
+impls:
+
+impl BalancePairStorageNodeDrop of core::traits::Drop::<BalancePairStorageNode>;
+impl BalancePairStorageNodeCopy of core::traits::Copy::<BalancePairStorageNode>;
+
+
 lib.cairo:23:1
 #[starknet::contract]
 ^*******************^
@@ -890,6 +897,7 @@ pub enum Event {}
         use super::StoragePathEntry;
         use super::Map;
         use super::StorageNodeTrait;
+        use super::StorageMemberDeref;
         use super::BalancePair;
         use super::HelloStarknetImpl;
             #[derive(Copy, Drop)]
@@ -908,6 +916,7 @@ pub enum Event {}
         use super::StoragePathEntry;
         use super::Map;
         use super::StorageNodeTrait;
+        use super::StorageMemberDeref;
         use super::BalancePair;
         use super::HelloStarknetImpl;
             #[derive(Copy, Drop)]
@@ -928,6 +937,7 @@ pub enum Event {}
         use super::StoragePathEntry;
         use super::Map;
         use super::StorageNodeTrait;
+        use super::StorageMemberDeref;
         use super::BalancePair;
         use super::HelloStarknetImpl;
             #[derive(Copy, Drop)]
@@ -949,6 +959,7 @@ pub enum Event {}
         use super::StoragePathEntry;
         use super::Map;
         use super::StorageNodeTrait;
+        use super::StorageMemberDeref;
         use super::BalancePair;
         use super::HelloStarknetImpl;
             #[derive(Copy, Drop)]
@@ -965,7 +976,7 @@ use starknet::storage::{
     StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
 };
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x33d804d2d34b3a3b1cad31ad6a6cb1e50a0d3e8e1bf3f344dbeafa8db462c05;
+pub const TEST_CLASS_HASH: felt252 = 0x2cbe7bb146db9a4e6e99a3ad1e8415067cc763695bbaf5ff60e539626be05bc;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
