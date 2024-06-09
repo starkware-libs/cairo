@@ -21,7 +21,9 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        CircuitConcreteLibfunc::U384IsZero(_libfunc) => build_u384_is_zero(builder),
+        CircuitConcreteLibfunc::TryIntoCircuitModulus(_libfunc) => {
+            build_try_into_circuit_modulus(builder)
+        }
         CircuitConcreteLibfunc::FillInput(_libfunc) => build_fill_input(builder),
         CircuitConcreteLibfunc::Eval(libfunc) => build_circuit_eval(&libfunc.ty, builder),
         CircuitConcreteLibfunc::GetDescriptor(libfunc) => {
@@ -289,8 +291,8 @@ fn build_circuit_eval(
     ))
 }
 
-/// Generates casm instructions for `u384_is_zero()`.
-fn build_u384_is_zero(
+/// Generates casm instructions for `try_into_circuit_modulus()`.
+fn build_try_into_circuit_modulus(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [l0, l1, l2, l3] = builder.try_get_refs::<1>()?[0].try_unpack()?;
@@ -298,19 +300,19 @@ fn build_u384_is_zero(
     let mut casm_builder = CasmBuilder::default();
     add_input_variables!(casm_builder, deref l0; deref l1; deref l2; deref l3;);
     casm_build_extend! {casm_builder,
-        jump NonZero if l0 != 0;
-        jump NonZero if l1 != 0;
-        jump NonZero if l2 != 0;
-        jump NonZero if l3 != 0;
+        const one = 1;
+        tempvar l0_minus_one = l0 - one;
+        tempvar not_zero_or_one =  l0 * l0_minus_one;
+        jump Success if not_zero_or_one != 0;
+        jump Success if l1 != 0;
+        jump Success if l2 != 0;
+        jump Success if l3 != 0;
     };
 
-    let non_zero_statement_id = get_non_fallthrough_statement_id(&builder);
+    let success_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [
-            ("Fallthrough", &[], None),
-            ("NonZero", &[&[l0, l1, l2, l3]], Some(non_zero_statement_id)),
-        ],
+        [("Fallthrough", &[], None), ("Success", &[&[l0, l1, l2, l3]], Some(success_statement_id))],
         Default::default(),
     ))
 }

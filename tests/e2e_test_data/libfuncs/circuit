@@ -187,21 +187,22 @@ test::foo: OrderedHashMap({Const: 600})
 
 //! > ==========================================================================
 
-//! > u348_is_zero
+//! > try_into_circuit_modulus
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-use core::zeroable::IsZeroResult;
-use core::circuit::{u384, u384_is_zero};
+use core::circuit::{u96, try_into_circuit_modulus, TryIntoModulusResult};
 
-fn foo(a: u384) -> IsZeroResult::<u384> {
-    u384_is_zero(a)
+fn foo(a: [u96; 4]) -> TryIntoModulusResult {
+    try_into_circuit_modulus(a)
 }
 
 //! > casm
-jmp rel 19 if [fp + -6] != 0;
+[fp + -6] = [ap + 0] + 1, ap++;
+[ap + 0] = [fp + -6] * [ap + -1], ap++;
+jmp rel 19 if [ap + -1] != 0;
 jmp rel 17 if [fp + -5] != 0;
 jmp rel 15 if [fp + -4] != 0;
 jmp rel 13 if [fp + -3] != 0;
@@ -220,33 +221,33 @@ ret;
 
 //! > sierra_code
 type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::circuit::u384 = Struct<ut@core::circuit::u384, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> = Struct<ut@Tuple, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type NonZero<core::circuit::u384> = NonZero<core::circuit::u384> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::zeroable::IsZeroResult::<core::circuit::u384> = Enum<ut@core::zeroable::IsZeroResult::<core::circuit::u384>, Unit, NonZero<core::circuit::u384>> [storable: true, drop: true, dup: true, zero_sized: false];
+type CircuitModulus = CircuitModulus [storable: true, drop: true, dup: true, zero_sized: false];
+type core::circuit::TryIntoModulusResult = Enum<ut@core::circuit::TryIntoModulusResult, Unit, CircuitModulus> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc u384_is_zero = u384_is_zero;
+libfunc try_into_circuit_modulus = try_into_circuit_modulus;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::zeroable::IsZeroResult::<core::circuit::u384>, 0> = enum_init<core::zeroable::IsZeroResult::<core::circuit::u384>, 0>;
-libfunc store_temp<core::zeroable::IsZeroResult::<core::circuit::u384>> = store_temp<core::zeroable::IsZeroResult::<core::circuit::u384>>;
-libfunc enum_init<core::zeroable::IsZeroResult::<core::circuit::u384>, 1> = enum_init<core::zeroable::IsZeroResult::<core::circuit::u384>, 1>;
+libfunc enum_init<core::circuit::TryIntoModulusResult, 0> = enum_init<core::circuit::TryIntoModulusResult, 0>;
+libfunc store_temp<core::circuit::TryIntoModulusResult> = store_temp<core::circuit::TryIntoModulusResult>;
+libfunc enum_init<core::circuit::TryIntoModulusResult, 1> = enum_init<core::circuit::TryIntoModulusResult, 1>;
 
-u384_is_zero([0]) { fallthrough() 6([1]) }; // 0
+try_into_circuit_modulus([0]) { fallthrough() 6([1]) }; // 0
 branch_align() -> (); // 1
 struct_construct<Unit>() -> ([2]); // 2
-enum_init<core::zeroable::IsZeroResult::<core::circuit::u384>, 0>([2]) -> ([3]); // 3
-store_temp<core::zeroable::IsZeroResult::<core::circuit::u384>>([3]) -> ([3]); // 4
+enum_init<core::circuit::TryIntoModulusResult, 0>([2]) -> ([3]); // 3
+store_temp<core::circuit::TryIntoModulusResult>([3]) -> ([3]); // 4
 return([3]); // 5
 branch_align() -> (); // 6
-enum_init<core::zeroable::IsZeroResult::<core::circuit::u384>, 1>([1]) -> ([4]); // 7
-store_temp<core::zeroable::IsZeroResult::<core::circuit::u384>>([4]) -> ([4]); // 8
+enum_init<core::circuit::TryIntoModulusResult, 1>([1]) -> ([4]); // 7
+store_temp<core::circuit::TryIntoModulusResult>([4]) -> ([4]); // 8
 return([4]); // 9
 
-test::foo@0([0]: core::circuit::u384) -> (core::zeroable::IsZeroResult::<core::circuit::u384>);
+test::foo@0([0]: Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>) -> (core::circuit::TryIntoModulusResult);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 900})
+test::foo: OrderedHashMap({Const: 1100})
 
 //! > ==========================================================================
 
