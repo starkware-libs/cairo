@@ -187,66 +187,69 @@ test::foo: OrderedHashMap({Const: 600})
 
 //! > ==========================================================================
 
-//! > u348_is_zero
+//! > try_into_circuit_modulus
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-use core::zeroable::IsZeroResult;
-use core::circuit::{u384, u384_is_zero};
+use core::circuit::{u96, CircuitModulus, try_into_circuit_modulus};
 
-fn foo(a: u384) -> IsZeroResult::<u384> {
-    u384_is_zero(a)
+fn foo(a: [u96; 4]) -> Option<CircuitModulus> {
+    try_into_circuit_modulus(a)
 }
 
 //! > casm
-jmp rel 19 if [fp + -6] != 0;
-jmp rel 17 if [fp + -5] != 0;
-jmp rel 15 if [fp + -4] != 0;
-jmp rel 13 if [fp + -3] != 0;
+jmp rel 16 if [fp + -3] != 0, ap++;
+jmp rel 14 if [fp + -4] != 0;
+jmp rel 12 if [fp + -5] != 0;
+jmp rel 4 if [fp + -6] != 0;
+jmp rel 15;
+[fp + -6] = [ap + -1] + 1;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 9;
 [ap + 0] = 0, ap++;
-[ap + 0] = 0, ap++;
-[ap + 0] = 0, ap++;
-[ap + 0] = 0, ap++;
-[ap + 0] = 0, ap++;
-ret;
-[ap + 0] = 1, ap++;
 [ap + 0] = [fp + -6], ap++;
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 ret;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
 
 //! > sierra_code
 type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::circuit::u384 = Struct<ut@core::circuit::u384, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> = Struct<ut@Tuple, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type NonZero<core::circuit::u384> = NonZero<core::circuit::u384> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::zeroable::IsZeroResult::<core::circuit::u384> = Enum<ut@core::zeroable::IsZeroResult::<core::circuit::u384>, Unit, NonZero<core::circuit::u384>> [storable: true, drop: true, dup: true, zero_sized: false];
+type CircuitModulus = CircuitModulus [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<core::circuit::CircuitModulus> = Enum<ut@core::option::Option::<core::circuit::CircuitModulus>, CircuitModulus, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc u384_is_zero = u384_is_zero;
+libfunc try_into_circuit_modulus = try_into_circuit_modulus;
 libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<core::circuit::CircuitModulus>, 0> = enum_init<core::option::Option::<core::circuit::CircuitModulus>, 0>;
+libfunc store_temp<core::option::Option::<core::circuit::CircuitModulus>> = store_temp<core::option::Option::<core::circuit::CircuitModulus>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::zeroable::IsZeroResult::<core::circuit::u384>, 0> = enum_init<core::zeroable::IsZeroResult::<core::circuit::u384>, 0>;
-libfunc store_temp<core::zeroable::IsZeroResult::<core::circuit::u384>> = store_temp<core::zeroable::IsZeroResult::<core::circuit::u384>>;
-libfunc enum_init<core::zeroable::IsZeroResult::<core::circuit::u384>, 1> = enum_init<core::zeroable::IsZeroResult::<core::circuit::u384>, 1>;
+libfunc enum_init<core::option::Option::<core::circuit::CircuitModulus>, 1> = enum_init<core::option::Option::<core::circuit::CircuitModulus>, 1>;
 
-u384_is_zero([0]) { fallthrough() 6([1]) }; // 0
+try_into_circuit_modulus([0]) { fallthrough([1]) 5() }; // 0
 branch_align() -> (); // 1
-struct_construct<Unit>() -> ([2]); // 2
-enum_init<core::zeroable::IsZeroResult::<core::circuit::u384>, 0>([2]) -> ([3]); // 3
-store_temp<core::zeroable::IsZeroResult::<core::circuit::u384>>([3]) -> ([3]); // 4
-return([3]); // 5
-branch_align() -> (); // 6
-enum_init<core::zeroable::IsZeroResult::<core::circuit::u384>, 1>([1]) -> ([4]); // 7
-store_temp<core::zeroable::IsZeroResult::<core::circuit::u384>>([4]) -> ([4]); // 8
+enum_init<core::option::Option::<core::circuit::CircuitModulus>, 0>([1]) -> ([2]); // 2
+store_temp<core::option::Option::<core::circuit::CircuitModulus>>([2]) -> ([2]); // 3
+return([2]); // 4
+branch_align() -> (); // 5
+struct_construct<Unit>() -> ([3]); // 6
+enum_init<core::option::Option::<core::circuit::CircuitModulus>, 1>([3]) -> ([4]); // 7
+store_temp<core::option::Option::<core::circuit::CircuitModulus>>([4]) -> ([4]); // 8
 return([4]); // 9
 
-test::foo@0([0]: core::circuit::u384) -> (core::zeroable::IsZeroResult::<core::circuit::u384>);
+test::foo@0([0]: Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>) -> (core::option::Option::<core::circuit::CircuitModulus>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 900})
+test::foo: OrderedHashMap({Const: 1200})
 
 //! > ==========================================================================
 
@@ -258,12 +261,12 @@ SmallE2ETestRunner
 //! > cairo
 use core::circuit::{
     AddModGate, Circuit, CircuitData, CircuitInput, CircuitDescriptor, EvalCircuitResult,
-    eval_circuit, u384
+    eval_circuit, CircuitModulus
 };
 type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>,)>;
 
 fn foo(
-    desc: CircuitDescriptor<MyCircuit>, data: CircuitData<MyCircuit>, modulus: NonZero<u384>
+    desc: CircuitDescriptor<MyCircuit>, data: CircuitData<MyCircuit>, modulus: CircuitModulus
 ) -> EvalCircuitResult<MyCircuit> {
     eval_circuit::<MyCircuit>(desc, data, modulus, 0, 1)
 }
@@ -344,9 +347,7 @@ type core::circuit::CircuitInput::<2> = CircuitInput<2> [storable: false, drop: 
 type (core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>) = Struct<ut@Tuple, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<1> = CircuitInput<1> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: false];
-type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::circuit::u384 = Struct<ut@core::circuit::u384, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: true, dup: true, zero_sized: false];
-type NonZero<core::circuit::u384> = NonZero<core::circuit::u384> [storable: true, drop: true, dup: true, zero_sized: false];
+type CircuitModulus = CircuitModulus [storable: true, drop: true, dup: true, zero_sized: false];
 type CircuitData<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = CircuitData<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> [storable: true, drop: true, dup: false, zero_sized: false];
 type CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> [storable: true, drop: true, dup: true, zero_sized: false];
 type MulMod = MulMod [storable: true, drop: false, dup: false, zero_sized: false];
@@ -387,7 +388,7 @@ store_temp<MulMod>([11]) -> ([11]); // 15
 store_temp<core::circuit::EvalCircuitResult::<core::circuit::Circuit::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>>([16]) -> ([16]); // 16
 return([10], [11], [16]); // 17
 
-test::foo@0([0]: AddMod, [1]: MulMod, [2]: CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [3]: CircuitData<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [4]: NonZero<core::circuit::u384>) -> (AddMod, MulMod, core::circuit::EvalCircuitResult::<core::circuit::Circuit::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>);
+test::foo@0([0]: AddMod, [1]: MulMod, [2]: CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [3]: CircuitData<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [4]: CircuitModulus) -> (AddMod, MulMod, core::circuit::EvalCircuitResult::<core::circuit::Circuit::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({AddMod: 1, MulMod: 3, Const: 4100})
@@ -402,12 +403,12 @@ SmallE2ETestRunner
 //! > cairo
 use core::circuit::{
     InverseGate, Circuit, CircuitData, CircuitInput, CircuitDescriptor, EvalCircuitResult,
-    eval_circuit, u384
+    eval_circuit, CircuitModulus
 };
 type MyCircuit = Circuit<(InverseGate<CircuitInput<0>>,)>;
 
 fn foo(
-    desc: CircuitDescriptor<MyCircuit>, data: CircuitData<MyCircuit>, modulus: NonZero<u384>
+    desc: CircuitDescriptor<MyCircuit>, data: CircuitData<MyCircuit>, modulus: CircuitModulus
 ) -> EvalCircuitResult<MyCircuit> {
     eval_circuit::<MyCircuit>(desc, data, modulus, 0, 1)
 }
@@ -479,9 +480,7 @@ type Circuit<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)> 
 type core::circuit::InverseGate::<core::circuit::CircuitInput::<0>> = InverseGate<core::circuit::CircuitInput::<0>> [storable: false, drop: false, dup: false, zero_sized: false];
 type (core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,) = Struct<ut@Tuple, core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: false];
-type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::circuit::u384 = Struct<ut@core::circuit::u384, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: true, dup: true, zero_sized: false];
-type NonZero<core::circuit::u384> = NonZero<core::circuit::u384> [storable: true, drop: true, dup: true, zero_sized: false];
+type CircuitModulus = CircuitModulus [storable: true, drop: true, dup: true, zero_sized: false];
 type CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>> = CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>> [storable: true, drop: true, dup: false, zero_sized: false];
 type CircuitDescriptor<Circuit<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>> = CircuitDescriptor<Circuit<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>> [storable: true, drop: true, dup: true, zero_sized: false];
 type MulMod = MulMod [storable: true, drop: false, dup: false, zero_sized: false];
@@ -522,7 +521,7 @@ store_temp<MulMod>([11]) -> ([11]); // 15
 store_temp<core::circuit::EvalCircuitResult::<core::circuit::Circuit::<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>>>([16]) -> ([16]); // 16
 return([10], [11], [16]); // 17
 
-test::foo@0([0]: AddMod, [1]: MulMod, [2]: CircuitDescriptor<Circuit<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>>, [3]: CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>>, [4]: NonZero<core::circuit::u384>) -> (AddMod, MulMod, core::circuit::EvalCircuitResult::<core::circuit::Circuit::<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>>);
+test::foo@0([0]: AddMod, [1]: MulMod, [2]: CircuitDescriptor<Circuit<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>>, [3]: CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>>, [4]: CircuitModulus) -> (AddMod, MulMod, core::circuit::EvalCircuitResult::<core::circuit::Circuit::<(core::circuit::InverseGate::<core::circuit::CircuitInput::<0>>,)>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({MulMod: 2, Const: 3400})
