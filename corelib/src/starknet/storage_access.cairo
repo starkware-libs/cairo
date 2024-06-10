@@ -587,12 +587,12 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
     ) -> SyscallResult<()> {
         match value {
             Result::Ok(x) => {
-                Store::write(address_domain, base, 0)?;
-                Store::write_at_offset(address_domain, base, 1_u8, x)?;
+                Store::write_at_offset(address_domain, base, offset, 0)?;
+                Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             },
             Result::Err(x) => {
-                Store::write(address_domain, base, 1)?;
-                Store::write_at_offset(address_domain, base, 1_u8, x)?;
+                Store::write_at_offset(address_domain, base, offset, 0)?;
+                Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             }
         };
         starknet::SyscallResult::Ok(())
@@ -649,10 +649,10 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
     ) -> SyscallResult<()> {
         match value {
             Option::Some(x) => {
-                Store::write(address_domain, base, 1)?;
-                Store::write_at_offset(address_domain, base, 1_u8, x)?;
+                Store::write_at_offset(address_domain, base, offset, 1)?;
+                Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             },
-            Option::None(_x) => { Store::write(address_domain, base, 0)?; }
+            Option::None(_x) => { Store::write_at_offset(address_domain, base, offset, 0)?; }
         };
         starknet::SyscallResult::Ok(())
     }
