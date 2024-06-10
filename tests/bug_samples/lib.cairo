@@ -40,16 +40,12 @@ mod issue4318;
 mod issue4380;
 mod issue4897;
 mod issue4937;
-<<<<<<< HEAD
 mod issue5043;
 mod issue5411;
 mod issue5438;
 mod issue5629;
 mod issue5680;
-||||||| 2203a47f8
-=======
 mod issue5764;
->>>>>>> origin/dev-v2.6.4
 mod loop_break_in_match;
 mod loop_only_change;
 mod partial_param_local;
