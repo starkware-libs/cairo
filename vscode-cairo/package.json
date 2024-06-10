@@ -21,7 +21,7 @@
     "url": "https://github.com/starkware-libs/cairo.git"
   },
   "license": "Apache-2.0",
-  "icon": "icons/marketplace.png",
+  "icon": "icon.png",
   "galleryBanner": {
     "color": "#111011",
     "theme": "dark"
@@ -50,8 +50,8 @@
           ".cairo"
         ],
         "icon": {
-          "light": "./icons/cairo-file.svg",
-          "dark": "./icons/cairo-file.svg"
+          "light": "icon.png",
+          "dark": "icon.png"
         },
         "configuration": "./language-configuration.json"
       }
