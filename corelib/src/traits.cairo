@@ -207,31 +207,15 @@ pub trait Felt252DictValue<T> {
     fn zero_default() -> T nopanic;
 }
 
-// Tuple Copy impls.
+// Tuple Copy and Drop impls.
 pub(crate) impl TupleSize0Copy of Copy<()>;
-
-impl TupleSize1Copy<E0, +Copy<E0>> of Copy<(E0,)>;
-
-impl TupleSize2Copy<E0, E1, +Copy<E0>, +Copy<E1>> of Copy<(E0, E1)>;
-
-impl TupleSize3Copy<E0, E1, E2, +Copy<E0>, +Copy<E1>, +Copy<E2>> of Copy<(E0, E1, E2)>;
-
-impl TupleSize4Copy<
-    E0, E1, E2, E3, +Copy<E0>, +Copy<E1>, +Copy<E2>, +Copy<E3>
-> of Copy<(E0, E1, E2, E3)>;
-
-// Tuple Drop impls.
 pub(crate) impl TupleSize0Drop of Drop<()>;
-
-impl TupleSize1Drop<E0, +Drop<E0>> of Drop<(E0,)>;
-
-impl TupleSize2Drop<E0, E1, +Drop<E0>, +Drop<E1>> of Drop<(E0, E1)>;
-
-impl TupleSize3Drop<E0, E1, E2, +Drop<E0>, +Drop<E1>, +Drop<E2>> of Drop<(E0, E1, E2)>;
-
-impl TupleSize4Drop<
-    E0, E1, E2, E3, +Drop<E0>, +Drop<E1>, +Drop<E2>, +Drop<E3>
-> of Drop<(E0, E1, E2, E3)>;
+impl TupleNextDrop<
+    T, impl TH: core::metaprogramming::TupleHelper<T, { true }>, +Drop<TH::Head>, +Drop<TH::Rest>
+> of Drop<T>;
+impl TupleNextCopy<
+    T, impl TH: core::metaprogramming::TupleHelper<T, { true }>, +Copy<TH::Head>, +Copy<TH::Rest>
+> of Copy<T>;
 
 // Tuple PartialEq impls.
 impl TupleSize0PartialEq of PartialEq<()> {
