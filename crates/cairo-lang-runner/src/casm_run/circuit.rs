@@ -90,7 +90,7 @@ impl CircuitInstance<'_> {
     }
 
     /// Fills the values for a mul mod gate.
-    /// Assumes all the inputs are ready.
+    /// Assumes all the inputs are ready and the the modulus is not zero or one.
     /// Returns true if the values were filled successfully, returns false if its an inverse
     /// operation and input is not invertible.
     fn fill_mul_gate(&mut self, index: usize) -> bool {
@@ -104,14 +104,7 @@ impl CircuitInstance<'_> {
                 true
             }
             (None, Some(rhs)) => {
-                let (success, res) = if self.modulus.is_one() {
-                    // if modulus is 1, we need to fail as the builtin cannot prove that
-                    // 0 * 0 === 1 (modulo 1)
-                    (false, BigUint::zero())
-                } else {
-                    invert_or_nullify(rhs, &self.modulus)
-                };
-
+                let (success, res) = invert_or_nullify(rhs, &self.modulus);
                 self.write_mulmod_value(index, res);
                 success
             }
