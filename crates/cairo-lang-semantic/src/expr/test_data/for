@@ -58,29 +58,3 @@ error: Identifier not found.
  --> lib.cairo:8:9
         x;
         ^
-
-//! > ==========================================================================
-
-//! >  Test for No in Identifier
-
-//! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
-
-//! > function
-fn foo() {
-    let mut _iter = array![10, 11, 12, 13_felt252].span();
-    for _x at _iter {
-        1;
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-
-//! > expected_diagnostics
-error: Unsupported feature.
- --> lib.cairo:3:5
-    for _x at _iter {
-    ^***************^
