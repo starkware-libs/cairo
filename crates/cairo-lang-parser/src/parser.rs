@@ -6,6 +6,7 @@ use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, require, LookupIntern};
@@ -1698,6 +1699,16 @@ impl<'a> Parser<'a> {
         let pattern = self.parse_pattern();
         // TODO(Tomer-StarkWare): Check identifier is 'in'.
         let identifier = self.parse_identifier();
+        if identifier.identifier(self.db) != "in" {
+            self.diagnostics.add(ParserDiagnostic {
+                file_id: self.file_id,
+                kind: ParserDiagnosticKind::ExpectedToken { expected: "in".into() },
+                span: TextSpan {
+                    start: self.offset,
+                    end: self.offset.add_width(self.current_width),
+                },
+            });
+        }
         let expression = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
         let body = self.parse_block();
 

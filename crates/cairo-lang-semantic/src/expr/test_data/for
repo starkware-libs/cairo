@@ -80,7 +80,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unsupported feature.
- --> lib.cairo:3:5
+error: Missing identifier token, expected in.
+ --> lib.cairo:3:12
     for _x at _iter {
-    ^***************^
+           ^*^
