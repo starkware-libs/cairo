@@ -23,8 +23,6 @@ pub enum LibfuncSimulationError {
     WrongNumberOfArgs,
     #[error("Expected a different type of an argument")]
     WrongArgType,
-    #[error("Expected a different memory layout")]
-    MemoryLayoutMismatch,
     #[error("Could not resolve requested symbol value")]
     UnresolvedStatementGasInfo,
     #[error("Error occurred during user function call")]
