@@ -70,7 +70,7 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_trait_function(&self, id: TraitFunctionLongId) -> TraitFunctionId;
     #[salsa::interned]
-    fn intern_impl(&self, id: ImplDefLongId) -> ImplDefId;
+    fn intern_impl_def(&self, id: ImplDefLongId) -> ImplDefId;
     #[salsa::interned]
     fn intern_extern_type(&self, id: ExternTypeLongId) -> ExternTypeId;
     #[salsa::interned]

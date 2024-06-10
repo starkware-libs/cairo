@@ -361,8 +361,8 @@ define_top_level_language_element_id!(
     ImplDefId,
     ImplDefLongId,
     ast::ItemImpl,
-    lookup_intern_impl,
-    intern_impl
+    lookup_intern_impl_def,
+    intern_impl_def
 );
 
 // --- Impl type items ---
