@@ -14,6 +14,7 @@ indicatif = "0.17.7"
 reqwest = { version = "0.12", features = ["json"] }
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
+<<<<<<< HEAD
 tokio.workspace = true
 cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.6.3" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.6.3", features = [
@@ -26,3 +27,16 @@ openssl = { workspace = true, features = ["vendored"] }
 
 [package.metadata.cargo-machete]
 ignored = ["openssl"]
+||||||| 2203a47f8
+rayon.workspace = true
+indicatif = "0.17.7"
+
+cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.6.3" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.6.3", features = ["serde"] }
+=======
+rayon.workspace = true
+indicatif = "0.17.7"
+
+cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.6.4" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.6.4", features = ["serde"] }
+>>>>>>> origin/dev-v2.6.4

@@ -1,9 +1,17 @@
 {
   "name": "cairo1",
   "displayName": "Cairo 1.0",
+<<<<<<< HEAD
   "description": "Cairo language support for Visual Studio Code.",
   "version": "2.6.3",
   "publisher": "StarkWare",
+||||||| 2203a47f8
+  "description": "Support Cairo syntax",
+  "version": "2.6.3",
+=======
+  "description": "Support Cairo syntax",
+  "version": "2.6.4",
+>>>>>>> origin/dev-v2.6.4
   "categories": [
     "Programming Languages",
     "Snippets",
