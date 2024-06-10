@@ -5,11 +5,13 @@ use core::circuit::{
 };
 
 
+use core::test::test_utils::assert_eq;
 use core::traits::TryInto;
 
 #[test]
 fn test_u96() {
-    let _a: u96 = 0x123;
+    let a: u96 = 0x123;
+    assert_eq!(a, 0x123);
 }
 
 #[test]
