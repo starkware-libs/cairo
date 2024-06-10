@@ -1254,10 +1254,6 @@ fn compute_expr_for_semantic(
     let syntax_db = db.upcast();
     let expr_ptr = syntax.expr(syntax_db).stable_ptr();
 
-    if syntax.identifier(syntax_db).text(syntax_db) != "in" {
-        ctx.diagnostics.report(syntax, Unsupported);
-    }
-
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
 
     let into_iterator_trait =
