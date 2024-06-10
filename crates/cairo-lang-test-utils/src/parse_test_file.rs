@@ -368,7 +368,6 @@ pub fn run_test_file(
     let filter = std::env::var("CAIRO_TEST_FILTER").unwrap_or_default();
 
     let gen_lean_mode = std::env::var("CAIRO_GEN_LEAN") == Ok("1".into());
-    let is_lean3_version: bool = std::env::var("CAIRO_LEAN_VERSION") == Ok("3".into());
     let lean_outputs = vec!(
         "lean_soundness_spec",
         "lean_soundness",
@@ -437,7 +436,7 @@ pub fn run_test_file(
             write_lean_soundness_file(&path, &test_name, result.outputs.get("lean_soundness"))?;
             write_lean_completeness_spec_file(&path, &test_name, result.outputs.get("lean_completeness_spec"))?;
             write_lean_completeness_file(&path, &test_name, result.outputs.get("lean_completeness"))?;
-            write_lean_code_file(&path, &test_name, result.outputs.get("lean_code"), is_lean3_version)?;
+            write_lean_code_file(&path, &test_name, result.outputs.get("lean_code"))?;
         }
 
         // Fix if in fix mode, unrelated to the result.

@@ -282,18 +282,15 @@ fn run_e2e_test(
         res.insert("function_costs".into(), function_costs_str.to_string());
     }
 
-    // Cayden note: This feels like an API violation to use this here, but I don't know how lean_generator.rs and e2e_test.rs communicate
-    // with their variables. Look into this later?
-    let is_lean3_version: bool = std::env::var("CAIRO_LEAN_VERSION") == Ok("3".into());
     let (lean_soundness_spec, lean_soundness) =
-        generate_lean_soundness(inputs["test_name"].as_str(), &cairo_program, is_lean3_version);
+        generate_lean_soundness(inputs["test_name"].as_str(), &cairo_program);
     res.insert("lean_soundness_spec".into(), lean_soundness_spec);
     res.insert("lean_soundness".into(), lean_soundness);
     let (lean_completeness_spec, lean_completeness) =
         generate_lean_completeness(inputs["test_name"].as_str(), &cairo_program);
     res.insert("lean_completeness_spec".into(), lean_completeness_spec);
     res.insert("lean_completeness".into(), lean_completeness);
-    let lean_code = generate_lean_code(inputs["test_name"].as_str(), &cairo_program, is_lean3_version);
+    let lean_code = generate_lean_code(inputs["test_name"].as_str(), &cairo_program);
     res.insert("lean_code".into(), lean_code);
 
     TestRunnerResult::success(res)
