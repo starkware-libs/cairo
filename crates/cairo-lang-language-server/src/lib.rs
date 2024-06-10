@@ -66,7 +66,7 @@ use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::items::imp::ImplId;
+use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
@@ -939,8 +939,12 @@ fn resolved_concrete_item_def(
                 None
             }
         }
-        ResolvedConcreteItem::Impl(ImplId::GenericParameter(param)) => {
-            Some(param.untyped_stable_ptr(db.upcast()))
+        ResolvedConcreteItem::Impl(imp) => {
+            if let ImplLongId::GenericParameter(param) = imp.lookup_intern(db) {
+                Some(param.untyped_stable_ptr(db.upcast()))
+            } else {
+                None
+            }
         }
         _ => None,
     }

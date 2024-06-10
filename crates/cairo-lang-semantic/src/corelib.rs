@@ -21,7 +21,7 @@ use crate::expr::inference::Inference;
 use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::ImplId;
+use crate::items::imp::ImplLongId;
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
 };
@@ -514,7 +514,8 @@ fn get_core_function_impl_method(
     }
     .unwrap_or_else(|| panic!("{impl_name} is not an impl."));
     let impl_id =
-        ImplId::Concrete(ConcreteImplLongId { impl_def_id, generic_args: vec![] }.intern(db));
+        ImplLongId::Concrete(ConcreteImplLongId { impl_def_id, generic_args: vec![] }.intern(db))
+            .intern(db);
     let concrete_trait_id = db.impl_concrete_trait(impl_id).unwrap();
     let function = db
         .trait_functions(concrete_trait_id.trait_id(db))
