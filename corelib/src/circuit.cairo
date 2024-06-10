@@ -7,6 +7,14 @@ pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs
 }
 
 
+/// Given two circuit elements, returns a new circuit element representing the circuit that applies
+/// the `submod` operation to the two input circuits.
+pub fn circuit_sub<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>>(
+    lhs: CircuitElement<Lhs>, rhs: CircuitElement<Rhs>
+) -> CircuitElement::<SubModGate<Lhs, Rhs>> {
+    CircuitElement::<SubModGate<Lhs, Rhs>> {}
+}
+
 /// Given a circuit element, returns a new circuit element representing the circuit that applies
 /// the inverse operation on the input circuit.
 pub fn circuit_inverse<Input, +CircuitElementTrait<Input>>(
@@ -161,6 +169,9 @@ impl InputCircuitElement<const N: usize> of CircuitElementTrait<CircuitInput<N>>
 impl AddModCircuitElement<
     Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>
 > of CircuitElementTrait<AddModGate<Lhs, Rhs>> {}
+impl SubModCircuitElement<
+    Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>
+> of CircuitElementTrait<SubModGate<Lhs, Rhs>> {}
 impl InverseCircuitElement<
     Input, +CircuitElementTrait<Input>
 > of CircuitElementTrait<InverseGate<Input>> {}

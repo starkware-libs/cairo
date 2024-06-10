@@ -1,7 +1,7 @@
 use core::circuit::{
     RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, CircuitDefinition, circuit_add,
-    circuit_mul, circuit_inverse, EvalCircuitResult, FillInputResult, InputAccumulatorTrait,
-    CircuitDescriptorTrait, u384, CircuitOutputsTrait, CircuitModulus
+    circuit_sub, circuit_mul, circuit_inverse, EvalCircuitResult, FillInputResult,
+    InputAccumulatorTrait, CircuitDescriptorTrait, u384, CircuitOutputsTrait, CircuitModulus
 };
 
 
@@ -23,7 +23,7 @@ fn test_builtins() {
 fn test_circuit() {
     let in1 = CircuitElement::<CircuitInput<0>> {};
     let in2 = CircuitElement::<CircuitInput<1>> {};
-    let out1 = circuit_mul(circuit_inverse(circuit_add(in1, in2)), in2);
+    let out1 = circuit_mul(circuit_inverse(circuit_add(in1, in2)), circuit_sub(in2, in1));
     let circ = (out1,);
     let inputs = circ.init();
 
