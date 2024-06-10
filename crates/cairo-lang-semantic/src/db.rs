@@ -112,6 +112,8 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_const_value(&self, id: items::constant::ConstValue) -> items::constant::ConstValueId;
     #[salsa::interned]
+    fn intern_impl(&self, id: items::imp::ImplLongId) -> items::imp::ImplId;
+    #[salsa::interned]
     fn intern_impl_var(&self, id: ImplVar) -> ImplVarId;
 
     // Const.

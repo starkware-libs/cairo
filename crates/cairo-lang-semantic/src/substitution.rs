@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, LookupIntern};
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::{zip_eq, Itertools};
 
 use crate::db::SemanticGroup;
@@ -23,7 +23,7 @@ use crate::items::functions::{
     ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
-use crate::items::imp::{ImplId, UninferredImpl};
+use crate::items::imp::{ImplId, ImplLongId, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::types::{
     ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId, ImplTypeId,
@@ -319,6 +319,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteImplLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ImplLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplTypeId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplConstantId, $($exclude)*);
@@ -406,7 +407,7 @@ add_basic_rewrites!(
     <'a>,
     SubstitutionRewriter<'a>,
     DiagnosticAdded,
-    @exclude TypeId TypeLongId ImplId ConstValue GenericFunctionId
+    @exclude TypeId TypeLongId ImplLongId ConstValue GenericFunctionId
 );
 
 impl<'a> SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'a> {
@@ -503,16 +504,17 @@ impl<'a> SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<ImplId, DiagnosticAdded> for SubstitutionRewriter<'a> {
-    fn internal_rewrite(&mut self, value: &mut ImplId) -> Maybe<RewriteResult> {
-        if let ImplId::GenericParameter(generic_param) = value {
+impl<'a> SemanticRewriter<ImplLongId, DiagnosticAdded> for SubstitutionRewriter<'a> {
+    fn internal_rewrite(&mut self, value: &mut ImplLongId) -> Maybe<RewriteResult> {
+        if let ImplLongId::GenericParameter(generic_param) = value {
             if let Some(generic_arg) = self.substitution.get(generic_param) {
-                *value = *extract_matches!(generic_arg, GenericArgumentId::Impl);
+                *value =
+                    extract_matches!(generic_arg, GenericArgumentId::Impl).lookup_intern(self.db);
                 // TODO(GIL): Reduce and check for cycles when the substitution is created.
                 // Substitution is guaranteed to not contain its own variables.
                 return Ok(RewriteResult::Modified);
             }
-        } else if value.is_fully_concrete(self.db) {
+        } else if value.clone().intern(self.db).is_fully_concrete(self.db) {
             return Ok(RewriteResult::NoChange);
         }
         value.default_rewrite(self)

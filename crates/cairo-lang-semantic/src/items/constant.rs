@@ -196,7 +196,7 @@ impl ImplConstantId {
         trait_constant_id: TraitConstantId,
         db: &dyn SemanticGroup,
     ) -> Self {
-        if let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_id {
+        if let crate::items::imp::ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
             let impl_def_id = concrete_impl.impl_def_id(db);
             assert_eq!(Ok(trait_constant_id.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
         }

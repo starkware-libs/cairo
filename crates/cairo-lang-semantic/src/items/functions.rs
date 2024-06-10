@@ -25,7 +25,7 @@ use syntax::node::TypedStablePtr;
 
 use super::attribute::SemanticQueryAttrs;
 use super::generics::generic_params_to_args;
-use super::imp::ImplId;
+use super::imp::{ImplId, ImplLongId};
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
 use crate::corelib::unit_ty;
@@ -52,11 +52,11 @@ pub struct ImplGenericFunctionId {
 impl ImplGenericFunctionId {
     /// Gets the impl function language element, if self.impl_id is of a concrete impl.
     pub fn impl_function(&self, db: &dyn SemanticGroup) -> Maybe<Option<ImplFunctionId>> {
-        match self.impl_id {
-            ImplId::Concrete(concrete_impl_id) => {
+        match self.impl_id.lookup_intern(db) {
+            ImplLongId::Concrete(concrete_impl_id) => {
                 concrete_impl_id.get_impl_function(db, self.function)
             }
-            ImplId::GenericParameter(_) | ImplId::ImplVar(_) => Ok(None),
+            ImplLongId::GenericParameter(_) | ImplLongId::ImplVar(_) => Ok(None),
         }
     }
     /// Converts to ImplGenericFunctionWithBodyId if this is a function of a concrete impl.
@@ -64,7 +64,7 @@ impl ImplGenericFunctionId {
         &self,
         db: &dyn SemanticGroup,
     ) -> Maybe<Option<ImplGenericFunctionWithBodyId>> {
-        let ImplId::Concrete(concrete_impl_id) = self.impl_id else {
+        let ImplLongId::Concrete(concrete_impl_id) = self.impl_id.lookup_intern(db) else {
             return Ok(None);
         };
         let Some(impl_function) = concrete_impl_id.get_impl_function(db.upcast(), self.function)?
@@ -120,7 +120,7 @@ impl GenericFunctionId {
         Ok(match val {
             GenericFunctionWithBodyId::Free(id) => GenericFunctionId::Free(id),
             GenericFunctionWithBodyId::Impl(id) => {
-                let impl_id = ImplId::Concrete(id.concrete_impl_id);
+                let impl_id = ImplLongId::Concrete(id.concrete_impl_id).intern(db);
                 let function = match id.function_body {
                     ImplFunctionBodyId::Impl(body_id) => {
                         db.impl_function_trait_function(body_id)?
@@ -154,16 +154,16 @@ impl GenericFunctionId {
             GenericFunctionId::Free(id) => db.free_function_signature(id),
             GenericFunctionId::Extern(id) => db.extern_function_signature(id),
             GenericFunctionId::Impl(id) => {
-                let concrete_trait_id = match id.impl_id {
-                    ImplId::Concrete(concrete_impl_id) => {
+                let concrete_trait_id = match id.impl_id.lookup_intern(db) {
+                    ImplLongId::Concrete(concrete_impl_id) => {
                         return db.concrete_impl_function_signature(concrete_impl_id, id.function);
                     }
-                    ImplId::GenericParameter(param) => {
+                    ImplLongId::GenericParameter(param) => {
                         let param_impl =
                             extract_matches!(db.generic_param_semantic(param)?, GenericParam::Impl);
                         param_impl.concrete_trait?
                     }
-                    ImplId::ImplVar(var) => var.lookup_intern(db).concrete_trait_id,
+                    ImplLongId::ImplVar(var) => var.lookup_intern(db).concrete_trait_id,
                 };
                 // When not having a concrete impl, falling back to the concrete trait signature.
                 let signature = db.concrete_trait_function_signature(
@@ -209,7 +209,9 @@ impl GenericFunctionId {
             }
             GenericFunctionId::Impl(impl_generic_function_id) => {
                 // Return the module file of the impl containing the function.
-                if let ImplId::Concrete(concrete_impl_id) = impl_generic_function_id.impl_id {
+                if let ImplLongId::Concrete(concrete_impl_id) =
+                    impl_generic_function_id.impl_id.lookup_intern(db)
+                {
                     Some(concrete_impl_id.impl_def_id(db).module_file_id(db.upcast()))
                 } else {
                     None
@@ -388,19 +390,21 @@ impl GenericFunctionWithBodyId {
     pub fn from_generic(db: &dyn SemanticGroup, other: GenericFunctionId) -> Maybe<Option<Self>> {
         Ok(Some(match other {
             GenericFunctionId::Free(id) => GenericFunctionWithBodyId::Free(id),
-            GenericFunctionId::Impl(ImplGenericFunctionId {
-                impl_id: ImplId::Concrete(concrete_impl_id),
-                function,
-            }) => GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
-                concrete_impl_id,
-                function_body: if let Some(impl_function) =
-                    concrete_impl_id.get_impl_function(db, function)?
-                {
-                    ImplFunctionBodyId::Impl(impl_function)
-                } else {
-                    ImplFunctionBodyId::Trait(function)
-                },
-            }),
+            GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }) => {
+                let ImplLongId::Concrete(concrete_impl_id) = impl_id.lookup_intern(db) else {
+                    return Ok(None);
+                };
+                GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
+                    concrete_impl_id,
+                    function_body: if let Some(impl_function) =
+                        concrete_impl_id.get_impl_function(db, function)?
+                    {
+                        ImplFunctionBodyId::Impl(impl_function)
+                    } else {
+                        ImplFunctionBodyId::Trait(function)
+                    },
+                })
+            }
             GenericFunctionId::Trait(id) => GenericFunctionWithBodyId::Trait(id),
             _ => return Ok(None),
         }))
@@ -480,25 +484,26 @@ impl ConcreteFunctionWithBody {
             GenericFunctionWithBodyId::Impl(f) => match f.function_body {
                 ImplFunctionBodyId::Impl(body_id) => {
                     let concrete_impl = f.concrete_impl_id.lookup_intern(db);
-                    GenericSubstitution::from_impl(ImplId::Concrete(f.concrete_impl_id)).concat(
-                        GenericSubstitution::new(
-                            &chain!(
-                                db.impl_function_generic_params(body_id)?,
-                                db.impl_def_generic_params(concrete_impl.impl_def_id)?
-                            )
-                            .collect_vec(),
-                            &chain!(
-                                self.generic_args.iter().copied(),
-                                concrete_impl.generic_args.iter().copied()
-                            )
-                            .collect_vec(),
-                        ),
+                    GenericSubstitution::from_impl(
+                        ImplLongId::Concrete(f.concrete_impl_id).intern(db),
                     )
+                    .concat(GenericSubstitution::new(
+                        &chain!(
+                            db.impl_function_generic_params(body_id)?,
+                            db.impl_def_generic_params(concrete_impl.impl_def_id)?
+                        )
+                        .collect_vec(),
+                        &chain!(
+                            self.generic_args.iter().copied(),
+                            concrete_impl.generic_args.iter().copied()
+                        )
+                        .collect_vec(),
+                    ))
                 }
                 ImplFunctionBodyId::Trait(body_id) => {
-                    let concrete_trait =
-                        ImplId::Concrete(f.concrete_impl_id).concrete_trait(db)?.lookup_intern(db);
-                    GenericSubstitution::from_impl(ImplId::Concrete(f.concrete_impl_id)).concat(
+                    let concrete_impl_id = ImplLongId::Concrete(f.concrete_impl_id).intern(db);
+                    let concrete_trait = concrete_impl_id.concrete_trait(db)?.lookup_intern(db);
+                    GenericSubstitution::from_impl(concrete_impl_id).concat(
                         GenericSubstitution::new(
                             &chain!(
                                 db.trait_function_generic_params(body_id)?,
