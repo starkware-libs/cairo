@@ -9,7 +9,7 @@ use cairo_lang_semantic::corelib::core_submodule;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::items::imp::{ImplId, ImplLookupContext};
+use cairo_lang_semantic::items::imp::{ImplLongId, ImplLookupContext};
 use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::types::{get_impl_at_context, ConcreteEnumLongId, ConcreteStructLongId};
 use cairo_lang_semantic::{
@@ -830,7 +830,8 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
     let event_impl =
         get_impl_at_context(db.upcast(), ImplLookupContext::default(), concrete_trait_id, None)
             .ok()?;
-    let concrete_event_impl = try_extract_matches!(event_impl, ImplId::Concrete)?;
+    let concrete_event_impl =
+        try_extract_matches!(event_impl.lookup_intern(db), ImplLongId::Concrete)?;
     let impl_def_id = concrete_event_impl.impl_def_id(db);
 
     // Attempt to extract the event data from the aux data from the impl generation.

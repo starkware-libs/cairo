@@ -15,7 +15,7 @@ use syntax::node::db::SyntaxGroup;
 use syntax::node::TypedStablePtr;
 
 use super::constant::{ConstValue, ConstValueId};
-use super::imp::{ImplHead, ImplId};
+use super::imp::{ImplHead, ImplId, ImplLongId};
 use super::resolve_trait_path;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{
@@ -36,7 +36,7 @@ use crate::{ConcreteTraitId, SemanticDiagnostic, TypeId, TypeLongId};
 pub enum GenericArgumentId {
     Type(TypeId),
     Constant(ConstValueId),
-    Impl(ImplId), // TODO(spapini): impls and constants as generic values.
+    Impl(ImplId),
     NegImpl,
 }
 impl GenericArgumentId {
@@ -149,7 +149,7 @@ impl GenericParam {
                 GenericArgumentId::Constant(ConstValue::Generic(param_const.id).intern(db))
             }
             GenericParam::Impl(param_impl) => {
-                GenericArgumentId::Impl(ImplId::GenericParameter(param_impl.id))
+                GenericArgumentId::Impl(ImplLongId::GenericParameter(param_impl.id).intern(db))
             }
             GenericParam::NegImpl(_) => GenericArgumentId::NegImpl,
         }

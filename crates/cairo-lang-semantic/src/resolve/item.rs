@@ -9,7 +9,7 @@ use cairo_lang_utils::LookupIntern;
 use crate::db::SemanticGroup;
 use crate::items::constant::ConstValueId;
 use crate::items::functions::GenericFunctionId;
-use crate::items::imp::ImplId;
+use crate::items::imp::{ImplId, ImplLongId};
 use crate::items::trt::ConcreteTraitGenericFunctionId;
 use crate::items::us::SemanticUseEx;
 use crate::{ConcreteTraitId, ConcreteVariant, FunctionId, TypeId, TypeLongId, Variant};
@@ -125,11 +125,11 @@ impl ResolvedConcreteItem {
             ResolvedConcreteItem::Trait(concrete_trait) => {
                 ResolvedGenericItem::Trait(concrete_trait.lookup_intern(db).trait_id)
             }
-            ResolvedConcreteItem::Impl(impl_id) => match impl_id {
-                ImplId::Concrete(concrete_impl_id) => {
+            ResolvedConcreteItem::Impl(impl_id) => match impl_id.lookup_intern(db) {
+                ImplLongId::Concrete(concrete_impl_id) => {
                     ResolvedGenericItem::Impl(concrete_impl_id.lookup_intern(db).impl_def_id)
                 }
-                ImplId::GenericParameter(_) | ImplId::ImplVar(_) => return None,
+                ImplLongId::GenericParameter(_) | ImplLongId::ImplVar(_) => return None,
             },
         })
     }
