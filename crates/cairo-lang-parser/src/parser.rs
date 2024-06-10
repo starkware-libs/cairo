@@ -1696,12 +1696,24 @@ impl<'a> Parser<'a> {
     fn expect_for_expr(&mut self) -> ExprForGreen {
         let for_kw = self.take::<TerminalFor>();
         let pattern = self.parse_pattern();
-        // TODO(Tomer-StarkWare): Check identifier is 'in'.
-        let identifier = self.parse_identifier();
+        let ident = self.take_raw();
+        let in_identifier: TerminalIdentifierGreen = match ident.text.as_str() {
+            "in" => self.add_trivia_to_terminal::<TerminalIdentifier>(ident),
+            _ => {
+                self.append_skipped_token_to_pending_trivia(
+                    ident,
+                    ParserDiagnosticKind::SkippedElement {
+                        element_name: or_an_attribute!(MODULE_ITEM_DESCRIPTION).into(),
+                    },
+                );
+                self.create_and_report_missing::<TerminalIdentifier>(
+                    ParserDiagnosticKind::ExpectedInToken,
+                )
+            }
+        };
         let expression = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
         let body = self.parse_block();
-
-        ExprFor::new_green(self.db, for_kw, pattern, identifier, expression, body)
+        ExprFor::new_green(self.db, for_kw, pattern, in_identifier, expression, body)
     }
 
     /// Assumes the current token is LBrack.
