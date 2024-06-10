@@ -299,48 +299,30 @@ impl TuplePartialEqHelperNext<
     }
 }
 
-// Tuple Default impls.
-impl TupleSize0Default of Default<()> {
+/// Base implementation for `Default` for tuples.
+impl DefaultTupleBase of Default<()> {
     fn default() -> () {
         ()
     }
 }
 
-impl TupleSize1Default<E0, +Default<E0>> of Default<(E0,)> {
-    fn default() -> (E0,) {
-        (Default::default(),)
+/// Base implementation for `Default` for fixed-sized arrays.
+impl DefaultFixedSizedArray<T> of Default<[T; 0]> {
+    fn default() -> [T; 0] {
+        []
     }
 }
 
-impl TupleSize2Default<E0, E1, +Default<E0>, +Drop<E0>, +Default<E1>> of Default<(E0, E1)> {
-    fn default() -> (E0, E1) {
-        (Default::default(), Default::default())
-    }
-}
-
-impl TupleSize3Default<
-    E0, E1, E2, +Default<E0>, +Drop<E0>, +Default<E1>, +Drop<E1>, +Default<E2>
-> of Default<(E0, E1, E2)> {
-    fn default() -> (E0, E1, E2) {
-        (Default::default(), Default::default(), Default::default())
-    }
-}
-
-impl TupleSize4Default<
-    E0,
-    E1,
-    E2,
-    E3,
-    +Default<E0>,
-    +Drop<E0>,
-    +Default<E1>,
-    +Drop<E1>,
-    +Default<E2>,
-    +Drop<E2>,
-    +Default<E3>
-> of Default<(E0, E1, E2, E3)> {
-    fn default() -> (E0, E1, E2, E3) {
-        (Default::default(), Default::default(), Default::default(), Default::default())
+/// Recursive implementation for `Default` for tuple style structs.
+impl DefaultNext<
+    T,
+    impl TS: core::metaprogramming::TupleSplit<T>,
+    +Default<TS::Head>,
+    +Default<TS::Rest>,
+    +Drop<TS::Head>,
+> of Default<T> {
+    fn default() -> T {
+        TS::reconstruct(Default::default(), Default::default())
     }
 }
 
