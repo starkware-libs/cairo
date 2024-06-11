@@ -103,6 +103,7 @@ mod env_config;
 mod ide;
 mod lang;
 mod lsp;
+mod markdown;
 mod project;
 mod server;
 mod toolchain;
