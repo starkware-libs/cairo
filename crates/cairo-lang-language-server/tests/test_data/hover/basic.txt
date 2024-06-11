@@ -73,26 +73,29 @@ pub mod front_of_house {
 }
 
 //! > hover 2:5
------------- source context -------------
-    println!("The value of x is: {}", x);
-     ↑
----------------- popover ----------------
+// = source context
+    p<caret>rintln!("The value of x is: {}", x);
+// = highlight
+No highlight information.
+// = popover
 No hover information.
 
 //! > hover 3:5
-- source context --
-    x = add_two(x);
-     ↑
------ popover -----
+// = source context
+    x<caret> = add_two(x);
+// = highlight
+No highlight information.
+// = popover
 ```cairo
 fn main()
 ```
 
 //! > hover 3:8
-- source context --
-    x = add_two(x);
-        ↑
------ popover -----
+// = source context
+    x = <caret>add_two(x);
+// = highlight
+No highlight information.
+// = popover
 ```cairo
 fn add_two(x: u32) -> u32
 ```
@@ -100,10 +103,11 @@ fn add_two(x: u32) -> u32
  `add_two` documentation.
 
 //! > hover 3:9
-- source context --
-    x = add_two(x);
-         ↑
------ popover -----
+// = source context
+    x = a<caret>dd_two(x);
+// = highlight
+No highlight information.
+// = popover
 ```cairo
 fn add_two(x: u32) -> u32
 ```
@@ -111,10 +115,11 @@ fn add_two(x: u32) -> u32
  `add_two` documentation.
 
 //! > hover 3:15
-- source context --
-    x = add_two(x);
-               ↑
------ popover -----
+// = source context
+    x = add_two<caret>(x);
+// = highlight
+No highlight information.
+// = popover
 ```cairo
 fn add_two(x: u32) -> u32
 ```
@@ -122,24 +127,27 @@ fn add_two(x: u32) -> u32
  `add_two` documentation.
 
 //! > hover 5:9
---------------- source context ----------------
-    front_of_house::hosting::add_to_waitlist();
-         ↑
-------------------- popover -------------------
+// = source context
+    front<caret>_of_house::hosting::add_to_waitlist();
+// = highlight
+No highlight information.
+// = popover
 No hover information.
 
 //! > hover 5:22
---------------- source context ----------------
-    front_of_house::hosting::add_to_waitlist();
-                      ↑
-------------------- popover -------------------
+// = source context
+    front_of_house::ho<caret>sting::add_to_waitlist();
+// = highlight
+No highlight information.
+// = popover
 No hover information.
 
 //! > hover 5:32
---------------- source context ----------------
-    front_of_house::hosting::add_to_waitlist();
-                                ↑
-------------------- popover -------------------
+// = source context
+    front_of_house::hosting::add<caret>_to_waitlist();
+// = highlight
+No highlight information.
+// = popover
 ```cairo
 pub fn add_to_waitlist()
 ```
@@ -147,17 +155,19 @@ pub fn add_to_waitlist()
  Add to waitlist function.
 
 //! > hover 9:8
---------- source context ----------
-fn add_two(x: u32) -> u32 { x + 2 }
-        ↑
-------------- popover -------------
+// = source context
+fn add_t<caret>wo(x: u32) -> u32 { x + 2 }
+// = highlight
+No highlight information.
+// = popover
 No hover information.
 
 //! > hover 23:22
----------- source context -----------
-    fn area(self: @Rectangle) -> u64;
-                      ↑
--------------- popover --------------
+// = source context
+    fn area(self: @Rec<caret>tangle) -> u64;
+// = highlight
+No highlight information.
+// = popover
 ```cairo
 struct Rectangle {
     /// Width of the rectangle.
@@ -171,10 +181,11 @@ struct Rectangle {
  Rectangle struct.
 
 //! > hover 28:22
------------ source context -----------
-    fn area(self: @Rectangle) -> u64 {
-                      ↑
--------------- popover ---------------
+// = source context
+    fn area(self: @Rec<caret>tangle) -> u64 {
+// = highlight
+No highlight information.
+// = popover
 ```cairo
 struct Rectangle {
     /// Width of the rectangle.
@@ -188,17 +199,19 @@ struct Rectangle {
  Rectangle struct.
 
 //! > hover 29:17
------------ source context -----------
-        (*self.width) * (*self.height)
-                 ↑
--------------- popover ---------------
+// = source context
+        (*self.wi<caret>dth) * (*self.height)
+// = highlight
+No highlight information.
+// = popover
 No hover information.
 
 //! > hover 37:22
------------ source context -----------
-    fn area(self: @Rectangle) -> u64 {
-                      ↑
--------------- popover ---------------
+// = source context
+    fn area(self: @Rec<caret>tangle) -> u64 {
+// = highlight
+No highlight information.
+// = popover
 ```cairo
 struct Rectangle {
     /// Width of the rectangle.
@@ -212,17 +225,19 @@ struct Rectangle {
  Rectangle struct.
 
 //! > hover 38:17
------------ source context -----------
-        (*self.width) * (*self.height)
-                 ↑
--------------- popover ---------------
+// = source context
+        (*self.wi<caret>dth) * (*self.height)
+// = highlight
+No highlight information.
+// = popover
 No hover information.
 
 //! > hover 46:25
-------------- source context -------------
-fn value_in_cents(coin: Coin) -> felt252 {
-                         ↑
----------------- popover -----------------
+// = source context
+fn value_in_cents(coin: C<caret>oin) -> felt252 {
+// = highlight
+No highlight information.
+// = popover
 ```cairo
 
 enum Coin {
@@ -232,10 +247,11 @@ enum Coin {
 ```
 
 //! > hover 48:15
----- source context -----
-        Coin::Penny => 1,
-               ↑
--------- popover --------
+// = source context
+        Coin::P<caret>enny => 1,
+// = highlight
+No highlight information.
+// = popover
 ```cairo
 
 enum Coin {
