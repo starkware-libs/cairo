@@ -109,6 +109,9 @@ pub trait DefsGroup:
     fn module_dir(&self, module_id: ModuleId) -> Maybe<Directory>;
 
     // TODO(mkaput): Add tests.
+    // TODO(mkaput): Support #[doc] attribute. This will be a bigger chunk of work because it would
+    //   be the best to convert all /// comments to #[doc] attrs before processing items by plugins,
+    //   so that plugins would get a nice and clean syntax of documentation to manipulate further.
     /// Gets the documentation above an item definition.
     fn get_item_documentation(&self, item_id: LookupItemId) -> Option<String>;
     // TODO(mkaput): Add tests.
@@ -307,8 +310,20 @@ fn get_item_documentation(db: &dyn DefsGroup, item_id: LookupItemId) -> Option<S
             !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
         })
         .filter_map(|line| {
-            (line.trim_start().starts_with("///") || line.trim_start().starts_with("//!"))
-                .then_some(line.trim_start())
+            // Remove indentation.
+            let dedent = line.trim_start();
+            // Check if this is a doc comment.
+            for prefix in ["///", "//!"] {
+                if let Some(content) = dedent.strip_prefix(prefix) {
+                    // TODO(mkaput): The way how removing this indentation is performed is probably
+                    //   wrong. The code should probably learn how many spaces are used at the first
+                    //   line of comments block, and then remove the same amount of spaces in the
+                    //   block, instead of assuming just one space.
+                    // Remove inner indentation if one exists.
+                    return Some(content.strip_prefix(' ').unwrap_or(content));
+                }
+            }
+            None
         })
         .collect::<Vec<&str>>();
     (!doc.is_empty()).then(|| doc.join("\n"))
