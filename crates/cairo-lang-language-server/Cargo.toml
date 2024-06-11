@@ -24,6 +24,7 @@ cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "~2.6.4" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.6.4" }
 cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.6.4" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.6.4" }
+itertools.workspace = true
 salsa.workspace = true
 scarb-metadata = "1.12"
 serde = { workspace = true, default-features = true }
@@ -40,7 +41,6 @@ assert_fs = "1.1"
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 futures = "0.3"
 indoc.workspace = true
-itertools.workspace = true
 pathdiff = "0.2"
 test-log.workspace = true
 tower-service = "0.3"

@@ -84,7 +84,7 @@ No hover information.
 // = source context
     x<caret> = add_two(x);
 // = highlight
-No highlight information.
+    <sel>x</sel> = add_two(x);
 // = popover
 ```cairo
 fn main()
@@ -94,37 +94,37 @@ fn main()
 // = source context
     x = <caret>add_two(x);
 // = highlight
-No highlight information.
+    x = <sel>add_two</sel>(x);
 // = popover
 ```cairo
 fn add_two(x: u32) -> u32
 ```
 ---
- `add_two` documentation.
+`add_two` documentation.
 
 //! > hover 3:9
 // = source context
     x = a<caret>dd_two(x);
 // = highlight
-No highlight information.
+    x = <sel>add_two</sel>(x);
 // = popover
 ```cairo
 fn add_two(x: u32) -> u32
 ```
 ---
- `add_two` documentation.
+`add_two` documentation.
 
 //! > hover 3:15
 // = source context
     x = add_two<caret>(x);
 // = highlight
-No highlight information.
+    x = <sel>add_two</sel>(x);
 // = popover
 ```cairo
 fn add_two(x: u32) -> u32
 ```
 ---
- `add_two` documentation.
+`add_two` documentation.
 
 //! > hover 5:9
 // = source context
@@ -146,13 +146,13 @@ No hover information.
 // = source context
     front_of_house::hosting::add<caret>_to_waitlist();
 // = highlight
-No highlight information.
+    front_of_house::hosting::<sel>add_to_waitlist</sel>();
 // = popover
 ```cairo
 pub fn add_to_waitlist()
 ```
 ---
- Add to waitlist function.
+Add to waitlist function.
 
 //! > hover 9:8
 // = source context
@@ -166,7 +166,7 @@ No hover information.
 // = source context
     fn area(self: @Rec<caret>tangle) -> u64;
 // = highlight
-No highlight information.
+    fn area(self: @<sel>Rectangle</sel>) -> u64;
 // = popover
 ```cairo
 struct Rectangle {
@@ -178,13 +178,13 @@ struct Rectangle {
 
 ```
 ---
- Rectangle struct.
+Rectangle struct.
 
 //! > hover 28:22
 // = source context
     fn area(self: @Rec<caret>tangle) -> u64 {
 // = highlight
-No highlight information.
+    fn area(self: @<sel>Rectangle</sel>) -> u64 {
 // = popover
 ```cairo
 struct Rectangle {
@@ -196,7 +196,7 @@ struct Rectangle {
 
 ```
 ---
- Rectangle struct.
+Rectangle struct.
 
 //! > hover 29:17
 // = source context
@@ -210,7 +210,7 @@ No hover information.
 // = source context
     fn area(self: @Rec<caret>tangle) -> u64 {
 // = highlight
-No highlight information.
+    fn area(self: @<sel>Rectangle</sel>) -> u64 {
 // = popover
 ```cairo
 struct Rectangle {
@@ -222,7 +222,7 @@ struct Rectangle {
 
 ```
 ---
- Rectangle struct.
+Rectangle struct.
 
 //! > hover 38:17
 // = source context
@@ -236,7 +236,7 @@ No hover information.
 // = source context
 fn value_in_cents(coin: C<caret>oin) -> felt252 {
 // = highlight
-No highlight information.
+fn value_in_cents(coin: <sel>Coin</sel>) -> felt252 {
 // = popover
 ```cairo
 
@@ -250,7 +250,7 @@ enum Coin {
 // = source context
         Coin::P<caret>enny => 1,
 // = highlight
-No highlight information.
+        Coin::<sel>Penny</sel> => 1,
 // = popover
 ```cairo
 
