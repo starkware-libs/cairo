@@ -23,8 +23,8 @@ use cairo_lang_utils::LookupIntern;
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 use tracing::debug;
 
+use crate::lang::db::LsSemanticGroup;
 use crate::lang::lsp::ToLsp;
-use crate::lang::semantic::LsSemanticGroup;
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn generic_completions(

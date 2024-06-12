@@ -7,7 +7,7 @@ use cairo_lang_syntax::node::utils::grandparent_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use tower_lsp::lsp_types::SemanticTokenType;
 
-use crate::lang::semantic::LsSemanticGroup;
+use crate::lang::db::LsSemanticGroup;
 
 #[allow(dead_code)]
 pub enum SemanticTokenKind {
