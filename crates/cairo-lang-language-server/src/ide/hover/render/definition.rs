@@ -1,14 +1,12 @@
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::Hover;
 
-use crate::find_definition;
 use crate::ide::hover::markdown_contents;
-use crate::lang::db::LsSemanticGroup;
+use crate::lang::inspect::defs::SymbolDef;
 use crate::lang::lsp::ToLsp;
 use crate::markdown::Markdown;
 
@@ -19,31 +17,19 @@ pub fn definition(
     identifier: &TerminalIdentifier,
     file_id: FileId,
 ) -> Option<Hover> {
-    // Get the syntax node of the definition.
-    let definition_node = {
-        let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
-        let stable_ptr = find_definition(db, identifier, &lookup_items)?;
-        stable_ptr.lookup(db.upcast())
+    let symbol = SymbolDef::find(db, identifier)?;
+
+    let md = match &symbol {
+        SymbolDef::Item(item) => {
+            // TODO(mkaput): Format this with Cairo formatter.
+            let mut md = Markdown::fenced_code_block(&item.signature(db));
+            if let Some(doc) = item.documentation(db) {
+                md += Markdown::rule();
+                md += doc;
+            }
+            md
+        }
     };
-    // Get the lookup item representing the defining item.
-    let lookup_item_id = db.find_lookup_item(&definition_node)?;
-
-    let mut md = Markdown::empty();
-
-    let signature = db.get_item_signature(lookup_item_id);
-    // TODO(mkaput): Format this with Cairo formatter.
-    md += Markdown::fenced_code_block(&signature);
-
-    let documentation = db.get_item_documentation(lookup_item_id).unwrap_or_default();
-
-    if !documentation.is_empty() {
-        md += Markdown::rule();
-
-        let mut doc = Markdown::from(documentation);
-        doc.convert_fenced_code_blocks_to_cairo();
-        doc.ensure_trailing_newline();
-        md += doc;
-    }
 
     Some(Hover {
         contents: markdown_contents(md),
