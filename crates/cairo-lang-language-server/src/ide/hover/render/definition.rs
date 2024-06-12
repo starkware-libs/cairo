@@ -30,9 +30,9 @@ pub fn definition(
 
     let mut md = Markdown::empty();
 
-    let definition = db.get_item_definition(lookup_item_id);
+    let signature = db.get_item_signature(lookup_item_id);
     // TODO(mkaput): Format this with Cairo formatter.
-    md += Markdown::fenced_code_block(&definition);
+    md += Markdown::fenced_code_block(&signature);
 
     let documentation = db.get_item_documentation(lookup_item_id).unwrap_or_default();
 
