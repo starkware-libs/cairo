@@ -2,8 +2,8 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::{Hover, HoverContents, HoverParams, MarkupContent, MarkupKind};
 
+use crate::lang::db::LsSyntaxGroup;
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
-use crate::lang::syntax::LsSyntaxGroup;
 use crate::markdown::Markdown;
 
 mod render;

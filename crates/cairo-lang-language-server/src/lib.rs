@@ -86,10 +86,9 @@ use tracing::{debug, error, info, trace_span, warn, Instrument};
 
 use crate::config::Config;
 use crate::ide::semantic_highlighting::SemanticTokenKind;
+use crate::lang::db::{LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
-use crate::lang::semantic::LsSemanticGroup;
-use crate::lang::syntax::LsSyntaxGroup;
 use crate::lsp::client_capabilities::ClientCapabilitiesExt;
 use crate::project::scarb::db::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
