@@ -115,8 +115,8 @@ pub trait DefsGroup:
     /// Gets the documentation above an item definition.
     fn get_item_documentation(&self, item_id: LookupItemId) -> Option<String>;
     // TODO(mkaput): Add tests.
-    /// Gets the definition of an item.
-    fn get_item_definition(&self, item_id: LookupItemId) -> String;
+    /// Gets the declaration of an item (i.e., signature without body).
+    fn get_item_declaration(&self, item_id: LookupItemId) -> String;
 
     // File to module.
     fn crate_modules(&self, crate_id: CrateId) -> Arc<Vec<ModuleId>>;
@@ -329,8 +329,7 @@ fn get_item_documentation(db: &dyn DefsGroup, item_id: LookupItemId) -> Option<S
     (!doc.is_empty()).then(|| doc.join("\n"))
 }
 
-/// Gets the definition of an item.
-fn get_item_definition(db: &dyn DefsGroup, item_id: LookupItemId) -> String {
+fn get_item_declaration(db: &dyn DefsGroup, item_id: LookupItemId) -> String {
     let syntax_node = item_id.stable_location(db).syntax_node(db);
     let definition = match syntax_node.green_node(db.upcast()).kind {
         SyntaxKind::ItemConstant
