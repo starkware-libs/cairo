@@ -152,7 +152,7 @@ async function determineLanguageServerExecutableProvider(
   const standalone = () => StandaloneLS.find(workspaceFolder, scarb, ctx);
 
   if (!scarb) {
-    log.trace("determineLanguageServerExecutableProvider: Scarb is missing");
+    log.trace("Scarb is missing");
     return await standalone();
   }
 
