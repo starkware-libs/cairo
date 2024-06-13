@@ -78,7 +78,9 @@ pub mod front_of_house {
 // = highlight
 No highlight information.
 // = popover
-No hover information.
+```cairo
+()
+```
 
 //! > hover 3:5
 // = source context
@@ -86,7 +88,9 @@ No hover information.
 // = highlight
 No highlight information.
 // = popover
-No hover information.
+```cairo
+core::integer::u32
+```
 
 //! > hover 3:8
 // = source context
@@ -130,7 +134,9 @@ fn add_two(x: u32) -> u32
 // = highlight
 No highlight information.
 // = popover
-No hover information.
+```cairo
+fn add_to_waitlist() -> ()
+```
 
 //! > hover 5:22
 // = source context
@@ -138,7 +144,9 @@ No hover information.
 // = highlight
 No highlight information.
 // = popover
-No hover information.
+```cairo
+fn add_to_waitlist() -> ()
+```
 
 //! > hover 5:32
 // = source context
@@ -158,7 +166,6 @@ fn add_t<caret>wo(x: u32) -> u32 { x + 2 }
 // = highlight
 No highlight information.
 // = popover
-No hover information.
 
 //! > hover 23:22
 // = source context
@@ -202,7 +209,9 @@ Rectangle struct.
 // = highlight
 No highlight information.
 // = popover
-No hover information.
+```cairo
+@core::integer::u64
+```
 
 //! > hover 37:22
 // = source context
@@ -228,7 +237,9 @@ Rectangle struct.
 // = highlight
 No highlight information.
 // = popover
-No hover information.
+```cairo
+@core::integer::u64
+```
 
 //! > hover 46:25
 // = source context

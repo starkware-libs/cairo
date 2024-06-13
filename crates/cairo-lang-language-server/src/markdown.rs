@@ -11,7 +11,7 @@ mod test;
 /// A convenience wrapper for building Markdown texts for used to display rich text in the IDE.
 ///
 /// Markdown is used because this is the format used by the LSP protocol for rich text.
-#[derive(Default, Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct Markdown {
     text: String,
 }

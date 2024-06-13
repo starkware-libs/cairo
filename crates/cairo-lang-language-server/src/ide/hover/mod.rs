@@ -1,5 +1,4 @@
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::{Hover, HoverContents, HoverParams, MarkupContent, MarkupKind};
 
 use crate::lang::db::LsSyntaxGroup;
@@ -19,7 +18,7 @@ pub fn hover(params: HoverParams, db: &RootDatabase) -> Option<Hover> {
     let position = params.text_document_position_params.position.to_cairo();
     let identifier = db.find_identifier_at_position(file_id, position)?;
 
-    render::definition(db.upcast(), &identifier, file_id)
+    render::definition(db, &identifier, file_id).or_else(|| render::legacy(db, &identifier))
 
     // TODO(mkaput): If client only supports plaintext, strip markdown formatting here like RA.
 }

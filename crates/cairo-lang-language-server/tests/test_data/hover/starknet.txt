@@ -65,7 +65,6 @@ pub fn contract_state_for_testing() -> ContractState
 // = highlight
 No highlight information.
 // = popover
-No hover information.
 
 //! > hover 23:33
 // = source context
@@ -88,7 +87,9 @@ No hover information.
 // = highlight
 No highlight information.
 // = popover
-No hover information.
+```cairo
+hello::Balance::__member_module_value::ContractMemberState
+```
 
 //! > hover 24:25
 // = source context
@@ -96,7 +97,9 @@ No hover information.
 // = highlight
 No highlight information.
 // = popover
-No hover information.
+```cairo
+core::integer::u128
+```
 
 //! > hover 28:30
 // = source context
@@ -151,4 +154,6 @@ fn write(ref self: TMemberState, value: Self::Value);
 // = highlight
 No highlight information.
 // = popover
-No hover information.
+```cairo
+core::integer::u128
+```
