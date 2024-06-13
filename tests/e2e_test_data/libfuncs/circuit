@@ -292,7 +292,18 @@ fn foo(
 [fp + -3] = [[fp + -12] + 3];
 [ap + -1] = [[fp + -12] + 4];
 [fp + -9] = [[fp + -12] + 5];
-%{ raise NotImplementedError %}
+%{ from starkware.cairo.lang.builtins.modulo.mod_builtin_runner import run_circuit
+
+memory[ap + 0] = run_circuit(
+    memory=memory,
+    values_ptr=memory[ap + -1],
+    add_mod_builtin=memory[fp + -13],
+    n_add_mods=memorymemory[fp + -10],
+    mul_mod_builtin=memory[fp + -12],
+    n_mul_mods=memorymemory[fp + -8],
+    modulus_ptr=fp + -6,
+)
+ %}
 [ap + 0] = [[fp + -12] + 6], ap++;
 [ap + 0] = [ap + -1] * 7, ap++;
 [fp + -8] = [ap + 0] + [ap + -2], ap++;
@@ -427,7 +438,18 @@ fn foo(
 [fp + -3] = [[fp + -12] + 3];
 [ap + -1] = [[fp + -12] + 4];
 [fp + -9] = [[fp + -12] + 5];
-%{ raise NotImplementedError %}
+%{ from starkware.cairo.lang.builtins.modulo.mod_builtin_runner import run_circuit
+
+memory[ap + 0] = run_circuit(
+    memory=memory,
+    values_ptr=memory[ap + -1],
+    add_mod_builtin=memory[fp + -13],
+    n_add_mods=memorymemory[fp + -10],
+    mul_mod_builtin=memory[fp + -12],
+    n_mul_mods=memorymemory[fp + -8],
+    modulus_ptr=fp + -6,
+)
+ %}
 [ap + 0] = [[fp + -12] + 6], ap++;
 [ap + 0] = [ap + -1] * 7, ap++;
 [fp + -8] = [ap + 0] + [ap + -2], ap++;
