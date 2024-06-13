@@ -2101,7 +2101,7 @@ pub fn execute_core_hint(
             let modulus_ptr =
                 cell_ref_to_relocatable(extract_matches!(modulus, ResOperand::Deref), vm);
 
-            let n_computed_gates = circuit::run_circuit(
+            let n_computed_gates = circuit::eval_circuit(
                 vm,
                 values_ptr,
                 add_mod_builtin,

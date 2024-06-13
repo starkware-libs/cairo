@@ -223,11 +223,11 @@ pub fn fill_instances(
     Ok(())
 }
 
-/// Fills the instances and the values of a circuit.
+/// Evaluates a circuit and fills the builtin instances and the values buffer.
 ///
 /// Returns the first mul gate index that failed to fill its values or `n_mul_mods` if all gates
 /// were filled successfully.
-pub fn run_circuit(
+pub fn eval_circuit(
     vm: &mut VirtualMachine,
     values_ptr: Relocatable,
     add_mod_builtin: Relocatable,
