@@ -84,11 +84,9 @@ No hover information.
 // = source context
     x<caret> = add_two(x);
 // = highlight
-    <sel>x</sel> = add_two(x);
+No highlight information.
 // = popover
-```cairo
-fn main()
-```
+No hover information.
 
 //! > hover 3:8
 // = source context

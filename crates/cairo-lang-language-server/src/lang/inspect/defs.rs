@@ -1,12 +1,14 @@
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::LookupItemId;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
+use cairo_lang_syntax::node::ast::TerminalIdentifier;
+use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::Upcast;
 
-use crate::find_definition;
 use crate::lang::db::LsSemanticGroup;
 use crate::markdown::Markdown;
+use crate::{find_definition, ResolvedItem};
 
 /// Keeps information about the symbol that is being searched for/inspected.
 ///
@@ -18,19 +20,43 @@ pub enum SymbolDef {
 
 impl SymbolDef {
     /// Finds definition of the symbol referred by the given identifier.
-    pub fn find(db: &RootDatabase, identifier: &ast::TerminalIdentifier) -> Option<Self> {
-        // Get the syntax node of the definition.
-        let definition_node = {
+    pub fn find(db: &RootDatabase, identifier: &TerminalIdentifier) -> Option<Self> {
+        // Get the resolved item info and the syntax node of the definition.
+        let (definition_item, definition_node) = {
             let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
-            let stable_ptr = find_definition(db, identifier, &lookup_items)?;
-            stable_ptr.lookup(db.upcast())
+            let (resolved_item, stable_ptr) = find_definition(db, identifier, &lookup_items)?;
+            let node = stable_ptr.lookup(db.upcast());
+            (resolved_item, node)
         };
 
-        // Get the lookup item representing the defining item.
-        let lookup_item_id = db.find_lookup_item(&definition_node)?;
+        match definition_item {
+            ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(_))
+            | ResolvedItem::Generic(ResolvedGenericItem::Module(_))
+            | ResolvedItem::Generic(ResolvedGenericItem::GenericFunction(_))
+            | ResolvedItem::Generic(ResolvedGenericItem::TraitFunction(_))
+            | ResolvedItem::Generic(ResolvedGenericItem::GenericType(_))
+            | ResolvedItem::Generic(ResolvedGenericItem::GenericTypeAlias(_))
+            | ResolvedItem::Generic(ResolvedGenericItem::GenericImplAlias(_))
+            | ResolvedItem::Generic(ResolvedGenericItem::Variant(_))
+            | ResolvedItem::Generic(ResolvedGenericItem::Trait(_))
+            | ResolvedItem::Generic(ResolvedGenericItem::Impl(_))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Constant(_))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Module(_))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Function(_))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::TraitFunction(_))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Type(_))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Variant(_))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Trait(_))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_)) => {
+                // Get the lookup item representing the defining item.
+                let lookup_item_id = db.find_lookup_item(&definition_node)?;
 
-        // TODO(mkaput): Support patterns etc.
-        Some(Self::Item(ItemDef { lookup_item_id }))
+                Some(Self::Item(ItemDef { lookup_item_id }))
+            }
+
+            // TODO(mkaput): Implement hover for variables.
+            ResolvedItem::Generic(ResolvedGenericItem::Variable(_)) => None,
+        }
     }
 }
 
