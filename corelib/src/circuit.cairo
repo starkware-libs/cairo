@@ -185,8 +185,36 @@ trait CircuitDefinition<CES> {
     /// The circuit internal type for a tuple of `CircuitElement`s.
     type CircuitType;
 }
-impl CircuitDefinition1<Out0> of CircuitDefinition<(CircuitElement<Out0>,)> {
-    type CircuitType = Circuit<(Out0,)>;
+impl CircuitDefinitionImpl<
+    T, impl Unwrap: UnwrapCircuitElement<T>, +core::metaprogramming::IsTuple<T>
+> of CircuitDefinition<T> {
+    type CircuitType = Circuit<Unwrap::Unwrapped>;
+}
+
+/// Helper trait to get the unwrapped type of a `CircuitElement`, as well as the tuple of unwrapped
+/// types from a tuple of `CircuitElement`s.
+trait UnwrapCircuitElement<T> {
+    type Unwrapped;
+}
+/// Implementation for unwrapping a single `CircuitElement`.
+impl UnwrapCircuitElementDirect<T> of UnwrapCircuitElement<CircuitElement<T>> {
+    type Unwrapped = T;
+}
+/// Implementation for unwrapping a basic tuple of `CircuitElement`s.
+impl UnwrapCircuitElementBase<
+    T, impl UnwrapT: UnwrapCircuitElement<T>
+> of UnwrapCircuitElement<(T,)> {
+    type Unwrapped = (UnwrapT::Unwrapped,);
+}
+/// Implementation for unwrapping a tuple of `CircuitElement`s.
+impl UnwrapCircuitElementNext<
+    T,
+    impl TS: core::metaprogramming::TupleSplit<T>,
+    impl UnwrapHead: UnwrapCircuitElement<TS::Head>,
+    impl UnwrapRest: UnwrapCircuitElement<TS::Rest>,
+    impl TEF: core::metaprogramming::TupleExtendFront<UnwrapRest::Unwrapped, UnwrapHead::Unwrapped>,
+> of UnwrapCircuitElement<T> {
+    type Unwrapped = TEF::Target;
 }
 
 /// A trait for setting up instances of a circuit defined using `CircuitElement`s.
