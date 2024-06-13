@@ -353,7 +353,8 @@ pub fn get_implicit_precedence<'a>(
             _ => Err(diagnostics
                 .report(&arg.arg, SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments)),
         })
-        .try_collect()?;
+        .try_collect()
+        .unwrap_or_default();
     let precedence = ImplicitPrecedence::from_iter(types);
 
     Ok((precedence, Some(attr)))
