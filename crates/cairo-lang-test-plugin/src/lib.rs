@@ -18,7 +18,7 @@ use cairo_lang_sierra::program::{ProgramArtifact, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
-use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
+use cairo_lang_sierra_generator::replace_ids::DebugReplacer;
 use cairo_lang_starknet::contract::{
     find_contracts, get_contract_abi_functions, get_contracts_info, ContractInfo,
 };
@@ -88,7 +88,7 @@ pub fn compile_test_prepared_db(
             .collect();
     let executable_functions = find_executable_function_ids(db, main_crate_ids.clone());
     let all_tests = find_all_tests(db, test_crate_ids.clone());
-    let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
+    let SierraProgramWithDebug { program: mut sierra_program, debug_info } = Arc::unwrap_or_clone(
         db.get_sierra_program_for_functions(
             chain!(
                 executable_functions.clone().into_keys(),
@@ -104,7 +104,7 @@ pub fn compile_test_prepared_db(
         .with_context(|| "Compilation failed without any diagnostics.")?,
     );
     let replacer = DebugReplacer { db };
-    let sierra_program = replacer.apply(&sierra_program);
+    replacer.enrich_function_names(&mut sierra_program);
     let statements_functions =
         debug_info.statements_locations.get_statements_functions_map_for_tests(db);
     let executables = collect_executables(db, executable_functions, &sierra_program);
