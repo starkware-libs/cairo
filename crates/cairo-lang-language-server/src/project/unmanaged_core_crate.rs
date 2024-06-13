@@ -1,4 +1,4 @@
-use std::io;
+use std::path;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
@@ -68,38 +68,10 @@ fn find_core_at_path(root_path: &Path) -> Option<PathBuf> {
 
 /// Makes a path absolute, or logs an error.
 fn ensure_absolute(path: PathBuf) -> Option<PathBuf> {
-    path_absolute(&path)
+    path::absolute(&path)
         .with_context(|| {
             format!("failed to make `core` crate path absolute: {path}", path = path.display())
         })
         .inspect_err(|e| error!("{e:?}"))
         .ok()
-}
-
-// FIXME(mkaput): Replace this with `std::path::absolute` when Rust 1.79 is released.
-/// Returns absolute form of a path, but does not resolve symlinks unlike [`std::fs::canonicalize`].
-///
-/// The function normalizes the path by resolving any `.` and `..` components which are present.
-///
-/// Copied from <https://internals.rust-lang.org/t/path-to-lexical-absolute/14940>.
-fn path_absolute(p: &Path) -> io::Result<PathBuf> {
-    use std::path::Component;
-
-    let mut absolute = if p.is_absolute() { PathBuf::new() } else { std::env::current_dir()? };
-    for component in p.components() {
-        match component {
-            Component::CurDir => {
-                // Skip `.` components.
-            }
-            Component::ParentDir => {
-                // Pop the last element that has been added for `..` components.
-                absolute.pop();
-            }
-            component => {
-                // Just push the component for any other component.
-                absolute.push(component.as_os_str())
-            }
-        }
-    }
-    Ok(absolute)
 }
