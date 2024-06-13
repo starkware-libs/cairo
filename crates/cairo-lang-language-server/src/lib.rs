@@ -873,13 +873,19 @@ impl LanguageServer for Backend {
     }
 }
 
+/// Either [`ResolvedGenericItem`] or [`ResolvedConcreteItem`].
+enum ResolvedItem {
+    Generic(ResolvedGenericItem),
+    Concrete(ResolvedConcreteItem),
+}
+
 // TODO(mkaput): Move this to crate::lang::inspect::defs and make private.
 #[tracing::instrument(level = "trace", skip_all)]
 fn find_definition(
     db: &RootDatabase,
     identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
-) -> Option<SyntaxStablePtrId> {
+) -> Option<(ResolvedItem, SyntaxStablePtrId)> {
     if let Some(parent) = identifier.as_syntax_node().parent() {
         if parent.kind(db) == SyntaxKind::ItemModule {
             let Some(containing_module_file_id) = db.find_module_file_containing_node(&parent)
@@ -893,9 +899,10 @@ fn find_definition(
                 ast::ItemModule::from_syntax_node(db, parent).stable_ptr(),
             )
             .intern(db);
-            return Some(resolved_generic_item_def(
-                db,
-                ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id)),
+            let item = ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id));
+            return Some((
+                ResolvedItem::Generic(item.clone()),
+                resolved_generic_item_def(db, item),
             ));
         }
     }
@@ -903,11 +910,17 @@ fn find_definition(
         if let Some(item) =
             db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
-            return Some(resolved_generic_item_def(db, item));
-        } else if let Some(item) =
+            return Some((
+                ResolvedItem::Generic(item.clone()),
+                resolved_generic_item_def(db, item),
+            ));
+        }
+
+        if let Some(item) =
             db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
-            return resolved_concrete_item_def(db.upcast(), item);
+            let stable_ptr = resolved_concrete_item_def(db.upcast(), item.clone())?;
+            return Some((ResolvedItem::Concrete(item), stable_ptr));
         }
     }
     None
@@ -1005,7 +1018,7 @@ fn get_definition_location(
     let syntax_db = db.upcast();
     let node = db.find_syntax_node_at_position(file, position)?;
     let lookup_items = db.collect_lookup_items_stack(&node)?;
-    let stable_ptr = find_definition(db, &identifier, &lookup_items)?;
+    let (_, stable_ptr) = find_definition(db, &identifier, &lookup_items)?;
     let node = stable_ptr.lookup(syntax_db);
     let found_file = stable_ptr.file_id(syntax_db);
     let span = node.span_without_trivia(syntax_db);

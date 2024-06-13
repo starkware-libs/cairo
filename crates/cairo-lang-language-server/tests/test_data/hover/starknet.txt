@@ -94,11 +94,9 @@ No hover information.
 // = source context
         self.value.write(<caret>value_);
 // = highlight
-        self.value.write(<sel>value_</sel>);
+No highlight information.
 // = popover
-```cairo
-fn constructor(ref self: ContractState, value_: u128)
-```
+No hover information.
 
 //! > hover 28:30
 // = source context
@@ -151,8 +149,6 @@ fn write(ref self: TMemberState, value: Self::Value);
 // = source context
             self.value.write( self.value.read() + <caret>a );
 // = highlight
-            self.value.write( self.value.read() + <sel>a</sel> );
+No highlight information.
 // = popover
-```cairo
-fn increase(ref self: ContractState, a: u128)
-```
+No hover information.
