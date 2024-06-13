@@ -745,14 +745,6 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
     ) -> Maybe<items::imp::ImplDefinitionData>;
 
-    /// Returns the signature of an impl function.
-    #[salsa::invoke(items::imp::concrete_impl_function_signature)]
-    fn concrete_impl_function_signature(
-        &self,
-        concrete_impl_id: items::imp::ConcreteImplId,
-        trait_function: TraitFunctionId,
-    ) -> Maybe<semantic::Signature>;
-
     /// Private query to check if an impl is fully concrete.
     #[salsa::invoke(items::imp::priv_impl_is_fully_concrete)]
     fn priv_impl_is_fully_concrete(&self, impl_id: ImplId) -> bool;

@@ -886,22 +886,6 @@ pub fn priv_impl_definition_data(
     })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::concrete_impl_function_signature].
-pub fn concrete_impl_function_signature(
-    db: &dyn SemanticGroup,
-    concrete_impl_id: ConcreteImplId,
-    trait_function: TraitFunctionId,
-) -> Maybe<semantic::Signature> {
-    let impl_id = ImplId::Concrete(concrete_impl_id);
-    let concrete_trait_id = impl_id.concrete_trait(db)?;
-    let signature = concrete_trait_function_signature(
-        db,
-        ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, trait_function),
-    )?;
-    let substitution = GenericSubstitution::from_impl(impl_id);
-    SubstitutionRewriter { db, substitution: &substitution }.rewrite(signature)
-}
-
 /// An helper function to report diagnostics of items in an impl (used in
 /// priv_impl_definition_data).
 fn report_invalid_impl_item<Terminal: syntax::node::Terminal>(
