@@ -53,7 +53,7 @@ mod Balance {
 // = source context
 use Balance::contr<caret>act_state_for_testing;
 // = highlight
-No highlight information.
+use Balance::<sel>contract_state_for_testing</sel>;
 // = popover
 ```cairo
 pub fn contract_state_for_testing() -> ContractState
@@ -71,7 +71,7 @@ No hover information.
 // = source context
     fn constructor(ref self: Cont<caret>ractState, value_: u128) {
 // = highlight
-No highlight information.
+    fn constructor(ref self: <sel>ContractState</sel>, value_: u128) {
 // = popover
 ```cairo
 
@@ -94,7 +94,7 @@ No hover information.
 // = source context
         self.value.write(<caret>value_);
 // = highlight
-No highlight information.
+        self.value.write(<sel>value_</sel>);
 // = popover
 ```cairo
 fn constructor(ref self: ContractState, value_: u128)
@@ -104,19 +104,19 @@ fn constructor(ref self: ContractState, value_: u128)
 // = source context
     impl Balance of super::IBa<caret>lance<ContractState> {
 // = highlight
-No highlight information.
+    impl Balance of super::<sel>IBalance</sel><ContractState> {
 // = popover
 ```cairo
  trait IBalance<T>
 ```
 ---
- The balance contract interface.
+The balance contract interface.
 
 //! > hover 28:39
 // = source context
     impl Balance of super::IBalance<Con<caret>tractState> {
 // = highlight
-No highlight information.
+    impl Balance of super::IBalance<<sel>ContractState</sel>> {
 // = popover
 ```cairo
 
@@ -131,7 +131,7 @@ No highlight information.
 // = source context
             self.value.r<caret>ead()
 // = highlight
-No highlight information.
+            self.value.<sel>read</sel>()
 // = popover
 ```cairo
 fn read(self: @TMemberState) -> Self::Value;
@@ -141,7 +141,7 @@ fn read(self: @TMemberState) -> Self::Value;
 // = source context
             self.value.wr<caret>ite( self.value.read() + a );
 // = highlight
-No highlight information.
+            self.value.<sel>write</sel>( self.value.read() + a );
 // = popover
 ```cairo
 fn write(ref self: TMemberState, value: Self::Value);
@@ -151,7 +151,7 @@ fn write(ref self: TMemberState, value: Self::Value);
 // = source context
             self.value.write( self.value.read() + <caret>a );
 // = highlight
-No highlight information.
+            self.value.write( self.value.read() + <sel>a</sel> );
 // = popover
 ```cairo
 fn increase(ref self: ContractState, a: u128)

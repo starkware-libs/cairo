@@ -1,11 +1,8 @@
-use std::fmt::Write;
-
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use tower_lsp::lsp_types::{
     lsp_request, ClientCapabilities, Hover, HoverClientCapabilities, HoverContents, HoverParams,
-    LanguageString, MarkedString, MarkupContent, MarkupKind, TextDocumentClientCapabilities,
-    TextDocumentPositionParams,
+    MarkupContent, MarkupKind, TextDocumentClientCapabilities, TextDocumentPositionParams,
 };
 
 use crate::support::cursor::{peek_caret, peek_selection};
@@ -84,9 +81,7 @@ fn test_hover(
         }
 
         report.push_str("// = popover\n");
-        report.push_str(
-            &hover.as_ref().map(render).unwrap_or_else(|| "No hover information.\n".to_owned()),
-        );
+        report.push_str(hover.as_ref().map(render).unwrap_or("No hover information.\n"));
 
         hovers.insert(hover_name, report);
     }
@@ -96,29 +91,11 @@ fn test_hover(
 
 /// Render a hover response to a Markdown string that resembles what would be shown in a hover popup
 /// in the text editor.
-///
-/// Any additional hover metadata is rendered as HTML comments at the beginning of the output.
-fn render(h: &Hover) -> String {
-    let mut buf = String::new();
-
-    let mut write_marked_string = |content: &MarkedString| match content {
-        MarkedString::String(contents) => buf.push_str(contents),
-        MarkedString::LanguageString(LanguageString { language, value }) => {
-            write!(&mut buf, "```{language}\n{value}\n```").unwrap();
-        }
-    };
-
+fn render(h: &Hover) -> &str {
     match &h.contents {
-        HoverContents::Scalar(content) => write_marked_string(content),
-        HoverContents::Markup(MarkupContent { value, .. }) => {
-            buf.push_str(value);
-        }
-        HoverContents::Array(contents) => {
-            for content in contents {
-                write_marked_string(content);
-            }
+        HoverContents::Markup(MarkupContent { value, .. }) => value,
+        contents => {
+            panic!("LS returned deprecated MarkedString-based hover contents: {:#?}", contents);
         }
     }
-
-    buf
 }
