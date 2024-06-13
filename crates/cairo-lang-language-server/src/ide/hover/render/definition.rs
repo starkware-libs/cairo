@@ -8,8 +8,8 @@ use tower_lsp::lsp_types::Hover;
 
 use crate::find_definition;
 use crate::ide::hover::markdown_contents;
+use crate::lang::db::LsSemanticGroup;
 use crate::lang::lsp::ToLsp;
-use crate::lang::semantic::LsSemanticGroup;
 use crate::markdown::Markdown;
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.

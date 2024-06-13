@@ -7,8 +7,8 @@ use tower_lsp::lsp_types::{
 };
 use tracing::debug;
 
+use crate::lang::db::LsSyntaxGroup;
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
-use crate::lang::syntax::LsSyntaxGroup;
 
 mod rename_unused_variable;
 
