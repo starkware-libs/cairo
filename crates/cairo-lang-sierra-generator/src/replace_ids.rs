@@ -147,6 +147,16 @@ impl SierraIdReplacer for DebugReplacer<'_> {
     }
 }
 
+impl DebugReplacer<'_> {
+    /// Enriches the function entries with their full function name. Required for tests and cairo
+    /// running.
+    pub fn enrich_function_names(&self, program: &mut cairo_lang_sierra::program::Program) {
+        for function in &mut program.funcs {
+            function.id = self.replace_function_id(&function.id);
+        }
+    }
+}
+
 pub fn replace_sierra_ids(
     db: &dyn SierraGenGroup,
     statement: &pre_sierra::StatementWithLocation,
