@@ -1,9 +1,8 @@
 use core::circuit::{
-    RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, CircuitDefinition, circuit_add,
-    circuit_sub, circuit_mul, circuit_inverse, EvalCircuitResult, FillInputResult,
-    InputAccumulatorTrait, CircuitDescriptorTrait, u384, CircuitOutputsTrait, CircuitModulus
+    RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, circuit_add, circuit_sub,
+    circuit_mul, circuit_inverse, EvalCircuitResult, EvalCircuitTrait, u384, CircuitOutputsTrait,
+    CircuitModulus, FillInputResultTrait, CircuitInputs,
 };
-
 
 use core::test::test_utils::assert_eq;
 use core::traits::TryInto;
@@ -29,20 +28,10 @@ fn test_circuit_success() {
     let inv = circuit_inverse(add);
     let sub = circuit_sub(inv, in2);
     let mul = circuit_mul(inv, sub);
-    let circ = (mul,);
-    let inputs = circ.init();
-
-    let inputs = match inputs.fill_input([3, 0, 0, 0]) {
-        FillInputResult::More(new_inputs) => new_inputs,
-        FillInputResult::Done(_data) => { panic!("Expected more inputs") }
-    };
-    let data = match inputs.fill_input([6, 0, 0, 0]) {
-        FillInputResult::More(_new_inputs) => panic!("Expected Done"),
-        FillInputResult::Done(data) => data
-    };
 
     let modulus = TryInto::<_, CircuitModulus>::try_into([7, 0, 0, 0]).unwrap();
-    let outputs = match circ.get_descriptor().eval(data, modulus) {
+    let outputs =
+        match (mul,).new_inputs().next([3, 0, 0, 0]).next([6, 0, 0, 0]).done().eval(modulus) {
         EvalCircuitResult::Success(outputs) => { outputs },
         EvalCircuitResult::Failure((_, _)) => { panic!("Expected success") }
     };
@@ -58,17 +47,9 @@ fn test_circuit_success() {
 fn test_circuit_failure() {
     let in0 = CircuitElement::<CircuitInput<0>> {};
     let out0 = circuit_inverse(in0);
-    let circ = (out0,);
-    let inputs = circ.init();
-
-    let data = match inputs.fill_input([11, 0, 0, 0]) {
-        FillInputResult::More(_new_inputs) => panic!("Expected Done"),
-        FillInputResult::Done(data) => data
-    };
 
     let modulus = TryInto::<_, CircuitModulus>::try_into([55, 0, 0, 0]).unwrap();
-
-    match circ.get_descriptor().eval(data, modulus) {
+    match (out0,).new_inputs().next([11, 0, 0, 0]).done().eval(modulus) {
         EvalCircuitResult::Failure((_, _)) => {},
         EvalCircuitResult::Success(_outputs) => { panic!("Expected failure"); }
     }

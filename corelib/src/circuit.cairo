@@ -164,7 +164,6 @@ pub struct CircuitElement<T> {}
 pub impl CircuitElementDrop<T> of Drop<CircuitElement<T>>;
 pub impl CircuitElementCopy<T> of Copy<CircuitElement<T>>;
 
-
 /// A marker trait for keeping track of which types are circuit elements.
 pub trait CircuitElementTrait<T> {}
 impl InputCircuitElement<const N: usize> of CircuitElementTrait<CircuitInput<N>> {}
@@ -181,72 +180,98 @@ impl MulModCircuitElement<
     Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>
 > of CircuitElementTrait<MulModGate<Lhs, Rhs>> {}
 
-
-/// A trait for initializtion instances of a circuit defined using CircuitElements.
-pub trait CircuitDefinition<CE> {
+/// A trait for defining a circuit.
+trait CircuitDefinition<CES> {
+    /// The circuit internal type for a tuple of `CircuitElement`s.
     type CircuitType;
-    /// calls `init_circuit_data` for the given circuit.
-    fn init(self: CE) -> CircuitInputAccumulator<Self::CircuitType>;
-    /// calls `get_circuit_descriptor` for the given circuit.
-    fn get_descriptor(self: CE) -> CircuitDescriptor<Self::CircuitType>;
 }
-
-impl SingleOutputCircuit<Out0> of CircuitDefinition<(CircuitElement<Out0>,)> {
+impl CircuitDefinition1<Out0> of CircuitDefinition<(CircuitElement<Out0>,)> {
     type CircuitType = Circuit<(Out0,)>;
+}
 
-    fn init(self: (CircuitElement<Out0>,)) -> CircuitInputAccumulator<Self::CircuitType> {
-        init_circuit_data::<Self::CircuitType>()
-    }
-
-    fn get_descriptor(self: (CircuitElement<Out0>,)) -> CircuitDescriptor<Self::CircuitType> {
-        get_circuit_descriptor::<Self::CircuitType>()
+/// A trait for setting up instances of a circuit defined using `CircuitElement`s.
+#[generate_trait]
+pub impl CircuitInputsImpl<CES> of CircuitInputs<CES> {
+    /// calls `init_circuit_data` for the given circuit.
+    fn new_inputs<impl CD: CircuitDefinition<CES>, +Drop<CES>>(
+        self: CES
+    ) -> FillInputResult<CD::CircuitType> {
+        FillInputResult::More(init_circuit_data::<CD::CircuitType>())
     }
 }
 
-
-/// A trait for evaluating a circuit.
-pub trait InputAccumulatorTrait<InputAccumulator> {
-    type CircuitType;
-
-    /// Fills a circuit input with the given value.
-    fn fill_input(self: InputAccumulator, value: [u96; 4]) -> FillInputResult<Self::CircuitType>;
+/// A trait for getting the descriptor of a circuit.
+#[generate_trait]
+impl GetCircuitDescriptorImpl<CES> of GetCircuitDescriptor<CES> {
+    /// calls `get_circuit_descriptor` for the given circuit.
+    fn get_descriptor<impl CD: CircuitDefinition<CES>, +Drop<CES>>(
+        self: CES
+    ) -> CircuitDescriptor<CD::CircuitType> {
+        get_circuit_descriptor::<CD::CircuitType>()
+    }
 }
 
-impl InputAccumulatorTraitImpl<C> of InputAccumulatorTrait<CircuitInputAccumulator<C>> {
-    type CircuitType = C;
+/// A trait for filling inputs in a circuit instance's data.
+#[generate_trait]
+pub impl FillInputResultImpl<C> of FillInputResultTrait<C> {
+    /// Adds an input to the accumulator.
+    fn next<Value, +IntoCircuitInputValue<Value>, +Drop<Value>>(
+        self: FillInputResult<C>, value: Value
+    ) -> FillInputResult<C> {
+        match self {
+            FillInputResult::More(accumulator) => fill_circuit_input(
+                accumulator, value.into_circuit_input_value()
+            ),
+            FillInputResult::Done(_) => panic!("All inputs have been filled"),
+        }
+    }
+    fn done(self: FillInputResult<C>) -> CircuitData<C> {
+        match self {
+            FillInputResult::Done(data) => data,
+            FillInputResult::More(_) => panic!("Not all inputs have been filled"),
+        }
+    }
+}
 
-    fn fill_input(self: CircuitInputAccumulator<C>, value: [u96; 4]) -> FillInputResult<C> {
-        let [val0, val1, val2, val3] = value;
-        let value = [
+/// Trait for converting a value to a circuit input value.
+trait IntoCircuitInputValue<T> {
+    fn into_circuit_input_value(self: T) -> [U96Guarantee; 4];
+}
+impl U96sIntoCircuitInputValue of IntoCircuitInputValue<[u96; 4]> {
+    fn into_circuit_input_value(self: [u96; 4]) -> [U96Guarantee; 4] {
+        let [val0, val1, val2, val3] = self;
+        [
             into_u96_guarantee(val0),
             into_u96_guarantee(val1),
             into_u96_guarantee(val2),
             into_u96_guarantee(val3),
-        ];
-        fill_circuit_input::<C>(self, value)
+        ]
+    }
+}
+
+impl U384IntoCircuitInputValue of IntoCircuitInputValue<u384> {
+    fn into_circuit_input_value(self: u384) -> [U96Guarantee; 4] {
+        [
+            into_u96_guarantee(self.limb0),
+            into_u96_guarantee(self.limb1),
+            into_u96_guarantee(self.limb2),
+            into_u96_guarantee(self.limb3),
+        ]
     }
 }
 
 /// A trait for evaluating a circuit.
-pub trait CircuitDescriptorTrait<Descriptor> {
-    type CircuitType;
-
-    /// Evaluates the circuit with the given data and modulus.
-    fn eval(
-        self: Descriptor, data: CircuitData<Self::CircuitType>, modulus: CircuitModulus
-    ) -> core::circuit::EvalCircuitResult<Self::CircuitType>;
-}
-
-impl CircuitDescriptorImpl<C> of CircuitDescriptorTrait<CircuitDescriptor<C>> {
-    type CircuitType = C;
-
-    fn eval(
-        self: CircuitDescriptor<C>, data: CircuitData<C>, modulus: CircuitModulus
+#[generate_trait]
+pub impl EvalCircuitImpl<C> of EvalCircuitTrait<C> {
+    fn eval(self: CircuitData<C>, modulus: CircuitModulus) -> core::circuit::EvalCircuitResult<C> {
+        self.eval_ex(get_circuit_descriptor::<C>(), modulus)
+    }
+    fn eval_ex(
+        self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus
     ) -> core::circuit::EvalCircuitResult<C> {
-        eval_circuit::<C>(self, data, modulus, 0, 1)
+        eval_circuit::<C>(descriptor, self, modulus, 0, 1)
     }
 }
-
 
 /// A trait for evaluating a circuit.
 pub trait CircuitOutputsTrait<Outputs, OutputElement> {
