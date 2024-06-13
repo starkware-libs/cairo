@@ -289,9 +289,9 @@ pub enum CoreHint {
     EvalCircuit {
         values_ptr: ResOperand,
         n_add_mods: ResOperand,
-        add_mod_offsets: ResOperand,
+        add_mod_builtin: ResOperand,
         n_mul_mods: ResOperand,
-        mul_mod_offsets: ResOperand,
+        mul_mod_builtin: ResOperand,
         // A ResOperand::Deref variant that points to the modulus
         modulus: ResOperand,
 

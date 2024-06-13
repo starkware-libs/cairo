@@ -286,14 +286,14 @@ fn foo(
 [ap + -1] = [[fp + -13] + 4];
 [fp + -11] = [[fp + -13] + 5];
 [fp + -10] = [[fp + -13] + 6];
-%{ raise NotImplementedError %}
-[fp + -6] = [[fp + -12] + 0], ap++;
+[fp + -6] = [[fp + -12] + 0];
 [fp + -5] = [[fp + -12] + 1];
 [fp + -4] = [[fp + -12] + 2];
 [fp + -3] = [[fp + -12] + 3];
-[ap + -2] = [[fp + -12] + 4];
+[ap + -1] = [[fp + -12] + 4];
 [fp + -9] = [[fp + -12] + 5];
-[ap + -1] = [[fp + -12] + 6];
+%{ raise NotImplementedError %}
+[ap + 0] = [[fp + -12] + 6], ap++;
 [ap + 0] = [ap + -1] * 7, ap++;
 [fp + -8] = [ap + 0] + [ap + -2], ap++;
 jmp rel 31 if [ap + -1] != 0;
@@ -421,14 +421,14 @@ fn foo(
 [ap + -3] = [[ap + -1] + 1];
 [ap + -3] = [[ap + -1] + 2];
 [ap + -3] = [[ap + -1] + 3];
-%{ raise NotImplementedError %}
-[fp + -6] = [[fp + -12] + 0], ap++;
+[fp + -6] = [[fp + -12] + 0];
 [fp + -5] = [[fp + -12] + 1];
 [fp + -4] = [[fp + -12] + 2];
 [fp + -3] = [[fp + -12] + 3];
-[ap + -2] = [[fp + -12] + 4];
+[ap + -1] = [[fp + -12] + 4];
 [fp + -9] = [[fp + -12] + 5];
-[ap + -1] = [[fp + -12] + 6];
+%{ raise NotImplementedError %}
+[ap + 0] = [[fp + -12] + 6], ap++;
 [ap + 0] = [ap + -1] * 7, ap++;
 [fp + -8] = [ap + 0] + [ap + -2], ap++;
 jmp rel 31 if [ap + -1] != 0;
