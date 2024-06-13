@@ -227,23 +227,21 @@ fn build_circuit_eval(
     }
 
     casm_build_extend! {casm_builder,
-        tempvar computed_gates;
-        hint CoreHint::EvalCircuit {
-            values_ptr: values,
-            n_add_mods: n_adds, add_mod_offsets: add_mod_offsets,
-            n_mul_mods: n_muls, mul_mod_offsets: mul_mod_offsets,
-            modulus: modulus0
-        } into {computed_gates_out: computed_gates};
-
         assert modulus0 = mul_mod[0];
         assert modulus1 = mul_mod[1];
         assert modulus2 = mul_mod[2];
         assert modulus3 = mul_mod[3];
         assert values = mul_mod[4];
         assert mul_mod_offsets = mul_mod[5];
+
+        tempvar computed_gates;
+        hint CoreHint::EvalCircuit {
+            values_ptr: values,
+            n_add_mods: n_adds, add_mod_builtin: add_mod,
+            n_mul_mods: n_muls, mul_mod_builtin: mul_mod,
+            modulus: modulus0
+        } into {computed_gates_out: computed_gates};
         assert computed_gates = mul_mod[6];
-
-
 
         const add_mod_usage = (BUILTIN_INSTANCE_SIZE * add_offsets.len());
         let new_add_mod = add_mod + add_mod_usage;

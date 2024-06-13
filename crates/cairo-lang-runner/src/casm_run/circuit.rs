@@ -1,7 +1,9 @@
-use std::ops::Shl;
+use std::array;
+use std::ops::{Deref, Shl};
 
-use cairo_lang_sierra::extensions::circuit::VALUE_SIZE;
+use cairo_lang_sierra::extensions::circuit::{BUILTIN_INSTANCE_SIZE, OFFSETS_PER_GATE, VALUE_SIZE};
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
+use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_integer::{ExtendedGcd, Integer};
@@ -194,4 +196,70 @@ fn invert_or_nullify(value: BigUint, modulus: &BigUint) -> (bool, BigUint) {
     // Note that gcd divides the value, so value * nullifier = value * (modulus / gcd) =
     // (value // gcd) * modulus = 0 (mod modulus)
     (false, nullifier)
+}
+
+/// Fills the instances of a mod builtin.
+pub fn fill_instances(
+    vm: &mut VirtualMachine,
+    builtin_ptr: Relocatable,
+    n_instances: usize,
+    modulus: [Felt252; VALUE_SIZE],
+    values_ptr: Relocatable,
+    mut offsets_ptr: Relocatable,
+) -> Result<(), HintError> {
+    for i in 0..n_instances {
+        let instance_ptr = (builtin_ptr + i * BUILTIN_INSTANCE_SIZE)?;
+
+        for (idx, value) in modulus.iter().enumerate() {
+            vm.insert_value((instance_ptr + idx)?, *value)?;
+        }
+
+        vm.insert_value((instance_ptr + 4)?, values_ptr)?;
+        vm.insert_value((instance_ptr + 5)?, offsets_ptr)?;
+        offsets_ptr += OFFSETS_PER_GATE;
+        vm.insert_value((instance_ptr + 6)?, n_instances - i)?;
+    }
+
+    Ok(())
+}
+
+/// Fills the instances and the values of a circuit.
+///
+/// Returns the first mul gate index that failed to fill its values or `n_mul_mods` if all gates
+/// were filled successfully.
+pub fn run_circuit(
+    vm: &mut VirtualMachine,
+    values_ptr: Relocatable,
+    add_mod_builtin: Relocatable,
+    n_add_mods: usize,
+    mul_mod_builtin: Relocatable,
+    n_mul_mods: usize,
+    modulus_ptr: Relocatable,
+) -> Result<usize, HintError> {
+    // The offset of the offsets pointer inside an instance of the builtins.
+    let offsets_offset = 5;
+
+    let mul_mod_offsets = vm.get_relocatable((mul_mod_builtin + offsets_offset)?)?;
+    let add_mod_offsets = if n_add_mods == 0 {
+        mul_mod_offsets
+    } else {
+        vm.get_relocatable((add_mod_builtin + offsets_offset)?)?
+    };
+    let n_computed_gates = fill_values(
+        vm,
+        values_ptr,
+        add_mod_offsets,
+        n_add_mods,
+        mul_mod_offsets,
+        n_mul_mods,
+        modulus_ptr,
+    );
+
+    let modulus: [Felt252; 4] =
+        array::from_fn(|i| *vm.get_integer((modulus_ptr + i).unwrap()).unwrap().deref());
+
+    fill_instances(vm, add_mod_builtin, n_add_mods, modulus, values_ptr, add_mod_offsets)?;
+    fill_instances(vm, mul_mod_builtin, n_computed_gates, modulus, values_ptr, mul_mod_offsets)?;
+
+    Ok(n_computed_gates)
 }
