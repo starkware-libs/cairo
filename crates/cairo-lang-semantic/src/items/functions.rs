@@ -15,8 +15,7 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{
-    define_short_id, extract_matches, require, try_extract_matches, Intern, LookupIntern,
-    OptionFrom,
+    define_short_id, require, try_extract_matches, Intern, LookupIntern, OptionFrom,
 };
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
@@ -126,18 +125,7 @@ impl GenericFunctionId {
             GenericFunctionId::Free(id) => db.free_function_signature(id),
             GenericFunctionId::Extern(id) => db.extern_function_signature(id),
             GenericFunctionId::Impl(id) => {
-                let concrete_trait_id = match id.impl_id {
-                    ImplId::Concrete(concrete_impl_id) => {
-                        return db.concrete_impl_function_signature(concrete_impl_id, id.function);
-                    }
-                    ImplId::GenericParameter(param) => {
-                        let param_impl =
-                            extract_matches!(db.generic_param_semantic(param)?, GenericParam::Impl);
-                        param_impl.concrete_trait?
-                    }
-                    ImplId::ImplVar(var) => var.lookup_intern(db).concrete_trait_id,
-                };
-                // When not having a concrete impl, falling back to the concrete trait signature.
+                let concrete_trait_id = id.impl_id.concrete_trait(db)?;
                 let signature = db.concrete_trait_function_signature(
                     ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function),
                 )?;
