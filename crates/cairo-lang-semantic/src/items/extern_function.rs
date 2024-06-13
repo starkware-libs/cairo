@@ -186,7 +186,7 @@ pub fn priv_extern_function_declaration_data(
         }
     }
 
-    let (_, implicit_precedence_attr) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
+    let (_, implicit_precedence_attr) = get_implicit_precedence(db, &mut diagnostics, &attributes);
     if let Some(attr) = implicit_precedence_attr {
         diagnostics
             .report(attr.stable_ptr.untyped(), ImplicitPrecedenceAttrForExternFunctionNotAllowed);
