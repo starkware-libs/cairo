@@ -873,6 +873,7 @@ impl LanguageServer for Backend {
     }
 }
 
+// TODO(mkaput): Move this to crate::lang::inspect::defs and make private.
 #[tracing::instrument(level = "trace", skip_all)]
 fn find_definition(
     db: &RootDatabase,
