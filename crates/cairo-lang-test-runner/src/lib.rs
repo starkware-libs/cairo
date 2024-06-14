@@ -26,7 +26,8 @@ use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::test_config::{PanicExpectation, TestExpectation};
 use cairo_lang_test_plugin::{
-    compile_test_prepared_db, test_plugin_suite, TestCompilation, TestConfig,
+    compile_test_prepared_db, test_plugin_suite, TestCompilation, TestCompilationMetadata,
+    TestConfig,
 };
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -100,11 +101,11 @@ impl CompiledTestRunner {
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
             if self.config.run_profiler == RunProfilerConfig::Cairo { db } else { None },
-            compiled.named_tests,
+            compiled.metadata.named_tests,
             compiled.sierra_program.program,
-            compiled.function_set_costs,
-            compiled.contracts_info,
-            compiled.statements_functions,
+            compiled.metadata.function_set_costs,
+            compiled.metadata.contracts_info,
+            compiled.metadata.statements_functions,
             &self.config,
         )?;
 
@@ -259,8 +260,9 @@ pub fn filter_test_cases(
     ignored: bool,
     filter: &str,
 ) -> (TestCompilation, usize) {
-    let total_tests_count = compiled.named_tests.len();
+    let total_tests_count = compiled.metadata.named_tests.len();
     let named_tests = compiled
+        .metadata
         .named_tests
         .into_iter()
         // Filtering unignored tests in `ignored` mode. Keep all tests in `include-ignored` mode.
@@ -275,7 +277,10 @@ pub fn filter_test_cases(
         .filter(|(name, _)| name.contains(filter))
         .collect_vec();
     let filtered_out = total_tests_count - named_tests.len();
-    let tests = TestCompilation { named_tests, ..compiled };
+    let tests = TestCompilation {
+        sierra_program: compiled.sierra_program,
+        metadata: TestCompilationMetadata { named_tests, ..(compiled.metadata) },
+    };
     (tests, filtered_out)
 }
 

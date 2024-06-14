@@ -130,17 +130,32 @@ pub fn compile_test_prepared_db(
     let sierra_program = ProgramArtifact::stripped(sierra_program)
         .with_debug_info(DebugInfo { executables, ..DebugInfo::default() });
     Ok(TestCompilation {
-        named_tests,
         sierra_program,
-        function_set_costs,
-        contracts_info,
-        statements_functions,
+        metadata: TestCompilationMetadata {
+            named_tests,
+            function_set_costs,
+            contracts_info,
+            statements_functions,
+        },
     })
 }
 
-/// Compiled test cases.
+/// Encapsulation of all data required to execute tests.
+/// This includes the source code compiled to a Sierra program and all cairo-test specific
+/// data extracted from it.
+/// This can be stored on the filesystem and shared externally.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct TestCompilation {
+    pub sierra_program: ProgramArtifact,
+    #[serde(flatten)]
+    pub metadata: TestCompilationMetadata,
+}
+
+/// Encapsulation of all data required to execute tests, except for the Sierra program itself.
+/// This includes all cairo-test specific data extracted from the program.
+/// This can be stored on the filesystem and shared externally.
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+pub struct TestCompilationMetadata {
     #[serde(
         serialize_with = "serialize_ordered_hashmap_vec",
         deserialize_with = "deserialize_ordered_hashmap_vec"
@@ -152,7 +167,6 @@ pub struct TestCompilation {
     )]
     pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     pub named_tests: Vec<(String, TestConfig)>,
-    pub sierra_program: ProgramArtifact,
     /// A map between sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
     /// path (modules and impls) to the function in the file. Used only if the tests are running
