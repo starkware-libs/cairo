@@ -30,6 +30,9 @@ impl LookupItemEx for LookupItemId {
             LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
                 Some(FunctionWithBodyId::Free(*free_function_id))
             }
+            LookupItemId::TraitItem(TraitItemId::Function(trait_function_id)) => {
+                Some(FunctionWithBodyId::Trait(*trait_function_id))
+            }
             LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
                 Some(FunctionWithBodyId::Impl(*impl_function_id))
             }

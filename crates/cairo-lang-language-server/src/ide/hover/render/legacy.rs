@@ -1,8 +1,9 @@
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_defs::ids::{FunctionWithBodyId, ImplItemId, LookupItemId, ModuleItemId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, LookupItemId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::Mutability;
 use cairo_lang_syntax::node::ast::{Expr, Pattern, TerminalIdentifier};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -20,17 +21,7 @@ use crate::markdown::Markdown;
 pub fn legacy(db: &RootDatabase, identifier: &TerminalIdentifier) -> Option<Hover> {
     let node = identifier.as_syntax_node();
     let lookup_item_id = db.find_lookup_item(&node)?;
-    let function_id = match lookup_item_id {
-        LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
-            FunctionWithBodyId::Free(free_function_id)
-        }
-        LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
-            FunctionWithBodyId::Impl(impl_function_id)
-        }
-        _ => {
-            return None;
-        }
-    };
+    let function_id = lookup_item_id.function_with_body()?;
 
     // Build texts.
     let mut hints = Vec::new();
