@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{
-    FunctionWithBodyId, ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
-    ModuleItemId, NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId,
+    LanguageElementId, LookupItemId, ModuleFileId, ModuleId, NamedLanguageElementId,
+    TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextOffset;
@@ -56,16 +56,8 @@ pub fn generic_completions(
     let Some(lookup_item_id) = lookup_items.into_iter().next() else {
         return completions;
     };
-    let function_id = match lookup_item_id {
-        LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
-            FunctionWithBodyId::Free(free_function_id)
-        }
-        LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
-            FunctionWithBodyId::Impl(impl_function_id)
-        }
-        _ => {
-            return completions;
-        }
+    let Some(function_id) = lookup_item_id.function_with_body() else {
+        return completions;
     };
     let Ok(signature) = db.function_with_body_signature(function_id) else {
         return completions;

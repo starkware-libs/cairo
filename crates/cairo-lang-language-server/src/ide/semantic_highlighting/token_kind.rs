@@ -1,6 +1,6 @@
-use cairo_lang_defs::ids::{FunctionWithBodyId, ImplItemId, LookupItemId, ModuleItemId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::grandparent_kind;
@@ -171,16 +171,8 @@ impl SemanticTokenKind {
                 }
 
                 // Exprs and patterns..
-                let function_id = match lookup_item_id {
-                    LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
-                        FunctionWithBodyId::Free(free_function_id)
-                    }
-                    LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
-                        FunctionWithBodyId::Impl(impl_function_id)
-                    }
-                    _ => {
-                        continue;
-                    }
+                let Some(function_id) = lookup_item_id.function_with_body() else {
+                    continue;
                 };
                 if let Some(expr_path_ptr) = expr_path_ptr {
                     if db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).is_ok() {
