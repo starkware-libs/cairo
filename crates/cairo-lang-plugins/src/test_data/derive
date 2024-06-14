@@ -474,6 +474,16 @@ error: Expected path.
 #[derive(1)]
          ^
 
+error: Unknown derive `Unsupported` - a plugin might be missing.
+ --> test_src/lib.cairo:7:10
+#[derive(Unsupported)]
+         ^*********^
+
+error: Unknown derive `long::path` - a plugin might be missing.
+ --> test_src/lib.cairo:10:10
+#[derive(long::path)]
+         ^********^
+
 error: Unsupported trait for derive for extern types.
  --> test_src/lib.cairo:13:10
 #[derive(Clone)]
