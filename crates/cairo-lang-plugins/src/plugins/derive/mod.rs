@@ -34,10 +34,11 @@ impl MacroPlugin for DerivePlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata<'_>,
+        metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         generate_derive_code_for_type(
             db,
+            metadata,
             match item_ast {
                 ast::ModuleItem::Struct(struct_ast) => DeriveInfo::new(
                     db,
@@ -237,7 +238,11 @@ pub struct DeriveResult {
 }
 
 /// Adds an implementation for all requested derives for the type.
-fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> PluginResult {
+fn generate_derive_code_for_type(
+    db: &dyn SyntaxGroup,
+    metadata: &MacroPluginMetadata<'_>,
+    info: DeriveInfo,
+) -> PluginResult {
     let mut result = DeriveResult::default();
     for attr in info.attributes.query_attr(db, DERIVE_ATTR) {
         let attr = attr.structurize(db);
@@ -259,11 +264,7 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
                 continue;
             };
 
-            let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] else {
-                continue;
-            };
-
-            let derived = segment.ident(db).text(db);
+            let derived = path.as_syntax_node().get_text_without_trivia(db);
             let stable_ptr = path.stable_ptr().untyped();
             match derived.as_str() {
                 "Copy" | "Drop" => result.impls.push(get_empty_impl(&derived, &info)),
@@ -278,8 +279,12 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
                 "PartialEq" => partial_eq::handle_partial_eq(&info, stable_ptr, &mut result),
                 "Serde" => serde::handle_serde(&info, stable_ptr, &mut result),
                 _ => {
-                    // TODO(spapini): How to allow downstream derives while also
-                    //  alerting the user when the derive doesn't exist?
+                    if !metadata.declared_derives.contains(&derived) {
+                        result.diagnostics.push(PluginDiagnostic::error(
+                            stable_ptr,
+                            format!("Unknown derive `{derived}` - a plugin might be missing."),
+                        ));
+                    }
                 }
             }
         }

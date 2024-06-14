@@ -8,6 +8,7 @@ use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use smol_str::SmolStr;
 
 /// A trait for arbitrary data that a macro generates along with a generated file.
@@ -81,6 +82,8 @@ impl PluginDiagnostic {
 pub struct MacroPluginMetadata<'a> {
     /// Config set of a crate to which the current item belongs.
     pub cfg_set: &'a CfgSet,
+    /// The possible derives declared by any plugin.
+    pub declared_derives: &'a OrderedHashSet<String>,
 }
 
 // TOD(spapini): Move to another place.
@@ -102,6 +105,15 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     /// Note: They may not cause a diagnostic if some other plugin declares such attribute, but
     /// plugin writers should not rely on that.
     fn declared_attributes(&self) -> Vec<String>;
+
+    /// Derives this plugin supplies.
+    /// Any derived classes the plugin supplies without declaring here are likely to cause a
+    /// compilation error for unknown derive.
+    /// Note: They may not cause a diagnostic if some other plugin declares such derive, but
+    /// plugin writers should not rely on that.
+    fn declared_derives(&self) -> Vec<String> {
+        Vec::new()
+    }
 
     /// Attributes that should mark the function as an executable.
     /// Functions marked with executable attributes will be listed

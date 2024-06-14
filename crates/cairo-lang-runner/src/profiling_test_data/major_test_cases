@@ -900,33 +900,35 @@ erc20_transfer
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 376: 10 (storage_base_address_from_felt252([0], [30]) -> ([31], [32]))
-  statement 453: 10 (storage_base_address_from_felt252([79], [96]) -> ([97], [98]))
-  statement 478: 10 (storage_base_address_from_felt252([97], [121]) -> ([122], [123]))
-  statement 556: 10 (storage_base_address_from_felt252([170], [187]) -> ([188], [189]))
-  statement 592: 9 (emit_event_syscall([203], [204], [220], [221]) { fallthrough([222], [223]) 603([224], [225], [226]) })
-  statement 462: 8 (storage_write_syscall([50], [51], [103], [101], [99]) { fallthrough([104], [105]) 747([106], [107], [108]) })
-  statement 470: 8 (storage_write_syscall([104], [105], [102], [111], [109]) { fallthrough([112], [113]) 738([114], [115], [116]) })
-  statement 565: 8 (storage_write_syscall([141], [142], [194], [192], [190]) { fallthrough([195], [196]) 623([197], [198], [199]) })
-  statement 573: 8 (storage_write_syscall([195], [196], [193], [202], [200]) { fallthrough([203], [204]) 614([205], [206], [207]) })
+  statement 677: 20 (storage_base_address_from_felt252([0], [9]) -> ([10], [11]))
+  statement 798: 20 (storage_base_address_from_felt252([0], [10]) -> ([11], [12]))
+  statement 808: 16 (storage_write_syscall([1], [3], [19], [17], [15]) { fallthrough([20], [21]) 859([22], [23], [24]) })
+  statement 817: 16 (storage_write_syscall([20], [21], [18], [28], [25]) { fallthrough([29], [30]) 852([31], [32], [33]) })
+  statement 685: 14 (storage_read_syscall([1], [3], [15], [13]) { fallthrough([16], [17], [18]) 777([19], [20], [21]) })
+  statement 698: 14 (storage_read_syscall([16], [17], [14], [29]) { fallthrough([30], [31], [32]) 747([33], [34], [35]) })
+  statement 523: 9 (emit_event_syscall([134], [136], [152], [153]) { fallthrough([154], [155]) 537([156], [157], [158]) })
+  statement 708: 8 (u8_overflowing_add([36], [27], [41]) { fallthrough([42], [43]) 720([44], [45]) })
+  statement 824: 8 (u8_overflowing_add([11], [26], [34]) { fallthrough([35], [36]) 836([37], [38]) })
   statement 81: 7 (contract_address_try_from_felt252([5], [20]) { fallthrough([22], [23]) 287([24]) })
-  statement 384: 7 (storage_read_syscall([1], [3], [36], [34]) { fallthrough([37], [38], [39]) 838([40], [41], [42]) })
-  statement 396: 7 (storage_read_syscall([37], [38], [35], [49]) { fallthrough([50], [51], [52]) 805([53], [54], [55]) })
-  statement 487: 7 (storage_read_syscall([112], [113], [127], [125]) { fallthrough([128], [129], [130]) 714([131], [132], [133]) })
-  statement 499: 7 (storage_read_syscall([128], [129], [126], [140]) { fallthrough([141], [142], [143]) 681([144], [145], [146]) })
   statement 182: 6 (withdraw_gas_all([61], [6], [81]) { fallthrough([82], [83]) 252([84], [85]) })
+  statement 718: 6 (store_temp<core::panics::PanicResult::<(core::integer::u256,)>>([48]) -> ([48]))
+  statement 834: 6 (store_temp<core::panics::PanicResult::<(test::erc_20::__member_module_balances::ContractMemberState, ())>>([41]) -> ([41]))
   statement 185: 5 (get_execution_info_v2_syscall([83], [3]) { fallthrough([86], [87], [88]) 234([89], [90], [91]) })
-  statement 581: 5 (store_temp<test::erc_20::Event>([213]) -> ([213]))
+  statement 513: 5 (store_temp<test::erc_20::Event>([145]) -> ([145]))
+  statement 675: 4 (pedersen([2], [7], [6]) -> ([8], [9]))
+  statement 690: 4 (u128s_from_felt252([10], [18]) { fallthrough([22], [23]) 755([24], [25], [26]) })
+  statement 703: 4 (u128s_from_felt252([22], [32]) { fallthrough([36], [37]) 731([38], [39], [40]) })
+  statement 796: 4 (pedersen([2], [8], [7]) -> ([9], [10]))
   statement 42: 3 (store_temp<core::panics::PanicResult::<((),)>>([32]) -> ([32]))
   statement 61: 3 (withdraw_gas([1], [2]) { fallthrough([5], [6]) 309([7], [8]) })
   statement 125: 3 (store_temp<core::option::Option::<core::integer::u256>>([60]) -> ([63]))
   statement 158: 3 (array_snapshot_pop_front<felt252>([62]) { fallthrough([72], [73]) 178([74]) })
   statement 223: 3 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([117]) -> ([117]))
-  statement 405: 3 (u128_overflowing_sub([56], [57], [63]) { fallthrough([64], [65]) 413([66], [67]) })
-  statement 419: 3 (u128_overflowing_sub([70], [44], [62]) { fallthrough([75], [76]) 426([77], [78]) })
-  statement 508: 3 (u128_overflowing_add([147], [148], [154]) { fallthrough([155], [156]) 516([157], [158]) })
-  statement 522: 3 (u128_overflowing_add([161], [135], [153]) { fallthrough([166], [167]) 529([168], [169]) })
-  statement 601: 3 (store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([229]) -> ([229]))
+  statement 385: 3 (u128_overflowing_sub([35], [44], [47]) { fallthrough([48], [49]) 393([50], [51]) })
+  statement 399: 3 (u128_overflowing_sub([54], [43], [46]) { fallthrough([59], [60]) 406([61], [62]) })
+  statement 454: 3 (u128_overflowing_add([90], [99], [102]) { fallthrough([103], [104]) 462([105], [106]) })
+  statement 468: 3 (u128_overflowing_add([109], [98], [101]) { fallthrough([114], [115]) 475([116], [117]) })
+  statement 535: 3 (store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([164]) -> ([164]))
   statement 10: 2 (store_temp<core::array::Span::<core::felt252>>([11]) -> ([11]))
   statement 30: 2 (store_temp<core::array::Span::<core::felt252>>([22]) -> ([22]))
   statement 66: 2 (array_snapshot_pop_front<felt252>([9]) { fallthrough([10], [11]) 74([12]) })
@@ -943,18 +945,52 @@ Weight by sierra statement:
   statement 124: 2 (store_temp<Snapshot<Array<felt252>>>([46]) -> ([62]))
   statement 180: 2 (get_builtin_costs() -> ([81]))
   statement 208: 2 (store_temp<core::integer::u256>([70]) -> ([70]))
-  statement 374: 2 (pedersen([2], [28], [27]) -> ([29], [30]))
-  statement 389: 2 (u128s_from_felt252([31], [39]) { fallthrough([43], [44]) 816([45], [46], [47]) })
-  statement 401: 2 (u128s_from_felt252([43], [52]) { fallthrough([56], [57]) 788([58], [59], [60]) })
-  statement 451: 2 (pedersen([29], [94], [93]) -> ([95], [96]))
-  statement 476: 2 (pedersen([95], [119], [118]) -> ([120], [121]))
-  statement 492: 2 (u128s_from_felt252([122], [130]) { fallthrough([134], [135]) 692([136], [137], [138]) })
-  statement 504: 2 (u128s_from_felt252([134], [143]) { fallthrough([147], [148]) 664([149], [150], [151]) })
-  statement 554: 2 (pedersen([120], [185], [184]) -> ([186], [187]))
-  statement 582: 2 (store_temp<Array<felt252>>([208]) -> ([208]))
-  statement 583: 2 (store_temp<Array<felt252>>([209]) -> ([209]))
-  statement 895: 2 (store_temp<Array<felt252>>([6]) -> ([6]))
-  statement 896: 2 (store_temp<Array<felt252>>([34]) -> ([34]))
+  statement 434: 2 (store_temp<core::integer::u256>([76]) -> ([76]))
+  statement 503: 2 (store_temp<core::integer::u256>([131]) -> ([131]))
+  statement 514: 2 (store_temp<Array<felt252>>([140]) -> ([140]))
+  statement 515: 2 (store_temp<Array<felt252>>([141]) -> ([141]))
+  statement 674: 2 (store_temp<felt252>([7]) -> ([7]))
+  statement 676: 2 (store_temp<felt252>([9]) -> ([9]))
+  statement 682: 2 (store_temp<u32>([15]) -> ([15]))
+  statement 683: 2 (store_temp<Pedersen>([8]) -> ([8]))
+  statement 684: 2 (store_temp<RangeCheck>([10]) -> ([10]))
+  statement 687: 2 (store_temp<felt252>([18]) -> ([18]))
+  statement 688: 2 (store_temp<GasBuiltin>([16]) -> ([16]))
+  statement 689: 2 (store_temp<System>([17]) -> ([17]))
+  statement 695: 2 (store_temp<u32>([14]) -> ([14]))
+  statement 696: 2 (store_temp<StorageAddress>([29]) -> ([29]))
+  statement 697: 2 (store_temp<RangeCheck>([22]) -> ([22]))
+  statement 700: 2 (store_temp<felt252>([32]) -> ([32]))
+  statement 701: 2 (store_temp<GasBuiltin>([30]) -> ([30]))
+  statement 702: 2 (store_temp<System>([31]) -> ([31]))
+  statement 706: 2 (store_temp<u8>([27]) -> ([27]))
+  statement 707: 2 (store_temp<u8>([41]) -> ([41]))
+  statement 709: 2 (branch_align() -> ())
+  statement 714: 2 (store_temp<RangeCheck>([42]) -> ([42]))
+  statement 715: 2 (store_temp<GasBuiltin>([30]) -> ([30]))
+  statement 716: 2 (store_temp<Pedersen>([8]) -> ([8]))
+  statement 717: 2 (store_temp<System>([31]) -> ([31]))
+  statement 719: 2 (return([42], [30], [8], [31], [48]))
+  statement 795: 2 (store_temp<felt252>([8]) -> ([8]))
+  statement 797: 2 (store_temp<felt252>([10]) -> ([10]))
+  statement 805: 2 (store_temp<u32>([19]) -> ([19]))
+  statement 806: 2 (store_temp<Pedersen>([9]) -> ([9]))
+  statement 807: 2 (store_temp<RangeCheck>([11]) -> ([11]))
+  statement 814: 2 (store_temp<GasBuiltin>([20]) -> ([20]))
+  statement 815: 2 (store_temp<u32>([18]) -> ([18]))
+  statement 816: 2 (store_temp<StorageAddress>([28]) -> ([28]))
+  statement 820: 2 (store_temp<u8>([26]) -> ([26]))
+  statement 821: 2 (store_temp<u8>([34]) -> ([34]))
+  statement 822: 2 (store_temp<GasBuiltin>([29]) -> ([29]))
+  statement 823: 2 (store_temp<System>([30]) -> ([30]))
+  statement 825: 2 (branch_align() -> ())
+  statement 830: 2 (store_temp<RangeCheck>([35]) -> ([35]))
+  statement 831: 2 (store_temp<GasBuiltin>([29]) -> ([29]))
+  statement 832: 2 (store_temp<Pedersen>([9]) -> ([9]))
+  statement 833: 2 (store_temp<System>([30]) -> ([30]))
+  statement 835: 2 (return([35], [29], [9], [30], [41]))
+  statement 909: 2 (store_temp<Array<felt252>>([6]) -> ([6]))
+  statement 910: 2 (store_temp<Array<felt252>>([34]) -> ([34]))
   statement 6: 1 (store_temp<Tuple<felt252>>([8]) -> ([8]))
   statement 7: 1 (into_box<Tuple<felt252>>([8]) -> ([9]))
   statement 11: 1 (cheatcode<10052436086942832998170947883001859293934451>([11]) -> ([12]))
@@ -1010,116 +1046,104 @@ Weight by sierra statement:
   statement 224: 1 (return([107], [105], [106], [108], [117]))
   statement 326: 1 (felt252_is_zero([9]) { fallthrough() 345([10]) })
   statement 349: 1 (felt252_is_zero([18]) { fallthrough() 368([19]) })
-  statement 373: 1 (store_temp<felt252>([28]) -> ([28]))
-  statement 375: 1 (store_temp<felt252>([30]) -> ([30]))
-  statement 381: 1 (store_temp<u32>([36]) -> ([36]))
-  statement 382: 1 (store_temp<Pedersen>([29]) -> ([29]))
-  statement 383: 1 (store_temp<RangeCheck>([31]) -> ([31]))
-  statement 386: 1 (store_temp<felt252>([39]) -> ([39]))
-  statement 387: 1 (store_temp<GasBuiltin>([37]) -> ([37]))
-  statement 388: 1 (store_temp<System>([38]) -> ([38]))
-  statement 393: 1 (store_temp<u32>([35]) -> ([35]))
-  statement 394: 1 (store_temp<StorageAddress>([49]) -> ([49]))
-  statement 395: 1 (store_temp<RangeCheck>([43]) -> ([43]))
-  statement 398: 1 (store_temp<felt252>([52]) -> ([52]))
-  statement 399: 1 (store_temp<GasBuiltin>([50]) -> ([50]))
-  statement 400: 1 (store_temp<System>([51]) -> ([51]))
-  statement 406: 1 (branch_align() -> ())
-  statement 409: 1 (store_temp<RangeCheck>([64]) -> ([70]))
-  statement 410: 1 (store_temp<u128>([65]) -> ([71]))
-  statement 411: 1 (store_temp<core::bool>([69]) -> ([72]))
-  statement 412: 1 (jump() { 419() })
-  statement 420: 1 (branch_align() -> ())
-  statement 421: 1 (store_temp<RangeCheck>([75]) -> ([79]))
-  statement 422: 1 (store_temp<u128>([76]) -> ([80]))
-  statement 423: 1 (store_temp<u128>([71]) -> ([81]))
-  statement 424: 1 (store_temp<core::bool>([72]) -> ([82]))
-  statement 425: 1 (jump() { 444() })
-  statement 444: 1 (enum_match<core::bool>([82]) { fallthrough([90]) 767([91]) })
-  statement 450: 1 (store_temp<felt252>([94]) -> ([94]))
-  statement 452: 1 (store_temp<felt252>([96]) -> ([96]))
-  statement 459: 1 (store_temp<u32>([103]) -> ([103]))
-  statement 460: 1 (store_temp<Pedersen>([95]) -> ([95]))
-  statement 461: 1 (store_temp<RangeCheck>([97]) -> ([97]))
-  statement 467: 1 (store_temp<GasBuiltin>([104]) -> ([104]))
-  statement 468: 1 (store_temp<u32>([102]) -> ([102]))
-  statement 469: 1 (store_temp<StorageAddress>([111]) -> ([111]))
-  statement 475: 1 (store_temp<felt252>([119]) -> ([119]))
-  statement 477: 1 (store_temp<felt252>([121]) -> ([121]))
-  statement 483: 1 (store_temp<GasBuiltin>([112]) -> ([112]))
-  statement 484: 1 (store_temp<u32>([127]) -> ([127]))
-  statement 485: 1 (store_temp<Pedersen>([120]) -> ([120]))
-  statement 486: 1 (store_temp<RangeCheck>([122]) -> ([122]))
-  statement 489: 1 (store_temp<felt252>([130]) -> ([130]))
-  statement 490: 1 (store_temp<GasBuiltin>([128]) -> ([128]))
-  statement 491: 1 (store_temp<System>([129]) -> ([129]))
-  statement 496: 1 (store_temp<u32>([126]) -> ([126]))
-  statement 497: 1 (store_temp<StorageAddress>([140]) -> ([140]))
-  statement 498: 1 (store_temp<RangeCheck>([134]) -> ([134]))
-  statement 501: 1 (store_temp<felt252>([143]) -> ([143]))
-  statement 502: 1 (store_temp<GasBuiltin>([141]) -> ([141]))
-  statement 503: 1 (store_temp<System>([142]) -> ([142]))
-  statement 509: 1 (branch_align() -> ())
-  statement 512: 1 (store_temp<RangeCheck>([155]) -> ([161]))
-  statement 513: 1 (store_temp<u128>([156]) -> ([162]))
-  statement 514: 1 (store_temp<core::bool>([160]) -> ([163]))
-  statement 515: 1 (jump() { 522() })
-  statement 523: 1 (branch_align() -> ())
-  statement 524: 1 (store_temp<RangeCheck>([166]) -> ([170]))
-  statement 525: 1 (store_temp<u128>([167]) -> ([171]))
-  statement 526: 1 (store_temp<u128>([162]) -> ([172]))
-  statement 527: 1 (store_temp<core::bool>([163]) -> ([173]))
-  statement 528: 1 (jump() { 547() })
-  statement 547: 1 (enum_match<core::bool>([173]) { fallthrough([181]) 643([182]) })
-  statement 553: 1 (store_temp<felt252>([185]) -> ([185]))
-  statement 555: 1 (store_temp<felt252>([187]) -> ([187]))
-  statement 562: 1 (store_temp<u32>([194]) -> ([194]))
-  statement 563: 1 (store_temp<Pedersen>([186]) -> ([186]))
-  statement 564: 1 (store_temp<RangeCheck>([188]) -> ([188]))
-  statement 570: 1 (store_temp<GasBuiltin>([195]) -> ([195]))
-  statement 571: 1 (store_temp<u32>([193]) -> ([193]))
-  statement 572: 1 (store_temp<StorageAddress>([202]) -> ([202]))
-  statement 575: 1 (array_new<felt252>() -> ([208]))
-  statement 576: 1 (array_new<felt252>() -> ([209]))
-  statement 584: 1 (function_call<user@test::erc_20::EventIsEvent::append_keys_and_data>([213], [208], [209]) -> ([214], [215]))
-  statement 591: 1 (store_temp<GasBuiltin>([203]) -> ([203]))
-  statement 597: 1 (store_temp<RangeCheck>([188]) -> ([188]))
-  statement 598: 1 (store_temp<GasBuiltin>([222]) -> ([222]))
-  statement 599: 1 (store_temp<Pedersen>([186]) -> ([186]))
-  statement 600: 1 (store_temp<System>([223]) -> ([223]))
-  statement 602: 1 (return([188], [222], [186], [223], [229]))
-  statement 862: 1 (enum_match<test::erc_20::Event>([0]) { fallthrough([3]) 898([4]) })
-  statement 865: 1 (store_temp<felt252>([5]) -> ([5]))
-  statement 866: 1 (array_append<felt252>([1], [5]) -> ([6]))
-  statement 873: 1 (array_append<felt252>([2], [12]) -> ([13]))
-  statement 880: 1 (array_append<felt252>([13], [19]) -> ([20]))
-  statement 889: 1 (array_append<felt252>([20], [28]) -> ([29]))
-  statement 894: 1 (array_append<felt252>([29], [33]) -> ([34]))
-  statement 897: 1 (return([6], [34]))
+  statement 372: 1 (store_temp<RangeCheck>([0]) -> ([0]))
+  statement 373: 1 (store_temp<GasBuiltin>([1]) -> ([1]))
+  statement 374: 1 (store_temp<Pedersen>([2]) -> ([2]))
+  statement 375: 1 (store_temp<System>([3]) -> ([3]))
+  statement 377: 1 (store_temp<ContractAddress>([34]) -> ([34]))
+  statement 378: 1 (function_call<user@core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>([0], [1], [2], [3], [33], [34]) -> ([35], [36], [37], [38], [39]))
+  statement 379: 1 (enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([39]) { fallthrough([40]) 654([41]) })
+  statement 386: 1 (branch_align() -> ())
+  statement 389: 1 (store_temp<RangeCheck>([48]) -> ([54]))
+  statement 390: 1 (store_temp<u128>([49]) -> ([55]))
+  statement 391: 1 (store_temp<core::bool>([53]) -> ([56]))
+  statement 392: 1 (jump() { 399() })
+  statement 400: 1 (branch_align() -> ())
+  statement 401: 1 (store_temp<RangeCheck>([59]) -> ([63]))
+  statement 402: 1 (store_temp<u128>([60]) -> ([64]))
+  statement 403: 1 (store_temp<u128>([55]) -> ([65]))
+  statement 404: 1 (store_temp<core::bool>([56]) -> ([66]))
+  statement 405: 1 (jump() { 424() })
+  statement 424: 1 (enum_match<core::bool>([66]) { fallthrough([74]) 628([75]) })
+  statement 428: 1 (store_temp<RangeCheck>([63]) -> ([63]))
+  statement 429: 1 (store_temp<GasBuiltin>([36]) -> ([36]))
+  statement 430: 1 (store_temp<Pedersen>([37]) -> ([37]))
+  statement 431: 1 (store_temp<System>([38]) -> ([38]))
+  statement 433: 1 (store_temp<ContractAddress>([77]) -> ([77]))
+  statement 435: 1 (function_call<user@core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>([63], [36], [37], [38], [32], [77], [76]) -> ([78], [79], [80], [81], [82]))
+  statement 436: 1 (enum_match<core::panics::PanicResult::<(test::erc_20::__member_module_balances::ContractMemberState, ())>>([82]) { fallthrough([83]) 612([84]) })
+  statement 441: 1 (store_temp<RangeCheck>([78]) -> ([78]))
+  statement 442: 1 (store_temp<GasBuiltin>([79]) -> ([79]))
+  statement 443: 1 (store_temp<Pedersen>([80]) -> ([80]))
+  statement 444: 1 (store_temp<System>([81]) -> ([81]))
+  statement 446: 1 (store_temp<ContractAddress>([89]) -> ([89]))
+  statement 447: 1 (function_call<user@core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>([78], [79], [80], [81], [88], [89]) -> ([90], [91], [92], [93], [94]))
+  statement 448: 1 (enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([94]) { fallthrough([95]) 595([96]) })
+  statement 455: 1 (branch_align() -> ())
+  statement 458: 1 (store_temp<RangeCheck>([103]) -> ([109]))
+  statement 459: 1 (store_temp<u128>([104]) -> ([110]))
+  statement 460: 1 (store_temp<core::bool>([108]) -> ([111]))
+  statement 461: 1 (jump() { 468() })
+  statement 469: 1 (branch_align() -> ())
+  statement 470: 1 (store_temp<RangeCheck>([114]) -> ([118]))
+  statement 471: 1 (store_temp<u128>([115]) -> ([119]))
+  statement 472: 1 (store_temp<u128>([110]) -> ([120]))
+  statement 473: 1 (store_temp<core::bool>([111]) -> ([121]))
+  statement 474: 1 (jump() { 493() })
+  statement 493: 1 (enum_match<core::bool>([121]) { fallthrough([129]) 569([130]) })
+  statement 497: 1 (store_temp<RangeCheck>([118]) -> ([118]))
+  statement 498: 1 (store_temp<GasBuiltin>([91]) -> ([91]))
+  statement 499: 1 (store_temp<Pedersen>([92]) -> ([92]))
+  statement 500: 1 (store_temp<System>([93]) -> ([93]))
+  statement 502: 1 (store_temp<ContractAddress>([132]) -> ([132]))
+  statement 504: 1 (function_call<user@core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>([118], [91], [92], [93], [87], [132], [131]) -> ([133], [134], [135], [136], [137]))
+  statement 505: 1 (enum_match<core::panics::PanicResult::<(test::erc_20::__member_module_balances::ContractMemberState, ())>>([137]) { fallthrough([138]) 553([139]) })
+  statement 507: 1 (array_new<felt252>() -> ([140]))
+  statement 508: 1 (array_new<felt252>() -> ([141]))
+  statement 516: 1 (function_call<user@test::erc_20::EventIsEvent::append_keys_and_data>([145], [140], [141]) -> ([146], [147]))
+  statement 531: 1 (store_temp<RangeCheck>([133]) -> ([133]))
+  statement 532: 1 (store_temp<GasBuiltin>([154]) -> ([154]))
+  statement 533: 1 (store_temp<Pedersen>([135]) -> ([135]))
+  statement 534: 1 (store_temp<System>([155]) -> ([155]))
+  statement 536: 1 (return([133], [154], [135], [155], [164]))
+  statement 876: 1 (enum_match<test::erc_20::Event>([0]) { fallthrough([3]) 912([4]) })
+  statement 879: 1 (store_temp<felt252>([5]) -> ([5]))
+  statement 880: 1 (array_append<felt252>([1], [5]) -> ([6]))
+  statement 887: 1 (array_append<felt252>([2], [12]) -> ([13]))
+  statement 894: 1 (array_append<felt252>([13], [19]) -> ([20]))
+  statement 903: 1 (array_append<felt252>([20], [28]) -> ([29]))
+  statement 908: 1 (array_append<felt252>([29], [33]) -> ([34]))
+  statement 911: 1 (return([6], [34]))
 Weight by concrete libfunc:
   libfunc storage_base_address_from_felt252: 40
   libfunc storage_write_syscall: 32
   libfunc storage_read_syscall: 28
-  libfunc store_temp<RangeCheck>: 20
+  libfunc store_temp<RangeCheck>: 28
+  libfunc store_temp<GasBuiltin>: 21
+  libfunc store_temp<System>: 19
   libfunc store_temp<felt252>: 18
-  libfunc store_temp<GasBuiltin>: 13
+  libfunc store_temp<Pedersen>: 17
+  libfunc u8_overflowing_add: 16
   libfunc u128s_from_felt252: 12
   libfunc array_snapshot_pop_front<felt252>: 9
+  libfunc branch_align: 9
   libfunc emit_event_syscall: 9
-  libfunc store_temp<Pedersen>: 9
-  libfunc store_temp<System>: 9
   libfunc array_append<felt252>: 8
   libfunc jump: 8
   libfunc pedersen: 8
   libfunc store_temp<Array<felt252>>: 8
   libfunc store_temp<Snapshot<Array<felt252>>>: 8
   libfunc store_temp<u32>: 8
+  libfunc store_temp<u8>: 8
   libfunc contract_address_try_from_felt252: 7
+  libfunc store_temp<ContractAddress>: 6
+  libfunc store_temp<core::integer::u256>: 6
+  libfunc store_temp<core::panics::PanicResult::<(core::integer::u256,)>>: 6
+  libfunc store_temp<core::panics::PanicResult::<(test::erc_20::__member_module_balances::ContractMemberState, ())>>: 6
   libfunc store_temp<u128>: 6
   libfunc u128_overflowing_add: 6
   libfunc u128_overflowing_sub: 6
   libfunc withdraw_gas_all: 6
-  libfunc branch_align: 5
   libfunc get_execution_info_v2_syscall: 5
   libfunc store_temp<test::erc_20::Event>: 5
   libfunc array_new<felt252>: 4
@@ -1134,10 +1158,12 @@ Weight by concrete libfunc:
   libfunc withdraw_gas: 3
   libfunc enum_match<core::bool>: 2
   libfunc enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>: 2
+  libfunc enum_match<core::panics::PanicResult::<(core::integer::u256,)>>: 2
+  libfunc enum_match<core::panics::PanicResult::<(test::erc_20::__member_module_balances::ContractMemberState, ())>>: 2
   libfunc felt252_is_zero: 2
+  libfunc function_call<user@core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>: 2
+  libfunc function_call<user@core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>: 2
   libfunc get_builtin_costs: 2
-  libfunc store_temp<ContractAddress>: 2
-  libfunc store_temp<core::integer::u256>: 2
   libfunc store_temp<core::option::Option::<core::felt252>>: 2
   libfunc cheatcode<10052436086942832998170947883001859293934451>: 1
   libfunc enum_match<core::option::Option::<core::felt252>>: 1
@@ -1152,56 +1178,65 @@ Weight by concrete libfunc:
   libfunc store_temp<Box<core::starknet::info::v2::ExecutionInfo>>: 1
   libfunc store_temp<BuiltinCosts>: 1
   libfunc store_temp<Tuple<felt252>>: 1
-  return: 4
+  return: 8
 Weight by generic libfunc:
-  libfunc store_temp: 141
+  libfunc store_temp: 203
   libfunc storage_base_address_from_felt252: 40
   libfunc storage_write_syscall: 32
   libfunc storage_read_syscall: 28
+  libfunc u8_overflowing_add: 16
+  libfunc enum_match: 13
   libfunc u128s_from_felt252: 12
   libfunc array_snapshot_pop_front: 9
+  libfunc branch_align: 9
   libfunc emit_event_syscall: 9
-  libfunc enum_match: 9
   libfunc array_append: 8
   libfunc jump: 8
   libfunc pedersen: 8
   libfunc contract_address_try_from_felt252: 7
+  libfunc function_call: 7
   libfunc u128_overflowing_add: 6
   libfunc u128_overflowing_sub: 6
   libfunc withdraw_gas_all: 6
-  libfunc branch_align: 5
   libfunc get_execution_info_v2_syscall: 5
   libfunc array_new: 4
-  libfunc function_call: 3
   libfunc withdraw_gas: 3
   libfunc felt252_is_zero: 2
   libfunc get_builtin_costs: 2
   libfunc cheatcode: 1
   libfunc into_box: 1
-  return: 4
+  return: 8
 Weight by user function (inc. generated):
-  function test::erc_20::StorageImpl::transfer_helper: 229
+  function core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read: 118
+  function core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write: 106
+  function test::erc_20::StorageImpl::transfer_helper: 99
   function test::erc_20::__wrapper__IERC20Impl__transfer: 90
   function test::erc20_transfer: 28
   function test::erc_20::EventIsEvent::append_keys_and_data: 12
 Weight by original user function (exc. generated):
-  function test::erc_20::StorageImpl::transfer_helper: 229
+  function core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read: 118
+  function core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write: 106
+  function test::erc_20::StorageImpl::transfer_helper: 99
   function test::erc_20::__wrapper__IERC20Impl__transfer: 90
   function test::erc20_transfer: 28
   function test::erc_20::EventIsEvent::append_keys_and_data: 12
 Weight by Cairo function:
   function contract::__member_module_balances::StorageLegacyMapContractMemberStateImpl::address: 44
-  function contract::ContractStateEventEmitter::emit: 28
+  function core::integer::U8Add::add: 32
+  function lib.cairo::erc_20::StorageImpl::transfer_helper: 32
+  function contract::ContractStateEventEmitter::emit: 27
   function core::integer::u128_try_from_felt252: 27
   function core::starknet::storage_access::StoreFelt252::write: 22
   function core::starknet::storage_access::StoreFelt252::write_at_offset: 22
   function contract::__wrapper__IERC20Impl__transfer: 21
-  function core::starknet::storage_access::StoreFelt252::read: 21
+  function core::starknet::storage_access::StoreFelt252::read: 20
   function core::starknet::storage_access::StoreFelt252::read_at_offset: 20
   function core::array::SpanImpl::pop_front: 18
   function core::array::ArrayImpl::append: 17
   function core::integer::u256_overflow_sub: 17
   function core::integer::u256_overflowing_add: 17
+  function core::starknet::SyscallResultTraitImpl::unwrap_syscall: 16
+  function core::starknet::storage::StorageLegacyMapMemberAccessImpl::write: 16
   function lib.cairo::erc20_transfer: 16
   function core::pedersen::HashStateImpl::update: 12
   function lib.cairo::erc_20::IERC20Impl::transfer: 9
@@ -1220,12 +1255,16 @@ Weight by Cairo function:
   function core::option::OptionTraitImpl::expect: 1
   function starknet_derive::EventIsEvent::append_keys_and_data: 1
 Weight by Sierra stack trace:
-  test::erc20_transfer: 359
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 331
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper: 241
+  test::erc20_transfer: 453
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 425
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper: 335
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read: 118
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write: 106
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::EventIsEvent::append_keys_and_data: 12
 Weight by Cairo stack trace:
-  test::erc20_transfer: 359
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 331
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper: 241
+  test::erc20_transfer: 453
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 425
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper: 335
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read: 118
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> core::starknet::storage::StorageLegacyMapMemberAccessImpl::<test::erc_20::__member_module_balances::ContractMemberState, test::erc_20::__member_module_balances::StorageLegacyMapContractMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleNextStore::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::TupleSize0Store, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>, test::erc_20::__member_module_balances::ContractMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write: 106
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::EventIsEvent::append_keys_and_data: 12

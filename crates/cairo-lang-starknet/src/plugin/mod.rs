@@ -83,4 +83,8 @@ impl MacroPlugin for StarkNetPlugin {
             SUBSTORAGE_ATTR.to_string(),
         ]
     }
+
+    fn declared_derives(&self) -> Vec<String> {
+        vec!["starknet::Event".to_string(), "starknet::Store".to_string()]
+    }
 }
