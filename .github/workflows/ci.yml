@@ -2,10 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
   merge_group:
-    types: [checks_requested]
+    types: [ checks_requested ]
 
 jobs:
   ensure-no_std:
@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2024-04-23
+          toolchain: nightly-2024-06-13
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - run: |
@@ -62,7 +62,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
-          toolchain: nightly-2024-04-23
+          toolchain: nightly-2024-06-13
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Install nextest
@@ -85,7 +85,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
-          toolchain: nightly-2024-04-23
+          toolchain: nightly-2024-06-13
       - uses: Swatinem/rust-cache@v2
       - run: scripts/rust_fmt.sh --check
 
@@ -124,7 +124,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           components: clippy
-          toolchain: nightly-2024-04-23
+          toolchain: nightly-2024-06-13
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/clippy.sh
@@ -141,7 +141,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2024-04-23
+          toolchain: nightly-2024-06-13
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/docs.sh
