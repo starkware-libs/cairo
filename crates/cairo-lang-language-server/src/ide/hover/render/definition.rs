@@ -29,6 +29,8 @@ pub fn definition(
             }
             md
         }
+
+        SymbolDef::Variable(var) => Markdown::fenced_code_block(&var.signature(db)),
     };
 
     Some(Hover {

@@ -13,6 +13,7 @@ cairo_lang_test_utils::test_file_test!(
     "tests/test_data/hover",
     {
         basic: "basic.txt",
+        partial: "partial.txt",
         starknet: "starknet.txt",
     },
     test_hover

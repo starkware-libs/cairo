@@ -1,0 +1,66 @@
+//! > Hover
+
+//! > test_runner_name
+test_hover
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2023_11"
+
+//! > src/lib.cairo
+fn main() {
+    let mut xy<caret>z = unkn<caret>own_function();
+    let y = xy<caret>z * 2;
+}
+
+fn f(ab<caret>c) -> felt252 {
+    2 * ab<caret>c
+}
+
+//! > hover 1:14
+// = source context
+    let mut xy<caret>z = unknown_function();
+// = highlight
+No highlight information.
+// = popover
+Type: `<missing>`
+
+//! > hover 1:22
+// = source context
+    let mut xyz = unkn<caret>own_function();
+// = highlight
+No highlight information.
+// = popover
+```cairo
+<missing>
+```
+
+//! > hover 2:14
+// = source context
+    let y = xy<caret>z * 2;
+// = highlight
+    let y = <sel>xyz</sel> * 2;
+// = popover
+```cairo
+let mut xyz: <missing>
+```
+
+//! > hover 5:7
+// = source context
+fn f(ab<caret>c) -> felt252 {
+// = highlight
+No highlight information.
+// = popover
+
+//! > hover 6:10
+// = source context
+    2 * ab<caret>c
+// = highlight
+    2 * <sel>abc</sel>
+// = popover
+```cairo
+abc: <missing>
+```

@@ -95,10 +95,10 @@ hello::Balance::__member_module_value::ContractMemberState
 // = source context
         self.value.write(<caret>value_);
 // = highlight
-No highlight information.
+        self.value.write(<sel>value_</sel>);
 // = popover
 ```cairo
-core::integer::u128
+value_: core::integer::u128
 ```
 
 //! > hover 28:30
@@ -152,8 +152,8 @@ fn write(ref self: TMemberState, value: Self::Value);
 // = source context
             self.value.write( self.value.read() + <caret>a );
 // = highlight
-No highlight information.
+            self.value.write( self.value.read() + <sel>a</sel> );
 // = popover
 ```cairo
-core::integer::u128
+a: core::integer::u128
 ```

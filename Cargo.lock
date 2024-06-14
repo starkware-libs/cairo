@@ -648,6 +648,7 @@ dependencies = [
  "scarb-metadata",
  "serde",
  "serde_json",
+ "smol_str",
  "test-log",
  "tokio",
  "tower-lsp",
