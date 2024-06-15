@@ -1,6 +1,6 @@
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_test_plugin::test_config::TestExpectation;
-use cairo_lang_test_plugin::TestConfig;
+use cairo_lang_test_plugin::{TestCompilationMetadata, TestConfig};
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use itertools::Itertools;
 use starknet_types_core::felt::Felt as Felt252;
@@ -18,11 +18,11 @@ fn test_compiled_serialization() {
     let deserialized: TestCompilation = serde_json::from_str(&serialized).unwrap();
 
     assert_eq!(compiled.sierra_program, deserialized.sierra_program);
-    assert_eq!(compiled.function_set_costs, deserialized.function_set_costs);
-    assert_eq!(compiled.named_tests, deserialized.named_tests);
+    assert_eq!(compiled.metadata.function_set_costs, deserialized.metadata.function_set_costs);
+    assert_eq!(compiled.metadata.named_tests, deserialized.metadata.named_tests);
     assert_eq!(
-        compiled.contracts_info.values().collect_vec(),
-        deserialized.contracts_info.values().collect_vec()
+        compiled.metadata.contracts_info.values().collect_vec(),
+        deserialized.metadata.contracts_info.values().collect_vec()
     );
 }
 
@@ -227,16 +227,18 @@ fn to_named_test(test: &(&str, bool)) -> (String, TestConfig) {
 /// Return a [TestCompilation] from a list of test names and their ignored status.
 fn to_test_compilation(tests: &[(&str, bool)]) -> TestCompilation {
     TestCompilation {
-        named_tests: tests.iter().map(to_named_test).collect(),
         sierra_program: ProgramArtifact::stripped(Program {
             type_declarations: vec![],
             libfunc_declarations: vec![],
             statements: vec![],
             funcs: vec![],
         }),
-        statements_functions: Default::default(),
-        contracts_info: Default::default(),
-        function_set_costs: Default::default(),
+        metadata: TestCompilationMetadata {
+            named_tests: tests.iter().map(to_named_test).collect(),
+            statements_functions: Default::default(),
+            contracts_info: Default::default(),
+            function_set_costs: Default::default(),
+        },
     }
 }
 
