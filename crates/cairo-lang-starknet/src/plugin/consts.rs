@@ -68,6 +68,9 @@ pub(super) const IMPLICIT_PRECEDENCE: &[&str] = &[
     "EcOp",
     "Poseidon",
     "SegmentArena",
+    "RangeCheck96",
+    "AddMod",
+    "MulMod",
     "GasBuiltin",
     "System",
 ];
