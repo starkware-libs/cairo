@@ -69,11 +69,6 @@ impl MacroPlugin for DerivePlugin {
     fn declared_attributes(&self) -> Vec<String> {
         vec![DERIVE_ATTR.to_string(), default::DEFAULT_ATTR.to_string()]
     }
-
-    fn declared_derives(&self) -> Vec<String> {
-        // TODO(orizi): Remove when `starknet::Store` usages is removed from the corelib completely.
-        vec!["starknet::Store".to_string()]
-    }
 }
 
 /// Information on struct members or enum variants.
