@@ -157,7 +157,8 @@ pub fn fill_values(
     let mut addmod_idx = 0;
     let mut first_failure_idx = n_mul_mods;
 
-    for mulmod_idx in 0..n_mul_mods {
+    let mut mulmod_idx = 0;
+    loop {
         while addmod_idx < n_add_mods {
             if !c.fill_add_gate(3 * addmod_idx) {
                 break;
@@ -165,10 +166,15 @@ pub fn fill_values(
             addmod_idx += 1;
         }
 
+        if mulmod_idx == n_mul_mods {
+            break;
+        }
+
         let success = c.fill_mul_gate(3 * mulmod_idx);
         if !success && first_failure_idx == n_mul_mods {
             first_failure_idx = mulmod_idx;
         }
+        mulmod_idx += 1;
     }
 
     first_failure_idx
