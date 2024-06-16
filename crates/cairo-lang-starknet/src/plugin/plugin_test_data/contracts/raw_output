@@ -74,7 +74,7 @@ use starknet::storage::{
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x2a1a1bba6d0c773fab786191dfb5454782701d3308f2d60e686ba861815e841;
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, RangeCheck96, AddMod, MulMod, GasBuiltin, System)]
 fn __wrapper__test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -88,7 +88,7 @@ fn __wrapper__test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
     test_raw_output(ref contract_state, )
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, RangeCheck96, AddMod, MulMod, GasBuiltin, System)]
 fn __wrapper__test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();

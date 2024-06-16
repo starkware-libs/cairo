@@ -8,6 +8,7 @@ use crate::test_utils::{get_example_file_path, get_test_contract};
 /// <test_case>.sierra, and that the resulted json is the same as in
 /// <test_case>.contract_class.json.
 #[test_case("account::account")]
+#[test_case("circuit_contract::circuit_contract")]
 #[test_case("test_contract::test_contract")]
 #[test_case("new_syntax_test_contract::counter_contract")]
 #[test_case("minimal_contract::minimal_contract")]
