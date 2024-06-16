@@ -316,6 +316,7 @@ impl StorePackingClassHash of StorePacking<ClassHash, felt252> {
     }
 }
 
+/// Store implementation for a tuple of size 0.
 impl TupleSize0Store of Store<()> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<()> {
@@ -343,7 +344,19 @@ impl TupleSize0Store of Store<()> {
     }
 }
 
-impl StorePackingEmptyFixedSizedArray<T> of StorePacking<[T; 0], ()> {
+/// Store packing for tuples of size 1.
+impl StorePackingTuple1<T> of StorePacking<(T,), T> {
+    fn pack(value: (T,)) -> T {
+        let (value,) = value;
+        value
+    }
+    fn unpack(value: T) -> (T,) {
+        (value,)
+    }
+}
+
+/// Store packing for small fixed sized arrays.
+impl StorePackingFixedSizedArray0<T> of StorePacking<[T; 0], ()> {
     fn pack(value: [T; 0]) -> () {
         let [] = value;
         ()
@@ -354,6 +367,18 @@ impl StorePackingEmptyFixedSizedArray<T> of StorePacking<[T; 0], ()> {
     }
 }
 
+/// Store packing for fixed sized arrays of size 1.
+impl StorePackingFixedSizedArray1<T> of StorePacking<[T; 1], T> {
+    fn pack(value: [T; 1]) -> T {
+        let [value] = value;
+        value
+    }
+    fn unpack(value: T) -> [T; 1] {
+        [value]
+    }
+}
+
+/// Store implementation for a tuple of size 2 and more.
 impl TupleNextStore<
     T,
     impl TH: core::metaprogramming::TupleSplit<T>,
@@ -361,6 +386,8 @@ impl TupleNextStore<
     impl RestStore: Store<TH::Rest>,
     +Drop<TH::Head>,
     +Drop<TH::Rest>,
+    // The following bound is to allow the recursion to be more efficient at size 1.
+    +core::metaprogramming::TupleSplit<TH::Rest>,
 > of Store<T> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T> {
