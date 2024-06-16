@@ -103,6 +103,9 @@ pub mod boolean;
 
 pub mod circuit;
 
+/// TODO(ilya): remove the following once implicits lookup is fixed.
+use circuit::{AddMod, MulMod, RangeCheck96};
+
 /// General purpose implicits.
 pub extern type RangeCheck;
 pub extern type SegmentArena;

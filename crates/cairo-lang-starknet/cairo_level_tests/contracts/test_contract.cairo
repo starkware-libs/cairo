@@ -21,6 +21,10 @@ mod test_contract {
         IAnotherContractDispatcherTrait, MyType
     };
     use core::dict::{Felt252DictTrait};
+    use core::circuit::{
+        CircuitElement, CircuitInput, circuit_add, circuit_inverse, CircuitOutputsTrait,
+        CircuitModulus, FillInputResultTrait, CircuitInputs, EvalCircuitTrait, EvalCircuitResult
+    };
 
     #[storage]
     struct Storage {
@@ -78,6 +82,22 @@ mod test_contract {
         #[l1_handler]
         fn l1_handle(ref self: ContractState, from_address: felt252, arg: felt252) -> felt252 {
             arg
+        }
+
+          /// An external method that requires the `mod` builtins.
+        #[external(v0)]
+        fn circuit_builtins(ref self: ContractState,) {
+            let in1 = CircuitElement::<CircuitInput<0>> {};
+            let in2 = CircuitElement::<CircuitInput<1>> {};
+            let add = circuit_add(in1, in2);
+            let inv = circuit_inverse(add);
+
+            let modulus = TryInto::<_, CircuitModulus>::try_into([7, 0, 0, 0]).unwrap();
+            let _outputs =
+                match (inv,).new_inputs().next([3, 0, 0, 0]).next([6, 0, 0, 0]).done().eval(modulus) {
+                EvalCircuitResult::Success(outputs) => { outputs },
+                EvalCircuitResult::Failure((_, _)) => { panic!("Expected success") }
+            };
         }
     }
 }
