@@ -1,5 +1,6 @@
 pub mod multi_component;
 mod account;
+mod circuit_contract;
 pub mod test_contract;
 mod new_syntax_test_contract;
 mod minimal_contract;
