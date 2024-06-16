@@ -266,6 +266,17 @@ impl StorePackingI128 of StorePacking<i128, felt252> {
     }
 }
 
+impl StorePackingU256 of StorePacking<u256, (u128, u128)> {
+    fn pack(value: u256) -> (u128, u128) {
+        (value.low, value.high)
+    }
+    #[inline]
+    fn unpack(value: (u128, u128)) -> u256 {
+        let (low, high) = value;
+        u256 { low, high }
+    }
+}
+
 impl StorePackingBytes31 of StorePacking<bytes31, felt252> {
     fn pack(value: bytes31) -> felt252 {
         value.into()
