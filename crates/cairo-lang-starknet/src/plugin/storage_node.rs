@@ -9,8 +9,9 @@ use indoc::formatdoc;
 
 use super::STORAGE_NODE_ATTR;
 
-/// Generates a trait and impl of updating a storage path of a struct to access each of its members
-/// (i.e. there will be a function for each member of the struct).
+/// Generates an impl for the `starknet::StorageNodeTrait` to point to a generate a struct to to be
+/// pointed to allowing further access to each of its members (i.e. there will be a fitting member
+/// in the inner struct for each member of the struct).
 ///
 /// For example, given the following struct:
 /// ```cairo
@@ -31,8 +32,12 @@ use super::STORAGE_NODE_ATTR;
 ///     type NodeType = BalancePairStorageNode;
 ///     fn storage_node(self: StoragePath<BalancePair>) -> BalancePairStorageNode {
 ///         BalancePairStorageNode {
-///             balance1: PendingStoragePath{ hash_state: self.hash_state, pending_key: selector!('balance1') },
-///             balance2: PendingStoragePath{ hash_state: self.hash_state, pending_key: selector!('balance2') },
+///             balance1: PendingStoragePath {
+///                 hash_state: self.hash_state, pending_key: selector!('balance1'),
+///             },
+///             balance2: PendingStoragePath {
+///                 hash_state: self.hash_state, pending_key: selector!('balance2'),
+///             },
 ///         }
 ///     }
 /// }
