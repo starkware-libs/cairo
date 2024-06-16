@@ -98,31 +98,63 @@ pub impl StorageLegacyMapMemberAccessImpl<
 #[derive(Copy, Drop)]
 pub struct StoragePointer<T> {
     pub address: StorageBaseAddress,
+    pub offset: u8,
 }
 
-/// Trait for converting a storage member to a `StoragePointer`.
-// TODO(Gil): Once associated types are stabilized, use a trait of `TMemberState` with an associated
+/// Same as `StoragePointer`, but with `offset` 0, which allows for some optimizations.
+#[derive(Copy, Drop)]
+pub struct StoragePointer0Offset<T> {
+    pub address: StorageBaseAddress,
+}
+
+/// Trait for converting a storage member to a `StoragePointer0Offset`.
 // type instead of `T`.
-pub trait StorageAsPointer<TMemberState, T> {
-    fn as_ptr(self: @TMemberState) -> StoragePointer<T>;
+pub trait StorageAsPointer<TMemberState> {
+    type Value;
+    fn as_ptr(self: @TMemberState) -> StoragePointer0Offset<Self::Value>;
 }
 
 /// Trait for accessing the values in storage using a `StoragePointer`.
 pub trait StoragePointerAccess<T> {
-    fn read(self: StoragePointer<T>) -> T;
-    fn write(self: StoragePointer<T>, value: T);
+    type Value;
+    fn read(self: T) -> Self::Value;
+    fn write(self: T, value: Self::Value);
 }
 
-/// Simple implementation of `StoragePointerAccess` for any type that implements `Store`.
-impl StorableStoragePointerAccess<T, +starknet::Store<T>> of StoragePointerAccess<T> {
+/// Simple implementation of `StoragePointerAccess` for any type that implements `Store` for 0
+/// offset.
+impl StorableStoragePointer0OffsetAccess<
+    T, +starknet::Store<T>
+> of StoragePointerAccess<StoragePointer0Offset<T>> {
+    type Value = T;
+    #[inline(always)]
+    fn read(self: StoragePointer0Offset<T>) -> T {
+        starknet::SyscallResultTrait::unwrap_syscall(starknet::Store::<T>::read(0, self.address))
+    }
+    #[inline(always)]
+    fn write(self: StoragePointer0Offset<T>, value: T) {
+        starknet::SyscallResultTrait::unwrap_syscall(
+            starknet::Store::<T>::write(0, self.address, value)
+        )
+    }
+}
+
+/// Simple implementation of `StoragePointerAccess` for any type that implements `Store` for any
+/// offset.
+impl StorableStoragePointerAccess<
+    T, +starknet::Store<T>
+> of StoragePointerAccess<StoragePointer<T>> {
+    type Value = T;
     #[inline(always)]
     fn read(self: StoragePointer<T>) -> T {
-        starknet::SyscallResultTrait::unwrap_syscall(starknet::Store::<T>::read(0, self.address))
+        starknet::SyscallResultTrait::unwrap_syscall(
+            starknet::Store::<T>::read_at_offset(0, self.address, self.offset)
+        )
     }
     #[inline(always)]
     fn write(self: StoragePointer<T>, value: T) {
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<T>::write(0, self.address, value)
+            starknet::Store::<T>::write_at_offset(0, self.address, self.offset, value)
         )
     }
 }
@@ -148,11 +180,10 @@ pub trait StorageAsPath<TMemberState> {
 
 /// An implementation of `StorageAsPointer` for any `StoragePath` with inner type that implements
 /// `Store`.
-impl StorableStoragePathAsPointer<T, +starknet::Store<T>> of StorageAsPointer<StoragePath<T>, T> {
-    fn as_ptr(self: @StoragePath<T>) -> StoragePointer<T> {
-        StoragePointer::<
-            T
-        > {
+impl StorableStoragePathAsPointer<T, +starknet::Store<T>> of StorageAsPointer<StoragePath<T>> {
+    type Value = T;
+    fn as_ptr(self: @StoragePath<T>) -> StoragePointer0Offset<T> {
+        StoragePointer0Offset {
             address: starknet::storage_access::storage_base_address_from_felt252(
                 core::hash::HashStateTrait::<core::poseidon::HashState>::finalize(*self.hash_state)
             )
@@ -166,20 +197,18 @@ impl StorageMemberStateAsPointer<
     TMemberState,
     +StorageMemberAddressTrait<TMemberState>,
     +starknet::Store<StorageMemberAddressTrait::<TMemberState>::Value>,
-> of StorageAsPointer<TMemberState, StorageMemberAddressTrait::<TMemberState>::Value> {
-    fn as_ptr(
-        self: @TMemberState
-    ) -> StoragePointer<StorageMemberAddressTrait::<TMemberState>::Value> {
-        StoragePointer::<
-            StorageMemberAddressTrait::<TMemberState>::Value
-        > { address: self.address() }
+> of StorageAsPointer<TMemberState> {
+    type Value = StorageMemberAddressTrait::<TMemberState>::Value;
+    fn as_ptr(self: @TMemberState) -> StoragePointer0Offset<Self::Value> {
+        StoragePointer0Offset { address: self.address() }
     }
 }
 
 /// Trait for updating the hash state with a value, using an `entry` method.
-// TODO(Gil): Once associated types are stabilized, make `K` and `V` associated types of this trait.
-pub trait StoragePathEntry<C, K, V> {
-    fn entry(self: StoragePath<C>, key: K) -> StoragePath<V>;
+pub trait StoragePathEntry<C> {
+    type Key;
+    type Value;
+    fn entry(self: StoragePath<C>, key: Self::Key) -> StoragePath<Self::Value>;
 }
 
 /// A struct that represents a map in a contract storage.
@@ -188,7 +217,9 @@ pub struct Map<K, V> {}
 
 impl StoragePathEntryMap<
     K, V, +core::hash::Hash<K, core::poseidon::HashState>
-> of StoragePathEntry<Map<K, V>, K, V> {
+> of StoragePathEntry<Map<K, V>> {
+    type Key = K;
+    type Value = V;
     #[inline(always)]
     fn entry(self: StoragePath<Map<K, V>>, key: K) -> StoragePath<V> {
         StoragePath::<
