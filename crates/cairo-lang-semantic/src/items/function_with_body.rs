@@ -317,13 +317,13 @@ pub fn get_implicit_precedence<'a>(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     attributes: &'a [Attribute],
-) -> Maybe<(ImplicitPrecedence, Option<&'a Attribute>)> {
+) -> (ImplicitPrecedence, Option<&'a Attribute>) {
     let syntax_db = db.upcast();
 
     let mut attributes = attributes.iter().rev().filter(|attr| attr.id == IMPLICIT_PRECEDENCE_ATTR);
 
     // Pick the last attribute if any.
-    let Some(attr) = attributes.next() else { return Ok((ImplicitPrecedence::UNSPECIFIED, None)) };
+    let Some(attr) = attributes.next() else { return (ImplicitPrecedence::UNSPECIFIED, None) };
 
     // Report warnings for overridden attributes if any.
     for attr in attributes {
@@ -333,7 +333,7 @@ pub fn get_implicit_precedence<'a>(
         );
     }
 
-    let types: Vec<TypeId> = attr
+    let Ok(types) = attr
         .args
         .iter()
         .map(|arg| match &arg.variant {
@@ -353,8 +353,12 @@ pub fn get_implicit_precedence<'a>(
             _ => Err(diagnostics
                 .report(&arg.arg, SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments)),
         })
-        .try_collect()?;
+        .try_collect::<TypeId, Vec<_>, _>()
+    else {
+        return (ImplicitPrecedence::UNSPECIFIED, None);
+    };
+
     let precedence = ImplicitPrecedence::from_iter(types);
 
-    Ok((precedence, Some(attr)))
+    (precedence, Some(attr))
 }

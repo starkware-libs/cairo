@@ -1163,7 +1163,7 @@ pub fn priv_trait_function_declaration_data(
     let resolver_data = Arc::new(resolver.data);
 
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
-    let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
+    let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes);
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
