@@ -829,7 +829,7 @@ impl U64BitSize of core::num::traits::BitSize<u64> {
     }
 }
 
-#[derive(Copy, Drop, Hash, PartialEq, Serde, starknet::Store)]
+#[derive(Copy, Drop, Hash, PartialEq, Serde)]
 pub struct u256 {
     pub low: u128,
     pub high: u128,
