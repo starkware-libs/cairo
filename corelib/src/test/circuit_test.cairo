@@ -31,7 +31,12 @@ fn test_circuit_success() {
 
     let modulus = TryInto::<_, CircuitModulus>::try_into([7, 0, 0, 0]).unwrap();
     let outputs =
-        match (mul,).new_inputs().next([3, 0, 0, 0]).next([6, 0, 0, 0]).done().eval(modulus) {
+        match (mul, add, inv)
+            .new_inputs()
+            .next([3, 0, 0, 0])
+            .next([6, 0, 0, 0])
+            .done()
+            .eval(modulus) {
         EvalCircuitResult::Success(outputs) => { outputs },
         EvalCircuitResult::Failure((_, _)) => { panic!("Expected success") }
     };
