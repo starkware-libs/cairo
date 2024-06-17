@@ -236,10 +236,8 @@ fn build_circuit_eval(
 
         tempvar computed_gates;
         hint CoreHint::EvalCircuit {
-            values_ptr: values,
             n_add_mods: n_adds, add_mod_builtin: add_mod,
-            n_mul_mods: n_muls, mul_mod_builtin: mul_mod,
-            modulus: modulus0
+            n_mul_mods: n_muls, mul_mod_builtin: mul_mod
         } into {computed_gates_out: computed_gates};
         assert computed_gates = mul_mod[6];
 
