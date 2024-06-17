@@ -59,3 +59,31 @@ fn test_circuit_failure() {
         EvalCircuitResult::Success(_outputs) => { panic!("Expected failure"); }
     }
 }
+
+#[test]
+fn test_into_u384() {
+    assert!(
+        0x100000023000000450000006700000089000000ab000000cd000000ef0000000_u256
+            .into() == u384 {
+                limb0: 0xb000000cd000000ef0000000,
+                limb1: 0x50000006700000089000000a,
+                limb2: 0x1000000230000004,
+                limb3: 0,
+            }
+    );
+    assert!(
+        0x10000002300000045000000670000008_u128
+            .into() == u384 {
+                limb0: 0x300000045000000670000008, limb1: 0x10000002, limb2: 0, limb3: 0,
+            }
+    );
+    assert!(
+        0x70000023000000450000006700000089000000ab000000cd000000ef0000000_felt252
+            .into() == u384 {
+                limb0: 0xb000000cd000000ef0000000,
+                limb1: 0x50000006700000089000000a,
+                limb2: 0x700000230000004,
+                limb3: 0,
+            }
+    );
+}
