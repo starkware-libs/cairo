@@ -12,7 +12,7 @@ edition = "2023_11"
 
 //! > src/lib.cairo
 fn main() {
-    let mut x = 5;
+    let mut x<caret> = 5;
     p<caret>rintln!("The value of x is: {}", x);
     x<caret> = <caret>a<caret>dd_two<caret>(x);
 
@@ -72,6 +72,14 @@ pub mod front_of_house {
     }
 }
 
+//! > hover 1:13
+// = source context
+    let mut x<caret> = 5;
+// = highlight
+No highlight information.
+// = popover
+Type: `core::integer::u32`
+
 //! > hover 2:5
 // = source context
     p<caret>rintln!("The value of x is: {}", x);
@@ -86,10 +94,10 @@ No highlight information.
 // = source context
     x<caret> = add_two(x);
 // = highlight
-No highlight information.
+    <sel>x</sel> = add_two(x);
 // = popover
 ```cairo
-core::integer::u32
+let mut x: core::integer::u32
 ```
 
 //! > hover 3:8

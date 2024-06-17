@@ -29,6 +29,7 @@ salsa.workspace = true
 scarb-metadata = "1.12"
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
+smol_str.workspace = true
 tokio.workspace = true
 tower-lsp = "0.20.0"
 tracing = "0.1"
