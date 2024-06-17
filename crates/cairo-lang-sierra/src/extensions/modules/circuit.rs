@@ -46,7 +46,7 @@ pub const VALUE_SIZE: usize = 4;
 pub const BUILTIN_INSTANCE_SIZE: usize = 7;
 /// A gate is defined by 3 offsets, the first two are the inputs and the third is the output.
 pub const OFFSETS_PER_GATE: usize = 3;
-/// The offset of the values in in the values array.
+/// The offset of the values in the values array.
 pub const ONE_OFFSET: usize = 0;
 
 define_type_hierarchy! {
@@ -982,7 +982,7 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
 pub type EvalCircuitLibFunc = WrapSignatureAndTypeGenericLibfunc<EvalCircuitLibFuncWrapped>;
 
 /// Converts 'T' into a 'U96Guarantee'.
-/// 'T' must be a a value that fits inside a u96, for example: u8, u96 or BoundedInt<0, 12>.
+/// 'T' must be a value that fits inside a u96, for example: u8, u96 or BoundedInt<0, 12>.
 #[derive(Default)]
 pub struct IntoU96GuaranteeLibFuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for IntoU96GuaranteeLibFuncWrapped {
