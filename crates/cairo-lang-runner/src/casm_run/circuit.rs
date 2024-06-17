@@ -235,15 +235,17 @@ pub fn fill_instances(
 /// were filled successfully.
 pub fn eval_circuit(
     vm: &mut VirtualMachine,
-    values_ptr: Relocatable,
     add_mod_builtin: Relocatable,
     n_add_mods: usize,
     mul_mod_builtin: Relocatable,
     n_mul_mods: usize,
-    modulus_ptr: Relocatable,
-) -> Result<usize, HintError> {
+) -> Result<(), HintError> {
+    let modulus_ptr = mul_mod_builtin;
+    // The offset of the values pointer inside an instance of the builtins.
+    let values_offset = 4;
     // The offset of the offsets pointer inside an instance of the builtins.
     let offsets_offset = 5;
+    let values_ptr = vm.get_relocatable((mul_mod_builtin + values_offset)?)?;
 
     let mul_mod_offsets = vm.get_relocatable((mul_mod_builtin + offsets_offset)?)?;
     let add_mod_offsets = if n_add_mods == 0 {
@@ -263,9 +265,7 @@ pub fn eval_circuit(
 
     let modulus: [Felt252; 4] =
         array::from_fn(|i| *vm.get_integer((modulus_ptr + i).unwrap()).unwrap().deref());
-
     fill_instances(vm, add_mod_builtin, n_add_mods, modulus, values_ptr, add_mod_offsets)?;
     fill_instances(vm, mul_mod_builtin, n_computed_gates, modulus, values_ptr, mul_mod_offsets)?;
-
-    Ok(n_computed_gates)
+    Ok(())
 }
