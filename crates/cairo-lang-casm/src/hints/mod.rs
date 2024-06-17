@@ -287,18 +287,10 @@ pub enum CoreHint {
 
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 28))]
     EvalCircuit {
-        values_ptr: ResOperand,
         n_add_mods: ResOperand,
         add_mod_builtin: ResOperand,
         n_mul_mods: ResOperand,
         mul_mod_builtin: ResOperand,
-        // A ResOperand::Deref variant that points to the modulus
-        modulus: ResOperand,
-
-        // The number of mul mod that were actually computed.
-        // If computed_gates < n_mul_mods it means that the `computed_gates` is an inverse gate
-        // and the input is not invertible.
-        computed_gates_out: CellRef,
     },
 }
 
