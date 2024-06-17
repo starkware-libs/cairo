@@ -2084,34 +2084,14 @@ pub fn execute_core_hint(
             }
         }
         CoreHint::EvalCircuit {
-            values_ptr,
-            n_add_mods,
-            add_mod_builtin,
-            n_mul_mods,
-            mul_mod_builtin,
-            modulus,
-            computed_gates_out,
-            ..
+            n_add_mods, add_mod_builtin, n_mul_mods, mul_mod_builtin, ..
         } => {
-            let values_ptr = extract_relocatable(vm, values_ptr)?;
             let add_mod_builtin = extract_relocatable(vm, add_mod_builtin)?;
             let n_add_mods = get_val(vm, n_add_mods)?.to_usize().unwrap();
             let mul_mod_builtin = extract_relocatable(vm, mul_mod_builtin)?;
             let n_mul_mods = get_val(vm, n_mul_mods)?.to_usize().unwrap();
-            let modulus_ptr =
-                cell_ref_to_relocatable(extract_matches!(modulus, ResOperand::Deref), vm);
 
-            let n_computed_gates = circuit::eval_circuit(
-                vm,
-                values_ptr,
-                add_mod_builtin,
-                n_add_mods,
-                mul_mod_builtin,
-                n_mul_mods,
-                modulus_ptr,
-            )?;
-
-            insert_value_to_cellref!(vm, computed_gates_out, Felt252::from(n_computed_gates))?;
+            circuit::eval_circuit(vm, add_mod_builtin, n_add_mods, mul_mod_builtin, n_mul_mods)?;
         }
     };
     Ok(())
