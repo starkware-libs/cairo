@@ -10,6 +10,7 @@ use crate::db::{CrateConfiguration, FilesGroup};
 use crate::span::{TextOffset, TextSpan};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
+pub const FILE_MODULE_NAME: &str = "mod";
 
 /// A crate is a standalone file tree representing a single compilation unit.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -165,6 +166,31 @@ impl Directory {
                 .get(&name)
                 .copied()
                 .unwrap_or_else(|| FileId::new(db, PathBuf::from(name.as_str()))),
+        }
+    }
+
+    /// Returns a file inside this directory. The file and directory don't necessarily exist on
+    /// the file system. These are ids/paths to them.
+    pub fn find_cairo_file(&self, db: &dyn FilesGroup, name: SmolStr) -> FileId {
+        match self {
+            Directory::Real(path) => {
+                let base_path = path.join(name.to_string());
+                let dir_file_path =
+                    base_path.join(FILE_MODULE_NAME).with_extension(CAIRO_FILE_EXTENSION);
+                // println!("dir_file_path: {:?}", dir_file_path);
+                if dir_file_path.is_file() {
+                    FileId::new(db, dir_file_path)
+                } else {
+                    FileId::new(db, base_path.with_extension(CAIRO_FILE_EXTENSION))
+                }
+            }
+            Directory::Virtual { files, dirs: _ } => {
+                let name = format!("{name}.{CAIRO_FILE_EXTENSION}");
+                files
+                    .get(name.as_str())
+                    .copied()
+                    .unwrap_or_else(|| FileId::new(db, PathBuf::from(name)))
+            }
         }
     }
 
