@@ -776,7 +776,22 @@ impl PythonicHint for CoreHint {
                         memory{t_or_k1} = k >> 128
                 "}
             }
-            CoreHint::EvalCircuit { .. } => "raise NotImplementedError".into(),
+            CoreHint::EvalCircuit { n_add_mods, add_mod_builtin, n_mul_mods, mul_mod_builtin } => {
+                let n_add_mods = ResOperandAsIntegerFormatter(n_add_mods);
+                let add_mod_builtin = ResOperandAsAddressFormatter(add_mod_builtin);
+                let n_mul_mods = ResOperandAsIntegerFormatter(n_mul_mods);
+                let mul_mod_builtin = ResOperandAsAddressFormatter(mul_mod_builtin);
+                formatdoc! {"
+
+                from starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner
+
+                ModBuiltinRunner.fill_memory(
+                        memory=memory,
+                        add_mod=({add_mod_builtin}, builtin_runners[\"add_mod_builtin\"], {n_add_mods}),
+                        mul_mod=({mul_mod_builtin}, builtin_runners[\"mul_mod_builtin\"], {n_mul_mods}),
+                )
+                "}
+            }
         }
     }
 }
