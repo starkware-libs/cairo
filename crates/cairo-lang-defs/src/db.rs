@@ -282,8 +282,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
                     db.module_file(submodule_id.module_file_id(db))?
                 }
                 MaybeModuleBody::None(_) => {
-                    let name = submodule_id.name(db);
-                    db.module_dir(parent)?.file(db.upcast(), format!("{name}.cairo").into())
+                    db.module_dir(parent)?.find_cairo_file(db.upcast(), submodule_id.name(db))
                 }
             }
         }
