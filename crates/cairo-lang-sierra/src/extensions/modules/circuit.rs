@@ -1308,6 +1308,9 @@ fn get_circuit_info(
     let ParsedInputs { mut values, mut mul_offsets } =
         parse_circuit_inputs(context, circ_outputs.clone())?;
     let n_inputs = values.len();
+    if n_inputs == 0 {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
     let mut add_offsets = vec![];
 
     // We visit each gate in the circuit twice.
