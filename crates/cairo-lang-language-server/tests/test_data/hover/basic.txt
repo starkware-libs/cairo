@@ -107,6 +107,9 @@ let mut x: core::integer::u32
     x = <sel>add_two</sel>(x);
 // = popover
 ```cairo
+hello
+```
+```cairo
 fn add_two(x: u32) -> u32
 ```
 ---
@@ -119,6 +122,9 @@ fn add_two(x: u32) -> u32
     x = <sel>add_two</sel>(x);
 // = popover
 ```cairo
+hello
+```
+```cairo
 fn add_two(x: u32) -> u32
 ```
 ---
@@ -130,6 +136,9 @@ fn add_two(x: u32) -> u32
 // = highlight
     x = <sel>add_two</sel>(x);
 // = popover
+```cairo
+hello
+```
 ```cairo
 fn add_two(x: u32) -> u32
 ```
@@ -163,6 +172,9 @@ fn add_to_waitlist() -> ()
     front_of_house::hosting::<sel>add_to_waitlist</sel>();
 // = popover
 ```cairo
+hello::front_of_house::hosting
+```
+```cairo
 pub fn add_to_waitlist()
 ```
 ---
@@ -182,6 +194,9 @@ No highlight information.
     fn area(self: @<sel>Rectangle</sel>) -> u64;
 // = popover
 ```cairo
+hello
+```
+```cairo
 struct Rectangle {
     /// Width of the rectangle.
     width: u64,
@@ -199,6 +214,9 @@ Rectangle struct.
 // = highlight
     fn area(self: @<sel>Rectangle</sel>) -> u64 {
 // = popover
+```cairo
+hello
+```
 ```cairo
 struct Rectangle {
     /// Width of the rectangle.
@@ -228,6 +246,9 @@ No highlight information.
     fn area(self: @<sel>Rectangle</sel>) -> u64 {
 // = popover
 ```cairo
+hello
+```
+```cairo
 struct Rectangle {
     /// Width of the rectangle.
     width: u64,
@@ -256,6 +277,9 @@ fn value_in_cents(coin: C<caret>oin) -> felt252 {
 fn value_in_cents(coin: <sel>Coin</sel>) -> felt252 {
 // = popover
 ```cairo
+hello
+```
+```cairo
 
 enum Coin {
     Penny,
@@ -269,6 +293,9 @@ enum Coin {
 // = highlight
         Coin::<sel>Penny</sel> => 1,
 // = popover
+```cairo
+hello
+```
 ```cairo
 
 enum Coin {

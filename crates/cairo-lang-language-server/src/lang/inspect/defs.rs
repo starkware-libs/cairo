@@ -1,6 +1,6 @@
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::LookupItemId;
+use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, TopLevelLanguageElementId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
@@ -100,6 +100,17 @@ impl ItemDef {
                 md.ensure_trailing_newline();
                 md
             })
+    }
+
+    /// Gets full path (including crate name and defining trait/impl if applicable)
+    /// to the module containing the item.
+    pub fn definition_path(&self, db: &RootDatabase) -> String {
+        let defs_db = db.upcast();
+        match self.lookup_item_id {
+            LookupItemId::ModuleItem(item) => item.parent_module(defs_db).full_path(defs_db),
+            LookupItemId::TraitItem(item) => item.trait_id(defs_db).full_path(defs_db),
+            LookupItemId::ImplItem(item) => item.impl_def_id(defs_db).full_path(defs_db),
+        }
     }
 }
 

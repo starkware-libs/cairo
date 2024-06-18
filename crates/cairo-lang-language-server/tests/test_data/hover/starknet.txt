@@ -56,6 +56,9 @@ use Balance::contr<caret>act_state_for_testing;
 use Balance::<sel>contract_state_for_testing</sel>;
 // = popover
 ```cairo
+hello
+```
+```cairo
 pub fn contract_state_for_testing() -> ContractState
 ```
 
@@ -72,6 +75,9 @@ No highlight information.
 // = highlight
     fn constructor(ref self: <sel>ContractState</sel>, value_: u128) {
 // = popover
+```cairo
+hello
+```
 ```cairo
 
 
@@ -108,6 +114,9 @@ value_: core::integer::u128
     impl Balance of super::<sel>IBalance</sel><ContractState> {
 // = popover
 ```cairo
+hello
+```
+```cairo
  trait IBalance<T>
 ```
 ---
@@ -119,6 +128,9 @@ The balance contract interface.
 // = highlight
     impl Balance of super::IBalance<<sel>ContractState</sel>> {
 // = popover
+```cairo
+hello
+```
 ```cairo
 
 
@@ -135,6 +147,9 @@ The balance contract interface.
             self.value.<sel>read</sel>()
 // = popover
 ```cairo
+core::starknet::storage::StorageMemberAccessTrait
+```
+```cairo
 fn read(self: @TMemberState) -> Self::Value;
 ```
 
@@ -144,6 +159,9 @@ fn read(self: @TMemberState) -> Self::Value;
 // = highlight
             self.value.<sel>write</sel>( self.value.read() + a );
 // = popover
+```cairo
+core::starknet::storage::StorageMemberAccessTrait
+```
 ```cairo
 fn write(ref self: TMemberState, value: Self::Value);
 ```
