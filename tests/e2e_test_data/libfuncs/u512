@@ -138,9 +138,9 @@ libfunc store_temp<Tuple<core::integer::u512, core::integer::u256, U128MulGuaran
 
 u512_safe_divmod_by_u256([0], [1], [2]) -> ([3], [4], [5], [6], [7], [8], [9], [10]); // 0
 struct_construct<Tuple<core::integer::u512, core::integer::u256, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee>>([4], [5], [6], [7], [8], [9], [10]) -> ([11]); // 1
-store_temp<RangeCheck>([3]) -> ([12]); // 2
-store_temp<Tuple<core::integer::u512, core::integer::u256, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee>>([11]) -> ([13]); // 3
-return([12], [13]); // 4
+store_temp<RangeCheck>([3]) -> ([3]); // 2
+store_temp<Tuple<core::integer::u512, core::integer::u256, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee>>([11]) -> ([11]); // 3
+return([3], [11]); // 4
 
 test::foo@0([0]: RangeCheck, [1]: core::integer::u512, [2]: NonZero<core::integer::u256>) -> (RangeCheck, Tuple<core::integer::u512, core::integer::u256, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee>);
 
