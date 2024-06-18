@@ -109,6 +109,13 @@ struct FuncBlock {
     start_local_ap: usize,
     // Maximal number of rc checks before reaching this block.
     start_rc: usize,
+    // This is the maximal non-negative difference between the number of assert steps
+    // performed before calling the next block and the rc_deficit of the called block,
+    // where the rc_deficit of a return block is the increase of the rc pointer at
+    // that return block minus the number of arguments returned (each of them is
+    // good for one assert). The rc_deficit should be zero at the main block and may
+    // be zero at other blocks.
+    rc_deficit: usize,
 }
 
 impl FuncBlock {
@@ -633,6 +640,8 @@ impl<'a> LeanFuncInfo<'a> {
         lean_info.make_blocks();
         lean_info.max_rc_counts = lean_info.find_max_rc_checks(0, None);
 
+        lean_info.calc_block_rc_deficits();
+
         lean_info
     }
 
@@ -671,6 +680,7 @@ impl<'a> LeanFuncInfo<'a> {
                 ret_labels: self.make_ret_labels(0),
                 start_local_ap: 0,
                 start_rc: 0,
+                rc_deficit: 0,
             }
         );
 
@@ -690,6 +700,7 @@ impl<'a> LeanFuncInfo<'a> {
                             start_local_ap: self.find_max_next_ap(0, &desc.label).unwrap_or(0)
                                 .to_usize().expect("ap offset expected to be non-negative"),
                             start_rc: *self.find_max_rc_checks(0, Some(&desc.label)).get(&desc.label).unwrap_or(&0),
+                            rc_deficit: 0,
                         }
                     )
                 },
@@ -826,6 +837,96 @@ impl<'a> LeanFuncInfo<'a> {
         match to_label {
             Some(to_label) if to_label != "Fallthrough" => HashMap::new(),
             _ => HashMap::from([("Fallthrough".into(), rc_count)])
+        }
+    }
+
+    fn calc_block_rc_deficits(&mut self) {
+        let rc_deficits: Vec<usize> = self.blocks.iter().map(|block| self.calc_rc_deficit_at_pos(block.start_pos)).collect();
+        for (block, rc_deficit) in self.blocks.iter_mut().zip(rc_deficits) {
+            block.rc_deficit = rc_deficit;
+        }
+    }
+
+    /// Calculates the rc deficit at the given start position. This is the maximal difference
+    /// between the increase of the rc pointer at a return branch reachable from this start position
+    /// and the number of assertions that take place between this start point and the return.
+
+    fn calc_rc_deficit_at_pos(&self, start_pos: usize) -> usize {
+
+        let mut assert_count: usize = 0;
+        let mut tail_deficit: Option<usize> = None;
+
+        for (i, statement) in self.aux_info.statements[start_pos..].iter().enumerate() {
+            match statement {
+                StatementDesc::Assert(_) => {
+                    assert_count += 1;
+                },
+                StatementDesc::TempVar(var)|StatementDesc::LocalVar(var) => {
+                    if var.expr.is_some() {
+                        assert_count += 1;
+                    }
+                }
+                StatementDesc::Jump(jump) => {
+                    let branch_deficit = if let Some(target) = self.get_jump_target_pos(jump) {
+                        self.calc_rc_deficit_at_pos(target)
+                    } else {
+                        // This label is a return block
+
+                        // For every return argument, there is one assert in the return block.
+                        assert_count += self.ret_arg_num();
+                        *self.max_rc_counts.get(&jump.target)
+                            .expect("Failed to find return branch for rc deficit")
+                    };
+                    if jump.cond_var.is_some() {
+                        // Take the maximum deficit of the two branches.
+                        tail_deficit = Some(max(branch_deficit, self.calc_rc_deficit_at_pos(start_pos + i + 1)));
+                    } else {
+                        tail_deficit = Some(branch_deficit);
+                    }
+                    break;
+                },
+                StatementDesc::Label(label) => {
+                    tail_deficit = self.get_return_block_rc_deficit(&label.label);
+                    if tail_deficit.is_some() {
+                        break;
+                    }
+                    // Otherwise, not a return block, so we continue.
+                },
+                StatementDesc::Fail => {
+                    // No deficit. In a failed branch, there is no need for range checks.
+                    return 0;
+                },
+                _ => {}
+            }
+        }
+
+        if tail_deficit.is_none() {
+            tail_deficit = self.get_return_block_rc_deficit("Fallthrough");
+        }
+
+        let tail_deficit = tail_deficit.expect("Failed to calculate tail rc deficit.");
+
+        if assert_count < tail_deficit {
+            tail_deficit - assert_count
+        } else {
+            0
+        }
+    }
+
+    /// Returns the rc deficit of a return block, which is the increase in the rc pointer
+    /// required at that return block minus the number of asserts that take place in the block
+    /// (one for each return variable) minus one (for the return step itself). A deficit should
+    /// never be negative, so if the difference is negative, zero is returned.
+    /// None is returned if the return block information cannot be found.
+    fn get_return_block_rc_deficit(&self, ret_block_name: &str) -> Option<usize> {
+        if let Some(max_rc) = self.max_rc_counts.get(ret_block_name) {
+            if self.ret_arg_num() + 1 < *max_rc {
+                Some(*max_rc - self.ret_arg_num() - 1)
+            } else {
+                Some(0)
+            }
+        } else {
+            None
         }
     }
 
@@ -2192,7 +2293,9 @@ impl AutoProof {
             rws.push(self.make_var_rw(&expr.var_a.name, lean_info, rebind));
             op = &expr.op;
             if let Some(expr_b) = &expr.var_b {
-                rws.push(self.make_var_rw(&expr_b.name, lean_info, rebind));
+                if expr.var_a.name != expr_b.name {
+                    rws.push(self.make_var_rw(&expr_b.name, lean_info, rebind));
+                }
             }
         }
 
@@ -2341,7 +2444,16 @@ impl AutoProof {
             }
 
             if let Some(rc_bound) = rc_bound {
-                self.push_main(indent, &format!("apply le_trans {rc_bound} (Nat.le_add_right _ _)"));
+                let has_rc_deficit = if let Some(return_block) = return_block {
+                        return_block.rc_deficit != 0
+                    } else {
+                        false
+                    };
+                if has_rc_deficit {
+                    self.push_main(indent, &format!("apply le_trans {rc_bound} (Nat.add_le_add_left _ _) ; norm_num1"));
+                } else {
+                    self.push_main(indent, &format!("apply le_trans {rc_bound} (Nat.le_add_right _ _)"));
+                }
             } else {
                 self.push_main(indent, "norm_num1");
             }
@@ -2467,11 +2579,16 @@ impl LeanGenerator for AutoProof {
                 } else {
                     "μ".into()
                 };
+            let rc_deficit = if block.rc_deficit == 0 {
+                    String::from("")
+                } else {
+                    format!(" + {deficit}", deficit = block.rc_deficit)
+                };
             let rc_bound: String = if let Some(max_rc) = max_rc {
-                format!("{rc_value} ≤ κ ∧")
+                format!("{rc_value} ≤ κ{rc_deficit} ∧")
             } else {
                 format!(
-                    "∃ {rc_value} ≤ κ, {min_max_rc} ≤ {rc_value} ∧",
+                    "∃ {rc_value} ≤ κ{rc_deficit}, {min_max_rc} ≤ {rc_value} ∧",
                     min_max_rc = lean_info.get_block_min_max_rc(block)
                 )
             };
