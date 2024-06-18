@@ -21,6 +21,7 @@ use crate::test_utils::get_example_file_path;
 #[test_case("upgradable_counter")]
 #[test_case("mintable")]
 #[test_case("multi_component__contract_with_4_components")]
+// TODO(ilya): Add circuit_contract once lalrpop is fixed.
 fn test_felt252_serde(name: &str) {
     let sierra = ProgramParser::new()
         .parse(&read_to_string(get_example_file_path(format!("{name}.sierra").as_str())).unwrap())
