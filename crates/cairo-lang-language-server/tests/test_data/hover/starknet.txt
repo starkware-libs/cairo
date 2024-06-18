@@ -10,7 +10,7 @@ hello = "src"
 [config.global]
 edition = "2023_11"
 
-//! > src/lib.cairo
+//! > cairo_code
 use Balance::contr<caret>act_state_for_testing;
 
 /// The balance contract interface.
@@ -49,7 +49,7 @@ mod Balance {
     }
 }
 
-//! > hover 0:18
+//! > hover #0
 // = source context
 use Balance::contr<caret>act_state_for_testing;
 // = highlight
@@ -62,14 +62,14 @@ hello
 pub fn contract_state_for_testing() -> ContractState
 ```
 
-//! > hover 23:25
+//! > hover #1
 // = source context
     fn constructor(ref se<caret>lf: ContractState, value_: u128) {
 // = highlight
 No highlight information.
 // = popover
 
-//! > hover 23:33
+//! > hover #2
 // = source context
     fn constructor(ref self: Cont<caret>ractState, value_: u128) {
 // = highlight
@@ -87,7 +87,7 @@ hello
 
 ```
 
-//! > hover 24:15
+//! > hover #3
 // = source context
         self.va<caret>lue.write(value_);
 // = highlight
@@ -97,7 +97,7 @@ No highlight information.
 hello::Balance::__member_module_value::ContractMemberState
 ```
 
-//! > hover 24:25
+//! > hover #4
 // = source context
         self.value.write(<caret>value_);
 // = highlight
@@ -107,7 +107,7 @@ hello::Balance::__member_module_value::ContractMemberState
 value_: core::integer::u128
 ```
 
-//! > hover 28:30
+//! > hover #5
 // = source context
     impl Balance of super::IBa<caret>lance<ContractState> {
 // = highlight
@@ -122,7 +122,7 @@ hello
 ---
 The balance contract interface.
 
-//! > hover 28:39
+//! > hover #6
 // = source context
     impl Balance of super::IBalance<Con<caret>tractState> {
 // = highlight
@@ -140,7 +140,7 @@ hello
 
 ```
 
-//! > hover 30:24
+//! > hover #7
 // = source context
             self.value.r<caret>ead()
 // = highlight
@@ -153,7 +153,7 @@ core::starknet::storage::StorageMemberAccessTrait
 fn read(self: @TMemberState) -> Self::Value;
 ```
 
-//! > hover 33:25
+//! > hover #8
 // = source context
             self.value.wr<caret>ite( self.value.read() + a );
 // = highlight
@@ -166,7 +166,7 @@ core::starknet::storage::StorageMemberAccessTrait
 fn write(ref self: TMemberState, value: Self::Value);
 ```
 
-//! > hover 33:50
+//! > hover #9
 // = source context
             self.value.write( self.value.read() + <caret>a );
 // = highlight
