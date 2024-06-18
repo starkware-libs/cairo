@@ -240,6 +240,7 @@ Type: `core::integer::u64`
 hello::RectangleTrait
 ```
 ```cairo
+ trait RectangleTrait 
 fn area(self: @Rectangle) -> u64;
 ```
 ---

@@ -150,6 +150,7 @@ hello
 core::starknet::storage::StorageMemberAccessTrait
 ```
 ```cairo
+pub trait StorageMemberAccessTrait<TMemberState>
 fn read(self: @TMemberState) -> Self::Value;
 ```
 
@@ -163,6 +164,7 @@ fn read(self: @TMemberState) -> Self::Value;
 core::starknet::storage::StorageMemberAccessTrait
 ```
 ```cairo
+pub trait StorageMemberAccessTrait<TMemberState>
 fn write(ref self: TMemberState, value: Self::Value);
 ```
 
