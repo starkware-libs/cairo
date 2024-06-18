@@ -1528,13 +1528,20 @@ fn compute_method_function_call_data(
     );
     let trait_function_id = match candidates[..] {
         [] => {
-            return Err(no_implementation_diagnostic(
+            eprintln!(
+                "No implementation of function: {:?} for type {:?}",
+                func_name,
+                self_ty.debug(ctx.db.elongate())
+            );
+            let x = Err(no_implementation_diagnostic(
                 self_ty,
                 func_name,
                 TraitInferenceErrors { traits_and_errors: inference_errors },
             )
             .map(|diag| ctx.diagnostics.report(method_syntax, diag))
             .unwrap_or_else(skip_diagnostic));
+            eprintln!("Diagnostic: {}", ctx.diagnostics.clone().build().format(ctx.db.elongate()));
+            return x;
         }
         [trait_function_id] => trait_function_id,
         [trait_function_id0, trait_function_id1, ..] => {
@@ -2381,7 +2388,7 @@ fn member_access_expr(
     match &long_ty {
         TypeLongId::Concrete(_) | TypeLongId::Tuple(_) | TypeLongId::FixedSizeArray { .. } => {
             let EnrichedMembers { members, deref_functions } =
-                enriched_members(ctx, lexpr.clone(), stable_ptr)?;
+                enriched_members(ctx, lexpr.clone(), stable_ptr, Some(member_name.clone()))?;
             let Some((member, n_derefs)) = members.get(&member_name) else {
                 return Err(ctx.diagnostics.report(
                     &rhs_syntax,
@@ -2481,6 +2488,7 @@ fn enriched_members(
     ctx: &mut ComputationContext<'_>,
     mut expr: ExprAndId,
     stable_ptr: ast::ExprPtr,
+    accessed_member_name: Option<SmolStr>,
 ) -> Maybe<EnrichedMembers> {
     // TODO(Gil): Use this function for LS completions.
     let mut ty = expr.ty();
@@ -2500,6 +2508,11 @@ fn enriched_members(
         let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
         for (member_name, member) in members.iter() {
             res.insert(member_name.clone(), (member.clone(), 0));
+            if let Some(ref accessed_member_name) = accessed_member_name {
+                if *member_name == *accessed_member_name {
+                    return Ok(EnrichedMembers { members: res, deref_functions });
+                }
+            }
         }
     }
     // Add members of derefed types.
@@ -2533,16 +2546,21 @@ fn enriched_members(
             break;
         }
         expr = ExprAndId { expr: derefed_expr.clone(), id: ctx.exprs.alloc(derefed_expr) };
+        deref_functions.push(function_id);
         if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
             let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
             for (member_name, member) in members.iter() {
                 // Insert member if there is not already a member with the same name.
                 if res.get(&member_name.clone()).is_none() {
                     res.insert(member_name.clone(), (member.clone(), n_deref));
+                    if let Some(ref accessed_member_name) = accessed_member_name {
+                        if *member_name == *accessed_member_name {
+                            return Ok(EnrichedMembers { members: res, deref_functions });
+                        }
+                    }
                 }
             }
         }
-        deref_functions.push(function_id);
         if !visited_types.insert(long_ty.intern(ctx.db)) {
             // Break if we have a cycle. A diagnostic will be reported from the impl and not from
             // member access.
