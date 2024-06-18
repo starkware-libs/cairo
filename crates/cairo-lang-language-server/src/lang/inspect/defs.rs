@@ -5,6 +5,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, ModuleItemId, TopLevelLanguageElementId, TraitItemId,
 };
+use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
@@ -117,7 +118,7 @@ impl ItemDef {
     pub fn signature(&self, db: &RootDatabase) -> String {
         let contexts = self.context_items.iter().map(|item| db.get_item_signature(*item)).rev();
         let this = iter::once(db.get_item_signature(self.lookup_item_id));
-        contexts.chain(this).join("\n")
+        contexts.chain(this).map(fmt).join("\n")
     }
 
     /// Gets item documentation in a final form usable for display.
@@ -259,4 +260,17 @@ impl VariableDef {
 
         format!("{prefix}{mutability}{name}: {ty}")
     }
+}
+
+/// Run Cairo formatter over code with extra post-processing that is specific to signatures.
+fn fmt(code: String) -> String {
+    let code = cairo_lang_formatter::format_string(&SimpleParserDatabase::default(), code);
+
+    code
+        // Trim any whitespace that formatter tends to leave.
+        .trim_end()
+        // Trim trailing semicolons, that are present in trait/impl functions, constants, etc.
+        // and that formatter tends to put in separate line.
+        .trim_end_matches("\n;")
+        .to_owned()
 }

@@ -207,7 +207,6 @@ struct Rectangle {
     /// Height of the rectangle.
     height: u64,
 }
-
 ```
 ---
 Rectangle struct.
@@ -240,8 +239,8 @@ Type: `core::integer::u64`
 hello::RectangleTrait
 ```
 ```cairo
- trait RectangleTrait 
-fn area(self: @Rectangle) -> u64;
+trait RectangleTrait
+fn area(self: @Rectangle) -> u64
 ```
 ---
 Calculate the area of the rectangle.
@@ -276,7 +275,6 @@ struct Rectangle {
     /// Height of the rectangle.
     height: u64,
 }
-
 ```
 ---
 Rectangle struct.
@@ -304,7 +302,6 @@ struct Rectangle {
     /// Height of the rectangle.
     height: u64,
 }
-
 ```
 ---
 Rectangle struct.
@@ -335,7 +332,6 @@ struct Rectangle {
     /// Height of the rectangle.
     height: u64,
 }
-
 ```
 ---
 Rectangle struct.
@@ -390,11 +386,9 @@ fn value_in_cents(coin: <sel>Coin</sel>) -> felt252 {
 hello
 ```
 ```cairo
-
 enum Coin {
     Penny,
 }
-
 ```
 
 //! > hover #27
@@ -417,9 +411,7 @@ coin: hello::Coin
 hello
 ```
 ```cairo
-
 enum Coin {
     Penny,
 }
-
 ```
