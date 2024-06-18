@@ -1,6 +1,6 @@
 [package]
 name = "core"
-version = "2.6.4"
+version = "2.7.0-dev.1"
 edition = "2023_11"
 experimental-features = ["coupons", "negative_impls"]
 
