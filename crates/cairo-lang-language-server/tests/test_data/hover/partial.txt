@@ -10,7 +10,7 @@ hello = "src"
 [config.global]
 edition = "2023_11"
 
-//! > src/lib.cairo
+//! > cairo_code
 fn main() {
     let mut xy<caret>z = unkn<caret>own_function();
     let y = xy<caret>z * 2;
@@ -20,7 +20,7 @@ fn f(ab<caret>c) -> felt252 {
     2 * ab<caret>c
 }
 
-//! > hover 1:14
+//! > hover #0
 // = source context
     let mut xy<caret>z = unknown_function();
 // = highlight
@@ -28,7 +28,7 @@ No highlight information.
 // = popover
 Type: `<missing>`
 
-//! > hover 1:22
+//! > hover #1
 // = source context
     let mut xyz = unkn<caret>own_function();
 // = highlight
@@ -38,7 +38,7 @@ No highlight information.
 <missing>
 ```
 
-//! > hover 2:14
+//! > hover #2
 // = source context
     let y = xy<caret>z * 2;
 // = highlight
@@ -48,14 +48,14 @@ No highlight information.
 let mut xyz: <missing>
 ```
 
-//! > hover 5:7
+//! > hover #3
 // = source context
 fn f(ab<caret>c) -> felt252 {
 // = highlight
 No highlight information.
 // = popover
 
-//! > hover 6:10
+//! > hover #4
 // = source context
     2 * ab<caret>c
 // = highlight

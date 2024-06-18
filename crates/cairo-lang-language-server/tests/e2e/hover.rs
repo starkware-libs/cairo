@@ -44,7 +44,7 @@ fn test_hover(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let (cairo, cursors) = cursors(&inputs["src/lib.cairo"]);
+    let (cairo, cursors) = cursors(&inputs["cairo_code"]);
 
     let mut ls = sandbox! {
         files {
@@ -58,8 +58,8 @@ fn test_hover(
 
     let mut hovers = OrderedHashMap::default();
 
-    for position in cursors.carets() {
-        let hover_name = format!("hover {}:{}", position.line, position.character);
+    for (n, position) in cursors.carets().into_iter().enumerate() {
+        let hover_name = format!("hover #{n}");
 
         let mut report = String::new();
 
