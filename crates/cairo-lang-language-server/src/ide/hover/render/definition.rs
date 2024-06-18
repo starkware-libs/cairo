@@ -22,7 +22,9 @@ pub fn definition(
     let md = match &symbol {
         SymbolDef::Item(item) => {
             // TODO(mkaput): Format this with Cairo formatter.
-            let mut md = Markdown::fenced_code_block(&item.signature(db));
+            let mut md = Markdown::empty();
+            md += Markdown::fenced_code_block(&item.definition_path(db));
+            md += Markdown::fenced_code_block(&item.signature(db));
             if let Some(doc) = item.documentation(db) {
                 md += Markdown::rule();
                 md += doc;

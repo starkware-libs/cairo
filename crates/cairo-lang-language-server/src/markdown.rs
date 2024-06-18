@@ -25,13 +25,13 @@ impl Markdown {
 
     /// Horizontal rule.
     pub fn rule() -> Self {
-        "\n---\n".into()
+        "---\n".into()
     }
 
     /// Creates a new [`Markdown`] instance with the given code surrounded with `cairo` fenced code
     /// block.
     pub fn fenced_code_block(contents: &str) -> Self {
-        format!("```cairo\n{contents}\n```").into()
+        format!("```cairo\n{contents}\n```\n").into()
     }
 
     /// Appends the given Markdown text to the current text.
