@@ -1313,14 +1313,11 @@ pub fn infer_impl_by_self(
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
-    let generic_function = inference
-        .infer_trait_generic_function(
-            concrete_trait_function_id,
-            &impl_lookup_context,
-            Some(stable_ptr),
-        )
-        .map_err(|err_set| inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr))
-        .unwrap();
+    let generic_function = inference.infer_trait_generic_function(
+        concrete_trait_function_id,
+        &impl_lookup_context,
+        Some(stable_ptr),
+    );
 
     Some((
         FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }
