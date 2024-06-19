@@ -79,12 +79,9 @@ No highlight information.
 hello
 ```
 ```cairo
-
-
-    pub struct ContractState {
-        pub value: __member_module_value::ContractMemberState,
-    }
-
+pub struct ContractState {
+    pub value: __member_module_value::ContractMemberState,
+}
 ```
 
 //! > hover #3
@@ -117,7 +114,7 @@ value_: core::integer::u128
 hello
 ```
 ```cairo
- trait IBalance<T>
+trait IBalance<T>
 ```
 ---
 The balance contract interface.
@@ -132,12 +129,9 @@ The balance contract interface.
 hello
 ```
 ```cairo
-
-
-    pub struct ContractState {
-        pub value: __member_module_value::ContractMemberState,
-    }
-
+pub struct ContractState {
+    pub value: __member_module_value::ContractMemberState,
+}
 ```
 
 //! > hover #7
@@ -151,7 +145,7 @@ core::starknet::storage::StorageMemberAccessTrait
 ```
 ```cairo
 pub trait StorageMemberAccessTrait<TMemberState>
-fn read(self: @TMemberState) -> Self::Value;
+fn read(self: @TMemberState) -> Self::Value
 ```
 
 //! > hover #8
@@ -165,7 +159,7 @@ core::starknet::storage::StorageMemberAccessTrait
 ```
 ```cairo
 pub trait StorageMemberAccessTrait<TMemberState>
-fn write(ref self: TMemberState, value: Self::Value);
+fn write(ref self: TMemberState, value: Self::Value)
 ```
 
 //! > hover #9
