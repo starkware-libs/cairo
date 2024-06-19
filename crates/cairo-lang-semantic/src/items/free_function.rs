@@ -164,7 +164,8 @@ pub fn priv_free_function_declaration_data(
 
     forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
 
-    let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes);
+    let (implicit_precedence, _) =
+        get_implicit_precedence(db, &mut diagnostics, &mut resolver, &attributes);
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
