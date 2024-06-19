@@ -63,7 +63,7 @@ fn foo() {}
 //! > function_body
 
 //! > expected_diagnostics
-error: Unknown type.
+error: Type not found.
  --> lib.cairo:1:23
 #[implicit_precedence(MissingBuiltin1, MissingBuiltin2)]
                       ^*************^

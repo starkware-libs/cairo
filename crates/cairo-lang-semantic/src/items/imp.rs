@@ -2038,6 +2038,10 @@ pub fn priv_impl_function_declaration_data(
         &mut environment,
     );
 
+    let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
+    let (implicit_precedence, _) =
+        get_implicit_precedence(&mut diagnostics, &mut resolver, &attributes);
+
     let inference = &mut resolver.inference();
     // Check fully resolved.
     inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
@@ -2054,13 +2058,9 @@ pub fn priv_impl_function_declaration_data(
         },
     );
 
-    let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
-
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
 
     forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
-
-    let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes);
 
     let signature = inference.rewrite(signature).no_err();
     let generic_params = inference.rewrite(generic_params).no_err();

@@ -1999,7 +1999,7 @@ use starknet::storage::{
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x8f9d2a9bd3a3fe28e42c16030ed25a2756a86a13d4297597e43683c3df9a02;
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, RangeCheck96, AddMod, MulMod, GasBuiltin, System)]
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -2309,7 +2309,7 @@ use starknet::storage::{
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x150d2e1961908098174a1d0101315691e91ab91682760b04003683fab54f03e;
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, RangeCheck96, AddMod, MulMod, GasBuiltin, System)]
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -2651,7 +2651,7 @@ use starknet::storage::{
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x3aa40c01c626d72d07c8dbda3c92460e7f71827931a5429b93fc69603190369;
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, RangeCheck96, AddMod, MulMod, GasBuiltin, System)]
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();

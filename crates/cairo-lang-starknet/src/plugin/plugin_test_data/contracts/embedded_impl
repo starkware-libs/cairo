@@ -255,7 +255,7 @@ trait UnsafeNewContractStateTraitForOutsideImpl<
     fn unsafe_new_contract_state() -> TContractState;
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, RangeCheck96, AddMod, MulMod, GasBuiltin, System)]
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__OutsideImpl__ret_3<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -274,7 +274,7 @@ fn __wrapper__OutsideImpl__ret_3<TContractState, impl UnsafeNewContractState: Un
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, RangeCheck96, AddMod, MulMod, GasBuiltin, System)]
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__OutsideImpl__ret_identity<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -849,7 +849,7 @@ trait UnsafeNewContractStateTraitForOutsideImplWithDestruct<
     fn unsafe_new_contract_state() -> TContractState;
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, RangeCheck96, AddMod, MulMod, GasBuiltin, System)]
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__OutsideImplWithDestruct__ret_3<TContractState, impl DisallowedDestruct: Destruct<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -1004,7 +1004,7 @@ trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<
     fn unsafe_new_contract_state() -> TContractState;
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, RangeCheck96, AddMod, MulMod, GasBuiltin, System)]
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -1755,7 +1755,7 @@ trait UnsafeNewContractStateTraitForOutsideImplWithDrop<
     fn unsafe_new_contract_state() -> TContractState;
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, RangeCheck96, AddMod, MulMod, GasBuiltin, System)]
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__OutsideImplWithDrop__ret_8<TContractState, +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithDrop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
