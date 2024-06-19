@@ -1,6 +1,10 @@
+use std::iter;
+
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, TopLevelLanguageElementId};
+use cairo_lang_defs::ids::{
+    LanguageElementId, LookupItemId, ModuleItemId, TopLevelLanguageElementId, TraitItemId,
+};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
@@ -11,6 +15,7 @@ use cairo_lang_syntax::node::ast::{Param, PatternIdentifier, PatternPtr, Termina
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
+use itertools::Itertools;
 use smol_str::SmolStr;
 use tracing::error;
 
@@ -72,20 +77,47 @@ impl SymbolDef {
 pub struct ItemDef {
     /// The [`LookupItemId`] associated with the item.
     lookup_item_id: LookupItemId,
+
+    /// Parent item to use as context when building signatures, etc.
+    ///
+    /// Sometimes, a signature of an item, it might contain parts that are defined elsewhere.
+    /// For example, for trait/impl items,
+    /// signature may refer to generic params defined in the defining trait/impl.
+    /// This reference allows including simplified signatures of such contexts alongside
+    /// the signature of this item.
+    context_items: Vec<LookupItemId>,
 }
 
 impl ItemDef {
     /// Constructs new [`ItemDef`] instance.
     fn new(db: &RootDatabase, definition_node: &SyntaxNode) -> Option<Self> {
-        // Get the lookup item representing the defining item.
-        let lookup_item_id = db.find_lookup_item(definition_node)?;
+        let mut lookup_item_ids = db.collect_lookup_items_stack(definition_node)?.into_iter();
 
-        Some(Self { lookup_item_id })
+        // Pull the lookup item representing the defining item.
+        let lookup_item_id = lookup_item_ids.next()?;
+
+        // Collect context items.
+        let context_items = lookup_item_ids
+            .take_while(|item| {
+                matches!(
+                    item,
+                    LookupItemId::ModuleItem(ModuleItemId::Struct(_))
+                        | LookupItemId::ModuleItem(ModuleItemId::Enum(_))
+                        | LookupItemId::ModuleItem(ModuleItemId::Trait(_))
+                        | LookupItemId::ModuleItem(ModuleItemId::Impl(_))
+                        | LookupItemId::TraitItem(TraitItemId::Impl(_))
+                )
+            })
+            .collect();
+
+        Some(Self { lookup_item_id, context_items })
     }
 
-    /// Get item signature without its body.
+    /// Get item signature without its body including signatures of its contexts.
     pub fn signature(&self, db: &RootDatabase) -> String {
-        db.get_item_signature(self.lookup_item_id)
+        let contexts = self.context_items.iter().map(|item| db.get_item_signature(*item)).rev();
+        let this = iter::once(db.get_item_signature(self.lookup_item_id));
+        contexts.chain(this).join("\n")
     }
 
     /// Gets item documentation in a final form usable for display.
