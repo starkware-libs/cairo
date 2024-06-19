@@ -322,6 +322,7 @@ macro_rules! fail_syscall {
 mod gas_costs {
     const STEP: usize = 100;
     const RANGE_CHECK: usize = 70;
+    const BITWISE: usize = 594;
 
     /// Entry point initial gas cost enforced by the compiler.
     /// Should match `ENTRY_POINT_COST` at `crates/cairo-lang-starknet/src/casm_contract_class.rs`.
@@ -337,7 +338,7 @@ mod gas_costs {
     pub const GET_EXECUTION_INFO: usize = 10 * STEP;
     pub const KECCAK: usize = 0;
     pub const KECCAK_ROUND_COST: usize = 180000;
-    pub const SHA256_PROCESS_BLOCK: usize = 2000 * STEP;
+    pub const SHA256_PROCESS_BLOCK: usize = 1852 * STEP + 65 * RANGE_CHECK + 1115 * BITWISE;
     pub const LIBRARY_CALL: usize = CALL_CONTRACT;
     pub const REPLACE_CLASS: usize = 50 * STEP;
     pub const SECP256K1_ADD: usize = 254 * STEP + 29 * RANGE_CHECK;
