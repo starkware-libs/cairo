@@ -202,16 +202,22 @@ fn find_all_tests(
     tests
 }
 
-/// The suite of plugins for compilation for testing.
-pub fn test_plugin_suite() -> PluginSuite {
+/// The suite of plugins that implements assert macros for tests.
+pub fn test_assert_suite() -> PluginSuite {
     let mut suite = PluginSuite::default();
     suite
-        .add_plugin::<TestPlugin>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertEqMacro>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertNeMacro>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertLtMacro>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertLeMacro>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertGtMacro>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertGeMacro>();
+    suite
+}
+
+/// The suite of plugins for compilation for testing.
+pub fn test_plugin_suite() -> PluginSuite {
+    let mut suite = PluginSuite::default();
+    suite.add_plugin::<TestPlugin>().add(test_assert_suite());
     suite
 }
