@@ -39,11 +39,13 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::{extract_allowed_features, FeatureKind};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
-use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplLongId, ImplLookupContext};
+use crate::items::imp::{
+    ConcreteImplId, ConcreteImplLongId, ImplImplId, ImplLongId, ImplLookupContext,
+};
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
-    ConcreteTraitLongId, ConcreteTraitTypeId,
+    ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
 use crate::items::{visibility, TraitOrImplContext};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
@@ -677,8 +679,37 @@ impl<'db> Resolver<'db> {
                             ConstValue::ImplConstant(imp_constant_id).intern(self.db),
                         ))
                     }
-                    TraitItemId::Impl(imp) => {
-                        Err(diagnostics.report(imp.stable_ptr(self.db.upcast()), Unsupported))
+                    TraitItemId::Impl(trait_impl_id) => {
+                        let concrete_trait_impl = ConcreteTraitImplLongId::new(
+                            self.db,
+                            *concrete_trait_id,
+                            trait_impl_id,
+                        )
+                        .intern(self.db);
+
+                        if let TraitOrImplContext::Trait(ctx_trait_id) = &self.trait_or_impl_ctx {
+                            if trait_id == *ctx_trait_id {
+                                return Ok(ResolvedConcreteItem::Impl(
+                                    ImplLongId::TraitImpl(trait_impl_id).intern(self.db),
+                                ));
+                            }
+                        }
+
+                        let impl_lookup_context = self.impl_lookup_context();
+                        let identifier_stable_ptr = identifier.stable_ptr().untyped();
+                        let impl_impl_id = self.inference().infer_trait_impl(
+                            concrete_trait_impl,
+                            &impl_lookup_context,
+                            Some(identifier_stable_ptr),
+                        );
+                        // Make sure the inference is solved for successful impl lookup
+                        // Ignore the result of the `solve()` call - the error, if any, will be
+                        // reported later.
+                        self.inference().solve().ok();
+
+                        Ok(ResolvedConcreteItem::Impl(
+                            ImplLongId::ImplImpl(impl_impl_id).intern(self.db),
+                        ))
                     }
                 }
             }
@@ -722,8 +753,15 @@ impl<'db> Resolver<'db> {
 
                         Ok(ResolvedConcreteItem::Constant(constant))
                     }
-                    TraitItemId::Impl(imp) => {
-                        Err(diagnostics.report(imp.stable_ptr(self.db.upcast()), Unsupported))
+                    TraitItemId::Impl(trait_impl_id) => {
+                        let impl_impl_id = ImplImplId::new(*impl_id, trait_impl_id, self.db);
+                        let lookup_context = self.impl_lookup_context().clone();
+                        let imp = self
+                            .inference()
+                            .reduce_impl_impl(impl_impl_id, lookup_context)
+                            .unwrap_or_else(|_| ImplLongId::ImplImpl(impl_impl_id).intern(self.db));
+
+                        Ok(ResolvedConcreteItem::Impl(imp))
                     }
                 }
             }
