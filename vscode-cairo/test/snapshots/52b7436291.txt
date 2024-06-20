@@ -1,0 +1,10 @@
+//! > cairo_code
+identifier!(1,2)
+
+//! > syntax
+identifier!          source.cairo meta.macro.cairo entity.name.function.macro.cairo
+(                    source.cairo punctuation.brackets.round.cairo
+1                    source.cairo constant.numeric.decimal.cairo
+,                    source.cairo punctuation.comma.cairo
+2                    source.cairo constant.numeric.decimal.cairo
+)                    source.cairo punctuation.brackets.round.cairo
