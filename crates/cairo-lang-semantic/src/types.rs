@@ -26,7 +26,7 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
-use crate::items::imp::{ImplId, ImplLookupContext};
+use crate::items::imp::{ImplId, ImplLongId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId, GenericArgumentId};
@@ -392,7 +392,7 @@ impl ImplTypeId {
     /// Creates a new impl type id. For an impl type of a concrete impl, asserts that the trait
     /// type belongs to the same trait that the impl implements (panics if not).
     pub fn new(impl_id: ImplId, ty: TraitTypeId, db: &dyn SemanticGroup) -> Self {
-        if let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_id {
+        if let crate::items::imp::ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
             let impl_def_id = concrete_impl.impl_def_id(db);
             assert_eq!(Ok(ty.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
         }
@@ -407,9 +407,11 @@ impl ImplTypeId {
     }
     /// Gets the impl type def (language element), if `self.impl_id` is of a concrete impl.
     pub fn impl_type_def(&self, db: &dyn SemanticGroup) -> Maybe<Option<ImplTypeDefId>> {
-        match self.impl_id {
-            ImplId::Concrete(concrete_impl_id) => concrete_impl_id.get_impl_type_def(db, self.ty),
-            ImplId::GenericParameter(_) | ImplId::ImplVar(_) => Ok(None),
+        match self.impl_id.lookup_intern(db) {
+            ImplLongId::Concrete(concrete_impl_id) => {
+                concrete_impl_id.get_impl_type_def(db, self.ty)
+            }
+            ImplLongId::GenericParameter(_) | ImplLongId::ImplVar(_) => Ok(None),
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {

@@ -39,7 +39,7 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::{extract_allowed_features, FeatureKind};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
-use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
+use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplLongId, ImplLookupContext};
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
@@ -814,14 +814,15 @@ impl<'db> Resolver<'db> {
                     &generic_args_syntax.unwrap_or_default(),
                 )?)
             }
-            ResolvedGenericItem::Impl(impl_def_id) => {
-                ResolvedConcreteItem::Impl(ImplId::Concrete(self.specialize_impl(
+            ResolvedGenericItem::Impl(impl_def_id) => ResolvedConcreteItem::Impl(
+                ImplLongId::Concrete(self.specialize_impl(
                     diagnostics,
                     identifier.stable_ptr().untyped(),
                     impl_def_id,
                     &generic_args_syntax.unwrap_or_default(),
-                )?))
-            }
+                )?)
+                .intern(self.db),
+            ),
             ResolvedGenericItem::Variant(_) => panic!("Variant is not a module item."),
             ResolvedGenericItem::TraitFunction(_) => panic!("TraitFunction is not a module item."),
             ResolvedGenericItem::Variable(_) => panic!("Variable is not a module item."),
@@ -879,9 +880,9 @@ impl<'db> Resolver<'db> {
                 GenericKind::Const => ResolvedConcreteItem::Constant(
                     ConstValue::Generic(*generic_param_id).intern(self.db),
                 ),
-                GenericKind::Impl => {
-                    ResolvedConcreteItem::Impl(ImplId::GenericParameter(*generic_param_id))
-                }
+                GenericKind::Impl => ResolvedConcreteItem::Impl(
+                    ImplLongId::GenericParameter(*generic_param_id).intern(self.db),
+                ),
                 GenericKind::NegImpl => return None,
             };
             return Some(item);
@@ -1282,9 +1283,11 @@ impl<'db> Resolver<'db> {
             ResolvedConcreteItem::Impl(current_segment_impl_id) => {
                 if let TraitOrImplContext::Impl(ctx_impl) = self.trait_or_impl_ctx {
                     // A ResolvedConcreteItem::Impl returned by
-                    // `specialize_generic_module_item` must be ImplId::Concrete.
-                    let current_segment_concrete_impl_id =
-                        extract_matches!(current_segment_impl_id, ImplId::Concrete);
+                    // `specialize_generic_module_item` must be ImplLongId::Concrete.
+                    let current_segment_concrete_impl_id = extract_matches!(
+                        current_segment_impl_id.lookup_intern(self.db),
+                        ImplLongId::Concrete
+                    );
                     self.warn_impl_in_same_impl(
                         diagnostics,
                         current_segment_concrete_impl_id.impl_def_id(self.db),
@@ -1445,14 +1448,14 @@ fn resolve_actual_self_segment(
         }
         TraitOrImplContext::Impl(impl_def_id) => {
             let generic_parameters = db.impl_def_generic_params(*impl_def_id)?;
-            let impl_id = ImplId::Concrete(
+            let impl_id = ImplLongId::Concrete(
                 ConcreteImplLongId {
                     impl_def_id: *impl_def_id,
                     generic_args: generic_params_to_args(&generic_parameters, db),
                 }
                 .intern(db),
             );
-            Ok(ResolvedConcreteItem::Impl(impl_id))
+            Ok(ResolvedConcreteItem::Impl(impl_id.intern(db)))
         }
     }
 }

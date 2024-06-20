@@ -9,7 +9,7 @@ use super::{Inference, InferenceError, InferenceResult};
 use crate::items::constant::ImplConstantId;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::GenericParamConst;
-use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{ImplId, ImplLongId, ImplLookupContext, UninferredImpl};
 use crate::items::trt::{
     ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitTypeId,
 };
@@ -128,7 +128,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
                 let param = extract_matches!(param, GenericParam::Impl);
                 let imp_concrete_trait_id = param.concrete_trait.unwrap();
                 self.conform_traits(concrete_trait_id, imp_concrete_trait_id)?;
-                ImplId::GenericParameter(param_id)
+                ImplLongId::GenericParameter(param_id).intern(self.db)
             }
         };
         Ok(impl_id)
@@ -167,7 +167,8 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             lookup_context,
             stable_ptr,
         )?;
-        Ok(ImplId::Concrete(ConcreteImplLongId { impl_def_id, generic_args }.intern(self.db)))
+        Ok(ImplLongId::Concrete(ConcreteImplLongId { impl_def_id, generic_args }.intern(self.db))
+            .intern(self.db))
     }
 
     /// Infers all the variables required to make an impl alias (possibly with free generic params)
