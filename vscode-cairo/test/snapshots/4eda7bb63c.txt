@@ -1,0 +1,7 @@
+//! > cairo_code
+trait MyTrait {
+
+//! > syntax
+trait                source.cairo keyword.declaration.trait.cairo storage.type.cairo
+MyTrait              source.cairo entity.name.type.trait.cairo
+{                    source.cairo punctuation.brackets.curly.cairo

@@ -1,0 +1,6 @@
+//! > cairo_code
+macro!
+
+//! > syntax
+macro                source.cairo keyword.other.cairo storage.type.cairo
+!                    source.cairo keyword.operator.logical.cairo
