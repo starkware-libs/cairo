@@ -1,0 +1,6 @@
+//! > cairo_code
+/// TODO(Tomerstarkware): parse logical operators with lower precedence than `=`
+
+//! > syntax
+///                  source.cairo comment.line.documentation.cairo punctuation.definition.comment.cairo
+␣TODO(Tomerstarkware):␣parse␣logical␣operators␣with␣lower␣precedence␣than␣`=` source.cairo comment.line.documentation.cairo

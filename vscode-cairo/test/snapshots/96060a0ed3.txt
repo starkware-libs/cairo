@@ -1,0 +1,7 @@
+//! > cairo_code
+struct A {
+
+//! > syntax
+struct               source.cairo keyword.declaration.struct.cairo storage.type.cairo
+A                    source.cairo entity.name.type.struct.cairo
+{                    source.cairo punctuation.brackets.curly.cairo
