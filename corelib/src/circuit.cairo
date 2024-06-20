@@ -132,6 +132,16 @@ pub enum FillInputResult<C> {
     More: CircuitInputAccumulator<C>,
 }
 
+mod internal {
+    impl FillInputResultDrop<C> of Drop<super::FillInputResult<C>>;
+    pub impl PanicDestructFillInputResult<C> of PanicDestruct<super::FillInputResult<C>> {
+        fn panic_destruct(
+            self: super::FillInputResult<C>, ref panic: core::panics::Panic
+        ) nopanic {}
+    }
+}
+impl PanicDestructFillInputResult<C> = internal::PanicDestructFillInputResult<C>;
+
 /// Type for accumulating inputs into the circuit instance's data.
 extern type CircuitInputAccumulator<C>;
 
