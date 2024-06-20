@@ -531,18 +531,22 @@ impl CompiledInvocationBuilder<'_> {
         }
 
         for BuiltinInfo { cost_token_ty, start, end } in cost_validation.builtin_infos {
-            assert_eq!(
-                cost_token_ty,
-                CostTokenType::RangeCheck,
-                "Only the range check is supported."
-            );
             for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
                 let (start_base, start_offset) =
                     state.get_adjusted(start).to_deref_with_offset().unwrap();
                 let (end_base, end_offset) =
                     state.get_adjusted(end).to_deref_with_offset().unwrap();
                 assert_eq!(start_base, end_base);
-                cost.range_checks += (end_offset - start_offset) as i32;
+                let diff = (end_offset - start_offset) as i32;
+                match cost_token_ty {
+                    CostTokenType::RangeCheck => {
+                        cost.range_checks += diff;
+                    }
+                    CostTokenType::RangeCheck96 => {
+                        cost.range_checks96 += diff;
+                    }
+                    _ => panic!("Cost token type not supported."),
+                }
             }
         }
 
