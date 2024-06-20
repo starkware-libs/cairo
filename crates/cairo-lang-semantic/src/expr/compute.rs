@@ -2180,9 +2180,7 @@ fn new_literal_expr(
     let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
-    inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context).map_err(
-        |err_set| inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr.untyped()),
-    )?;
+    inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context);
 
     Ok(ExprLiteral { value, ty, stable_ptr })
 }
@@ -2231,9 +2229,7 @@ fn new_string_literal_expr(
     let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
-    inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context).map_err(
-        |err_set| inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr.untyped()),
-    )?;
+    inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context);
 
     Ok(ExprStringLiteral { value, ty, stable_ptr })
 }

@@ -582,13 +582,7 @@ pub fn get_impl_at_context(
     let mut inference = inference_data.inference(db);
     // It's ok to consume the errors without reporting as this is a helper function meant to find an
     // impl and return it, but it's ok if the impl can't be found.
-    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context).map_err(
-        |err_set| {
-            inference
-                .consume_error_without_reporting(err_set)
-                .expect("Error couldn't be already consumed")
-        },
-    )?;
+    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context);
     if let Err((err_set, _)) = inference.finalize_without_reporting() {
         return Err(inference
             .consume_error_without_reporting(err_set)

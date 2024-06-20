@@ -517,10 +517,10 @@ impl<'db> Inference<'db> {
         concrete_trait_id: ConcreteTraitId,
         stable_ptr: Option<SyntaxStablePtrId>,
         mut lookup_context: ImplLookupContext,
-    ) -> InferenceResult<ImplId> {
+    ) -> ImplId {
         enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
         let var = self.new_impl_var_raw(lookup_context, concrete_trait_id, stable_ptr);
-        Ok(ImplId::ImplVar(self.impl_var(var).intern(self.db)))
+        ImplId::ImplVar(self.impl_var(var).intern(self.db))
     }
 
     /// Allocates a new [ImplVar] for an unknown type that needs to be inferred.

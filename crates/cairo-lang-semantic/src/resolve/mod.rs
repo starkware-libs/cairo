@@ -612,20 +612,11 @@ impl<'db> Resolver<'db> {
                             }
                         }
                         let impl_lookup_context = self.impl_lookup_context();
-                        let generic_function = self
-                            .inference()
-                            .infer_trait_generic_function(
-                                concrete_trait_function,
-                                &impl_lookup_context,
-                                Some(identifier_stable_ptr),
-                            )
-                            .map_err(|err_set| {
-                                self.inference().report_on_pending_error(
-                                    err_set,
-                                    diagnostics,
-                                    identifier.stable_ptr().untyped(),
-                                )
-                            })?;
+                        let generic_function = self.inference().infer_trait_generic_function(
+                            concrete_trait_function,
+                            &impl_lookup_context,
+                            Some(identifier_stable_ptr),
+                        );
 
                         Ok(ResolvedConcreteItem::Function(self.specialize_function(
                             diagnostics,
@@ -647,20 +638,11 @@ impl<'db> Resolver<'db> {
 
                         let impl_lookup_context = self.impl_lookup_context();
                         let identifier_stable_ptr = identifier.stable_ptr().untyped();
-                        let ty = self
-                            .inference()
-                            .infer_trait_type(
-                                concrete_trait_type,
-                                &impl_lookup_context,
-                                Some(identifier_stable_ptr),
-                            )
-                            .map_err(|err_set| {
-                                self.inference().report_on_pending_error(
-                                    err_set,
-                                    diagnostics,
-                                    identifier_stable_ptr,
-                                )
-                            })?;
+                        let ty = self.inference().infer_trait_type(
+                            concrete_trait_type,
+                            &impl_lookup_context,
+                            Some(identifier_stable_ptr),
+                        );
                         Ok(ResolvedConcreteItem::Type(self.inference().rewrite(ty).no_err()))
                     }
                     TraitItemId::Constant(trait_constant_id) => {
@@ -681,20 +663,11 @@ impl<'db> Resolver<'db> {
 
                         let impl_lookup_context = self.impl_lookup_context();
                         let identifier_stable_ptr = identifier.stable_ptr().untyped();
-                        let imp_constant_id = self
-                            .inference()
-                            .infer_trait_constant(
-                                concrete_trait_constant,
-                                &impl_lookup_context,
-                                Some(identifier_stable_ptr),
-                            )
-                            .map_err(|err_set| {
-                                self.inference().report_on_pending_error(
-                                    err_set,
-                                    diagnostics,
-                                    identifier_stable_ptr,
-                                )
-                            })?;
+                        let imp_constant_id = self.inference().infer_trait_constant(
+                            concrete_trait_constant,
+                            &impl_lookup_context,
+                            Some(identifier_stable_ptr),
+                        );
                         // Make sure the inference is solved for successful impl lookup
                         // Ignore the result of the `solve()` call - the error, if any, will be
                         // reported later.

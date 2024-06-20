@@ -189,7 +189,7 @@ pub struct ImplConstantId {
 }
 
 impl ImplConstantId {
-    /// Creates a new impl constant id. For an impl constamt of a concrete impl, asserts that the
+    /// Creates a new impl constant id. For an impl constant of a concrete impl, asserts that the
     /// trait constant belongs to the same trait that the impl implements (panics if not).
     pub fn new(
         impl_id: ImplId,
