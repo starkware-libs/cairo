@@ -33,12 +33,6 @@
   ],
   "main": "./dist/extension",
   "contributes": {
-    "snippets": [
-      {
-        "language": "cairo",
-        "path": "./snippets/cairo.json"
-      }
-    ],
     "languages": [
       {
         "id": "cairo",
@@ -54,6 +48,19 @@
           "dark": "./icons/cairo-file.svg"
         },
         "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cairo",
+        "scopeName": "source.cairo",
+        "path": "./syntaxes/cairo.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "cairo",
+        "path": "./snippets/cairo.json"
       }
     ],
     "commands": [
