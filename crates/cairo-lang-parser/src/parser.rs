@@ -847,14 +847,14 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Impl.
-    /// Expected pattern: `impl <name> of <trait_path>;`
+    /// Expected pattern: `impl <name>: <trait_path>;`
     fn expect_trait_item_impl(&mut self, attributes: AttributeListGreen) -> TraitItemImplGreen {
         let impl_kw = self.take::<TerminalImpl>();
         let name = self.parse_identifier();
-        let of_kw = self.take::<TerminalOf>();
+        let colon = self.parse_token::<TerminalColon>();
         let trait_path = self.parse_type_path();
         let semicolon = self.parse_token::<TerminalSemicolon>();
-        TraitItemImpl::new_green(self.db, attributes, impl_kw, name, of_kw, trait_path, semicolon)
+        TraitItemImpl::new_green(self.db, attributes, impl_kw, name, colon, trait_path, semicolon)
     }
 
     /// Assumes the current token is Impl.
