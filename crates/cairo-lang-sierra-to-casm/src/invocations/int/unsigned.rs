@@ -1,5 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
 use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
@@ -9,8 +10,8 @@ use num_bigint::BigInt;
 use super::{bounded, build_const, build_small_diff, build_small_wide_mul};
 use crate::invocations::range_reduction::build_felt252_range_reduction;
 use crate::invocations::{
-    add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, CompiledInvocation,
-    CompiledInvocationBuilder, CostValidationInfo, InvocationError,
+    add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, BuiltinInfo,
+    CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
 
 /// Handles a small uint overflowing add operation.
@@ -58,7 +59,11 @@ fn build_small_uint_overflowing_add(
             ("Target", &[&[range_check], &[fixed_a_plus_b]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))
@@ -115,7 +120,11 @@ pub fn build_sqrt(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[root]], None)],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))

@@ -1,5 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
 use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
@@ -10,7 +11,8 @@ use num_bigint::BigInt;
 use super::{add_input_variables, build_const, build_small_diff, build_small_wide_mul};
 use crate::invocations::range_reduction::build_felt252_range_reduction;
 use crate::invocations::{
-    misc, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo, InvocationError,
+    misc, BuiltinInfo, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
+    InvocationError,
 };
 
 /// Handles a signed integer conversion from felt252.
@@ -117,7 +119,11 @@ pub fn build_sint_overflowing_operation(
             ("Above", &[&[range_check], &[fixed_above]], Some(*overflow_handle_statement_id)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))

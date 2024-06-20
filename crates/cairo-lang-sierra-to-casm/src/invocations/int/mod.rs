@@ -1,12 +1,13 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::int::{IntConstConcreteLibfunc, IntTraits};
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+    add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CostValidationInfo,
 };
 use crate::references::ReferenceExpression;
 
@@ -89,7 +90,11 @@ fn build_small_diff(
             ("Target", &[&[range_check], &[wrapping_a_minus_b]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))
@@ -129,7 +134,11 @@ fn build_128bit_diff(
             ("Target", &[&[range_check], &[wrapping_a_minus_b]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))

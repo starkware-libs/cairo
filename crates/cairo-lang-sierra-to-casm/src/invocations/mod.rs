@@ -346,12 +346,21 @@ impl<'a> InvocationCostInfoProvider for CompiledInvocationBuilder<'a> {
     }
 }
 
+/// Cost validation info for a builtin.
+struct BuiltinInfo {
+    /// The cost token type associated with the builtin.
+    cost_token_ty: CostTokenType,
+    /// The builtin pointer at the start of the libfunc.
+    start: Var,
+    /// The builtin pointer at the end of all the libfunc branches.
+    end: Var,
+}
+
 /// Information required for validating libfunc cost.
 #[derive(Default)]
 struct CostValidationInfo<const BRANCH_COUNT: usize> {
-    /// Range check variables at start and end of the libfunc.
-    /// Assumes only directly used as buffer.
-    pub range_check_info: Option<(Var, Var)>,
+    /// infos about builtin usage.
+    pub builtin_infos: Vec<BuiltinInfo>,
     /// Possible extra cost per branch.
     /// Useful for amortized costs, as well as gas withdrawal libfuncs.
     pub extra_costs: Option<[i32; BRANCH_COUNT]>,
@@ -520,7 +529,13 @@ impl CompiledInvocationBuilder<'_> {
         for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
             cost.steps += state.steps as i32;
         }
-        if let Some((start, end)) = cost_validation.range_check_info {
+
+        for BuiltinInfo { cost_token_ty, start, end } in cost_validation.builtin_infos {
+            assert_eq!(
+                cost_token_ty,
+                CostTokenType::RangeCheck,
+                "Only the range check is supported."
+            );
             for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
                 let (start_base, start_offset) =
                     state.get_adjusted(start).to_deref_with_offset().unwrap();
@@ -530,6 +545,7 @@ impl CompiledInvocationBuilder<'_> {
                 cost.range_checks += (end_offset - start_offset) as i32;
             }
         }
+
         let extra_costs =
             cost_validation.extra_costs.unwrap_or(std::array::from_fn(|_| Default::default()));
         let final_costs_with_extra =

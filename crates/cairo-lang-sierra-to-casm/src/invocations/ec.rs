@@ -3,13 +3,14 @@ use std::str::FromStr;
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use num_bigint::BigInt;
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+    add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CostValidationInfo,
 };
 
 /// Returns the Beta value of the Starkware elliptic curve.
@@ -234,7 +235,11 @@ fn build_ec_point_from_x_nz(
             ("NotOnCurve", &[&[range_check]], Some(not_on_curve)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))

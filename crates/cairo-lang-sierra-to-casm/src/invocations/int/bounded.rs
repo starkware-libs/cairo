@@ -6,6 +6,7 @@ use cairo_lang_sierra::extensions::bounded_int::{
     BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm,
 };
 use cairo_lang_sierra::extensions::felt252::Felt252BinaryOperator;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::BigInt;
 use num_traits::One;
@@ -13,7 +14,7 @@ use num_traits::One;
 use crate::invocations::felt252::build_felt252_op_with_var;
 use crate::invocations::misc::{build_identity, build_is_zero};
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, CompiledInvocation,
+    add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
 
@@ -163,7 +164,11 @@ pub fn build_div_rem(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[q], &[r]], None)],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))
@@ -207,7 +212,11 @@ fn build_constrain(
             ("Over", &[&[range_check], &[value]], Some(target_statement_id)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))
