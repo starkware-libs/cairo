@@ -1,5 +1,6 @@
 use core::traits::Into;
 use core::poseidon::HashState;
+use core::hash::HashStateTrait;
 use starknet::storage_access::StorageBaseAddress;
 use starknet::SyscallResult;
 use starknet::storage_access::storage_base_address_from_felt252;
@@ -164,13 +165,36 @@ impl StorableStoragePointerAccess<
 /// Storage path should have two interfaces, if T is storable then it should implement
 /// `StorageAsPointer` in order to be able to get the address of the storage path. Otherwise, if
 /// T is not storable then it should implement some kind of updating trait, e.g. `StoragePathEntry`.
-#[derive(Copy, Drop)]
-pub struct GenericStoragePath<T, THashState> {
-    pub hash_state: THashState,
+pub struct StoragePath<T> {
+    pub hash_state: StoragePathHashState,
 }
 
-/// A 'GenericStoragePath' that uses the Poseidon hash function. Used as the default storage path.
-type StoragePath<T> = GenericStoragePath<T, core::poseidon::HashState>;
+/// The hash state of a storage path.
+type StoragePathHashState = core::poseidon::HashState;
+
+impl StoragePathCopy<T> of core::traits::Copy<StoragePath<T>> {}
+impl StoragePathDrop<T> of core::traits::Drop<StoragePath<T>> {}
+
+/// Trait for StoragePath operations.
+trait StoragePathTrait<T> {
+    fn new(init_value: felt252) -> StoragePath<T>;
+    fn finalize(self: StoragePath<T>) -> StorageBaseAddress;
+}
+
+
+impl StoragePathImpl<T> of StoragePathTrait<T> {
+    fn new(init_value: felt252) -> StoragePath<T> {
+        StoragePath {
+            hash_state: core::hash::HashStateTrait::update(
+                core::poseidon::PoseidonTrait::new(), init_value
+            )
+        }
+    }
+    fn finalize(self: StoragePath<T>) -> StorageBaseAddress {
+        storage_base_address_from_felt252(self.hash_state.finalize())
+    }
+}
+
 
 /// Trait for creating a new `StoragePath` from a storage member.
 pub trait StorageAsPath<TMemberState> {
@@ -183,11 +207,7 @@ pub trait StorageAsPath<TMemberState> {
 impl StorableStoragePathAsPointer<T, +starknet::Store<T>> of StorageAsPointer<StoragePath<T>> {
     type Value = T;
     fn as_ptr(self: @StoragePath<T>) -> StoragePointer0Offset<T> {
-        StoragePointer0Offset {
-            address: starknet::storage_access::storage_base_address_from_felt252(
-                core::hash::HashStateTrait::<core::poseidon::HashState>::finalize(*self.hash_state)
-            )
-        }
+        StoragePointer0Offset { address: (*self).finalize() }
     }
 }
 
@@ -216,7 +236,7 @@ pub trait StoragePathEntry<C> {
 pub struct Map<K, V> {}
 
 impl StoragePathEntryMap<
-    K, V, +core::hash::Hash<K, core::poseidon::HashState>
+    K, V, +core::hash::Hash<K, StoragePathHashState>
 > of StoragePathEntry<Map<K, V>> {
     type Key = K;
     type Value = V;
@@ -226,7 +246,7 @@ impl StoragePathEntryMap<
             V
         > {
             hash_state: core::hash::Hash::<
-                K, core::poseidon::HashState
+                K, StoragePathHashState
             >::update_state(self.hash_state, key)
         }
     }
@@ -243,7 +263,7 @@ trait StorageNodeTrait<T> {
 /// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
 #[derive(Copy, Drop)]
 struct PendingStoragePath<T> {
-    hash_state: core::poseidon::HashState,
+    hash_state: StoragePathHashState,
     pending_key: felt252
 }
 
@@ -266,14 +286,7 @@ impl StorageNodeAsPath<
 > of StorageAsPath<TMemberState> {
     type Value = StorageMemberAddressTrait::<TMemberState>::Value;
     fn as_path(self: @TMemberState) -> StoragePath<Self::Value> {
-        let address = self.address().into();
-        StoragePath::<
-            Self::Value
-        > {
-            hash_state: core::hash::HashStateTrait::update(
-                core::poseidon::PoseidonTrait::new(), address
-            )
-        }
+        StoragePathTrait::new(self.address().into())
     }
 }
 
@@ -287,13 +300,7 @@ impl MapAsPath<
             StorageMapMemberAddressTrait::<TMemberState>::Value
         >;
     fn as_path(self: @TMemberState) -> StoragePath<Self::Value> {
-        StoragePath::<
-            Self::Value
-        > {
-            hash_state: core::hash::HashStateTrait::update(
-                core::poseidon::PoseidonTrait::new(), self.address().into()
-            )
-        }
+        StoragePathTrait::new(self.address().into())
     }
 }
 
