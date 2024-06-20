@@ -411,7 +411,10 @@ impl ImplTypeId {
             ImplLongId::Concrete(concrete_impl_id) => {
                 concrete_impl_id.get_impl_type_def(db, self.ty)
             }
-            ImplLongId::GenericParameter(_) | ImplLongId::ImplVar(_) => Ok(None),
+            ImplLongId::GenericParameter(_)
+            | ImplLongId::ImplVar(_)
+            | ImplLongId::ImplImpl(_)
+            | ImplLongId::TraitImpl(_) => Ok(None),
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {

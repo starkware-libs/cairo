@@ -9,9 +9,10 @@ use super::{Inference, InferenceError, InferenceResult};
 use crate::items::constant::ImplConstantId;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::GenericParamConst;
-use crate::items::imp::{ImplId, ImplLongId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl};
 use crate::items::trt::{
-    ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitTypeId,
+    ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitImplId,
+    ConcreteTraitTypeId,
 };
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::ImplTypeId;
@@ -102,6 +103,12 @@ pub trait InferenceEmbeddings {
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> ImplConstantId;
+    fn infer_trait_impl(
+        &mut self,
+        concrete_trait_constant: ConcreteTraitImplId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: Option<SyntaxStablePtrId>,
+    ) -> ImplImplId;
 }
 
 impl<'db> InferenceEmbeddings for Inference<'db> {
@@ -444,5 +451,21 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         );
 
         ImplConstantId::new(impl_id, concrete_trait_constant.trait_constant(self.db), self.db)
+    }
+    /// Infers the impl to be substituted instead of a trait for a given trait impl.
+    /// Returns the resulting impl impl.
+    fn infer_trait_impl(
+        &mut self,
+        concrete_trait_impl: ConcreteTraitImplId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: Option<SyntaxStablePtrId>,
+    ) -> ImplImplId {
+        let impl_id = self.new_impl_var(
+            concrete_trait_impl.concrete_trait(self.db),
+            stable_ptr,
+            lookup_context.clone(),
+        );
+
+        ImplImplId::new(impl_id, concrete_trait_impl.trait_impl(self.db), self.db)
     }
 }
