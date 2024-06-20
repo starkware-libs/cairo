@@ -1,3 +1,4 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::zip_eq;
 
@@ -6,7 +7,7 @@ use super::{ErrorSet, Inference, InferenceError, InferenceResult, InferenceVar};
 use crate::corelib::never_ty;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::{ImplId, ImplLongId};
+use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext};
 use crate::substitution::SemanticRewriter;
 use crate::types::{peel_snapshots, ImplTypeId};
 use crate::{
@@ -343,6 +344,9 @@ impl<'db> InferenceConform for Inference<'db> {
             ImplLongId::GenericParameter(_) => {
                 Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
             }
+            ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => {
+                Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
+            }
         }
     }
 
@@ -421,7 +425,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 &concrete_impl_id.lookup_intern(self.db).generic_args,
                 var,
             ),
-            ImplLongId::GenericParameter(_) => false,
+            ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => false,
             ImplLongId::ImplVar(new_var) => {
                 let new_var_long_id = new_var.lookup_intern(self.db);
                 let new_var_local_id = new_var_long_id.id;
@@ -436,6 +440,7 @@ impl<'db> InferenceConform for Inference<'db> {
                     var,
                 )
             }
+            ImplLongId::ImplImpl(impl_impl) => self.impl_contains_var(impl_impl.impl_id(), var),
         }
     }
 
@@ -529,6 +534,52 @@ impl Inference<'_> {
             ImplConstantId::new(impl_id, trait_constant, self.db),
         ) {
             Ok(constant)
+        } else {
+            Err(self.set_error(
+                impl_id
+                    .concrete_trait(self.db)
+                    .map(InferenceError::NoImplsFound)
+                    .unwrap_or_else(InferenceError::Reported),
+            ))
+        }
+    }
+
+    /// Reduces an impl impl to a concrete impl.
+    pub fn reduce_impl_impl(
+        &mut self,
+        impl_impl_id: ImplImplId,
+        lookup_context: ImplLookupContext,
+    ) -> InferenceResult<ImplId> {
+        let impl_id = impl_impl_id.impl_id();
+        let trait_impl = impl_impl_id.trait_impl_id();
+
+        if let ImplLongId::ImplVar(var) = impl_id.lookup_intern(self.db) {
+            let var_id = var.id(self.db);
+            if let Some(imp) = self
+                .data
+                .impl_vars_trait_item_mappings
+                .get(&var_id)
+                .and_then(|mappings| mappings.impls.get(&trait_impl))
+            {
+                Ok(*imp)
+            } else {
+                let imp = self.new_impl_var(
+                    self.db.trait_impl_concrete_trait(trait_impl).unwrap(),
+                    self.data.stable_ptrs.get(&InferenceVar::Impl(var_id)).cloned(),
+                    lookup_context,
+                );
+                self.data
+                    .impl_vars_trait_item_mappings
+                    .entry(var_id)
+                    .or_default()
+                    .impls
+                    .insert(trait_impl, imp);
+                Ok(imp)
+            }
+        } else if let Ok(imp) =
+            self.db.impl_impl_concrete_implized(ImplImplId::new(impl_id, trait_impl, self.db))
+        {
+            Ok(imp)
         } else {
             Err(self.set_error(
                 impl_id

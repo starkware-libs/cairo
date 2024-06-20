@@ -129,7 +129,10 @@ impl ResolvedConcreteItem {
                 ImplLongId::Concrete(concrete_impl_id) => {
                     ResolvedGenericItem::Impl(concrete_impl_id.lookup_intern(db).impl_def_id)
                 }
-                ImplLongId::GenericParameter(_) | ImplLongId::ImplVar(_) => return None,
+                ImplLongId::GenericParameter(_)
+                | ImplLongId::ImplVar(_)
+                | ImplLongId::ImplImpl(_)
+                | ImplLongId::TraitImpl(_) => return None,
             },
         })
     }
