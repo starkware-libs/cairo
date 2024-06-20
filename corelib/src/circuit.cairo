@@ -132,6 +132,14 @@ pub enum FillInputResult<C> {
     More: CircuitInputAccumulator<C>,
 }
 
+mod internal {
+    impl FillInputResultDrop<C> of Drop<super::FillInputResult<C>>;
+    pub impl DestructFillInputResult<C> of Destruct<super::FillInputResult<C>> {
+        fn destruct(self: super::FillInputResult<C>) nopanic {}
+    }
+}
+impl DestructFillInputResult<C> = internal::DestructFillInputResult<C>;
+
 /// Type for accumulating inputs into the circuit instance's data.
 extern type CircuitInputAccumulator<C>;
 

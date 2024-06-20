@@ -87,3 +87,17 @@ fn test_into_u384() {
             }
     );
 }
+
+
+fn test_fill_inputs_loop() {
+    let in1 = CircuitElement::<CircuitInput<0>> {};
+    let in2 = CircuitElement::<CircuitInput<1>> {};
+    let add = circuit_add(in1, in2);
+
+    let mut inputs: Array::<[u96; 4]> = array![[1,0, 0, 0], [2 ,0, 0, 0]];
+    let mut xxx = (add,).new_inputs();
+
+    while let Option::Some(input) = inputs.pop_front() {
+        xxx = xxx.next(input);
+    }
+}
