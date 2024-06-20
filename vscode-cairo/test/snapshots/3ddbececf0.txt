@@ -1,0 +1,16 @@
+//! > cairo_code
+identifier(x)
+
+//! > syntax
+identifier(x)
+^^^^^^^^^^ source.cairo meta.function.call.cairo entity.name.function.cairo
+
+identifier(x)
+          ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+identifier(x)
+           ^ source.cairo meta.function.call.cairo variable.other.cairo
+
+identifier(x)
+            ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+

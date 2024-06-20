@@ -1,0 +1,13 @@
+//! > cairo_code
+mod mod;
+
+//! > syntax
+mod mod;
+^^^ source.cairo storage.type.cairo
+
+mod mod;
+    ^^^ source.cairo entity.name.module.cairo
+
+mod mod;
+       ^ source.cairo punctuation.semi.cairo
+

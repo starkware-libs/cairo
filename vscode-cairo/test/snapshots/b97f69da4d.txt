@@ -1,0 +1,19 @@
+//! > cairo_code
+impl Abc of Def {
+
+//! > syntax
+impl Abc of Def {
+^^^^ source.cairo keyword.other.cairo
+
+impl Abc of Def {
+     ^^^ source.cairo entity.name.type.cairo
+
+impl Abc of Def {
+         ^^ source.cairo keyword.other.cairo
+
+impl Abc of Def {
+            ^^^ source.cairo entity.name.type.cairo
+
+impl Abc of Def {
+                ^ source.cairo punctuation.brackets.curly.cairo
+

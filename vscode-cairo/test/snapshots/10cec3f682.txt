@@ -1,0 +1,91 @@
+//! > cairo_code
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+
+//! > syntax
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+  ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+   ^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+      ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+       ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+        ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+         ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+          ^^^^ source.cairo meta.function.definition.cairo entity.name.type.primitive.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+              ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+               ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                 ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                  ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                   ^^^^ source.cairo meta.function.definition.cairo entity.name.type.primitive.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                       ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                        ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                         ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                          ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                           ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                            ^^^^ source.cairo meta.function.definition.cairo entity.name.type.primitive.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                                ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                                 ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                                  ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                                   ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                                    ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                                     ^^^^ source.cairo meta.function.definition.cairo entity.name.type.primitive.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                                         ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                                          ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: bool, b: bool, c: bool, d: bool) {
+                                           ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+

@@ -1,0 +1,52 @@
+//! > cairo_code
+fn foo(a: Option::<felt252>) {}
+
+//! > syntax
+fn foo(a: Option::<felt252>) {}
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn foo(a: Option::<felt252>) {}
+  ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: Option::<felt252>) {}
+   ^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn foo(a: Option::<felt252>) {}
+      ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo(a: Option::<felt252>) {}
+       ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(a: Option::<felt252>) {}
+        ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn foo(a: Option::<felt252>) {}
+         ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: Option::<felt252>) {}
+          ^^^^^^ source.cairo meta.function.definition.cairo entity.name.namespace.cairo
+
+fn foo(a: Option::<felt252>) {}
+                ^^ source.cairo meta.function.definition.cairo keyword.operator.namespace.cairo
+
+fn foo(a: Option::<felt252>) {}
+                  ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+fn foo(a: Option::<felt252>) {}
+                   ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+fn foo(a: Option::<felt252>) {}
+                          ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+fn foo(a: Option::<felt252>) {}
+                           ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo(a: Option::<felt252>) {}
+                            ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: Option::<felt252>) {}
+                             ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+
+fn foo(a: Option::<felt252>) {}
+                              ^ source.cairo punctuation.brackets.curly.cairo
+

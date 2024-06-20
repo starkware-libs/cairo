@@ -1,0 +1,25 @@
+//! > cairo_code
+inline_macro!(1, 2);
+
+//! > syntax
+inline_macro!(1, 2);
+^^^^^^^^^^^^^ source.cairo meta.macro.cairo entity.name.function.macro.cairo
+
+inline_macro!(1, 2);
+             ^ source.cairo punctuation.brackets.round.cairo
+
+inline_macro!(1, 2);
+              ^ source.cairo constant.numeric.decimal.cairo
+
+inline_macro!(1, 2);
+               ^ source.cairo punctuation.comma.cairo
+
+inline_macro!(1, 2);
+                 ^ source.cairo constant.numeric.decimal.cairo
+
+inline_macro!(1, 2);
+                  ^ source.cairo punctuation.brackets.round.cairo
+
+inline_macro!(1, 2);
+                   ^ source.cairo punctuation.semi.cairo
+

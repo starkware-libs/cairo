@@ -1,0 +1,22 @@
+//! > cairo_code
+impl mod of MyTrait {}
+
+//! > syntax
+impl mod of MyTrait {}
+^^^^ source.cairo keyword.other.cairo
+
+impl mod of MyTrait {}
+     ^^^ source.cairo storage.type.cairo
+
+impl mod of MyTrait {}
+         ^^ source.cairo entity.name.module.cairo
+
+impl mod of MyTrait {}
+            ^^^^^^^ source.cairo entity.name.type.cairo
+
+impl mod of MyTrait {}
+                    ^ source.cairo punctuation.brackets.curly.cairo
+
+impl mod of MyTrait {}
+                     ^ source.cairo punctuation.brackets.curly.cairo
+

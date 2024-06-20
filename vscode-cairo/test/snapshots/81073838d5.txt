@@ -1,0 +1,19 @@
+//! > cairo_code
+const X = 0x1234;
+
+//! > syntax
+const X = 0x1234;
+^^^^^ source.cairo storage.type.cairo
+
+const X = 0x1234;
+      ^ source.cairo constant.other.caps.cairo
+
+const X = 0x1234;
+        ^ source.cairo keyword.operator.assignment.equal.cairo
+
+const X = 0x1234;
+          ^^^^^^ source.cairo constant.numeric.hex.cairo
+
+const X = 0x1234;
+                ^ source.cairo punctuation.semi.cairo
+

@@ -1,0 +1,472 @@
+//! > cairo_code
+fn foo (x:T) -> S
+{
+    let x = -5 + 3;
+    let y : T = x*2 + 3*5; // Comment.
+    let z = ;
+    let v = bool::True == false;
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+    return df == 6;
+    x + y
+}
+
+pub impl A of B {
+    fn foo() {
+        if bla.
+        // The module below should parse correctly, not inside this impl.
+    }
+}
+
+pub mod my_mod{
+    fn bar (x:T0, s: S) -> X {
+        x.a *+-. s.s * foo(1,3)
+    }
+    struct A{
+        x: a, // Comment.
+        y: int
+    }
+
+}
+
+skipped tokens
+
+
+//! > syntax
+fn foo (x:T) -> S
+^^ source.cairo keyword.other.fn.cairo
+
+fn foo (x:T) -> S
+   ^^^ source.cairo variable.other.cairo
+
+fn foo (x:T) -> S
+       ^ source.cairo punctuation.brackets.round.cairo
+
+fn foo (x:T) -> S
+        ^ source.cairo variable.other.cairo
+
+fn foo (x:T) -> S
+         ^ source.cairo keyword.operator.key-value.cairo
+
+fn foo (x:T) -> S
+          ^ source.cairo entity.name.type.cairo
+
+fn foo (x:T) -> S
+           ^ source.cairo punctuation.brackets.round.cairo
+
+fn foo (x:T) -> S
+             ^^ source.cairo keyword.operator.arrow.skinny.cairo
+
+fn foo (x:T) -> S
+                ^ source.cairo entity.name.type.cairo
+
+{
+^ source.cairo punctuation.brackets.curly.cairo
+
+    let x = -5 + 3;
+    ^^^ source.cairo keyword.other.cairo storage.type.cairo
+
+    let x = -5 + 3;
+        ^ source.cairo variable.other.cairo
+
+    let x = -5 + 3;
+          ^ source.cairo keyword.operator.assignment.equal.cairo
+
+    let x = -5 + 3;
+            ^ source.cairo keyword.operator.math.cairo
+
+    let x = -5 + 3;
+             ^ source.cairo constant.numeric.decimal.cairo
+
+    let x = -5 + 3;
+               ^ source.cairo keyword.operator.math.cairo
+
+    let x = -5 + 3;
+                 ^ source.cairo constant.numeric.decimal.cairo
+
+    let x = -5 + 3;
+                  ^ source.cairo punctuation.semi.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+    ^^^ source.cairo keyword.other.cairo storage.type.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+        ^ source.cairo variable.other.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+          ^ source.cairo keyword.operator.key-value.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+            ^ source.cairo entity.name.type.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+              ^ source.cairo keyword.operator.assignment.equal.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+                ^ source.cairo variable.other.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+                 ^ source.cairo keyword.operator.desnap.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+                  ^ source.cairo constant.numeric.decimal.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+                    ^ source.cairo keyword.operator.math.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+                      ^ source.cairo constant.numeric.decimal.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+                       ^ source.cairo keyword.operator.desnap.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+                        ^ source.cairo constant.numeric.decimal.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+                         ^ source.cairo punctuation.semi.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+                           ^^ source.cairo comment.line.double-slash.cairo punctuation.definition.comment.cairo
+
+    let y : T = x*2 + 3*5; // Comment.
+                             ^^^^^^^^^ source.cairo comment.line.double-slash.cairo
+
+    let z = ;
+    ^^^ source.cairo keyword.other.cairo storage.type.cairo
+
+    let z = ;
+        ^ source.cairo variable.other.cairo
+
+    let z = ;
+          ^ source.cairo keyword.operator.assignment.equal.cairo
+
+    let z = ;
+            ^ source.cairo punctuation.semi.cairo
+
+    let v = bool::True == false;
+    ^^^ source.cairo keyword.other.cairo storage.type.cairo
+
+    let v = bool::True == false;
+        ^ source.cairo variable.other.cairo
+
+    let v = bool::True == false;
+          ^ source.cairo keyword.operator.assignment.equal.cairo
+
+    let v = bool::True == false;
+            ^^^^ source.cairo entity.name.type.primitive.cairo
+
+    let v = bool::True == false;
+                ^^ source.cairo keyword.operator.namespace.cairo
+
+    let v = bool::True == false;
+                  ^^^^ source.cairo entity.name.type.cairo
+
+    let v = bool::True == false;
+                       ^^ source.cairo keyword.operator.comparison.cairo
+
+    let v = bool::True == false;
+                          ^^^^^ source.cairo constant.language.bool.cairo
+
+    let v = bool::True == false;
+                               ^ source.cairo punctuation.semi.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+    ^ source.cairo constant.numeric.decimal.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+      ^ source.cairo keyword.operator.math.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+        ^^^^^^ source.cairo entity.name.type.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+              ^ source.cairo punctuation.brackets.curly.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+               ^ source.cairo variable.other.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                ^ source.cairo keyword.operator.key-value.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                  ^ source.cairo constant.numeric.decimal.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                   ^ source.cairo punctuation.comma.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                     ^ source.cairo variable.other.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                      ^ source.cairo keyword.operator.key-value.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                        ^^^^^^^ source.cairo entity.name.type.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                               ^ source.cairo punctuation.brackets.curly.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                                ^^^ source.cairo variable.other.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                                   ^ source.cairo keyword.operator.key-value.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                                     ^ source.cairo punctuation.brackets.round.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                                      ^ source.cairo punctuation.brackets.round.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                                       ^ source.cairo punctuation.brackets.curly.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                                        ^ source.cairo punctuation.brackets.curly.cairo
+
+    5 + Struct{a: 5, b: Struct2{_gg: ()}};
+                                         ^ source.cairo punctuation.semi.cairo
+
+    return df == 6;
+    ^^^^^^ source.cairo keyword.control.cairo
+
+    return df == 6;
+           ^^ source.cairo variable.other.cairo
+
+    return df == 6;
+              ^^ source.cairo keyword.operator.comparison.cairo
+
+    return df == 6;
+                 ^ source.cairo constant.numeric.decimal.cairo
+
+    return df == 6;
+                  ^ source.cairo punctuation.semi.cairo
+
+    x + y
+    ^ source.cairo variable.other.cairo
+
+    x + y
+      ^ source.cairo keyword.operator.math.cairo
+
+    x + y
+        ^ source.cairo variable.other.cairo
+
+}
+^ source.cairo punctuation.brackets.curly.cairo
+
+pub impl A of B {
+^^^ source.cairo keyword.other.cairo
+
+pub impl A of B {
+    ^^^^ source.cairo keyword.other.cairo
+
+pub impl A of B {
+         ^ source.cairo entity.name.type.cairo
+
+pub impl A of B {
+           ^^ source.cairo keyword.other.cairo
+
+pub impl A of B {
+              ^ source.cairo entity.name.type.cairo
+
+pub impl A of B {
+                ^ source.cairo punctuation.brackets.curly.cairo
+
+    fn foo() {
+    ^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+    fn foo() {
+      ^ source.cairo meta.function.definition.cairo
+
+    fn foo() {
+       ^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+    fn foo() {
+          ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+    fn foo() {
+           ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+    fn foo() {
+            ^ source.cairo meta.function.definition.cairo
+
+    fn foo() {
+             ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+
+        if bla.
+        ^^ source.cairo keyword.control.cairo
+
+        if bla.
+           ^^^ source.cairo variable.other.cairo
+
+        if bla.
+              ^ source.cairo keyword.operator.access.dot.cairo
+
+        // The module below should parse correctly, not inside this impl.
+        ^^ source.cairo comment.line.double-slash.cairo punctuation.definition.comment.cairo
+
+        // The module below should parse correctly, not inside this impl.
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.cairo comment.line.double-slash.cairo
+
+    }
+    ^ source.cairo punctuation.brackets.curly.cairo
+
+}
+^ source.cairo punctuation.brackets.curly.cairo
+
+pub mod my_mod{
+^^^ source.cairo keyword.other.cairo
+
+pub mod my_mod{
+    ^^^ source.cairo storage.type.cairo
+
+pub mod my_mod{
+        ^^^^^^ source.cairo entity.name.module.cairo
+
+pub mod my_mod{
+              ^ source.cairo punctuation.brackets.curly.cairo
+
+    fn bar (x:T0, s: S) -> X {
+    ^^ source.cairo keyword.other.fn.cairo
+
+    fn bar (x:T0, s: S) -> X {
+       ^^^ source.cairo variable.other.cairo
+
+    fn bar (x:T0, s: S) -> X {
+           ^ source.cairo punctuation.brackets.round.cairo
+
+    fn bar (x:T0, s: S) -> X {
+            ^ source.cairo variable.other.cairo
+
+    fn bar (x:T0, s: S) -> X {
+             ^ source.cairo keyword.operator.key-value.cairo
+
+    fn bar (x:T0, s: S) -> X {
+              ^^ source.cairo entity.name.type.cairo
+
+    fn bar (x:T0, s: S) -> X {
+                ^ source.cairo punctuation.comma.cairo
+
+    fn bar (x:T0, s: S) -> X {
+                  ^ source.cairo variable.other.cairo
+
+    fn bar (x:T0, s: S) -> X {
+                   ^ source.cairo keyword.operator.key-value.cairo
+
+    fn bar (x:T0, s: S) -> X {
+                     ^ source.cairo entity.name.type.cairo
+
+    fn bar (x:T0, s: S) -> X {
+                      ^ source.cairo punctuation.brackets.round.cairo
+
+    fn bar (x:T0, s: S) -> X {
+                        ^^ source.cairo keyword.operator.arrow.skinny.cairo
+
+    fn bar (x:T0, s: S) -> X {
+                           ^ source.cairo entity.name.type.cairo
+
+    fn bar (x:T0, s: S) -> X {
+                             ^ source.cairo punctuation.brackets.curly.cairo
+
+        x.a *+-. s.s * foo(1,3)
+        ^ source.cairo variable.other.cairo
+
+        x.a *+-. s.s * foo(1,3)
+         ^ source.cairo keyword.operator.access.dot.cairo
+
+        x.a *+-. s.s * foo(1,3)
+          ^^ source.cairo
+
+        x.a *+-. s.s * foo(1,3)
+            ^ source.cairo keyword.operator.math.cairo
+
+        x.a *+-. s.s * foo(1,3)
+             ^ source.cairo keyword.operator.math.cairo
+
+        x.a *+-. s.s * foo(1,3)
+              ^ source.cairo keyword.operator.math.cairo
+
+        x.a *+-. s.s * foo(1,3)
+               ^ source.cairo keyword.operator.access.dot.cairo
+
+        x.a *+-. s.s * foo(1,3)
+                 ^ source.cairo variable.other.cairo
+
+        x.a *+-. s.s * foo(1,3)
+                  ^ source.cairo keyword.operator.access.dot.cairo
+
+        x.a *+-. s.s * foo(1,3)
+                   ^^ source.cairo
+
+        x.a *+-. s.s * foo(1,3)
+                     ^ source.cairo keyword.operator.math.cairo
+
+        x.a *+-. s.s * foo(1,3)
+                       ^^^ source.cairo meta.function.call.cairo entity.name.function.cairo
+
+        x.a *+-. s.s * foo(1,3)
+                          ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+        x.a *+-. s.s * foo(1,3)
+                           ^ source.cairo meta.function.call.cairo constant.numeric.decimal.cairo
+
+        x.a *+-. s.s * foo(1,3)
+                            ^ source.cairo meta.function.call.cairo punctuation.comma.cairo
+
+        x.a *+-. s.s * foo(1,3)
+                             ^ source.cairo meta.function.call.cairo constant.numeric.decimal.cairo
+
+        x.a *+-. s.s * foo(1,3)
+                              ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+    }
+    ^ source.cairo punctuation.brackets.curly.cairo
+
+    struct A{
+    ^^^^^^ source.cairo keyword.declaration.struct.cairo storage.type.cairo
+
+    struct A{
+           ^ source.cairo entity.name.type.struct.cairo
+
+    struct A{
+            ^ source.cairo punctuation.brackets.curly.cairo
+
+        x: a, // Comment.
+        ^ source.cairo variable.other.cairo
+
+        x: a, // Comment.
+         ^ source.cairo keyword.operator.key-value.cairo
+
+        x: a, // Comment.
+           ^ source.cairo variable.other.cairo
+
+        x: a, // Comment.
+            ^ source.cairo punctuation.comma.cairo
+
+        x: a, // Comment.
+              ^^ source.cairo comment.line.double-slash.cairo punctuation.definition.comment.cairo
+
+        x: a, // Comment.
+                ^^^^^^^^^ source.cairo comment.line.double-slash.cairo
+
+        y: int
+        ^ source.cairo variable.other.cairo
+
+        y: int
+         ^ source.cairo keyword.operator.key-value.cairo
+
+        y: int
+           ^^^ source.cairo variable.other.cairo
+
+    }
+    ^ source.cairo punctuation.brackets.curly.cairo
+
+}
+^ source.cairo punctuation.brackets.curly.cairo
+
+skipped tokens
+^^^^^^^ source.cairo variable.other.cairo
+
+skipped tokens
+        ^^^^^^ source.cairo variable.other.cairo
+

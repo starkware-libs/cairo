@@ -1,0 +1,10 @@
+//! > cairo_code
+// TODO(Gil): handle multiline diagnostics.
+
+//! > syntax
+// TODO(Gil): handle multiline diagnostics.
+^^ source.cairo comment.line.double-slash.cairo punctuation.definition.comment.cairo
+
+// TODO(Gil): handle multiline diagnostics.
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.cairo comment.line.double-slash.cairo
+

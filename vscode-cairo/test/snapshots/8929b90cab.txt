@@ -1,0 +1,19 @@
+//! > cairo_code
+impl MyImpl of MyTrait {
+
+//! > syntax
+impl MyImpl of MyTrait {
+^^^^ source.cairo keyword.other.cairo
+
+impl MyImpl of MyTrait {
+     ^^^^^^ source.cairo entity.name.type.cairo
+
+impl MyImpl of MyTrait {
+            ^^ source.cairo keyword.other.cairo
+
+impl MyImpl of MyTrait {
+               ^^^^^^^ source.cairo entity.name.type.cairo
+
+impl MyImpl of MyTrait {
+                       ^ source.cairo punctuation.brackets.curly.cairo
+

@@ -1,0 +1,40 @@
+//! > cairo_code
+fn f(x: felt252,) {
+
+//! > syntax
+fn f(x: felt252,) {
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn f(x: felt252,) {
+  ^ source.cairo meta.function.definition.cairo
+
+fn f(x: felt252,) {
+   ^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn f(x: felt252,) {
+    ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn f(x: felt252,) {
+     ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn f(x: felt252,) {
+      ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn f(x: felt252,) {
+       ^ source.cairo meta.function.definition.cairo
+
+fn f(x: felt252,) {
+        ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+fn f(x: felt252,) {
+               ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn f(x: felt252,) {
+                ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn f(x: felt252,) {
+                 ^ source.cairo meta.function.definition.cairo
+
+fn f(x: felt252,) {
+                  ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+

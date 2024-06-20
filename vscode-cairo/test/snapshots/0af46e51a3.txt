@@ -1,0 +1,46 @@
+//! > cairo_code
+fn f(ref _: felt252) {}
+
+//! > syntax
+fn f(ref _: felt252) {}
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn f(ref _: felt252) {}
+  ^ source.cairo meta.function.definition.cairo
+
+fn f(ref _: felt252) {}
+   ^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn f(ref _: felt252) {}
+    ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn f(ref _: felt252) {}
+     ^^^ source.cairo meta.function.definition.cairo storage.modifier.cairo
+
+fn f(ref _: felt252) {}
+        ^ source.cairo meta.function.definition.cairo
+
+fn f(ref _: felt252) {}
+         ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn f(ref _: felt252) {}
+          ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn f(ref _: felt252) {}
+           ^ source.cairo meta.function.definition.cairo
+
+fn f(ref _: felt252) {}
+            ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+fn f(ref _: felt252) {}
+                   ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn f(ref _: felt252) {}
+                    ^ source.cairo meta.function.definition.cairo
+
+fn f(ref _: felt252) {}
+                     ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+
+fn f(ref _: felt252) {}
+                      ^ source.cairo punctuation.brackets.curly.cairo
+

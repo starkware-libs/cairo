@@ -1,0 +1,16 @@
+//! > cairo_code
+#[an_attr]
+
+//! > syntax
+#[an_attr]
+^ source.cairo meta.attribute.cairo punctuation.definition.attribute.cairo
+
+#[an_attr]
+ ^ source.cairo meta.attribute.cairo punctuation.brackets.attribute.cairo
+
+#[an_attr]
+  ^^^^^^^ source.cairo meta.attribute.cairo
+
+#[an_attr]
+         ^ source.cairo meta.attribute.cairo punctuation.brackets.attribute.cairo
+

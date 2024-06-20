@@ -1,0 +1,55 @@
+//! > cairo_code
+const X: [felt252; 3] = [1, 2, 3];
+
+//! > syntax
+const X: [felt252; 3] = [1, 2, 3];
+^^^^^ source.cairo storage.type.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+      ^ source.cairo constant.other.caps.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+       ^ source.cairo keyword.operator.key-value.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+         ^ source.cairo punctuation.brackets.square.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+          ^^^^^^^ source.cairo entity.name.type.numeric.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+                 ^ source.cairo punctuation.semi.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+                   ^ source.cairo constant.numeric.decimal.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+                    ^ source.cairo punctuation.brackets.square.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+                      ^ source.cairo keyword.operator.assignment.equal.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+                        ^ source.cairo punctuation.brackets.square.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+                         ^ source.cairo constant.numeric.decimal.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+                          ^ source.cairo punctuation.comma.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+                            ^ source.cairo constant.numeric.decimal.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+                             ^ source.cairo punctuation.comma.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+                               ^ source.cairo constant.numeric.decimal.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+                                ^ source.cairo punctuation.brackets.square.cairo
+
+const X: [felt252; 3] = [1, 2, 3];
+                                 ^ source.cairo punctuation.semi.cairo
+

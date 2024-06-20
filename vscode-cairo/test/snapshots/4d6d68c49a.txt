@@ -1,0 +1,55 @@
+//! > cairo_code
+fn foo() -> Aaaaa  Bbb + Cc  {
+
+//! > syntax
+fn foo() -> Aaaaa  Bbb + Cc  {
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+  ^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+   ^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+      ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+       ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+        ^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+         ^^ source.cairo meta.function.definition.cairo keyword.operator.arrow.skinny.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+           ^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+            ^^^^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+                 ^^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+                   ^^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+                      ^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+                       ^ source.cairo meta.function.definition.cairo keyword.operator.math.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+                        ^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+                         ^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+                           ^^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc  {
+                             ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+

@@ -1,0 +1,154 @@
+//! > cairo_code
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+
+//! > syntax
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+  ^ source.cairo meta.function.definition.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+   ^^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+       ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+        ^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+         ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+          ^ source.cairo meta.function.definition.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+           ^ source.cairo meta.function.definition.cairo keyword.operator.math.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+            ^^^^^^ source.cairo meta.function.definition.cairo entity.name.namespace.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                  ^^ source.cairo meta.function.definition.cairo keyword.operator.namespace.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                    ^^^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                        ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                         ^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                          ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                           ^ source.cairo meta.function.definition.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                            ^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                             ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                              ^ source.cairo meta.function.definition.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                               ^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                     ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                      ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                       ^ source.cairo meta.function.definition.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                        ^ source.cairo meta.function.definition.cairo keyword.operator.math.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                         ^^^^^^ source.cairo meta.function.definition.cairo entity.name.namespace.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                               ^^ source.cairo meta.function.definition.cairo keyword.operator.namespace.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                 ^^^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                     ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                      ^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                       ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                        ^ source.cairo meta.function.definition.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                         ^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                          ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                           ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                            ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                             ^^^ source.cairo meta.function.definition.cairo storage.modifier.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                ^ source.cairo meta.function.definition.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                 ^^^^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                     ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                      ^ source.cairo meta.function.definition.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                       ^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                        ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                         ^ source.cairo meta.function.definition.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                          ^^^^^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                               ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                                ^ source.cairo meta.function.definition.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                                 ^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                                  ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                                   ^ source.cairo meta.function.definition.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                                    ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {}
+                                                                                     ^ source.cairo punctuation.brackets.curly.cairo
+

@@ -1,0 +1,16 @@
+//! > cairo_code
+trait _ {}
+
+//! > syntax
+trait _ {}
+^^^^^ source.cairo keyword.declaration.trait.cairo storage.type.cairo
+
+trait _ {}
+      ^ source.cairo variable.other.cairo
+
+trait _ {}
+        ^ source.cairo punctuation.brackets.curly.cairo
+
+trait _ {}
+         ^ source.cairo punctuation.brackets.curly.cairo
+

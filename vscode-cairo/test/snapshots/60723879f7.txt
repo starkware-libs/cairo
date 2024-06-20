@@ -1,0 +1,25 @@
+//! > cairo_code
+struct A<mod> {}
+
+//! > syntax
+struct A<mod> {}
+^^^^^^ source.cairo keyword.declaration.struct.cairo storage.type.cairo
+
+struct A<mod> {}
+       ^ source.cairo entity.name.type.struct.cairo
+
+struct A<mod> {}
+        ^ source.cairo punctuation.brackets.angle.cairo
+
+struct A<mod> {}
+         ^^^ source.cairo keyword.other.cairo storage.type.cairo
+
+struct A<mod> {}
+            ^ source.cairo punctuation.brackets.angle.cairo
+
+struct A<mod> {}
+              ^ source.cairo punctuation.brackets.curly.cairo
+
+struct A<mod> {}
+               ^ source.cairo punctuation.brackets.curly.cairo
+

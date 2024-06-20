@@ -1,0 +1,13 @@
+//! > cairo_code
+enum MyEnum {
+
+//! > syntax
+enum MyEnum {
+^^^^ source.cairo keyword.declaration.enum.cairo storage.type.cairo
+
+enum MyEnum {
+     ^^^^^^ source.cairo entity.name.type.enum.cairo
+
+enum MyEnum {
+            ^ source.cairo punctuation.brackets.curly.cairo
+

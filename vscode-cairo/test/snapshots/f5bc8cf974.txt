@@ -1,0 +1,52 @@
+//! > cairo_code
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+
+//! > syntax
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+^^^^ source.cairo keyword.other.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+     ^^^^^^^^^^^ source.cairo entity.name.type.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                ^ source.cairo punctuation.brackets.angle.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                 ^ source.cairo entity.name.type.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                  ^ source.cairo punctuation.brackets.angle.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                    ^ source.cairo keyword.operator.assignment.equal.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                      ^^^^^^^^^ source.cairo entity.name.type.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                               ^ source.cairo punctuation.brackets.angle.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                                ^^^^^ source.cairo entity.name.type.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                                     ^ source.cairo punctuation.comma.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                                       ^ source.cairo entity.name.type.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                                        ^ source.cairo punctuation.brackets.angle.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                                         ^ source.cairo entity.name.type.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                                          ^ source.cairo punctuation.brackets.angle.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                                           ^ source.cairo punctuation.brackets.angle.cairo
+
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+                                            ^ source.cairo punctuation.semi.cairo
+

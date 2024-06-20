@@ -1,0 +1,84 @@
+//! > cairo_code
+use std::format;
+
+fn foo(a: int) -> felt252 {
+    return a;
+}
+
+
+//! > syntax
+use std::format;
+^^^ source.cairo meta.use.cairo keyword.other.cairo
+
+use std::format;
+   ^ source.cairo meta.use.cairo
+
+use std::format;
+    ^^^ source.cairo meta.use.cairo entity.name.namespace.cairo
+
+use std::format;
+       ^^ source.cairo meta.use.cairo keyword.operator.namespace.cairo
+
+use std::format;
+         ^^^^^^ source.cairo meta.use.cairo
+
+use std::format;
+               ^ source.cairo meta.use.cairo punctuation.semi.cairo
+
+fn foo(a: int) -> felt252 {
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn foo(a: int) -> felt252 {
+  ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: int) -> felt252 {
+   ^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn foo(a: int) -> felt252 {
+      ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo(a: int) -> felt252 {
+       ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(a: int) -> felt252 {
+        ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn foo(a: int) -> felt252 {
+         ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: int) -> felt252 {
+          ^^^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(a: int) -> felt252 {
+             ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo(a: int) -> felt252 {
+              ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: int) -> felt252 {
+               ^^ source.cairo meta.function.definition.cairo keyword.operator.arrow.skinny.cairo
+
+fn foo(a: int) -> felt252 {
+                 ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: int) -> felt252 {
+                  ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+fn foo(a: int) -> felt252 {
+                         ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: int) -> felt252 {
+                          ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+
+    return a;
+    ^^^^^^ source.cairo keyword.control.cairo
+
+    return a;
+           ^ source.cairo variable.other.cairo
+
+    return a;
+            ^ source.cairo punctuation.semi.cairo
+
+}
+^ source.cairo punctuation.brackets.curly.cairo
+

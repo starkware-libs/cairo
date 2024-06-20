@@ -1,0 +1,31 @@
+//! > cairo_code
+extern fn mod() nopanic;
+
+//! > syntax
+extern fn mod() nopanic;
+^^^^^^ source.cairo keyword.other.cairo storage.type.cairo
+
+extern fn mod() nopanic;
+       ^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+extern fn mod() nopanic;
+         ^ source.cairo meta.function.definition.cairo
+
+extern fn mod() nopanic;
+          ^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+extern fn mod() nopanic;
+             ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+extern fn mod() nopanic;
+              ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+extern fn mod() nopanic;
+               ^ source.cairo meta.function.definition.cairo
+
+extern fn mod() nopanic;
+                ^^^^^^^ source.cairo meta.function.definition.cairo keyword.other.cairo
+
+extern fn mod() nopanic;
+                       ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+

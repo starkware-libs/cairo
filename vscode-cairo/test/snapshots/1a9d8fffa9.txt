@@ -1,0 +1,37 @@
+//! > cairo_code
+const X: NonZero::<felt252> = 0x1234;
+
+//! > syntax
+const X: NonZero::<felt252> = 0x1234;
+^^^^^ source.cairo storage.type.cairo
+
+const X: NonZero::<felt252> = 0x1234;
+      ^ source.cairo constant.other.caps.cairo
+
+const X: NonZero::<felt252> = 0x1234;
+       ^ source.cairo keyword.operator.key-value.cairo
+
+const X: NonZero::<felt252> = 0x1234;
+         ^^^^^^^ source.cairo entity.name.type.cairo
+
+const X: NonZero::<felt252> = 0x1234;
+                ^^ source.cairo keyword.operator.namespace.cairo
+
+const X: NonZero::<felt252> = 0x1234;
+                  ^ source.cairo punctuation.brackets.angle.cairo
+
+const X: NonZero::<felt252> = 0x1234;
+                   ^^^^^^^ source.cairo entity.name.type.numeric.cairo
+
+const X: NonZero::<felt252> = 0x1234;
+                          ^ source.cairo punctuation.brackets.angle.cairo
+
+const X: NonZero::<felt252> = 0x1234;
+                            ^ source.cairo keyword.operator.assignment.equal.cairo
+
+const X: NonZero::<felt252> = 0x1234;
+                              ^^^^^^ source.cairo constant.numeric.hex.cairo
+
+const X: NonZero::<felt252> = 0x1234;
+                                    ^ source.cairo punctuation.semi.cairo
+

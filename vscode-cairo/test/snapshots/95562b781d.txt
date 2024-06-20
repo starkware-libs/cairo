@@ -1,0 +1,37 @@
+//! > cairo_code
+fn f() -> u32 {
+
+//! > syntax
+fn f() -> u32 {
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn f() -> u32 {
+  ^ source.cairo meta.function.definition.cairo
+
+fn f() -> u32 {
+   ^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn f() -> u32 {
+    ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn f() -> u32 {
+     ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn f() -> u32 {
+      ^ source.cairo meta.function.definition.cairo
+
+fn f() -> u32 {
+       ^^ source.cairo meta.function.definition.cairo keyword.operator.arrow.skinny.cairo
+
+fn f() -> u32 {
+         ^ source.cairo meta.function.definition.cairo
+
+fn f() -> u32 {
+          ^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+fn f() -> u32 {
+             ^ source.cairo meta.function.definition.cairo
+
+fn f() -> u32 {
+              ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+

@@ -1,0 +1,604 @@
+//! > cairo_code
+fn main() -> Option<felt252> {
+    fib(1, 1, 13)
+}
+
+/// Calculates fib...
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+    gas::withdraw_gas()?;
+    some_macro!();
+    match n {
+        0 => Option::Some(a),
+        _ => fib(b, a + b, n - 1),
+    }
+}
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+    gas::withdraw_gas()?;
+    match n {
+        0 => (Option::Some(a), Option::Some(b)),
+        _ => fib_tuple(b, a + b, n - 1),
+    }
+}
+
+
+//! > syntax
+fn main() -> Option<felt252> {
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn main() -> Option<felt252> {
+  ^ source.cairo meta.function.definition.cairo
+
+fn main() -> Option<felt252> {
+   ^^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn main() -> Option<felt252> {
+       ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn main() -> Option<felt252> {
+        ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn main() -> Option<felt252> {
+         ^ source.cairo meta.function.definition.cairo
+
+fn main() -> Option<felt252> {
+          ^^ source.cairo meta.function.definition.cairo keyword.operator.arrow.skinny.cairo
+
+fn main() -> Option<felt252> {
+            ^ source.cairo meta.function.definition.cairo
+
+fn main() -> Option<felt252> {
+             ^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn main() -> Option<felt252> {
+                   ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+fn main() -> Option<felt252> {
+                    ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+fn main() -> Option<felt252> {
+                           ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+fn main() -> Option<felt252> {
+                            ^ source.cairo meta.function.definition.cairo
+
+fn main() -> Option<felt252> {
+                             ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+
+    fib(1, 1, 13)
+    ^^^ source.cairo meta.function.call.cairo entity.name.function.cairo
+
+    fib(1, 1, 13)
+       ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+    fib(1, 1, 13)
+        ^ source.cairo meta.function.call.cairo constant.numeric.decimal.cairo
+
+    fib(1, 1, 13)
+         ^ source.cairo meta.function.call.cairo punctuation.comma.cairo
+
+    fib(1, 1, 13)
+          ^ source.cairo meta.function.call.cairo
+
+    fib(1, 1, 13)
+           ^ source.cairo meta.function.call.cairo constant.numeric.decimal.cairo
+
+    fib(1, 1, 13)
+            ^ source.cairo meta.function.call.cairo punctuation.comma.cairo
+
+    fib(1, 1, 13)
+             ^ source.cairo meta.function.call.cairo
+
+    fib(1, 1, 13)
+              ^^ source.cairo meta.function.call.cairo constant.numeric.decimal.cairo
+
+    fib(1, 1, 13)
+                ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+}
+^ source.cairo punctuation.brackets.curly.cairo
+
+/// Calculates fib...
+^^^ source.cairo comment.line.documentation.cairo punctuation.definition.comment.cairo
+
+/// Calculates fib...
+   ^^^^^^^^^^^^^^^^^^ source.cairo comment.line.documentation.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+  ^ source.cairo meta.function.definition.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+   ^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+      ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+       ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+        ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+         ^ source.cairo meta.function.definition.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+          ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                 ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                  ^ source.cairo meta.function.definition.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                   ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                    ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                     ^ source.cairo meta.function.definition.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                      ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                             ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                              ^ source.cairo meta.function.definition.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                               ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                 ^ source.cairo meta.function.definition.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                  ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                         ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                          ^ source.cairo meta.function.definition.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                           ^^ source.cairo meta.function.definition.cairo keyword.operator.arrow.skinny.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                             ^ source.cairo meta.function.definition.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                              ^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                                    ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                                     ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                                            ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                                             ^ source.cairo meta.function.definition.cairo
+
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
+                                                              ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+
+    gas::withdraw_gas()?;
+    ^^^ source.cairo entity.name.namespace.cairo
+
+    gas::withdraw_gas()?;
+       ^^ source.cairo keyword.operator.namespace.cairo
+
+    gas::withdraw_gas()?;
+         ^^^^^^^^^^^^ source.cairo meta.function.call.cairo entity.name.function.cairo
+
+    gas::withdraw_gas()?;
+                     ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+    gas::withdraw_gas()?;
+                      ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+    gas::withdraw_gas()?;
+                       ^ source.cairo keyword.operator.question.cairo
+
+    gas::withdraw_gas()?;
+                        ^ source.cairo punctuation.semi.cairo
+
+    some_macro!();
+    ^^^^^^^^^^^ source.cairo meta.macro.cairo entity.name.function.macro.cairo
+
+    some_macro!();
+               ^ source.cairo punctuation.brackets.round.cairo
+
+    some_macro!();
+                ^ source.cairo punctuation.brackets.round.cairo
+
+    some_macro!();
+                 ^ source.cairo punctuation.semi.cairo
+
+    match n {
+    ^^^^^ source.cairo keyword.control.cairo
+
+    match n {
+          ^ source.cairo variable.other.cairo
+
+    match n {
+            ^ source.cairo punctuation.brackets.curly.cairo
+
+        0 => Option::Some(a),
+        ^ source.cairo constant.numeric.decimal.cairo
+
+        0 => Option::Some(a),
+          ^^ source.cairo keyword.operator.arrow.fat.cairo
+
+        0 => Option::Some(a),
+             ^^^^^^ source.cairo entity.name.type.cairo
+
+        0 => Option::Some(a),
+                   ^^ source.cairo keyword.operator.namespace.cairo
+
+        0 => Option::Some(a),
+                     ^^^^ source.cairo entity.name.type.option.cairo
+
+        0 => Option::Some(a),
+                         ^ source.cairo punctuation.brackets.round.cairo
+
+        0 => Option::Some(a),
+                          ^ source.cairo variable.other.cairo
+
+        0 => Option::Some(a),
+                           ^ source.cairo punctuation.brackets.round.cairo
+
+        0 => Option::Some(a),
+                            ^ source.cairo punctuation.comma.cairo
+
+        _ => fib(b, a + b, n - 1),
+        ^ source.cairo variable.other.cairo
+
+        _ => fib(b, a + b, n - 1),
+          ^^ source.cairo keyword.operator.arrow.fat.cairo
+
+        _ => fib(b, a + b, n - 1),
+             ^^^ source.cairo meta.function.call.cairo entity.name.function.cairo
+
+        _ => fib(b, a + b, n - 1),
+                ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+        _ => fib(b, a + b, n - 1),
+                 ^ source.cairo meta.function.call.cairo variable.other.cairo
+
+        _ => fib(b, a + b, n - 1),
+                  ^ source.cairo meta.function.call.cairo punctuation.comma.cairo
+
+        _ => fib(b, a + b, n - 1),
+                   ^ source.cairo meta.function.call.cairo
+
+        _ => fib(b, a + b, n - 1),
+                    ^ source.cairo meta.function.call.cairo variable.other.cairo
+
+        _ => fib(b, a + b, n - 1),
+                     ^ source.cairo meta.function.call.cairo
+
+        _ => fib(b, a + b, n - 1),
+                      ^ source.cairo meta.function.call.cairo keyword.operator.math.cairo
+
+        _ => fib(b, a + b, n - 1),
+                       ^ source.cairo meta.function.call.cairo
+
+        _ => fib(b, a + b, n - 1),
+                        ^ source.cairo meta.function.call.cairo variable.other.cairo
+
+        _ => fib(b, a + b, n - 1),
+                         ^ source.cairo meta.function.call.cairo punctuation.comma.cairo
+
+        _ => fib(b, a + b, n - 1),
+                          ^ source.cairo meta.function.call.cairo
+
+        _ => fib(b, a + b, n - 1),
+                           ^ source.cairo meta.function.call.cairo variable.other.cairo
+
+        _ => fib(b, a + b, n - 1),
+                            ^ source.cairo meta.function.call.cairo
+
+        _ => fib(b, a + b, n - 1),
+                             ^ source.cairo meta.function.call.cairo keyword.operator.math.cairo
+
+        _ => fib(b, a + b, n - 1),
+                              ^ source.cairo meta.function.call.cairo
+
+        _ => fib(b, a + b, n - 1),
+                               ^ source.cairo meta.function.call.cairo constant.numeric.decimal.cairo
+
+        _ => fib(b, a + b, n - 1),
+                                ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+        _ => fib(b, a + b, n - 1),
+                                 ^ source.cairo punctuation.comma.cairo
+
+    }
+    ^ source.cairo punctuation.brackets.curly.cairo
+
+}
+^ source.cairo punctuation.brackets.curly.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+^^^ source.cairo keyword.other.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+    ^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+      ^ source.cairo meta.function.definition.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+       ^^^^^^^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                 ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                  ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                   ^ source.cairo meta.function.definition.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                    ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                           ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                            ^ source.cairo meta.function.definition.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                             ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                              ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                               ^ source.cairo meta.function.definition.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                       ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                        ^ source.cairo meta.function.definition.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                         ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                          ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                           ^ source.cairo meta.function.definition.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                            ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                   ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                    ^ source.cairo meta.function.definition.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                     ^^ source.cairo meta.function.definition.cairo keyword.operator.arrow.skinny.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                       ^ source.cairo meta.function.definition.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                        ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                         ^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                               ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                                ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                                       ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                                        ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                                         ^ source.cairo meta.function.definition.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                                          ^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                                                ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                                                 ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                                                        ^ source.cairo meta.function.definition.cairo punctuation.brackets.angle.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                                                         ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                                                          ^ source.cairo meta.function.definition.cairo
+
+pub fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+                                                                                           ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+
+    gas::withdraw_gas()?;
+    ^^^ source.cairo entity.name.namespace.cairo
+
+    gas::withdraw_gas()?;
+       ^^ source.cairo keyword.operator.namespace.cairo
+
+    gas::withdraw_gas()?;
+         ^^^^^^^^^^^^ source.cairo meta.function.call.cairo entity.name.function.cairo
+
+    gas::withdraw_gas()?;
+                     ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+    gas::withdraw_gas()?;
+                      ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+    gas::withdraw_gas()?;
+                       ^ source.cairo keyword.operator.question.cairo
+
+    gas::withdraw_gas()?;
+                        ^ source.cairo punctuation.semi.cairo
+
+    match n {
+    ^^^^^ source.cairo keyword.control.cairo
+
+    match n {
+          ^ source.cairo variable.other.cairo
+
+    match n {
+            ^ source.cairo punctuation.brackets.curly.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+        ^ source.cairo constant.numeric.decimal.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+          ^^ source.cairo keyword.operator.arrow.fat.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+             ^ source.cairo punctuation.brackets.round.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+              ^^^^^^ source.cairo entity.name.type.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                    ^^ source.cairo keyword.operator.namespace.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                      ^^^^ source.cairo entity.name.type.option.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                          ^ source.cairo punctuation.brackets.round.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                           ^ source.cairo variable.other.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                            ^ source.cairo punctuation.brackets.round.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                             ^ source.cairo punctuation.comma.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                               ^^^^^^ source.cairo entity.name.type.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                                     ^^ source.cairo keyword.operator.namespace.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                                       ^^^^ source.cairo entity.name.type.option.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                                           ^ source.cairo punctuation.brackets.round.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                                            ^ source.cairo variable.other.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                                             ^ source.cairo punctuation.brackets.round.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                                              ^ source.cairo punctuation.brackets.round.cairo
+
+        0 => (Option::Some(a), Option::Some(b)),
+                                               ^ source.cairo punctuation.comma.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+        ^ source.cairo variable.other.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+          ^^ source.cairo keyword.operator.arrow.fat.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+             ^^^^^^^^^ source.cairo meta.function.call.cairo entity.name.function.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                      ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                       ^ source.cairo meta.function.call.cairo variable.other.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                        ^ source.cairo meta.function.call.cairo punctuation.comma.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                         ^ source.cairo meta.function.call.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                          ^ source.cairo meta.function.call.cairo variable.other.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                           ^ source.cairo meta.function.call.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                            ^ source.cairo meta.function.call.cairo keyword.operator.math.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                             ^ source.cairo meta.function.call.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                              ^ source.cairo meta.function.call.cairo variable.other.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                               ^ source.cairo meta.function.call.cairo punctuation.comma.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                                ^ source.cairo meta.function.call.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                                 ^ source.cairo meta.function.call.cairo variable.other.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                                  ^ source.cairo meta.function.call.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                                   ^ source.cairo meta.function.call.cairo keyword.operator.math.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                                    ^ source.cairo meta.function.call.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                                     ^ source.cairo meta.function.call.cairo constant.numeric.decimal.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                                      ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+        _ => fib_tuple(b, a + b, n - 1),
+                                       ^ source.cairo punctuation.comma.cairo
+
+    }
+    ^ source.cairo punctuation.brackets.curly.cairo
+
+}
+^ source.cairo punctuation.brackets.curly.cairo
+

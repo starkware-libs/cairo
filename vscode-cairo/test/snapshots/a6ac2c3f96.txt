@@ -1,0 +1,127 @@
+//! > cairo_code
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+
+//! > syntax
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+  ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+   ^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+      ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+       ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+        ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+         ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+          ^^^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+             ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+              ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+               ^^^ source.cairo meta.function.definition.cairo storage.modifier.mut.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                  ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                   ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                    ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                     ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                      ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                             ^ source.cairo meta.function.definition.cairo punctuation.comma.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                              ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                               ^^^ source.cairo meta.function.definition.cairo storage.modifier.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                  ^ source.cairo meta.function.definition.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                   ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                    ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                     ^ source.cairo punctuation.brackets.curly.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                      ^ source.cairo punctuation.comma.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                        ^^^ source.cairo storage.modifier.mut.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                            ^^^ source.cairo storage.modifier.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                ^ source.cairo variable.other.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                 ^ source.cairo keyword.operator.key-value.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                   ^^^^^^^ source.cairo entity.name.type.numeric.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                          ^ source.cairo punctuation.brackets.round.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                            ^^ source.cairo keyword.operator.arrow.skinny.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                               ^^^^^^^ source.cairo entity.name.type.numeric.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                                       ^^^^^^^^^ source.cairo meta.function.call.cairo entity.name.function.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                                                ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                                                 ^^^^^^^^^^ source.cairo meta.function.call.cairo entity.name.type.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                                                           ^ source.cairo meta.function.call.cairo punctuation.comma.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                                                            ^ source.cairo meta.function.call.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                                                             ^^^^ source.cairo meta.function.call.cairo entity.name.type.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                                                                 ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                                                                   ^^^^^^^ source.cairo keyword.other.cairo
+
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                                                                                           ^ source.cairo punctuation.brackets.curly.cairo
+

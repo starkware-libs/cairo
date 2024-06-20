@@ -1,0 +1,10 @@
+//! > cairo_code
+skipped tokens
+
+//! > syntax
+skipped tokens
+^^^^^^^ source.cairo variable.other.cairo
+
+skipped tokens
+        ^^^^^^ source.cairo variable.other.cairo
+

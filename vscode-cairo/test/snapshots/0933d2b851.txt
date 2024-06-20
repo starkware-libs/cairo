@@ -1,0 +1,34 @@
+//! > cairo_code
+#[derive(Copy, Drop)]
+
+//! > syntax
+#[derive(Copy, Drop)]
+^ source.cairo meta.attribute.cairo punctuation.definition.attribute.cairo
+
+#[derive(Copy, Drop)]
+ ^ source.cairo meta.attribute.cairo punctuation.brackets.attribute.cairo
+
+#[derive(Copy, Drop)]
+  ^^^^^^ source.cairo meta.attribute.cairo
+
+#[derive(Copy, Drop)]
+        ^ source.cairo meta.attribute.cairo punctuation.brackets.round.cairo
+
+#[derive(Copy, Drop)]
+         ^^^^ source.cairo meta.attribute.cairo entity.name.type.cairo
+
+#[derive(Copy, Drop)]
+             ^ source.cairo meta.attribute.cairo punctuation.comma.cairo
+
+#[derive(Copy, Drop)]
+              ^ source.cairo meta.attribute.cairo
+
+#[derive(Copy, Drop)]
+               ^^^^ source.cairo meta.attribute.cairo entity.name.type.cairo
+
+#[derive(Copy, Drop)]
+                   ^ source.cairo meta.attribute.cairo punctuation.brackets.round.cairo
+
+#[derive(Copy, Drop)]
+                    ^ source.cairo meta.attribute.cairo punctuation.brackets.attribute.cairo
+

@@ -1,0 +1,22 @@
+//! > cairo_code
+use mod::foo;
+
+//! > syntax
+use mod::foo;
+^^^ source.cairo meta.use.cairo keyword.other.cairo
+
+use mod::foo;
+   ^ source.cairo meta.use.cairo
+
+use mod::foo;
+    ^^^ source.cairo meta.use.cairo keyword.other.cairo storage.type.cairo
+
+use mod::foo;
+       ^^ source.cairo meta.use.cairo keyword.operator.namespace.cairo
+
+use mod::foo;
+         ^^^ source.cairo meta.use.cairo
+
+use mod::foo;
+            ^ source.cairo meta.use.cairo punctuation.semi.cairo
+

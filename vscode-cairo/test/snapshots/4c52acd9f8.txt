@@ -1,0 +1,70 @@
+//! > cairo_code
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+
+//! > syntax
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+  ^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+   ^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+      ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+       ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+        ^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+         ^^ source.cairo meta.function.definition.cairo keyword.operator.arrow.skinny.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+           ^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+            ^^^^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                 ^^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                   ^^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                      ^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                       ^ source.cairo meta.function.definition.cairo keyword.operator.math.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                        ^ source.cairo meta.function.definition.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                         ^^ source.cairo meta.function.definition.cairo entity.name.type.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                           ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                             ^^^ source.cairo keyword.other.cairo storage.type.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                                 ^ source.cairo variable.other.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                                   ^ source.cairo keyword.operator.assignment.equal.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                                     ^ source.cairo constant.numeric.decimal.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                                      ^ source.cairo punctuation.semi.cairo
+
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                                        ^ source.cairo punctuation.brackets.curly.cairo
+

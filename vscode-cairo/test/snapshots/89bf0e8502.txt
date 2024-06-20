@@ -1,0 +1,13 @@
+//! > cairo_code
+pub // trailing.
+
+//! > syntax
+pub // trailing.
+^^^ source.cairo keyword.other.cairo
+
+pub // trailing.
+    ^^ source.cairo comment.line.double-slash.cairo punctuation.definition.comment.cairo
+
+pub // trailing.
+      ^^^^^^^^^^ source.cairo comment.line.double-slash.cairo
+

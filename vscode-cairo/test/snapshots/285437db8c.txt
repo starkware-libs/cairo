@@ -1,0 +1,7 @@
+//! > cairo_code
+identifier
+
+//! > syntax
+identifier
+^^^^^^^^^^ source.cairo variable.other.cairo
+

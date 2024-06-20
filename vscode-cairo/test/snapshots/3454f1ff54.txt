@@ -1,0 +1,145 @@
+//! > cairo_code
+;
+#[attr]
+fn foo(var1: int var2: felt252) -> int {
+    let bla = 7 + true + 'abc'; // comment
+    return bar(bla);
+}
+
+
+//! > syntax
+;
+^ source.cairo punctuation.semi.cairo
+
+#[attr]
+^ source.cairo meta.attribute.cairo punctuation.definition.attribute.cairo
+
+#[attr]
+ ^ source.cairo meta.attribute.cairo punctuation.brackets.attribute.cairo
+
+#[attr]
+  ^^^^ source.cairo meta.attribute.cairo
+
+#[attr]
+      ^ source.cairo meta.attribute.cairo punctuation.brackets.attribute.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+  ^ source.cairo meta.function.definition.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+   ^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+      ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+       ^^^^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+           ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+            ^ source.cairo meta.function.definition.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+             ^^^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+                ^ source.cairo meta.function.definition.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+                 ^^^^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+                     ^ source.cairo meta.function.definition.cairo keyword.operator.key-value.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+                      ^ source.cairo meta.function.definition.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+                       ^^^^^^^ source.cairo meta.function.definition.cairo entity.name.type.numeric.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+                              ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+                               ^ source.cairo meta.function.definition.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+                                ^^ source.cairo meta.function.definition.cairo keyword.operator.arrow.skinny.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+                                  ^ source.cairo meta.function.definition.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+                                   ^^^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+                                      ^ source.cairo meta.function.definition.cairo
+
+fn foo(var1: int var2: felt252) -> int {
+                                       ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+    ^^^ source.cairo keyword.other.cairo storage.type.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+        ^^^ source.cairo variable.other.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+            ^ source.cairo keyword.operator.assignment.equal.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+              ^ source.cairo constant.numeric.decimal.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+                ^ source.cairo keyword.operator.math.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+                  ^^^^ source.cairo constant.language.bool.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+                       ^ source.cairo keyword.operator.math.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+                         ^ source.cairo string.quoted.single.cairo punctuation.definition.string.short.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+                          ^^^ source.cairo string.quoted.single.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+                             ^ source.cairo string.quoted.single.cairo punctuation.definition.string.short.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+                              ^ source.cairo punctuation.semi.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+                                ^^ source.cairo comment.line.double-slash.cairo punctuation.definition.comment.cairo
+
+    let bla = 7 + true + 'abc'; // comment
+                                  ^^^^^^^^ source.cairo comment.line.double-slash.cairo
+
+    return bar(bla);
+    ^^^^^^ source.cairo keyword.control.cairo
+
+    return bar(bla);
+           ^^^ source.cairo meta.function.call.cairo entity.name.function.cairo
+
+    return bar(bla);
+              ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+    return bar(bla);
+               ^^^ source.cairo meta.function.call.cairo variable.other.cairo
+
+    return bar(bla);
+                  ^ source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
+
+    return bar(bla);
+                   ^ source.cairo punctuation.semi.cairo
+
+}
+^ source.cairo punctuation.brackets.curly.cairo
+

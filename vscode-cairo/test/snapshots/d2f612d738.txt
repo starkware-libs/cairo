@@ -1,0 +1,43 @@
+//! > cairo_code
+fn foo() implicits(_) {}
+
+//! > syntax
+fn foo() implicits(_) {}
+^^ source.cairo meta.function.definition.cairo keyword.other.fn.cairo
+
+fn foo() implicits(_) {}
+  ^ source.cairo meta.function.definition.cairo
+
+fn foo() implicits(_) {}
+   ^^^ source.cairo meta.function.definition.cairo entity.name.function.cairo
+
+fn foo() implicits(_) {}
+      ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo() implicits(_) {}
+       ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo() implicits(_) {}
+        ^ source.cairo meta.function.definition.cairo
+
+fn foo() implicits(_) {}
+         ^^^^^^^^^ source.cairo meta.function.definition.cairo keyword.other.cairo
+
+fn foo() implicits(_) {}
+                  ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo() implicits(_) {}
+                   ^ source.cairo meta.function.definition.cairo variable.other.cairo
+
+fn foo() implicits(_) {}
+                    ^ source.cairo meta.function.definition.cairo punctuation.brackets.round.cairo
+
+fn foo() implicits(_) {}
+                     ^ source.cairo meta.function.definition.cairo
+
+fn foo() implicits(_) {}
+                      ^ source.cairo meta.function.definition.cairo punctuation.brackets.curly.cairo
+
+fn foo() implicits(_) {}
+                       ^ source.cairo punctuation.brackets.curly.cairo
+

@@ -1,0 +1,16 @@
+//! > cairo_code
+#[mod]
+
+//! > syntax
+#[mod]
+^ source.cairo meta.attribute.cairo punctuation.definition.attribute.cairo
+
+#[mod]
+ ^ source.cairo meta.attribute.cairo punctuation.brackets.attribute.cairo
+
+#[mod]
+  ^^^ source.cairo meta.attribute.cairo keyword.other.cairo storage.type.cairo
+
+#[mod]
+     ^ source.cairo meta.attribute.cairo punctuation.brackets.attribute.cairo
+

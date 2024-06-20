@@ -1,0 +1,22 @@
+//! > cairo_code
+use _::foo;
+
+//! > syntax
+use _::foo;
+^^^ source.cairo meta.use.cairo keyword.other.cairo
+
+use _::foo;
+   ^ source.cairo meta.use.cairo
+
+use _::foo;
+    ^ source.cairo meta.use.cairo entity.name.namespace.cairo
+
+use _::foo;
+     ^^ source.cairo meta.use.cairo keyword.operator.namespace.cairo
+
+use _::foo;
+       ^^^ source.cairo meta.use.cairo
+
+use _::foo;
+          ^ source.cairo meta.use.cairo punctuation.semi.cairo
+

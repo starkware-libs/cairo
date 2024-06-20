@@ -1,0 +1,16 @@
+//! > cairo_code
+enum mod {}
+
+//! > syntax
+enum mod {}
+^^^^ source.cairo keyword.declaration.enum.cairo storage.type.cairo
+
+enum mod {}
+     ^^^ source.cairo keyword.other.cairo storage.type.cairo
+
+enum mod {}
+         ^ source.cairo punctuation.brackets.curly.cairo
+
+enum mod {}
+          ^ source.cairo punctuation.brackets.curly.cairo
+

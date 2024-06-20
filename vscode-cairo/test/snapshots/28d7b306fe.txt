@@ -1,0 +1,10 @@
+//! > cairo_code
+mod my_mod
+
+//! > syntax
+mod my_mod
+^^^ source.cairo storage.type.cairo
+
+mod my_mod
+    ^^^^^^ source.cairo entity.name.module.cairo
+
