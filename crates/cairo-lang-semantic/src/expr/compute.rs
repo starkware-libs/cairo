@@ -45,9 +45,10 @@ use super::pattern::{
     PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_bool_ty, core_unary_operator, deref_trait, false_literal_expr,
-    get_core_trait, get_usize_ty, never_ty, numeric_literal_trait, true_literal_expr,
-    try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type, CoreTraitContext,
+    core_binary_operator, core_bool_ty, core_unary_operator, deref_mut_trait, deref_trait,
+    false_literal_expr, get_core_trait, get_usize_ty, never_ty, numeric_literal_trait,
+    true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type,
+    CoreTraitContext,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -2405,11 +2406,11 @@ fn member_access_expr(
                 _ => None,
             };
             let mut derefed_expr: ExprAndId = lexpr;
-            for deref_function in deref_functions.iter().take(*n_derefs) {
+            for (deref_function, mutability) in deref_functions.iter().take(*n_derefs) {
                 let cur_expr = expr_function_call(
                     ctx,
                     *deref_function,
-                    vec![NamedArg(derefed_expr, None, Mutability::Immutable)],
+                    vec![NamedArg(derefed_expr, None, *mutability)],
                     stable_ptr,
                     stable_ptr,
                 )
@@ -2424,8 +2425,10 @@ fn member_access_expr(
                 }
                 _ => unreachable!(),
             };
-            let ty = member.ty;
-            let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
+            let mut ty = member.ty;
+            if *n_derefs == 0 {
+                ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
+            }
             Ok(Expr::MemberAccess(ExprMemberAccess {
                 expr: derefed_expr.id,
                 concrete_struct_id: derefed_expr_concrete_struct_id,
@@ -2467,7 +2470,7 @@ struct EnrichedMembers {
     /// needed to access them.
     members: OrderedHashMap<SmolStr, (semantic::Member, usize)>,
     /// The sequence of deref functions needed to access the members.
-    deref_functions: Vec<FunctionId>,
+    deref_functions: Vec<(FunctionId, Mutability)>,
 }
 
 /// Enriched members include both direct members (in case of a struct), and members of derefed types
@@ -2507,20 +2510,46 @@ fn enriched_members(
             }
         }
     }
+
+    let deref_mut_trait_id = deref_mut_trait(ctx.db);
+    let deref_trait_id = deref_trait(ctx.db);
+
+    let compute_deref_method_function_call_data =
+        |ctx: &mut ComputationContext, expr: ExprAndId, use_deref_mut: bool| {
+            let deref_trait = if use_deref_mut { deref_mut_trait_id } else { deref_trait_id };
+            compute_method_function_call_data(
+                ctx,
+                &[deref_trait],
+                if use_deref_mut { "deref_mut".into() } else { "deref".into() },
+                expr.clone(),
+                stable_ptr.0,
+                None,
+                |_, _, _| None,
+                |_, _, _| None,
+            )
+        };
+
     // Add members of derefed types.
     let mut n_deref = 0;
-    let deref_trait = deref_trait(ctx.db);
+    // If the variable is mutable, and implements DerefMut, we use DerefMut in the first iteration.
+    let mut use_deref_mut = match expr.clone().expr {
+        Expr::Var(expr_var) => {
+            let var_id = expr_var.var;
+            match ctx.semantic_defs.get(&var_id) {
+                Some(variable) if variable.is_mut() => {
+                    compute_deref_method_function_call_data(ctx, expr.clone(), true).is_ok()
+                }
+                _ => false,
+            }
+        }
+        _ => false,
+    };
 
-    while let Ok((function_id, cur_expr, mutability)) = compute_method_function_call_data(
-        ctx,
-        &[deref_trait],
-        "deref".into(),
-        expr,
-        stable_ptr.0,
-        None,
-        |_, _, _| None,
-        |_, _, _| None,
-    ) {
+    while let Ok((function_id, cur_expr, mutability)) =
+        compute_deref_method_function_call_data(ctx, expr, use_deref_mut)
+    {
+        deref_functions.push((function_id, mutability));
+        use_deref_mut = false;
         n_deref += 1;
         expr = cur_expr;
         let derefed_expr = expr_function_call(
@@ -2538,7 +2567,6 @@ fn enriched_members(
             break;
         }
         expr = ExprAndId { expr: derefed_expr.clone(), id: ctx.exprs.alloc(derefed_expr) };
-        deref_functions.push(function_id);
         if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
             let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
             for (member_name, member) in members.iter() {
