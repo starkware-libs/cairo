@@ -57,6 +57,7 @@ impl CostTypeTrait for ConstCost {
             steps: std::cmp::min(value1.steps, value2.steps),
             holes: std::cmp::min(value1.holes, value2.holes),
             range_checks: std::cmp::min(value1.range_checks, value2.range_checks),
+            range_checks96: std::cmp::min(value1.range_checks96, value2.range_checks96),
         }
     }
 
@@ -66,6 +67,7 @@ impl CostTypeTrait for ConstCost {
                 steps: std::cmp::max(acc.steps, value.steps),
                 holes: std::cmp::max(acc.holes, value.holes),
                 range_checks: std::cmp::max(acc.range_checks, value.range_checks),
+                range_checks96: std::cmp::max(acc.range_checks96, value.range_checks96),
             })
             .unwrap_or_default()
     }
@@ -75,6 +77,7 @@ impl CostTypeTrait for ConstCost {
             steps: std::cmp::max(value.steps, 0),
             holes: std::cmp::max(value.holes, 0),
             range_checks: std::cmp::max(value.range_checks, 0),
+            range_checks96: std::cmp::max(value.range_checks96, 0),
         }
     }
 }
@@ -821,7 +824,12 @@ impl<'a, CostType: PostCostTypeEx> SpecificCostContextTrait<CostType> for Postco
                 let res = if ap_change == 0 {
                     ConstCost::default()
                 } else {
-                    ConstCost { steps: 1, holes: ap_change as i32, range_checks: 0 }
+                    ConstCost {
+                        steps: 1,
+                        holes: ap_change as i32,
+                        range_checks: 0,
+                        range_checks96: 0,
+                    }
                 };
                 CostType::from_const_cost(&res)
             }
