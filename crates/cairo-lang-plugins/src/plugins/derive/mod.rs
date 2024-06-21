@@ -1,6 +1,8 @@
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -46,6 +48,7 @@ impl MacroPlugin for DerivePlugin {
                     struct_ast.attributes(db),
                     struct_ast.generic_params(db),
                     TypeVariantInfo::Struct(extract_members(db, struct_ast.members(db))),
+                    struct_ast.as_syntax_node().span(db),
                 ),
                 ast::ModuleItem::Enum(enum_ast) => DeriveInfo::new(
                     db,
@@ -53,6 +56,7 @@ impl MacroPlugin for DerivePlugin {
                     enum_ast.attributes(db),
                     enum_ast.generic_params(db),
                     TypeVariantInfo::Enum(extract_variants(db, enum_ast.variants(db))),
+                    enum_ast.as_syntax_node().span(db),
                 ),
                 ast::ModuleItem::ExternType(extern_type_ast) => DeriveInfo::new(
                     db,
@@ -60,6 +64,7 @@ impl MacroPlugin for DerivePlugin {
                     extern_type_ast.attributes(db),
                     extern_type_ast.generic_params(db),
                     TypeVariantInfo::Extern,
+                    extern_type_ast.as_syntax_node().span(db),
                 ),
                 _ => return PluginResult::default(),
             },
@@ -157,6 +162,7 @@ pub struct DeriveInfo {
     attributes: AttributeList,
     generics: GenericParamsInfo,
     specific_info: TypeVariantInfo,
+    span: TextSpan,
 }
 impl DeriveInfo {
     /// Extracts the information on the type being derived.
@@ -166,12 +172,14 @@ impl DeriveInfo {
         attributes: AttributeList,
         generic_args: OptionWrappedGenericParamList,
         specific_info: TypeVariantInfo,
+        span: TextSpan,
     ) -> Self {
         Self {
             name: ident.text(db),
             attributes,
             generics: GenericParamsInfo::new(db, generic_args),
             specific_info,
+            span,
         }
     }
 
@@ -293,10 +301,17 @@ fn generate_derive_code_for_type(
         code: if result.impls.is_empty() {
             None
         } else {
+            let content = result.impls.join("");
             Some(PluginGeneratedFile {
                 name: "impls".into(),
-                content: result.impls.join(""),
-                code_mappings: Default::default(),
+                code_mappings: vec![CodeMapping {
+                    origin: CodeOrigin::Span(info.span),
+                    span: TextSpan {
+                        start: TextOffset::default(),
+                        end: TextOffset::default().add_width(TextWidth::from_str(&content)),
+                    },
+                }],
+                content,
                 aux_data: None,
             })
         },
