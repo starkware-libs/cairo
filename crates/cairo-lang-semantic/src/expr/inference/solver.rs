@@ -113,6 +113,9 @@ pub fn enrich_lookup_context(
                         lookup_context.insert_module(module_file_id.0);
                     }
                 }
+                TypeLongId::ImplType(impl_type_id) => {
+                    lookup_context.insert_impl(impl_type_id.impl_id());
+                }
                 _ => (),
             }
         }
@@ -195,7 +198,7 @@ impl CandidateSolver {
         let (concrete_trait_id, canonical_embedding) = canonical_trait.embed(&mut inference);
         // Add the defining module of the candidate to the lookup.
         let mut lookup_context = lookup_context.clone();
-        lookup_context.insert_module(candidate.module_id(db.upcast()));
+        lookup_context.insert_lookup_scope(candidate.lookup_scope(db.upcast()));
         // Instantiate the candidate in the inference table.
         let candidate_impl =
             inference.infer_impl(candidate, concrete_trait_id, &lookup_context, None)?;

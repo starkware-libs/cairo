@@ -630,6 +630,13 @@ pub trait SemanticGroup:
         module_id: ModuleId,
         trait_lookup_constraint: items::imp::TraitFilter,
     ) -> Maybe<Vec<UninferredImpl>>;
+    #[salsa::invoke(items::imp::impl_impl_ids_for_trait_filter)]
+    #[salsa::cycle(items::imp::impl_impl_ids_for_trait_filter_cycle)]
+    fn impl_impl_ids_for_trait_filter(
+        &self,
+        impl_id: ImplId,
+        trait_lookup_constraint: items::imp::TraitFilter,
+    ) -> Maybe<Vec<UninferredImpl>>;
     // Returns the solution set for a canonical trait.
     #[salsa::invoke(inference::solver::canonic_trait_solutions)]
     #[salsa::cycle(inference::solver::canonic_trait_solutions_cycle)]

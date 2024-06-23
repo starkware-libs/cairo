@@ -1183,3 +1183,35 @@ core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B> -> core
  --> lib.cairo:5:1
 impl ADeref of core::ops::Deref<A> {
 ^**********************************^
+
+//! > ==========================================================================
+
+//! > ==========================================================================
+
+//! > Inferring impl var from struct generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: *)
+
+//! > function
+fn foo1() -> felt252 {
+    2
+}
+
+//! > function_name
+foo1
+
+//! > module_code
+pub trait Tr {}
+impl I0 of Tr {}
+
+struct A<impl I: Tr> {}
+
+fn foo<impl I: Tr>(x: A<I>) -> A<I> {
+    x
+}
+fn bar<impl I: Tr>(x: A<I>) -> A<I> {
+    foo(x)
+}
+
+//! > expected_diagnostics

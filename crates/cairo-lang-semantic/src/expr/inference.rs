@@ -569,6 +569,9 @@ impl<'db> Inference<'db> {
     }
 
     fn solve_single_pending(&mut self, var: LocalImplVarId) -> InferenceResult<()> {
+        if self.impl_assignment.contains_key(&var) {
+            return Ok(());
+        }
         let solution = match self.impl_var_solution_set(var)? {
             SolutionSet::None => {
                 self.refuted.push(var);
@@ -1088,9 +1091,13 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
                 let impl_id = impl_type_id.impl_id();
                 let trait_ty = impl_type_id.ty();
                 return Ok(match impl_id.lookup_intern(self.db) {
-                    ImplLongId::GenericParameter(_)
-                    | ImplLongId::ImplImpl(_)
-                    | ImplLongId::TraitImpl(_) => impl_type_id_rewrite_result,
+                    ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => {
+                        impl_type_id_rewrite_result
+                    }
+                    ImplLongId::ImplImpl(impl_impl) => {
+                        assert!(impl_impl.impl_id().is_var_free(self.db));
+                        impl_type_id_rewrite_result
+                    }
                     ImplLongId::Concrete(_) => {
                         if let Ok(Some(ty)) = self.db.impl_type_concrete_implized(ImplTypeId::new(
                             impl_id, trait_ty, self.db,
@@ -1133,9 +1140,13 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
                 let impl_id = impl_constant_id.impl_id();
                 let trait_constant = impl_constant_id.trait_constant_id();
                 return Ok(match impl_id.lookup_intern(self.db) {
-                    ImplLongId::GenericParameter(_)
-                    | ImplLongId::ImplImpl(_)
-                    | ImplLongId::TraitImpl(_) => impl_constant_id_rewrite_result,
+                    ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => {
+                        impl_constant_id_rewrite_result
+                    }
+                    ImplLongId::ImplImpl(impl_impl) => {
+                        assert!(impl_impl.impl_id().is_var_free(self.db));
+                        impl_constant_id_rewrite_result
+                    }
                     ImplLongId::Concrete(_) => {
                         if let Ok(constant) = self.db.impl_constant_concrete_implized_value(
                             ImplConstantId::new(impl_id, trait_constant, self.db),
@@ -1180,9 +1191,13 @@ impl<'a> SemanticRewriter<ImplLongId, NoError> for Inference<'a> {
                 let impl_id = impl_impl_id.impl_id();
                 let trait_impl = impl_impl_id.trait_impl_id();
                 return Ok(match impl_id.lookup_intern(self.db) {
-                    ImplLongId::GenericParameter(_)
-                    | ImplLongId::ImplImpl(_)
-                    | ImplLongId::TraitImpl(_) => impl_impl_id_rewrite_result,
+                    ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => {
+                        impl_impl_id_rewrite_result
+                    }
+                    ImplLongId::ImplImpl(impl_impl) => {
+                        assert!(impl_impl.impl_id().is_var_free(self.db));
+                        impl_impl_id_rewrite_result
+                    }
                     ImplLongId::Concrete(_) => {
                         if let Ok(ty) = self.db.impl_impl_concrete_implized(ImplImplId::new(
                             impl_id, trait_impl, self.db,

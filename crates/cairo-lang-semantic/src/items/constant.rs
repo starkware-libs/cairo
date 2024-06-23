@@ -135,16 +135,18 @@ impl ConstValue {
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
         self.ty(db).unwrap().is_var_free(db)
             && match self {
-                ConstValue::Int(_, _) | ConstValue::Generic(_) | ConstValue::Missing(_) => true,
+                ConstValue::Int(_, _)
+                | ConstValue::Generic(_)
+                | ConstValue::Missing(_)
+                | ConstValue::TraitConstant(_) => true,
                 ConstValue::Struct(members, _) => {
                     members.iter().all(|member| member.is_var_free(db))
                 }
                 ConstValue::Enum(_, value)
                 | ConstValue::NonZero(value)
                 | ConstValue::Boxed(value) => value.is_var_free(db),
-                ConstValue::Var(_, _)
-                | ConstValue::ImplConstant(_)
-                | ConstValue::TraitConstant(_) => false,
+                ConstValue::Var(_, _) => false,
+                ConstValue::ImplConstant(impl_constant) => impl_constant.impl_id().is_var_free(db),
             }
     }
 

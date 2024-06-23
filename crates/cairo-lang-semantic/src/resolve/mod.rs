@@ -1043,7 +1043,19 @@ impl<'db> Resolver<'db> {
     }
 
     pub fn impl_lookup_context(&self) -> ImplLookupContext {
-        ImplLookupContext::new(self.module_file_id.0, self.generic_params.clone())
+        let mut lookup_context =
+            ImplLookupContext::new(self.module_file_id.0, self.generic_params.clone());
+
+        if let TraitOrImplContext::Impl(impl_def_id) = &self.trait_or_impl_ctx {
+            let Ok(generic_params) = self.db.impl_def_generic_params(*impl_def_id) else {
+                return lookup_context;
+            };
+            let generic_args = generic_params_to_args(generic_params.as_slice(), self.db);
+            let impl_id: ConcreteImplId =
+                ConcreteImplLongId { impl_def_id: *impl_def_id, generic_args }.intern(self.db);
+            lookup_context.insert_impl(ImplLongId::Concrete(impl_id).intern(self.db));
+        }
+        lookup_context
     }
 
     pub fn resolve_generic_args(
