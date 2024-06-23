@@ -33,3 +33,8 @@ impl BoundedIntPartialEq<
 
 impl BoundedIntDebug<const MIN: felt252, const MAX: felt252> =
     core::fmt::into_felt252_based::DebugImpl<BoundedInt<MIN, MAX>>;
+
+pub(crate) extern type BoundedIntGuarantee<BoundedIntType>;
+pub(crate) extern fn bounded_int_into_guarantee<BoundedIntType>(
+    value: BoundedIntType
+) -> BoundedIntGuarantee<BoundedIntType> nopanic;

@@ -2,7 +2,7 @@ use super::ap_tracking::ApTrackingLibfunc;
 use super::array::{ArrayLibfunc, ArrayType};
 use super::bitwise::BitwiseType;
 use super::boolean::BoolLibfunc;
-use super::bounded_int::{BoundedIntLibfunc, BoundedIntType};
+use super::bounded_int::{BoundedIntGuaranteeType, BoundedIntLibfunc, BoundedIntType};
 use super::branch_align::BranchAlignLibfunc;
 use super::bytes31::{Bytes31Libfunc, Bytes31Type};
 use super::casts::CastLibfunc;
@@ -94,6 +94,7 @@ define_type_hierarchy! {
         Snapshot(SnapshotType),
         Bytes31(Bytes31Type),
         BoundedInt(BoundedIntType),
+        BoundedIntGuarantee(BoundedIntGuaranteeType),
     }, CoreTypeConcrete
 }
 

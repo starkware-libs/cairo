@@ -16,7 +16,9 @@ use crate::extensions::lib_func::{
     SpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
-use crate::extensions::types::TypeInfo;
+use crate::extensions::types::{
+    GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
+};
 use crate::extensions::{
     args_as_single_type, args_as_two_types, ConcreteType, NamedLibfunc, NamedType,
     OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
@@ -72,6 +74,36 @@ impl ConcreteType for BoundedIntConcreteType {
     }
 }
 
+/// Type for BoundedIntGuarantee.
+/// This type is the same as BoundedInt, but requires future validation by the system that the value
+/// is in the given range.
+#[derive(Default)]
+pub struct BoundedIntGuaranteeTypeWrapped {}
+impl GenericTypeArgGenericType for BoundedIntGuaranteeTypeWrapped {
+    const ID: GenericTypeId = GenericTypeId::new_inline("BoundedIntGuarantee");
+
+    fn calc_info(
+        &self,
+        _context: &dyn TypeSpecializationContext,
+        long_id: crate::program::ConcreteTypeLongId,
+        wrapped_info: TypeInfo,
+    ) -> Result<TypeInfo, SpecializationError> {
+        // Making sure the inner value is a boundedint range style type.
+        let range = Range::from_type_info(&wrapped_info)?;
+        // Not allowing guarantee of felt252.
+        require(!range.is_full_felt252_range())
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        Ok(TypeInfo {
+            long_id,
+            duplicatable: false,
+            droppable: false,
+            storable: true,
+            zero_sized: false,
+        })
+    }
+}
+pub type BoundedIntGuaranteeType = GenericTypeArgGenericTypeWrapper<BoundedIntGuaranteeTypeWrapped>;
+
 define_libfunc_hierarchy! {
     pub enum BoundedIntLibfunc {
         Add(BoundedIntAddLibfunc),
@@ -81,6 +113,7 @@ define_libfunc_hierarchy! {
         Constrain(BoundedIntConstrainLibfunc),
         IsZero(BoundedIntIsZeroLibfunc),
         WrapNonZero(BoundedIntWrapNonZeroLibfunc),
+        IntoGuarantee(BoundedIntIntoGuaranteeLibfunc),
     }, BoundedIntConcreteLibfunc
 }
 
@@ -469,6 +502,23 @@ impl SignatureOnlyGenericLibfunc for BoundedIntWrapNonZeroLibfunc {
     }
 }
 
+/// Libfunc for wrapping a given bounded int with a guarantee.
+#[derive(Default)]
+pub struct BoundedIntIntoGuaranteeLibfunc {}
+impl SignatureOnlyGenericLibfunc for BoundedIntIntoGuaranteeLibfunc {
+    const STR_ID: &'static str = "bounded_int_into_guarantee";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let guarantee_ty = bounded_int_guarantee_ty(context, ty.clone())?;
+        Ok(reinterpret_cast_signature(ty, guarantee_ty))
+    }
+}
+
 /// Returns the concrete type for a BoundedInt<min, max>.
 pub fn bounded_int_ty(
     context: &dyn SignatureSpecializationContext,
@@ -476,4 +526,12 @@ pub fn bounded_int_ty(
     max: BigInt,
 ) -> Result<ConcreteTypeId, SpecializationError> {
     context.get_concrete_type(BoundedIntType::ID, &[GenericArg::Value(min), GenericArg::Value(max)])
+}
+
+/// Returns the concrete type for a `BoundedIntGuarantee<T>`.
+pub fn bounded_int_guarantee_ty(
+    context: &dyn SignatureSpecializationContext,
+    ty: ConcreteTypeId,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_wrapped_concrete_type(BoundedIntGuaranteeTypeWrapped::ID, ty)
 }
