@@ -79,9 +79,7 @@ No highlight information.
 hello
 ```
 ```cairo
-pub struct ContractState {
-    pub value: __member_module_value::ContractMemberState,
-}
+pub struct ContractState {}
 ```
 
 //! > hover #3
@@ -91,7 +89,7 @@ pub struct ContractState {
 No highlight information.
 // = popover
 ```cairo
-hello::Balance::__member_module_value::ContractMemberState
+core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>
 ```
 
 //! > hover #4
@@ -129,9 +127,7 @@ The balance contract interface.
 hello
 ```
 ```cairo
-pub struct ContractState {
-    pub value: __member_module_value::ContractMemberState,
-}
+pub struct ContractState {}
 ```
 
 //! > hover #7
@@ -141,11 +137,11 @@ pub struct ContractState {
             self.value.<sel>read</sel>()
 // = popover
 ```cairo
-core::starknet::storage::StorageMemberAccessTrait
+core::starknet::storage::StoragePointerReadAccess
 ```
 ```cairo
-pub trait StorageMemberAccessTrait<TMemberState>
-fn read(self: @TMemberState) -> Self::Value
+pub trait StoragePointerReadAccess<T>
+fn read(self: @T) -> Self::Value
 ```
 
 //! > hover #8
@@ -155,11 +151,11 @@ fn read(self: @TMemberState) -> Self::Value
             self.value.<sel>write</sel>( self.value.read() + a );
 // = popover
 ```cairo
-core::starknet::storage::StorageMemberAccessTrait
+core::starknet::storage::StoragePointerWriteAccess
 ```
 ```cairo
-pub trait StorageMemberAccessTrait<TMemberState>
-fn write(ref self: TMemberState, value: Self::Value)
+pub trait StoragePointerWriteAccess<T>
+fn write(self: T, value: Self::Value)
 ```
 
 //! > hover #9

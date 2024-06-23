@@ -86,7 +86,7 @@ mod test_contract {
     use super::Proposal;
     #[storage]
     struct Storage {
-        _proposals: LegacyMap<u32, Proposal>,
+        _proposals: Map<u32, Proposal>,
         _single_proposal: Proposal
     }
 
