@@ -20,6 +20,15 @@ mod counter_contract {
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
 
+    #[storage]
+    struct Storage {
+        counter: u128,
+        #[substorage(v0)]
+        upgradable: upgradable_comp::Storage,
+        #[substorage(v0)]
+        ownable: ownable_comp::Storage
+    }
+
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
@@ -67,44 +76,76 @@ mod counter_contract {
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
-    pub struct ContractState {
-        pub counter: __member_module_counter::ContractMemberState,
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    counter: starknet::storage::StorageBase<u128>,
+    upgradable: starknet::storage::StorageBase<upgradable_comp::Storage>,
+    ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+}
+#[derive(Drop, Copy)]
+struct ContractStorageBaseMut {
+    counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+    upgradable: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
+    ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    type BaseMutType = ContractStorageBaseMut;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           counter: starknet::storage::StorageBase{ address: selector!("counter") },
+           upgradable: starknet::storage::StorageBase{ address: selector!("upgradable") },
+           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
+        }
+    }
+    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           counter: starknet::storage::StorageBase{ address: selector!("counter") },
+           upgradable: starknet::storage::StorageBase{ address: selector!("upgradable") },
+           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
+        }
+    }
+}
+pub struct ContractState {
         pub upgradable: upgradable_comp::ComponentState<ContractState>,
         pub ownable: ownable_comp::ComponentState<ContractState>,
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = ContractStorageBase;
+    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
+        self.storage_base()
     }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            counter: __member_module_counter::ContractMemberState {},
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = ContractStorageBaseMut;
+    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        self.storage_base_mut()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
             upgradable: upgradable_comp::unsafe_new_component_state::<ContractState>(),
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
-        }
     }
-    
+}
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
 
-        pub mod __member_module_counter {
-        use super::upgradable_comp;
-        use super::ownable_comp;
-        use super::Event;
-        use super::CounterIncreased;
-        use super::CounterDecreased;
-        use super::CounterContract;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = u128;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x7ebcc807b5c7e19f245995a55aed6f46f5f582f476a886b91b834b0ddf5854>()
-                }
-            }
-impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-        }
 use starknet::storage::{
-    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
 };
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+use starknet::storage::Map as LegacyMap;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -226,7 +267,7 @@ pub mod __constructor {
 
 impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @upgradable_comp::ComponentState<ContractState> {
-        self.upgradable
+                 @upgradable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> upgradable_comp::ComponentState<ContractState> {
         upgradable_comp::unsafe_new_component_state::<ContractState>()
@@ -245,7 +286,7 @@ impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractS
 }
 impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
-        self.ownable
+                 @ownable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
         ownable_comp::unsafe_new_component_state::<ContractState>()
@@ -377,6 +418,10 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
         Option::Some(CounterDecreased {amount, })
     }
 }
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
+impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 }
 trait ICounterContractDispatcherTrait<T> {
     fn increase_counter(self: T, amount: u128);
@@ -761,6 +806,15 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
 
+    #[storage]
+    struct Storage {
+        counter: u128,
+        #[substorage(v0)]
+        upgradable: upgradable_comp::Storage,
+        #[substorage(v0)]
+        ownable: ownable_comp::Storage
+    }
+
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
@@ -808,44 +862,76 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
-    pub struct ContractState {
-        pub counter: __member_module_counter::ContractMemberState,
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    counter: starknet::storage::StorageBase<u128>,
+    upgradable: starknet::storage::StorageBase<upgradable_comp::Storage>,
+    ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+}
+#[derive(Drop, Copy)]
+struct ContractStorageBaseMut {
+    counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+    upgradable: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
+    ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    type BaseMutType = ContractStorageBaseMut;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           counter: starknet::storage::StorageBase{ address: selector!("counter") },
+           upgradable: starknet::storage::StorageBase{ address: selector!("upgradable") },
+           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
+        }
+    }
+    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           counter: starknet::storage::StorageBase{ address: selector!("counter") },
+           upgradable: starknet::storage::StorageBase{ address: selector!("upgradable") },
+           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
+        }
+    }
+}
+pub struct ContractState {
         pub upgradable: upgradable_comp::ComponentState<ContractState>,
         pub ownable: ownable_comp::ComponentState<ContractState>,
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = ContractStorageBase;
+    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
+        self.storage_base()
     }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            counter: __member_module_counter::ContractMemberState {},
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = ContractStorageBaseMut;
+    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        self.storage_base_mut()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
             upgradable: upgradable_comp::unsafe_new_component_state::<ContractState>(),
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
-        }
     }
-    
+}
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
 
-        pub mod __member_module_counter {
-        use super::upgradable_comp;
-        use super::ownable_comp;
-        use super::Event;
-        use super::CounterIncreased;
-        use super::CounterDecreased;
-        use super::CounterContract;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = u128;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x7ebcc807b5c7e19f245995a55aed6f46f5f582f476a886b91b834b0ddf5854>()
-                }
-            }
-impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-        }
 use starknet::storage::{
-    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
 };
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+use starknet::storage::Map as LegacyMap;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -967,7 +1053,7 @@ pub mod __constructor {
 
 impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @upgradable_comp::ComponentState<ContractState> {
-        self.upgradable
+                 @upgradable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> upgradable_comp::ComponentState<ContractState> {
         upgradable_comp::unsafe_new_component_state::<ContractState>()
@@ -986,7 +1072,7 @@ impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractS
 }
 impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
-        self.ownable
+                 @ownable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
         ownable_comp::unsafe_new_component_state::<ContractState>()
@@ -1118,5 +1204,9 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
         Option::Some(CounterDecreased {amount, })
     }
 }
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
+impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 //! > expected_diagnostics
