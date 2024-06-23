@@ -2543,6 +2543,15 @@ fn enriched_members(
                 _ => false,
             }
         }
+        Expr::MemberAccess(ExprMemberAccess { member_path: Some(member_path), .. }) => {
+            let var_id = member_path.base_var();
+            match ctx.semantic_defs.get(&var_id) {
+                Some(variable) if variable.is_mut() => {
+                    compute_deref_method_function_call_data(ctx, expr.clone(), true).is_ok()
+                }
+                _ => false,
+            }
+        }
         _ => false,
     };
 
