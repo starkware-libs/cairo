@@ -146,8 +146,7 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
         CostTokenType::Poseidon => 500,
         CostTokenType::Bitwise => 594,
         CostTokenType::EcOp => 4166,
-        // TODO(ilya): Validate the costs.
-        CostTokenType::AddMod => 274,
+        CostTokenType::AddMod => 234,
         CostTokenType::MulMod => 616,
     }
 }
