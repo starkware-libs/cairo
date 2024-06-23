@@ -26,7 +26,7 @@ use crate::items::constant::{ConstValue, ConstValueId, Constant, ImplConstantId}
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
-use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{ImplId, ImplImplId, ImplLookupContext, UninferredImpl};
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemImplData,
@@ -912,6 +912,11 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::imp::impl_impl_def_trait_impl)]
     fn impl_impl_def_trait_impl(&self, impl_impl_def_id: ImplImplDefId) -> Maybe<TraitImplId>;
 
+    /// Returns the resolved impl an impl item impl.
+    #[salsa::invoke(items::imp::impl_impl_def_impl)]
+    #[salsa::cycle(items::imp::impl_impl_def_impl_cycle)]
+    fn impl_impl_def_impl(&self, impl_impl_def_id: ImplImplDefId) -> Maybe<ImplId>;
+
     /// Private query to compute data about an impl item impl.
     #[salsa::invoke(items::imp::priv_impl_impl_semantic_data)]
     #[salsa::cycle(items::imp::priv_impl_impl_semantic_data_cycle)]
@@ -926,6 +931,21 @@ pub trait SemanticGroup:
         &self,
         impl_impl_def_id: ImplImplDefId,
     ) -> Maybe<GenericParamsData>;
+
+    // Impl impl.
+    // ================
+    /// Returns the implized impl impl if the impl is concrete.
+    #[salsa::invoke(items::imp::impl_impl_implized_by_context)]
+    #[salsa::cycle(items::imp::impl_impl_implized_by_context_cycle)]
+    fn impl_impl_implized_by_context(
+        &self,
+        impl_impl_id: ImplImplId,
+        impl_def_id: ImplDefId,
+    ) -> Maybe<ImplId>;
+    /// Returns the implized impl impl value if the impl is concrete.
+    #[salsa::invoke(items::imp::impl_impl_concrete_implized)]
+    #[salsa::cycle(items::imp::impl_impl_concrete_implized_cycle)]
+    fn impl_impl_concrete_implized(&self, impl_impl_id: ImplImplId) -> Maybe<ImplId>;
 
     // Impl function.
     // ================

@@ -174,13 +174,20 @@ pub enum ImplLongId {
     Concrete(ConcreteImplId),
     GenericParameter(GenericParamId),
     ImplVar(ImplVarId),
+    ImplImpl(ImplImplId),
+    TraitImpl(TraitImplId),
 }
 impl ImplLongId {
     /// Returns the [ImplHead] of an impl if available.
     pub fn head(&self, db: &dyn SemanticGroup) -> Option<ImplHead> {
         Some(match self {
             ImplLongId::Concrete(concrete) => ImplHead::Concrete(concrete.impl_def_id(db)),
-            ImplLongId::GenericParameter(_) | ImplLongId::ImplVar(_) => return None,
+            ImplLongId::GenericParameter(_)
+            | ImplLongId::ImplVar(_)
+            | ImplLongId::ImplImpl(_)
+            | ImplLongId::TraitImpl(_) => {
+                return None;
+            }
         })
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
@@ -192,6 +199,15 @@ impl ImplLongId {
             ImplLongId::ImplVar(var) => {
                 format!("ImplVar({})", var.concrete_trait_id(db).full_path(db)).into()
             }
+            ImplLongId::ImplImpl(impl_impl) => format!(
+                "{}::{})",
+                impl_impl.impl_id().name(db.upcast()),
+                db.trait_impl_concrete_trait(impl_impl.trait_impl_id())
+                    .map(|trait_impl| trait_impl.full_path(db))
+                    .unwrap_or_else(|_| "_".into())
+            )
+            .into(),
+            ImplLongId::TraitImpl(trait_impl) => trait_impl.name(db.upcast()),
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -203,6 +219,8 @@ impl ImplLongId {
                 generic_param_impl.format(db.upcast())
             }
             ImplLongId::ImplVar(var) => format!("{var:?}"),
+            ImplLongId::ImplImpl(impl_impl) => format!("{:?}", impl_impl.debug(db.elongate())),
+            ImplLongId::TraitImpl(trait_impl) => format!("{:?}", trait_impl.debug(db.elongate())),
         }
     }
 
@@ -210,8 +228,9 @@ impl ImplLongId {
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
         match self {
             ImplLongId::Concrete(concrete_impl_id) => concrete_impl_id.is_var_free(db),
-            ImplLongId::GenericParameter(_) => true,
+            ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => true,
             ImplLongId::ImplVar(_) => false,
+            ImplLongId::ImplImpl(_) => false,
         }
     }
 
@@ -221,6 +240,7 @@ impl ImplLongId {
             ImplLongId::Concrete(concrete_impl_id) => concrete_impl_id.is_fully_concrete(db),
             ImplLongId::GenericParameter(_) => false,
             ImplLongId::ImplVar(_) => false,
+            ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => false,
         }
     }
 }
@@ -234,6 +254,8 @@ impl DebugWithDb<dyn SemanticGroup> for ImplLongId {
             ImplLongId::Concrete(concrete_impl_id) => write!(f, "{:?}", concrete_impl_id.debug(db)),
             ImplLongId::GenericParameter(param) => write!(f, "{:?}", param.debug(db)),
             ImplLongId::ImplVar(var) => write!(f, "?{}", var.lookup_intern(db).id.0),
+            ImplLongId::ImplImpl(impl_impl) => write!(f, "{:?}", impl_impl.debug(db)),
+            ImplLongId::TraitImpl(trait_impl) => write!(f, "{:?}", trait_impl.debug(db)),
         }
     }
 }
@@ -267,6 +289,48 @@ impl ImplId {
 
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         self.lookup_intern(db).format(db)
+    }
+}
+
+/// An impl item of kind impl.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct ImplImplId {
+    /// The impl the item impl is in.
+    impl_id: ImplId,
+    /// The trait impl this impl impl "implements".
+    trait_impl_id: TraitImplId,
+}
+
+impl ImplImplId {
+    /// Creates a new impl impl id. For an impl impl of a concrete impl, asserts that the
+    /// trait impl belongs to the same trait that the impl implements (panics if not).
+    pub fn new(impl_id: ImplId, trait_impl_id: TraitImplId, db: &dyn SemanticGroup) -> Self {
+        if let crate::items::imp::ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
+            let impl_def_id = concrete_impl.impl_def_id(db);
+            assert_eq!(Ok(trait_impl_id.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
+        }
+
+        ImplImplId { impl_id, trait_impl_id }
+    }
+    pub fn impl_id(&self) -> ImplId {
+        self.impl_id
+    }
+    pub fn trait_impl_id(&self) -> TraitImplId {
+        self.trait_impl_id
+    }
+
+    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("{}::{}", self.impl_id.name(db.upcast()), self.trait_impl_id.name(db.upcast()))
+            .into()
+    }
+}
+impl DebugWithDb<dyn SemanticGroup> for ImplImplId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
     }
 }
 
@@ -427,6 +491,8 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
             param_impl.concrete_trait
         }
         ImplLongId::ImplVar(var) => Ok(var.lookup_intern(db).concrete_trait_id),
+        ImplLongId::ImplImpl(impl_impl) => db.trait_impl_concrete_trait(impl_impl.trait_impl_id()),
+        ImplLongId::TraitImpl(trait_impl) => db.trait_impl_concrete_trait(trait_impl),
     }
 }
 
@@ -1669,9 +1735,18 @@ pub fn impl_type_concrete_implized(
 ) -> Maybe<Option<TypeId>> {
     let concrete_impl = match impl_type_id.impl_id().lookup_intern(db) {
         ImplLongId::Concrete(concrete_impl) => concrete_impl,
-        ImplLongId::GenericParameter(_) => {
+        ImplLongId::ImplImpl(imp_impl_id) => {
+            let ImplLongId::Concrete(concrete_impl) =
+                db.impl_impl_concrete_implized(imp_impl_id)?.lookup_intern(db)
+            else {
+                return Ok(Some(TypeLongId::ImplType(impl_type_id).intern(db)));
+            };
+            concrete_impl
+        }
+        ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => {
             return Ok(Some(TypeLongId::ImplType(impl_type_id).intern(db)));
         }
+
         ImplLongId::ImplVar(_) => return Ok(None),
     };
 
@@ -1949,6 +2024,8 @@ pub fn impl_constant_concrete_implized_type(
             param_impl.concrete_trait?
         }
         ImplLongId::ImplVar(var) => var.lookup_intern(db).concrete_trait_id,
+        ImplLongId::ImplImpl(implimpl) => db.trait_impl_concrete_trait(implimpl.trait_impl_id)?,
+        ImplLongId::TraitImpl(traitimpl) => db.trait_impl_concrete_trait(traitimpl)?,
     };
 
     let ty = db.concrete_trait_constant_type(ConcreteTraitConstantId::new(
@@ -2007,6 +2084,22 @@ pub fn impl_impl_def_trait_impl(
     impl_impl_def_id: ImplImplDefId,
 ) -> Maybe<TraitImplId> {
     db.priv_impl_impl_semantic_data(impl_impl_def_id)?.trait_impl_id
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_def_impl].
+pub fn impl_impl_def_impl(
+    db: &dyn SemanticGroup,
+    impl_impl_def_id: ImplImplDefId,
+) -> Maybe<ImplId> {
+    db.priv_impl_impl_semantic_data(impl_impl_def_id)?.impl_data.resolved_impl
+}
+/// Cycle handling for [crate::db::SemanticGroup::impl_impl_def_impl].
+pub fn impl_impl_def_impl_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_impl_def_id: &ImplImplDefId,
+) -> Maybe<ImplId> {
+    db.priv_impl_impl_semantic_data(*impl_impl_def_id)?.impl_data.resolved_impl
 }
 
 // --- Computation ---
@@ -2170,6 +2263,57 @@ fn validate_impl_item_impl(
         );
     }
     Ok(trait_impl_id)
+}
+
+// === Impl Impl ===
+
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_implized_by_context].
+pub fn impl_impl_implized_by_context(
+    db: &dyn SemanticGroup,
+    impl_impl_id: ImplImplId,
+    impl_def_id: ImplDefId,
+) -> Maybe<ImplId> {
+    let impl_impl_def_id = db.impl_impl_by_trait_impl(impl_def_id, impl_impl_id.trait_impl_id())?;
+
+    db.impl_impl_def_impl(impl_impl_def_id)
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::impl_impl_implized_by_context].
+pub fn impl_impl_implized_by_context_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_impl_id: &ImplImplId,
+    impl_def_id: &ImplDefId,
+) -> Maybe<ImplId> {
+    // Forwarding cycle handling to `priv_impl_impl_semantic_data` handler.
+    impl_impl_implized_by_context(db, *impl_impl_id, *impl_def_id)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_impl_concrete_implized].
+pub fn impl_impl_concrete_implized(
+    db: &dyn SemanticGroup,
+    impl_impl_id: ImplImplId,
+) -> Maybe<ImplId> {
+    if let ImplLongId::Concrete(concrete_impl) = impl_impl_id.impl_id().lookup_intern(db) {
+        let impl_def_id = concrete_impl.impl_def_id(db);
+        let imp = db.impl_impl_implized_by_context(impl_impl_id, impl_def_id)?;
+        let substitution: &GenericSubstitution = &concrete_impl.substitution(db)?;
+        return SubstitutionRewriter { db, substitution }.rewrite(imp);
+    }
+    let substitution = &GenericSubstitution::from_impl(impl_impl_id.impl_id());
+
+    Ok(ImplLongId::ImplImpl(SubstitutionRewriter { db, substitution }.rewrite(impl_impl_id)?)
+        .intern(db))
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::impl_impl_concrete_implized].
+pub fn impl_impl_concrete_implized_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_impl_id: &ImplImplId,
+) -> Maybe<ImplId> {
+    // Forwarding cycle handling to `priv_impl_const_semantic_data` handler.
+    impl_impl_concrete_implized(db, *impl_impl_id)
 }
 
 // === Impl Function Declaration ===
