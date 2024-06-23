@@ -1876,7 +1876,11 @@ fn maybe_compute_tuple_like_pattern_semantic(
         (ast::Pattern::Tuple(_), TypeLongId::Tuple(_))
         | (ast::Pattern::FixedSizeArray(_), TypeLongId::FixedSizeArray { .. }) => {}
         _ => {
-            return Err(ctx.diagnostics.report(pattern_syntax, unexpected_pattern(ty)));
+            return Err(match long_ty {
+                TypeLongId::Var(_) => skip_diagnostic(),
+
+                _ => ctx.diagnostics.report(pattern_syntax, unexpected_pattern(ty)),
+            });
         }
     };
     let inner_tys = match long_ty {

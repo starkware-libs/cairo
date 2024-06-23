@@ -1,7 +1,7 @@
 use core::circuit::{
     RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, circuit_add, circuit_sub,
-    circuit_mul, circuit_inverse, EvalCircuitResult, EvalCircuitTrait, u384, CircuitOutputsTrait,
-    CircuitModulus, FillInputResultTrait, CircuitInputs,
+    circuit_mul, circuit_inverse, EvalCircuitTrait, u384, CircuitOutputsTrait, CircuitModulus,
+    FillInputResultTrait, CircuitInputs,
 };
 
 use core::test::test_utils::assert_eq;
@@ -37,8 +37,8 @@ fn test_circuit_success() {
             .next([6, 0, 0, 0])
             .done()
             .eval(modulus) {
-        EvalCircuitResult::Success(outputs) => { outputs },
-        EvalCircuitResult::Failure(_) => { panic!("Expected success") }
+        Result::Ok(outputs) => { outputs },
+        Result::Err(_) => { panic!("Expected success") }
     };
 
     assert_eq!(outputs.get_output(add), u384 { limb0: 2, limb1: 0, limb2: 0, limb3: 0 });
@@ -55,8 +55,8 @@ fn test_circuit_failure() {
 
     let modulus = TryInto::<_, CircuitModulus>::try_into([55, 0, 0, 0]).unwrap();
     match (out0,).new_inputs().next([11, 0, 0, 0]).done().eval(modulus) {
-        EvalCircuitResult::Failure((_, _)) => {},
-        EvalCircuitResult::Success(_outputs) => { panic!("Expected failure"); }
+        Result::Ok(_outputs) => { panic!("Expected failure"); },
+        Result::Err(_) => {}
     }
 }
 
