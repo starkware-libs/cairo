@@ -181,7 +181,7 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
             ),
         ],
         CostValidationInfo {
-            range_check_info: None,
+            builtin_infos: vec![],
             extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
         },
     ))

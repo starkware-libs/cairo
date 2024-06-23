@@ -56,7 +56,7 @@ fn build_felt252_dict_new(
         casm_builder,
         [("Fallthrough", &[&[segment_arena_ptr], &[new_dict_end]], None)],
         CostValidationInfo {
-            range_check_info: None,
+            builtin_infos: vec![],
             // The segment arena finalization cost.
             extra_costs: Some([SEGMENT_ARENA_ALLOCATION_COST.cost()]),
         },
@@ -732,7 +732,7 @@ fn build_felt252_dict_entry_get(
         casm_builder,
         [("Fallthrough", &[&[dict_ptr], &[prev_value]], None)],
         CostValidationInfo {
-            range_check_info: None,
+            builtin_infos: vec![],
             extra_costs: Some([DICT_SQUASH_UNIQUE_KEY_COST.cost()]),
         },
     ))
