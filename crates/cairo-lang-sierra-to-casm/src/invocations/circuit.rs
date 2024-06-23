@@ -6,13 +6,16 @@ use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::circuit::{
     CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE, OFFSETS_PER_GATE, VALUE_SIZE,
 };
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::casts::IntoOrPanic;
 use itertools::chain;
 
 use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::{
+    add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CostValidationInfo,
+};
 use crate::references::ReferenceExpression;
 use crate::relocations::{Relocation, RelocationEntry};
 
@@ -80,7 +83,14 @@ fn build_init_circuit_data(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[vals_end], &[inputs_start, inputs_end]], None)],
-        Default::default(),
+        CostValidationInfo {
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck96,
+                start: rc96,
+                end: vals_end,
+            }],
+            extra_costs: None,
+        },
     ))
 }
 
@@ -360,6 +370,7 @@ fn build_failure_guarantee_verify(
     };
 
     casm_build_extend! {casm_builder,
+        let rc96_start = rc96;
         const offsets_per_gate = OFFSETS_PER_GATE;
         tempvar failing_gate_offset = fail_idx * offsets_per_gate;
         tempvar failing_gate_ptr = orig_mul_mod_offsets + failing_gate_offset;
@@ -431,7 +442,14 @@ fn build_failure_guarantee_verify(
             ],
             None,
         )],
-        Default::default(),
+        CostValidationInfo {
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck96,
+                start: rc96_start,
+                end: rc96,
+            }],
+            extra_costs: None,
+        },
     ))
 }
 
@@ -500,12 +518,20 @@ fn build_u96_guarantee_verify(
         deref guarantee;
     };
     casm_build_extend! {casm_builder,
+        let rc96_start = rc96;
         assert guarantee = *(rc96++);
     }
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[rc96]], None)],
-        Default::default(),
+        CostValidationInfo {
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck96,
+                start: rc96_start,
+                end: rc96,
+            }],
+            extra_costs: None,
+        },
     ))
 }
 

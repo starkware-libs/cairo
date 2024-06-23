@@ -215,7 +215,12 @@ fn build_felt252_dict_squash(
     let unique_key_range_checks = 6;
     let repeated_access_range_checks = 1;
     assert_eq!(
-        ConstCost { steps: fixed_steps, holes: 0, range_checks: fixed_range_checks },
+        ConstCost {
+            steps: fixed_steps,
+            holes: 0,
+            range_checks: fixed_range_checks,
+            range_checks96: 0
+        },
         DICT_SQUASH_FIXED_COST
     );
     assert_eq!(
@@ -223,11 +228,17 @@ fn build_felt252_dict_squash(
             steps: repeated_access_steps,
             holes: 0,
             range_checks: repeated_access_range_checks,
+            range_checks96: 0
         },
         DICT_SQUASH_REPEATED_ACCESS_COST
     );
     assert_eq!(
-        ConstCost { steps: unique_key_steps, holes: 0, range_checks: unique_key_range_checks },
+        ConstCost {
+            steps: unique_key_steps,
+            holes: 0,
+            range_checks: unique_key_range_checks,
+            range_checks96: 0
+        },
         DICT_SQUASH_UNIQUE_KEY_COST
     );
     let CasmBuildResult { instructions, branches: [(state, _)] } =

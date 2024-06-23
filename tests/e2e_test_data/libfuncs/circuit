@@ -18,7 +18,7 @@ fn foo() -> CircuitInputAccumulator<MyCircuit> {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({RangeCheck96: 32, Const: 300})
+test::foo: OrderedHashMap({Const: 2380})
 
 //! > sierra_code
 type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
@@ -640,7 +640,7 @@ return([6], [5], [7]); // 8
 test::foo@0([0]: MulMod, [1]: RangeCheck96, [2]: CircuitFailureGuarantee) -> (MulMod, RangeCheck96, U96LimbsLTGuarantee<4>);
 
 //! > function_costs
-test::foo: OrderedHashMap({RangeCheck96: 6, Const: 4500})
+test::foo: OrderedHashMap({Const: 4890})
 
 //! > ==========================================================================
 
@@ -779,7 +779,7 @@ return([2]); // 2
 test::foo@0([0]: RangeCheck96, [1]: U96Guarantee) -> (RangeCheck96);
 
 //! > function_costs
-test::foo: OrderedHashMap({RangeCheck96: 1, Const: 200})
+test::foo: OrderedHashMap({Const: 265})
 
 //! > ==========================================================================
 
@@ -953,4 +953,4 @@ return([10]); // 19
 test::foo@0([0]: RangeCheck96, [1]: U96LimbsLTGuarantee<4>) -> (RangeCheck96);
 
 //! > function_costs
-test::foo: OrderedHashMap({RangeCheck96: 1, Const: 1000})
+test::foo: OrderedHashMap({Const: 1065})

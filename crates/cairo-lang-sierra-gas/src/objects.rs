@@ -12,19 +12,20 @@ pub struct ConstCost {
     pub steps: i32,
     pub holes: i32,
     pub range_checks: i32,
+    pub range_checks96: i32,
 }
 impl ConstCost {
     pub const fn cost(&self) -> i32 {
-        self.steps * 100 + self.holes * 10 + self.range_checks * 70
+        self.steps * 100 + self.holes * 10 + self.range_checks * 70 + self.range_checks96 * 65
     }
     pub const fn steps(value: i32) -> Self {
-        Self { steps: value, holes: 0, range_checks: 0 }
+        Self { steps: value, holes: 0, range_checks: 0, range_checks96: 0 }
     }
     pub const fn holes(value: i32) -> Self {
-        Self { holes: value, steps: 0, range_checks: 0 }
+        Self { holes: value, steps: 0, range_checks: 0, range_checks96: 0 }
     }
     pub const fn range_checks(value: i32) -> Self {
-        Self { range_checks: value, steps: 0, holes: 0 }
+        Self { range_checks: value, steps: 0, holes: 0, range_checks96: 0 }
     }
 }
 
@@ -36,6 +37,7 @@ impl ConstCost {
             steps: self.steps + rhs.steps,
             holes: self.holes + rhs.holes,
             range_checks: self.range_checks + rhs.range_checks,
+            range_checks96: self.range_checks96 + rhs.range_checks96,
         }
     }
 }
@@ -58,6 +60,7 @@ impl std::ops::Sub for ConstCost {
             steps: self.steps - rhs.steps,
             holes: self.holes - rhs.holes,
             range_checks: self.range_checks - rhs.range_checks,
+            range_checks96: self.range_checks96 - rhs.range_checks96,
         }
     }
 }
@@ -147,7 +150,7 @@ impl WithdrawGasBranchInfo {
                 steps += 1;
             }
         };
-        ConstCost { steps, range_checks: 1, holes: 0 }
+        ConstCost { steps, range_checks: 1, holes: 0, range_checks96: 0 }
     }
 }
 
