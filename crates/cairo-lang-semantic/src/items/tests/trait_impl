@@ -825,7 +825,7 @@ impl MyImpl<K> of MyTrait {
 
 //! > ==========================================================================
 
-//! > using a generic impl with impl impl type
+//! > using a generic impl with impl impl type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
@@ -864,7 +864,49 @@ impl MyImpl<K> of MyTrait {
         x
     }
 }
-/// TODO(TomerStarkware): fix diagnostics.
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using a generic impl with trait impl type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    bar::<myMod::MyImpl<felt252>>(2)
+}
+pub fn bar<+MyTrait>(x: MyTrait::Impl::ty) -> MyTrait::Impl::ty {
+    MyTrait::foo(x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type ty;
+}
+
+impl OtherImpl1 = myMod::OtherImpl<u32>;
+mod myMod {
+    impl OtherImpl<K> of super::OtherTrait {
+        type ty = K;
+    }
+    impl MyImpl<K> of super::MyTrait {
+        impl Impl = OtherImpl<K>;
+        fn foo(x: Self::Impl::ty) -> Self::Impl::ty {
+            x
+        }
+    }
+}
+
+trait MyTrait {
+    impl Impl: OtherTrait;
+    fn foo(x: Self::Impl::ty) -> Self::Impl::ty;
+}
 
 //! > expected_diagnostics
 
@@ -910,6 +952,122 @@ impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
         lhs
     }
 }
-/// TODO(TomerStarkware): fix diagnostics.
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using a generic trait impl type with generic args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    bar(3_felt252, 4)
+}
+pub fn bar<T, +OtherAdd<T, T>>(x: T, y: T) -> OtherAdd::<T, T>::Impl::ty {
+    OtherAdd::other_add(x, y)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type ty;
+}
+
+impl OtherImpl1 = myMod::OtherImpl<felt252>;
+mod myMod {
+    impl OtherImpl<K> of super::OtherTrait {
+        type ty = K;
+    }
+}
+
+trait OtherAdd<Lhs, Rhs> {
+    impl Impl: OtherTrait;
+    type ty;
+    fn other_add(lhs: Lhs, rhs: Rhs) -> Self::Impl::ty;
+}
+impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
+    impl Impl = myMod::OtherImpl<T>;
+    type ty = T;
+    fn other_add(lhs: T, rhs: T) -> Self::ty {
+        lhs
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using trait type as generic argument for impl impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    21
+}
+fn bar<T, impl I: IntoIterator<T>>(a: T) {
+    let mut x = a.into_iter();
+    let mut y: felt252 = 0;
+    while let Option::Some(_) = I::Impl::next(ref x) {
+        y += 1;
+    };
+    y;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Iterator<T> {
+    type Item;
+    fn next(ref self: T) -> Option<Self::Item>;
+}
+trait IntoIterator<T> {
+    type IntoIter;
+    impl Impl: Iterator<Self::IntoIter>;
+    fn into_iter(self: T) -> Self::IntoIter;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > inferring an Impl from a generic arg.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    21
+}
+fn bar<T, +IntoIterator<T>>(a: T) {
+    let mut x = a.into_iter();
+    let mut y: felt252 = 0;
+    while let Option::Some(_) = x.next() {
+        y += 1;
+    };
+    y;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Iterator<T> {
+    type Item;
+    fn next(ref self: T) -> Option<Self::Item>;
+}
+trait IntoIterator<T> {
+    type IntoIter;
+    impl Impl: Iterator<Self::IntoIter>;
+    fn into_iter(self: T) -> Self::IntoIter;
+}
 
 //! > expected_diagnostics
