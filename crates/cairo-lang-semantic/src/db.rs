@@ -630,6 +630,13 @@ pub trait SemanticGroup:
         module_id: ModuleId,
         trait_lookup_constraint: items::imp::TraitFilter,
     ) -> Maybe<Vec<UninferredImpl>>;
+    #[salsa::invoke(items::imp::impl_impl_ids_for_trait_filter)]
+    #[salsa::cycle(items::imp::impl_impl_ids_for_trait_filter_cycle)]
+    fn impl_impl_ids_for_trait_filter(
+        &self,
+        impl_id: ImplId,
+        trait_lookup_constraint: items::imp::TraitFilter,
+    ) -> Maybe<Vec<UninferredImpl>>;
     // Returns the solution set for a canonical trait.
     #[salsa::invoke(inference::solver::canonic_trait_solutions)]
     #[salsa::cycle(inference::solver::canonic_trait_solutions_cycle)]
@@ -946,6 +953,9 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::imp::impl_impl_concrete_implized)]
     #[salsa::cycle(items::imp::impl_impl_concrete_implized_cycle)]
     fn impl_impl_concrete_implized(&self, impl_impl_id: ImplImplId) -> Maybe<ImplId>;
+    /// Returns the concrete trait of an impl impl.
+    #[salsa::invoke(items::imp::impl_impl_concrete_trait)]
+    fn impl_impl_concrete_trait(&self, impl_impl_id: ImplImplId) -> Maybe<ConcreteTraitId>;
 
     // Impl function.
     // ================
