@@ -20,16 +20,21 @@ type core::starknet::info::v2::ResourceBounds = Struct<ut@[144906372820445666953
 type core::starknet::info::v2::ExecutionInfo = Struct<ut@[221391467073327924041011052339733471441050020995554893254144785727444530663], Box<core::starknet::info::BlockInfo>, Box<core::starknet::info::v2::TxInfo>, ContractAddress, ContractAddress, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<core::starknet::info::v2::ExecutionInfo> = Box<core::starknet::info::v2::ExecutionInfo> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914> = Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>> = Struct<ut@[1406421560729222487321158693779721987406191951744536794639782822626171229388], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643]> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::option::Option::<core::felt252> = Enum<ut@[502540321931352404499287398278270665773953423387279675570524389549882807569], felt252, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 1749165063169615148890104124711417950509560691> = Const<felt252, 1749165063169615148890104124711417950509560691> [storable: false, drop: false, dup: false, zero_sized: false];
+type StorageBaseAddress = StorageBaseAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress> = Struct<ut@[684885822084819006811669382433291536170969547481496406103746721682810784018], StorageBaseAddress> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress> = Struct<ut@[175603965207910821842364356770270525171287427970297915695336470775871165241], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 907111799109225873672206001743429201758838553092777504370151546632448000192> = Const<felt252, 907111799109225873672206001743429201758838553092777504370151546632448000192> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913> = Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>> = Struct<ut@[1210330118597216240039006089148545469289080810330083534797913951558268282264], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301644699864366139839615702772668018]> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::panics::PanicResult::<((),)> = Enum<ut@[361089181821616824109533730671601453699459898913788950609596320038338987733], Tuple<Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
-type cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState = Struct<ut@[445638078296155389806370471967846643768878360000311548040093156318362912746]> [storable: true, drop: true, dup: true, zero_sized: true];
-type cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState> = Struct<ut@[58237049251456622370461467575865464743062008573046115994396901321700186682], cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
+type cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState> = Struct<ut@[58237049251456622370461467575865464743062008573046115994396901321700186682]> [storable: true, drop: true, dup: true, zero_sized: true];
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<core::box::Box::<@core::felt252>> = Enum<ut@[1182885770396068416776258475038712898857052156962285097349975100489777991911], Box<felt252>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];
@@ -37,7 +42,9 @@ type Const<felt252, 476442828812030857794232422692155113556837216824> = Const<fe
 type Tuple<core::array::Span::<core::felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::array::Span::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<u32, 0> = Const<u32, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 type StorageAddress = StorageAddress [storable: true, drop: true, dup: true, zero_sized: false];
-type StorageBaseAddress = StorageBaseAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::storage::StoragePointer0Offset::<core::integer::u128> = Struct<ut@[900076576657854394924402023721091564864406525443448277479516273533483658992], StorageBaseAddress> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::storage::StorageBase::<core::integer::u128> = Struct<ut@[625185812596709186178935882284608651955038687246169325367903944316371369697], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 916907772491729262376534102982219947830828984996257231353398618781993312401> = Const<felt252, 916907772491729262376534102982219947830828984996257231353398618781993312401> [storable: false, drop: false, dup: false, zero_sized: false];
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
 type System = System [storable: true, drop: false, dup: false, zero_sized: false];
 type core::panics::PanicResult::<(core::array::Span::<core::felt252>,)> = Enum<ut@[270671131472959732993844072583327084608513343873724697777364695367457417702], Tuple<core::array::Span::<core::felt252>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -65,11 +72,21 @@ libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt25
 libfunc get_builtin_costs = get_builtin_costs;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 libfunc withdraw_gas_all = withdraw_gas_all;
-libfunc storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401> = storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>;
+libfunc const_as_immediate<Const<felt252, 916907772491729262376534102982219947830828984996257231353398618781993312401>> = const_as_immediate<Const<felt252, 916907772491729262376534102982219947830828984996257231353398618781993312401>>;
+libfunc struct_construct<core::starknet::storage::StorageBase::<core::integer::u128>> = struct_construct<core::starknet::storage::StorageBase::<core::integer::u128>>;
+libfunc snapshot_take<core::starknet::storage::StorageBase::<core::integer::u128>> = snapshot_take<core::starknet::storage::StorageBase::<core::integer::u128>>;
+libfunc drop<core::starknet::storage::StorageBase::<core::integer::u128>> = drop<core::starknet::storage::StorageBase::<core::integer::u128>>;
+libfunc struct_deconstruct<core::starknet::storage::StorageBase::<core::integer::u128>> = struct_deconstruct<core::starknet::storage::StorageBase::<core::integer::u128>>;
+libfunc rename<felt252> = rename<felt252>;
+libfunc storage_base_address_from_felt252 = storage_base_address_from_felt252;
+libfunc struct_construct<core::starknet::storage::StoragePointer0Offset::<core::integer::u128>> = struct_construct<core::starknet::storage::StoragePointer0Offset::<core::integer::u128>>;
+libfunc snapshot_take<core::starknet::storage::StoragePointer0Offset::<core::integer::u128>> = snapshot_take<core::starknet::storage::StoragePointer0Offset::<core::integer::u128>>;
+libfunc drop<core::starknet::storage::StoragePointer0Offset::<core::integer::u128>> = drop<core::starknet::storage::StoragePointer0Offset::<core::integer::u128>>;
+libfunc struct_deconstruct<core::starknet::storage::StoragePointer0Offset::<core::integer::u128>> = struct_deconstruct<core::starknet::storage::StoragePointer0Offset::<core::integer::u128>>;
+libfunc rename<StorageBaseAddress> = rename<StorageBaseAddress>;
 libfunc storage_address_from_base = storage_address_from_base;
 libfunc const_as_immediate<Const<u32, 0>> = const_as_immediate<Const<u32, 0>>;
 libfunc store_temp<u32> = store_temp<u32>;
-libfunc store_temp<StorageAddress> = store_temp<StorageAddress>;
 libfunc storage_read_syscall = storage_read_syscall;
 libfunc u128s_from_felt252 = u128s_from_felt252;
 libfunc u128_to_felt252 = u128_to_felt252;
@@ -92,21 +109,31 @@ libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1> = enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>;
 libfunc enum_match<core::option::Option::<core::box::Box::<@core::felt252>>> = enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>;
 libfunc unbox<felt252> = unbox<felt252>;
-libfunc rename<felt252> = rename<felt252>;
 libfunc disable_ap_tracking = disable_ap_tracking;
-libfunc struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState> = struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>;
 libfunc struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>> = struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>;
 libfunc snapshot_take<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>> = snapshot_take<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>;
 libfunc drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>> = drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>;
 libfunc function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership> = function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership>;
 libfunc enum_match<core::panics::PanicResult::<((),)>> = enum_match<core::panics::PanicResult::<((),)>>;
 libfunc drop<Tuple<Unit>> = drop<Tuple<Unit>>;
+libfunc struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>> = struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>>;
+libfunc snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>> = snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>>;
+libfunc drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>> = drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>>;
+libfunc struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>> = struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>>;
 libfunc storage_write_syscall = storage_write_syscall;
 libfunc struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>> = struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>>;
 libfunc drop<core::panics::Panic> = drop<core::panics::Panic>;
 libfunc drop<Unit> = drop<Unit>;
 libfunc const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>> = const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>;
-libfunc storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192> = storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>;
+libfunc const_as_immediate<Const<felt252, 907111799109225873672206001743429201758838553092777504370151546632448000192>> = const_as_immediate<Const<felt252, 907111799109225873672206001743429201758838553092777504370151546632448000192>>;
+libfunc struct_construct<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>> = struct_construct<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>>;
+libfunc snapshot_take<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>> = snapshot_take<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>>;
+libfunc drop<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>> = drop<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>>;
+libfunc struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>> = struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>>;
+libfunc struct_construct<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>> = struct_construct<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>>;
+libfunc snapshot_take<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>> = snapshot_take<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>>;
+libfunc drop<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>> = drop<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>>;
+libfunc struct_deconstruct<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>> = struct_deconstruct<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>>;
 libfunc contract_address_try_from_felt252 = contract_address_try_from_felt252;
 libfunc contract_address_to_felt252 = contract_address_to_felt252;
 libfunc const_as_immediate<Const<felt252, 1749165063169615148890104124711417950509560691>> = const_as_immediate<Const<felt252, 1749165063169615148890104124711417950509560691>>;
@@ -115,6 +142,10 @@ libfunc store_temp<core::option::Option::<core::felt252>> = store_temp<core::opt
 libfunc enum_init<core::option::Option::<core::felt252>, 1> = enum_init<core::option::Option::<core::felt252>, 1>;
 libfunc enum_match<core::option::Option::<core::felt252>> = enum_match<core::option::Option::<core::felt252>>;
 libfunc drop<ContractAddress> = drop<ContractAddress>;
+libfunc struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>> = struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>>;
+libfunc snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>> = snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>>;
+libfunc drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>> = drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>>;
+libfunc struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>> = struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>>;
 libfunc const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>> = const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>>;
 libfunc get_execution_info_v2_syscall = get_execution_info_v2_syscall;
 libfunc store_temp<Box<core::starknet::info::v2::ExecutionInfo>> = store_temp<Box<core::starknet::info::v2::ExecutionInfo>>;
@@ -133,7 +164,7 @@ libfunc const_as_immediate<Const<felt252, 27063539617145597287547105838>> = cons
 libfunc enum_init<core::panics::PanicResult::<((),)>, 1> = enum_init<core::panics::PanicResult::<((),)>, 1>;
 
 revoke_ap_tracking() -> (); // 0
-withdraw_gas([0], [1]) { fallthrough([4], [5]) 91([6], [7]) }; // 1
+withdraw_gas([0], [1]) { fallthrough([4], [5]) 102([6], [7]) }; // 1
 branch_align() -> (); // 2
 struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 3
 store_temp<RangeCheck>([4]) -> ([4]); // 4
@@ -157,778 +188,836 @@ branch_align() -> (); // 21
 drop<Snapshot<Array<felt252>>>([11]) -> (); // 22
 get_builtin_costs() -> ([18]); // 23
 store_temp<BuiltinCosts>([18]) -> ([18]); // 24
-withdraw_gas_all([4], [5], [18]) { fallthrough([19], [20]) 78([21], [22]) }; // 25
+withdraw_gas_all([4], [5], [18]) { fallthrough([19], [20]) 89([21], [22]) }; // 25
 branch_align() -> (); // 26
-storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([23]); // 27
-storage_address_from_base([23]) -> ([24]); // 28
-const_as_immediate<Const<u32, 0>>() -> ([25]); // 29
-store_temp<u32>([25]) -> ([25]); // 30
-store_temp<StorageAddress>([24]) -> ([24]); // 31
-store_temp<RangeCheck>([19]) -> ([19]); // 32
-storage_read_syscall([20], [2], [25], [24]) { fallthrough([26], [27], [28]) 65([29], [30], [31]) }; // 33
-branch_align() -> (); // 34
-store_temp<felt252>([28]) -> ([28]); // 35
-store_temp<GasBuiltin>([26]) -> ([26]); // 36
-store_temp<System>([27]) -> ([27]); // 37
-u128s_from_felt252([19], [28]) { fallthrough([32], [33]) 53([34], [35], [36]) }; // 38
-branch_align() -> (); // 39
-array_new<felt252>() -> ([37]); // 40
-u128_to_felt252([33]) -> ([38]); // 41
-array_append<felt252>([37], [38]) -> ([39]); // 42
-snapshot_take<Array<felt252>>([39]) -> ([40], [41]); // 43
-drop<Array<felt252>>([40]) -> (); // 44
-struct_construct<core::array::Span::<core::felt252>>([41]) -> ([42]); // 45
-struct_construct<Tuple<core::array::Span::<core::felt252>>>([42]) -> ([43]); // 46
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([43]) -> ([44]); // 47
-store_temp<RangeCheck>([32]) -> ([32]); // 48
-store_temp<GasBuiltin>([26]) -> ([26]); // 49
-store_temp<System>([27]) -> ([27]); // 50
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([44]) -> ([44]); // 51
-return([32], [26], [27], [44]); // 52
-branch_align() -> (); // 53
-drop<u128>([35]) -> (); // 54
-drop<u128>([36]) -> (); // 55
-array_new<felt252>() -> ([45]); // 56
-const_as_immediate<Const<felt252, 476442828812030857794232422692155113556837216824>>() -> ([46]); // 57
-store_temp<felt252>([46]) -> ([46]); // 58
-array_append<felt252>([45], [46]) -> ([47]); // 59
-store_temp<RangeCheck>([34]) -> ([48]); // 60
-store_temp<GasBuiltin>([26]) -> ([49]); // 61
-store_temp<System>([27]) -> ([50]); // 62
-store_temp<Array<felt252>>([47]) -> ([51]); // 63
-jump() { 70() }; // 64
-branch_align() -> (); // 65
-store_temp<RangeCheck>([19]) -> ([48]); // 66
-store_temp<GasBuiltin>([29]) -> ([49]); // 67
-store_temp<System>([30]) -> ([50]); // 68
-store_temp<Array<felt252>>([31]) -> ([51]); // 69
-struct_construct<core::panics::Panic>() -> ([52]); // 70
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([52], [51]) -> ([53]); // 71
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([53]) -> ([54]); // 72
-store_temp<RangeCheck>([48]) -> ([48]); // 73
-store_temp<GasBuiltin>([49]) -> ([49]); // 74
-store_temp<System>([50]) -> ([50]); // 75
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([54]) -> ([54]); // 76
-return([48], [49], [50], [54]); // 77
-branch_align() -> (); // 78
-array_new<felt252>() -> ([55]); // 79
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([56]); // 80
-store_temp<felt252>([56]) -> ([56]); // 81
-array_append<felt252>([55], [56]) -> ([57]); // 82
-struct_construct<core::panics::Panic>() -> ([58]); // 83
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([58], [57]) -> ([59]); // 84
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([59]) -> ([60]); // 85
-store_temp<RangeCheck>([21]) -> ([21]); // 86
-store_temp<GasBuiltin>([22]) -> ([22]); // 87
-store_temp<System>([2]) -> ([2]); // 88
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([60]) -> ([60]); // 89
-return([21], [22], [2], [60]); // 90
-branch_align() -> (); // 91
-drop<core::array::Span::<core::felt252>>([3]) -> (); // 92
-array_new<felt252>() -> ([61]); // 93
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([62]); // 94
-store_temp<felt252>([62]) -> ([62]); // 95
-array_append<felt252>([61], [62]) -> ([63]); // 96
-struct_construct<core::panics::Panic>() -> ([64]); // 97
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([64], [63]) -> ([65]); // 98
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([65]) -> ([66]); // 99
-store_temp<RangeCheck>([6]) -> ([6]); // 100
-store_temp<GasBuiltin>([7]) -> ([7]); // 101
-store_temp<System>([2]) -> ([2]); // 102
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([66]) -> ([66]); // 103
-return([6], [7], [2], [66]); // 104
-revoke_ap_tracking() -> (); // 105
-withdraw_gas([0], [1]) { fallthrough([4], [5]) 245([6], [7]) }; // 106
-branch_align() -> (); // 107
-struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 108
-enable_ap_tracking() -> (); // 109
-store_temp<RangeCheck>([4]) -> ([4]); // 110
-array_snapshot_pop_front<felt252>([8]) { fallthrough([9], [10]) 117([11]) }; // 111
-branch_align() -> (); // 112
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([10]) -> ([12]); // 113
-store_temp<Snapshot<Array<felt252>>>([9]) -> ([13]); // 114
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([12]) -> ([14]); // 115
-jump() { 122() }; // 116
-branch_align() -> (); // 117
-struct_construct<Unit>() -> ([15]); // 118
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([15]) -> ([16]); // 119
-store_temp<Snapshot<Array<felt252>>>([11]) -> ([13]); // 120
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([16]) -> ([14]); // 121
-enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([14]) { fallthrough([17]) 228([18]) }; // 122
+const_as_immediate<Const<felt252, 916907772491729262376534102982219947830828984996257231353398618781993312401>>() -> ([23]); // 27
+struct_construct<core::starknet::storage::StorageBase::<core::integer::u128>>([23]) -> ([24]); // 28
+snapshot_take<core::starknet::storage::StorageBase::<core::integer::u128>>([24]) -> ([25], [26]); // 29
+drop<core::starknet::storage::StorageBase::<core::integer::u128>>([25]) -> (); // 30
+struct_deconstruct<core::starknet::storage::StorageBase::<core::integer::u128>>([26]) -> ([27]); // 31
+rename<felt252>([27]) -> ([28]); // 32
+store_temp<felt252>([28]) -> ([28]); // 33
+storage_base_address_from_felt252([19], [28]) -> ([29], [30]); // 34
+struct_construct<core::starknet::storage::StoragePointer0Offset::<core::integer::u128>>([30]) -> ([31]); // 35
+snapshot_take<core::starknet::storage::StoragePointer0Offset::<core::integer::u128>>([31]) -> ([32], [33]); // 36
+drop<core::starknet::storage::StoragePointer0Offset::<core::integer::u128>>([32]) -> (); // 37
+struct_deconstruct<core::starknet::storage::StoragePointer0Offset::<core::integer::u128>>([33]) -> ([34]); // 38
+rename<StorageBaseAddress>([34]) -> ([35]); // 39
+storage_address_from_base([35]) -> ([36]); // 40
+const_as_immediate<Const<u32, 0>>() -> ([37]); // 41
+store_temp<u32>([37]) -> ([37]); // 42
+store_temp<RangeCheck>([29]) -> ([29]); // 43
+storage_read_syscall([20], [2], [37], [36]) { fallthrough([38], [39], [40]) 76([41], [42], [43]) }; // 44
+branch_align() -> (); // 45
+store_temp<felt252>([40]) -> ([40]); // 46
+store_temp<GasBuiltin>([38]) -> ([38]); // 47
+store_temp<System>([39]) -> ([39]); // 48
+u128s_from_felt252([29], [40]) { fallthrough([44], [45]) 64([46], [47], [48]) }; // 49
+branch_align() -> (); // 50
+array_new<felt252>() -> ([49]); // 51
+u128_to_felt252([45]) -> ([50]); // 52
+array_append<felt252>([49], [50]) -> ([51]); // 53
+snapshot_take<Array<felt252>>([51]) -> ([52], [53]); // 54
+drop<Array<felt252>>([52]) -> (); // 55
+struct_construct<core::array::Span::<core::felt252>>([53]) -> ([54]); // 56
+struct_construct<Tuple<core::array::Span::<core::felt252>>>([54]) -> ([55]); // 57
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([55]) -> ([56]); // 58
+store_temp<RangeCheck>([44]) -> ([44]); // 59
+store_temp<GasBuiltin>([38]) -> ([38]); // 60
+store_temp<System>([39]) -> ([39]); // 61
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([56]) -> ([56]); // 62
+return([44], [38], [39], [56]); // 63
+branch_align() -> (); // 64
+drop<u128>([47]) -> (); // 65
+drop<u128>([48]) -> (); // 66
+array_new<felt252>() -> ([57]); // 67
+const_as_immediate<Const<felt252, 476442828812030857794232422692155113556837216824>>() -> ([58]); // 68
+store_temp<felt252>([58]) -> ([58]); // 69
+array_append<felt252>([57], [58]) -> ([59]); // 70
+store_temp<RangeCheck>([46]) -> ([60]); // 71
+store_temp<GasBuiltin>([38]) -> ([61]); // 72
+store_temp<System>([39]) -> ([62]); // 73
+store_temp<Array<felt252>>([59]) -> ([63]); // 74
+jump() { 81() }; // 75
+branch_align() -> (); // 76
+store_temp<RangeCheck>([29]) -> ([60]); // 77
+store_temp<GasBuiltin>([41]) -> ([61]); // 78
+store_temp<System>([42]) -> ([62]); // 79
+store_temp<Array<felt252>>([43]) -> ([63]); // 80
+struct_construct<core::panics::Panic>() -> ([64]); // 81
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([64], [63]) -> ([65]); // 82
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([65]) -> ([66]); // 83
+store_temp<RangeCheck>([60]) -> ([60]); // 84
+store_temp<GasBuiltin>([61]) -> ([61]); // 85
+store_temp<System>([62]) -> ([62]); // 86
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([66]) -> ([66]); // 87
+return([60], [61], [62], [66]); // 88
+branch_align() -> (); // 89
+array_new<felt252>() -> ([67]); // 90
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([68]); // 91
+store_temp<felt252>([68]) -> ([68]); // 92
+array_append<felt252>([67], [68]) -> ([69]); // 93
+struct_construct<core::panics::Panic>() -> ([70]); // 94
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([70], [69]) -> ([71]); // 95
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([71]) -> ([72]); // 96
+store_temp<RangeCheck>([21]) -> ([21]); // 97
+store_temp<GasBuiltin>([22]) -> ([22]); // 98
+store_temp<System>([2]) -> ([2]); // 99
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([72]) -> ([72]); // 100
+return([21], [22], [2], [72]); // 101
+branch_align() -> (); // 102
+drop<core::array::Span::<core::felt252>>([3]) -> (); // 103
+array_new<felt252>() -> ([73]); // 104
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([74]); // 105
+store_temp<felt252>([74]) -> ([74]); // 106
+array_append<felt252>([73], [74]) -> ([75]); // 107
+struct_construct<core::panics::Panic>() -> ([76]); // 108
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([76], [75]) -> ([77]); // 109
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([77]) -> ([78]); // 110
+store_temp<RangeCheck>([6]) -> ([6]); // 111
+store_temp<GasBuiltin>([7]) -> ([7]); // 112
+store_temp<System>([2]) -> ([2]); // 113
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([78]) -> ([78]); // 114
+return([6], [7], [2], [78]); // 115
+revoke_ap_tracking() -> (); // 116
+withdraw_gas([0], [1]) { fallthrough([4], [5]) 261([6], [7]) }; // 117
+branch_align() -> (); // 118
+struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 119
+enable_ap_tracking() -> (); // 120
+store_temp<RangeCheck>([4]) -> ([4]); // 121
+array_snapshot_pop_front<felt252>([8]) { fallthrough([9], [10]) 128([11]) }; // 122
 branch_align() -> (); // 123
-unbox<felt252>([17]) -> ([19]); // 124
-rename<felt252>([19]) -> ([20]); // 125
-store_temp<felt252>([20]) -> ([20]); // 126
-u128s_from_felt252([4], [20]) { fallthrough([21], [22]) 222([23], [24], [25]) }; // 127
+enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([10]) -> ([12]); // 124
+store_temp<Snapshot<Array<felt252>>>([9]) -> ([13]); // 125
+store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([12]) -> ([14]); // 126
+jump() { 133() }; // 127
 branch_align() -> (); // 128
-store_temp<RangeCheck>([21]) -> ([21]); // 129
-array_snapshot_pop_front<felt252>([13]) { fallthrough([26], [27]) 148([28]) }; // 130
-branch_align() -> (); // 131
-disable_ap_tracking() -> (); // 132
-drop<Snapshot<Array<felt252>>>([26]) -> (); // 133
-drop<Box<felt252>>([27]) -> (); // 134
-drop<u128>([22]) -> (); // 135
-array_new<felt252>() -> ([29]); // 136
-const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([30]); // 137
-store_temp<felt252>([30]) -> ([30]); // 138
-array_append<felt252>([29], [30]) -> ([31]); // 139
-struct_construct<core::panics::Panic>() -> ([32]); // 140
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([32], [31]) -> ([33]); // 141
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([33]) -> ([34]); // 142
-store_temp<RangeCheck>([21]) -> ([21]); // 143
-store_temp<GasBuiltin>([5]) -> ([5]); // 144
-store_temp<System>([2]) -> ([2]); // 145
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([34]) -> ([34]); // 146
-return([21], [5], [2], [34]); // 147
-branch_align() -> (); // 148
-disable_ap_tracking() -> (); // 149
-drop<Snapshot<Array<felt252>>>([28]) -> (); // 150
-get_builtin_costs() -> ([35]); // 151
-store_temp<BuiltinCosts>([35]) -> ([35]); // 152
-withdraw_gas_all([21], [5], [35]) { fallthrough([36], [37]) 208([38], [39]) }; // 153
-branch_align() -> (); // 154
-struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([40]); // 155
-struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([40]) -> ([41]); // 156
-snapshot_take<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([41]) -> ([42], [43]); // 157
-drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([42]) -> (); // 158
-store_temp<RangeCheck>([36]) -> ([36]); // 159
-store_temp<GasBuiltin>([37]) -> ([37]); // 160
-store_temp<System>([2]) -> ([2]); // 161
-function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership>([36], [37], [2], [43]) -> ([44], [45], [46], [47]); // 162
-enable_ap_tracking() -> (); // 163
-enum_match<core::panics::PanicResult::<((),)>>([47]) { fallthrough([48]) 192([49]) }; // 164
+struct_construct<Unit>() -> ([15]); // 129
+enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([15]) -> ([16]); // 130
+store_temp<Snapshot<Array<felt252>>>([11]) -> ([13]); // 131
+store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([16]) -> ([14]); // 132
+enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([14]) { fallthrough([17]) 244([18]) }; // 133
+branch_align() -> (); // 134
+unbox<felt252>([17]) -> ([19]); // 135
+rename<felt252>([19]) -> ([20]); // 136
+store_temp<felt252>([20]) -> ([20]); // 137
+u128s_from_felt252([4], [20]) { fallthrough([21], [22]) 238([23], [24], [25]) }; // 138
+branch_align() -> (); // 139
+store_temp<RangeCheck>([21]) -> ([21]); // 140
+array_snapshot_pop_front<felt252>([13]) { fallthrough([26], [27]) 159([28]) }; // 141
+branch_align() -> (); // 142
+disable_ap_tracking() -> (); // 143
+drop<Snapshot<Array<felt252>>>([26]) -> (); // 144
+drop<Box<felt252>>([27]) -> (); // 145
+drop<u128>([22]) -> (); // 146
+array_new<felt252>() -> ([29]); // 147
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([30]); // 148
+store_temp<felt252>([30]) -> ([30]); // 149
+array_append<felt252>([29], [30]) -> ([31]); // 150
+struct_construct<core::panics::Panic>() -> ([32]); // 151
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([32], [31]) -> ([33]); // 152
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([33]) -> ([34]); // 153
+store_temp<RangeCheck>([21]) -> ([21]); // 154
+store_temp<GasBuiltin>([5]) -> ([5]); // 155
+store_temp<System>([2]) -> ([2]); // 156
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([34]) -> ([34]); // 157
+return([21], [5], [2], [34]); // 158
+branch_align() -> (); // 159
+disable_ap_tracking() -> (); // 160
+drop<Snapshot<Array<felt252>>>([28]) -> (); // 161
+get_builtin_costs() -> ([35]); // 162
+store_temp<BuiltinCosts>([35]) -> ([35]); // 163
+withdraw_gas_all([21], [5], [35]) { fallthrough([36], [37]) 224([38], [39]) }; // 164
 branch_align() -> (); // 165
-drop<Tuple<Unit>>([48]) -> (); // 166
-storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([50]); // 167
-u128_to_felt252([22]) -> ([51]); // 168
-storage_address_from_base([50]) -> ([52]); // 169
-const_as_immediate<Const<u32, 0>>() -> ([53]); // 170
-store_temp<u32>([53]) -> ([53]); // 171
-store_temp<StorageAddress>([52]) -> ([52]); // 172
-storage_write_syscall([45], [46], [53], [52], [51]) { fallthrough([54], [55]) 187([56], [57], [58]) }; // 173
+struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>() -> ([40]); // 166
+snapshot_take<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([40]) -> ([41], [42]); // 167
+drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([41]) -> (); // 168
+store_temp<RangeCheck>([36]) -> ([36]); // 169
+store_temp<GasBuiltin>([37]) -> ([37]); // 170
+store_temp<System>([2]) -> ([2]); // 171
+function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership>([36], [37], [2], [42]) -> ([43], [44], [45], [46]); // 172
+enum_match<core::panics::PanicResult::<((),)>>([46]) { fallthrough([47]) 208([48]) }; // 173
 branch_align() -> (); // 174
-disable_ap_tracking() -> (); // 175
-array_new<felt252>() -> ([59]); // 176
-snapshot_take<Array<felt252>>([59]) -> ([60], [61]); // 177
-drop<Array<felt252>>([60]) -> (); // 178
-struct_construct<core::array::Span::<core::felt252>>([61]) -> ([62]); // 179
-struct_construct<Tuple<core::array::Span::<core::felt252>>>([62]) -> ([63]); // 180
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([63]) -> ([64]); // 181
-store_temp<RangeCheck>([44]) -> ([44]); // 182
-store_temp<GasBuiltin>([54]) -> ([54]); // 183
-store_temp<System>([55]) -> ([55]); // 184
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([64]) -> ([64]); // 185
-return([44], [54], [55], [64]); // 186
-branch_align() -> (); // 187
-store_temp<GasBuiltin>([56]) -> ([65]); // 188
-store_temp<System>([57]) -> ([66]); // 189
-store_temp<Array<felt252>>([58]) -> ([67]); // 190
-jump() { 199() }; // 191
-branch_align() -> (); // 192
-drop<u128>([22]) -> (); // 193
-struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>>([49]) -> ([68], [69]); // 194
-drop<core::panics::Panic>([68]) -> (); // 195
-store_temp<GasBuiltin>([45]) -> ([65]); // 196
-store_temp<System>([46]) -> ([66]); // 197
-store_temp<Array<felt252>>([69]) -> ([67]); // 198
-disable_ap_tracking() -> (); // 199
-struct_construct<core::panics::Panic>() -> ([70]); // 200
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([70], [67]) -> ([71]); // 201
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([71]) -> ([72]); // 202
-store_temp<RangeCheck>([44]) -> ([44]); // 203
-store_temp<GasBuiltin>([65]) -> ([65]); // 204
-store_temp<System>([66]) -> ([66]); // 205
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([72]) -> ([72]); // 206
-return([44], [65], [66], [72]); // 207
+drop<Tuple<Unit>>([47]) -> (); // 175
+const_as_immediate<Const<felt252, 916907772491729262376534102982219947830828984996257231353398618781993312401>>() -> ([49]); // 176
+struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>>([49]) -> ([50]); // 177
+snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>>([50]) -> ([51], [52]); // 178
+drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>>([51]) -> (); // 179
+struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>>([52]) -> ([53]); // 180
+rename<felt252>([53]) -> ([54]); // 181
+store_temp<felt252>([54]) -> ([54]); // 182
+storage_base_address_from_felt252([43], [54]) -> ([55], [56]); // 183
+u128_to_felt252([22]) -> ([57]); // 184
+storage_address_from_base([56]) -> ([58]); // 185
+const_as_immediate<Const<u32, 0>>() -> ([59]); // 186
+store_temp<u32>([59]) -> ([59]); // 187
+store_temp<RangeCheck>([55]) -> ([55]); // 188
+storage_write_syscall([44], [45], [59], [58], [57]) { fallthrough([60], [61]) 202([62], [63], [64]) }; // 189
+branch_align() -> (); // 190
+array_new<felt252>() -> ([65]); // 191
+snapshot_take<Array<felt252>>([65]) -> ([66], [67]); // 192
+drop<Array<felt252>>([66]) -> (); // 193
+struct_construct<core::array::Span::<core::felt252>>([67]) -> ([68]); // 194
+struct_construct<Tuple<core::array::Span::<core::felt252>>>([68]) -> ([69]); // 195
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([69]) -> ([70]); // 196
+store_temp<RangeCheck>([55]) -> ([55]); // 197
+store_temp<GasBuiltin>([60]) -> ([60]); // 198
+store_temp<System>([61]) -> ([61]); // 199
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([70]) -> ([70]); // 200
+return([55], [60], [61], [70]); // 201
+branch_align() -> (); // 202
+store_temp<RangeCheck>([55]) -> ([71]); // 203
+store_temp<GasBuiltin>([62]) -> ([72]); // 204
+store_temp<System>([63]) -> ([73]); // 205
+store_temp<Array<felt252>>([64]) -> ([74]); // 206
+jump() { 216() }; // 207
 branch_align() -> (); // 208
 drop<u128>([22]) -> (); // 209
-array_new<felt252>() -> ([73]); // 210
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([74]); // 211
-store_temp<felt252>([74]) -> ([74]); // 212
-array_append<felt252>([73], [74]) -> ([75]); // 213
-struct_construct<core::panics::Panic>() -> ([76]); // 214
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([76], [75]) -> ([77]); // 215
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([77]) -> ([78]); // 216
-store_temp<RangeCheck>([38]) -> ([38]); // 217
-store_temp<GasBuiltin>([39]) -> ([39]); // 218
-store_temp<System>([2]) -> ([2]); // 219
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([78]) -> ([78]); // 220
-return([38], [39], [2], [78]); // 221
-branch_align() -> (); // 222
-drop<u128>([24]) -> (); // 223
-drop<u128>([25]) -> (); // 224
-drop<Snapshot<Array<felt252>>>([13]) -> (); // 225
-store_temp<RangeCheck>([23]) -> ([79]); // 226
-jump() { 232() }; // 227
-branch_align() -> (); // 228
-drop<Unit>([18]) -> (); // 229
-drop<Snapshot<Array<felt252>>>([13]) -> (); // 230
-store_temp<RangeCheck>([4]) -> ([79]); // 231
-disable_ap_tracking() -> (); // 232
-array_new<felt252>() -> ([80]); // 233
-const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([81]); // 234
-store_temp<felt252>([81]) -> ([81]); // 235
-array_append<felt252>([80], [81]) -> ([82]); // 236
-struct_construct<core::panics::Panic>() -> ([83]); // 237
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([83], [82]) -> ([84]); // 238
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([84]) -> ([85]); // 239
-store_temp<RangeCheck>([79]) -> ([79]); // 240
-store_temp<GasBuiltin>([5]) -> ([5]); // 241
-store_temp<System>([2]) -> ([2]); // 242
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([85]) -> ([85]); // 243
-return([79], [5], [2], [85]); // 244
-branch_align() -> (); // 245
-drop<core::array::Span::<core::felt252>>([3]) -> (); // 246
-array_new<felt252>() -> ([86]); // 247
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([87]); // 248
-store_temp<felt252>([87]) -> ([87]); // 249
-array_append<felt252>([86], [87]) -> ([88]); // 250
-struct_construct<core::panics::Panic>() -> ([89]); // 251
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([89], [88]) -> ([90]); // 252
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([90]) -> ([91]); // 253
-store_temp<RangeCheck>([6]) -> ([6]); // 254
-store_temp<GasBuiltin>([7]) -> ([7]); // 255
-store_temp<System>([2]) -> ([2]); // 256
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([91]) -> ([91]); // 257
-return([6], [7], [2], [91]); // 258
-revoke_ap_tracking() -> (); // 259
-withdraw_gas([0], [1]) { fallthrough([4], [5]) 348([6], [7]) }; // 260
+struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>>([48]) -> ([75], [76]); // 210
+drop<core::panics::Panic>([75]) -> (); // 211
+store_temp<RangeCheck>([43]) -> ([71]); // 212
+store_temp<GasBuiltin>([44]) -> ([72]); // 213
+store_temp<System>([45]) -> ([73]); // 214
+store_temp<Array<felt252>>([76]) -> ([74]); // 215
+struct_construct<core::panics::Panic>() -> ([77]); // 216
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([77], [74]) -> ([78]); // 217
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([78]) -> ([79]); // 218
+store_temp<RangeCheck>([71]) -> ([71]); // 219
+store_temp<GasBuiltin>([72]) -> ([72]); // 220
+store_temp<System>([73]) -> ([73]); // 221
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([79]) -> ([79]); // 222
+return([71], [72], [73], [79]); // 223
+branch_align() -> (); // 224
+drop<u128>([22]) -> (); // 225
+array_new<felt252>() -> ([80]); // 226
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([81]); // 227
+store_temp<felt252>([81]) -> ([81]); // 228
+array_append<felt252>([80], [81]) -> ([82]); // 229
+struct_construct<core::panics::Panic>() -> ([83]); // 230
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([83], [82]) -> ([84]); // 231
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([84]) -> ([85]); // 232
+store_temp<RangeCheck>([38]) -> ([38]); // 233
+store_temp<GasBuiltin>([39]) -> ([39]); // 234
+store_temp<System>([2]) -> ([2]); // 235
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([85]) -> ([85]); // 236
+return([38], [39], [2], [85]); // 237
+branch_align() -> (); // 238
+drop<u128>([24]) -> (); // 239
+drop<u128>([25]) -> (); // 240
+drop<Snapshot<Array<felt252>>>([13]) -> (); // 241
+store_temp<RangeCheck>([23]) -> ([86]); // 242
+jump() { 248() }; // 243
+branch_align() -> (); // 244
+drop<Unit>([18]) -> (); // 245
+drop<Snapshot<Array<felt252>>>([13]) -> (); // 246
+store_temp<RangeCheck>([4]) -> ([86]); // 247
+disable_ap_tracking() -> (); // 248
+array_new<felt252>() -> ([87]); // 249
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([88]); // 250
+store_temp<felt252>([88]) -> ([88]); // 251
+array_append<felt252>([87], [88]) -> ([89]); // 252
+struct_construct<core::panics::Panic>() -> ([90]); // 253
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([90], [89]) -> ([91]); // 254
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([91]) -> ([92]); // 255
+store_temp<RangeCheck>([86]) -> ([86]); // 256
+store_temp<GasBuiltin>([5]) -> ([5]); // 257
+store_temp<System>([2]) -> ([2]); // 258
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([92]) -> ([92]); // 259
+return([86], [5], [2], [92]); // 260
 branch_align() -> (); // 261
-struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 262
-store_temp<RangeCheck>([4]) -> ([4]); // 263
-array_snapshot_pop_front<felt252>([8]) { fallthrough([9], [10]) 280([11]) }; // 264
-branch_align() -> (); // 265
-drop<Snapshot<Array<felt252>>>([9]) -> (); // 266
-drop<Box<felt252>>([10]) -> (); // 267
-array_new<felt252>() -> ([12]); // 268
-const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([13]); // 269
-store_temp<felt252>([13]) -> ([13]); // 270
-array_append<felt252>([12], [13]) -> ([14]); // 271
-struct_construct<core::panics::Panic>() -> ([15]); // 272
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([15], [14]) -> ([16]); // 273
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([16]) -> ([17]); // 274
-store_temp<RangeCheck>([4]) -> ([4]); // 275
-store_temp<GasBuiltin>([5]) -> ([5]); // 276
-store_temp<System>([2]) -> ([2]); // 277
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([17]) -> ([17]); // 278
-return([4], [5], [2], [17]); // 279
-branch_align() -> (); // 280
-drop<Snapshot<Array<felt252>>>([11]) -> (); // 281
-get_builtin_costs() -> ([18]); // 282
-store_temp<BuiltinCosts>([18]) -> ([18]); // 283
-withdraw_gas_all([4], [5], [18]) { fallthrough([19], [20]) 335([21], [22]) }; // 284
-branch_align() -> (); // 285
-storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>() -> ([23]); // 286
-storage_address_from_base([23]) -> ([24]); // 287
-const_as_immediate<Const<u32, 0>>() -> ([25]); // 288
-store_temp<u32>([25]) -> ([25]); // 289
-store_temp<StorageAddress>([24]) -> ([24]); // 290
-store_temp<RangeCheck>([19]) -> ([19]); // 291
-storage_read_syscall([20], [2], [25], [24]) { fallthrough([26], [27], [28]) 322([29], [30], [31]) }; // 292
-branch_align() -> (); // 293
-store_temp<felt252>([28]) -> ([28]); // 294
-store_temp<GasBuiltin>([26]) -> ([26]); // 295
-store_temp<System>([27]) -> ([27]); // 296
-contract_address_try_from_felt252([19], [28]) { fallthrough([32], [33]) 312([34]) }; // 297
-branch_align() -> (); // 298
-array_new<felt252>() -> ([35]); // 299
-contract_address_to_felt252([33]) -> ([36]); // 300
-array_append<felt252>([35], [36]) -> ([37]); // 301
-snapshot_take<Array<felt252>>([37]) -> ([38], [39]); // 302
-drop<Array<felt252>>([38]) -> (); // 303
-struct_construct<core::array::Span::<core::felt252>>([39]) -> ([40]); // 304
-struct_construct<Tuple<core::array::Span::<core::felt252>>>([40]) -> ([41]); // 305
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([41]) -> ([42]); // 306
-store_temp<RangeCheck>([32]) -> ([32]); // 307
-store_temp<GasBuiltin>([26]) -> ([26]); // 308
-store_temp<System>([27]) -> ([27]); // 309
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([42]) -> ([42]); // 310
-return([32], [26], [27], [42]); // 311
-branch_align() -> (); // 312
-array_new<felt252>() -> ([43]); // 313
-const_as_immediate<Const<felt252, 1749165063169615148890104124711417950509560691>>() -> ([44]); // 314
-store_temp<felt252>([44]) -> ([44]); // 315
-array_append<felt252>([43], [44]) -> ([45]); // 316
-store_temp<RangeCheck>([34]) -> ([46]); // 317
-store_temp<GasBuiltin>([26]) -> ([47]); // 318
-store_temp<System>([27]) -> ([48]); // 319
-store_temp<Array<felt252>>([45]) -> ([49]); // 320
-jump() { 327() }; // 321
-branch_align() -> (); // 322
-store_temp<RangeCheck>([19]) -> ([46]); // 323
-store_temp<GasBuiltin>([29]) -> ([47]); // 324
-store_temp<System>([30]) -> ([48]); // 325
-store_temp<Array<felt252>>([31]) -> ([49]); // 326
-struct_construct<core::panics::Panic>() -> ([50]); // 327
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([50], [49]) -> ([51]); // 328
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([51]) -> ([52]); // 329
-store_temp<RangeCheck>([46]) -> ([46]); // 330
-store_temp<GasBuiltin>([47]) -> ([47]); // 331
-store_temp<System>([48]) -> ([48]); // 332
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([52]) -> ([52]); // 333
-return([46], [47], [48], [52]); // 334
-branch_align() -> (); // 335
-array_new<felt252>() -> ([53]); // 336
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([54]); // 337
-store_temp<felt252>([54]) -> ([54]); // 338
-array_append<felt252>([53], [54]) -> ([55]); // 339
-struct_construct<core::panics::Panic>() -> ([56]); // 340
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([56], [55]) -> ([57]); // 341
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([57]) -> ([58]); // 342
-store_temp<RangeCheck>([21]) -> ([21]); // 343
-store_temp<GasBuiltin>([22]) -> ([22]); // 344
-store_temp<System>([2]) -> ([2]); // 345
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([58]) -> ([58]); // 346
-return([21], [22], [2], [58]); // 347
-branch_align() -> (); // 348
-drop<core::array::Span::<core::felt252>>([3]) -> (); // 349
-array_new<felt252>() -> ([59]); // 350
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([60]); // 351
-store_temp<felt252>([60]) -> ([60]); // 352
-array_append<felt252>([59], [60]) -> ([61]); // 353
+drop<core::array::Span::<core::felt252>>([3]) -> (); // 262
+array_new<felt252>() -> ([93]); // 263
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([94]); // 264
+store_temp<felt252>([94]) -> ([94]); // 265
+array_append<felt252>([93], [94]) -> ([95]); // 266
+struct_construct<core::panics::Panic>() -> ([96]); // 267
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([96], [95]) -> ([97]); // 268
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([97]) -> ([98]); // 269
+store_temp<RangeCheck>([6]) -> ([6]); // 270
+store_temp<GasBuiltin>([7]) -> ([7]); // 271
+store_temp<System>([2]) -> ([2]); // 272
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([98]) -> ([98]); // 273
+return([6], [7], [2], [98]); // 274
+revoke_ap_tracking() -> (); // 275
+withdraw_gas([0], [1]) { fallthrough([4], [5]) 375([6], [7]) }; // 276
+branch_align() -> (); // 277
+struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 278
+store_temp<RangeCheck>([4]) -> ([4]); // 279
+array_snapshot_pop_front<felt252>([8]) { fallthrough([9], [10]) 296([11]) }; // 280
+branch_align() -> (); // 281
+drop<Snapshot<Array<felt252>>>([9]) -> (); // 282
+drop<Box<felt252>>([10]) -> (); // 283
+array_new<felt252>() -> ([12]); // 284
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([13]); // 285
+store_temp<felt252>([13]) -> ([13]); // 286
+array_append<felt252>([12], [13]) -> ([14]); // 287
+struct_construct<core::panics::Panic>() -> ([15]); // 288
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([15], [14]) -> ([16]); // 289
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([16]) -> ([17]); // 290
+store_temp<RangeCheck>([4]) -> ([4]); // 291
+store_temp<GasBuiltin>([5]) -> ([5]); // 292
+store_temp<System>([2]) -> ([2]); // 293
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([17]) -> ([17]); // 294
+return([4], [5], [2], [17]); // 295
+branch_align() -> (); // 296
+drop<Snapshot<Array<felt252>>>([11]) -> (); // 297
+get_builtin_costs() -> ([18]); // 298
+store_temp<BuiltinCosts>([18]) -> ([18]); // 299
+withdraw_gas_all([4], [5], [18]) { fallthrough([19], [20]) 362([21], [22]) }; // 300
+branch_align() -> (); // 301
+const_as_immediate<Const<felt252, 907111799109225873672206001743429201758838553092777504370151546632448000192>>() -> ([23]); // 302
+struct_construct<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>>([23]) -> ([24]); // 303
+snapshot_take<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>>([24]) -> ([25], [26]); // 304
+drop<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>>([25]) -> (); // 305
+struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>>([26]) -> ([27]); // 306
+rename<felt252>([27]) -> ([28]); // 307
+store_temp<felt252>([28]) -> ([28]); // 308
+storage_base_address_from_felt252([19], [28]) -> ([29], [30]); // 309
+struct_construct<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>>([30]) -> ([31]); // 310
+snapshot_take<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>>([31]) -> ([32], [33]); // 311
+drop<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>>([32]) -> (); // 312
+struct_deconstruct<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>>([33]) -> ([34]); // 313
+rename<StorageBaseAddress>([34]) -> ([35]); // 314
+storage_address_from_base([35]) -> ([36]); // 315
+const_as_immediate<Const<u32, 0>>() -> ([37]); // 316
+store_temp<u32>([37]) -> ([37]); // 317
+store_temp<RangeCheck>([29]) -> ([29]); // 318
+storage_read_syscall([20], [2], [37], [36]) { fallthrough([38], [39], [40]) 349([41], [42], [43]) }; // 319
+branch_align() -> (); // 320
+store_temp<felt252>([40]) -> ([40]); // 321
+store_temp<GasBuiltin>([38]) -> ([38]); // 322
+store_temp<System>([39]) -> ([39]); // 323
+contract_address_try_from_felt252([29], [40]) { fallthrough([44], [45]) 339([46]) }; // 324
+branch_align() -> (); // 325
+array_new<felt252>() -> ([47]); // 326
+contract_address_to_felt252([45]) -> ([48]); // 327
+array_append<felt252>([47], [48]) -> ([49]); // 328
+snapshot_take<Array<felt252>>([49]) -> ([50], [51]); // 329
+drop<Array<felt252>>([50]) -> (); // 330
+struct_construct<core::array::Span::<core::felt252>>([51]) -> ([52]); // 331
+struct_construct<Tuple<core::array::Span::<core::felt252>>>([52]) -> ([53]); // 332
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([53]) -> ([54]); // 333
+store_temp<RangeCheck>([44]) -> ([44]); // 334
+store_temp<GasBuiltin>([38]) -> ([38]); // 335
+store_temp<System>([39]) -> ([39]); // 336
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([54]) -> ([54]); // 337
+return([44], [38], [39], [54]); // 338
+branch_align() -> (); // 339
+array_new<felt252>() -> ([55]); // 340
+const_as_immediate<Const<felt252, 1749165063169615148890104124711417950509560691>>() -> ([56]); // 341
+store_temp<felt252>([56]) -> ([56]); // 342
+array_append<felt252>([55], [56]) -> ([57]); // 343
+store_temp<RangeCheck>([46]) -> ([58]); // 344
+store_temp<GasBuiltin>([38]) -> ([59]); // 345
+store_temp<System>([39]) -> ([60]); // 346
+store_temp<Array<felt252>>([57]) -> ([61]); // 347
+jump() { 354() }; // 348
+branch_align() -> (); // 349
+store_temp<RangeCheck>([29]) -> ([58]); // 350
+store_temp<GasBuiltin>([41]) -> ([59]); // 351
+store_temp<System>([42]) -> ([60]); // 352
+store_temp<Array<felt252>>([43]) -> ([61]); // 353
 struct_construct<core::panics::Panic>() -> ([62]); // 354
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([62], [61]) -> ([63]); // 355
 enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([63]) -> ([64]); // 356
-store_temp<RangeCheck>([6]) -> ([6]); // 357
-store_temp<GasBuiltin>([7]) -> ([7]); // 358
-store_temp<System>([2]) -> ([2]); // 359
+store_temp<RangeCheck>([58]) -> ([58]); // 357
+store_temp<GasBuiltin>([59]) -> ([59]); // 358
+store_temp<System>([60]) -> ([60]); // 359
 store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([64]) -> ([64]); // 360
-return([6], [7], [2], [64]); // 361
-revoke_ap_tracking() -> (); // 362
-withdraw_gas([0], [1]) { fallthrough([4], [5]) 499([6], [7]) }; // 363
-branch_align() -> (); // 364
-struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 365
-enable_ap_tracking() -> (); // 366
-store_temp<RangeCheck>([4]) -> ([4]); // 367
-array_snapshot_pop_front<felt252>([8]) { fallthrough([9], [10]) 376([11]) }; // 368
-branch_align() -> (); // 369
-unbox<felt252>([10]) -> ([12]); // 370
-rename<felt252>([12]) -> ([13]); // 371
-enum_init<core::option::Option::<core::felt252>, 0>([13]) -> ([14]); // 372
-store_temp<Snapshot<Array<felt252>>>([9]) -> ([15]); // 373
-store_temp<core::option::Option::<core::felt252>>([14]) -> ([16]); // 374
-jump() { 381() }; // 375
-branch_align() -> (); // 376
-struct_construct<Unit>() -> ([17]); // 377
-enum_init<core::option::Option::<core::felt252>, 1>([17]) -> ([18]); // 378
-store_temp<Snapshot<Array<felt252>>>([11]) -> ([15]); // 379
-store_temp<core::option::Option::<core::felt252>>([18]) -> ([16]); // 380
-enum_match<core::option::Option::<core::felt252>>([16]) { fallthrough([19]) 482([20]) }; // 381
-branch_align() -> (); // 382
-contract_address_try_from_felt252([4], [19]) { fallthrough([21], [22]) 478([23]) }; // 383
-branch_align() -> (); // 384
-store_temp<RangeCheck>([21]) -> ([21]); // 385
-array_snapshot_pop_front<felt252>([15]) { fallthrough([24], [25]) 404([26]) }; // 386
-branch_align() -> (); // 387
-disable_ap_tracking() -> (); // 388
-drop<Snapshot<Array<felt252>>>([24]) -> (); // 389
-drop<Box<felt252>>([25]) -> (); // 390
-drop<ContractAddress>([22]) -> (); // 391
-array_new<felt252>() -> ([27]); // 392
-const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([28]); // 393
-store_temp<felt252>([28]) -> ([28]); // 394
-array_append<felt252>([27], [28]) -> ([29]); // 395
-struct_construct<core::panics::Panic>() -> ([30]); // 396
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([30], [29]) -> ([31]); // 397
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([31]) -> ([32]); // 398
-store_temp<RangeCheck>([21]) -> ([21]); // 399
-store_temp<GasBuiltin>([5]) -> ([5]); // 400
-store_temp<System>([2]) -> ([2]); // 401
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([32]) -> ([32]); // 402
-return([21], [5], [2], [32]); // 403
-branch_align() -> (); // 404
-disable_ap_tracking() -> (); // 405
-drop<Snapshot<Array<felt252>>>([26]) -> (); // 406
-get_builtin_costs() -> ([33]); // 407
-store_temp<BuiltinCosts>([33]) -> ([33]); // 408
-withdraw_gas_all([21], [5], [33]) { fallthrough([34], [35]) 464([36], [37]) }; // 409
-branch_align() -> (); // 410
-struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([38]); // 411
-struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([38]) -> ([39]); // 412
-snapshot_take<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([39]) -> ([40], [41]); // 413
-drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([40]) -> (); // 414
-store_temp<RangeCheck>([34]) -> ([34]); // 415
-store_temp<GasBuiltin>([35]) -> ([35]); // 416
-store_temp<System>([2]) -> ([2]); // 417
-function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership>([34], [35], [2], [41]) -> ([42], [43], [44], [45]); // 418
-enable_ap_tracking() -> (); // 419
-enum_match<core::panics::PanicResult::<((),)>>([45]) { fallthrough([46]) 448([47]) }; // 420
-branch_align() -> (); // 421
-drop<Tuple<Unit>>([46]) -> (); // 422
-storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>() -> ([48]); // 423
-contract_address_to_felt252([22]) -> ([49]); // 424
-storage_address_from_base([48]) -> ([50]); // 425
-const_as_immediate<Const<u32, 0>>() -> ([51]); // 426
-store_temp<u32>([51]) -> ([51]); // 427
-store_temp<StorageAddress>([50]) -> ([50]); // 428
-storage_write_syscall([43], [44], [51], [50], [49]) { fallthrough([52], [53]) 443([54], [55], [56]) }; // 429
-branch_align() -> (); // 430
-disable_ap_tracking() -> (); // 431
-array_new<felt252>() -> ([57]); // 432
-snapshot_take<Array<felt252>>([57]) -> ([58], [59]); // 433
-drop<Array<felt252>>([58]) -> (); // 434
-struct_construct<core::array::Span::<core::felt252>>([59]) -> ([60]); // 435
-struct_construct<Tuple<core::array::Span::<core::felt252>>>([60]) -> ([61]); // 436
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([61]) -> ([62]); // 437
-store_temp<RangeCheck>([42]) -> ([42]); // 438
-store_temp<GasBuiltin>([52]) -> ([52]); // 439
-store_temp<System>([53]) -> ([53]); // 440
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([62]) -> ([62]); // 441
-return([42], [52], [53], [62]); // 442
-branch_align() -> (); // 443
-store_temp<GasBuiltin>([54]) -> ([63]); // 444
-store_temp<System>([55]) -> ([64]); // 445
-store_temp<Array<felt252>>([56]) -> ([65]); // 446
-jump() { 455() }; // 447
-branch_align() -> (); // 448
-drop<ContractAddress>([22]) -> (); // 449
-struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>>([47]) -> ([66], [67]); // 450
-drop<core::panics::Panic>([66]) -> (); // 451
-store_temp<GasBuiltin>([43]) -> ([63]); // 452
-store_temp<System>([44]) -> ([64]); // 453
-store_temp<Array<felt252>>([67]) -> ([65]); // 454
-disable_ap_tracking() -> (); // 455
-struct_construct<core::panics::Panic>() -> ([68]); // 456
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([68], [65]) -> ([69]); // 457
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([69]) -> ([70]); // 458
-store_temp<RangeCheck>([42]) -> ([42]); // 459
-store_temp<GasBuiltin>([63]) -> ([63]); // 460
-store_temp<System>([64]) -> ([64]); // 461
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([70]) -> ([70]); // 462
-return([42], [63], [64], [70]); // 463
-branch_align() -> (); // 464
-drop<ContractAddress>([22]) -> (); // 465
-array_new<felt252>() -> ([71]); // 466
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([72]); // 467
-store_temp<felt252>([72]) -> ([72]); // 468
-array_append<felt252>([71], [72]) -> ([73]); // 469
-struct_construct<core::panics::Panic>() -> ([74]); // 470
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([74], [73]) -> ([75]); // 471
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([75]) -> ([76]); // 472
-store_temp<RangeCheck>([36]) -> ([36]); // 473
-store_temp<GasBuiltin>([37]) -> ([37]); // 474
-store_temp<System>([2]) -> ([2]); // 475
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([76]) -> ([76]); // 476
-return([36], [37], [2], [76]); // 477
-branch_align() -> (); // 478
-drop<Snapshot<Array<felt252>>>([15]) -> (); // 479
-store_temp<RangeCheck>([23]) -> ([77]); // 480
-jump() { 486() }; // 481
-branch_align() -> (); // 482
-drop<Unit>([20]) -> (); // 483
-drop<Snapshot<Array<felt252>>>([15]) -> (); // 484
-store_temp<RangeCheck>([4]) -> ([77]); // 485
-disable_ap_tracking() -> (); // 486
-array_new<felt252>() -> ([78]); // 487
-const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([79]); // 488
-store_temp<felt252>([79]) -> ([79]); // 489
-array_append<felt252>([78], [79]) -> ([80]); // 490
-struct_construct<core::panics::Panic>() -> ([81]); // 491
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([81], [80]) -> ([82]); // 492
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([82]) -> ([83]); // 493
-store_temp<RangeCheck>([77]) -> ([77]); // 494
-store_temp<GasBuiltin>([5]) -> ([5]); // 495
-store_temp<System>([2]) -> ([2]); // 496
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([83]) -> ([83]); // 497
-return([77], [5], [2], [83]); // 498
-branch_align() -> (); // 499
-drop<core::array::Span::<core::felt252>>([3]) -> (); // 500
-array_new<felt252>() -> ([84]); // 501
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([85]); // 502
-store_temp<felt252>([85]) -> ([85]); // 503
-array_append<felt252>([84], [85]) -> ([86]); // 504
-struct_construct<core::panics::Panic>() -> ([87]); // 505
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([87], [86]) -> ([88]); // 506
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([88]) -> ([89]); // 507
-store_temp<RangeCheck>([6]) -> ([6]); // 508
-store_temp<GasBuiltin>([7]) -> ([7]); // 509
-store_temp<System>([2]) -> ([2]); // 510
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([89]) -> ([89]); // 511
-return([6], [7], [2], [89]); // 512
-revoke_ap_tracking() -> (); // 513
-withdraw_gas([0], [1]) { fallthrough([4], [5]) 692([6], [7]) }; // 514
-branch_align() -> (); // 515
-struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 516
-enable_ap_tracking() -> (); // 517
-store_temp<RangeCheck>([4]) -> ([4]); // 518
-array_snapshot_pop_front<felt252>([8]) { fallthrough([9], [10]) 527([11]) }; // 519
-branch_align() -> (); // 520
-unbox<felt252>([10]) -> ([12]); // 521
-rename<felt252>([12]) -> ([13]); // 522
-enum_init<core::option::Option::<core::felt252>, 0>([13]) -> ([14]); // 523
-store_temp<Snapshot<Array<felt252>>>([9]) -> ([15]); // 524
-store_temp<core::option::Option::<core::felt252>>([14]) -> ([16]); // 525
-jump() { 532() }; // 526
-branch_align() -> (); // 527
-struct_construct<Unit>() -> ([17]); // 528
-enum_init<core::option::Option::<core::felt252>, 1>([17]) -> ([18]); // 529
-store_temp<Snapshot<Array<felt252>>>([11]) -> ([15]); // 530
-store_temp<core::option::Option::<core::felt252>>([18]) -> ([16]); // 531
-enum_match<core::option::Option::<core::felt252>>([16]) { fallthrough([19]) 675([20]) }; // 532
-branch_align() -> (); // 533
-contract_address_try_from_felt252([4], [19]) { fallthrough([21], [22]) 671([23]) }; // 534
-branch_align() -> (); // 535
-store_temp<RangeCheck>([21]) -> ([21]); // 536
-array_snapshot_pop_front<felt252>([15]) { fallthrough([24], [25]) 543([26]) }; // 537
-branch_align() -> (); // 538
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([25]) -> ([27]); // 539
-store_temp<Snapshot<Array<felt252>>>([24]) -> ([28]); // 540
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([27]) -> ([29]); // 541
-jump() { 548() }; // 542
-branch_align() -> (); // 543
-struct_construct<Unit>() -> ([30]); // 544
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([30]) -> ([31]); // 545
-store_temp<Snapshot<Array<felt252>>>([26]) -> ([28]); // 546
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([31]) -> ([29]); // 547
-enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([29]) { fallthrough([32]) 653([33]) }; // 548
-branch_align() -> (); // 549
-unbox<felt252>([32]) -> ([34]); // 550
-rename<felt252>([34]) -> ([35]); // 551
-store_temp<felt252>([35]) -> ([35]); // 552
-u128s_from_felt252([21], [35]) { fallthrough([36], [37]) 646([38], [39], [40]) }; // 553
-branch_align() -> (); // 554
-store_temp<RangeCheck>([36]) -> ([36]); // 555
-array_snapshot_pop_front<felt252>([28]) { fallthrough([41], [42]) 575([43]) }; // 556
-branch_align() -> (); // 557
-disable_ap_tracking() -> (); // 558
-drop<Snapshot<Array<felt252>>>([41]) -> (); // 559
-drop<Box<felt252>>([42]) -> (); // 560
-drop<u128>([37]) -> (); // 561
-drop<ContractAddress>([22]) -> (); // 562
-array_new<felt252>() -> ([44]); // 563
-const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([45]); // 564
-store_temp<felt252>([45]) -> ([45]); // 565
-array_append<felt252>([44], [45]) -> ([46]); // 566
-struct_construct<core::panics::Panic>() -> ([47]); // 567
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([47], [46]) -> ([48]); // 568
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([48]) -> ([49]); // 569
-store_temp<RangeCheck>([36]) -> ([36]); // 570
-store_temp<GasBuiltin>([5]) -> ([5]); // 571
-store_temp<System>([2]) -> ([2]); // 572
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([49]) -> ([49]); // 573
-return([36], [5], [2], [49]); // 574
+return([58], [59], [60], [64]); // 361
+branch_align() -> (); // 362
+array_new<felt252>() -> ([65]); // 363
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([66]); // 364
+store_temp<felt252>([66]) -> ([66]); // 365
+array_append<felt252>([65], [66]) -> ([67]); // 366
+struct_construct<core::panics::Panic>() -> ([68]); // 367
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([68], [67]) -> ([69]); // 368
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([69]) -> ([70]); // 369
+store_temp<RangeCheck>([21]) -> ([21]); // 370
+store_temp<GasBuiltin>([22]) -> ([22]); // 371
+store_temp<System>([2]) -> ([2]); // 372
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([70]) -> ([70]); // 373
+return([21], [22], [2], [70]); // 374
+branch_align() -> (); // 375
+drop<core::array::Span::<core::felt252>>([3]) -> (); // 376
+array_new<felt252>() -> ([71]); // 377
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([72]); // 378
+store_temp<felt252>([72]) -> ([72]); // 379
+array_append<felt252>([71], [72]) -> ([73]); // 380
+struct_construct<core::panics::Panic>() -> ([74]); // 381
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([74], [73]) -> ([75]); // 382
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([75]) -> ([76]); // 383
+store_temp<RangeCheck>([6]) -> ([6]); // 384
+store_temp<GasBuiltin>([7]) -> ([7]); // 385
+store_temp<System>([2]) -> ([2]); // 386
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([76]) -> ([76]); // 387
+return([6], [7], [2], [76]); // 388
+revoke_ap_tracking() -> (); // 389
+withdraw_gas([0], [1]) { fallthrough([4], [5]) 531([6], [7]) }; // 390
+branch_align() -> (); // 391
+struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 392
+enable_ap_tracking() -> (); // 393
+store_temp<RangeCheck>([4]) -> ([4]); // 394
+array_snapshot_pop_front<felt252>([8]) { fallthrough([9], [10]) 403([11]) }; // 395
+branch_align() -> (); // 396
+unbox<felt252>([10]) -> ([12]); // 397
+rename<felt252>([12]) -> ([13]); // 398
+enum_init<core::option::Option::<core::felt252>, 0>([13]) -> ([14]); // 399
+store_temp<Snapshot<Array<felt252>>>([9]) -> ([15]); // 400
+store_temp<core::option::Option::<core::felt252>>([14]) -> ([16]); // 401
+jump() { 408() }; // 402
+branch_align() -> (); // 403
+struct_construct<Unit>() -> ([17]); // 404
+enum_init<core::option::Option::<core::felt252>, 1>([17]) -> ([18]); // 405
+store_temp<Snapshot<Array<felt252>>>([11]) -> ([15]); // 406
+store_temp<core::option::Option::<core::felt252>>([18]) -> ([16]); // 407
+enum_match<core::option::Option::<core::felt252>>([16]) { fallthrough([19]) 514([20]) }; // 408
+branch_align() -> (); // 409
+contract_address_try_from_felt252([4], [19]) { fallthrough([21], [22]) 510([23]) }; // 410
+branch_align() -> (); // 411
+store_temp<RangeCheck>([21]) -> ([21]); // 412
+array_snapshot_pop_front<felt252>([15]) { fallthrough([24], [25]) 431([26]) }; // 413
+branch_align() -> (); // 414
+disable_ap_tracking() -> (); // 415
+drop<Snapshot<Array<felt252>>>([24]) -> (); // 416
+drop<Box<felt252>>([25]) -> (); // 417
+drop<ContractAddress>([22]) -> (); // 418
+array_new<felt252>() -> ([27]); // 419
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([28]); // 420
+store_temp<felt252>([28]) -> ([28]); // 421
+array_append<felt252>([27], [28]) -> ([29]); // 422
+struct_construct<core::panics::Panic>() -> ([30]); // 423
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([30], [29]) -> ([31]); // 424
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([31]) -> ([32]); // 425
+store_temp<RangeCheck>([21]) -> ([21]); // 426
+store_temp<GasBuiltin>([5]) -> ([5]); // 427
+store_temp<System>([2]) -> ([2]); // 428
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([32]) -> ([32]); // 429
+return([21], [5], [2], [32]); // 430
+branch_align() -> (); // 431
+disable_ap_tracking() -> (); // 432
+drop<Snapshot<Array<felt252>>>([26]) -> (); // 433
+get_builtin_costs() -> ([33]); // 434
+store_temp<BuiltinCosts>([33]) -> ([33]); // 435
+withdraw_gas_all([21], [5], [33]) { fallthrough([34], [35]) 496([36], [37]) }; // 436
+branch_align() -> (); // 437
+struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>() -> ([38]); // 438
+snapshot_take<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([38]) -> ([39], [40]); // 439
+drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([39]) -> (); // 440
+store_temp<RangeCheck>([34]) -> ([34]); // 441
+store_temp<GasBuiltin>([35]) -> ([35]); // 442
+store_temp<System>([2]) -> ([2]); // 443
+function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership>([34], [35], [2], [40]) -> ([41], [42], [43], [44]); // 444
+enum_match<core::panics::PanicResult::<((),)>>([44]) { fallthrough([45]) 480([46]) }; // 445
+branch_align() -> (); // 446
+drop<Tuple<Unit>>([45]) -> (); // 447
+const_as_immediate<Const<felt252, 907111799109225873672206001743429201758838553092777504370151546632448000192>>() -> ([47]); // 448
+struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>>([47]) -> ([48]); // 449
+snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>>([48]) -> ([49], [50]); // 450
+drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>>([49]) -> (); // 451
+struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>>([50]) -> ([51]); // 452
+rename<felt252>([51]) -> ([52]); // 453
+store_temp<felt252>([52]) -> ([52]); // 454
+storage_base_address_from_felt252([41], [52]) -> ([53], [54]); // 455
+contract_address_to_felt252([22]) -> ([55]); // 456
+storage_address_from_base([54]) -> ([56]); // 457
+const_as_immediate<Const<u32, 0>>() -> ([57]); // 458
+store_temp<u32>([57]) -> ([57]); // 459
+store_temp<RangeCheck>([53]) -> ([53]); // 460
+storage_write_syscall([42], [43], [57], [56], [55]) { fallthrough([58], [59]) 474([60], [61], [62]) }; // 461
+branch_align() -> (); // 462
+array_new<felt252>() -> ([63]); // 463
+snapshot_take<Array<felt252>>([63]) -> ([64], [65]); // 464
+drop<Array<felt252>>([64]) -> (); // 465
+struct_construct<core::array::Span::<core::felt252>>([65]) -> ([66]); // 466
+struct_construct<Tuple<core::array::Span::<core::felt252>>>([66]) -> ([67]); // 467
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([67]) -> ([68]); // 468
+store_temp<RangeCheck>([53]) -> ([53]); // 469
+store_temp<GasBuiltin>([58]) -> ([58]); // 470
+store_temp<System>([59]) -> ([59]); // 471
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([68]) -> ([68]); // 472
+return([53], [58], [59], [68]); // 473
+branch_align() -> (); // 474
+store_temp<RangeCheck>([53]) -> ([69]); // 475
+store_temp<GasBuiltin>([60]) -> ([70]); // 476
+store_temp<System>([61]) -> ([71]); // 477
+store_temp<Array<felt252>>([62]) -> ([72]); // 478
+jump() { 488() }; // 479
+branch_align() -> (); // 480
+drop<ContractAddress>([22]) -> (); // 481
+struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>>([46]) -> ([73], [74]); // 482
+drop<core::panics::Panic>([73]) -> (); // 483
+store_temp<RangeCheck>([41]) -> ([69]); // 484
+store_temp<GasBuiltin>([42]) -> ([70]); // 485
+store_temp<System>([43]) -> ([71]); // 486
+store_temp<Array<felt252>>([74]) -> ([72]); // 487
+struct_construct<core::panics::Panic>() -> ([75]); // 488
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([75], [72]) -> ([76]); // 489
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([76]) -> ([77]); // 490
+store_temp<RangeCheck>([69]) -> ([69]); // 491
+store_temp<GasBuiltin>([70]) -> ([70]); // 492
+store_temp<System>([71]) -> ([71]); // 493
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([77]) -> ([77]); // 494
+return([69], [70], [71], [77]); // 495
+branch_align() -> (); // 496
+drop<ContractAddress>([22]) -> (); // 497
+array_new<felt252>() -> ([78]); // 498
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([79]); // 499
+store_temp<felt252>([79]) -> ([79]); // 500
+array_append<felt252>([78], [79]) -> ([80]); // 501
+struct_construct<core::panics::Panic>() -> ([81]); // 502
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([81], [80]) -> ([82]); // 503
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([82]) -> ([83]); // 504
+store_temp<RangeCheck>([36]) -> ([36]); // 505
+store_temp<GasBuiltin>([37]) -> ([37]); // 506
+store_temp<System>([2]) -> ([2]); // 507
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([83]) -> ([83]); // 508
+return([36], [37], [2], [83]); // 509
+branch_align() -> (); // 510
+drop<Snapshot<Array<felt252>>>([15]) -> (); // 511
+store_temp<RangeCheck>([23]) -> ([84]); // 512
+jump() { 518() }; // 513
+branch_align() -> (); // 514
+drop<Unit>([20]) -> (); // 515
+drop<Snapshot<Array<felt252>>>([15]) -> (); // 516
+store_temp<RangeCheck>([4]) -> ([84]); // 517
+disable_ap_tracking() -> (); // 518
+array_new<felt252>() -> ([85]); // 519
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([86]); // 520
+store_temp<felt252>([86]) -> ([86]); // 521
+array_append<felt252>([85], [86]) -> ([87]); // 522
+struct_construct<core::panics::Panic>() -> ([88]); // 523
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([88], [87]) -> ([89]); // 524
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([89]) -> ([90]); // 525
+store_temp<RangeCheck>([84]) -> ([84]); // 526
+store_temp<GasBuiltin>([5]) -> ([5]); // 527
+store_temp<System>([2]) -> ([2]); // 528
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([90]) -> ([90]); // 529
+return([84], [5], [2], [90]); // 530
+branch_align() -> (); // 531
+drop<core::array::Span::<core::felt252>>([3]) -> (); // 532
+array_new<felt252>() -> ([91]); // 533
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([92]); // 534
+store_temp<felt252>([92]) -> ([92]); // 535
+array_append<felt252>([91], [92]) -> ([93]); // 536
+struct_construct<core::panics::Panic>() -> ([94]); // 537
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([94], [93]) -> ([95]); // 538
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([95]) -> ([96]); // 539
+store_temp<RangeCheck>([6]) -> ([6]); // 540
+store_temp<GasBuiltin>([7]) -> ([7]); // 541
+store_temp<System>([2]) -> ([2]); // 542
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([96]) -> ([96]); // 543
+return([6], [7], [2], [96]); // 544
+revoke_ap_tracking() -> (); // 545
+withdraw_gas([0], [1]) { fallthrough([4], [5]) 738([6], [7]) }; // 546
+branch_align() -> (); // 547
+struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 548
+enable_ap_tracking() -> (); // 549
+store_temp<RangeCheck>([4]) -> ([4]); // 550
+array_snapshot_pop_front<felt252>([8]) { fallthrough([9], [10]) 559([11]) }; // 551
+branch_align() -> (); // 552
+unbox<felt252>([10]) -> ([12]); // 553
+rename<felt252>([12]) -> ([13]); // 554
+enum_init<core::option::Option::<core::felt252>, 0>([13]) -> ([14]); // 555
+store_temp<Snapshot<Array<felt252>>>([9]) -> ([15]); // 556
+store_temp<core::option::Option::<core::felt252>>([14]) -> ([16]); // 557
+jump() { 564() }; // 558
+branch_align() -> (); // 559
+struct_construct<Unit>() -> ([17]); // 560
+enum_init<core::option::Option::<core::felt252>, 1>([17]) -> ([18]); // 561
+store_temp<Snapshot<Array<felt252>>>([11]) -> ([15]); // 562
+store_temp<core::option::Option::<core::felt252>>([18]) -> ([16]); // 563
+enum_match<core::option::Option::<core::felt252>>([16]) { fallthrough([19]) 721([20]) }; // 564
+branch_align() -> (); // 565
+contract_address_try_from_felt252([4], [19]) { fallthrough([21], [22]) 717([23]) }; // 566
+branch_align() -> (); // 567
+store_temp<RangeCheck>([21]) -> ([21]); // 568
+array_snapshot_pop_front<felt252>([15]) { fallthrough([24], [25]) 575([26]) }; // 569
+branch_align() -> (); // 570
+enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([25]) -> ([27]); // 571
+store_temp<Snapshot<Array<felt252>>>([24]) -> ([28]); // 572
+store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([27]) -> ([29]); // 573
+jump() { 580() }; // 574
 branch_align() -> (); // 575
-drop<Snapshot<Array<felt252>>>([43]) -> (); // 576
-get_builtin_costs() -> ([50]); // 577
-store_temp<BuiltinCosts>([50]) -> ([50]); // 578
-withdraw_gas_all([36], [5], [50]) { fallthrough([51], [52]) 630([53], [54]) }; // 579
-branch_align() -> (); // 580
-storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>() -> ([55]); // 581
-contract_address_to_felt252([22]) -> ([56]); // 582
-storage_address_from_base([55]) -> ([57]); // 583
-const_as_immediate<Const<u32, 0>>() -> ([58]); // 584
-store_temp<u32>([58]) -> ([58]); // 585
-store_temp<StorageAddress>([57]) -> ([57]); // 586
-store_temp<RangeCheck>([51]) -> ([51]); // 587
-storage_write_syscall([52], [2], [58], [57], [56]) { fallthrough([59], [60]) 616([61], [62], [63]) }; // 588
+struct_construct<Unit>() -> ([30]); // 576
+enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([30]) -> ([31]); // 577
+store_temp<Snapshot<Array<felt252>>>([26]) -> ([28]); // 578
+store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([31]) -> ([29]); // 579
+enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([29]) { fallthrough([32]) 699([33]) }; // 580
+branch_align() -> (); // 581
+unbox<felt252>([32]) -> ([34]); // 582
+rename<felt252>([34]) -> ([35]); // 583
+store_temp<felt252>([35]) -> ([35]); // 584
+u128s_from_felt252([21], [35]) { fallthrough([36], [37]) 692([38], [39], [40]) }; // 585
+branch_align() -> (); // 586
+store_temp<RangeCheck>([36]) -> ([36]); // 587
+array_snapshot_pop_front<felt252>([28]) { fallthrough([41], [42]) 607([43]) }; // 588
 branch_align() -> (); // 589
-storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([64]); // 590
-u128_to_felt252([37]) -> ([65]); // 591
-storage_address_from_base([64]) -> ([66]); // 592
-const_as_immediate<Const<u32, 0>>() -> ([67]); // 593
-store_temp<GasBuiltin>([59]) -> ([59]); // 594
-store_temp<u32>([67]) -> ([67]); // 595
-store_temp<StorageAddress>([66]) -> ([66]); // 596
-storage_write_syscall([59], [60], [67], [66], [65]) { fallthrough([68], [69]) 611([70], [71], [72]) }; // 597
-branch_align() -> (); // 598
-disable_ap_tracking() -> (); // 599
-array_new<felt252>() -> ([73]); // 600
-snapshot_take<Array<felt252>>([73]) -> ([74], [75]); // 601
-drop<Array<felt252>>([74]) -> (); // 602
-struct_construct<core::array::Span::<core::felt252>>([75]) -> ([76]); // 603
-struct_construct<Tuple<core::array::Span::<core::felt252>>>([76]) -> ([77]); // 604
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([77]) -> ([78]); // 605
-store_temp<RangeCheck>([51]) -> ([51]); // 606
-store_temp<GasBuiltin>([68]) -> ([68]); // 607
-store_temp<System>([69]) -> ([69]); // 608
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([78]) -> ([78]); // 609
-return([51], [68], [69], [78]); // 610
-branch_align() -> (); // 611
-store_temp<GasBuiltin>([70]) -> ([79]); // 612
-store_temp<System>([71]) -> ([80]); // 613
-store_temp<Array<felt252>>([72]) -> ([81]); // 614
-jump() { 621() }; // 615
-branch_align() -> (); // 616
-drop<u128>([37]) -> (); // 617
-store_temp<GasBuiltin>([61]) -> ([79]); // 618
-store_temp<System>([62]) -> ([80]); // 619
-store_temp<Array<felt252>>([63]) -> ([81]); // 620
-disable_ap_tracking() -> (); // 621
-struct_construct<core::panics::Panic>() -> ([82]); // 622
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([82], [81]) -> ([83]); // 623
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([83]) -> ([84]); // 624
-store_temp<RangeCheck>([51]) -> ([51]); // 625
-store_temp<GasBuiltin>([79]) -> ([79]); // 626
-store_temp<System>([80]) -> ([80]); // 627
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([84]) -> ([84]); // 628
-return([51], [79], [80], [84]); // 629
-branch_align() -> (); // 630
-disable_ap_tracking() -> (); // 631
-drop<u128>([37]) -> (); // 632
-drop<ContractAddress>([22]) -> (); // 633
-array_new<felt252>() -> ([85]); // 634
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([86]); // 635
-store_temp<felt252>([86]) -> ([86]); // 636
-array_append<felt252>([85], [86]) -> ([87]); // 637
-struct_construct<core::panics::Panic>() -> ([88]); // 638
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([88], [87]) -> ([89]); // 639
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([89]) -> ([90]); // 640
-store_temp<RangeCheck>([53]) -> ([53]); // 641
-store_temp<GasBuiltin>([54]) -> ([54]); // 642
-store_temp<System>([2]) -> ([2]); // 643
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([90]) -> ([90]); // 644
-return([53], [54], [2], [90]); // 645
-branch_align() -> (); // 646
-drop<u128>([39]) -> (); // 647
-drop<u128>([40]) -> (); // 648
-drop<Snapshot<Array<felt252>>>([28]) -> (); // 649
-drop<ContractAddress>([22]) -> (); // 650
-store_temp<RangeCheck>([38]) -> ([91]); // 651
-jump() { 658() }; // 652
-branch_align() -> (); // 653
-drop<Unit>([33]) -> (); // 654
-drop<Snapshot<Array<felt252>>>([28]) -> (); // 655
-drop<ContractAddress>([22]) -> (); // 656
-store_temp<RangeCheck>([21]) -> ([91]); // 657
-disable_ap_tracking() -> (); // 658
-array_new<felt252>() -> ([92]); // 659
-const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>>() -> ([93]); // 660
-store_temp<felt252>([93]) -> ([93]); // 661
-array_append<felt252>([92], [93]) -> ([94]); // 662
-struct_construct<core::panics::Panic>() -> ([95]); // 663
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([95], [94]) -> ([96]); // 664
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([96]) -> ([97]); // 665
-store_temp<RangeCheck>([91]) -> ([91]); // 666
-store_temp<GasBuiltin>([5]) -> ([5]); // 667
-store_temp<System>([2]) -> ([2]); // 668
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([97]) -> ([97]); // 669
-return([91], [5], [2], [97]); // 670
-branch_align() -> (); // 671
-drop<Snapshot<Array<felt252>>>([15]) -> (); // 672
-store_temp<RangeCheck>([23]) -> ([98]); // 673
-jump() { 679() }; // 674
-branch_align() -> (); // 675
-drop<Unit>([20]) -> (); // 676
-drop<Snapshot<Array<felt252>>>([15]) -> (); // 677
-store_temp<RangeCheck>([4]) -> ([98]); // 678
-disable_ap_tracking() -> (); // 679
-array_new<felt252>() -> ([99]); // 680
-const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([100]); // 681
-store_temp<felt252>([100]) -> ([100]); // 682
-array_append<felt252>([99], [100]) -> ([101]); // 683
-struct_construct<core::panics::Panic>() -> ([102]); // 684
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([102], [101]) -> ([103]); // 685
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([103]) -> ([104]); // 686
-store_temp<RangeCheck>([98]) -> ([98]); // 687
-store_temp<GasBuiltin>([5]) -> ([5]); // 688
+disable_ap_tracking() -> (); // 590
+drop<Snapshot<Array<felt252>>>([41]) -> (); // 591
+drop<Box<felt252>>([42]) -> (); // 592
+drop<u128>([37]) -> (); // 593
+drop<ContractAddress>([22]) -> (); // 594
+array_new<felt252>() -> ([44]); // 595
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([45]); // 596
+store_temp<felt252>([45]) -> ([45]); // 597
+array_append<felt252>([44], [45]) -> ([46]); // 598
+struct_construct<core::panics::Panic>() -> ([47]); // 599
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([47], [46]) -> ([48]); // 600
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([48]) -> ([49]); // 601
+store_temp<RangeCheck>([36]) -> ([36]); // 602
+store_temp<GasBuiltin>([5]) -> ([5]); // 603
+store_temp<System>([2]) -> ([2]); // 604
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([49]) -> ([49]); // 605
+return([36], [5], [2], [49]); // 606
+branch_align() -> (); // 607
+drop<Snapshot<Array<felt252>>>([43]) -> (); // 608
+get_builtin_costs() -> ([50]); // 609
+store_temp<BuiltinCosts>([50]) -> ([50]); // 610
+withdraw_gas_all([36], [5], [50]) { fallthrough([51], [52]) 676([53], [54]) }; // 611
+branch_align() -> (); // 612
+disable_ap_tracking() -> (); // 613
+const_as_immediate<Const<felt252, 907111799109225873672206001743429201758838553092777504370151546632448000192>>() -> ([55]); // 614
+struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>>([55]) -> ([56]); // 615
+snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>>([56]) -> ([57], [58]); // 616
+drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>>([57]) -> (); // 617
+struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>>>([58]) -> ([59]); // 618
+rename<felt252>([59]) -> ([60]); // 619
+store_temp<felt252>([60]) -> ([60]); // 620
+storage_base_address_from_felt252([51], [60]) -> ([61], [62]); // 621
+contract_address_to_felt252([22]) -> ([63]); // 622
+storage_address_from_base([62]) -> ([64]); // 623
+const_as_immediate<Const<u32, 0>>() -> ([65]); // 624
+store_temp<u32>([65]) -> ([65]); // 625
+store_temp<RangeCheck>([61]) -> ([61]); // 626
+storage_write_syscall([52], [2], [65], [64], [63]) { fallthrough([66], [67]) 662([68], [69], [70]) }; // 627
+branch_align() -> (); // 628
+const_as_immediate<Const<felt252, 916907772491729262376534102982219947830828984996257231353398618781993312401>>() -> ([71]); // 629
+struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>>([71]) -> ([72]); // 630
+snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>>([72]) -> ([73], [74]); // 631
+drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>>([73]) -> (); // 632
+struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>>([74]) -> ([75]); // 633
+rename<felt252>([75]) -> ([76]); // 634
+store_temp<felt252>([76]) -> ([76]); // 635
+storage_base_address_from_felt252([61], [76]) -> ([77], [78]); // 636
+u128_to_felt252([37]) -> ([79]); // 637
+storage_address_from_base([78]) -> ([80]); // 638
+const_as_immediate<Const<u32, 0>>() -> ([81]); // 639
+store_temp<GasBuiltin>([66]) -> ([66]); // 640
+store_temp<u32>([81]) -> ([81]); // 641
+store_temp<RangeCheck>([77]) -> ([77]); // 642
+storage_write_syscall([66], [67], [81], [80], [79]) { fallthrough([82], [83]) 656([84], [85], [86]) }; // 643
+branch_align() -> (); // 644
+array_new<felt252>() -> ([87]); // 645
+snapshot_take<Array<felt252>>([87]) -> ([88], [89]); // 646
+drop<Array<felt252>>([88]) -> (); // 647
+struct_construct<core::array::Span::<core::felt252>>([89]) -> ([90]); // 648
+struct_construct<Tuple<core::array::Span::<core::felt252>>>([90]) -> ([91]); // 649
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([91]) -> ([92]); // 650
+store_temp<RangeCheck>([77]) -> ([77]); // 651
+store_temp<GasBuiltin>([82]) -> ([82]); // 652
+store_temp<System>([83]) -> ([83]); // 653
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([92]) -> ([92]); // 654
+return([77], [82], [83], [92]); // 655
+branch_align() -> (); // 656
+store_temp<RangeCheck>([77]) -> ([93]); // 657
+store_temp<GasBuiltin>([84]) -> ([94]); // 658
+store_temp<System>([85]) -> ([95]); // 659
+store_temp<Array<felt252>>([86]) -> ([96]); // 660
+jump() { 668() }; // 661
+branch_align() -> (); // 662
+drop<u128>([37]) -> (); // 663
+store_temp<RangeCheck>([61]) -> ([93]); // 664
+store_temp<GasBuiltin>([68]) -> ([94]); // 665
+store_temp<System>([69]) -> ([95]); // 666
+store_temp<Array<felt252>>([70]) -> ([96]); // 667
+struct_construct<core::panics::Panic>() -> ([97]); // 668
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([97], [96]) -> ([98]); // 669
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([98]) -> ([99]); // 670
+store_temp<RangeCheck>([93]) -> ([93]); // 671
+store_temp<GasBuiltin>([94]) -> ([94]); // 672
+store_temp<System>([95]) -> ([95]); // 673
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([99]) -> ([99]); // 674
+return([93], [94], [95], [99]); // 675
+branch_align() -> (); // 676
+disable_ap_tracking() -> (); // 677
+drop<u128>([37]) -> (); // 678
+drop<ContractAddress>([22]) -> (); // 679
+array_new<felt252>() -> ([100]); // 680
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([101]); // 681
+store_temp<felt252>([101]) -> ([101]); // 682
+array_append<felt252>([100], [101]) -> ([102]); // 683
+struct_construct<core::panics::Panic>() -> ([103]); // 684
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([103], [102]) -> ([104]); // 685
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([104]) -> ([105]); // 686
+store_temp<RangeCheck>([53]) -> ([53]); // 687
+store_temp<GasBuiltin>([54]) -> ([54]); // 688
 store_temp<System>([2]) -> ([2]); // 689
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([104]) -> ([104]); // 690
-return([98], [5], [2], [104]); // 691
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([105]) -> ([105]); // 690
+return([53], [54], [2], [105]); // 691
 branch_align() -> (); // 692
-drop<core::array::Span::<core::felt252>>([3]) -> (); // 693
-array_new<felt252>() -> ([105]); // 694
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([106]); // 695
-store_temp<felt252>([106]) -> ([106]); // 696
-array_append<felt252>([105], [106]) -> ([107]); // 697
-struct_construct<core::panics::Panic>() -> ([108]); // 698
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([108], [107]) -> ([109]); // 699
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([109]) -> ([110]); // 700
-store_temp<RangeCheck>([6]) -> ([6]); // 701
-store_temp<GasBuiltin>([7]) -> ([7]); // 702
-store_temp<System>([2]) -> ([2]); // 703
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([110]) -> ([110]); // 704
-return([6], [7], [2], [110]); // 705
-drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([3]) -> (); // 706
-storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>() -> ([4]); // 707
-storage_address_from_base([4]) -> ([5]); // 708
-const_as_immediate<Const<u32, 0>>() -> ([6]); // 709
-store_temp<u32>([6]) -> ([6]); // 710
-store_temp<StorageAddress>([5]) -> ([5]); // 711
-storage_read_syscall([1], [2], [6], [5]) { fallthrough([7], [8], [9]) 780([10], [11], [12]) }; // 712
-branch_align() -> (); // 713
-store_temp<felt252>([9]) -> ([9]); // 714
-store_temp<GasBuiltin>([7]) -> ([7]); // 715
-store_temp<System>([8]) -> ([8]); // 716
-contract_address_try_from_felt252([0], [9]) { fallthrough([13], [14]) 770([15]) }; // 717
-branch_align() -> (); // 718
-store_temp<RangeCheck>([13]) -> ([13]); // 719
-get_execution_info_v2_syscall([7], [8]) { fallthrough([16], [17], [18]) 760([19], [20], [21]) }; // 720
+drop<u128>([39]) -> (); // 693
+drop<u128>([40]) -> (); // 694
+drop<Snapshot<Array<felt252>>>([28]) -> (); // 695
+drop<ContractAddress>([22]) -> (); // 696
+store_temp<RangeCheck>([38]) -> ([106]); // 697
+jump() { 704() }; // 698
+branch_align() -> (); // 699
+drop<Unit>([33]) -> (); // 700
+drop<Snapshot<Array<felt252>>>([28]) -> (); // 701
+drop<ContractAddress>([22]) -> (); // 702
+store_temp<RangeCheck>([21]) -> ([106]); // 703
+disable_ap_tracking() -> (); // 704
+array_new<felt252>() -> ([107]); // 705
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>>() -> ([108]); // 706
+store_temp<felt252>([108]) -> ([108]); // 707
+array_append<felt252>([107], [108]) -> ([109]); // 708
+struct_construct<core::panics::Panic>() -> ([110]); // 709
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([110], [109]) -> ([111]); // 710
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([111]) -> ([112]); // 711
+store_temp<RangeCheck>([106]) -> ([106]); // 712
+store_temp<GasBuiltin>([5]) -> ([5]); // 713
+store_temp<System>([2]) -> ([2]); // 714
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([112]) -> ([112]); // 715
+return([106], [5], [2], [112]); // 716
+branch_align() -> (); // 717
+drop<Snapshot<Array<felt252>>>([15]) -> (); // 718
+store_temp<RangeCheck>([23]) -> ([113]); // 719
+jump() { 725() }; // 720
 branch_align() -> (); // 721
-store_temp<Box<core::starknet::info::v2::ExecutionInfo>>([18]) -> ([18]); // 722
-unbox<core::starknet::info::v2::ExecutionInfo>([18]) -> ([22]); // 723
-contract_address_to_felt252([14]) -> ([23]); // 724
-struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([22]) -> ([24], [25], [26], [27], [28]); // 725
-drop<Box<core::starknet::info::BlockInfo>>([24]) -> (); // 726
-drop<Box<core::starknet::info::v2::TxInfo>>([25]) -> (); // 727
-drop<ContractAddress>([27]) -> (); // 728
-drop<felt252>([28]) -> (); // 729
-contract_address_to_felt252([26]) -> ([29]); // 730
-store_temp<felt252>([29]) -> ([29]); // 731
-felt252_sub([23], [29]) -> ([30]); // 732
-store_temp<felt252>([30]) -> ([30]); // 733
-store_temp<GasBuiltin>([16]) -> ([16]); // 734
-store_temp<System>([17]) -> ([17]); // 735
-felt252_is_zero([30]) { fallthrough() 746([31]) }; // 736
-branch_align() -> (); // 737
-struct_construct<Unit>() -> ([32]); // 738
-struct_construct<Tuple<Unit>>([32]) -> ([33]); // 739
-enum_init<core::panics::PanicResult::<((),)>, 0>([33]) -> ([34]); // 740
-store_temp<RangeCheck>([13]) -> ([13]); // 741
-store_temp<GasBuiltin>([16]) -> ([16]); // 742
-store_temp<System>([17]) -> ([17]); // 743
-store_temp<core::panics::PanicResult::<((),)>>([34]) -> ([34]); // 744
-return([13], [16], [17], [34]); // 745
-branch_align() -> (); // 746
-drop<NonZero<felt252>>([31]) -> (); // 747
-array_new<felt252>() -> ([35]); // 748
-const_as_immediate<Const<felt252, 27063539617145597287547105838>>() -> ([36]); // 749
-store_temp<felt252>([36]) -> ([36]); // 750
-array_append<felt252>([35], [36]) -> ([37]); // 751
-struct_construct<core::panics::Panic>() -> ([38]); // 752
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([38], [37]) -> ([39]); // 753
-enum_init<core::panics::PanicResult::<((),)>, 1>([39]) -> ([40]); // 754
-store_temp<RangeCheck>([13]) -> ([13]); // 755
-store_temp<GasBuiltin>([16]) -> ([16]); // 756
-store_temp<System>([17]) -> ([17]); // 757
-store_temp<core::panics::PanicResult::<((),)>>([40]) -> ([40]); // 758
-return([13], [16], [17], [40]); // 759
-branch_align() -> (); // 760
-drop<ContractAddress>([14]) -> (); // 761
-struct_construct<core::panics::Panic>() -> ([41]); // 762
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([41], [21]) -> ([42]); // 763
-enum_init<core::panics::PanicResult::<((),)>, 1>([42]) -> ([43]); // 764
-store_temp<RangeCheck>([13]) -> ([13]); // 765
-store_temp<GasBuiltin>([19]) -> ([19]); // 766
-store_temp<System>([20]) -> ([20]); // 767
-store_temp<core::panics::PanicResult::<((),)>>([43]) -> ([43]); // 768
-return([13], [19], [20], [43]); // 769
-branch_align() -> (); // 770
-array_new<felt252>() -> ([44]); // 771
-const_as_immediate<Const<felt252, 1749165063169615148890104124711417950509560691>>() -> ([45]); // 772
-store_temp<felt252>([45]) -> ([45]); // 773
-array_append<felt252>([44], [45]) -> ([46]); // 774
-store_temp<RangeCheck>([15]) -> ([47]); // 775
-store_temp<GasBuiltin>([7]) -> ([48]); // 776
-store_temp<System>([8]) -> ([49]); // 777
-store_temp<Array<felt252>>([46]) -> ([50]); // 778
-jump() { 785() }; // 779
-branch_align() -> (); // 780
-store_temp<RangeCheck>([0]) -> ([47]); // 781
-store_temp<GasBuiltin>([10]) -> ([48]); // 782
-store_temp<System>([11]) -> ([49]); // 783
-store_temp<Array<felt252>>([12]) -> ([50]); // 784
-struct_construct<core::panics::Panic>() -> ([51]); // 785
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([51], [50]) -> ([52]); // 786
-enum_init<core::panics::PanicResult::<((),)>, 1>([52]) -> ([53]); // 787
-store_temp<RangeCheck>([47]) -> ([47]); // 788
-store_temp<GasBuiltin>([48]) -> ([48]); // 789
-store_temp<System>([49]) -> ([49]); // 790
-store_temp<core::panics::PanicResult::<((),)>>([53]) -> ([53]); // 791
-return([47], [48], [49], [53]); // 792
+drop<Unit>([20]) -> (); // 722
+drop<Snapshot<Array<felt252>>>([15]) -> (); // 723
+store_temp<RangeCheck>([4]) -> ([113]); // 724
+disable_ap_tracking() -> (); // 725
+array_new<felt252>() -> ([114]); // 726
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([115]); // 727
+store_temp<felt252>([115]) -> ([115]); // 728
+array_append<felt252>([114], [115]) -> ([116]); // 729
+struct_construct<core::panics::Panic>() -> ([117]); // 730
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([117], [116]) -> ([118]); // 731
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([118]) -> ([119]); // 732
+store_temp<RangeCheck>([113]) -> ([113]); // 733
+store_temp<GasBuiltin>([5]) -> ([5]); // 734
+store_temp<System>([2]) -> ([2]); // 735
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([119]) -> ([119]); // 736
+return([113], [5], [2], [119]); // 737
+branch_align() -> (); // 738
+drop<core::array::Span::<core::felt252>>([3]) -> (); // 739
+array_new<felt252>() -> ([120]); // 740
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([121]); // 741
+store_temp<felt252>([121]) -> ([121]); // 742
+array_append<felt252>([120], [121]) -> ([122]); // 743
+struct_construct<core::panics::Panic>() -> ([123]); // 744
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([123], [122]) -> ([124]); // 745
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([124]) -> ([125]); // 746
+store_temp<RangeCheck>([6]) -> ([6]); // 747
+store_temp<GasBuiltin>([7]) -> ([7]); // 748
+store_temp<System>([2]) -> ([2]); // 749
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([125]) -> ([125]); // 750
+return([6], [7], [2], [125]); // 751
+drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([3]) -> (); // 752
+const_as_immediate<Const<felt252, 907111799109225873672206001743429201758838553092777504370151546632448000192>>() -> ([4]); // 753
+struct_construct<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>>([4]) -> ([5]); // 754
+snapshot_take<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>>([5]) -> ([6], [7]); // 755
+drop<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>>([6]) -> (); // 756
+struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::contract_address::ContractAddress>>([7]) -> ([8]); // 757
+rename<felt252>([8]) -> ([9]); // 758
+store_temp<felt252>([9]) -> ([9]); // 759
+storage_base_address_from_felt252([0], [9]) -> ([10], [11]); // 760
+struct_construct<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>>([11]) -> ([12]); // 761
+snapshot_take<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>>([12]) -> ([13], [14]); // 762
+drop<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>>([13]) -> (); // 763
+struct_deconstruct<core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_address::ContractAddress>>([14]) -> ([15]); // 764
+rename<StorageBaseAddress>([15]) -> ([16]); // 765
+storage_address_from_base([16]) -> ([17]); // 766
+const_as_immediate<Const<u32, 0>>() -> ([18]); // 767
+store_temp<u32>([18]) -> ([18]); // 768
+store_temp<RangeCheck>([10]) -> ([10]); // 769
+storage_read_syscall([1], [2], [18], [17]) { fallthrough([19], [20], [21]) 838([22], [23], [24]) }; // 770
+branch_align() -> (); // 771
+store_temp<felt252>([21]) -> ([21]); // 772
+store_temp<GasBuiltin>([19]) -> ([19]); // 773
+store_temp<System>([20]) -> ([20]); // 774
+contract_address_try_from_felt252([10], [21]) { fallthrough([25], [26]) 828([27]) }; // 775
+branch_align() -> (); // 776
+store_temp<RangeCheck>([25]) -> ([25]); // 777
+get_execution_info_v2_syscall([19], [20]) { fallthrough([28], [29], [30]) 818([31], [32], [33]) }; // 778
+branch_align() -> (); // 779
+store_temp<Box<core::starknet::info::v2::ExecutionInfo>>([30]) -> ([30]); // 780
+unbox<core::starknet::info::v2::ExecutionInfo>([30]) -> ([34]); // 781
+contract_address_to_felt252([26]) -> ([35]); // 782
+struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([34]) -> ([36], [37], [38], [39], [40]); // 783
+drop<Box<core::starknet::info::BlockInfo>>([36]) -> (); // 784
+drop<Box<core::starknet::info::v2::TxInfo>>([37]) -> (); // 785
+drop<ContractAddress>([39]) -> (); // 786
+drop<felt252>([40]) -> (); // 787
+contract_address_to_felt252([38]) -> ([41]); // 788
+store_temp<felt252>([41]) -> ([41]); // 789
+felt252_sub([35], [41]) -> ([42]); // 790
+store_temp<felt252>([42]) -> ([42]); // 791
+store_temp<GasBuiltin>([28]) -> ([28]); // 792
+store_temp<System>([29]) -> ([29]); // 793
+felt252_is_zero([42]) { fallthrough() 804([43]) }; // 794
+branch_align() -> (); // 795
+struct_construct<Unit>() -> ([44]); // 796
+struct_construct<Tuple<Unit>>([44]) -> ([45]); // 797
+enum_init<core::panics::PanicResult::<((),)>, 0>([45]) -> ([46]); // 798
+store_temp<RangeCheck>([25]) -> ([25]); // 799
+store_temp<GasBuiltin>([28]) -> ([28]); // 800
+store_temp<System>([29]) -> ([29]); // 801
+store_temp<core::panics::PanicResult::<((),)>>([46]) -> ([46]); // 802
+return([25], [28], [29], [46]); // 803
+branch_align() -> (); // 804
+drop<NonZero<felt252>>([43]) -> (); // 805
+array_new<felt252>() -> ([47]); // 806
+const_as_immediate<Const<felt252, 27063539617145597287547105838>>() -> ([48]); // 807
+store_temp<felt252>([48]) -> ([48]); // 808
+array_append<felt252>([47], [48]) -> ([49]); // 809
+struct_construct<core::panics::Panic>() -> ([50]); // 810
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([50], [49]) -> ([51]); // 811
+enum_init<core::panics::PanicResult::<((),)>, 1>([51]) -> ([52]); // 812
+store_temp<RangeCheck>([25]) -> ([25]); // 813
+store_temp<GasBuiltin>([28]) -> ([28]); // 814
+store_temp<System>([29]) -> ([29]); // 815
+store_temp<core::panics::PanicResult::<((),)>>([52]) -> ([52]); // 816
+return([25], [28], [29], [52]); // 817
+branch_align() -> (); // 818
+drop<ContractAddress>([26]) -> (); // 819
+struct_construct<core::panics::Panic>() -> ([53]); // 820
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([53], [33]) -> ([54]); // 821
+enum_init<core::panics::PanicResult::<((),)>, 1>([54]) -> ([55]); // 822
+store_temp<RangeCheck>([25]) -> ([25]); // 823
+store_temp<GasBuiltin>([31]) -> ([31]); // 824
+store_temp<System>([32]) -> ([32]); // 825
+store_temp<core::panics::PanicResult::<((),)>>([55]) -> ([55]); // 826
+return([25], [31], [32], [55]); // 827
+branch_align() -> (); // 828
+array_new<felt252>() -> ([56]); // 829
+const_as_immediate<Const<felt252, 1749165063169615148890104124711417950509560691>>() -> ([57]); // 830
+store_temp<felt252>([57]) -> ([57]); // 831
+array_append<felt252>([56], [57]) -> ([58]); // 832
+store_temp<RangeCheck>([27]) -> ([59]); // 833
+store_temp<GasBuiltin>([19]) -> ([60]); // 834
+store_temp<System>([20]) -> ([61]); // 835
+store_temp<Array<felt252>>([58]) -> ([62]); // 836
+jump() { 843() }; // 837
+branch_align() -> (); // 838
+store_temp<RangeCheck>([10]) -> ([59]); // 839
+store_temp<GasBuiltin>([22]) -> ([60]); // 840
+store_temp<System>([23]) -> ([61]); // 841
+store_temp<Array<felt252>>([24]) -> ([62]); // 842
+struct_construct<core::panics::Panic>() -> ([63]); // 843
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([63], [62]) -> ([64]); // 844
+enum_init<core::panics::PanicResult::<((),)>, 1>([64]) -> ([65]); // 845
+store_temp<RangeCheck>([59]) -> ([59]); // 846
+store_temp<GasBuiltin>([60]) -> ([60]); // 847
+store_temp<System>([61]) -> ([61]); // 848
+store_temp<core::panics::PanicResult::<((),)>>([65]) -> ([65]); // 849
+return([59], [60], [61], [65]); // 850
 
 cairo_level_tests::contracts::with_ownable::ownable_balance::__wrapper__OwnableBalanceImpl__get_balance@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-cairo_level_tests::contracts::with_ownable::ownable_balance::__wrapper__OwnableBalanceImpl__set_balance@105([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-cairo_level_tests::components::ownable::ownable::__wrapper__Transfer__owner::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateTransfer>@259([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-cairo_level_tests::components::ownable::ownable::__wrapper__Transfer__transfer_ownership::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateTransfer>@362([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-cairo_level_tests::contracts::with_ownable::ownable_balance::__wrapper__OwnableBalanceImpl__constructor@513([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership@706([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<((),)>);
+cairo_level_tests::contracts::with_ownable::ownable_balance::__wrapper__OwnableBalanceImpl__set_balance@116([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+cairo_level_tests::components::ownable::ownable::__wrapper__Transfer__owner::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateTransfer>@275([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+cairo_level_tests::components::ownable::ownable::__wrapper__Transfer__transfer_ownership::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateTransfer>@389([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+cairo_level_tests::contracts::with_ownable::ownable_balance::__wrapper__OwnableBalanceImpl__constructor@545([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership@752([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<((),)>);
