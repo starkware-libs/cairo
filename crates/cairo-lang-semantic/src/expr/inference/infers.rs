@@ -127,6 +127,9 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             UninferredImpl::ImplAlias(impl_alias_id) => {
                 self.infer_impl_alias(impl_alias_id, concrete_trait_id, lookup_context, stable_ptr)?
             }
+            UninferredImpl::ImplImpl(impl_impl_id) => {
+                ImplLongId::ImplImpl(impl_impl_id).intern(self.db)
+            }
             UninferredImpl::GenericParam(param_id) => {
                 let param = self
                     .db
