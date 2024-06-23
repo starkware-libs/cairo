@@ -14,6 +14,7 @@ mod example_failure {
     use super::Node;
     use super::ITree;
 
+
     #[storage]
     struct Storage {
         nodes: LegacyMap::<u128, Node>,

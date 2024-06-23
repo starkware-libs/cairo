@@ -14,6 +14,21 @@ pub trait DerefMut<T> {
 }
 
 
+/// A helper trait for dereferencing a snapshot of a type. Should not be implemented for copyable
+/// types.
+pub trait SnapshotDeref<T> {
+    type Target;
+    fn snapshot_deref(self: @T) -> Self::Target;
+}
+
+/// Implementation of Deref for snapshots that implement SnapshotDeref.
+impl SnapshotDerefHelper<T, +SnapshotDeref<T>> of Deref<@T> {
+    type Target = SnapshotDeref::<T>::Target;
+    fn deref(self: @T) -> Self::Target {
+        self.snapshot_deref()
+    }
+}
+
 /// Impl of Deref for copyable snapshots.
 // TODO(Gil): This should not use the `*` operator as the `*` operator will later be calling
 // `Deref`.

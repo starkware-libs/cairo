@@ -139,230 +139,111 @@ contract:
 pub enum Event {}
 
 
-    pub struct ContractState {
-        pub var_felt252: __member_module_var_felt252::ContractMemberState,
-        pub var_u8: __member_module_var_u8::ContractMemberState,
-        pub var_u16: __member_module_var_u16::ContractMemberState,
-        pub var_u32: __member_module_var_u32::ContractMemberState,
-        pub var_u64: __member_module_var_u64::ContractMemberState,
-        pub var_u128: __member_module_var_u128::ContractMemberState,
-        pub var_bool: __member_module_var_bool::ContractMemberState,
-        pub felt252_to_u128: __member_module_felt252_to_u128::ContractMemberState,
-        pub u128_to_bool: __member_module_u128_to_bool::ContractMemberState,
-        pub bool_to_felt252: __member_module_bool_to_felt252::ContractMemberState,
-        pub outer_type_var: __member_module_outer_type_var::ContractMemberState,
-        pub outer_type_to_outer_type: __member_module_outer_type_to_outer_type::ContractMemberState,
-        pub inner_type_var: __member_module_inner_type_var::ContractMemberState,
-        pub inner_type_to_inner_type: __member_module_inner_type_to_inner_type::ContractMemberState,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            var_felt252: __member_module_var_felt252::ContractMemberState {},
-            var_u8: __member_module_var_u8::ContractMemberState {},
-            var_u16: __member_module_var_u16::ContractMemberState {},
-            var_u32: __member_module_var_u32::ContractMemberState {},
-            var_u64: __member_module_var_u64::ContractMemberState {},
-            var_u128: __member_module_var_u128::ContractMemberState {},
-            var_bool: __member_module_var_bool::ContractMemberState {},
-            felt252_to_u128: __member_module_felt252_to_u128::ContractMemberState {},
-            u128_to_bool: __member_module_u128_to_bool::ContractMemberState {},
-            bool_to_felt252: __member_module_bool_to_felt252::ContractMemberState {},
-            outer_type_var: __member_module_outer_type_var::ContractMemberState {},
-            outer_type_to_outer_type: __member_module_outer_type_to_outer_type::ContractMemberState {},
-            inner_type_var: __member_module_inner_type_var::ContractMemberState {},
-            inner_type_to_inner_type: __member_module_inner_type_to_inner_type::ContractMemberState {},
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    var_felt252: starknet::storage::StorageBase<felt252>,
+    var_u8: starknet::storage::StorageBase<u8>,
+    var_u16: starknet::storage::StorageBase<u16>,
+    var_u32: starknet::storage::StorageBase<u32>,
+    var_u64: starknet::storage::StorageBase<u64>,
+    var_u128: starknet::storage::StorageBase<u128>,
+    var_bool: starknet::storage::StorageBase<bool>,
+    felt252_to_u128: starknet::storage::StorageBase<LegacyMap::<felt252, u128>>,
+    u128_to_bool: starknet::storage::StorageBase<LegacyMap::<u128, bool>>,
+    bool_to_felt252: starknet::storage::StorageBase<LegacyMap::<bool, felt252>>,
+    outer_type_var: starknet::storage::StorageBase<super::OuterType>,
+    outer_type_to_outer_type: starknet::storage::StorageBase<LegacyMap::<super::OuterType, super::OuterType>>,
+    inner_type_var: starknet::storage::StorageBase<inner::InnerType>,
+    inner_type_to_inner_type: starknet::storage::StorageBase<LegacyMap::<inner::InnerType, inner::InnerType>>,
+}
+#[derive(Drop, Copy)]
+struct ContractStorageBaseMut {
+    var_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
+    var_u8: starknet::storage::StorageBase<starknet::storage::Mutable<u8>>,
+    var_u16: starknet::storage::StorageBase<starknet::storage::Mutable<u16>>,
+    var_u32: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
+    var_u64: starknet::storage::StorageBase<starknet::storage::Mutable<u64>>,
+    var_u128: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+    var_bool: starknet::storage::StorageBase<starknet::storage::Mutable<bool>>,
+    felt252_to_u128: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<felt252, u128>>>,
+    u128_to_bool: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<u128, bool>>>,
+    bool_to_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<bool, felt252>>>,
+    outer_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<super::OuterType>>,
+    outer_type_to_outer_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<super::OuterType, super::OuterType>>>,
+    inner_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<inner::InnerType>>,
+    inner_type_to_inner_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<inner::InnerType, inner::InnerType>>>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    type BaseMutType = ContractStorageBaseMut;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           var_felt252: starknet::storage::StorageBase{ address: selector!("var_felt252") },
+           var_u8: starknet::storage::StorageBase{ address: selector!("var_u8") },
+           var_u16: starknet::storage::StorageBase{ address: selector!("var_u16") },
+           var_u32: starknet::storage::StorageBase{ address: selector!("var_u32") },
+           var_u64: starknet::storage::StorageBase{ address: selector!("var_u64") },
+           var_u128: starknet::storage::StorageBase{ address: selector!("var_u128") },
+           var_bool: starknet::storage::StorageBase{ address: selector!("var_bool") },
+           felt252_to_u128: starknet::storage::StorageBase{ address: selector!("felt252_to_u128") },
+           u128_to_bool: starknet::storage::StorageBase{ address: selector!("u128_to_bool") },
+           bool_to_felt252: starknet::storage::StorageBase{ address: selector!("bool_to_felt252") },
+           outer_type_var: starknet::storage::StorageBase{ address: selector!("outer_type_var") },
+           outer_type_to_outer_type: starknet::storage::StorageBase{ address: selector!("outer_type_to_outer_type") },
+           inner_type_var: starknet::storage::StorageBase{ address: selector!("inner_type_var") },
+           inner_type_to_inner_type: starknet::storage::StorageBase{ address: selector!("inner_type_to_inner_type") },
         }
     }
-    #[cfg(test)]
-    #[inline(always)]
-    pub fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-    
-
-        pub mod __member_module_var_felt252 {
-        use super::inner;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = felt252;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0xaa97ff6377ea4c71d88150f635730828734fd5bfd6f834e2ae92d29676846c>()
-                }
-            }
-        }
-
-        pub mod __member_module_var_u8 {
-        use super::inner;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = u8;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x2c1cc4c68869a16c4afd31a765927ce369b8ef4b1208114ea00e820ea36fc23>()
-                }
-            }
-        }
-
-        pub mod __member_module_var_u16 {
-        use super::inner;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = u16;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0xf3b2ea0485e7fdfaec3d3e519eeedf3d5dc3434b4f9c8858c217ca6a8b1d45>()
-                }
-            }
-        }
-
-        pub mod __member_module_var_u32 {
-        use super::inner;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = u32;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x19490a04fdf74ff92d2d73deff1f53be2aa23274d5a6896a509931d308ffa2d>()
-                }
-            }
-        }
-
-        pub mod __member_module_var_u64 {
-        use super::inner;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = u64;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x2b58a04fca59322572a3335b3f8e9a63dd34db1b715eaaae3ab367afa90a194>()
-                }
-            }
-        }
-
-        pub mod __member_module_var_u128 {
-        use super::inner;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = u128;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x1ba472df0f88c033d4e0c12eb95fd291de570db0f2df241297c6ebf905889a>()
-                }
-            }
-        }
-
-        pub mod __member_module_var_bool {
-        use super::inner;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = bool;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x379caae8ce359ad2da9b1cd83d4df406d959c199192b9c9e787595a50e0db27>()
-                }
-            }
-        }
-    pub mod __member_module_felt252_to_u128 {
-        use super::inner;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-
-        impl StorageLegacyMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
-            type Key = felt252;
-            type Value = u128;
-            fn address(self: @ContractMemberState, key: felt252) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_from_felt252(
-                    core::hash::LegacyHash::<felt252>::hash(0x22ccfa174c52d0acc1e51ed6102f40f9e270cefc9a906ff2ee9a366c52db7bc, key))
-            }
+    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           var_felt252: starknet::storage::StorageBase{ address: selector!("var_felt252") },
+           var_u8: starknet::storage::StorageBase{ address: selector!("var_u8") },
+           var_u16: starknet::storage::StorageBase{ address: selector!("var_u16") },
+           var_u32: starknet::storage::StorageBase{ address: selector!("var_u32") },
+           var_u64: starknet::storage::StorageBase{ address: selector!("var_u64") },
+           var_u128: starknet::storage::StorageBase{ address: selector!("var_u128") },
+           var_bool: starknet::storage::StorageBase{ address: selector!("var_bool") },
+           felt252_to_u128: starknet::storage::StorageBase{ address: selector!("felt252_to_u128") },
+           u128_to_bool: starknet::storage::StorageBase{ address: selector!("u128_to_bool") },
+           bool_to_felt252: starknet::storage::StorageBase{ address: selector!("bool_to_felt252") },
+           outer_type_var: starknet::storage::StorageBase{ address: selector!("outer_type_var") },
+           outer_type_to_outer_type: starknet::storage::StorageBase{ address: selector!("outer_type_to_outer_type") },
+           inner_type_var: starknet::storage::StorageBase{ address: selector!("inner_type_var") },
+           inner_type_to_inner_type: starknet::storage::StorageBase{ address: selector!("inner_type_to_inner_type") },
         }
     }
-    pub mod __member_module_u128_to_bool {
-        use super::inner;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
+}
+pub struct ContractState {
+}
 
-        impl StorageLegacyMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
-            type Key = u128;
-            type Value = bool;
-            fn address(self: @ContractMemberState, key: u128) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_from_felt252(
-                    core::hash::LegacyHash::<u128>::hash(0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a, key))
-            }
-        }
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = ContractStorageBase;
+    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
+        self.storage_base()
     }
-    pub mod __member_module_bool_to_felt252 {
-        use super::inner;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-
-        impl StorageLegacyMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
-            type Key = bool;
-            type Value = felt252;
-            fn address(self: @ContractMemberState, key: bool) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_from_felt252(
-                    core::hash::LegacyHash::<bool>::hash(0x11ddb648d7a85d8ff1f89f86feb50fd8bd26a25e6837cff5c3c38d8c3a0bb93, key))
-            }
-        }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = ContractStorageBaseMut;
+    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        self.storage_base_mut()
     }
-
-        pub mod __member_module_outer_type_var {
-        use super::inner;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = super::super::OuterType;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x3106af1c2d86e8b1cb851a79386ce0a8769e17e9d35faaac2d358e2ab15b47e>()
-                }
-            }
-        }
-    pub mod __member_module_outer_type_to_outer_type {
-        use super::inner;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-
-        impl StorageLegacyMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
-            type Key = super::super::OuterType;
-            type Value = super::super::OuterType;
-            fn address(self: @ContractMemberState, key: super::super::OuterType) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_from_felt252(
-                    core::hash::LegacyHash::<super::super::OuterType>::hash(0x35c41176ed396a1aefee30c295c954b0e7fd2f58e270016196d6751c199ad54, key))
-            }
-        }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
     }
+}
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
 
-        pub mod __member_module_inner_type_var {
-        use super::inner;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = inner::InnerType;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x13116abdf53a8bc21fa319084c612c78d3d632bf1a48cf7f221c343f1a7b51e>()
-                }
-            }
-        }
-    pub mod __member_module_inner_type_to_inner_type {
-        use super::inner;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-
-        impl StorageLegacyMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
-            type Key = inner::InnerType;
-            type Value = inner::InnerType;
-            fn address(self: @ContractMemberState, key: inner::InnerType) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_from_felt252(
-                    core::hash::LegacyHash::<inner::InnerType>::hash(0x3ab3286e5324e5e72225cf3acbcb086eb63bceab39847ca070c7aa92140de4b, key))
-            }
-        }
-    }
 use starknet::storage::{
-    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
 };
+use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21bc80a6e513ea8e536;
 
@@ -418,5 +299,18 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+
+
+
+impls:
+
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+
+
+impls:
+
+impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
+impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 //! > expected_diagnostics
