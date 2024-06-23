@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use cairo_lang_defs::ids::{TraitConstantId, TraitTypeId};
+use cairo_lang_defs::ids::{TraitConstantId, TraitImplId, TraitTypeId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::zip_eq;
@@ -14,7 +14,7 @@ use super::{
 use crate::corelib::never_ty;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::{ImplId, ImplLongId};
+use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext};
 use crate::substitution::SemanticRewriter;
 use crate::types::{peel_snapshots, ImplTypeId};
 use crate::{
@@ -351,6 +351,9 @@ impl<'db> InferenceConform for Inference<'db> {
             ImplLongId::GenericParameter(_) => {
                 Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
             }
+            ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => {
+                Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
+            }
         }
     }
 
@@ -429,7 +432,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 &concrete_impl_id.lookup_intern(self.db).generic_args,
                 var,
             ),
-            ImplLongId::GenericParameter(_) => false,
+            ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => false,
             ImplLongId::ImplVar(new_var) => {
                 let new_var_long_id = new_var.lookup_intern(self.db);
                 let new_var_local_id = new_var_long_id.id;
@@ -444,6 +447,7 @@ impl<'db> InferenceConform for Inference<'db> {
                     var,
                 )
             }
+            ImplLongId::ImplImpl(impl_impl) => self.impl_contains_var(impl_impl.impl_id(), var),
         }
     }
 
@@ -498,6 +502,22 @@ impl Inference<'_> {
         }
     }
 
+    /// Reduces an impl impl to a concrete impl.
+    pub fn reduce_impl_impl(&mut self, impl_impl_id: ImplImplId) -> InferenceResult<ImplId> {
+        let impl_id = impl_impl_id.impl_id();
+        let trait_impl = impl_impl_id.trait_impl_id();
+
+        if let ImplLongId::ImplVar(var) = impl_id.lookup_intern(self.db) {
+            Ok(self.rewritten_impl_impl(var, trait_impl))
+        } else if let Ok(imp) =
+            self.db.impl_impl_concrete_implized(ImplImplId::new(impl_id, trait_impl, self.db))
+        {
+            Ok(imp)
+        } else {
+            Err(self.set_impl_reduction_error(impl_id))
+        }
+    }
+
     /// Returns the type of an impl var's type item.
     /// The type may be a variable itself, but it may previously exist, so may be more specific due
     /// to rewriting.
@@ -526,6 +546,24 @@ impl Inference<'_> {
                 inference.new_const_var(
                     stable_ptr,
                     inference.db.trait_constant_type(trait_constant).unwrap(),
+                )
+            },
+        )
+    }
+
+    /// Returns the inner_impl value of an impl var's impl item.
+    /// The inner_impl may be a variable itself, but it may previously exist, so may be more
+    /// specific due to rewriting.
+    pub fn rewritten_impl_impl(&mut self, id: ImplVarId, trait_impl: TraitImplId) -> ImplId {
+        self.rewritten_impl_item(
+            id,
+            trait_impl,
+            |m| &mut m.impls,
+            |inference, stable_ptr| {
+                inference.new_impl_var(
+                    inference.db.trait_impl_concrete_trait(trait_impl).unwrap(),
+                    stable_ptr,
+                    ImplLookupContext::default(),
                 )
             },
         )
