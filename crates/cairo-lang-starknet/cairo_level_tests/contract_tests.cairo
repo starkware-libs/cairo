@@ -10,12 +10,13 @@ trait ITestContract<T> {}
 #[starknet::contract]
 mod test_contract {
     use starknet::StorageAddress;
+    use starknet::storage::Map;
 
     #[storage]
     struct Storage {
         value: felt252,
-        mapping: LegacyMap::<u128, bool>,
-        large_mapping: LegacyMap::<u256, u256>,
+        mapping: Map::<u128, bool>,
+        large_mapping: Map::<u256, u256>,
     }
 
     #[external(v0)]

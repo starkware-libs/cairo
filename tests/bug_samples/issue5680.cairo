@@ -1,5 +1,7 @@
 #[starknet::contract]
 mod c1 {
+    use starknet::storage::Map;
+
     #[starknet::interface]
     trait IMy<T> {
         fn a(self: @T);
@@ -7,7 +9,7 @@ mod c1 {
 
     #[storage]
     struct Storage {
-        v1: LegacyMap::<felt252, (u32, u32)>,
+        v1: Map::<felt252, (u32, u32)>,
     }
 
     #[abi(embed_v0)]
