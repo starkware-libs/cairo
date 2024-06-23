@@ -708,25 +708,56 @@ component:
 pub enum Event {}
 
 
-    pub struct ComponentState<TContractState> {
-    }
-    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
-    #[inline(always)]
-    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
-        ComponentState::<TContractState> {
+#[derive(Drop, Copy)]
+struct ComponentStorageBase {
+}
+#[derive(Drop, Copy)]
+struct ComponentStorageBaseMut {
+}
+impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+    type BaseType = ComponentStorageBase;
+    type BaseMutType = ComponentStorageBaseMut;
+    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+        ComponentStorageBase {
         }
     }
-    #[cfg(test)]
-    #[inline(always)]
-    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
-        unsafe_new_component_state::<TContractState>()
+    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+        ComponentStorageBaseMut {
+        }
     }
-    
+}
+pub struct ComponentState<TContractState> {
+}
+
+impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+ 
+impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+    type Target = ComponentStorageBase;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+        self.storage_base()
+    }
+}
+impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
+    type Target = ComponentStorageBaseMut;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+        self.storage_base_mut()
+    }
+}
+pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    ComponentState::<TContractState> {
+    }
+}
+#[inline(always)]
+pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    unsafe_new_component_state::<TContractState>()
+}
+
 
 use starknet::storage::{
-    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
 };
+use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -792,6 +823,18 @@ impl EventIsEvent of starknet::Event<Event> {
     }
 }
 
+
+
+impls:
+
+impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
+impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+
+
+impls:
+
+impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
+impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
 lib.cairo:16:5
@@ -930,26 +973,61 @@ contract:
 
 
 
-    pub struct ContractState {
-        pub comp_storage: super::comp::ComponentState<ContractState>,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            comp_storage: super::comp::unsafe_new_component_state::<ContractState>(),
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    comp_storage: starknet::storage::StorageBase<super::comp::Storage>,
+}
+#[derive(Drop, Copy)]
+struct ContractStorageBaseMut {
+    comp_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::comp::Storage>>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    type BaseMutType = ContractStorageBaseMut;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           comp_storage: starknet::storage::StorageBase{ address: selector!("comp_storage") },
         }
     }
-    #[cfg(test)]
-    #[inline(always)]
-    pub fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
+    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           comp_storage: starknet::storage::StorageBase{ address: selector!("comp_storage") },
+        }
     }
-    
+}
+pub struct ContractState {
+        pub comp_storage: super::comp::ComponentState<ContractState>,
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = ContractStorageBase;
+    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = ContractStorageBaseMut;
+    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        self.storage_base_mut()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+            comp_storage: super::comp::unsafe_new_component_state::<ContractState>(),
+    }
+}
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
+
 use starknet::storage::{
-    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
 };
+use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x1086dfc31bbcf268e659eae270c18772df580a79d61a03d56056059861c874a;
 
@@ -1018,7 +1096,7 @@ pub mod __constructor {
 
 impl HasComponentImpl_comp of super::comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @super::comp::ComponentState<ContractState> {
-        self.comp_storage
+                 @super::comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> super::comp::ComponentState<ContractState> {
         super::comp::unsafe_new_component_state::<ContractState>()
@@ -1078,6 +1156,19 @@ impl EventCompEventIntoEvent of Into<super::comp::Event, Event> {
         Event::CompEvent(self)
     }
 }
+
+
+
+impls:
+
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+
+
+impls:
+
+impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
+impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.

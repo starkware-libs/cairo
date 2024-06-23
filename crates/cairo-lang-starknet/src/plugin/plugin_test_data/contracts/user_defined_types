@@ -8,6 +8,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_contract {
     use hash::HashStateExTrait;
 
+
     #[storage]
     struct Storage {
         var: WrappedFelt252,
@@ -52,6 +53,7 @@ lib.cairo:
 #[starknet::contract]
 mod test_contract {
     use hash::HashStateExTrait;
+
 
     #[storage]
     struct Storage {
@@ -101,106 +103,73 @@ contract:
 pub enum Event {}
 
 
-    pub struct ContractState {
-        pub var: __member_module_var::ContractMemberState,
-        pub zero_size: __member_module_zero_size::ContractMemberState,
-        pub mapping: __member_module_mapping::ContractMemberState,
-        pub zero_size_mapping: __member_module_zero_size_mapping::ContractMemberState,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            var: __member_module_var::ContractMemberState {},
-            zero_size: __member_module_zero_size::ContractMemberState {},
-            mapping: __member_module_mapping::ContractMemberState {},
-            zero_size_mapping: __member_module_zero_size_mapping::ContractMemberState {},
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    var: starknet::storage::StorageBase<WrappedFelt252>,
+    zero_size: starknet::storage::StorageBase<ZeroSize>,
+    mapping: starknet::storage::StorageBase<LegacyMap::<WrappedFelt252, WrappedFelt252>>,
+    zero_size_mapping: starknet::storage::StorageBase<LegacyMap::<ZeroSize, ZeroSize>>,
+}
+#[derive(Drop, Copy)]
+struct ContractStorageBaseMut {
+    var: starknet::storage::StorageBase<starknet::storage::Mutable<WrappedFelt252>>,
+    zero_size: starknet::storage::StorageBase<starknet::storage::Mutable<ZeroSize>>,
+    mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<WrappedFelt252, WrappedFelt252>>>,
+    zero_size_mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<ZeroSize, ZeroSize>>>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    type BaseMutType = ContractStorageBaseMut;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           var: starknet::storage::StorageBase{ address: selector!("var") },
+           zero_size: starknet::storage::StorageBase{ address: selector!("zero_size") },
+           mapping: starknet::storage::StorageBase{ address: selector!("mapping") },
+           zero_size_mapping: starknet::storage::StorageBase{ address: selector!("zero_size_mapping") },
         }
     }
-    #[cfg(test)]
-    #[inline(always)]
-    pub fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
+    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           var: starknet::storage::StorageBase{ address: selector!("var") },
+           zero_size: starknet::storage::StorageBase{ address: selector!("zero_size") },
+           mapping: starknet::storage::StorageBase{ address: selector!("mapping") },
+           zero_size_mapping: starknet::storage::StorageBase{ address: selector!("zero_size_mapping") },
+        }
     }
-    
+}
+pub struct ContractState {
+}
 
-        pub mod __member_module_var {
-        use super::HashStateExTrait;
-        use super::WrappedFelt252;
-        use super::ZeroSize;
-        use super::SimpleEnum;
-        use super::EnumWithDefault;
-        use super::BadEnumWithDefault;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = WrappedFelt252;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71>()
-                }
-            }
-        }
-
-        pub mod __member_module_zero_size {
-        use super::HashStateExTrait;
-        use super::WrappedFelt252;
-        use super::ZeroSize;
-        use super::SimpleEnum;
-        use super::EnumWithDefault;
-        use super::BadEnumWithDefault;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = ZeroSize;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x219cc4423c8eab3d10a1f42659ee7172b916579fccdaadceb6efdf1782911b6>()
-                }
-            }
-        }
-    pub mod __member_module_mapping {
-        use super::HashStateExTrait;
-        use super::WrappedFelt252;
-        use super::ZeroSize;
-        use super::SimpleEnum;
-        use super::EnumWithDefault;
-        use super::BadEnumWithDefault;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-
-        impl StorageLegacyMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
-            type Key = WrappedFelt252;
-            type Value = WrappedFelt252;
-            fn address(self: @ContractMemberState, key: WrappedFelt252) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_from_felt252(
-                    core::hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
-            }
-        }
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = ContractStorageBase;
+    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
+        self.storage_base()
     }
-    pub mod __member_module_zero_size_mapping {
-        use super::HashStateExTrait;
-        use super::WrappedFelt252;
-        use super::ZeroSize;
-        use super::SimpleEnum;
-        use super::EnumWithDefault;
-        use super::BadEnumWithDefault;
-        #[derive(Copy, Drop)]
-        pub struct ContractMemberState {}
-
-        impl StorageLegacyMapContractMemberStateImpl of starknet::storage::StorageLegacyMapMemberAddressTrait<ContractMemberState> {
-            type Key = ZeroSize;
-            type Value = ZeroSize;
-            fn address(self: @ContractMemberState, key: ZeroSize) -> starknet::storage_access::StorageBaseAddress {
-                starknet::storage_access::storage_base_address_from_felt252(
-                    core::hash::LegacyHash::<ZeroSize>::hash(0x18a905aad30d0632877f9b37c338ceaaa98ea40758006e286f2104428beedab, key))
-            }
-        }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = ContractStorageBaseMut;
+    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        self.storage_base_mut()
     }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
+
 use starknet::storage::{
-    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
 };
+use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x22a6a9ef9e77b4a6859543ea1095bf317324bd00f9420953f068bcafc59b605;
+pub const TEST_CLASS_HASH: felt252 = 0x2cae3c1a8f23fba093b57b34045f8fcdc3fddeefe6546440825e3a9d19f23ec;
 
 
 pub mod __external {
@@ -246,7 +215,7 @@ impl WrappedFelt252Hash<
 }
 
 
-lib.cairo:12:26
+lib.cairo:13:26
     #[derive(Drop, Hash, starknet::Store)]
                          ^*************^
 starknet_derive:
@@ -310,7 +279,7 @@ impl ZeroSizeSerde of core::serde::Serde::<ZeroSize> {
 }
 
 
-lib.cairo:16:33
+lib.cairo:17:33
     #[derive(Drop, Hash, Serde, starknet::Store)]
                                 ^*************^
 starknet_derive:
@@ -371,7 +340,7 @@ impl SimpleEnumSerde of core::serde::Serde::<SimpleEnum> {
 }
 
 
-lib.cairo:19:27
+lib.cairo:20:27
     #[derive(Drop, Serde, starknet::Store)]
                           ^*************^
 starknet_derive:
@@ -480,7 +449,7 @@ impl EnumWithDefaultSerde of core::serde::Serde::<EnumWithDefault> {
 }
 
 
-lib.cairo:25:27
+lib.cairo:26:27
     #[derive(Drop, Serde, starknet::Store)]
                           ^*************^
 starknet_derive:
@@ -636,8 +605,21 @@ impl EventIsEvent of starknet::Event<Event> {
     }
 }
 
+
+
+impls:
+
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+
+
+impls:
+
+impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
+impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`
- --> lib.cairo:38:9
+ --> lib.cairo:39:9
         #[default]
         ^********^

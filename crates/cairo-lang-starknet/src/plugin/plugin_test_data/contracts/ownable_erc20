@@ -12,6 +12,13 @@ mod ownable_erc20_contract {
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use starknet::ContractAddress;
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        ownable_storage: ownable_comp::Storage,
+        #[substorage(v0)]
+        erc20_storage: erc20_comp::Storage,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -49,23 +56,67 @@ mod ownable_erc20_contract {
     }
 
 
-    pub struct ContractState {
-        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
-        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
-            erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
+    erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
+}
+#[derive(Drop, Copy)]
+struct ContractStorageBaseMut {
+    ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+    erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    type BaseMutType = ContractStorageBaseMut;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           ownable_storage: starknet::storage::StorageBase{ address: selector!("ownable_storage") },
+           erc20_storage: starknet::storage::StorageBase{ address: selector!("erc20_storage") },
         }
     }
-    
+    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           ownable_storage: starknet::storage::StorageBase{ address: selector!("ownable_storage") },
+           erc20_storage: starknet::storage::StorageBase{ address: selector!("erc20_storage") },
+        }
+    }
+}
+pub struct ContractState {
+        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
+        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = ContractStorageBase;
+    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = ContractStorageBaseMut;
+    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        self.storage_base_mut()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+            ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
+            erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
+    }
+}
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
+
 use starknet::storage::{
-    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
 };
+use starknet::storage::Map as LegacyMap;
 
 impl ContractStateIERC20 of
     erc20_comp::UnsafeNewContractStateTraitForIERC20<ContractState> {
@@ -149,7 +200,7 @@ pub mod __constructor {
 
 impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @erc20_comp::ComponentState<ContractState> {
-        self.erc20_storage
+                 @erc20_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> erc20_comp::ComponentState<ContractState> {
         erc20_comp::unsafe_new_component_state::<ContractState>()
@@ -168,7 +219,7 @@ impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
 }
 impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
-        self.ownable_storage
+                 @ownable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
         ownable_comp::unsafe_new_component_state::<ContractState>()
@@ -246,11 +297,22 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
             owner: ContractAddress,
         );
     }
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
+impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 }
 
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use starknet::ContractAddress;
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        ownable_storage: ownable_comp::Storage,
+        #[substorage(v0)]
+        erc20_storage: erc20_comp::Storage,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -288,23 +350,67 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 
 
-    pub struct ContractState {
-        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
-        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
-            erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
+    erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
+}
+#[derive(Drop, Copy)]
+struct ContractStorageBaseMut {
+    ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+    erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    type BaseMutType = ContractStorageBaseMut;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           ownable_storage: starknet::storage::StorageBase{ address: selector!("ownable_storage") },
+           erc20_storage: starknet::storage::StorageBase{ address: selector!("erc20_storage") },
         }
     }
-    
+    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           ownable_storage: starknet::storage::StorageBase{ address: selector!("ownable_storage") },
+           erc20_storage: starknet::storage::StorageBase{ address: selector!("erc20_storage") },
+        }
+    }
+}
+pub struct ContractState {
+        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
+        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = ContractStorageBase;
+    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = ContractStorageBaseMut;
+    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        self.storage_base_mut()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+            ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
+            erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
+    }
+}
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
+
 use starknet::storage::{
-    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
 };
+use starknet::storage::Map as LegacyMap;
 
 impl ContractStateIERC20 of
     erc20_comp::UnsafeNewContractStateTraitForIERC20<ContractState> {
@@ -388,7 +494,7 @@ pub mod __constructor {
 
 impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @erc20_comp::ComponentState<ContractState> {
-        self.erc20_storage
+                 @erc20_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> erc20_comp::ComponentState<ContractState> {
         erc20_comp::unsafe_new_component_state::<ContractState>()
@@ -407,7 +513,7 @@ impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
 }
 impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
-        self.ownable_storage
+                 @ownable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
         ownable_comp::unsafe_new_component_state::<ContractState>()
@@ -485,5 +591,9 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
             owner: ContractAddress,
         );
     }
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
+impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 //! > expected_diagnostics

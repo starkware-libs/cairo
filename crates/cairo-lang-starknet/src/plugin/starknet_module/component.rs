@@ -33,9 +33,11 @@ impl ComponentSpecificGenerationData {
         RewriteNode::interpolate_patched(
             indoc! {"
             use starknet::storage::{
-                StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-                StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+                StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+                StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
             };
+            // TODO(Gil): Deprecate LegacyMap and remove it.
+            use starknet::storage::Map as LegacyMap;
             $has_component_trait$
 
             $generated_impls$"},
