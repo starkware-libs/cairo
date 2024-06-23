@@ -1084,26 +1084,7 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
                         }
                     }
                     ImplLongId::ImplVar(var) => {
-                        let var_id = var.id(self.db);
-                        if let Some(ty) = self
-                            .data
-                            .impl_vars_trait_item_mappings
-                            .get(&var_id)
-                            .and_then(|mappings| mappings.types.get(&trait_ty))
-                        {
-                            *value = self.rewrite(*ty).no_err().lookup_intern(self.db);
-                        } else {
-                            let ty = self.new_type_var(
-                                self.data.stable_ptrs.get(&InferenceVar::Impl(var_id)).cloned(),
-                            );
-                            self.data
-                                .impl_vars_trait_item_mappings
-                                .entry(var_id)
-                                .or_default()
-                                .types
-                                .insert(trait_ty, ty);
-                            *value = ty.lookup_intern(self.db);
-                        }
+                        *value = self.rewritten_impl_type(var, trait_ty).lookup_intern(self.db);
                         return Ok(RewriteResult::Modified);
                     }
                 });
@@ -1146,27 +1127,9 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
                         }
                     }
                     ImplLongId::ImplVar(var) => {
-                        let var_id = var.id(self.db);
-                        if let Some(constant) = self
-                            .data
-                            .impl_vars_trait_item_mappings
-                            .get(&var_id)
-                            .and_then(|mappings| mappings.constants.get(&trait_constant))
-                        {
-                            *value = self.rewrite(*constant).no_err().lookup_intern(self.db);
-                        } else {
-                            let constant = self.new_const_var(
-                                self.data.stable_ptrs.get(&InferenceVar::Impl(var_id)).cloned(),
-                                self.db.trait_constant_type(trait_constant).unwrap(),
-                            );
-                            self.data
-                                .impl_vars_trait_item_mappings
-                                .entry(var_id)
-                                .or_default()
-                                .constants
-                                .insert(trait_constant, constant);
-                            *value = constant.lookup_intern(self.db);
-                        }
+                        *value = self
+                            .rewritten_impl_constant(var, trait_constant)
+                            .lookup_intern(self.db);
                         return Ok(RewriteResult::Modified);
                     }
                 });

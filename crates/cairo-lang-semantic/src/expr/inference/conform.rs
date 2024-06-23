@@ -1,8 +1,16 @@
+use std::collections::HashMap;
+use std::hash::Hash;
+
+use cairo_lang_defs::ids::{TraitConstantId, TraitTypeId};
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::zip_eq;
 
-use super::canonic::ResultNoErrEx;
-use super::{ErrorSet, Inference, InferenceError, InferenceResult, InferenceVar};
+use super::canonic::{NoError, ResultNoErrEx};
+use super::{
+    ErrorSet, ImplVarId, ImplVarTraitItemMappings, Inference, InferenceError, InferenceResult,
+    InferenceVar,
+};
 use crate::corelib::never_ty;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
@@ -462,36 +470,13 @@ impl Inference<'_> {
         let impl_id = impl_type_id.impl_id();
         let trait_ty = impl_type_id.ty();
         if let ImplLongId::ImplVar(var) = impl_id.lookup_intern(self.db) {
-            let var_id = var.id(self.db);
-            if let Some(ty) = self
-                .data
-                .impl_vars_trait_item_mappings
-                .get(&var_id)
-                .and_then(|mappings| mappings.types.get(&trait_ty))
-            {
-                Ok(*ty)
-            } else {
-                let ty = self
-                    .new_type_var(self.data.stable_ptrs.get(&InferenceVar::Impl(var_id)).cloned());
-                self.data
-                    .impl_vars_trait_item_mappings
-                    .entry(var_id)
-                    .or_default()
-                    .types
-                    .insert(trait_ty, ty);
-                Ok(ty)
-            }
+            Ok(self.rewritten_impl_type(var, trait_ty))
         } else if let Ok(Some(ty)) =
             self.db.impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_ty, self.db))
         {
             Ok(ty)
         } else {
-            Err(self.set_error(
-                impl_id
-                    .concrete_trait(self.db)
-                    .map(InferenceError::NoImplsFound)
-                    .unwrap_or_else(InferenceError::Reported),
-            ))
+            Err(self.set_impl_reduction_error(impl_id))
         }
     }
 
@@ -502,41 +487,91 @@ impl Inference<'_> {
     ) -> InferenceResult<ConstValueId> {
         let impl_id = impl_const_id.impl_id();
         let trait_constant = impl_const_id.trait_constant_id();
-
         if let ImplLongId::ImplVar(var) = impl_id.lookup_intern(self.db) {
-            let var_id = var.id(self.db);
-            if let Some(constant) = self
-                .data
-                .impl_vars_trait_item_mappings
-                .get(&var_id)
-                .and_then(|mappings| mappings.constants.get(&trait_constant))
-            {
-                Ok(*constant)
-            } else {
-                let constant = self.new_const_var(
-                    self.data.stable_ptrs.get(&InferenceVar::Impl(var_id)).cloned(),
-                    self.db.trait_constant_type(trait_constant).unwrap(),
-                );
-                self.data
-                    .impl_vars_trait_item_mappings
-                    .entry(var_id)
-                    .or_default()
-                    .constants
-                    .insert(trait_constant, constant);
-                Ok(constant)
-            }
+            Ok(self.rewritten_impl_constant(var, trait_constant))
         } else if let Ok(constant) = self.db.impl_constant_concrete_implized_value(
             ImplConstantId::new(impl_id, trait_constant, self.db),
         ) {
             Ok(constant)
         } else {
-            Err(self.set_error(
-                impl_id
-                    .concrete_trait(self.db)
-                    .map(InferenceError::NoImplsFound)
-                    .unwrap_or_else(InferenceError::Reported),
-            ))
+            Err(self.set_impl_reduction_error(impl_id))
         }
+    }
+
+    /// Returns the type of an impl var's type item.
+    /// The type may be a variable itself, but it may previously exist, so may be more specific due
+    /// to rewriting.
+    pub fn rewritten_impl_type(&mut self, id: ImplVarId, trait_type_id: TraitTypeId) -> TypeId {
+        self.rewritten_impl_item(
+            id,
+            trait_type_id,
+            |m| &mut m.types,
+            |inference, stable_ptr| inference.new_type_var(stable_ptr),
+        )
+    }
+
+    /// Returns the constant value of an impl var's constant item.
+    /// The constant may be a variable itself, but it may previously exist, so may be more specific
+    /// due to rewriting.
+    pub fn rewritten_impl_constant(
+        &mut self,
+        id: ImplVarId,
+        trait_constant: TraitConstantId,
+    ) -> ConstValueId {
+        self.rewritten_impl_item(
+            id,
+            trait_constant,
+            |m| &mut m.constants,
+            |inference, stable_ptr| {
+                inference.new_const_var(
+                    stable_ptr,
+                    inference.db.trait_constant_type(trait_constant).unwrap(),
+                )
+            },
+        )
+    }
+
+    /// Helper function for getting an impl vars item ids.
+    /// These ids are likely to be variables, but may have more specific information due to
+    /// rewriting.
+    fn rewritten_impl_item<K: Hash + PartialEq + Eq, V: Copy>(
+        &mut self,
+        id: ImplVarId,
+        key: K,
+        get_map: impl Fn(&mut ImplVarTraitItemMappings) -> &mut HashMap<K, V>,
+        new_var: impl FnOnce(&mut Self, Option<SyntaxStablePtrId>) -> V,
+    ) -> V
+    where
+        Self: SemanticRewriter<V, NoError>,
+    {
+        let var_id = id.id(self.db);
+        if let Some(value) = self
+            .data
+            .impl_vars_trait_item_mappings
+            .get_mut(&var_id)
+            .and_then(|mappings| get_map(mappings).get(&key))
+        {
+            // Copy the value to allow usage of `self`.
+            let value = *value;
+            // If the value already exists, rewrite it before returning.
+            self.rewrite(value).no_err()
+        } else {
+            let value =
+                new_var(self, self.data.stable_ptrs.get(&InferenceVar::Impl(var_id)).cloned());
+            get_map(self.data.impl_vars_trait_item_mappings.entry(var_id).or_default())
+                .insert(key, value);
+            value
+        }
+    }
+
+    /// Sets an error for an impl reduction failure.
+    fn set_impl_reduction_error(&mut self, impl_id: ImplId) -> ErrorSet {
+        self.set_error(
+            impl_id
+                .concrete_trait(self.db)
+                .map(InferenceError::NoImplsFound)
+                .unwrap_or_else(InferenceError::Reported),
+        )
     }
 
     /// Conforms a type to a type. Returning the reduced types on failure.
