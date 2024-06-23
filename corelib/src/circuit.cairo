@@ -59,7 +59,9 @@ impl U384TryIntoCircuitModulus of TryInto<[u96; 4], CircuitModulus> {
 
 /// Converts 'T' into a 'U96Guarantee'.
 /// 'T' must be a a value that fits inside a u96, for example: u8, u96 or BoundedInt<0, 12>.
-extern fn into_u96_guarantee<T>(val: T) -> U96Guarantee nopanic;
+fn into_u96_guarantee<T>(val: T) -> U96Guarantee nopanic {
+    core::internal::bounded_int_into_guarantee(core::integer::upcast(val))
+}
 extern fn u96_guarantee_verify(guarantee: U96Guarantee) implicits(RangeCheck96) nopanic;
 
 
@@ -70,7 +72,7 @@ impl DestructU96Guarantee of Destruct<U96Guarantee> {
 }
 
 /// A value that is guaranteed to fit in a u96.
-extern type U96Guarantee;
+type U96Guarantee = core::internal::BoundedIntGuarantee<u96>;
 
 /// Expose the const required by the libfunc to allow the compiler const reusage.
 pub type ConstZero = core::internal::BoundedInt<0, 0>;

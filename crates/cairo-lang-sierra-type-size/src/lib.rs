@@ -49,7 +49,8 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Felt252DictEntry(_)
             | CoreTypeConcrete::SegmentArena(_)
             | CoreTypeConcrete::Bytes31(_)
-            | CoreTypeConcrete::BoundedInt(_) => Some(1),
+            | CoreTypeConcrete::BoundedInt(_)
+            | CoreTypeConcrete::BoundedIntGuarantee(_) => Some(1),
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::Span(_)
             | CoreTypeConcrete::EcPoint(_)
@@ -86,7 +87,6 @@ pub fn get_type_size_map(
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::U96LimbsLessThanGuarantee(g)) => {
                 Some((g.limb_count.checked_mul(2)?).try_into().ok()?)
             }
-            CoreTypeConcrete::Circuit(CircuitTypeConcrete::U96Guarantee(_)) => Some(1),
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitOutputs(_)) => Some(5),
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitPartialOutputs(_)) => Some(6),
             CoreTypeConcrete::Circuit(CircuitTypeConcrete::CircuitModulus(_)) => Some(4),
