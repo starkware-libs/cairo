@@ -38,7 +38,7 @@ fn test_circuit_success() {
             .done()
             .eval(modulus) {
         EvalCircuitResult::Success(outputs) => { outputs },
-        EvalCircuitResult::Failure((_, _)) => { panic!("Expected success") }
+        EvalCircuitResult::Failure(_) => { panic!("Expected success") }
     };
 
     assert_eq!(outputs.get_output(add), u384 { limb0: 2, limb1: 0, limb2: 0, limb3: 0 });

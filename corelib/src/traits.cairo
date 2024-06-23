@@ -328,3 +328,9 @@ impl DefaultNext<
 
 impl FixedSizedArrayDrop<T, +Drop<T>, const N: u32> of Drop<[T; N]>;
 impl FixedSizedArrayCopy<T, +Copy<T>, const N: u32> of Copy<[T; N]>;
+
+impl Size2TupleDestruct<S, T, +Destruct<S>, +Destruct<T>,> of Destruct<(S, T)> {
+    fn destruct(self: (S, T)) nopanic {
+        let (_, _) = self;
+    }
+}
