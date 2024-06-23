@@ -369,25 +369,62 @@ component:
 pub enum Event {}
 
 
-    pub struct ComponentState<TContractState> {
-    }
-    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
-    #[inline(always)]
-    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
-        ComponentState::<TContractState> {
+#[derive(Drop, Copy)]
+struct ComponentStorageBase {
+}
+#[derive(Drop, Copy)]
+struct ComponentStorageBaseMut {
+}
+impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+    type BaseType = ComponentStorageBase;
+    type BaseMutType = ComponentStorageBaseMut;
+    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+        ComponentStorageBase {
         }
     }
-    #[cfg(target: 'test')]
-    #[inline(always)]
-    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
-        unsafe_new_component_state::<TContractState>()
+    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+        ComponentStorageBaseMut {
+        }
     }
-    
+}
+pub struct ComponentState<TContractState> {
+}
+
+impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+ 
+impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+    type Target = ComponentStorageBase;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+        self.storage_base()
+    }
+}
+impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
+    type Target = ComponentStorageBaseMut;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+        self.storage_base_mut()
+    }
+}
+pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    ComponentState::<TContractState> {
+    }
+}
+#[cfg(target: 'test')]
+#[inline(always)]
+pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    unsafe_new_component_state::<TContractState>()
+}
+
 
 use starknet::storage::{
-    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
 };
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -433,6 +470,18 @@ impl EventIsEvent of starknet::Event<Event> {
     }
 }
 
+
+
+impls:
+
+impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
+impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+
+
+impls:
+
+impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
+impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
 lib.cairo:8:5

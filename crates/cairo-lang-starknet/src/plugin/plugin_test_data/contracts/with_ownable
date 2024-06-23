@@ -13,6 +13,12 @@ mod ownable_balance {
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        ownable: ownable_comp::Storage,
+        balance: u128,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -45,41 +51,66 @@ mod ownable_balance {
     }
 
 
-    pub struct ContractState {
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+    balance: starknet::storage::StorageBase<u128>,
+}
+#[derive(Drop, Copy)]
+struct ContractStorageBaseMut {
+    ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+    balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    type BaseMutType = ContractStorageBaseMut;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
+           balance: starknet::storage::StorageBase{ address: selector!("balance") },
+        }
+    }
+    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
+           balance: starknet::storage::StorageBase{ address: selector!("balance") },
+        }
+    }
+}
+pub struct ContractState {
         pub ownable: ownable_comp::ComponentState<ContractState>,
-        pub balance: __member_module_balance::ContractMemberState,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
-            balance: __member_module_balance::ContractMemberState {},
-        }
-    }
-    
+}
 
-        pub mod __member_module_balance {
-        use super::ownable_comp;
-        use super::TransferTrait;
-        use super::ContractAddress;
-        use super::Event;
-        use super::OwnableBalanceImpl;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = u128;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
-                }
-            }
-impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-        }
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = ContractStorageBase;
+    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = ContractStorageBaseMut;
+    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        self.storage_base_mut()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+            ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
+    }
+}
+
 use starknet::storage::{
-    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
 };
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+use starknet::storage::Map as LegacyMap;
 
 impl ContractStateTransfer of
     ownable_comp::UnsafeNewContractStateTraitForTransfer<ContractState> {
@@ -183,7 +214,7 @@ pub mod __constructor {
 
 impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
-        self.ownable
+                 @ownable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
         ownable_comp::unsafe_new_component_state::<ContractState>()
@@ -240,11 +271,21 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         #[external(v0)]
         fn set_balance(ref self: ContractState, new_balance: u128);
     }
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
+impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 }
 
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        ownable: ownable_comp::Storage,
+        balance: u128,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -277,41 +318,66 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 
 
-    pub struct ContractState {
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+    balance: starknet::storage::StorageBase<u128>,
+}
+#[derive(Drop, Copy)]
+struct ContractStorageBaseMut {
+    ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+    balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    type BaseMutType = ContractStorageBaseMut;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
+           balance: starknet::storage::StorageBase{ address: selector!("balance") },
+        }
+    }
+    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
+           balance: starknet::storage::StorageBase{ address: selector!("balance") },
+        }
+    }
+}
+pub struct ContractState {
         pub ownable: ownable_comp::ComponentState<ContractState>,
-        pub balance: __member_module_balance::ContractMemberState,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
-            balance: __member_module_balance::ContractMemberState {},
-        }
-    }
-    
+}
 
-        pub mod __member_module_balance {
-        use super::ownable_comp;
-        use super::TransferTrait;
-        use super::ContractAddress;
-        use super::Event;
-        use super::OwnableBalanceImpl;
-            #[derive(Copy, Drop)]
-            pub struct ContractMemberState {}
-            impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState> {
-                type Value = u128;
-                fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
-                    starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
-                }
-            }
-impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
-        }
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = ContractStorageBase;
+    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = ContractStorageBaseMut;
+    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        self.storage_base_mut()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+            ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
+    }
+}
+
 use starknet::storage::{
-    StorageLegacyMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageLegacyMapMemberAccessTrait, StorageMemberAccessTrait,
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
 };
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+use starknet::storage::Map as LegacyMap;
 
 impl ContractStateTransfer of
     ownable_comp::UnsafeNewContractStateTraitForTransfer<ContractState> {
@@ -415,7 +481,7 @@ pub mod __constructor {
 
 impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
-        self.ownable
+                 @ownable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
         ownable_comp::unsafe_new_component_state::<ContractState>()
@@ -472,5 +538,9 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         #[external(v0)]
         fn set_balance(ref self: ContractState, new_balance: u128);
     }
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
+impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 //! > expected_diagnostics
