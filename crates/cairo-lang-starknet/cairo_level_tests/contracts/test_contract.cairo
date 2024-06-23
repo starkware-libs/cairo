@@ -79,6 +79,11 @@ mod test_contract {
         fn l1_handle(ref self: ContractState, from_address: felt252, arg: felt252) -> felt252 {
             arg
         }
+
+        #[external(v0)]
+        fn fixed_sized_array_usage(ref self: ContractState, value: [felt252; 5]) -> [felt252; 5] {
+            value
+        }
     }
 }
 
