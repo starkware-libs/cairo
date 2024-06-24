@@ -64,7 +64,7 @@ pub fn handle_storage_struct(
                      {state_struct_name}{full_generic_arg_str} {{$member_init_code$
                      }}
                  }}
-                 #[cfg(test)]
+                 #[cfg(target: 'test')]
                  #[inline(always)]
                  pub fn {module_kind}_state_for_testing{generic_arg_str}() -> \
              {full_state_struct_name} {{
