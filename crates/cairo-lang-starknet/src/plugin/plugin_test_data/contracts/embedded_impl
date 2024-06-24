@@ -550,7 +550,7 @@ pub enum Event {}
             value: __member_module_value::ContractMemberState {},
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -1486,7 +1486,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -2021,7 +2021,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()

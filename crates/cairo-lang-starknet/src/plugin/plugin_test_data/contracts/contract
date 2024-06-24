@@ -122,7 +122,7 @@ contract:
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()

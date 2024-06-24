@@ -876,7 +876,7 @@ pub enum Event {}
             balance_pair: __member_module_balance_pair::ContractMemberState {},
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()

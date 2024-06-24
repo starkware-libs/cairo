@@ -117,7 +117,7 @@ pub enum Event {}
             zero_size_mapping: __member_module_zero_size_mapping::ContractMemberState {},
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()

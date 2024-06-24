@@ -61,7 +61,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -178,7 +178,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -295,7 +295,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -408,7 +408,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -521,7 +521,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -638,7 +638,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -751,7 +751,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -860,7 +860,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -981,7 +981,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -1148,7 +1148,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -1265,7 +1265,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()

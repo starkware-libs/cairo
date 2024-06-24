@@ -550,7 +550,7 @@ component:
             my_type_var: __member_module_my_type_var::ComponentMemberState {},
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
