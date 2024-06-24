@@ -511,8 +511,16 @@ pub fn core_libfunc_cost(
             BoundedIntConcreteLibfunc::Felt252Constrain(_) => {
                 vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
             }
-            BoundedIntConcreteLibfunc::VerifyGuarantee(_) => {
-                todo!("Implement bounded_int_verify_guarantee")
+            BoundedIntConcreteLibfunc::VerifyGuarantee(libfunc) => {
+                vec![
+                    (ConstCost {
+                        steps: 8 + if libfunc.range.lower.is_zero() { 0 } else { 1 },
+                        holes: 0,
+                        range_checks: 3,
+                        range_checks96: 0,
+                    })
+                    .into(),
+                ]
             }
         },
         Circuit(libfunc) => match libfunc {
