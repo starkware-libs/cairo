@@ -119,6 +119,9 @@ pub trait HasComponent<TContractState> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -146,12 +149,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
@@ -286,6 +295,9 @@ pub trait HasComponent<TContractState> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -313,12 +325,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
@@ -453,6 +471,9 @@ pub trait HasComponent<TContractState> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -480,12 +501,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
@@ -616,6 +643,9 @@ pub trait HasComponent<TContractState> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -643,12 +673,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
@@ -779,6 +815,9 @@ pub trait HasComponent<TContractState> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -806,12 +845,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
@@ -946,6 +991,9 @@ pub trait HasComponent<TContractState> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -973,12 +1021,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
@@ -1109,6 +1163,9 @@ pub trait HasComponent<TContractState> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1136,12 +1193,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
@@ -1268,6 +1331,9 @@ pub trait HasComponent<TContractState> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1295,12 +1361,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
@@ -1444,6 +1516,9 @@ pub impl MyImpl<
 > of MyTrait<TContractState> {
 }
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1471,12 +1546,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
@@ -1655,6 +1736,9 @@ pub trait HasComponent<TContractState> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1682,12 +1766,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
@@ -1822,6 +1912,9 @@ pub trait HasComponent<TContractState> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1849,12 +1942,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
+lib.cairo:1:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;

@@ -99,6 +99,9 @@ trait MyTrait<T> {
     fn set(ref self: T, addr: ContractAddress, value: u32);
 }
 
+lib.cairo:1:1
+#[derive(Drop, starknet::Store)]
+^******************************^
 impls:
 
 impl MyTypeDrop of core::traits::Drop::<MyType>;
@@ -313,6 +316,9 @@ impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatch
 }
 
 
+lib.cairo:41:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl MyTraitDispatcherCopy of core::traits::Copy::<MyTraitDispatcher>;
@@ -367,6 +373,9 @@ impl StoreMyTraitDispatcher of starknet::Store::<MyTraitDispatcher> {
 }
 
 
+lib.cairo:41:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl MyTraitLibraryDispatcherCopy of core::traits::Copy::<MyTraitLibraryDispatcher>;
@@ -421,6 +430,9 @@ impl StoreMyTraitLibraryDispatcher of starknet::Store::<MyTraitLibraryDispatcher
 }
 
 
+lib.cairo:41:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl MyTraitSafeLibraryDispatcherCopy of core::traits::Copy::<MyTraitSafeLibraryDispatcher>;
@@ -475,6 +487,9 @@ impl StoreMyTraitSafeLibraryDispatcher of starknet::Store::<MyTraitSafeLibraryDi
 }
 
 
+lib.cairo:41:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl MyTraitSafeDispatcherCopy of core::traits::Copy::<MyTraitSafeDispatcher>;
@@ -629,6 +644,9 @@ pub impl MyImpl<
     }
 }
 
+lib.cairo:17:1
+
+^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -673,6 +691,9 @@ impl EventLogIntoEvent of Into<Log, Event> {
 
 
 
+lib.cairo:23:1
+    #[derive(Drop, starknet::Event)]
+^**********************************^
 impls:
 
 impl LogDrop of core::traits::Drop::<Log>;
@@ -696,12 +717,18 @@ impl LogIsEvent of starknet::Event<Log> {
 }
 
 
+lib.cairo:6:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
+lib.cairo:6:1
+#[starknet::component]
+^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;

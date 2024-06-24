@@ -820,6 +820,9 @@ impl BalancePairStorageNodeImpl of starknet::storage::StorageNode<BalancePair> {
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl HelloStarknetTraitDispatcherCopy of core::traits::Copy::<HelloStarknetTraitDispatcher>;
@@ -874,6 +877,9 @@ impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDi
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl HelloStarknetTraitLibraryDispatcherCopy of core::traits::Copy::<HelloStarknetTraitLibraryDispatcher>;
@@ -928,6 +934,9 @@ impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknet
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl HelloStarknetTraitSafeLibraryDispatcherCopy of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcher>;
@@ -982,6 +991,9 @@ impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStar
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl HelloStarknetTraitSafeDispatcherCopy of core::traits::Copy::<HelloStarknetTraitSafeDispatcher>;
@@ -1036,6 +1048,9 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
 }
 
 
+lib.cairo:20:1
+#[starknet::storage_node]
+^***********************^
 impls:
 
 impl BalancePairStorageNodeDrop of core::traits::Drop::<BalancePairStorageNode>;
@@ -1365,6 +1380,9 @@ pub mod __constructor {
 
 
 
+lib.cairo:26:1
+#[starknet::contract]
+^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1392,12 +1410,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:26:1
+#[starknet::contract]
+^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
+lib.cairo:26:1
+#[starknet::contract]
+^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
