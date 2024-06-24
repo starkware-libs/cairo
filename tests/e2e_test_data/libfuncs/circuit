@@ -764,44 +764,6 @@ test::foo: OrderedHashMap({Const: 1700})
 
 //! > ==========================================================================
 
-//! > into_u96_guarantee
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-use core::circuit::{U96Guarantee, into_u96_guarantee};
-
-
-fn foo(val: u8) -> U96Guarantee {
-    into_u96_guarantee(val)
-}
-
-//! > casm
-[ap + 0] = [fp + -3], ap++;
-ret;
-
-//! > sierra_code
-type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
-type BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> = BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: false, dup: false, zero_sized: false];
-type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
-
-libfunc upcast<u8, BoundedInt<0, 79228162514264337593543950335>> = upcast<u8, BoundedInt<0, 79228162514264337593543950335>>;
-libfunc bounded_int_into_guarantee<BoundedInt<0, 79228162514264337593543950335>> = bounded_int_into_guarantee<BoundedInt<0, 79228162514264337593543950335>>;
-libfunc store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>> = store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>>;
-
-upcast<u8, BoundedInt<0, 79228162514264337593543950335>>([0]) -> ([1]); // 0
-bounded_int_into_guarantee<BoundedInt<0, 79228162514264337593543950335>>([1]) -> ([2]); // 1
-store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>>([2]) -> ([2]); // 2
-return([2]); // 3
-
-test::foo@0([0]: u8) -> (BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>);
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 100})
-
-//! > ==========================================================================
-
 //! > u96_guarantee_verify
 
 //! > test_runner_name
