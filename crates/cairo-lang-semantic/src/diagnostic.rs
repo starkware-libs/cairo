@@ -836,7 +836,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::ImplInImplMustBeExplicit
             | SemanticDiagnosticKind::TraitItemForbiddenInTheTrait
             | SemanticDiagnosticKind::TraitItemForbiddenInItsImpl
-            | SemanticDiagnosticKind::ImplItemForbiddenInTheImpl => Severity::Warning,
+            | SemanticDiagnosticKind::ImplItemForbiddenInTheImpl
+            | SemanticDiagnosticKind::UnstableFeature { .. }
+            | SemanticDiagnosticKind::DeprecatedFeature { .. } => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }

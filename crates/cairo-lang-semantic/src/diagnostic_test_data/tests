@@ -510,12 +510,12 @@ fn unstable_function_with_note() -> felt252 {
 //! > function_body
 
 //! > expected_diagnostics
-error: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
+warning: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
  --> lib.cairo:12:15
   let _fail = unstable_function();
               ^***************^
 
-error: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute. Note: "Some reason"
+warning: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute. Note: "Some reason"
  --> lib.cairo:15:15
   let _fail = unstable_function_with_note();
               ^*************************^
@@ -580,27 +580,27 @@ enum AllowedEnumMember {
 //! > function_body
 
 //! > expected_diagnostics
-error: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
+warning: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
  --> lib.cairo:14:25
 impl BadUnstableImpl of UnstableTrait;
                         ^***********^
 
-error: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
+warning: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
  --> lib.cairo:23:13
     member: DisallowedType,
             ^************^
 
-error: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
+warning: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
  --> lib.cairo:32:14
     variant: DisallowedType,
              ^************^
 
-error: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
  --> lib.cairo:41:15
   let _fail = deprecated_function_with_note();
               ^***************************^
 
-error: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
  --> lib.cairo:44:15
   let _fail = deprecated_function_no_note();
               ^*************************^
