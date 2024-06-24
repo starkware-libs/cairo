@@ -46,13 +46,19 @@ impl MinusOneU96 of MinusOne<0x1000000000000000000000000> {
     const VALUE: felt252 = 0xffffffffffffffffffffffff;
 }
 
-enum ConstraitFelt252Result<const BOUNDARY_MINUS_1: felt252, const BOUNDARY: felt252> {
+pub(crate) enum ConstraitFelt252Result<const BOUNDARY_MINUS_1: felt252, const BOUNDARY: felt252> {
     Under: BoundedIntGuarantee<BoundedInt<0, BOUNDARY_MINUS_1>>,
-    Over: BoundedIntGuarantee<BoundedInt<BOUNDARY, 0x800000000000011000000000000000000000000000000000000000000000000>>,
+    Over: BoundedIntGuarantee<
+        BoundedInt<BOUNDARY, 0x800000000000011000000000000000000000000000000000000000000000000>
+    >,
 }
 
 pub(crate) extern fn bounded_int_felt252_constrain<
-    const BOUNDARY: felt252, impl BoundaryMinusOne: MinusOne::<BOUNDARY>,
+    const BOUNDARY: felt252, impl BoundaryMinusOne: MinusOne<BOUNDARY>,
 >(
     value: felt252
 ) -> ConstraitFelt252Result<BoundaryMinusOne::VALUE, BOUNDARY> nopanic;
+
+pub(crate) extern fn bounded_int_verify_guarantee<BoundedIntType>(
+    guarantee: BoundedIntGuarantee<BoundedIntType>
+) implicits(RangeCheck) nopanic;

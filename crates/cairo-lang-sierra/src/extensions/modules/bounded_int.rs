@@ -525,8 +525,10 @@ impl SignatureOnlyGenericLibfunc for BoundedIntIntoGuaranteeLibfunc {
 /// Libfunc for wrapping a given bounded int with a guarantee.
 #[derive(Default)]
 pub struct BoundedIntVerifyGuaranteeLibfunc {}
-impl SignatureOnlyGenericLibfunc for BoundedIntVerifyGuaranteeLibfunc {
+impl NamedLibfunc for BoundedIntVerifyGuaranteeLibfunc {
     const STR_ID: &'static str = "bounded_int_verify_guarantee";
+
+    type Concrete = BoundedIntVerifyGuaranteeConcreteLibfunc;
 
     fn specialize_signature(
         &self,
@@ -534,6 +536,11 @@ impl SignatureOnlyGenericLibfunc for BoundedIntVerifyGuaranteeLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
+        let range = Range::from_type(context, ty.clone())?;
+        let prime: BigInt = Felt252::prime().into();
+        // Ranges that aren't this large there are much more efficient algorithms.
+        require((&prime - range.size()) < (&prime % u128::MAX))
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
@@ -543,6 +550,25 @@ impl SignatureOnlyGenericLibfunc for BoundedIntVerifyGuaranteeLibfunc {
             vec![OutputVarInfo::new_builtin(range_check_type.clone(), 0)],
             SierraApChange::Known { new_vars_only: false },
         ))
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let range = Range::from_type(context.upcast(), ty.clone())?;
+        Ok(Self::Concrete { range, signature: self.specialize_signature(context.upcast(), args)? })
+    }
+}
+pub struct BoundedIntVerifyGuaranteeConcreteLibfunc {
+    pub range: Range,
+    signature: LibfuncSignature,
+}
+impl SignatureBasedConcreteLibfunc for BoundedIntVerifyGuaranteeConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
     }
 }
 
