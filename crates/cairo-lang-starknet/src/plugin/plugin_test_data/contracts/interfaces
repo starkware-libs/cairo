@@ -1,7 +1,7 @@
 //! > Expansion of a contract with a component with conflicting interfaces.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: warnings_only)
 
 //! > cairo_code
 >>> file: test_data/interfaces.cairo
