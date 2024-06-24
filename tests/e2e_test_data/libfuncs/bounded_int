@@ -823,3 +823,38 @@ store_temp<NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>>([1
 return([1]); // 2
 
 test::foo@0([0]: BoundedInt<-680564733841876926926749214863536422911, -1>) -> (NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>);
+
+//! > ==========================================================================
+
+//! > bounded_int_into_guarantee
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::internal::{BoundedIntGuarantee, bounded_int_into_guarantee};
+
+
+fn foo(val: u8) -> BoundedIntGuarantee<u8> {
+    bounded_int_into_guarantee(val)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedIntGuarantee<u8> = BoundedIntGuarantee<u8> [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc bounded_int_into_guarantee<u8> = bounded_int_into_guarantee<u8>;
+libfunc store_temp<BoundedIntGuarantee<u8>> = store_temp<BoundedIntGuarantee<u8>>;
+
+bounded_int_into_guarantee<u8>([0]) -> ([1]); // 0
+store_temp<BoundedIntGuarantee<u8>>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: u8) -> (BoundedIntGuarantee<u8>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
