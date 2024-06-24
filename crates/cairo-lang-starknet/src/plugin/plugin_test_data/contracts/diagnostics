@@ -49,7 +49,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -183,7 +183,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -327,7 +327,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -524,7 +524,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -663,7 +663,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -800,7 +800,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -965,7 +965,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -1121,7 +1121,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -1373,7 +1373,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -1528,7 +1528,7 @@ pub enum Event {}
             same_name: __member_module_same_name::ContractMemberState {},
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -1730,7 +1730,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -2411,7 +2411,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -2650,7 +2650,7 @@ contract:
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -2771,7 +2771,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -5240,7 +5240,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -5408,7 +5408,7 @@ contract:
             component_storage: super::component::unsafe_new_component_state::<ContractState>(),
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -5602,7 +5602,7 @@ pub enum Event {}
         ContractState {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -6248,7 +6248,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -6326,7 +6326,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -6404,7 +6404,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -7056,7 +7056,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -7134,7 +7134,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -7212,7 +7212,7 @@ pub enum Event {}
         ComponentState::<TContractState> {
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()

@@ -89,7 +89,7 @@ pub enum Event {}
             data: __member_module_data::ComponentMemberState {},
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -169,7 +169,7 @@ contract:
             normal_member2: __member_module_normal_member2::ContractMemberState {},
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -430,7 +430,7 @@ pub enum Event {}
             data: __member_module_data::ComponentMemberState {},
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -509,7 +509,7 @@ pub enum Event {}
             data: __member_module_data::ComponentMemberState {},
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -587,7 +587,7 @@ contract:
             component2_storage: super::component2::unsafe_new_component_state::<ContractState>(),
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
@@ -862,7 +862,7 @@ pub enum Event {}
             data: __member_module_data::ComponentMemberState {},
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -941,7 +941,7 @@ pub enum Event {}
             data: __member_module_data::ComponentMemberState {},
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
@@ -1019,7 +1019,7 @@ contract:
             component2_storage: super::component2::unsafe_new_component_state::<ContractState>(),
         }
     }
-    #[cfg(test)]
+    #[cfg(target: 'test')]
     #[inline(always)]
     pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
