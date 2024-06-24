@@ -43,7 +43,7 @@ error: Trait has no implementation in context: core::starknet::event::Event::<te
 //! > Test flat event variant which is not an enum.
 
 //! > test_runner_name
-test_abi_failure(expect_diagnostics: true)
+test_abi_failure(expect_diagnostics: warnings_only)
 
 //! > cairo_code
 #[derive(Drop, starknet::Event)]
@@ -76,7 +76,7 @@ warning: Plugin diagnostic: Failed to generate ABI: `starknet::Event` variant ma
 //! > Test duplicate event selector.
 
 //! > test_runner_name
-test_abi_failure(expect_diagnostics: true)
+test_abi_failure(expect_diagnostics: warnings_only)
 
 //! > cairo_code
 #[derive(Drop, starknet::Event)]
@@ -114,7 +114,7 @@ warning: Plugin diagnostic: Failed to generate ABI: Event `test::test_contract::
 //! > Test duplicate entry points with the same name.
 
 //! > test_runner_name
-test_abi_failure(expect_diagnostics: true)
+test_abi_failure(expect_diagnostics: warnings_only)
 
 //! > cairo_code
 >>> file: test_data/interfaces.cairo
@@ -143,7 +143,7 @@ warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'
 //! > Test embed impl of non-interface trait.
 
 //! > test_runner_name
-test_abi_failure(expect_diagnostics: true)
+test_abi_failure(expect_diagnostics: warnings_only)
 
 //! > cairo_code
 trait NonInterfaceTrait<TContractState> {
@@ -175,7 +175,7 @@ warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an 
 //! > Test per-item impl of a starknet interface.
 
 //! > test_runner_name
-test_abi_failure(expect_diagnostics: true)
+test_abi_failure(expect_diagnostics: warnings_only)
 
 //! > cairo_code
 #[starknet::interface]
@@ -210,7 +210,7 @@ warning: Plugin diagnostic: Failed to generate ABI: An impl marked with #[abi(pe
 //! > Test bad __validate_deploy__.
 
 //! > test_runner_name
-test_abi_failure(expect_diagnostics: true)
+test_abi_failure(expect_diagnostics: warnings_only)
 
 //! > cairo_code
 #[starknet::contract(account)]

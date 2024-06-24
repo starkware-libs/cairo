@@ -30,7 +30,7 @@ impl MyImpl of MyTrait {
 //! > An impl, without generics, shouldn't be used in a path in its own body.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: warnings_only)
 
 //! > function
 fn foo() {}
@@ -61,7 +61,7 @@ warning: In an impl, paths of the same impl are not allowed. Did you mean to use
 //! > An impl shouldn't be used in a path in its own body, with the same generics.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: warnings_only)
 
 //! > function
 fn foo() {}
@@ -119,7 +119,7 @@ impl MyImpl<T> of MyTrait<T> {
 //! > An impl in a path in its own body should be fully explicit.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: warnings_only)
 
 //! > function
 fn foo() {}
