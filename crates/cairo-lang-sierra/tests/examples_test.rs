@@ -7,7 +7,6 @@ use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra::simulation::value::CoreValue;
 use cairo_lang_sierra::simulation::{self};
-use num_bigint::ToBigInt;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
@@ -57,16 +56,12 @@ fn simulate_fib_jumps((gb, n): (i64, i128), (new_gb, fib): (i64, i128)) {
                 (StatementIdx(9), 0),
             ]),
             &"Fibonacci".into(),
-            vec![
-                CoreValue::RangeCheck,
-                CoreValue::GasBuiltin(gb),
-                CoreValue::Felt252(n.to_bigint().unwrap())
-            ]
+            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Felt252(n.into())]
         ),
         Ok(vec![
             CoreValue::RangeCheck,
             CoreValue::GasBuiltin(new_gb),
-            CoreValue::Felt252(fib.to_bigint().unwrap())
+            CoreValue::Felt252(fib.into())
         ])
     );
 }
@@ -88,12 +83,12 @@ fn simulate_fib_no_gas(n: i128, fib: i128) {
             &"Fibonacci".into(),
             vec![
                 // a=
-                CoreValue::Felt252(1.to_bigint().unwrap()),
+                CoreValue::Felt252(1.into()),
                 // b=
-                CoreValue::Felt252(1.to_bigint().unwrap()),
-                CoreValue::Felt252(n.to_bigint().unwrap())
+                CoreValue::Felt252(1.into()),
+                CoreValue::Felt252(n.into())
             ]
         ),
-        Ok(vec![CoreValue::Felt252(fib.to_bigint().unwrap())])
+        Ok(vec![CoreValue::Felt252(fib.into())])
     );
 }

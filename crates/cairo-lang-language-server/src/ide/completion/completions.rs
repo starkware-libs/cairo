@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{
-    FunctionWithBodyId, ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
-    ModuleItemId, NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId,
+    LanguageElementId, LookupItemId, ModuleFileId, ModuleId, NamedLanguageElementId,
+    TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextOffset;
@@ -23,8 +23,8 @@ use cairo_lang_utils::LookupIntern;
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 use tracing::debug;
 
+use crate::lang::db::LsSemanticGroup;
 use crate::lang::lsp::ToLsp;
-use crate::lang::semantic::LsSemanticGroup;
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn generic_completions(
@@ -56,16 +56,8 @@ pub fn generic_completions(
     let Some(lookup_item_id) = lookup_items.into_iter().next() else {
         return completions;
     };
-    let function_id = match lookup_item_id {
-        LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
-            FunctionWithBodyId::Free(free_function_id)
-        }
-        LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
-            FunctionWithBodyId::Impl(impl_function_id)
-        }
-        _ => {
-            return completions;
-        }
+    let Some(function_id) = lookup_item_id.function_with_body() else {
+        return completions;
     };
     let Ok(signature) = db.function_with_body_signature(function_id) else {
         return completions;
@@ -95,7 +87,7 @@ pub fn generic_completions(
 
 fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> CompletionItemKind {
     match item {
-        ResolvedGenericItem::Constant(_) => CompletionItemKind::CONSTANT,
+        ResolvedGenericItem::GenericConstant(_) => CompletionItemKind::CONSTANT,
         ResolvedGenericItem::Module(_) => CompletionItemKind::MODULE,
         ResolvedGenericItem::GenericFunction(_) | ResolvedGenericItem::TraitFunction(_) => {
             CompletionItemKind::FUNCTION

@@ -385,11 +385,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!(r#"Type "{}" has no members."#, ty.format(db))
             }
-            SemanticDiagnosticKind::NoSuchMember { struct_id, member_name } => {
+            SemanticDiagnosticKind::NoSuchStructMember { struct_id, member_name } => {
                 format!(
                     r#"Struct "{}" has no member "{member_name}""#,
                     struct_id.full_path(db.upcast())
                 )
+            }
+            SemanticDiagnosticKind::NoSuchTypeMember { ty, member_name } => {
+                format!(r#"Type "{}" has no member "{member_name}""#, ty.format(db))
             }
             SemanticDiagnosticKind::MemberNotVisible(member_name) => {
                 format!(r#"Member "{member_name}" is not visible in this context."#)
@@ -419,10 +422,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnhandledMustUseFunction => {
                 "Unhandled `#[must_use]` function.".into()
             }
-            SemanticDiagnosticKind::UnstableFeature(feature_name) => {
+            SemanticDiagnosticKind::UnstableFeature { feature_name, note } => {
                 format!(
                     "Usage of unstable feature `{feature_name}` with no \
-                     `#[feature({feature_name})]` attribute."
+                     `#[feature({feature_name})]` attribute.{}",
+                    note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
                 )
             }
             SemanticDiagnosticKind::DeprecatedFeature { feature_name, note } => {
@@ -553,6 +557,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::InvalidDropTraitImpl(inference_error) => {
                 format!("Invalid drop trait implementation, {}", inference_error.format(db))
+            }
+            SemanticDiagnosticKind::InvalidIntoIteratorTraitImpl(inference_error) => {
+                format!(
+                    "Invalid into iterator trait implementation, {}",
+                    inference_error.format(db)
+                )
             }
             SemanticDiagnosticKind::InvalidImplItem(item_kw) => {
                 format!("`{item_kw}` is not allowed inside impl.")
@@ -736,12 +746,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
                 "Only `_` is valid as a negative impl argument.".into()
             }
-            SemanticDiagnosticKind::UnsupportedTraitItem(kind) => {
-                format!("{kind} items are not yet supported in traits.")
-            }
-            SemanticDiagnosticKind::UnsupportedImplItem(kind) => {
-                format!("{kind} items are not yet supported in impls.")
-            }
             SemanticDiagnosticKind::CouponForExternFunctionNotAllowed => {
                 "Coupon cannot be used with extern functions.".into()
             }
@@ -788,6 +792,30 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NonPhantomTypeContainingPhantomType => {
                 "Non-phantom type containing phantom type.".into()
             }
+            SemanticDiagnosticKind::DerefCycle { deref_chain } => {
+                format!("Deref impls cycle detected:\n{}", deref_chain)
+            }
+            SemanticDiagnosticKind::NoImplementationOfTrait {
+                ty,
+                trait_name,
+                inference_errors,
+            } => {
+                if inference_errors.is_empty() {
+                    format!(
+                        "Implementation of trait `{}` not found on type `{}`. Did you import the \
+                         correct trait and impl?",
+                        trait_name,
+                        ty.format(db)
+                    )
+                } else {
+                    format!(
+                        "Could not find implementation of trait `{}` on type `{}`.\n{}",
+                        trait_name,
+                        ty.format(db),
+                        inference_errors.format(db)
+                    )
+                }
+            }
         }
     }
 
@@ -808,7 +836,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::ImplInImplMustBeExplicit
             | SemanticDiagnosticKind::TraitItemForbiddenInTheTrait
             | SemanticDiagnosticKind::TraitItemForbiddenInItsImpl
-            | SemanticDiagnosticKind::ImplItemForbiddenInTheImpl => Severity::Warning,
+            | SemanticDiagnosticKind::ImplItemForbiddenInTheImpl
+            | SemanticDiagnosticKind::UnstableFeature { .. }
+            | SemanticDiagnosticKind::DeprecatedFeature { .. } => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -966,8 +996,12 @@ pub enum SemanticDiagnosticKind {
         method_name: SmolStr,
         inference_errors: TraitInferenceErrors,
     },
-    NoSuchMember {
+    NoSuchStructMember {
         struct_id: StructId,
+        member_name: SmolStr,
+    },
+    NoSuchTypeMember {
+        ty: semantic::TypeId,
         member_name: SmolStr,
     },
     MemberNotVisible(SmolStr),
@@ -982,7 +1016,10 @@ pub enum SemanticDiagnosticKind {
     },
     ErrorPropagateOnNonErrorType(semantic::TypeId),
     UnhandledMustUseType(semantic::TypeId),
-    UnstableFeature(SmolStr),
+    UnstableFeature {
+        feature_name: SmolStr,
+        note: Option<SmolStr>,
+    },
     DeprecatedFeature {
         feature_name: SmolStr,
         note: Option<SmolStr>,
@@ -1032,6 +1069,7 @@ pub enum SemanticDiagnosticKind {
     },
     InvalidCopyTraitImpl(InferenceError),
     InvalidDropTraitImpl(InferenceError),
+    InvalidIntoIteratorTraitImpl(InferenceError),
     InvalidImplItem(SmolStr),
     MissingItemsInImpl(Vec<SmolStr>),
     PassPanicAsNopanic {
@@ -1064,6 +1102,11 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
         inference_errors: TraitInferenceErrors,
     },
+    NoImplementationOfTrait {
+        ty: semantic::TypeId,
+        trait_name: SmolStr,
+        inference_errors: TraitInferenceErrors,
+    },
     MultipleImplementationOfIndexOperator(semantic::TypeId),
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
@@ -1091,8 +1134,6 @@ pub enum SemanticDiagnosticKind {
         actual: usize,
     },
     GenericArgOutOfOrder(SmolStr),
-    UnsupportedTraitItem(SmolStr),
-    UnsupportedImplItem(SmolStr),
     CouponForExternFunctionNotAllowed,
     CouponArgumentNoModifiers,
     /// Coupons are disabled in the current crate.
@@ -1104,6 +1145,9 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArraySizeTooBig,
     SelfNotSupportedInContext,
     SelfMustBeFirst,
+    DerefCycle {
+        deref_chain: String,
+    },
 }
 
 /// The kind of an expression with multiple possible return types.
@@ -1154,7 +1198,6 @@ impl From<&ResolvedConcreteItem> for ElementKind {
     fn from(val: &ResolvedConcreteItem) -> Self {
         match val {
             ResolvedConcreteItem::Constant(_) => ElementKind::Constant,
-            ResolvedConcreteItem::ConstGenericParameter(_) => ElementKind::Constant,
             ResolvedConcreteItem::Module(_) => ElementKind::Module,
             ResolvedConcreteItem::Function(_) => ElementKind::Function,
             ResolvedConcreteItem::TraitFunction(_) => ElementKind::TraitFunction,

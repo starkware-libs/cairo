@@ -8,7 +8,6 @@ use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
-use super::feature_kind::extract_allowed_features;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
@@ -91,6 +90,7 @@ pub fn free_function_generic_params_data(
         ModuleItemId::FreeFunction(free_function_id),
     ));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    resolver.set_allowed_features(&free_function_id, &free_function_syntax, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -145,12 +145,6 @@ pub fn priv_free_function_declaration_data(
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.extend(generic_params_data.diagnostics);
-    resolver.data.allowed_features = extract_allowed_features(
-        db.upcast(),
-        &free_function_id,
-        &free_function_syntax,
-        &mut diagnostics,
-    );
 
     let mut environment = Environment::empty();
 
@@ -170,7 +164,8 @@ pub fn priv_free_function_declaration_data(
 
     forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
 
-    let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
+    let (implicit_precedence, _) =
+        get_implicit_precedence(&mut diagnostics, &mut resolver, &attributes);
 
     // Check fully resolved.
     let inference = &mut resolver.inference();

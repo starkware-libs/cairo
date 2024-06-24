@@ -6,9 +6,14 @@ use itertools::Itertools;
 use super::canonic::ResultNoErrEx;
 use super::conform::InferenceConform;
 use super::{Inference, InferenceError, InferenceResult};
+use crate::items::constant::ImplConstantId;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitTypeId};
+use crate::items::generics::GenericParamConst;
+use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl};
+use crate::items::trt::{
+    ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitImplId,
+    ConcreteTraitTypeId,
+};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::ImplTypeId;
 use crate::{
@@ -85,13 +90,25 @@ pub trait InferenceEmbeddings {
         concrete_trait_function: ConcreteTraitGenericFunctionId,
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<GenericFunctionId>;
+    ) -> GenericFunctionId;
     fn infer_trait_type(
         &mut self,
         concrete_trait_type: ConcreteTraitTypeId,
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<TypeId>;
+    ) -> TypeId;
+    fn infer_trait_constant(
+        &mut self,
+        concrete_trait_constant: ConcreteTraitConstantId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: Option<SyntaxStablePtrId>,
+    ) -> ImplConstantId;
+    fn infer_trait_impl(
+        &mut self,
+        concrete_trait_constant: ConcreteTraitImplId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: Option<SyntaxStablePtrId>,
+    ) -> ImplImplId;
 }
 
 impl<'db> InferenceEmbeddings for Inference<'db> {
@@ -110,6 +127,9 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             UninferredImpl::ImplAlias(impl_alias_id) => {
                 self.infer_impl_alias(impl_alias_id, concrete_trait_id, lookup_context, stable_ptr)?
             }
+            UninferredImpl::ImplImpl(impl_impl_id) => {
+                ImplLongId::ImplImpl(impl_impl_id).intern(self.db)
+            }
             UninferredImpl::GenericParam(param_id) => {
                 let param = self
                     .db
@@ -118,7 +138,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
                 let param = extract_matches!(param, GenericParam::Impl);
                 let imp_concrete_trait_id = param.concrete_trait.unwrap();
                 self.conform_traits(concrete_trait_id, imp_concrete_trait_id)?;
-                ImplId::GenericParameter(param_id)
+                ImplLongId::GenericParameter(param_id).intern(self.db)
             }
         };
         Ok(impl_id)
@@ -157,7 +177,8 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             lookup_context,
             stable_ptr,
         )?;
-        Ok(ImplId::Concrete(ConcreteImplLongId { impl_def_id, generic_args }.intern(self.db)))
+        Ok(ImplLongId::Concrete(ConcreteImplLongId { impl_def_id, generic_args }.intern(self.db))
+            .intern(self.db))
     }
 
     /// Infers all the variables required to make an impl alias (possibly with free generic params)
@@ -339,10 +360,10 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
                     concrete_trait_id,
                     stable_ptr,
                     lookup_context,
-                )?))
+                )))
             }
-            GenericParam::Const(_) => {
-                Ok(GenericArgumentId::Constant(self.new_const_var(stable_ptr)))
+            GenericParam::Const(GenericParamConst { ty, .. }) => {
+                Ok(GenericArgumentId::Constant(self.new_const_var(stable_ptr, *ty)))
             }
             GenericParam::NegImpl(_) => Ok(GenericArgumentId::NegImpl),
         }
@@ -358,7 +379,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<FunctionId> {
         let generic_function =
-            self.infer_trait_generic_function(concrete_trait_function, lookup_context, stable_ptr)?;
+            self.infer_trait_generic_function(concrete_trait_function, lookup_context, stable_ptr);
         self.infer_generic_function(generic_function, lookup_context, stable_ptr)
     }
 
@@ -385,16 +406,16 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         concrete_trait_function: ConcreteTraitGenericFunctionId,
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<GenericFunctionId> {
+    ) -> GenericFunctionId {
         let impl_id = self.new_impl_var(
             concrete_trait_function.concrete_trait(self.db),
             stable_ptr,
             lookup_context.clone(),
-        )?;
-        Ok(GenericFunctionId::Impl(ImplGenericFunctionId {
+        );
+        GenericFunctionId::Impl(ImplGenericFunctionId {
             impl_id,
             function: concrete_trait_function.trait_function(self.db),
-        }))
+        })
     }
 
     /// Infers the impl to be substituted instead of a trait for a given trait type.
@@ -404,17 +425,51 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         concrete_trait_type: ConcreteTraitTypeId,
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> InferenceResult<TypeId> {
+    ) -> TypeId {
         let impl_id = self.new_impl_var(
             concrete_trait_type.concrete_trait(self.db),
             stable_ptr,
             lookup_context.clone(),
-        )?;
-        Ok(TypeLongId::ImplType(ImplTypeId::new(
+        );
+        TypeLongId::ImplType(ImplTypeId::new(
             impl_id,
             concrete_trait_type.trait_type(self.db),
             self.db,
         ))
-        .intern(self.db))
+        .intern(self.db)
+    }
+
+    /// Infers the impl to be substituted instead of a trait for a given trait constant.
+    /// Returns the resulting impl constant.
+    fn infer_trait_constant(
+        &mut self,
+        concrete_trait_constant: ConcreteTraitConstantId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: Option<SyntaxStablePtrId>,
+    ) -> ImplConstantId {
+        let impl_id = self.new_impl_var(
+            concrete_trait_constant.concrete_trait(self.db),
+            stable_ptr,
+            lookup_context.clone(),
+        );
+
+        ImplConstantId::new(impl_id, concrete_trait_constant.trait_constant(self.db), self.db)
+    }
+
+    /// Infers the impl to be substituted instead of a trait for a given trait impl.
+    /// Returns the resulting impl impl.
+    fn infer_trait_impl(
+        &mut self,
+        concrete_trait_impl: ConcreteTraitImplId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: Option<SyntaxStablePtrId>,
+    ) -> ImplImplId {
+        let impl_id = self.new_impl_var(
+            concrete_trait_impl.concrete_trait(self.db),
+            stable_ptr,
+            lookup_context.clone(),
+        );
+
+        ImplImplId::new(impl_id, concrete_trait_impl.trait_impl(self.db), self.db)
     }
 }

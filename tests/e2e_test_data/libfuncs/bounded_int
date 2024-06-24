@@ -115,6 +115,89 @@ test::foo@0([0]: i8, [1]: i8) -> (BoundedInt<-16256, 16384>);
 
 //! > ==========================================================================
 
+//! > bounded_int_mul libfunc on NonZero.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+const MIN_I8: felt252 = -128;
+const MAX_I8: felt252 = 127;
+type MulType = NonZero<BoundedInt<{MIN_I8 * MAX_I8}, {MIN_I8 * MIN_I8}>>;
+
+extern fn bounded_int_mul<T1, T2>(a: T1, b: T2) -> MulType nopanic;
+
+fn foo(a: NonZero<i8>, b: NonZero<i8>) -> MulType {
+    bounded_int_mul(a, b)
+}
+
+//! > casm
+[ap + 0] = [fp + -4] * [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<i8> = NonZero<i8> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedInt<-16256, 16384> = BoundedInt<-16256, 16384> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<-16256, 16384>> = NonZero<BoundedInt<-16256, 16384>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_mul<NonZero<i8>, NonZero<i8>> = bounded_int_mul<NonZero<i8>, NonZero<i8>>;
+libfunc store_temp<NonZero<BoundedInt<-16256, 16384>>> = store_temp<NonZero<BoundedInt<-16256, 16384>>>;
+
+bounded_int_mul<NonZero<i8>, NonZero<i8>>([0], [1]) -> ([2]); // 0
+store_temp<NonZero<BoundedInt<-16256, 16384>>>([2]) -> ([2]); // 1
+return([2]); // 2
+
+test::foo@0([0]: NonZero<i8>, [1]: NonZero<i8>) -> (NonZero<BoundedInt<-16256, 16384>>);
+
+//! > ==========================================================================
+
+//! > bounded_int_add with const libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+const MIN_I8: felt252 = -128;
+const MAX_I8: felt252 = 127;
+type AddType = BoundedInt<{MIN_I8 + MIN_I8}, {MAX_I8 + MAX_I8}>;
+
+extern fn bounded_int_add<T1, T2>(a: T1, b: T2) -> AddType nopanic;
+
+fn foo(a: i8) -> AddType {
+    bounded_int_add(a, 50_i8)
+}
+
+//! > casm
+[ap + 0] = [fp + -3] + 50, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedInt<-256, 254> = BoundedInt<-256, 254> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<i8, 50> = Const<i8, 50> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<i8, 50>> = const_as_immediate<Const<i8, 50>>;
+libfunc bounded_int_add<i8, i8> = bounded_int_add<i8, i8>;
+libfunc store_temp<BoundedInt<-256, 254>> = store_temp<BoundedInt<-256, 254>>;
+
+const_as_immediate<Const<i8, 50>>() -> ([1]); // 0
+bounded_int_add<i8, i8>([0], [1]) -> ([2]); // 1
+store_temp<BoundedInt<-256, 254>>([2]) -> ([2]); // 2
+return([2]); // 3
+
+test::foo@0([0]: i8) -> (BoundedInt<-256, 254>);
+
+//! > ==========================================================================
+
 //! > bounded_int_div_rem libfunc
 
 //! > test_runner_name
@@ -127,9 +210,9 @@ type DivRemType = (
     BoundedInt<0, 7>,
 );
 
-extern fn bounded_int_div_rem<T1, T2>(a: T1, b: T2) -> DivRemType implicits(RangeCheck) nopanic;
+extern fn bounded_int_div_rem<T1, T2>(a: T1, b: NonZero<T2>) -> DivRemType implicits(RangeCheck) nopanic;
 
-fn foo(a: BoundedInt<128, 255>, b: BoundedInt<3, 8>) -> DivRemType {
+fn foo(a: BoundedInt<128, 255>, b: NonZero<BoundedInt<3, 8>>) -> DivRemType {
     bounded_int_div_rem(a, b)
 }
 
@@ -156,6 +239,7 @@ type BoundedInt<16, 85> = BoundedInt<16, 85> [storable: true, drop: true, dup: t
 type BoundedInt<0, 7> = BoundedInt<0, 7> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>> = Struct<ut@Tuple, BoundedInt<16, 85>, BoundedInt<0, 7>> [storable: true, drop: true, dup: true, zero_sized: false];
 type BoundedInt<3, 8> = BoundedInt<3, 8> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<3, 8>> = NonZero<BoundedInt<3, 8>> [storable: true, drop: true, dup: true, zero_sized: false];
 type BoundedInt<128, 255> = BoundedInt<128, 255> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc bounded_int_div_rem<BoundedInt<128, 255>, BoundedInt<3, 8>> = bounded_int_div_rem<BoundedInt<128, 255>, BoundedInt<3, 8>>;
@@ -169,7 +253,7 @@ store_temp<RangeCheck>([3]) -> ([3]); // 2
 store_temp<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>>([6]) -> ([6]); // 3
 return([3], [6]); // 4
 
-test::foo@0([0]: RangeCheck, [1]: BoundedInt<128, 255>, [2]: BoundedInt<3, 8>) -> (RangeCheck, Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>);
+test::foo@0([0]: RangeCheck, [1]: BoundedInt<128, 255>, [2]: NonZero<BoundedInt<3, 8>>) -> (RangeCheck, Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>);
 
 //! > ==========================================================================
 
@@ -185,9 +269,9 @@ type DivRemType = (
     BoundedInt<0, 0xfffffffffffffffffffffffffffffffe>,
 );
 
-extern fn bounded_int_div_rem<T1, T2>(a: T1, b: T2) -> DivRemType implicits(RangeCheck) nopanic;
+extern fn bounded_int_div_rem<T1, T2>(a: T1, b: NonZero<T2>) -> DivRemType implicits(RangeCheck) nopanic;
 
-fn foo(a: u128, b: BoundedInt<1, 0xffffffffffffffffffffffffffffffff>) -> DivRemType {
+fn foo(a: u128, b: NonZero<BoundedInt<1, 0xffffffffffffffffffffffffffffffff>>) -> DivRemType {
     bounded_int_div_rem(a, b)
 }
 
@@ -220,6 +304,7 @@ type BoundedInt<0, 340282366920938463463374607431768211455> = BoundedInt<0, 3402
 type BoundedInt<0, 340282366920938463463374607431768211454> = BoundedInt<0, 340282366920938463463374607431768211454> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>> = Struct<ut@Tuple, BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>> [storable: true, drop: true, dup: true, zero_sized: false];
 type BoundedInt<1, 340282366920938463463374607431768211455> = BoundedInt<1, 340282366920938463463374607431768211455> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<1, 340282366920938463463374607431768211455>> = NonZero<BoundedInt<1, 340282366920938463463374607431768211455>> [storable: true, drop: true, dup: true, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc bounded_int_div_rem<u128, BoundedInt<1, 340282366920938463463374607431768211455>> = bounded_int_div_rem<u128, BoundedInt<1, 340282366920938463463374607431768211455>>;
@@ -233,7 +318,7 @@ store_temp<RangeCheck>([3]) -> ([3]); // 2
 store_temp<Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>>([6]) -> ([6]); // 3
 return([3], [6]); // 4
 
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: BoundedInt<1, 340282366920938463463374607431768211455>) -> (RangeCheck, Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>);
+test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<1, 340282366920938463463374607431768211455>>) -> (RangeCheck, Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>);
 
 //! > ==========================================================================
 
@@ -249,9 +334,9 @@ type DivRemType = (
     BoundedInt<0, 0xfffffffffffffffffffffffffffffff>,
 );
 
-extern fn bounded_int_div_rem<T1, T2>(a: T1, b: T2) -> DivRemType implicits(RangeCheck) nopanic;
+extern fn bounded_int_div_rem<T1, T2>(a: T1, b: NonZero<T2>) -> DivRemType implicits(RangeCheck) nopanic;
 
-fn foo(a: u128, b: BoundedInt<0x10000000000000000000000000000000, 0x10000000000000000000000000000000>) -> DivRemType {
+fn foo(a: u128, b: NonZero<BoundedInt<0x10000000000000000000000000000000, 0x10000000000000000000000000000000>>) -> DivRemType {
     bounded_int_div_rem(a, b)
 }
 
@@ -280,6 +365,7 @@ type BoundedInt<0, 15> = BoundedInt<0, 15> [storable: true, drop: true, dup: tru
 type BoundedInt<0, 21267647932558653966460912964485513215> = BoundedInt<0, 21267647932558653966460912964485513215> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>> = Struct<ut@Tuple, BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>> [storable: true, drop: true, dup: true, zero_sized: false];
 type BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216> = BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>> = NonZero<BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>> [storable: true, drop: true, dup: true, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc bounded_int_div_rem<u128, BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>> = bounded_int_div_rem<u128, BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>>;
@@ -293,7 +379,7 @@ store_temp<RangeCheck>([3]) -> ([3]); // 2
 store_temp<Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>>([6]) -> ([6]); // 3
 return([3], [6]); // 4
 
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>) -> (RangeCheck, Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>);
+test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>>) -> (RangeCheck, Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>);
 
 //! > ==========================================================================
 
@@ -492,3 +578,248 @@ store_temp<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374
 return([4], [7]); // 10
 
 test::foo@0([0]: RangeCheck, [1]: BoundedInt<0, 680564733841876926926749214863536422911>) -> (RangeCheck, core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>);
+
+//! > ==========================================================================
+
+//! > bounded_int_constrain libfunc non-zero.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+type Res = Result<NonZero<BoundedInt<0, 0x7f>>, NonZero<BoundedInt<0x80, 0xff>>>;
+
+extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(value: T) -> Res implicits(RangeCheck) nopanic;
+
+fn foo(value: NonZero<u8>) -> Res {
+    bounded_int_constrain::<_, 0x80>(value)
+}
+
+//! > casm
+%{ memory[ap + 0] = 340282366920938463463374607431768211456 <= (memory[fp + -3] + -128) % PRIME %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -3] + -128, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 11;
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768211328, ap++;
+[ap + -1] = [[fp + -4] + 0];
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 770})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedInt<0, 127> = BoundedInt<0, 127> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<0, 127>> = NonZero<BoundedInt<0, 127>> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedInt<128, 255> = BoundedInt<128, 255> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<128, 255>> = NonZero<BoundedInt<128, 255>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>> = Enum<ut@core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, NonZero<BoundedInt<0, 127>>, NonZero<BoundedInt<128, 255>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<u8> = NonZero<u8> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_constrain<NonZero<u8>, 128> = bounded_int_constrain<NonZero<u8>, 128>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, 0> = enum_init<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>> = store_temp<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>>;
+libfunc enum_init<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, 1> = enum_init<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, 1>;
+
+bounded_int_constrain<NonZero<u8>, 128>([0], [1]) { fallthrough([2], [3]) 6([4], [5]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, 0>([3]) -> ([6]); // 2
+store_temp<RangeCheck>([2]) -> ([2]); // 3
+store_temp<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>>([6]) -> ([6]); // 4
+return([2], [6]); // 5
+branch_align() -> (); // 6
+enum_init<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, 1>([5]) -> ([7]); // 7
+store_temp<RangeCheck>([4]) -> ([4]); // 8
+store_temp<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>>([7]) -> ([7]); // 9
+return([4], [7]); // 10
+
+test::foo@0([0]: RangeCheck, [1]: NonZero<u8>) -> (RangeCheck, core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>);
+
+//! > ==========================================================================
+
+//! > bounded_int_is_zero libfunc for i8.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::zeroable::IsZeroResult;
+extern fn bounded_int_is_zero<T>(value: T) -> IsZeroResult<T> implicits() nopanic;
+
+fn foo(value: i8) -> IsZeroResult<i8> {
+    bounded_int_is_zero(value)
+}
+
+//! > casm
+jmp rel 7 if [fp + -3] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type NonZero<i8> = NonZero<i8> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::zeroable::IsZeroResult::<core::integer::i8> = Enum<ut@core::zeroable::IsZeroResult::<core::integer::i8>, Unit, NonZero<i8>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_is_zero<i8> = bounded_int_is_zero<i8>;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 0> = enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 0>;
+libfunc store_temp<core::zeroable::IsZeroResult::<core::integer::i8>> = store_temp<core::zeroable::IsZeroResult::<core::integer::i8>>;
+libfunc enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 1> = enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 1>;
+
+bounded_int_is_zero<i8>([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 0>([2]) -> ([3]); // 3
+store_temp<core::zeroable::IsZeroResult::<core::integer::i8>>([3]) -> ([3]); // 4
+return([3]); // 5
+branch_align() -> (); // 6
+enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 1>([1]) -> ([4]); // 7
+store_temp<core::zeroable::IsZeroResult::<core::integer::i8>>([4]) -> ([4]); // 8
+return([4]); // 9
+
+test::foo@0([0]: i8) -> (core::zeroable::IsZeroResult::<core::integer::i8>);
+
+//! > ==========================================================================
+
+//! > bounded_int_is_zero libfunc for large bounded int.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::zeroable::IsZeroResult;
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern fn bounded_int_is_zero<T>(value: T) -> IsZeroResult<T> implicits() nopanic;
+
+fn foo(value: BoundedInt<0, 0x1ffffffffffffffffffffffffffffffff>) -> IsZeroResult<BoundedInt<0, 0x1ffffffffffffffffffffffffffffffff>> {
+    bounded_int_is_zero(value)
+}
+
+//! > casm
+jmp rel 7 if [fp + -3] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type BoundedInt<0, 680564733841876926926749214863536422911> = BoundedInt<0, 680564733841876926926749214863536422911> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type NonZero<BoundedInt<0, 680564733841876926926749214863536422911>> = NonZero<BoundedInt<0, 680564733841876926926749214863536422911>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>> = Enum<ut@core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, Unit, NonZero<BoundedInt<0, 680564733841876926926749214863536422911>>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_is_zero<BoundedInt<0, 680564733841876926926749214863536422911>> = bounded_int_is_zero<BoundedInt<0, 680564733841876926926749214863536422911>>;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, 0> = enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, 0>;
+libfunc store_temp<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>> = store_temp<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>>;
+libfunc enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, 1> = enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, 1>;
+
+bounded_int_is_zero<BoundedInt<0, 680564733841876926926749214863536422911>>([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, 0>([2]) -> ([3]); // 3
+store_temp<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>>([3]) -> ([3]); // 4
+return([3]); // 5
+branch_align() -> (); // 6
+enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, 1>([1]) -> ([4]); // 7
+store_temp<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>>([4]) -> ([4]); // 8
+return([4]); // 9
+
+test::foo@0([0]: BoundedInt<0, 680564733841876926926749214863536422911>) -> (core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>);
+
+//! > ==========================================================================
+
+//! > bounded_int_wrap_non_zero libfunc positive.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern fn bounded_int_wrap_non_zero<T>(value: T) -> NonZero<T> implicits() nopanic;
+
+fn foo(value: BoundedInt<1, 0x1ffffffffffffffffffffffffffffffff>) -> NonZero<BoundedInt<1, 0x1ffffffffffffffffffffffffffffffff>> {
+    bounded_int_wrap_non_zero(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type BoundedInt<1, 680564733841876926926749214863536422911> = BoundedInt<1, 680564733841876926926749214863536422911> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<1, 680564733841876926926749214863536422911>> = NonZero<BoundedInt<1, 680564733841876926926749214863536422911>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_wrap_non_zero<BoundedInt<1, 680564733841876926926749214863536422911>> = bounded_int_wrap_non_zero<BoundedInt<1, 680564733841876926926749214863536422911>>;
+libfunc store_temp<NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>> = store_temp<NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>>;
+
+bounded_int_wrap_non_zero<BoundedInt<1, 680564733841876926926749214863536422911>>([0]) -> ([1]); // 0
+store_temp<NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: BoundedInt<1, 680564733841876926926749214863536422911>) -> (NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>);
+
+//! > ==========================================================================
+
+//! > bounded_int_wrap_non_zero libfunc negative.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern fn bounded_int_wrap_non_zero<T>(value: T) -> NonZero<T> implicits() nopanic;
+
+fn foo(value: BoundedInt<-0x1ffffffffffffffffffffffffffffffff, -1>) -> NonZero<BoundedInt<-0x1ffffffffffffffffffffffffffffffff, -1>> {
+    bounded_int_wrap_non_zero(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type BoundedInt<-680564733841876926926749214863536422911, -1> = BoundedInt<-680564733841876926926749214863536422911, -1> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>> = NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_wrap_non_zero<BoundedInt<-680564733841876926926749214863536422911, -1>> = bounded_int_wrap_non_zero<BoundedInt<-680564733841876926926749214863536422911, -1>>;
+libfunc store_temp<NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>> = store_temp<NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>>;
+
+bounded_int_wrap_non_zero<BoundedInt<-680564733841876926926749214863536422911, -1>>([0]) -> ([1]); // 0
+store_temp<NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: BoundedInt<-680564733841876926926749214863536422911, -1>) -> (NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>);

@@ -847,14 +847,14 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Impl.
-    /// Expected pattern: `impl <name> of <trait_path>;`
+    /// Expected pattern: `impl <name>: <trait_path>;`
     fn expect_trait_item_impl(&mut self, attributes: AttributeListGreen) -> TraitItemImplGreen {
         let impl_kw = self.take::<TerminalImpl>();
         let name = self.parse_identifier();
-        let of_kw = self.take::<TerminalOf>();
+        let colon = self.parse_token::<TerminalColon>();
         let trait_path = self.parse_type_path();
         let semicolon = self.parse_token::<TerminalSemicolon>();
-        TraitItemImpl::new_green(self.db, attributes, impl_kw, name, of_kw, trait_path, semicolon)
+        TraitItemImpl::new_green(self.db, attributes, impl_kw, name, colon, trait_path, semicolon)
     }
 
     /// Assumes the current token is Impl.
@@ -1192,6 +1192,9 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalWhile if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.expect_while_expr().into())
+            }
+            SyntaxKind::TerminalFor if lbrace_allowed == LbraceAllowed::Allow => {
+                Ok(self.expect_for_expr().into())
             }
 
             _ => {
@@ -1685,6 +1688,28 @@ impl<'a> Parser<'a> {
         let body = self.parse_block();
 
         ExprWhile::new_green(self.db, while_kw, condition, body)
+    }
+
+    /// Assumes the current token is `For`.
+    /// Expected pattern: `for <pattern> <identifier> <expression> <block>`.
+    /// Identifier will be checked to be 'in' in semantics.
+    fn expect_for_expr(&mut self) -> ExprForGreen {
+        let for_kw = self.take::<TerminalFor>();
+        let pattern = self.parse_pattern();
+        let ident = self.take_raw();
+        let in_identifier: TerminalIdentifierGreen = match ident.text.as_str() {
+            "in" => self.add_trivia_to_terminal::<TerminalIdentifier>(ident),
+            _ => {
+                self.append_skipped_token_to_pending_trivia(
+                    ident,
+                    ParserDiagnosticKind::SkippedElement { element_name: "'in'".into() },
+                );
+                TerminalIdentifier::missing(self.db)
+            }
+        };
+        let expression = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let body = self.parse_block();
+        ExprFor::new_green(self.db, for_kw, pattern, in_identifier, expression, body)
     }
 
     /// Assumes the current token is LBrack.
@@ -2278,6 +2303,8 @@ impl<'a> Parser<'a> {
                 ExprUnary::new_green(self.db, op, expr).into()
             }
             SyntaxKind::TerminalShortString => self.take_terminal_short_string().into(),
+            SyntaxKind::TerminalTrue => self.take::<TerminalTrue>().into(),
+            SyntaxKind::TerminalFalse => self.take::<TerminalFalse>().into(),
             SyntaxKind::TerminalLBrace => self.parse_block().into(),
             _ => self.try_parse_type_expr()?,
         };

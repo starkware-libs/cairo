@@ -9,7 +9,7 @@ use cairo_lang_semantic::corelib::core_submodule;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::items::imp::{ImplId, ImplLookupContext};
+use cairo_lang_semantic::items::imp::{ImplLongId, ImplLookupContext};
 use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::types::{get_impl_at_context, ConcreteEnumLongId, ConcreteStructLongId};
 use cairo_lang_semantic::{
@@ -340,12 +340,12 @@ impl<'a> AbiBuilder<'a> {
         let impl_name = impl_def_id.name(self.db.upcast());
 
         let trt = self.db.impl_def_concrete_trait(impl_def_id)?;
-        let trt_path = trt.full_path(self.db);
 
         let trait_id = trt.trait_id(self.db);
+        let interface_name = trait_id.full_path(self.db.upcast());
 
         let abi_name = impl_alias_name.unwrap_or(impl_name.into());
-        let impl_item = Item::Impl(Imp { name: abi_name, interface_name: trt_path });
+        let impl_item = Item::Impl(Imp { name: abi_name, interface_name });
         self.add_abi_item(impl_item, true, source)?;
         self.add_interface(source, trait_id)?;
 
@@ -830,7 +830,8 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
     let event_impl =
         get_impl_at_context(db.upcast(), ImplLookupContext::default(), concrete_trait_id, None)
             .ok()?;
-    let concrete_event_impl = try_extract_matches!(event_impl, ImplId::Concrete)?;
+    let concrete_event_impl =
+        try_extract_matches!(event_impl.lookup_intern(db), ImplLongId::Concrete)?;
     let impl_def_id = concrete_event_impl.impl_def_id(db);
 
     // Attempt to extract the event data from the aux data from the impl generation.

@@ -216,7 +216,7 @@ impl LineBuilder {
             Self::default()
         }
     }
-    /// Adds a a sub-builder as the next child.
+    /// Adds a sub-builder as the next child.
     /// All subsequent children will be added to this sub builder until set as closed.
     fn open_sub_builder(&mut self, precedence: usize) {
         let active_builder = self.get_active_builder_mut();

@@ -1,10 +1,7 @@
-use num_traits::ToPrimitive;
-
 use super::boxing::box_ty;
 use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
 use super::structure::StructConcreteType;
-use super::utils::fixed_size_array_ty;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -16,7 +13,7 @@ use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
 use crate::extensions::{
-    args_as_single_type, args_as_type_and_value, NamedLibfunc, NamedType, OutputVarReferenceInfo,
+    args_as_single_type, NamedLibfunc, NamedType, OutputVarReferenceInfo,
     SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
@@ -161,7 +158,7 @@ impl SignatureAndTypeGenericLibfunc for TupleFromSpanLibfuncWrapped {
 
 /// Validates that the given type is a tuple with all members of the same type, and returns the type
 /// of the members.
-/// Any user type with such members is considered a tuple.
+/// Any user type with such members is also considered a tuple.
 fn validate_tuple_and_fetch_ty(
     context: &dyn SignatureSpecializationContext,
     ty: &ConcreteTypeId,
@@ -522,7 +519,8 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let (ty, count) = args_as_type_and_value(args)?;
+        let popped_ty = args_as_single_type(args)?;
+        let ty = validate_tuple_and_fetch_ty(context, &popped_ty)?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
         let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
@@ -532,34 +530,22 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
                 ParamSignature::new(arr_snapshot_ty.clone()),
             ],
             branch_signatures: vec![
+                // Success.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(range_check_ty.clone(), 0),
                         OutputVarInfo {
                             ty: arr_snapshot_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 1 },
-                            ),
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                         OutputVarInfo {
-                            ty: snapshot_ty(
-                                context,
-                                box_ty(
-                                    context,
-                                    fixed_size_array_ty(
-                                        context,
-                                        ty,
-                                        count
-                                            .to_i16()
-                                            .ok_or(SpecializationError::UnsupportedGenericArg)?,
-                                    )?,
-                                )?,
-                            )?,
+                            ty: snapshot_ty(context, box_ty(context, popped_ty)?)?,
                             ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 1 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Failure.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(range_check_ty, 0),
@@ -580,12 +566,10 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let (ty, count) = args_as_type_and_value(args)?;
+        let popped_ty = args_as_single_type(args)?;
         Ok(ConcreteMultiPopLibfunc {
-            ty,
+            popped_ty,
             signature: self.specialize_signature(context.upcast(), args)?,
-            // Early failing on size, although the type itself would fail on definition.
-            popped_values: count.to_i16().ok_or(SpecializationError::UnsupportedGenericArg)?,
         })
     }
 }
@@ -603,7 +587,8 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let (ty, count) = args_as_type_and_value(args)?;
+        let popped_ty = args_as_single_type(args)?;
+        let ty = validate_tuple_and_fetch_ty(context, &popped_ty)?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
         let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
@@ -613,34 +598,22 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
                 ParamSignature::new(arr_snapshot_ty.clone()),
             ],
             branch_signatures: vec![
+                // Success.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(range_check_ty.clone(), 0),
                         OutputVarInfo {
                             ty: arr_snapshot_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 1 },
-                            ),
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                         OutputVarInfo {
-                            ty: snapshot_ty(
-                                context,
-                                box_ty(
-                                    context,
-                                    fixed_size_array_ty(
-                                        context,
-                                        ty,
-                                        count
-                                            .to_i16()
-                                            .ok_or(SpecializationError::UnsupportedGenericArg)?,
-                                    )?,
-                                )?,
-                            )?,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                            ty: snapshot_ty(context, box_ty(context, popped_ty)?)?,
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Failure.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(range_check_ty, 0),
@@ -661,20 +634,17 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let (ty, count) = args_as_type_and_value(args)?;
+        let popped_ty = args_as_single_type(args)?;
         Ok(ConcreteMultiPopLibfunc {
-            ty,
+            popped_ty,
             signature: self.specialize_signature(context.upcast(), args)?,
-            // Early failing on size, although the type itself would fail on definition.
-            popped_values: count.to_i16().ok_or(SpecializationError::UnsupportedGenericArg)?,
         })
     }
 }
 
 /// Struct the data for a multi pop action.
 pub struct ConcreteMultiPopLibfunc {
-    pub ty: ConcreteTypeId,
-    pub popped_values: i16,
+    pub popped_ty: ConcreteTypeId,
     pub signature: LibfuncSignature,
 }
 impl SignatureBasedConcreteLibfunc for ConcreteMultiPopLibfunc {

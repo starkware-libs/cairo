@@ -1,4 +1,6 @@
 pub mod traits;
+#[feature("deprecated-index-traits")]
+#[feature("deprecated-op-assign-traits")]
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
     PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop, Not, Neg, Into,
@@ -278,6 +280,9 @@ pub mod math;
 /// Num.
 pub mod num;
 
+/// General operations.
+pub mod ops;
+
 /// Cmp.
 pub mod cmp;
 
@@ -367,3 +372,6 @@ pub mod metaprogramming;
 
 /// Preludes.
 mod prelude;
+
+/// Iterators.
+pub mod iter;

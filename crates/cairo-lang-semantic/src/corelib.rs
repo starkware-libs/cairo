@@ -21,7 +21,7 @@ use crate::expr::inference::Inference;
 use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::ImplId;
+use crate::items::imp::ImplLongId;
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
 };
@@ -73,8 +73,9 @@ pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
 /// Returns the concrete type of a bounded int type with a given min and max.
 pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeId {
     let internal = core_submodule(db, "internal");
-    let lower_id = ConstValue::Int(min).intern(db);
-    let upper_id = ConstValue::Int(max).intern(db);
+    let size_ty = core_felt252_ty(db);
+    let lower_id = ConstValue::Int(min, size_ty).intern(db);
+    let upper_id = ConstValue::Int(max, size_ty).intern(db);
     try_get_ty_by_name(
         db,
         internal,
@@ -108,6 +109,15 @@ pub fn core_option_ty(db: &dyn SemanticGroup, some_type: TypeId) -> TypeId {
         core_submodule(db, "option"),
         "Option".into(),
         vec![GenericArgumentId::Type(some_type)],
+    )
+}
+
+pub fn core_box_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
+    get_ty_by_name(
+        db,
+        core_submodule(db, "box"),
+        "Box".into(),
+        vec![GenericArgumentId::Type(inner_type)],
     )
 }
 
@@ -440,33 +450,33 @@ pub fn core_binary_operator(
     binary_op: &BinaryOperator,
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Result<(ConcreteTraitGenericFunctionId, bool), SemanticDiagnosticKind>> {
-    let (trait_name, function_name, snapshot) = match binary_op {
-        BinaryOperator::Plus(_) => ("Add", "add", false),
-        BinaryOperator::PlusEq(_) => ("AddEq", "add_eq", false),
-        BinaryOperator::Minus(_) => ("Sub", "sub", false),
-        BinaryOperator::MinusEq(_) => ("SubEq", "sub_eq", false),
-        BinaryOperator::Mul(_) => ("Mul", "mul", false),
-        BinaryOperator::MulEq(_) => ("MulEq", "mul_eq", false),
-        BinaryOperator::Div(_) => ("Div", "div", false),
-        BinaryOperator::DivEq(_) => ("DivEq", "div_eq", false),
-        BinaryOperator::Mod(_) => ("Rem", "rem", false),
-        BinaryOperator::ModEq(_) => ("RemEq", "rem_eq", false),
-        BinaryOperator::EqEq(_) => ("PartialEq", "eq", true),
-        BinaryOperator::Neq(_) => ("PartialEq", "ne", true),
-        BinaryOperator::LE(_) => ("PartialOrd", "le", false),
-        BinaryOperator::GE(_) => ("PartialOrd", "ge", false),
-        BinaryOperator::LT(_) => ("PartialOrd", "lt", false),
-        BinaryOperator::GT(_) => ("PartialOrd", "gt", false),
-        BinaryOperator::And(_) => ("BitAnd", "bitand", false),
-        BinaryOperator::Or(_) => ("BitOr", "bitor", false),
-        BinaryOperator::Xor(_) => ("BitXor", "bitxor", false),
+    let (trait_name, function_name, snapshot, context) = match binary_op {
+        BinaryOperator::Plus(_) => ("Add", "add", false, CoreTraitContext::TopLevel),
+        BinaryOperator::PlusEq(_) => ("AddAssign", "add_assign", false, CoreTraitContext::Ops),
+        BinaryOperator::Minus(_) => ("Sub", "sub", false, CoreTraitContext::TopLevel),
+        BinaryOperator::MinusEq(_) => ("SubAssign", "sub_assign", false, CoreTraitContext::Ops),
+        BinaryOperator::Mul(_) => ("Mul", "mul", false, CoreTraitContext::TopLevel),
+        BinaryOperator::MulEq(_) => ("MulAssign", "mul_assign", false, CoreTraitContext::Ops),
+        BinaryOperator::Div(_) => ("Div", "div", false, CoreTraitContext::TopLevel),
+        BinaryOperator::DivEq(_) => ("DivAssign", "div_assign", false, CoreTraitContext::Ops),
+        BinaryOperator::Mod(_) => ("Rem", "rem", false, CoreTraitContext::TopLevel),
+        BinaryOperator::ModEq(_) => ("RemAssign", "rem_assign", false, CoreTraitContext::Ops),
+        BinaryOperator::EqEq(_) => ("PartialEq", "eq", true, CoreTraitContext::TopLevel),
+        BinaryOperator::Neq(_) => ("PartialEq", "ne", true, CoreTraitContext::TopLevel),
+        BinaryOperator::LE(_) => ("PartialOrd", "le", false, CoreTraitContext::TopLevel),
+        BinaryOperator::GE(_) => ("PartialOrd", "ge", false, CoreTraitContext::TopLevel),
+        BinaryOperator::LT(_) => ("PartialOrd", "lt", false, CoreTraitContext::TopLevel),
+        BinaryOperator::GT(_) => ("PartialOrd", "gt", false, CoreTraitContext::TopLevel),
+        BinaryOperator::And(_) => ("BitAnd", "bitand", false, CoreTraitContext::TopLevel),
+        BinaryOperator::Or(_) => ("BitOr", "bitor", false, CoreTraitContext::TopLevel),
+        BinaryOperator::Xor(_) => ("BitXor", "bitxor", false, CoreTraitContext::TopLevel),
         _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
     Ok(Ok((
         get_core_trait_function_infer(
             db,
             inference,
-            CoreTraitContext::TopLevel,
+            context,
             trait_name.into(),
             function_name.into(),
             stable_ptr,
@@ -504,7 +514,8 @@ fn get_core_function_impl_method(
     }
     .unwrap_or_else(|| panic!("{impl_name} is not an impl."));
     let impl_id =
-        ImplId::Concrete(ConcreteImplLongId { impl_def_id, generic_args: vec![] }.intern(db));
+        ImplLongId::Concrete(ConcreteImplLongId { impl_def_id, generic_args: vec![] }.intern(db))
+            .intern(db);
     let concrete_trait_id = db.impl_concrete_trait(impl_id).unwrap();
     let function = db
         .trait_functions(concrete_trait_id.trait_id(db))
@@ -612,12 +623,26 @@ pub fn concrete_panic_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> Conc
     get_core_concrete_trait(db, "PanicDestruct".into(), vec![GenericArgumentId::Type(ty)])
 }
 
+pub fn concrete_iterator_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    let trait_id = get_core_trait(db, CoreTraitContext::Iterator, "Iterator".into());
+    semantic::ConcreteTraitLongId { trait_id, generic_args: vec![GenericArgumentId::Type(ty)] }
+        .intern(db)
+}
+
 pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, CoreTraitContext::TopLevel, "Copy".into())
 }
 
 pub fn drop_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, CoreTraitContext::TopLevel, "Drop".into())
+}
+
+pub fn deref_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, CoreTraitContext::Ops, "Deref".into())
+}
+
+pub fn deref_mut_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, CoreTraitContext::Ops, "DerefMut".into())
 }
 
 pub fn destruct_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
@@ -631,6 +656,10 @@ pub fn panic_destruct_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
         "PanicDestruct".into(),
         "panic_destruct".into(),
     )
+}
+
+pub fn into_iterator_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, CoreTraitContext::Iterator, "IntoIterator".into())
 }
 
 pub fn numeric_literal_trait(db: &dyn SemanticGroup) -> TraitId {
@@ -651,12 +680,18 @@ fn get_core_concrete_trait(
 pub enum CoreTraitContext {
     /// The top level core library context.
     TopLevel,
+    /// The ops core library context.
+    Ops,
+    /// The iterator core library context.
+    Iterator,
 }
 
 /// Given a core library context and trait name, returns [TraitId].
 pub fn get_core_trait(db: &dyn SemanticGroup, context: CoreTraitContext, name: SmolStr) -> TraitId {
     let base_module = match context {
         CoreTraitContext::TopLevel => db.core_module(),
+        CoreTraitContext::Ops => core_submodule(db, "ops"),
+        CoreTraitContext::Iterator => core_submodule(db, "iter"),
     };
     // This should not fail if the corelib is present.
     let use_id = extract_matches!(
@@ -828,6 +863,7 @@ fn try_extract_bounded_int_type_ranges(
     else {
         return None;
     };
-    let to_int = |id| try_extract_matches!(db.lookup_intern_const_value(id), ConstValue::Int);
+    let to_int = |id| db.lookup_intern_const_value(id).into_int();
+
     Some((to_int(min)?, to_int(max)?))
 }

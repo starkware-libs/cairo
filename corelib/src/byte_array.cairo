@@ -348,13 +348,15 @@ impl ByteArrayAdd of Add<ByteArray> {
         ByteArrayTrait::concat(@lhs, @rhs)
     }
 }
-impl ByteArrayAddEq of AddEq<ByteArray> {
+#[feature("deprecated-op-assign-traits")]
+impl ByteArrayAddEq of core::traits::AddEq<ByteArray> {
     #[inline]
     fn add_eq(ref self: ByteArray, other: ByteArray) {
         self.append(@other);
     }
 }
 
+#[feature("deprecated-index-traits")]
 pub(crate) impl ByteArrayIndexView of IndexView<ByteArray, usize, u8> {
     fn index(self: @ByteArray, index: usize) -> u8 {
         self.at(index).expect('Index out of bounds')

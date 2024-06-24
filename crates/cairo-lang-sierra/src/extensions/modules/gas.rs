@@ -174,7 +174,6 @@ impl CostTokenType {
             CostTokenType::Poseidon,
             CostTokenType::Bitwise,
             CostTokenType::EcOp,
-            CostTokenType::RangeCheck96,
             CostTokenType::AddMod,
             CostTokenType::MulMod,
         ]
@@ -215,7 +214,8 @@ impl CostTokenType {
             CostTokenType::Const
             | CostTokenType::Step
             | CostTokenType::Hole
-            | CostTokenType::RangeCheck => {
+            | CostTokenType::RangeCheck
+            | CostTokenType::RangeCheck96 => {
                 panic!("offset_in_builtin_costs is not supported for '{}'.", self.camel_case_name())
             }
 
@@ -224,9 +224,8 @@ impl CostTokenType {
             CostTokenType::EcOp => 2,
             CostTokenType::Poseidon => 3,
             // TODO(ilya): Update the actual table.
-            CostTokenType::RangeCheck96 => 4,
-            CostTokenType::AddMod => 5,
-            CostTokenType::MulMod => 6,
+            CostTokenType::AddMod => 4,
+            CostTokenType::MulMod => 5,
         }
     }
 }

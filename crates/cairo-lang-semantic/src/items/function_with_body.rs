@@ -5,18 +5,19 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::consts::{IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{try_extract_matches, Upcast};
 use id_arena::Arena;
 use itertools::Itertools;
 
 use super::functions::InlineConfiguration;
-use crate::corelib::try_get_core_ty_by_name;
 use crate::db::SemanticGroup;
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
+use crate::diagnostic::{
+    NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
+};
 use crate::items::functions::ImplicitPrecedence;
-use crate::resolve::ResolverData;
+use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::{semantic, ExprId, PatternId, SemanticDiagnostic, TypeId};
 
 // === Declaration ===
@@ -314,16 +315,14 @@ pub fn get_inline_config(
 /// If there is no implicit precedence influencing attribute, then this function returns
 /// [ImplicitPrecedence::UNSPECIFIED].
 pub fn get_implicit_precedence<'a>(
-    db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
+    resolver: &mut Resolver<'_>,
     attributes: &'a [Attribute],
-) -> Maybe<(ImplicitPrecedence, Option<&'a Attribute>)> {
-    let syntax_db = db.upcast();
-
+) -> (ImplicitPrecedence, Option<&'a Attribute>) {
     let mut attributes = attributes.iter().rev().filter(|attr| attr.id == IMPLICIT_PRECEDENCE_ATTR);
 
     // Pick the last attribute if any.
-    let Some(attr) = attributes.next() else { return Ok((ImplicitPrecedence::UNSPECIFIED, None)) };
+    let Some(attr) = attributes.next() else { return (ImplicitPrecedence::UNSPECIFIED, None) };
 
     // Report warnings for overridden attributes if any.
     for attr in attributes {
@@ -333,7 +332,7 @@ pub fn get_implicit_precedence<'a>(
         );
     }
 
-    let types: Vec<TypeId> = attr
+    let Ok(types) = attr
         .args
         .iter()
         .map(|arg| match &arg.variant {
@@ -345,16 +344,24 @@ pub fn get_implicit_precedence<'a>(
                     ));
                 };
 
-                let type_name = path.as_syntax_node().get_text_without_trivia(syntax_db);
-                try_get_core_ty_by_name(db, type_name.into(), vec![])
-                    .map_err(|kind| diagnostics.report(value, kind))
+                resolver.resolve_concrete_path(diagnostics, path, NotFoundItemType::Type).and_then(
+                    |resolved_item: crate::resolve::ResolvedConcreteItem| {
+                        try_extract_matches!(resolved_item, ResolvedConcreteItem::Type).ok_or_else(
+                            || diagnostics.report(value, SemanticDiagnosticKind::UnknownType),
+                        )
+                    },
+                )
             }
 
             _ => Err(diagnostics
                 .report(&arg.arg, SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments)),
         })
-        .try_collect()?;
+        .try_collect::<TypeId, Vec<_>, _>()
+    else {
+        return (ImplicitPrecedence::UNSPECIFIED, None);
+    };
+
     let precedence = ImplicitPrecedence::from_iter(types);
 
-    Ok((precedence, Some(attr)))
+    (precedence, Some(attr))
 }

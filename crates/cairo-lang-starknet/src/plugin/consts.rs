@@ -22,7 +22,6 @@ pub const EVENT_ATTR: &str = "event";
 pub const EVENT_TRAIT: &str = "starknet::Event";
 pub const STORE_TRAIT: &str = "starknet::Store";
 pub const STORAGE_AS_POINTER_TRAIT: &str = "starknet::storage::StorageAsPointer";
-pub const STORAGE_MEMBER_ADDRESS_TRAIT: &str = "starknet::storage::StorageMemberAddressTrait";
 pub const STORAGE_AS_PATH_TRAIT: &str = "starknet::storage::StorageAsPath";
 pub const STORAGE_NODE_ATTR: &str = "starknet::storage_node";
 pub const INTERFACE_ATTR: &str = "starknet::interface";
@@ -65,9 +64,12 @@ pub(super) const IMPLICIT_PRECEDENCE: &[&str] = &[
     "Pedersen",
     "RangeCheck",
     "Bitwise",
-    "EcOp",
+    "core::ec::EcOp",
     "Poseidon",
     "SegmentArena",
+    "core::circuit::RangeCheck96",
+    "core::circuit::AddMod",
+    "core::circuit::MulMod",
     "GasBuiltin",
     "System",
 ];

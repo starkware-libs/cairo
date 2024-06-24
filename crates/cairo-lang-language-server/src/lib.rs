@@ -66,7 +66,7 @@ use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::items::imp::ImplId;
+use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
@@ -86,10 +86,9 @@ use tracing::{debug, error, info, trace_span, warn, Instrument};
 
 use crate::config::Config;
 use crate::ide::semantic_highlighting::SemanticTokenKind;
+use crate::lang::db::{LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
-use crate::lang::semantic::LsSemanticGroup;
-use crate::lang::syntax::LsSyntaxGroup;
 use crate::lsp::client_capabilities::ClientCapabilitiesExt;
 use crate::project::scarb::db::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
@@ -103,6 +102,7 @@ mod env_config;
 mod ide;
 mod lang;
 mod lsp;
+mod markdown;
 mod project;
 mod server;
 mod toolchain;
@@ -581,6 +581,10 @@ impl Backend {
             }
 
             Some(ProjectManifestPath::CairoProject(config_path)) => {
+                // The base path of ProjectConfig must be absolute to ensure that all paths in Salsa
+                // DB will also be absolute.
+                assert!(config_path.is_absolute());
+
                 try_to_init_unmanaged_core(&*self.config.read().await, db);
 
                 if let Ok(config) = ProjectConfig::from_file(&config_path) {
@@ -869,12 +873,19 @@ impl LanguageServer for Backend {
     }
 }
 
+/// Either [`ResolvedGenericItem`] or [`ResolvedConcreteItem`].
+enum ResolvedItem {
+    Generic(ResolvedGenericItem),
+    Concrete(ResolvedConcreteItem),
+}
+
+// TODO(mkaput): Move this to crate::lang::inspect::defs and make private.
 #[tracing::instrument(level = "trace", skip_all)]
 fn find_definition(
     db: &RootDatabase,
     identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
-) -> Option<SyntaxStablePtrId> {
+) -> Option<(ResolvedItem, SyntaxStablePtrId)> {
     if let Some(parent) = identifier.as_syntax_node().parent() {
         if parent.kind(db) == SyntaxKind::ItemModule {
             let Some(containing_module_file_id) = db.find_module_file_containing_node(&parent)
@@ -888,9 +899,10 @@ fn find_definition(
                 ast::ItemModule::from_syntax_node(db, parent).stable_ptr(),
             )
             .intern(db);
-            return Some(resolved_generic_item_def(
-                db,
-                ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id)),
+            let item = ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id));
+            return Some((
+                ResolvedItem::Generic(item.clone()),
+                resolved_generic_item_def(db, item),
             ));
         }
     }
@@ -898,11 +910,17 @@ fn find_definition(
         if let Some(item) =
             db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
-            return Some(resolved_generic_item_def(db, item));
-        } else if let Some(item) =
+            return Some((
+                ResolvedItem::Generic(item.clone()),
+                resolved_generic_item_def(db, item),
+            ));
+        }
+
+        if let Some(item) =
             db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
-            return resolved_concrete_item_def(db.upcast(), item);
+            let stable_ptr = resolved_concrete_item_def(db.upcast(), item.clone())?;
+            return Some((ResolvedItem::Concrete(item), stable_ptr));
         }
     }
     None
@@ -921,8 +939,12 @@ fn resolved_concrete_item_def(
                 None
             }
         }
-        ResolvedConcreteItem::Impl(ImplId::GenericParameter(param)) => {
-            Some(param.untyped_stable_ptr(db.upcast()))
+        ResolvedConcreteItem::Impl(imp) => {
+            if let ImplLongId::GenericParameter(param) = imp.lookup_intern(db) {
+                Some(param.untyped_stable_ptr(db.upcast()))
+            } else {
+                None
+            }
         }
         _ => None,
     }
@@ -935,7 +957,7 @@ fn resolved_generic_item_def(
 ) -> SyntaxStablePtrId {
     let defs_db = db.upcast();
     match item {
-        ResolvedGenericItem::Constant(item) => item.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(defs_db),
         ResolvedGenericItem::Module(module_id) => {
             // Check if the module is an inline submodule.
             if let ModuleId::Submodule(submodule_id) = module_id {
@@ -1000,7 +1022,7 @@ fn get_definition_location(
     let syntax_db = db.upcast();
     let node = db.find_syntax_node_at_position(file, position)?;
     let lookup_items = db.collect_lookup_items_stack(&node)?;
-    let stable_ptr = find_definition(db, &identifier, &lookup_items)?;
+    let (_, stable_ptr) = find_definition(db, &identifier, &lookup_items)?;
     let node = stable_ptr.lookup(syntax_db);
     let found_file = stable_ptr.file_id(syntax_db);
     let span = node.span_without_trivia(syntax_db);

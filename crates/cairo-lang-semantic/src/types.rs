@@ -26,7 +26,7 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
-use crate::items::imp::{ImplId, ImplLookupContext};
+use crate::items::imp::{ImplId, ImplLongId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId, GenericArgumentId};
@@ -392,7 +392,7 @@ impl ImplTypeId {
     /// Creates a new impl type id. For an impl type of a concrete impl, asserts that the trait
     /// type belongs to the same trait that the impl implements (panics if not).
     pub fn new(impl_id: ImplId, ty: TraitTypeId, db: &dyn SemanticGroup) -> Self {
-        if let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_id {
+        if let crate::items::imp::ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
             let impl_def_id = concrete_impl.impl_def_id(db);
             assert_eq!(Ok(ty.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
         }
@@ -407,9 +407,14 @@ impl ImplTypeId {
     }
     /// Gets the impl type def (language element), if `self.impl_id` is of a concrete impl.
     pub fn impl_type_def(&self, db: &dyn SemanticGroup) -> Maybe<Option<ImplTypeDefId>> {
-        match self.impl_id {
-            ImplId::Concrete(concrete_impl_id) => concrete_impl_id.get_impl_type_def(db, self.ty),
-            ImplId::GenericParameter(_) | ImplId::ImplVar(_) => Ok(None),
+        match self.impl_id.lookup_intern(db) {
+            ImplLongId::Concrete(concrete_impl_id) => {
+                concrete_impl_id.get_impl_type_def(db, self.ty)
+            }
+            ImplLongId::GenericParameter(_)
+            | ImplLongId::ImplVar(_)
+            | ImplLongId::ImplImpl(_)
+            | ImplLongId::TraitImpl(_) => Ok(None),
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
@@ -522,18 +527,17 @@ pub fn extract_fixed_size_array_size(
             let mut ctx = ComputationContext::new(db, diagnostics, resolver, None, environment);
             let size_expr_syntax = size_clause.size(syntax_db);
             let size = compute_expr_semantic(&mut ctx, &size_expr_syntax);
-            let (_, const_value) = resolve_const_expr_and_evaluate(
+            let const_value = resolve_const_expr_and_evaluate(
                 db,
                 &mut ctx,
                 &size,
                 size_expr_syntax.stable_ptr().untyped(),
                 get_usize_ty(db),
             );
-            match &const_value {
-                ConstValue::Int(_) => Ok(Some(const_value.intern(db))),
-                ConstValue::Generic(_) => Ok(Some(const_value.intern(db))),
-
-                _ => Err(diagnostics.report(syntax, FixedSizeArrayNonNumericSize)),
+            if matches!(const_value, ConstValue::Int(_, _) | ConstValue::Generic(_)) {
+                Ok(Some(const_value.intern(db)))
+            } else {
+                Err(diagnostics.report(syntax, FixedSizeArrayNonNumericSize))
             }
         }
         ast::OptionFixedSizeArraySize::Empty(_) => Ok(None),
@@ -583,13 +587,7 @@ pub fn get_impl_at_context(
     let mut inference = inference_data.inference(db);
     // It's ok to consume the errors without reporting as this is a helper function meant to find an
     // impl and return it, but it's ok if the impl can't be found.
-    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context).map_err(
-        |err_set| {
-            inference
-                .consume_error_without_reporting(err_set)
-                .expect("Error couldn't be already consumed")
-        },
-    )?;
+    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context);
     if let Err((err_set, _)) = inference.finalize_without_reporting() {
         return Err(inference
             .consume_error_without_reporting(err_set)
@@ -640,7 +638,7 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
                 || matches!(size.lookup_intern(db),
-                            ConstValue::Int(value) if value.is_zero())
+                            ConstValue::Int(value, _) if value.is_zero())
         }
     })
 }
@@ -725,7 +723,7 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
         | TypeLongId::TraitType(_)
         | TypeLongId::ImplType(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
-            if matches!(size.lookup_intern(db), ConstValue::Int(value) if value.is_zero())
+            if matches!(size.lookup_intern(db), ConstValue::Int(value,_) if value.is_zero())
                 || db.type_size_info(type_id)? == TypeSizeInformation::ZeroSized
             {
                 return Ok(TypeSizeInformation::ZeroSized);
@@ -792,14 +790,18 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_var_free(db) && size.is_var_free(db)
         }
-        TypeLongId::ImplType(_) => false,
+        TypeLongId::ImplType(impl_type) => impl_type.impl_id().is_var_free(db),
     }
 }
 
 /// Peels all wrapping Snapshot (`@`) from the type.
 /// Returns the number of peeled snapshots and the inner type.
 pub fn peel_snapshots(db: &dyn SemanticGroup, ty: TypeId) -> (usize, TypeLongId) {
-    let mut long_ty = ty.lookup_intern(db);
+    peel_snapshots_ex(db, ty.lookup_intern(db))
+}
+
+/// Same as `peel_snapshots`, but takes a `TypeLongId` instead of a `TypeId`.
+pub fn peel_snapshots_ex(db: &dyn SemanticGroup, mut long_ty: TypeLongId) -> (usize, TypeLongId) {
     let mut n_snapshots = 0;
     while let TypeLongId::Snapshot(ty) = long_ty {
         long_ty = ty.lookup_intern(db);

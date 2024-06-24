@@ -90,9 +90,13 @@ impl StarknetModuleKind {
     pub fn get_full_state_struct_name(self) -> String {
         format!("{}{}", self.get_state_struct_name(), self.get_generic_arg_str())
     }
-    /// Gets the member State struct name, according to the module kind.
-    pub fn get_member_state_name(self) -> String {
-        format!("{}MemberState", self.to_str_capital())
+    /// Gets the storage base struct name, according to the module kind.
+    pub fn get_storage_base_struct_name(self) -> String {
+        format!("{}StorageBase", self.to_str_capital())
+    }
+    /// Gets the mutable storage base struct name, according to the module kind.
+    pub fn get_storage_base_mut_struct_name(self) -> String {
+        format!("{}StorageBaseMut", self.to_str_capital())
     }
 }
 
@@ -238,7 +242,7 @@ pub(super) fn handle_module_by_storage(
             },
         }),
         diagnostics,
-        remove_original_item: true,
+        remove_original_item: false,
     })
 }
 

@@ -9,8 +9,9 @@ use indoc::formatdoc;
 
 use super::STORAGE_NODE_ATTR;
 
-/// Generates a trait and impl of updating a storage path of a struct to access each of its members
-/// (i.e. there will be a function for each member of the struct).
+/// Generates an impl for the `starknet::StorageNode` to point to a generate a struct to to be
+/// pointed to allowing further access to each of its members (i.e. there will be a fitting member
+/// in the inner struct for each member of the struct).
 ///
 /// For example, given the following struct:
 /// ```cairo
@@ -27,12 +28,16 @@ use super::STORAGE_NODE_ATTR;
 ///     balance2: PendingStoragePath<felt252>,
 /// }
 ///
-/// impl BalancePairStorageNodeTrait of StorageNodeTrait<BalancePair> {
+/// impl BalancePairStorageNode of StorageNode<BalancePair> {
 ///     type NodeType = BalancePairStorageNode;
 ///     fn storage_node(self: StoragePath<BalancePair>) -> BalancePairStorageNode {
 ///         BalancePairStorageNode {
-///             balance1: PendingStoragePath{ hash_state: self.hash_state, pending_key: selector!('balance1') },
-///             balance2: PendingStoragePath{ hash_state: self.hash_state, pending_key: selector!('balance2') },
+///             balance1: PendingStoragePath {
+///                 hash_state: self.hash_state, pending_key: selector!('balance1'),
+///             },
+///             balance2: PendingStoragePath {
+///                 hash_state: self.hash_state, pending_key: selector!('balance2'),
+///             },
 ///         }
 ///     }
 /// }
@@ -63,12 +68,15 @@ impl MacroPlugin for StorageNodePlugin {
 
 /// Generates the trait and impl for a storage node.
 fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
-    // Refactor this to use PatchBuilder
     let struct_name_syntax = struct_ast.name(db).as_syntax_node();
     let mut builder = PatchBuilder::new(db, &struct_ast);
 
     builder.add_modified(RewriteNode::interpolate_patched(
-        "struct $name$StorageNode {\n",
+        &formatdoc!(
+            "#[derive(Drop, Copy)]
+            struct $name$StorageNode {{
+"
+        ),
         &[("name".to_string(), RewriteNode::new_trimmed(struct_name_syntax.clone()))].into(),
     ));
 
@@ -90,7 +98,7 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
 
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "impl $name$StorageNodeTrait of starknet::storage::StorageNodeTrait<$name$> {{
+            "impl $name$StorageNodeImpl of starknet::storage::StorageNode<$name$> {{
                  type NodeType = $name$StorageNode;
                  fn storage_node(self: starknet::storage::StoragePath<$name$>) -> \
              $name$StorageNode {{

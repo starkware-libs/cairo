@@ -300,7 +300,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > Test unhandled Option.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -322,7 +322,7 @@ warning: Unhandled `#[must_use]` type `core::option::Option::<core::felt252>`
 //! > Test unhandled Result.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -344,7 +344,7 @@ warning: Unhandled `#[must_use]` type `core::result::Result::<core::felt252, cor
 //! > Test unhandled must use function.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -399,7 +399,7 @@ impl imp of trt {
 //! > Test unhandled must use trait function.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -430,7 +430,7 @@ warning: Unhandled `#[must_use]` function.
 //! > Test unhandled must use method.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -491,6 +491,9 @@ test_expr_diagnostics(expect_diagnostics: true)
   let _fail = unstable_function();
   #[feature("testing")]
   let _work = unstable_function();
+  let _fail = unstable_function_with_note();
+  #[feature("testing")]
+  let _work = unstable_function_with_note();
 }
 
 //! > module_code
@@ -499,13 +502,23 @@ fn unstable_function() -> felt252 {
     0
 }
 
+#[unstable(feature: "testing", note: "Some reason", since: "1.0.0")]
+fn unstable_function_with_note() -> felt252 {
+    0
+}
+
 //! > function_body
 
 //! > expected_diagnostics
-error: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
- --> lib.cairo:7:15
+warning: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
+ --> lib.cairo:12:15
   let _fail = unstable_function();
               ^***************^
+
+warning: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute. Note: "Some reason"
+ --> lib.cairo:15:15
+  let _fail = unstable_function_with_note();
+              ^*************************^
 
 //! > ==========================================================================
 
@@ -535,16 +548,60 @@ fn deprecated_function_no_note() -> felt252 {
     0
 }
 
+#[unstable(feature: "unstable-trait")]
+trait UnstableTrait;
+
+impl BadUnstableImpl of UnstableTrait;
+
+#[feature("unstable-trait")]
+impl AllowedUnstableImpl of UnstableTrait;
+
+#[unstable(feature: "unstable-member")]
+struct DisallowedType {}
+
+struct BadStructMember {
+    member: DisallowedType,
+}
+
+#[feature("unstable-member")]
+struct AllowedStructMember {
+    member: DisallowedType,
+}
+
+enum BadEnumVariant {
+    variant: DisallowedType,
+}
+
+#[feature("unstable-member")]
+enum AllowedEnumMember {
+    variant: DisallowedType,
+}
+
 //! > function_body
 
 //! > expected_diagnostics
-error: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
- --> lib.cairo:12:15
+warning: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
+ --> lib.cairo:14:25
+impl BadUnstableImpl of UnstableTrait;
+                        ^***********^
+
+warning: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
+ --> lib.cairo:23:13
+    member: DisallowedType,
+            ^************^
+
+warning: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
+ --> lib.cairo:32:14
+    variant: DisallowedType,
+             ^************^
+
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
+ --> lib.cairo:41:15
   let _fail = deprecated_function_with_note();
               ^***************************^
 
-error: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
- --> lib.cairo:15:15
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
+ --> lib.cairo:44:15
   let _fail = deprecated_function_no_note();
               ^*************************^
 
@@ -611,11 +668,6 @@ error: Unsupported argument for feature marker attribute.
  --> lib.cairo:4:32
 #[unstable(feature: "testing", extra)]
                                ^***^
-
-error: Unsupported argument for feature marker attribute.
- --> lib.cairo:7:32
-#[unstable(feature: "testing", note: "extra")]
-                               ^**^
 
 error: Duplicated argument for feature marker attribute.
  --> lib.cairo:10:32

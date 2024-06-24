@@ -163,16 +163,15 @@ fn get_libfunc_id_without_generics(
 
 pub fn const_libfunc_id_by_type(
     db: &dyn SierraGenGroup,
-    ty: semantic::TypeId,
     value: &ConstValue,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    if let ConstValue::Boxed(ty, inner_value) = value {
+    if let ConstValue::Boxed(inner_value) = value {
         cairo_lang_sierra::program::ConcreteLibfuncLongId {
             generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(
                 ConstAsBoxLibfunc::STR_ID,
             ),
             generic_args: vec![
-                GenericArg::Type(const_type_id(db, *ty, inner_value)),
+                GenericArg::Type(const_type_id(db, inner_value)),
                 GenericArg::Value(0.into()),
             ],
         }
@@ -182,28 +181,28 @@ pub fn const_libfunc_id_by_type(
             generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(
                 ConstAsImmediateLibfunc::STR_ID,
             ),
-            generic_args: vec![GenericArg::Type(const_type_id(db, ty, value))],
+            generic_args: vec![GenericArg::Type(const_type_id(db, value))],
         }
         .intern(db)
     }
 }
 
-/// Returns the [cairo_lang_sierra::ids::ConcreteTypeId] for the given `ty` and `value`.
+/// Returns the [cairo_lang_sierra::ids::ConcreteTypeId] for the given `value`.
 fn const_type_id(
     db: &dyn SierraGenGroup,
-    ty: semantic::TypeId,
     value: &ConstValue,
 ) -> cairo_lang_sierra::ids::ConcreteTypeId {
+    let ty = value.ty(db.upcast()).unwrap();
     let first_arg = GenericArg::Type(db.get_concrete_type_id(ty).unwrap());
     SierraGeneratorTypeLongId::Regular(
         cairo_lang_sierra::program::ConcreteTypeLongId {
             generic_id: ConstType::ID,
             generic_args: match value {
-                ConstValue::Int(v) => vec![first_arg, GenericArg::Value(v.clone())],
-                ConstValue::Struct(tys) => {
+                ConstValue::Int(v, _) => vec![first_arg, GenericArg::Value(v.clone())],
+                ConstValue::Struct(tys, _) => {
                     let mut args = vec![first_arg];
-                    for (ty, value) in tys {
-                        args.push(GenericArg::Type(const_type_id(db, *ty, value)));
+                    for value in tys {
+                        args.push(GenericArg::Type(const_type_id(db, value)));
                     }
                     args
                 }
@@ -211,16 +210,20 @@ fn const_type_id(
                     vec![
                         first_arg,
                         GenericArg::Value(variant.idx.into()),
-                        GenericArg::Type(const_type_id(db, variant.ty, inner)),
+                        GenericArg::Type(const_type_id(db, inner)),
                     ]
                 }
-                ConstValue::NonZero(ty, value) => {
-                    vec![first_arg, GenericArg::Type(const_type_id(db, *ty, value))]
+                ConstValue::NonZero(value) => {
+                    vec![first_arg, GenericArg::Type(const_type_id(db, value))]
                 }
-                ConstValue::Boxed(_, _) => {
+                ConstValue::Boxed(_) => {
                     unreachable!("Should be handled by `const_libfunc_id_by_type`.")
                 }
-                ConstValue::Generic(_) | ConstValue::Var(_) | ConstValue::Missing(_) => {
+                ConstValue::Generic(_)
+                | ConstValue::Var(_, _)
+                | ConstValue::Missing(_)
+                | ConstValue::ImplConstant(_)
+                | ConstValue::TraitConstant(_) => {
                     unreachable!("Should be caught by the lowering.")
                 }
             },
@@ -404,11 +407,12 @@ pub fn get_concrete_libfunc_id(
                 generic_args.push(GenericArg::Type(db.get_concrete_type_id(*ty).unwrap()))
             }
             semantic::GenericArgumentId::Constant(value_id) => {
-                generic_args.push(GenericArg::Value(extract_matches!(
-                    value_id.lookup_intern(db),
-                    ConstValue::Int,
-                    "Only integer constants are supported."
-                )))
+                let size = value_id
+                    .lookup_intern(db)
+                    .into_int()
+                    .expect("Expected ConstValue::Int for size");
+
+                generic_args.push(GenericArg::Value(size))
             }
             semantic::GenericArgumentId::Impl(_) | semantic::GenericArgumentId::NegImpl => {
                 // Everything after an impl generic is ignored as it does not exist in Sierra.

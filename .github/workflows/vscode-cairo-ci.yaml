@@ -26,5 +26,6 @@ jobs:
           cache: npm
           cache-dependency-path: vscode-cairo/package-lock.json
       - run: npm ci
-      - run: npm run fmt:check
-      - run: npm run lint
+      - run: npm run lint-fmt
+      - run: npm run lint-eslint
+      - run: npm run compile-test

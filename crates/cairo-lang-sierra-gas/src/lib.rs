@@ -299,7 +299,7 @@ fn calc_gas_info_inner<
                                     continue;
                                 }
                                 _ => unreachable!(
-                                    "Gas variables variables cannot originate from {}.",
+                                    "Gas variables cannot originate from {}.",
                                     invocation.libfunc_id
                                 ),
                             }

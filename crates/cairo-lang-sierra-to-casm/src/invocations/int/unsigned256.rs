@@ -1,10 +1,11 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
 use num_bigint::BigInt;
 
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, CompiledInvocation,
+    add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
 
@@ -180,7 +181,11 @@ fn build_u256_divmod(
             None,
         )],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))
@@ -320,7 +325,11 @@ fn build_u256_sqrt(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[sqrt]], None)],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))
@@ -586,7 +595,11 @@ fn build_u256_inv_mod_n(
             ),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))

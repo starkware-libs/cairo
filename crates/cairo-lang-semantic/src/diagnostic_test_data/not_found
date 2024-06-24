@@ -45,3 +45,25 @@ error: Module file not found. Expected path: module_does_not_exist.cairo
  --> lib.cairo:1:1
 mod module_does_not_exist;
 ^************************^
+
+//! > ==========================================================================
+
+//! > Test missing implicit in implicit_precedence
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{}
+
+//! > module_code
+#[implicit_precedence(MissingBuiltin1, MissingBuiltin2)]
+fn foo() {}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Type not found.
+ --> lib.cairo:1:23
+#[implicit_precedence(MissingBuiltin1, MissingBuiltin2)]
+                      ^*************^

@@ -1,13 +1,13 @@
-use cairo_lang_defs::ids::{FunctionWithBodyId, ImplItemId, LookupItemId, ModuleItemId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::grandparent_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use tower_lsp::lsp_types::SemanticTokenType;
 
-use crate::lang::semantic::LsSemanticGroup;
+use crate::lang::db::LsSemanticGroup;
 
 #[allow(dead_code)]
 pub enum SemanticTokenKind {
@@ -141,7 +141,7 @@ impl SemanticTokenKind {
                     db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
                 {
                     return Some(match item {
-                        ResolvedGenericItem::Constant(_) => SemanticTokenKind::EnumMember,
+                        ResolvedGenericItem::GenericConstant(_) => SemanticTokenKind::EnumMember,
                         ResolvedGenericItem::Module(_) => SemanticTokenKind::Namespace,
                         ResolvedGenericItem::GenericFunction(_)
                         | ResolvedGenericItem::TraitFunction(_) => SemanticTokenKind::Function,
@@ -163,8 +163,7 @@ impl SemanticTokenKind {
                         ResolvedConcreteItem::Module(_) => SemanticTokenKind::Namespace,
                         ResolvedConcreteItem::Function(_)
                         | ResolvedConcreteItem::TraitFunction(_) => SemanticTokenKind::Function,
-                        ResolvedConcreteItem::Type(_)
-                        | ResolvedConcreteItem::ConstGenericParameter(_) => SemanticTokenKind::Type,
+                        ResolvedConcreteItem::Type(_) => SemanticTokenKind::Type,
                         ResolvedConcreteItem::Variant(_) => SemanticTokenKind::EnumMember,
                         ResolvedConcreteItem::Trait(_) => SemanticTokenKind::Interface,
                         ResolvedConcreteItem::Impl(_) => SemanticTokenKind::Class,
@@ -172,16 +171,8 @@ impl SemanticTokenKind {
                 }
 
                 // Exprs and patterns..
-                let function_id = match lookup_item_id {
-                    LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
-                        FunctionWithBodyId::Free(free_function_id)
-                    }
-                    LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
-                        FunctionWithBodyId::Impl(impl_function_id)
-                    }
-                    _ => {
-                        continue;
-                    }
+                let Some(function_id) = lookup_item_id.function_with_body() else {
+                    continue;
                 };
                 if let Some(expr_path_ptr) = expr_path_ptr {
                     if db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).is_ok() {

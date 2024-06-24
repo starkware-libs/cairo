@@ -10,7 +10,7 @@ hello = "src"
 [config.global]
 edition = "2023_11"
 
-//! > src/lib.cairo
+//! > cairo_code
 use Balance::contr<caret>act_state_for_testing;
 
 /// The balance contract interface.
@@ -49,100 +49,121 @@ mod Balance {
     }
 }
 
-//! > hover 0:18
------------- source context ------------
-use Balance::contract_state_for_testing;
-                  ↑
---------------- popover ----------------
+//! > hover #0
+// = source context
+use Balance::contr<caret>act_state_for_testing;
+// = highlight
+use Balance::<sel>contract_state_for_testing</sel>;
+// = popover
+```cairo
+hello
+```
 ```cairo
 pub fn contract_state_for_testing() -> ContractState
 ```
 
-//! > hover 23:25
---------------------- source context ----------------------
-    fn constructor(ref self: ContractState, value_: u128) {
-                         ↑
-------------------------- popover -------------------------
-No hover information.
+//! > hover #1
+// = source context
+    fn constructor(ref se<caret>lf: ContractState, value_: u128) {
+// = highlight
+No highlight information.
+// = popover
 
-//! > hover 23:33
---------------------- source context ----------------------
-    fn constructor(ref self: ContractState, value_: u128) {
-                                 ↑
-------------------------- popover -------------------------
+//! > hover #2
+// = source context
+    fn constructor(ref self: Cont<caret>ractState, value_: u128) {
+// = highlight
+    fn constructor(ref self: <sel>ContractState</sel>, value_: u128) {
+// = popover
 ```cairo
-
-
-    pub struct ContractState {
-        pub value: __member_module_value::ContractMemberState,
-    }
-
+hello
+```
+```cairo
+pub struct ContractState {}
 ```
 
-//! > hover 24:15
--------- source context ---------
-        self.value.write(value_);
-               ↑
------------- popover ------------
-No hover information.
-
-//! > hover 24:25
--------- source context ---------
-        self.value.write(value_);
-                         ↑
------------- popover ------------
+//! > hover #3
+// = source context
+        self.va<caret>lue.write(value_);
+// = highlight
+No highlight information.
+// = popover
 ```cairo
-fn constructor(ref self: ContractState, value_: u128)
+core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>
 ```
 
-//! > hover 28:30
------------------- source context ------------------
-    impl Balance of super::IBalance<ContractState> {
-                              ↑
---------------------- popover ----------------------
+//! > hover #4
+// = source context
+        self.value.write(<caret>value_);
+// = highlight
+        self.value.write(<sel>value_</sel>);
+// = popover
 ```cairo
- trait IBalance<T>
+value_: core::integer::u128
+```
+
+//! > hover #5
+// = source context
+    impl Balance of super::IBa<caret>lance<ContractState> {
+// = highlight
+    impl Balance of super::<sel>IBalance</sel><ContractState> {
+// = popover
+```cairo
+hello
+```
+```cairo
+trait IBalance<T>
 ```
 ---
- The balance contract interface.
+The balance contract interface.
 
-//! > hover 28:39
------------------- source context ------------------
-    impl Balance of super::IBalance<ContractState> {
-                                       ↑
---------------------- popover ----------------------
+//! > hover #6
+// = source context
+    impl Balance of super::IBalance<Con<caret>tractState> {
+// = highlight
+    impl Balance of super::IBalance<<sel>ContractState</sel>> {
+// = popover
 ```cairo
-
-
-    pub struct ContractState {
-        pub value: __member_module_value::ContractMemberState,
-    }
-
+hello
+```
+```cairo
+pub struct ContractState {}
 ```
 
-//! > hover 30:24
------- source context -------
-            self.value.read()
-                        ↑
----------- popover ----------
+//! > hover #7
+// = source context
+            self.value.r<caret>ead()
+// = highlight
+            self.value.<sel>read</sel>()
+// = popover
 ```cairo
-fn read(self: @TMemberState) -> Self::Value;
+core::starknet::storage::StoragePointerReadAccess
+```
+```cairo
+pub trait StoragePointerReadAccess<T>
+fn read(self: @T) -> Self::Value
 ```
 
-//! > hover 33:25
-------------------- source context -------------------
-            self.value.write( self.value.read() + a );
-                         ↑
----------------------- popover -----------------------
+//! > hover #8
+// = source context
+            self.value.wr<caret>ite( self.value.read() + a );
+// = highlight
+            self.value.<sel>write</sel>( self.value.read() + a );
+// = popover
 ```cairo
-fn write(ref self: TMemberState, value: Self::Value);
+core::starknet::storage::StoragePointerWriteAccess
+```
+```cairo
+pub trait StoragePointerWriteAccess<T>
+fn write(self: T, value: Self::Value)
 ```
 
-//! > hover 33:50
-------------------- source context -------------------
-            self.value.write( self.value.read() + a );
-                                                  ↑
----------------------- popover -----------------------
+//! > hover #9
+// = source context
+            self.value.write( self.value.read() + <caret>a );
+// = highlight
+            self.value.write( self.value.read() + <sel>a</sel> );
+// = popover
 ```cairo
-fn increase(ref self: ContractState, a: u128)
+a: core::integer::u128
 ```

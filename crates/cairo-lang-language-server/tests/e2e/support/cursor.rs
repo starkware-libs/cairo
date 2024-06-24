@@ -1,7 +1,8 @@
+use std::cmp::min;
 use std::str::Chars;
 
 use itertools::{Itertools, MultiPeek};
-use tower_lsp::lsp_types::Position;
+use tower_lsp::lsp_types::{Position, Range};
 
 #[path = "cursor_test.rs"]
 mod test;
@@ -96,4 +97,42 @@ impl Cursors {
     pub fn carets(&self) -> Vec<Position> {
         self.cursors.clone()
     }
+}
+
+/// Creates a snippet (lines of interest) of the source text showing a caret at the specified
+/// position.
+pub fn peek_caret(text: &str, position: Position) -> String {
+    let mut snippet = text.to_owned();
+    snippet.insert_str(index_in_text(text, position), "<caret>");
+    snippet.lines().nth(position.line as usize).unwrap().to_owned() + "\n"
+}
+
+/// Creates a snippet (lines of interest) of the source text showing a selection of the specified
+/// range.
+pub fn peek_selection(text: &str, range: &Range) -> String {
+    let mut snippet = text.to_owned();
+    assert!(range.start <= range.end);
+    snippet.insert_str(index_in_text(text, range.start), "<sel>");
+    snippet.insert_str(index_in_text(text, range.end) + "<sel>".len(), "</sel>");
+    snippet
+        .lines()
+        .skip(range.start.line as usize)
+        .take(range.end.line as usize - range.start.line as usize + 1)
+        .join("\n")
+        + "\n"
+}
+
+/// Converts a [`Position`] to a char-bounded index in the text.
+///
+/// This function assumes UTF-8 position encoding.
+fn index_in_text(text: &str, position: Position) -> usize {
+    let mut offset = 0;
+    let mut lines = text.lines();
+    for line in lines.by_ref().take(position.line as usize) {
+        offset += line.len() + "\n".len();
+    }
+    if let Some(line) = lines.next() {
+        offset += min(position.character as usize, line.len());
+    }
+    offset
 }

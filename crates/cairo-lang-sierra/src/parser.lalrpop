@@ -103,6 +103,8 @@ ConcreteTypeId: ConcreteTypeId = {
     <id:ConcreteLabel> => ConcreteTypeId::from_string(id),
     "@" <id:ConcreteLabel> => ConcreteTypeId::from_string(format!("@{id}")),
     "[" <id:UnsignedInt> "]" => ConcreteTypeId::new(id),
+    "[" <ty:ConcreteTypeId> ";" <count:UnsignedInt> "]" =>
+        ConcreteTypeId::from_string(format!("[{ty}; {count}]")),
 }
 ConcreteTypeIds = Comma<ConcreteTypeId>;
 

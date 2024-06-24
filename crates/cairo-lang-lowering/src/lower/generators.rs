@@ -32,6 +32,7 @@ impl StatementsBuilder {
 pub struct Const {
     pub value: ConstValue,
     pub location: LocationId,
+    // TODO(TomerStarkware): Remove this field and use the type from value.
     pub ty: semantic::TypeId,
 }
 impl Const {
@@ -181,7 +182,7 @@ impl Desnap {
 
 /// Generator for [StatementStructDestructure].
 ///
-/// Note that we return `Vec<VariableId>` rather then `Vec<VarUsage>` as the the caller typically
+/// Note that we return `Vec<VariableId>` rather then `Vec<VarUsage>` as the caller typically
 /// has a more accurate location then the one we have in the var requests.
 pub struct StructDestructure {
     /// Variable that holds the struct value.

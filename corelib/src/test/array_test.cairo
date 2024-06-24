@@ -1,4 +1,6 @@
 use core::test::test_utils::{assert_eq, assert_ne};
+#[feature("collections-into-iter")]
+use core::iter::{IntoIterator, Iterator};
 
 #[test]
 fn test_array() {
@@ -175,4 +177,43 @@ fn test_span_multi_pop() {
     assert!(debox(span.multi_pop_back::<4>()) == Option::Some(@[10, 11, 12, 13]));
     let mut span = array![10, 11, 12, 13].span();
     assert!(debox(span.multi_pop_back::<3>()) == Option::Some(@[11, 12, 13]));
+}
+
+#[test]
+fn test_span_iterator() {
+    let mut iter = array![10, 11, 12, 13_felt252].span().into_iter();
+    let mut i = 10;
+    while let Option::Some(value) = iter.next() {
+        assert_eq!(value, @i);
+        i += 1;
+    }
+}
+
+#[test]
+fn test_array_iterator() {
+    let mut iter = array![10, 11, 12, 13].into_iter();
+    let mut i = 10;
+    while let Option::Some(value) = iter.next() {
+        assert_eq!(value, i);
+        i += 1;
+    }
+}
+
+fn test_array_into_span() {
+    assert_eq!(array![1, 2, 3].span(), array![1, 2, 3].into())
+}
+
+#[test]
+fn test_span_into_array() {
+    assert_eq!(array![1, 2, 3], array![1, 2, 3].span().into());
+}
+
+#[test]
+fn test_array_snap_into_span() {
+    assert_eq!(array![1, 2, 3].span(), (@array![1, 2, 3]).into());
+}
+
+#[test]
+fn test_span_into_array_snap() {
+    assert_eq!(@array![1, 2, 3], array![1, 2, 3].span().into());
 }

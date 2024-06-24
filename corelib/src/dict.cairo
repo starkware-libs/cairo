@@ -1,3 +1,4 @@
+#[feature("deprecated-index-traits")]
 use core::traits::{Index, Default, Felt252DictValue};
 
 pub extern type Felt252Dict<T>;

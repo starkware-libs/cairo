@@ -136,16 +136,17 @@ pub enum RunResultValue {
 pub fn token_gas_cost(token_type: CostTokenType) -> usize {
     match token_type {
         CostTokenType::Const => 1,
-        CostTokenType::Step | CostTokenType::Hole | CostTokenType::RangeCheck => {
+        CostTokenType::Step
+        | CostTokenType::Hole
+        | CostTokenType::RangeCheck
+        | CostTokenType::RangeCheck96 => {
             panic!("Token type {:?} has no gas cost.", token_type)
         }
         CostTokenType::Pedersen => 4130,
         CostTokenType::Poseidon => 500,
         CostTokenType::Bitwise => 594,
         CostTokenType::EcOp => 4166,
-        // TODO(ilya): Validate the costs.
-        CostTokenType::RangeCheck96 => 65,
-        CostTokenType::AddMod => 274,
+        CostTokenType::AddMod => 234,
         CostTokenType::MulMod => 616,
     }
 }

@@ -20,14 +20,13 @@ use crate::lsp::client_capabilities::ClientCapabilitiesExt;
 /// `workspace/didChangeConfiguration` requests.
 #[derive(Debug, Default)]
 pub struct Config {
-    /// A user-provided fallback path to the `core` crate source code for use in projects where
-    /// `core` is unmanaged by the toolchain.
+    /// A user-provided path to the `core` crate source code for use in projects where `core` is
+    /// unmanaged by the toolchain.
     ///
-    /// This property is only used when the LS is unable to find unmanaged `core` automatically.
     /// The path may omit the `corelib/src` or `src` suffix.
     ///
     /// The property is set by the user under the `cairo1.corelibPath` key in client configuration.
-    pub unmanaged_core_fallback_path: Option<PathBuf>,
+    pub unmanaged_core_path: Option<PathBuf>,
 }
 
 impl Config {
@@ -65,7 +64,7 @@ impl Config {
             // This conversion is O(1), and makes popping from front also O(1).
             let mut response = VecDeque::from(response);
 
-            self.unmanaged_core_fallback_path =
+            self.unmanaged_core_path =
                 response.pop_front().as_ref().and_then(|v| v.as_str()).map(Into::into);
 
             debug!("reloaded configuration: {self:#?}");

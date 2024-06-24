@@ -1,0 +1,25 @@
+name: Tree sitter
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  test:
+    name: Test tree-sitter parser
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up tree-sitter
+        uses: tree-sitter/setup-action/cli@v1
+      - name: Clone tree-sitter-repo
+        run: |-
+          git clone https://github.com/starkware-libs/tree-sitter-cairo --single-branch --depth=1 --filter=blob:none
+          mv tree-sitter-cairo/** .
+      - name: Parse examples
+        uses: tree-sitter/parse-action@v4
+        with:
+          files: ./**/*.cairo
+          invalid-files: crates/cairo-lang-parser/src/parser_test_data/cairo_test_files/*.cairo

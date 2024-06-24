@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{ConstantId, MemberId, NamedLanguageElementId, VarId};
+use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId, VarId};
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
@@ -131,6 +131,7 @@ pub enum Expr {
     Block(ExprBlock),
     Loop(ExprLoop),
     While(ExprWhile),
+    For(ExprFor),
     FunctionCall(ExprFunctionCall),
     Match(ExprMatch),
     If(ExprIf),
@@ -142,7 +143,6 @@ pub enum Expr {
     EnumVariantCtor(ExprEnumVariantCtor),
     PropagateError(ExprPropagateError),
     Constant(ExprConstant),
-    ParamConstant(ExprParamConstant),
     FixedSizeArray(ExprFixedSizeArray),
     Missing(ExprMissing),
 }
@@ -157,6 +157,7 @@ impl Expr {
             Expr::Block(expr) => expr.ty,
             Expr::Loop(expr) => expr.ty,
             Expr::While(expr) => expr.ty,
+            Expr::For(expr) => expr.ty,
             Expr::FunctionCall(expr) => expr.ty,
             Expr::Match(expr) => expr.ty,
             Expr::If(expr) => expr.ty,
@@ -168,7 +169,6 @@ impl Expr {
             Expr::EnumVariantCtor(expr) => expr.ty,
             Expr::PropagateError(expr) => expr.ok_variant.ty,
             Expr::Constant(expr) => expr.ty,
-            Expr::ParamConstant(expr) => expr.ty,
             Expr::Missing(expr) => expr.ty,
             Expr::FixedSizeArray(expr) => expr.ty,
         }
@@ -183,6 +183,7 @@ impl Expr {
             Expr::Block(expr) => expr.stable_ptr,
             Expr::Loop(expr) => expr.stable_ptr,
             Expr::While(expr) => expr.stable_ptr,
+            Expr::For(expr) => expr.stable_ptr,
             Expr::FunctionCall(expr) => expr.stable_ptr,
             Expr::Match(expr) => expr.stable_ptr,
             Expr::If(expr) => expr.stable_ptr,
@@ -194,7 +195,6 @@ impl Expr {
             Expr::EnumVariantCtor(expr) => expr.stable_ptr,
             Expr::PropagateError(expr) => expr.stable_ptr,
             Expr::Constant(expr) => expr.stable_ptr,
-            Expr::ParamConstant(expr) => expr.stable_ptr,
             Expr::Missing(expr) => expr.stable_ptr,
             Expr::FixedSizeArray(expr) => expr.stable_ptr,
         }
@@ -293,6 +293,19 @@ pub struct ExprLoop {
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprWhile {
     pub condition: Condition,
+    pub body: ExprId,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprFor {
+    pub into_iter: ExprId,
+    pub next_function_id: FunctionId,
+    pub pattern: PatternId,
     pub body: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
@@ -529,16 +542,6 @@ pub struct ExprPropagateError {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprConstant {
-    pub constant_id: ConstantId,
-    pub ty: semantic::TypeId,
-    #[dont_rewrite]
-    #[hide_field_debug_with_db]
-    pub stable_ptr: ast::ExprPtr,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct ExprParamConstant {
     pub const_value_id: ConstValueId,
     pub ty: semantic::TypeId,
     #[dont_rewrite]

@@ -10,7 +10,7 @@ use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
 use cairo_lang_sierra::extensions::circuit::{
-    CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE, VALUE_SIZE,
+    CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE,
 };
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
@@ -60,17 +60,18 @@ use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 /// (read/write/entry), and the overhead cost is refunded for each repeated access.
 /// Repeated access is access to a key that has already been accessed before.
 pub const DICT_SQUASH_UNIQUE_KEY_COST: ConstCost =
-    ConstCost { steps: 46, holes: 0, range_checks: 6 };
+    ConstCost { steps: 46, holes: 0, range_checks: 6, range_checks96: 0 };
 /// The cost per each access to a key after the first access.
 pub const DICT_SQUASH_REPEATED_ACCESS_COST: ConstCost =
-    ConstCost { steps: 9, holes: 0, range_checks: 1 };
+    ConstCost { steps: 9, holes: 0, range_checks: 1, range_checks96: 0 };
 /// The cost not dependent on the number of keys and access.
-pub const DICT_SQUASH_FIXED_COST: ConstCost = ConstCost { steps: 57, holes: 0, range_checks: 3 };
+pub const DICT_SQUASH_FIXED_COST: ConstCost =
+    ConstCost { steps: 57, holes: 0, range_checks: 3, range_checks96: 0 };
 
 /// The cost of allocating a segment in the segment arena. This is charged to pay for the
 /// finalization step of the segment arena.
 pub const SEGMENT_ARENA_ALLOCATION_COST: ConstCost =
-    ConstCost { steps: 8, holes: 0, range_checks: 0 };
+    ConstCost { steps: 8, holes: 0, range_checks: 0, range_checks96: 0 };
 
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
@@ -154,10 +155,20 @@ pub fn core_libfunc_cost(
                         + if &libfunc.to_range.upper - 1 == u128::MAX.into() { 0 } else { 1 };
                     let failure_extra_steps = if libfunc.to_range.upper.is_zero() { 0 } else { 1 };
                     vec![
-                        ConstCost { steps: success_extra_steps + 3, holes: 0, range_checks: 2 }
-                            .into(),
-                        ConstCost { steps: failure_extra_steps + 9, holes: 0, range_checks: 3 }
-                            .into(),
+                        ConstCost {
+                            steps: success_extra_steps + 3,
+                            holes: 0,
+                            range_checks: 2,
+                            range_checks96: 0,
+                        }
+                        .into(),
+                        ConstCost {
+                            steps: failure_extra_steps + 9,
+                            holes: 0,
+                            range_checks: 3,
+                            range_checks96: 0,
+                        }
+                        .into(),
                     ]
                 } else {
                     // Overflow tests are more expensive when asserting a value is above non-zero
@@ -428,8 +439,8 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::default().into()]
             }
             Bytes31ConcreteLibfunc::TryFromFelt252(_) => vec![
-                (ConstCost { steps: 7, holes: 0, range_checks: 3 }).into(),
-                (ConstCost { steps: 9, holes: 0, range_checks: 3 }).into(),
+                (ConstCost { steps: 7, holes: 0, range_checks: 3, range_checks96: 0 }).into(),
+                (ConstCost { steps: 9, holes: 0, range_checks: 3, range_checks96: 0 }).into(),
             ],
         },
         Const(libfunc) => match libfunc {
@@ -458,15 +469,15 @@ pub fn core_libfunc_cost(
             | BoundedIntConcreteLibfunc::Mul(_) => vec![ConstCost::steps(0).into()],
             BoundedIntConcreteLibfunc::DivRem(libfunc) => {
                 vec![
-                    match BoundedIntDivRemAlgorithm::new(&libfunc.lhs, &libfunc.rhs).unwrap() {
+                    match BoundedIntDivRemAlgorithm::try_new(&libfunc.lhs, &libfunc.rhs).unwrap() {
                         BoundedIntDivRemAlgorithm::KnownSmallRhs => {
-                            ConstCost { steps: 7, holes: 0, range_checks: 3 }
+                            ConstCost { steps: 7, holes: 0, range_checks: 3, range_checks96: 0 }
                         }
-                        BoundedIntDivRemAlgorithm::KnownSmallQuotient(_) => {
-                            ConstCost { steps: 9, holes: 0, range_checks: 4 }
+                        BoundedIntDivRemAlgorithm::KnownSmallQuotient { .. } => {
+                            ConstCost { steps: 9, holes: 0, range_checks: 4, range_checks96: 0 }
                         }
-                        BoundedIntDivRemAlgorithm::KnownSmallLhs(_) => {
-                            ConstCost { steps: 11, holes: 0, range_checks: 4 }
+                        BoundedIntDivRemAlgorithm::KnownSmallLhs { .. } => {
+                            ConstCost { steps: 11, holes: 0, range_checks: 4, range_checks96: 0 }
                         }
                     }
                     .into(),
@@ -475,60 +486,101 @@ pub fn core_libfunc_cost(
             BoundedIntConcreteLibfunc::Constrain(libfunc) => {
                 vec![
                     (ConstCost {
-                        steps: 2 + i32::from(libfunc.boundary != BigInt::one().shl(128)),
+                        steps: 2 + if libfunc.boundary == BigInt::one().shl(128) { 0 } else { 1 },
                         holes: 0,
                         range_checks: 1,
+                        range_checks96: 0,
                     })
                     .into(),
                     (ConstCost {
-                        steps: 3 + i32::from(!libfunc.boundary.is_zero()),
+                        steps: 3 + if libfunc.boundary.is_zero() { 0 } else { 1 },
                         holes: 0,
                         range_checks: 1,
+                        range_checks96: 0,
                     })
                     .into(),
                 ]
             }
+            BoundedIntConcreteLibfunc::IsZero(_) => {
+                vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
+            }
+            BoundedIntConcreteLibfunc::WrapNonZero(_) => {
+                vec![ConstCost::steps(0).into()]
+            }
         },
-        Circuit(CircuitConcreteLibfunc::FillInput(_)) => {
-            vec![ConstCost::steps(7).into(), ConstCost::steps(7).into()]
-        }
-        Circuit(CircuitConcreteLibfunc::Eval(libfunc)) => {
-            let info = info_provider.circuit_info(&libfunc.ty);
-
-            let mut steps: i32 = 5;
-            let instance_size: i32 = BUILTIN_INSTANCE_SIZE.into_or_panic();
-
-            if !info.add_offsets.is_empty() {
-                steps += instance_size;
+        Circuit(libfunc) => match libfunc {
+            CircuitConcreteLibfunc::FillInput(_) => {
+                vec![ConstCost::steps(7).into(), ConstCost::steps(7).into()]
             }
+            CircuitConcreteLibfunc::Eval(libfunc) => {
+                let info = info_provider.circuit_info(&libfunc.ty);
 
-            if !info.mul_offsets.is_empty() {
-                steps += instance_size;
+                let instance_size: i32 = BUILTIN_INSTANCE_SIZE.into_or_panic();
+                let mut steps: i32 = 8 + instance_size;
+
+                if !info.add_offsets.is_empty() {
+                    steps += instance_size;
+                }
+
+                vec![
+                    // Failure.
+                    BranchCost::Regular {
+                        const_cost: ConstCost::steps(steps),
+                        pre_cost: PreCost(OrderedHashMap::from_iter([
+                            (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
+                            (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
+                        ])),
+                    },
+                    // Success.
+                    BranchCost::Regular {
+                        const_cost: ConstCost::steps(steps),
+                        pre_cost: PreCost(OrderedHashMap::from_iter([
+                            (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
+                            (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
+                        ])),
+                    },
+                ]
             }
-
-            vec![BranchCost::Regular {
-                const_cost: ConstCost::steps(steps),
-                pre_cost: PreCost(OrderedHashMap::from_iter([
-                    (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
-                    (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
-                ])),
-            }]
-        }
-        Circuit(CircuitConcreteLibfunc::U384IsZero(_)) => {
-            vec![ConstCost::steps(4).into(), ConstCost::steps(4).into()]
-        }
-        Circuit(CircuitConcreteLibfunc::GetDescriptor(_)) => {
-            vec![ConstCost::steps(6).into()]
-        }
-        Circuit(CircuitConcreteLibfunc::InitCircuitData(libfunc)) => {
-            let info = info_provider.circuit_info(&libfunc.ty);
-            let rc_usage: i32 = (info.values.len() * VALUE_SIZE).into_or_panic();
-
-            vec![BranchCost::Regular {
-                const_cost: ConstCost::steps(0),
-                pre_cost: PreCost::n_builtins(CostTokenType::RangeCheck96, rc_usage),
-            }]
-        }
+            CircuitConcreteLibfunc::GetOutput(_) => {
+                vec![ConstCost::steps(5).into()]
+            }
+            CircuitConcreteLibfunc::TryIntoCircuitModulus(_) => {
+                vec![ConstCost::steps(6).into(), ConstCost::steps(7).into()]
+            }
+            CircuitConcreteLibfunc::GetDescriptor(_) => {
+                vec![ConstCost::steps(6).into()]
+            }
+            CircuitConcreteLibfunc::IntoU96Guarantee(_) => {
+                vec![ConstCost::steps(0).into()]
+            }
+            CircuitConcreteLibfunc::U96GuaranteeVerify(_) => {
+                vec![ConstCost { steps: 1, holes: 0, range_checks: 0, range_checks96: 1 }.into()]
+            }
+            CircuitConcreteLibfunc::U96LimbsLessThanGuaranteeVerify(_) => {
+                vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
+            }
+            CircuitConcreteLibfunc::U96SingleLimbLessThanGuaranteeVerify(_) => {
+                vec![ConstCost::steps(0).into()]
+            }
+            CircuitConcreteLibfunc::InitCircuitData(libfunc) => {
+                let info = info_provider.circuit_info(&libfunc.ty);
+                vec![
+                    ConstCost {
+                        steps: 0,
+                        holes: 0,
+                        range_checks: 0,
+                        range_checks96: info.rc96_usage().into_or_panic(),
+                    }
+                    .into(),
+                ]
+            }
+            CircuitConcreteLibfunc::FailureGuaranteeVerify(_) => {
+                // The libfunc also costs 1 mulmod instance, however, in the failure case
+                // `eval_circuit` uses less mulmod gates then it actaually uses, so
+                // the mulmod is already paid for.
+                vec![ConstCost { steps: 33, holes: 0, range_checks: 0, range_checks96: 6 }.into()]
+            }
+        },
     }
 }
 
@@ -570,6 +622,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                             steps: 1,
                             holes: ap_change as i32,
                             range_checks: 0,
+                            range_checks96: 0,
                         }),
                     )
                 }
@@ -672,32 +725,37 @@ fn uint_libfunc_cost<TUintTraits: UintTraits + IsZeroTraits + IntMulTraits>(
         UintConcrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => {
                 vec![
-                    (ConstCost { steps: 4, holes: 0, range_checks: 1 }).into(),
-                    (ConstCost { steps: 5, holes: 0, range_checks: 1 }).into(),
+                    (ConstCost { steps: 4, holes: 0, range_checks: 1, range_checks96: 0 }).into(),
+                    (ConstCost { steps: 5, holes: 0, range_checks: 1, range_checks96: 0 }).into(),
                 ]
             }
             IntOperator::OverflowingSub => {
                 vec![
-                    (ConstCost { steps: 3, holes: 0, range_checks: 1 }).into(),
-                    (ConstCost { steps: 5, holes: 0, range_checks: 1 }).into(),
+                    (ConstCost { steps: 3, holes: 0, range_checks: 1, range_checks96: 0 }).into(),
+                    (ConstCost { steps: 5, holes: 0, range_checks: 1, range_checks96: 0 }).into(),
                 ]
             }
         },
         UintConcrete::SquareRoot(_) => {
-            vec![(ConstCost { steps: 9, holes: 0, range_checks: 4 }).into()]
+            vec![(ConstCost { steps: 9, holes: 0, range_checks: 4, range_checks96: 0 }).into()]
         }
         UintConcrete::Equal(_) => {
             vec![ConstCost::steps(2).into(), ConstCost::steps(3).into()]
         }
         UintConcrete::FromFelt252(_) => {
             vec![
-                (ConstCost { steps: 4, holes: 0, range_checks: 2 }).into(),
-                (ConstCost { steps: 10, holes: 0, range_checks: 3 }).into(),
+                (ConstCost { steps: 4, holes: 0, range_checks: 2, range_checks96: 0 }).into(),
+                (ConstCost { steps: 10, holes: 0, range_checks: 3, range_checks96: 0 }).into(),
             ]
         }
         UintConcrete::IsZero(_) => vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()],
         UintConcrete::Divmod(_) => {
-            vec![BranchCost::from(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
+            vec![BranchCost::from(ConstCost {
+                steps: 7,
+                holes: 0,
+                range_checks: 3,
+                range_checks96: 0,
+            })]
         }
         UintConcrete::Bitwise(_) => {
             vec![BranchCost::Regular {
@@ -714,27 +772,27 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
         Uint128Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
                 vec![
-                    ConstCost { steps: 3, holes: 0, range_checks: 1 }.into(),
-                    ConstCost { steps: 5, holes: 0, range_checks: 1 }.into(),
+                    ConstCost { steps: 3, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
+                    ConstCost { steps: 5, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
                 ]
             }
         },
         Uint128Concrete::Divmod(_) => {
-            vec![ConstCost { steps: 11, holes: 0, range_checks: 4 }.into()]
+            vec![ConstCost { steps: 11, holes: 0, range_checks: 4, range_checks96: 0 }.into()]
         }
         Uint128Concrete::GuaranteeMul(_) => {
             vec![ConstCost::steps(1).into()]
         }
         Uint128Concrete::MulGuaranteeVerify(_) => {
-            vec![ConstCost { steps: 23, holes: 0, range_checks: 9 }.into()]
+            vec![ConstCost { steps: 23, holes: 0, range_checks: 9, range_checks96: 0 }.into()]
         }
         Uint128Concrete::Const(_) | Uint128Concrete::ToFelt252(_) => {
             vec![ConstCost::default().into()]
         }
         Uint128Concrete::FromFelt252(_) => {
             vec![
-                ConstCost { steps: 2, holes: 0, range_checks: 1 }.into(),
-                ConstCost { steps: 11, holes: 0, range_checks: 3 }.into(),
+                ConstCost { steps: 2, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
+                ConstCost { steps: 11, holes: 0, range_checks: 3, range_checks96: 0 }.into(),
             ]
         }
         Uint128Concrete::IsZero(_) => {
@@ -744,7 +802,7 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
             vec![ConstCost::steps(2).into(), ConstCost::steps(3).into()]
         }
         Uint128Concrete::SquareRoot(_) => {
-            vec![ConstCost { steps: 9, holes: 0, range_checks: 4 }.into()]
+            vec![ConstCost { steps: 9, holes: 0, range_checks: 4, range_checks96: 0 }.into()]
         }
         Uint128Concrete::Bitwise(_) => {
             vec![BranchCost::Regular {
@@ -766,11 +824,15 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
         Uint256Concrete::IsZero(_) => {
             vec![steps(2), steps(2)]
         }
-        Uint256Concrete::Divmod(_) => vec![ConstCost { steps: 26, holes: 0, range_checks: 6 }],
-        Uint256Concrete::SquareRoot(_) => vec![ConstCost { steps: 30, holes: 0, range_checks: 7 }],
+        Uint256Concrete::Divmod(_) => {
+            vec![ConstCost { steps: 26, holes: 0, range_checks: 6, range_checks96: 0 }]
+        }
+        Uint256Concrete::SquareRoot(_) => {
+            vec![ConstCost { steps: 30, holes: 0, range_checks: 7, range_checks96: 0 }]
+        }
         Uint256Concrete::InvModN(_) => vec![
-            ConstCost { steps: 40, holes: 0, range_checks: 9 },
-            ConstCost { steps: 25, holes: 0, range_checks: 7 },
+            ConstCost { steps: 40, holes: 0, range_checks: 9, range_checks96: 0 },
+            ConstCost { steps: 25, holes: 0, range_checks: 7, range_checks96: 0 },
         ],
     }
 }
@@ -778,7 +840,9 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
 /// Returns costs for u512 libfuncs.
 fn u512_libfunc_cost(libfunc: &Uint512Concrete) -> Vec<ConstCost> {
     match libfunc {
-        Uint512Concrete::DivModU256(_) => vec![ConstCost { steps: 47, holes: 0, range_checks: 12 }],
+        Uint512Concrete::DivModU256(_) => {
+            vec![ConstCost { steps: 47, holes: 0, range_checks: 12, range_checks96: 0 }]
+        }
     }
 }
 
@@ -795,19 +859,19 @@ fn sint_libfunc_cost<TSintTraits: SintTraits + IsZeroTraits + IntMulTraits>(
         }
         SintConcrete::FromFelt252(_) => {
             vec![
-                ConstCost { steps: 5, holes: 0, range_checks: 2 }.into(),
-                ConstCost { steps: 10, holes: 0, range_checks: 3 }.into(),
+                ConstCost { steps: 5, holes: 0, range_checks: 2, range_checks96: 0 }.into(),
+                ConstCost { steps: 10, holes: 0, range_checks: 3, range_checks96: 0 }.into(),
             ]
         }
         SintConcrete::IsZero(_) => vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()],
         SintConcrete::Operation(_) => vec![
-            ConstCost { steps: 6, holes: 0, range_checks: 2 }.into(),
-            ConstCost { steps: 6, holes: 0, range_checks: 1 }.into(),
-            ConstCost { steps: 6, holes: 0, range_checks: 1 }.into(),
+            ConstCost { steps: 6, holes: 0, range_checks: 2, range_checks96: 0 }.into(),
+            ConstCost { steps: 6, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
+            ConstCost { steps: 6, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
         ],
         SintConcrete::Diff(_) => vec![
-            (ConstCost { steps: 3, holes: 0, range_checks: 1 }).into(),
-            (ConstCost { steps: 5, holes: 0, range_checks: 1 }).into(),
+            (ConstCost { steps: 3, holes: 0, range_checks: 1, range_checks96: 0 }).into(),
+            (ConstCost { steps: 5, holes: 0, range_checks: 1, range_checks96: 0 }).into(),
         ],
     }
 }
@@ -821,8 +885,8 @@ fn s128_libfunc_cost(libfunc: &Sint128Concrete) -> Vec<BranchCost> {
         }
         Sint128Concrete::FromFelt252(_) => {
             vec![
-                ConstCost { steps: 3, holes: 0, range_checks: 1 }.into(),
-                ConstCost { steps: 10, holes: 0, range_checks: 3 }.into(),
+                ConstCost { steps: 3, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
+                ConstCost { steps: 10, holes: 0, range_checks: 3, range_checks96: 0 }.into(),
             ]
         }
         Sint128Concrete::IsZero(_) => {
@@ -832,13 +896,13 @@ fn s128_libfunc_cost(libfunc: &Sint128Concrete) -> Vec<BranchCost> {
             vec![steps(2).into(), steps(3).into()]
         }
         Sint128Concrete::Operation(_) => vec![
-            ConstCost { steps: 4, holes: 0, range_checks: 1 }.into(),
-            ConstCost { steps: 6, holes: 0, range_checks: 1 }.into(),
-            ConstCost { steps: 6, holes: 0, range_checks: 1 }.into(),
+            ConstCost { steps: 4, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
+            ConstCost { steps: 6, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
+            ConstCost { steps: 6, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
         ],
         Sint128Concrete::Diff(_) => vec![
-            ConstCost { steps: 3, holes: 0, range_checks: 1 }.into(),
-            ConstCost { steps: 5, holes: 0, range_checks: 1 }.into(),
+            ConstCost { steps: 3, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
+            ConstCost { steps: 5, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
         ],
     }
 }

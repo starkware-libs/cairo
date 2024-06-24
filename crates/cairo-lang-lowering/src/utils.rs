@@ -1,5 +1,6 @@
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
+use crate::ids::LocationId;
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
     MatchInfo, Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
@@ -11,7 +12,13 @@ use crate::{
 pub trait Rebuilder {
     fn map_var_id(&mut self, var: VariableId) -> VariableId;
     fn map_var_usage(&mut self, var_usage: VarUsage) -> VarUsage {
-        VarUsage { var_id: self.map_var_id(var_usage.var_id), location: var_usage.location }
+        VarUsage {
+            var_id: self.map_var_id(var_usage.var_id),
+            location: self.map_location(var_usage.location),
+        }
+    }
+    fn map_location(&mut self, location: LocationId) -> LocationId {
+        location
     }
     fn map_block_id(&mut self, block: BlockId) -> BlockId;
     fn transform_statement(&mut self, _statement: &mut Statement) {}
@@ -33,7 +40,7 @@ pub trait RebuilderEx: Rebuilder {
                 inputs: stmt.inputs.iter().map(|v| self.map_var_usage(*v)).collect(),
                 with_coupon: stmt.with_coupon,
                 outputs: stmt.outputs.iter().map(|v| self.map_var_id(*v)).collect(),
-                location: stmt.location,
+                location: self.map_location(stmt.location),
             }),
             Statement::StructConstruct(stmt) => {
                 Statement::StructConstruct(StatementStructConstruct {
@@ -82,7 +89,7 @@ pub trait RebuilderEx: Rebuilder {
         let mut end = match end {
             FlatBlockEnd::Return(returns, location) => FlatBlockEnd::Return(
                 returns.iter().map(|var_usage| self.map_var_usage(*var_usage)).collect(),
-                *location,
+                self.map_location(*location),
             ),
             FlatBlockEnd::Panic(data) => FlatBlockEnd::Panic(self.map_var_usage(*data)),
             FlatBlockEnd::Goto(block_id, remapping) => {
@@ -107,7 +114,7 @@ pub trait RebuilderEx: Rebuilder {
                                     .collect(),
                             })
                             .collect(),
-                        location: stmt.location,
+                        location: self.map_location(stmt.location),
                     }),
                     MatchInfo::Enum(stmt) => MatchInfo::Enum(MatchEnumInfo {
                         concrete_enum_id: stmt.concrete_enum_id,
@@ -125,7 +132,7 @@ pub trait RebuilderEx: Rebuilder {
                                     .collect(),
                             })
                             .collect(),
-                        location: stmt.location,
+                        location: self.map_location(stmt.location),
                     }),
                     MatchInfo::Value(stmt) => MatchInfo::Value(MatchEnumValue {
                         num_of_arms: stmt.num_of_arms,
@@ -143,7 +150,7 @@ pub trait RebuilderEx: Rebuilder {
                                     .collect(),
                             })
                             .collect(),
-                        location: stmt.location,
+                        location: self.map_location(stmt.location),
                     }),
                 },
             },

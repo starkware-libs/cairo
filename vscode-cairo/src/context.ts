@@ -5,7 +5,7 @@ import { RootLogOutputChannel } from "./logging";
 export class Context {
   public static create(extensionContext: vscode.ExtensionContext): Context {
     const log = new RootLogOutputChannel(
-      vscode.window.createOutputChannel("Cairo Extension", {
+      vscode.window.createOutputChannel("Cairo", {
         log: true,
       }),
     );

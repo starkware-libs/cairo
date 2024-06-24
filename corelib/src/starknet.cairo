@@ -60,7 +60,7 @@ mod info;
 pub use info::{
     v2::ExecutionInfo as ExecutionInfo, BlockInfo, v2::TxInfo as TxInfo, get_execution_info,
     get_caller_address, get_contract_address, get_block_info, get_tx_info, get_block_timestamp,
-    get_block_number
+    get_block_number, v2::ResourceBounds as ResourcesBounds
 };
 
 pub mod event;

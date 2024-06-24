@@ -22,6 +22,7 @@ pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
+use syntax::node::helpers::QueryAttrs;
 use syntax::node::TypedStablePtr;
 
 use crate::corelib::{core_submodule, get_submodule};
@@ -33,15 +34,18 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
-use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue};
+use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ImplConstantId};
 use crate::items::enm::SemanticEnumEx;
-use crate::items::feature_kind::FeatureKind;
+use crate::items::feature_kind::{extract_allowed_features, FeatureKind};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
-use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
+use crate::items::imp::{
+    ConcreteImplId, ConcreteImplLongId, ImplImplId, ImplLongId, ImplLookupContext,
+};
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
-    ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTraitTypeId,
+    ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
+    ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
 use crate::items::{visibility, TraitOrImplContext};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
@@ -157,6 +161,19 @@ impl Deref for Resolver<'_> {
 impl DerefMut for Resolver<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.data
+    }
+}
+impl Resolver<'_> {
+    /// Extracts the allowed node from the syntax, and sets it as the allowed features of the
+    /// resolver.
+    pub fn set_allowed_features(
+        &mut self,
+        element_id: &impl LanguageElementId,
+        syntax: &impl QueryAttrs,
+        diagnostics: &mut SemanticDiagnostics,
+    ) {
+        self.allowed_features =
+            extract_allowed_features(self.db.upcast(), element_id, syntax, diagnostics);
     }
 }
 
@@ -597,20 +614,11 @@ impl<'db> Resolver<'db> {
                             }
                         }
                         let impl_lookup_context = self.impl_lookup_context();
-                        let generic_function = self
-                            .inference()
-                            .infer_trait_generic_function(
-                                concrete_trait_function,
-                                &impl_lookup_context,
-                                Some(identifier_stable_ptr),
-                            )
-                            .map_err(|err_set| {
-                                self.inference().report_on_pending_error(
-                                    err_set,
-                                    diagnostics,
-                                    identifier.stable_ptr().untyped(),
-                                )
-                            })?;
+                        let generic_function = self.inference().infer_trait_generic_function(
+                            concrete_trait_function,
+                            &impl_lookup_context,
+                            Some(identifier_stable_ptr),
+                        );
 
                         Ok(ResolvedConcreteItem::Function(self.specialize_function(
                             diagnostics,
@@ -632,26 +640,76 @@ impl<'db> Resolver<'db> {
 
                         let impl_lookup_context = self.impl_lookup_context();
                         let identifier_stable_ptr = identifier.stable_ptr().untyped();
-                        let ty = self
-                            .inference()
-                            .infer_trait_type(
-                                concrete_trait_type,
-                                &impl_lookup_context,
-                                Some(identifier_stable_ptr),
-                            )
-                            .map_err(|err_set| {
-                                self.inference().report_on_pending_error(
-                                    err_set,
-                                    diagnostics,
-                                    identifier_stable_ptr,
-                                )
-                            })?;
+                        let ty = self.inference().infer_trait_type(
+                            concrete_trait_type,
+                            &impl_lookup_context,
+                            Some(identifier_stable_ptr),
+                        );
                         Ok(ResolvedConcreteItem::Type(self.inference().rewrite(ty).no_err()))
                     }
-                    TraitItemId::Constant(_trait_constant_id) => {
-                        // TODO(TomerStarkware): resolve trait constants when impl constants are
-                        // supported.
-                        Err(diagnostics.report(identifier, Unsupported))
+                    TraitItemId::Constant(trait_constant_id) => {
+                        let concrete_trait_constant = ConcreteTraitConstantLongId::new(
+                            self.db,
+                            *concrete_trait_id,
+                            trait_constant_id,
+                        )
+                        .intern(self.db);
+
+                        if let TraitOrImplContext::Trait(ctx_trait_id) = &self.trait_or_impl_ctx {
+                            if trait_id == *ctx_trait_id {
+                                return Ok(ResolvedConcreteItem::Constant(
+                                    ConstValue::TraitConstant(trait_constant_id).intern(self.db),
+                                ));
+                            }
+                        }
+
+                        let impl_lookup_context = self.impl_lookup_context();
+                        let identifier_stable_ptr = identifier.stable_ptr().untyped();
+                        let imp_constant_id = self.inference().infer_trait_constant(
+                            concrete_trait_constant,
+                            &impl_lookup_context,
+                            Some(identifier_stable_ptr),
+                        );
+                        // Make sure the inference is solved for successful impl lookup
+                        // Ignore the result of the `solve()` call - the error, if any, will be
+                        // reported later.
+                        self.inference().solve().ok();
+
+                        Ok(ResolvedConcreteItem::Constant(
+                            ConstValue::ImplConstant(imp_constant_id).intern(self.db),
+                        ))
+                    }
+                    TraitItemId::Impl(trait_impl_id) => {
+                        let concrete_trait_impl = ConcreteTraitImplLongId::new(
+                            self.db,
+                            *concrete_trait_id,
+                            trait_impl_id,
+                        )
+                        .intern(self.db);
+
+                        if let TraitOrImplContext::Trait(ctx_trait_id) = &self.trait_or_impl_ctx {
+                            if trait_id == *ctx_trait_id {
+                                return Ok(ResolvedConcreteItem::Impl(
+                                    ImplLongId::TraitImpl(trait_impl_id).intern(self.db),
+                                ));
+                            }
+                        }
+
+                        let impl_lookup_context = self.impl_lookup_context();
+                        let identifier_stable_ptr = identifier.stable_ptr().untyped();
+                        let impl_impl_id = self.inference().infer_trait_impl(
+                            concrete_trait_impl,
+                            &impl_lookup_context,
+                            Some(identifier_stable_ptr),
+                        );
+                        // Make sure the inference is solved for successful impl lookup
+                        // Ignore the result of the `solve()` call - the error, if any, will be
+                        // reported later.
+                        self.inference().solve().ok();
+
+                        Ok(ResolvedConcreteItem::Impl(
+                            ImplLongId::ImplImpl(impl_impl_id).intern(self.db),
+                        ))
                     }
                 }
             }
@@ -684,8 +742,25 @@ impl<'db> Resolver<'db> {
                             .unwrap_or_else(|_| TypeLongId::ImplType(impl_type_id).intern(self.db));
                         Ok(ResolvedConcreteItem::Type(ty))
                     }
-                    TraitItemId::Constant(_trait_constant_id) => {
-                        Err(diagnostics.report(identifier, Unsupported))
+                    TraitItemId::Constant(trait_constant_id) => {
+                        let impl_constant_id =
+                            ImplConstantId::new(*impl_id, trait_constant_id, self.db);
+
+                        let constant =
+                            self.inference().reduce_impl_constant(impl_constant_id).unwrap_or_else(
+                                |_| ConstValue::ImplConstant(impl_constant_id).intern(self.db),
+                            );
+
+                        Ok(ResolvedConcreteItem::Constant(constant))
+                    }
+                    TraitItemId::Impl(trait_impl_id) => {
+                        let impl_impl_id = ImplImplId::new(*impl_id, trait_impl_id, self.db);
+                        let imp = self
+                            .inference()
+                            .reduce_impl_impl(impl_impl_id)
+                            .unwrap_or_else(|_| ImplLongId::ImplImpl(impl_impl_id).intern(self.db));
+
+                        Ok(ResolvedConcreteItem::Impl(imp))
                     }
                 }
             }
@@ -714,7 +789,9 @@ impl<'db> Resolver<'db> {
         generic_args_syntax: Option<Vec<ast::GenericArg>>,
     ) -> Maybe<ResolvedConcreteItem> {
         Ok(match generic_item {
-            ResolvedGenericItem::Constant(id) => ResolvedConcreteItem::Constant(id),
+            ResolvedGenericItem::GenericConstant(id) => {
+                ResolvedConcreteItem::Constant(self.db.constant_const_value(id)?.intern(self.db))
+            }
             ResolvedGenericItem::Module(module_id) => {
                 if generic_args_syntax.is_some() {
                     return Err(diagnostics.report(identifier, UnexpectedGenericArgs));
@@ -774,14 +851,15 @@ impl<'db> Resolver<'db> {
                     &generic_args_syntax.unwrap_or_default(),
                 )?)
             }
-            ResolvedGenericItem::Impl(impl_def_id) => {
-                ResolvedConcreteItem::Impl(ImplId::Concrete(self.specialize_impl(
+            ResolvedGenericItem::Impl(impl_def_id) => ResolvedConcreteItem::Impl(
+                ImplLongId::Concrete(self.specialize_impl(
                     diagnostics,
                     identifier.stable_ptr().untyped(),
                     impl_def_id,
                     &generic_args_syntax.unwrap_or_default(),
-                )?))
-            }
+                )?)
+                .intern(self.db),
+            ),
             ResolvedGenericItem::Variant(_) => panic!("Variant is not a module item."),
             ResolvedGenericItem::TraitFunction(_) => panic!("TraitFunction is not a module item."),
             ResolvedGenericItem::Variable(_) => panic!("Variable is not a module item."),
@@ -836,12 +914,12 @@ impl<'db> Resolver<'db> {
                 GenericKind::Type => ResolvedConcreteItem::Type(
                     TypeLongId::GenericParameter(*generic_param_id).intern(self.db),
                 ),
-                GenericKind::Const => {
-                    ResolvedConcreteItem::ConstGenericParameter(*generic_param_id)
-                }
-                GenericKind::Impl => {
-                    ResolvedConcreteItem::Impl(ImplId::GenericParameter(*generic_param_id))
-                }
+                GenericKind::Const => ResolvedConcreteItem::Constant(
+                    ConstValue::Generic(*generic_param_id).intern(self.db),
+                ),
+                GenericKind::Impl => ResolvedConcreteItem::Impl(
+                    ImplLongId::GenericParameter(*generic_param_id).intern(self.db),
+                ),
                 GenericKind::NegImpl => return None,
             };
             return Some(item);
@@ -965,7 +1043,19 @@ impl<'db> Resolver<'db> {
     }
 
     pub fn impl_lookup_context(&self) -> ImplLookupContext {
-        ImplLookupContext::new(self.module_file_id.0, self.generic_params.clone())
+        let mut lookup_context =
+            ImplLookupContext::new(self.module_file_id.0, self.generic_params.clone());
+
+        if let TraitOrImplContext::Impl(impl_def_id) = &self.trait_or_impl_ctx {
+            let Ok(generic_params) = self.db.impl_def_generic_params(*impl_def_id) else {
+                return lookup_context;
+            };
+            let generic_args = generic_params_to_args(generic_params.as_slice(), self.db);
+            let impl_id: ConcreteImplId =
+                ConcreteImplLongId { impl_def_id: *impl_def_id, generic_args }.intern(self.db);
+            lookup_context.insert_impl(ImplLongId::Concrete(impl_id).intern(self.db));
+        }
+        lookup_context
     }
 
     pub fn resolve_generic_args(
@@ -1093,18 +1183,23 @@ impl<'db> Resolver<'db> {
                 // to inference finalization and use inference here. This will become more relevant
                 // when we support constant expressions, which need inference.
                 let environment = Environment::empty();
-                let mut resolver =
-                    Resolver::new(self.db, self.module_file_id, InferenceId::Canonical);
 
-                for param in self.generic_params.iter() {
-                    resolver.add_generic_param(*param);
-                }
+                // Using the resolver's data in the constant computation context, so impl vars are
+                // added to the correct inference.
+                let mut resolver_data =
+                    ResolverData::new(self.module_file_id, self.inference_data.inference_id);
+                std::mem::swap(&mut self.data, &mut resolver_data);
 
-                let mut ctx =
-                    ComputationContext::new(self.db, diagnostics, resolver, None, environment);
+                let mut ctx = ComputationContext::new(
+                    self.db,
+                    diagnostics,
+                    Resolver::with_data(self.db, resolver_data),
+                    None,
+                    environment,
+                );
                 let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
 
-                let (_, const_value) = resolve_const_expr_and_evaluate(
+                let const_value = resolve_const_expr_and_evaluate(
                     self.db,
                     &mut ctx,
                     &value,
@@ -1112,16 +1207,10 @@ impl<'db> Resolver<'db> {
                     const_param.ty,
                 );
 
-                match const_value {
-                    ConstValue::Int(value) => {
-                        GenericArgumentId::Constant(ConstValue::Int(value).intern(self.db))
-                    }
-                    ConstValue::Generic(generic_param_id) => GenericArgumentId::Constant(
-                        ConstValue::Generic(generic_param_id).intern(self.db),
-                    ),
-                    ConstValue::Missing(err) => return Err(err),
-                    _ => unreachable!("Invalid const value."),
-                }
+                // Update `self` data with const_eval_resolver's data.
+                std::mem::swap(&mut ctx.resolver.data, &mut self.data);
+
+                GenericArgumentId::Constant(const_value.intern(self.db))
             }
 
             GenericParam::Impl(param) => {
@@ -1184,8 +1273,13 @@ impl<'db> Resolver<'db> {
             }
         }
         match &item_info.feature_kind {
-            FeatureKind::Unstable(feature) if !self.data.allowed_features.contains(feature) => {
-                diagnostics.report(identifier, UnstableFeature(feature.clone()));
+            FeatureKind::Unstable { feature, note }
+                if !self.data.allowed_features.contains(feature) =>
+            {
+                diagnostics.report(
+                    identifier,
+                    UnstableFeature { feature_name: feature.clone(), note: note.clone() },
+                );
             }
             FeatureKind::Deprecated { feature, note }
                 if !self.data.allowed_features.contains(feature) =>
@@ -1238,9 +1332,11 @@ impl<'db> Resolver<'db> {
             ResolvedConcreteItem::Impl(current_segment_impl_id) => {
                 if let TraitOrImplContext::Impl(ctx_impl) = self.trait_or_impl_ctx {
                     // A ResolvedConcreteItem::Impl returned by
-                    // `specialize_generic_module_item` must be ImplId::Concrete.
-                    let current_segment_concrete_impl_id =
-                        extract_matches!(current_segment_impl_id, ImplId::Concrete);
+                    // `specialize_generic_module_item` must be ImplLongId::Concrete.
+                    let current_segment_concrete_impl_id = extract_matches!(
+                        current_segment_impl_id.lookup_intern(self.db),
+                        ImplLongId::Concrete
+                    );
                     self.warn_impl_in_same_impl(
                         diagnostics,
                         current_segment_concrete_impl_id.impl_def_id(self.db),
@@ -1401,14 +1497,14 @@ fn resolve_actual_self_segment(
         }
         TraitOrImplContext::Impl(impl_def_id) => {
             let generic_parameters = db.impl_def_generic_params(*impl_def_id)?;
-            let impl_id = ImplId::Concrete(
+            let impl_id = ImplLongId::Concrete(
                 ConcreteImplLongId {
                     impl_def_id: *impl_def_id,
                     generic_args: generic_params_to_args(&generic_parameters, db),
                 }
                 .intern(db),
             );
-            Ok(ResolvedConcreteItem::Impl(impl_id))
+            Ok(ResolvedConcreteItem::Impl(impl_id.intern(db)))
         }
     }
 }

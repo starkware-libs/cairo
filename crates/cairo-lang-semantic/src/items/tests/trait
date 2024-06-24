@@ -102,16 +102,6 @@ error: `trait` is not allowed inside impl.
     trait DummyTrait;
     ^***^
 
-error: Impl items are not yet supported in impls.
- --> lib.cairo:15:5
-    impl DummyImpl1 = MyImpl;
-    ^**^
-
-error: Impl items are not yet supported in impls.
- --> lib.cairo:16:5
-    impl DummyImpl2 of MyTrait::<T>;
-    ^**^
-
 error: `struct` is not allowed inside impl.
  --> lib.cairo:18:5
     struct DummyStruct {}
@@ -166,6 +156,21 @@ error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `M
  --> lib.cairo:30:31
     fn no_ret_ty(ref a: u128) {
                               ^
+
+error: Impl item impl `MyImpl2::DummyImpl1` is not a member of trait `MyTrait`.
+ --> lib.cairo:15:5
+    impl DummyImpl1 = MyImpl;
+    ^***********************^
+
+error: Impl item impl `MyImpl2::DummyImpl2` is not a member of trait `MyTrait`.
+ --> lib.cairo:16:5
+    impl DummyImpl2 of MyTrait::<T>;
+    ^*************^
+
+error: Impl not found.
+ --> lib.cairo:16:21
+    impl DummyImpl2 of MyTrait::<T>;
+                    ^
 
 error: Not a trait.
  --> lib.cairo:35:13
@@ -449,12 +454,13 @@ trait MyTrait {
     fn foo2();
     type X;
     const C: u32;
+    impl Z: Self;
 }
 impl MyImpl of MyTrait;
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X', 'C'.
- --> lib.cairo:7:6
+error: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X', 'C', 'Z'.
+ --> lib.cairo:8:6
 impl MyImpl of MyTrait;
      ^****^
 
@@ -480,16 +486,19 @@ trait MyTrait {
     type Y;
     const C: u32;
     const D: u32;
+    impl E: Self;
+    impl F: Self;
 }
 impl MyImpl of MyTrait {
-    fn foo2() {}
     type X = u32;
     const C: u32 = 3;
+    impl E = Self;
+    fn foo2() {}
 }
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D'.
- --> lib.cairo:10:6
+error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D', 'F'.
+ --> lib.cairo:12:6
 impl MyImpl of MyTrait {
      ^****^
 
@@ -509,26 +518,32 @@ foo
 //! > module_code
 trait MyTrait {}
 impl MyImpl of MyTrait {
-    fn bar() {}
     type X = u32;
     const C: u32 = 3;
+    impl E = Self;
+    fn bar() {}
 }
 
 //! > expected_diagnostics
 error: Impl item function `MyImpl::bar` is not a member of trait `MyTrait`.
- --> lib.cairo:3:5
+ --> lib.cairo:6:5
     fn bar() {}
     ^*********^
 
 error: Impl item type `MyImpl::X` is not a member of trait `MyTrait`.
- --> lib.cairo:4:5
+ --> lib.cairo:3:5
     type X = u32;
     ^***********^
 
 error: Impl item const `MyImpl::C` is not a member of trait `MyTrait`.
- --> lib.cairo:5:5
+ --> lib.cairo:4:5
     const C: u32 = 3;
     ^***************^
+
+error: Impl item impl `MyImpl::E` is not a member of trait `MyTrait`.
+ --> lib.cairo:5:5
+    impl E = Self;
+    ^************^
 
 //! > ==========================================================================
 
@@ -731,6 +746,45 @@ error: The name `X` is defined multiple times.
 
 //! > ==========================================================================
 
+//! > trait/impl impl declared twice.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bla() {}
+
+//! > function_name
+bla
+
+//! > module_code
+trait MyTrait<T> {
+    impl X: MyTrait<u32>;
+    impl X: MyTrait<i32>;
+}
+impl MyImpl<T> of MyTrait<T> {
+    impl X = MyImpl<u32>;
+    impl X = MyImpl<i32>;
+}
+
+//! > expected_diagnostics
+error: The name `X` is defined multiple times.
+ --> lib.cairo:3:10
+    impl X: MyTrait<i32>;
+         ^
+
+error: The name `X` is defined multiple times.
+ --> lib.cairo:7:10
+    impl X = MyImpl<i32>;
+         ^
+
+error: Expected an impl of `test::MyTrait::<core::integer::i32>`. Got an impl of `test::MyTrait::<core::integer::u32>`.
+ --> lib.cairo:6:5
+    impl X = MyImpl<u32>;
+    ^*******************^
+
+//! > ==========================================================================
+
 //! > trait/impl function declared twice.
 
 //! > test_runner_name
@@ -812,60 +866,6 @@ impl imp4 of inner_imp {}
 
 //! > ==========================================================================
 
-//! > Test unsupported items in trait/impl.
-
-//! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
-
-//! > function
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type X<T>;
-    impl Z of OtherTrait;
-    const Y: u32;
-}
-impl MyImpl of MyTrait {
-    type X = u32;
-    type XX<T> = Array<T>;
-    impl Z = OtherImpl;
-}
-
-trait OtherTrait {}
-impl OtherImpl of OtherTrait {}
-
-//! > expected_diagnostics
-error: Impl items are not yet supported in traits.
- --> lib.cairo:3:5
-    impl Z of OtherTrait;
-    ^**^
-
-error: Generic parameters are not supported in Trait item type.
- --> lib.cairo:2:11
-    type X<T>;
-          ^*^
-
-error: Impl items are not yet supported in impls.
- --> lib.cairo:9:5
-    impl Z = OtherImpl;
-    ^**^
-
-error: Not all trait items are implemented. Missing: 'Y'.
- --> lib.cairo:6:6
-impl MyImpl of MyTrait {
-     ^****^
-
-error: Impl item type `MyImpl::XX` is not a member of trait `MyTrait`.
- --> lib.cairo:8:5
-    type XX<T> = Array<T>;
-    ^********************^
-
-//! > ==========================================================================
-
 //! > Test type items in trait/impl.
 
 //! > test_runner_name
@@ -903,46 +903,17 @@ foo
 //! > module_code
 trait MyTrait {
     const X: u32;
-}
-
-impl MyImpl of MyTrait {
-    const X: u32 = 3;
-}
-
-//! > expected_diagnostics
-
-//! > ==========================================================================
-
-//! > Test unsupported const usage.
-
-//! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
-
-//! > function
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    const X: u32;
     fn foo() -> u32;
 }
 
 impl MyImpl of MyTrait {
     const X: u32 = 3;
     fn foo() -> u32 {
-        ///TODO(TomerStarkware): remove diagnostic when impl const are resolved.
         Self::X
     }
 }
 
 //! > expected_diagnostics
-error: Unsupported feature.
- --> lib.cairo:10:15
-        Self::X
-              ^
 
 //! > ==========================================================================
 
@@ -1077,3 +1048,168 @@ error: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait:
  --> lib.cairo:5:31
     fn foo(x: u32, y: u32) -> u32 {
                               ^*^
+
+//! > ==========================================================================
+
+//! > Type in IntoIterator Trait implementation do not Have implementation for Iterator Trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+pub struct Foo {}
+pub struct FooIter {}
+
+#[feature("collections-into-iter")]
+impl FooIntoIterator of core::iter::IntoIterator<Foo> {
+    type IntoIter = FooIter;
+
+    fn into_iter(self: Foo) -> FooIter {
+        FooIter {}
+    }
+}
+
+//! > expected_diagnostics
+error: Invalid into iterator trait implementation, Trait has no implementation in context: core::iter::traits::iterator::Iterator::<test::FooIter>.
+ --> lib.cairo:7:5
+    type IntoIter = FooIter;
+    ^**********************^
+
+//! > ==========================================================================
+
+//! > Deref trait cycle of two impls.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {}
+struct B {}
+
+impl ADeref of core::ops::Deref<A> {
+    type Target = B;
+    fn deref(self: A) -> B {
+        B {}
+    }
+}
+
+impl BDeref of core::ops::Deref<B> {
+    type Target = A;
+    fn deref(self: B) -> A {
+        A {}
+    }
+}
+
+//! > expected_diagnostics
+error: Deref impls cycle detected:
+core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::A>
+ --> lib.cairo:11:1
+impl BDeref of core::ops::Deref<B> {
+^**********************************^
+
+error: Deref impls cycle detected:
+core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B>
+ --> lib.cairo:4:1
+impl ADeref of core::ops::Deref<A> {
+^**********************************^
+
+//! > ==========================================================================
+
+//! > Deref trait cycle of three impls.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {}
+struct B {}
+struct C {}
+
+impl ADeref of core::ops::Deref<A> {
+    type Target = B;
+    fn deref(self: A) -> B {
+        B {}
+    }
+}
+
+impl BDeref of core::ops::Deref<B> {
+    type Target = C;
+    fn deref(self: B) -> C {
+        C {}
+    }
+}
+
+impl CDeref of core::ops::Deref<C> {
+    type Target = A;
+    fn deref(self: C) -> A {
+        A {}
+    }
+}
+
+//! > expected_diagnostics
+error: Deref impls cycle detected:
+core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A>
+ --> lib.cairo:12:1
+impl BDeref of core::ops::Deref<B> {
+^**********************************^
+
+error: Deref impls cycle detected:
+core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B>
+ --> lib.cairo:19:1
+impl CDeref of core::ops::Deref<C> {
+^**********************************^
+
+error: Deref impls cycle detected:
+core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C>
+ --> lib.cairo:5:1
+impl ADeref of core::ops::Deref<A> {
+^**********************************^
+
+//! > ==========================================================================
+
+//! > Inferring impl var from struct generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: *)
+
+//! > function
+fn foo1() -> felt252 {
+    2
+}
+
+//! > function_name
+foo1
+
+//! > module_code
+pub trait Tr {}
+impl I0 of Tr {}
+
+struct A<impl I: Tr> {}
+
+fn foo<impl I: Tr>(x: A<I>) -> A<I> {
+    x
+}
+fn bar<impl I: Tr>(x: A<I>) -> A<I> {
+    foo(x)
+}
+
+//! > expected_diagnostics

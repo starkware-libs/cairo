@@ -21,14 +21,15 @@ pub trait ERC20Trait<TCS> {
 pub mod erc20 {
     use starknet::{ContractAddress, get_caller_address, contract_address_const};
     use core::num::traits::Zero;
+    use starknet::storage::Map;
     #[storage]
     struct Storage {
         name: felt252,
         symbol: felt252,
         decimals: u8,
         total_supply: u256,
-        balances: LegacyMap::<ContractAddress, u256>,
-        allowances: LegacyMap::<(ContractAddress, ContractAddress), u256>,
+        balances: Map::<ContractAddress, u256>,
+        allowances: Map::<(ContractAddress, ContractAddress), u256>,
     }
 
     #[event]

@@ -27,8 +27,7 @@ export class Scarb implements LanguageServerExecutableProvider {
     workspaceFolder: vscode.WorkspaceFolder | undefined,
     ctx: Context,
   ): Promise<Scarb> {
-    const path =
-      (await fromConfig()) || (await fromPath()) || (await fromAsdf());
+    const path = (await fromConfig()) || (await fromPath()) || (await fromAsdf());
     if (!path) {
       throw new Error("could not find Scarb executable on this machine");
     }
@@ -103,10 +102,7 @@ export class Scarb implements LanguageServerExecutableProvider {
       .some((commands: Record<string, unknown>) => !!commands[command]);
   }
 
-  private async execWithOutput(
-    args: readonly string[],
-    ctx: Context,
-  ): Promise<string> {
+  private async execWithOutput(args: readonly string[], ctx: Context): Promise<string> {
     const log = ctx.log.span(`scarb[${globalExecId++}]`);
 
     log.trace(`${this.path} ${args.join(" ")}`.trimEnd());
