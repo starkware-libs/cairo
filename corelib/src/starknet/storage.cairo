@@ -332,7 +332,7 @@ impl StorageAsPathWriteForward<
     }
 }
 
-/// A trait that binds a storage path to a struct, and the struct storage node (a storage node is a
+/// A trait that binds a storage path of a struct, and the struct storage node (a storage node is a
 /// struct that all its fields are storage paths, one for each member of the original struct).
 pub trait StorageNode<T> {
     type NodeType;
@@ -345,6 +345,43 @@ impl StorageNodeDeref<T, +StorageNode<T>> of core::ops::Deref<StoragePath<T>> {
         self.storage_node()
     }
 }
+
+/// Similar to storage node, but for structs which are stored sequentially in the storage. In
+/// contrast to storage node, the fields of the struct are just offseted from the base address of
+/// the struct.
+pub trait SubPointers<T> {
+    /// The type of the storage pointers, generated for the struct T.
+    type SubPointersType;
+    /// Creates a sub pointers struct for the given storage pointer to a struct T.
+    fn sub_pointers(self: StoragePointer<T>) -> Self::SubPointersType;
+}
+
+/// This makes the sub-pointers members directly accessible from a pointer to the parent struct.
+impl SubPointersDeref<T, +SubPointers<T>> of core::ops::Deref<StoragePointer<T>> {
+    type Target = SubPointers::<T>::SubPointersType;
+    fn deref(self: StoragePointer<T>) -> Self::Target {
+        self.sub_pointers()
+    }
+}
+
+/// Implement deref for storage paths that implements StorageAsPointer.
+impl StoragePathDeref<
+    T, impl PointerImpl: StorageAsPointer<StoragePath<T>>
+> of core::ops::Deref<StoragePath<T>> {
+    type Target = StoragePointer0Offset<PointerImpl::Value>;
+    fn deref(self: StoragePath<T>) -> StoragePointer0Offset<PointerImpl::Value> {
+        self.as_ptr()
+    }
+}
+
+/// Implement deref for StoragePointer0Offset into a StoragePointer.
+impl StoragePointer0OffsetDeref<T> of core::ops::Deref<StoragePointer0Offset<T>> {
+    type Target = StoragePointer<T>;
+    fn deref(self: StoragePointer0Offset<T>) -> StoragePointer<T> {
+        StoragePointer::<T> { address: self.address, offset: 0 }
+    }
+}
+
 
 /// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
 struct PendingStoragePath<T> {
@@ -478,4 +515,27 @@ trait MutableTrait<T> {
 
 impl MutableImpl<T> of MutableTrait<Mutable<T>> {
     type InnerType = T;
+}
+
+/// Implementation of SubPointers for core types.
+#[derive(Drop, Copy)]
+struct u256SubPointers {
+    low: starknet::storage::StoragePointer<u128>,
+    high: starknet::storage::StoragePointer<u128>,
+}
+impl u256SubPointersImpl of starknet::storage::SubPointers<u256> {
+    type SubPointersType = u256SubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<u256>) -> u256SubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let low_value = starknet::storage::StoragePointer::<
+            u128
+        > { address: base_address, offset: current_offset, };
+        current_offset = current_offset + starknet::Store::<u128>::size();
+        let high_value = starknet::storage::StoragePointer::<
+            u128
+        > { address: base_address, offset: current_offset, };
+
+        u256SubPointers { low: low_value, high: high_value, }
+    }
 }
