@@ -300,7 +300,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > Test unhandled Option.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -322,7 +322,7 @@ warning: Unhandled `#[must_use]` type `core::option::Option::<core::felt252>`
 //! > Test unhandled Result.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -344,7 +344,7 @@ warning: Unhandled `#[must_use]` type `core::result::Result::<core::felt252, cor
 //! > Test unhandled must use function.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -399,7 +399,7 @@ impl imp of trt {
 //! > Test unhandled must use trait function.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -430,7 +430,7 @@ warning: Unhandled `#[must_use]` function.
 //! > Test unhandled must use method.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
