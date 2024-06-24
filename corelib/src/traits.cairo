@@ -329,8 +329,15 @@ impl DefaultNext<
 impl FixedSizedArrayDrop<T, +Drop<T>, const N: u32> of Drop<[T; N]>;
 impl FixedSizedArrayCopy<T, +Copy<T>, const N: u32> of Copy<[T; N]>;
 
-impl Size2TupleDestruct<S, T, +Destruct<S>, +Destruct<T>, -Drop<(S, T)>> of Destruct<(S, T)> {
-    fn destruct(self: (S, T)) nopanic {
-        let (_, _) = self;
+/// Recursive implementation of `Destruct` for tuple style structs.
+impl TupleNextDestruct<
+    T,
+    impl TH: core::metaprogramming::TupleSplit<T>,
+    +Destruct<TH::Head>,
+    +Destruct<TH::Rest>,
+    -Drop<T>,
+> of Destruct<T> {
+    fn destruct(self: T) nopanic {
+        let (_head, _rest) = TH::split_head(self);
     }
 }
