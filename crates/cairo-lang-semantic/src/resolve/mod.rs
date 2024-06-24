@@ -1224,20 +1224,28 @@ impl<'db> Resolver<'db> {
             }
         }
         match &item_info.feature_kind {
-            FeatureKind::Unstable { feature, note }
+            FeatureKind::Unstable { feature, note, warn }
                 if !self.data.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
                     identifier,
-                    UnstableFeature { feature_name: feature.clone(), note: note.clone() },
+                    UnstableFeature {
+                        feature_name: feature.clone(),
+                        note: note.clone(),
+                        warn: *warn,
+                    },
                 );
             }
-            FeatureKind::Deprecated { feature, note }
+            FeatureKind::Deprecated { feature, note, warn }
                 if !self.data.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
                     identifier,
-                    DeprecatedFeature { feature_name: feature.clone(), note: note.clone() },
+                    DeprecatedFeature {
+                        feature_name: feature.clone(),
+                        note: note.clone(),
+                        warn: *warn,
+                    },
                 );
             }
             _ => {}

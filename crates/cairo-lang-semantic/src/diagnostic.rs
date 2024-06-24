@@ -422,14 +422,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnhandledMustUseFunction => {
                 "Unhandled `#[must_use]` function.".into()
             }
-            SemanticDiagnosticKind::UnstableFeature { feature_name, note } => {
+            SemanticDiagnosticKind::UnstableFeature { feature_name, note, .. } => {
                 format!(
                     "Usage of unstable feature `{feature_name}` with no \
                      `#[feature({feature_name})]` attribute.{}",
                     note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
                 )
             }
-            SemanticDiagnosticKind::DeprecatedFeature { feature_name, note } => {
+            SemanticDiagnosticKind::DeprecatedFeature { feature_name, note, .. } => {
                 format!(
                     "Usage of deprecated feature `{feature_name}` with no \
                      `#[feature({feature_name})]` attribute.{}",
@@ -448,6 +448,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 }
                 FeatureMarkerDiagnostic::DuplicatedArgument => {
                     "Duplicated argument for feature marker attribute.".into()
+                }
+                FeatureMarkerDiagnostic::UnsupportedBoolValue => {
+                    "bool type arguments must be either \"true\" or \"false\".".into()
                 }
             },
             SemanticDiagnosticKind::UnusedVariable => {
@@ -837,6 +840,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::TraitItemForbiddenInTheTrait
             | SemanticDiagnosticKind::TraitItemForbiddenInItsImpl
             | SemanticDiagnosticKind::ImplItemForbiddenInTheImpl => Severity::Warning,
+            SemanticDiagnosticKind::UnstableFeature { warn, .. } if *warn => Severity::Warning,
+            SemanticDiagnosticKind::DeprecatedFeature { warn, .. } if *warn => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -1017,10 +1022,12 @@ pub enum SemanticDiagnosticKind {
     UnstableFeature {
         feature_name: SmolStr,
         note: Option<SmolStr>,
+        warn: bool,
     },
     DeprecatedFeature {
         feature_name: SmolStr,
         note: Option<SmolStr>,
+        warn: bool,
     },
     FeatureMarkerDiagnostic(FeatureMarkerDiagnostic),
     UnhandledMustUseFunction,

@@ -21,10 +21,10 @@ pub enum FeatureKind {
     /// The feature of the item is stable.
     Stable,
     /// The feature of the item is unstable, with the given name to allow.
-    Unstable { feature: SmolStr, note: Option<SmolStr> },
+    Unstable { feature: SmolStr, note: Option<SmolStr>, warn: bool },
     /// The feature of the item is deprecated, with the given name to allow, and an optional note
     /// to appear in diagnostics.
-    Deprecated { feature: SmolStr, note: Option<SmolStr> },
+    Deprecated { feature: SmolStr, note: Option<SmolStr>, warn: bool },
 }
 impl FeatureKind {
     pub fn from_ast(
@@ -43,14 +43,26 @@ impl FeatureKind {
         }
         if deprecated_attrs.is_empty() {
             let attr = unstable_attrs.into_iter().next().unwrap().structurize(db);
-            let [feature, note, _] =
-                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
-            feature.map(|feature| Self::Unstable { feature, note }).ok_or(attr)
+            let [feature, note, _, warn] =
+                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since", "warn"]);
+            feature
+                .map(|feature| Self::Unstable {
+                    feature,
+                    note,
+                    warn: process_bool_arg(&warn, diagnostics, &attr.stable_ptr),
+                })
+                .ok_or(attr)
         } else {
             let attr = deprecated_attrs.into_iter().next().unwrap().structurize(db);
-            let [feature, note, _] =
-                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
-            feature.map(|feature| Self::Deprecated { feature, note }).ok_or(attr)
+            let [feature, note, _, warn] =
+                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since", "warn"]);
+            feature
+                .map(|feature| Self::Deprecated {
+                    feature,
+                    note,
+                    warn: process_bool_arg(&warn, diagnostics, &attr.stable_ptr),
+                })
+                .ok_or(attr)
         }
         .unwrap_or_else(|attr| {
             add_diag(diagnostics, &attr.stable_ptr, FeatureMarkerDiagnostic::MissingAllowFeature);
@@ -70,6 +82,8 @@ pub enum FeatureMarkerDiagnostic {
     UnsupportedArgument,
     /// Duplicated argument in the feature marker attribute.
     DuplicatedArgument,
+    /// Unsupported value for a bool argument.
+    UnsupportedBoolValue,
 }
 
 /// Parses the feature attribute.
@@ -166,4 +180,23 @@ pub fn extract_allowed_features(
         curr_module_id = parent;
     }
     allowed_features
+}
+
+/// Converts a string argument to a bool, raising a diagnostic if the argument is not a valid bool.
+fn process_bool_arg(
+    arg: &Option<SmolStr>,
+    diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
+    stable_ptr: &impl TypedStablePtr,
+) -> bool {
+    match arg {
+        Some(arg) => match arg.as_str() {
+            "\"true\"" => true,
+            "\"false\"" => false,
+            _ => {
+                add_diag(diagnostics, stable_ptr, FeatureMarkerDiagnostic::UnsupportedBoolValue);
+                false
+            }
+        },
+        None => false,
+    }
 }
