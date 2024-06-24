@@ -1077,10 +1077,10 @@ impl FooIntoIterator of core::iter::IntoIterator<Foo> {
 }
 
 //! > expected_diagnostics
-error: Invalid into iterator trait implementation, Trait has no implementation in context: core::iter::traits::iterator::Iterator::<test::FooIter>.
- --> lib.cairo:7:5
-    type IntoIter = FooIter;
-    ^**********************^
+error: Not all trait items are implemented. Missing: 'IteratorImpl'.
+ --> lib.cairo:6:6
+impl FooIntoIterator of core::iter::IntoIterator<Foo> {
+     ^*************^
 
 //! > ==========================================================================
 

@@ -558,12 +558,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidDropTraitImpl(inference_error) => {
                 format!("Invalid drop trait implementation, {}", inference_error.format(db))
             }
-            SemanticDiagnosticKind::InvalidIntoIteratorTraitImpl(inference_error) => {
-                format!(
-                    "Invalid into iterator trait implementation, {}",
-                    inference_error.format(db)
-                )
-            }
             SemanticDiagnosticKind::InvalidImplItem(item_kw) => {
                 format!("`{item_kw}` is not allowed inside impl.")
             }
@@ -1069,7 +1063,6 @@ pub enum SemanticDiagnosticKind {
     },
     InvalidCopyTraitImpl(InferenceError),
     InvalidDropTraitImpl(InferenceError),
-    InvalidIntoIteratorTraitImpl(InferenceError),
     InvalidImplItem(SmolStr),
     MissingItemsInImpl(Vec<SmolStr>),
     PassPanicAsNopanic {

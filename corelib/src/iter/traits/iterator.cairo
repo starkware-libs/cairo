@@ -11,7 +11,7 @@ pub trait Iterator<T> {
 pub trait IntoIterator<T> {
     /// The iterator type that will be created.
     type IntoIter;
-
+    impl IteratorImpl: Iterator<Self::IntoIter>;
     /// Creates an iterator from a collection.
     fn into_iter(self: T) -> Self::IntoIter;
 }
