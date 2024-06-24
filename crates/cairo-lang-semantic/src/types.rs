@@ -790,7 +790,7 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_var_free(db) && size.is_var_free(db)
         }
-        TypeLongId::ImplType(_) => false,
+        TypeLongId::ImplType(impl_type) => impl_type.impl_id().is_var_free(db),
     }
 }
 
