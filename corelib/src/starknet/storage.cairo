@@ -346,6 +346,37 @@ impl StorageNodeDeref<T, +StorageNode<T>> of core::ops::Deref<StoragePath<T>> {
     }
 }
 
+pub trait SubPointersNode<T> {
+    type NodeType;
+    fn sub_pointers_node(self: StoragePointer<T>) -> Self::NodeType;
+}
+
+impl SubPointersNodeDeref<T, +SubPointersNode<T>> of core::ops::Deref<StoragePointer<T>> {
+    type Target = SubPointersNode::<T>::NodeType;
+    fn deref(self: StoragePointer<T>) -> Self::Target {
+        self.sub_pointers_node()
+    }
+}
+
+/// Implement deref for storage paths that implements StorageAsPointer.
+impl StoragePathDeref<
+    T, impl PointerImpl: StorageAsPointer<StoragePath<T>>
+> of core::ops::Deref<StoragePath<T>> {
+    type Target = StoragePointer0Offset<PointerImpl::Value>;
+    fn deref(self: StoragePath<T>) -> StoragePointer0Offset<PointerImpl::Value> {
+        self.as_ptr()
+    }
+}
+
+/// Implement deref for StoragePointer0Offset into a StoragePointer.
+impl StoragePointer0OffsetDeref<T> of core::ops::Deref<StoragePointer0Offset<T>> {
+    type Target = StoragePointer<T>;
+    fn deref(self: StoragePointer0Offset<T>) -> StoragePointer<T> {
+        StoragePointer::<T> { address: self.address, offset: 0 }
+    }
+}
+
+
 /// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
 struct PendingStoragePath<T> {
     hash_state: StoragePathHashState,
@@ -478,4 +509,29 @@ trait MutableTrait<T> {
 
 impl MutableImpl<T> of MutableTrait<Mutable<T>> {
     type InnerType = T;
+}
+
+/// Implementation of SubPointersNode for core types.
+
+#[derive(Drop, Copy)]
+struct u256SubPointersNode {
+    high: starknet::storage::StoragePointer<u128>,
+    low: starknet::storage::StoragePointer<u128>,
+}
+
+impl u256SubPointersNodeImpl of starknet::storage::SubPointersNode<u256> {
+    type NodeType = u256SubPointersNode;
+    fn sub_pointers_node(self: starknet::storage::StoragePointer<u256>) -> u256SubPointersNode {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        current_offset = current_offset + starknet::Store::<u128>::size();
+        let high_pointer = starknet::storage::StoragePointer::<
+            u128
+        > { address: base_address, offset: current_offset, };
+        current_offset = current_offset + starknet::Store::<u128>::size();
+        let low_pointer = starknet::storage::StoragePointer::<
+            u128
+        > { address: base_address, offset: current_offset, };
+        u256SubPointersNode { high: high_pointer, low: low_pointer, }
+    }
 }

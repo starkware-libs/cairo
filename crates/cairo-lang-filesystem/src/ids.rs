@@ -78,6 +78,7 @@ pub struct CodeMapping {
 }
 impl CodeMapping {
     pub fn translate(&self, span: TextSpan) -> Option<TextSpan> {
+        return None;
         if self.span.contains(span) {
             Some(match self.origin {
                 CodeOrigin::Start(origin_start) => {
