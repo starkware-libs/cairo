@@ -24,6 +24,7 @@ pub const STORE_TRAIT: &str = "starknet::Store";
 pub const STORAGE_AS_POINTER_TRAIT: &str = "starknet::storage::StorageAsPointer";
 pub const STORAGE_AS_PATH_TRAIT: &str = "starknet::storage::StorageAsPath";
 pub const STORAGE_NODE_ATTR: &str = "starknet::storage_node";
+pub const STORAGE_SUB_POINTERS_ATTR: &str = "starknet::sub_pointers";
 pub const INTERFACE_ATTR: &str = "starknet::interface";
 pub(super) const DEPRECATED_CONTRACT_ATTR: &str = "contract";
 pub const CONTRACT_ATTR: &str = "starknet::contract";
