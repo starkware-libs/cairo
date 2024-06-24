@@ -736,7 +736,7 @@ error: Cannot have array of type "()" that is zero sized.
 //! > Test deprecated warning.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings )
 
 //! > expr_code
 {
