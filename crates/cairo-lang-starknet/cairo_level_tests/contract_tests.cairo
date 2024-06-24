@@ -9,6 +9,8 @@ trait ITestContract<T> {}
 
 #[starknet::contract]
 mod test_contract {
+    use core::starknet::storage::StoragePointerReadAccess;
+    use core::starknet::storage::StoragePathEntry;
     use starknet::StorageAddress;
     use starknet::storage::Map;
 
@@ -69,6 +71,11 @@ mod test_contract {
     #[external(v0)]
     fn get_large(self: @ContractState, key: u256) -> u256 {
         self.large_mapping.read(key)
+    }
+
+    #[external(v0)]
+    fn get_large_high(self: @ContractState, key: u256) -> u128 {
+        self.large_mapping.entry(key).high.read()
     }
 
     #[external(v0)]
@@ -174,6 +181,27 @@ fn write_read_large_value() {
         'Wrong result'
     );
 }
+
+#[test]
+fn write_read_large_sub_value() {
+    assert(
+        test_contract::__external::set_large(
+            serialized(
+                (0x200000000000000000000000000000001_u256, 0x400000000000000000000000000000003_u256)
+            )
+        )
+            .is_empty(),
+        'Array not empty'
+    );
+    assert_eq(
+        @test_contract::__external::get_large_high(
+            serialized(0x200000000000000000000000000000001_u256)
+        ),
+        @serialized(0x4_u128),
+        'Wrong result'
+    );
+}
+
 
 #[test]
 fn test_get_block_info() {
