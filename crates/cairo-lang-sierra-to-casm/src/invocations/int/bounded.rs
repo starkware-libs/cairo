@@ -42,6 +42,12 @@ pub fn build(
         BoundedIntConcreteLibfunc::IsZero(_) => build_is_zero(builder),
         BoundedIntConcreteLibfunc::WrapNonZero(_) => build_identity(builder),
         BoundedIntConcreteLibfunc::IntoGuarantee(_) => build_identity(builder),
+        BoundedIntConcreteLibfunc::Felt252Constrain(libfunc) => {
+            build_felt252_constrain(builder, &libfunc.boundary)
+        }
+        BoundedIntConcreteLibfunc::VerifyGuarantee(_) => {
+            todo!("Implement bounded_int_verify_guarantee")
+        }
     }
 }
 
@@ -220,5 +226,28 @@ fn build_constrain(
             }],
             extra_costs: None,
         },
+    ))
+}
+
+/// Build constrain on felt252 creating bounded int guarantees.
+fn build_felt252_constrain(
+    builder: CompiledInvocationBuilder<'_>,
+    boundary: &BigInt,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [value] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    let value = casm_builder.add_var(value.clone());
+    casm_build_extend! {casm_builder,
+        const boundary_minus_1 = (boundary - 1) as BigInt;
+        tempvar is_over;
+        hint TestLessThanOrEqual {lhs: boundary_minus_1, rhs: value} into {dst: is_over};
+        jump Over if is_over != 0;
+    };
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[value]], None), ("Over", &[&[value]], Some(target_statement_id))],
+        Default::default(),
     ))
 }
