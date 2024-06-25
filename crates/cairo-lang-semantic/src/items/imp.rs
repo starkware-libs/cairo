@@ -56,9 +56,7 @@ use super::type_aliases::{
     type_alias_semantic_data_helper, TypeAliasData,
 };
 use super::{resolve_trait_path, TraitOrImplContext};
-use crate::corelib::{
-    concrete_iterator_trait, copy_trait, deref_trait, drop_trait, into_iterator_trait,
-};
+use crate::corelib::{copy_trait, deref_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -649,32 +647,11 @@ pub fn impl_semantic_definition_diagnostics(
             .concrete_trait
             .unwrap()
             .trait_id(db);
-        // check that into iterator impl type implements Iterator.
-        // TODO(Tomer-StarkWare) Remove when proper trait bounds are implemented.
-        if trait_id == into_iterator_trait(db) {
-            handle_into_iterator_impl(db, impl_def_id, &mut diagnostics);
-        }
         if trait_id == deref_trait(db) {
             handle_deref_impl(db, impl_def_id, &mut diagnostics);
         }
     }
     diagnostics.build()
-}
-
-/// Validates that the IntoIterator impl type implements Iterator.
-fn handle_into_iterator_impl(
-    db: &dyn SemanticGroup,
-    impl_def_id: ImplDefId,
-    diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
-) {
-    if let Err((err, impl_type_def_id)) =
-        get_impl_based_on_single_impl_type(db, impl_def_id, |ty| concrete_iterator_trait(db, ty))
-    {
-        diagnostics.report(
-            impl_type_def_id.stable_ptr(db.upcast()),
-            SemanticDiagnosticKind::InvalidIntoIteratorTraitImpl(err),
-        );
-    };
 }
 
 /// Checks that there are no cycles of Deref impls.
