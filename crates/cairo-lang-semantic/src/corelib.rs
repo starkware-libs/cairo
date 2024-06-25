@@ -695,10 +695,26 @@ pub fn get_core_trait(db: &dyn SemanticGroup, context: CoreTraitContext, name: S
     };
     // This should not fail if the corelib is present.
     let use_id = extract_matches!(
-        db.module_item_by_name(base_module, name).unwrap().unwrap(),
+        db.module_item_by_name(base_module, name.clone())
+            .unwrap_or_else(|_| panic!(
+                "Core module `{}` failed to compile.",
+                base_module.full_path(db.upcast())
+            ))
+            .unwrap_or_else(|| panic!(
+                "Core module `{}` is missing an use item for trait `{}`.",
+                base_module.full_path(db.upcast()),
+                name
+            )),
         ModuleItemId::Use
     );
-    extract_matches!(db.use_resolved_item(use_id).unwrap(), ResolvedGenericItem::Trait)
+    extract_matches!(
+        db.use_resolved_item(use_id).unwrap_or_else(|_| panic!(
+            "Could not resolve core trait `{}::{}`.",
+            base_module.full_path(db.upcast()),
+            name
+        )),
+        ResolvedGenericItem::Trait
+    )
 }
 
 /// Given a core library context, trait name and fn name, returns [TraitFunctionId].
