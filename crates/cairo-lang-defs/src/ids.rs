@@ -31,7 +31,7 @@ use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, require, Intern, LookupIntern, OptionFrom};
 use smol_str::SmolStr;
 
@@ -315,6 +315,28 @@ define_language_element_id_as_enum! {
         ExternFunction(ExternFunctionId),
     }
 }
+
+impl ModuleItemId {
+    pub fn as_syntax_node(&self, db: &dyn DefsGroup) -> SyntaxNode {
+        match self {
+            ModuleItemId::Constant(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ModuleItemId::Submodule(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ModuleItemId::Use(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ModuleItemId::ImplAlias(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ModuleItemId::Impl(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ModuleItemId::ExternType(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ModuleItemId::ExternFunction(item) => {
+                item.stable_ptr(db.upcast()).0.lookup(db.upcast())
+            }
+            ModuleItemId::FreeFunction(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ModuleItemId::Struct(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ModuleItemId::Enum(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ModuleItemId::TypeAlias(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ModuleItemId::Trait(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+        }
+    }
+}
+
 define_top_level_language_element_id!(
     SubmoduleId,
     SubmoduleLongId,
@@ -1053,6 +1075,14 @@ impl TraitItemId {
             TraitItemId::Impl(id) => id.trait_id(db),
         }
     }
+    pub fn as_syntax_node(&self, db: &dyn DefsGroup) -> SyntaxNode {
+        match self {
+            TraitItemId::Function(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            TraitItemId::Type(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            TraitItemId::Constant(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            TraitItemId::Impl(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+        }
+    }
 }
 
 define_language_element_id_as_enum! {
@@ -1082,6 +1112,14 @@ impl ImplItemId {
             ImplItemId::Impl(id) => id.impl_def_id(db),
         }
     }
+    pub fn as_syntax_node(&self, db: &dyn DefsGroup) -> SyntaxNode {
+        match self {
+            ImplItemId::Function(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ImplItemId::Type(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ImplItemId::Constant(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+            ImplItemId::Impl(item) => item.stable_ptr(db.upcast()).0.lookup(db.upcast()),
+        }
+    }
 }
 
 define_language_element_id_as_enum! {
@@ -1092,5 +1130,15 @@ define_language_element_id_as_enum! {
         ModuleItem(ModuleItemId),
         TraitItem(TraitItemId),
         ImplItem(ImplItemId),
+    }
+}
+
+impl LookupItemId {
+    pub fn as_syntax_node(&self, db: &dyn DefsGroup) -> SyntaxNode {
+        match self {
+            LookupItemId::ModuleItem(item) => item.as_syntax_node(db),
+            LookupItemId::TraitItem(item) => item.as_syntax_node(db),
+            LookupItemId::ImplItem(item) => item.as_syntax_node(db),
+        }
     }
 }
