@@ -131,6 +131,8 @@ pub enum FillInputResult<C> {
 mod internal {
     impl FillInputResultDrop<C> of Drop<super::FillInputResult<C>>;
     pub impl PanicDestructFillInputResult<C> of PanicDestruct<super::FillInputResult<C>> {
+        // Inlining to make sure possibly huge `C` won't be in a user function name.
+        #[inline(always)]
         fn panic_destruct(
             self: super::FillInputResult<C>, ref panic: core::panics::Panic
         ) nopanic {}
@@ -227,6 +229,8 @@ impl UnwrapCircuitElementNext<
 #[generate_trait]
 pub impl CircuitInputsImpl<CES> of CircuitInputs<CES> {
     /// calls `init_circuit_data` for the given circuit.
+    // Inlining to make sure possibly huge `CES` won't be in a user function name.
+    #[inline]
     fn new_inputs<impl CD: CircuitDefinition<CES>, +Drop<CES>>(
         self: CES
     ) -> FillInputResult<CD::CircuitType> {
@@ -238,6 +242,8 @@ pub impl CircuitInputsImpl<CES> of CircuitInputs<CES> {
 #[generate_trait]
 impl GetCircuitDescriptorImpl<CES> of GetCircuitDescriptor<CES> {
     /// calls `get_circuit_descriptor` for the given circuit.
+    // Inlining to make sure possibly huge `C` won't be in a user function name.
+    #[inline]
     fn get_descriptor<impl CD: CircuitDefinition<CES>, +Drop<CES>>(
         self: CES
     ) -> CircuitDescriptor<CD::CircuitType> {
@@ -249,6 +255,8 @@ impl GetCircuitDescriptorImpl<CES> of GetCircuitDescriptor<CES> {
 #[generate_trait]
 pub impl FillInputResultImpl<C> of FillInputResultTrait<C> {
     /// Adds an input to the accumulator.
+    // Inlining to make sure possibly huge `C` won't be in a user function name.
+    #[inline]
     fn next<Value, +IntoCircuitInputValue<Value>, +Drop<Value>>(
         self: FillInputResult<C>, value: Value
     ) -> FillInputResult<C> {
@@ -259,6 +267,8 @@ pub impl FillInputResultImpl<C> of FillInputResultTrait<C> {
             FillInputResult::Done(_) => panic!("All inputs have been filled"),
         }
     }
+    // Inlining to make sure possibly huge `C` won't be in a user function name.
+    #[inline(always)]
     fn done(self: FillInputResult<C>) -> CircuitData<C> {
         match self {
             FillInputResult::Done(data) => data,
@@ -297,9 +307,13 @@ impl U384IntoCircuitInputValue of IntoCircuitInputValue<u384> {
 /// A trait for evaluating a circuit.
 #[generate_trait]
 pub impl EvalCircuitImpl<C> of EvalCircuitTrait<C> {
+    // Inlining to make sure possibly huge `C` won't be in a user function name.
+    #[inline(always)]
     fn eval(self: CircuitData<C>, modulus: CircuitModulus) -> core::circuit::EvalCircuitResult<C> {
         self.eval_ex(get_circuit_descriptor::<C>(), modulus)
     }
+    // Inlining to make sure possibly huge `C` won't be in a user function name.
+    #[inline(always)]
     fn eval_ex(
         self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus
     ) -> core::circuit::EvalCircuitResult<C> {
@@ -316,6 +330,8 @@ pub trait CircuitOutputsTrait<Outputs, OutputElement> {
 impl CircuitOutputsImpl<
     C, Output
 > of CircuitOutputsTrait<CircuitOutputs<C>, CircuitElement<Output>> {
+    // Inlining to make sure possibly huge `C` won't be in a user function name.
+    #[inline(always)]
     fn get_output(self: CircuitOutputs<C>, output: CircuitElement<Output>) -> u384 {
         let (res, _) = get_circuit_output::<C, Output>(self);
         res
