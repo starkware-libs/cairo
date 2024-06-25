@@ -65,6 +65,9 @@ enum MyEventEnum {
     D: NestedEventEnum,
 }
 
+lib.cairo:1:1
+#[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
+^*****************************************************************^
 impls:
 
 impl APartialEq of core::traits::PartialEq::<A> {
@@ -155,6 +158,9 @@ impl StoreA of starknet::Store::<A> {
 }
 
 
+lib.cairo:7:1
+
+^
 impls:
 
 impl BPartialEq of core::traits::PartialEq::<B> {
@@ -197,6 +203,9 @@ impl BIsEvent of starknet::Event<B> {
 }
 
 
+lib.cairo:12:1
+
+^
 impls:
 
 impl NestedEventEnumPartialEq of core::traits::PartialEq::<NestedEventEnum> {
@@ -250,6 +259,9 @@ impl NestedEventEnumBIntoEvent of Into<B, NestedEventEnum> {
 
 
 
+lib.cairo:18:1
+
+^
 impls:
 
 impl MyEventEnumPartialEq of core::traits::PartialEq::<MyEventEnum> {

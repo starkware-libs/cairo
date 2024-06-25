@@ -205,6 +205,9 @@ pub mod __constructor {
 
 
 
+lib.cairo:13:1
+    #[derive(Drop, Hash, starknet::Store)]
+^****************************************^
 impls:
 
 impl WrappedFelt252Drop of core::traits::Drop::<WrappedFelt252>;
@@ -259,6 +262,9 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
 }
 
 
+lib.cairo:17:1
+    #[derive(Drop, Hash, Serde, starknet::Store)]
+^***********************************************^
 impls:
 
 impl ZeroSizeDrop of core::traits::Drop::<ZeroSize>;
@@ -323,6 +329,9 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
 }
 
 
+lib.cairo:19:1
+
+^
 impls:
 
 impl SimpleEnumDrop of core::traits::Drop::<SimpleEnum>;
@@ -430,6 +439,9 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
 }
 
 
+lib.cairo:25:1
+
+^
 impls:
 
 impl EnumWithDefaultDrop of core::traits::Drop::<EnumWithDefault>;
@@ -561,6 +573,9 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
 }
 
 
+lib.cairo:33:1
+
+^
 impls:
 
 impl BadEnumWithDefaultDrop of core::traits::Drop::<BadEnumWithDefault>;
@@ -586,6 +601,9 @@ impl BadEnumWithDefaultSerde of core::serde::Serde::<BadEnumWithDefault> {
 }
 
 
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -613,12 +631,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
