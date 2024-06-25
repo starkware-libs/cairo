@@ -7,4 +7,4 @@ license-file.workspace = true
 description = "Language server executable for the Cairo programming language"
 
 [dependencies]
-cairo-lang-language-server = { path = "../../cairo-lang-language-server", version = "~2.6.4" }
+cairo-lang-language-server = { path = "../../cairo-lang-language-server", version = "~2.7.0-rc.0" }
