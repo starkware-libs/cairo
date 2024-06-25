@@ -1289,6 +1289,14 @@ impl<'db> Resolver<'db> {
                     DeprecatedFeature { feature_name: feature.clone(), note: note.clone() },
                 );
             }
+            FeatureKind::Internal { feature, note }
+                if !self.data.allowed_features.contains(feature) =>
+            {
+                diagnostics.report(
+                    identifier,
+                    InternalFeature { feature_name: feature.clone(), note: note.clone() },
+                );
+            }
             _ => {}
         }
     }
