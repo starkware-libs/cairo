@@ -479,6 +479,7 @@ fn build_get_output(
     let CircuitInfo { values, .. } =
         builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
 
+    // TODO: remove unwrap and return result.
     let output_offset = values.get(output_ty).unwrap();
 
     add_input_variables! {casm_builder,

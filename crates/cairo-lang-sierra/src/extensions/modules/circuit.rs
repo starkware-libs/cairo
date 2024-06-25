@@ -578,6 +578,7 @@ pub struct U96LimbsLessThanGuarantee {}
 impl NamedType for U96LimbsLessThanGuarantee {
     type Concrete = ConcreteU96LimbsLessThanGuarantee;
     // Shortened name to fit in the 23 bytes limit.
+    // TODO: Rename to U96LimbsLtGuarantee (small `t`).
     const ID: GenericTypeId = GenericTypeId::new_inline("U96LimbsLTGuarantee");
 
     fn specialize(
@@ -918,6 +919,7 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
         let circuit_data_ty =
             context.get_concrete_type(CircuitData::id(), &[GenericArg::Type(ty.clone())])?;
 
+        // TODO: Consider removing these arguments.
         let zero = bounded_int_ty(context, BigInt::zero(), BigInt::zero())?;
         let one = bounded_int_ty(context, BigInt::one(), BigInt::one())?;
 
@@ -939,6 +941,7 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(add_mod_builtin_ty.clone(), 0),
+                        // TODO: `new_builtin` uses `AddConst`.
                         OutputVarInfo::new_builtin(mul_mod_builtin_ty.clone(), 1),
                         OutputVarInfo {
                             ty: context.get_concrete_type(
@@ -955,6 +958,7 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(add_mod_builtin_ty, 0),
+                        // TODO: `new_builtin` uses `AddConst`.
                         OutputVarInfo::new_builtin(mul_mod_builtin_ty, 1),
                         OutputVarInfo {
                             ty: context.get_concrete_type(
@@ -1040,7 +1044,7 @@ impl NamedLibfunc for GetOutputLibFunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let (circ_ty, _output_ty) = args_as_two_types(args)?;
-
+        // TODO: check that `output_ty` is a valid output type.
         let outputs_ty =
             context.get_concrete_type(CircuitOutputs::id(), &[GenericArg::Type(circ_ty)])?;
 
@@ -1101,6 +1105,7 @@ impl NoGenericArgsGenericLibfunc for CircuitFailureGuaranteeVerifyLibFunc {
         let zero = bounded_int_ty(context, BigInt::zero(), BigInt::zero())?;
         let one = bounded_int_ty(context, BigInt::one(), BigInt::one())?;
 
+        // TODO: Use `new_builtin()` for the builtins.
         Ok(LibfuncSignature::new_non_branch(
             vec![range_check96_type.clone(), mul_mod_builtin_ty.clone(), guarantee_ty, zero, one],
             vec![

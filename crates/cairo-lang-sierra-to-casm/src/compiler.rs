@@ -280,6 +280,7 @@ impl ConstsInfo {
             return Err(CompilationError::ConstSegmentsOutOfOrder);
         }
 
+        // TODO: Split into smaller functions.
         let mut next_segment = segments.len() as u32;
         let mut circuit_segments = OrderedHashMap::default();
 

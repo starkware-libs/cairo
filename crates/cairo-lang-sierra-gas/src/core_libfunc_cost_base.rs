@@ -523,7 +523,7 @@ pub fn core_libfunc_cost(
                 }
 
                 vec![
-                    // Failure.
+                    // Success.
                     BranchCost::Regular {
                         const_cost: ConstCost::steps(steps),
                         pre_cost: PreCost(OrderedHashMap::from_iter([
@@ -531,7 +531,7 @@ pub fn core_libfunc_cost(
                             (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
                         ])),
                     },
-                    // Success.
+                    // Failure.
                     BranchCost::Regular {
                         const_cost: ConstCost::steps(steps),
                         pre_cost: PreCost(OrderedHashMap::from_iter([
