@@ -2248,3 +2248,35 @@ impl ArrayFirst<T> of FirstTrait<Array<T>> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Use of missing Impl type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _: MyImpl::ty = 5;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+impl MyImpl of MyTrait {}
+
+//! > expected_diagnostics
+error: Not all trait items are implemented. Missing: 'ty'.
+ --> lib.cairo:4:6
+impl MyImpl of MyTrait {}
+     ^****^
+
+error: Trait has no implementation in context: test::MyTrait.
+ --> lib.cairo:5:10
+fn foo() {
+         ^
