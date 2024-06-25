@@ -395,7 +395,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         Circuit(CircuitConcreteLibfunc::TryIntoCircuitModulus(_)) => {
             vec![ApChange::Known(1), ApChange::Known(1)]
         }
-        Circuit(CircuitConcreteLibfunc::FillInput(_)) => {
+        Circuit(CircuitConcreteLibfunc::AddInput(_)) => {
             vec![ApChange::Known(2), ApChange::Known(2)]
         }
         Circuit(CircuitConcreteLibfunc::Eval(_)) => vec![ApChange::Known(4), ApChange::Known(4)],

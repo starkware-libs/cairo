@@ -509,7 +509,7 @@ pub fn core_libfunc_cost(
             }
         },
         Circuit(libfunc) => match libfunc {
-            CircuitConcreteLibfunc::FillInput(_) => {
+            CircuitConcreteLibfunc::AddInput(_) => {
                 vec![ConstCost::steps(7).into(), ConstCost::steps(7).into()]
             }
             CircuitConcreteLibfunc::Eval(libfunc) => {

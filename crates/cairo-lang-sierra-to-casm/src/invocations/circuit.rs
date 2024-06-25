@@ -28,7 +28,7 @@ pub fn build(
         CircuitConcreteLibfunc::TryIntoCircuitModulus(_libfunc) => {
             build_try_into_circuit_modulus(builder)
         }
-        CircuitConcreteLibfunc::FillInput(_libfunc) => build_fill_input(builder),
+        CircuitConcreteLibfunc::AddInput(_libfunc) => build_add_input(builder),
         CircuitConcreteLibfunc::Eval(libfunc) => build_circuit_eval(&libfunc.ty, builder),
         CircuitConcreteLibfunc::GetDescriptor(libfunc) => {
             build_get_descriptor(&libfunc.ty, builder)
@@ -71,31 +71,33 @@ fn build_init_circuit_data(
         buffer(1) rc96;
     };
     casm_build_extend! {casm_builder,
-        const value_size = VALUE_SIZE;
-        let inputs_start = rc96 + value_size;
+        let rc96_start = rc96;
+        // Skip the constant `1`.
+        const input_start_offset = 1 * VALUE_SIZE;
+        let input_start = rc96 + input_start_offset;
         // This size of all the inputs including the input 1.
-        const inputs_size = (1 + n_inputs) * VALUE_SIZE;
-        let inputs_end = rc96 + inputs_size;
+        const input_end_offset = (1 + n_inputs) * VALUE_SIZE;
+        let input_end = rc96 + input_end_offset;
         const rc96_usage = rc96_usage;
-        let vals_end = rc96 + rc96_usage;
+        let rc96 = rc96 + rc96_usage;
     };
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[vals_end], &[inputs_start, inputs_end]], None)],
+        [("Fallthrough", &[&[rc96], &[input_start, input_end]], None)],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
                 cost_token_ty: CostTokenType::RangeCheck96,
-                start: rc96,
-                end: vals_end,
+                start: rc96_start,
+                end: rc96,
             }],
             extra_costs: None,
         },
     ))
 }
 
-/// Handles a Sierra statement for popping an element from the beginning of an array.
-fn build_fill_input(
+/// Handles a Sierra statement for adding an input to the input accumulator.
+fn build_add_input(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_handle, elem] = builder.try_get_refs()?;
@@ -114,14 +116,17 @@ fn build_fill_input(
     casm_build_extend! {casm_builder,
         tempvar new_start = start;
         tempvar remaining = end - new_start;
-        jump More if remaining != 0;
+        jump MoreInputs if remaining != 0;
         Done:
     };
-    let more_handle = get_non_fallthrough_statement_id(&builder);
+    let more_inputs_handle = get_non_fallthrough_statement_id(&builder);
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[end]], None), ("More", &[&[new_start, end]], Some(more_handle))],
+        [
+            ("Fallthrough", &[&[end]], None),
+            ("MoreInputs", &[&[new_start, end]], Some(more_inputs_handle)),
+        ],
         Default::default(),
     ))
 }
@@ -136,11 +141,10 @@ fn build_get_descriptor(
 
     let ctx = casm! {
         // The relocation will point the `call` to the `ret;` instruction that precedes the
-        // relevant const.
+        // add and mul tables.
         call rel 0;
         // The relocation table will add const offset to the `1` below, making it point to the
-        // constant value (the `1` is to skip the `ret` instruction).
-        // TODO(Gil): Support relocatable CellExpression and return an unstored "[ap - 1] + 1".
+        // add and mul tables (the `1` is to skip the `ret` instruction).
         [ap] = [ap - 1] + 1, ap++;
         [ap] = (add_offsets.len()), ap++;
         [ap] = [ap - 2] + (add_offsets.len() * OFFSETS_PER_GATE), ap++;

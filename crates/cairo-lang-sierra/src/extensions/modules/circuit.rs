@@ -73,7 +73,7 @@ define_type_hierarchy! {
 
 define_libfunc_hierarchy! {
     pub enum CircuitLibFunc {
-        FillInput(FillCircuitInputLibFunc),
+        AddInput(AddCircuitInputLibFunc),
         Eval(EvalCircuitLibFunc),
         GetDescriptor(GetCircuitDescriptorLibFunc),
         InitCircuitData(InitCircuitDataLibFunc),
@@ -416,7 +416,7 @@ impl NoGenericArgsGenericType for CircuitModulus {
     const ZERO_SIZED: bool = false;
 }
 
-/// A type representing a circuit instance data with all the inputs filled.
+/// A type representing a circuit instance data with all the inputs added.
 #[derive(Default)]
 pub struct CircuitData {}
 impl NamedType for CircuitData {
@@ -629,7 +629,7 @@ impl NoGenericArgsGenericType for U96Guarantee {
     const ZERO_SIZED: bool = false;
 }
 
-/// A type representing a circuit instance data with all the inputs filled.
+/// A type representing the circuit add and mul tables.
 #[derive(Default)]
 pub struct CircuitDescriptor {}
 impl NamedType for CircuitDescriptor {
@@ -789,11 +789,11 @@ impl SignatureAndTypeGenericLibfunc for InitCircuitDataLibFuncWrapped {
 
 pub type InitCircuitDataLibFunc = WrapSignatureAndTypeGenericLibfunc<InitCircuitDataLibFuncWrapped>;
 
-/// libfunc for filling an input in the circuit instance's data.
+/// libfunc for adding an input in the circuit instance's data.
 #[derive(Default)]
-pub struct FillCircuitInputLibFuncWrapped {}
-impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
-    const STR_ID: &'static str = "fill_circuit_input";
+pub struct AddCircuitInputLibFuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for AddCircuitInputLibFuncWrapped {
+    const STR_ID: &'static str = "add_circuit_input";
 
     fn specialize_signature(
         &self,
@@ -824,7 +824,7 @@ impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
                 ParamSignature::new(val_ty),
             ],
             branch_signatures: vec![
-                // All inputs were filled.
+                // All inputs were added.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: circuit_data_ty,
@@ -832,7 +832,7 @@ impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
-                // More inputs to fill.
+                // More inputs to add.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: circuit_input_accumulator_ty,
@@ -846,8 +846,7 @@ impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
     }
 }
 
-pub type FillCircuitInputLibFunc =
-    WrapSignatureAndTypeGenericLibfunc<FillCircuitInputLibFuncWrapped>;
+pub type AddCircuitInputLibFunc = WrapSignatureAndTypeGenericLibfunc<AddCircuitInputLibFuncWrapped>;
 
 /// A zero-input function that returns an handle to the offsets of a circuit.
 #[derive(Default)]
@@ -1305,7 +1304,7 @@ fn get_circuit_info(
 
     validate_args_are_circuit_components(context, circ_outputs.clone())?;
 
-    let ParsedInputs { mut values, mut mul_offsets } =
+    let ParsedInputs { reduced_inputs: mut values, mut mul_offsets } =
         parse_circuit_inputs(context, circ_outputs.clone())?;
     let n_inputs = values.len();
     require(n_inputs >= 1).ok_or(SpecializationError::UnsupportedGenericArg)?;
@@ -1419,18 +1418,18 @@ fn parse_circuit_inputs<'a>(
         }
     }
 
-    let mut values: UnorderedHashMap<ConcreteTypeId, usize> = Default::default();
+    let mut reduced_inputs: UnorderedHashMap<ConcreteTypeId, usize> = Default::default();
     let n_inputs = inputs.len();
 
-    // The reduced_inputs start at n_inputs + 1 since we need to reserve slot 0 for the constant
-    // value 1.
-    let reduced_input_start = n_inputs + 1;
+    // The reduced_inputs start at `1 + n_inputs` since we need to reserve slot 0 for the constant
+    // value `1`.
+    let reduced_input_start = 1 + n_inputs;
     let mut mul_offsets = vec![];
 
     for (idx, (input_idx, ty)) in inputs.iter_sorted().enumerate() {
         // Validate that the input indices are `[0, 1, ..., n_inputs - 1]`.
         require(idx == *input_idx).ok_or(SpecializationError::UnsupportedGenericArg)?;
-        assert!(values.insert(ty.clone(), reduced_input_start + idx).is_none());
+        assert!(reduced_inputs.insert(ty.clone(), reduced_input_start + idx).is_none());
         // Add the gate `1 * input = result` to reduce the input module the modulus.
         mul_offsets.push(GateOffsets {
             lhs: ONE_OFFSET,
@@ -1439,7 +1438,7 @@ fn parse_circuit_inputs<'a>(
         });
     }
 
-    Ok(ParsedInputs { values, mul_offsets })
+    Ok(ParsedInputs { reduced_inputs, mul_offsets })
 }
 
 /// Describes the offset that define a gate in a circuit.
@@ -1480,7 +1479,7 @@ impl CircuitInfo {
 
 struct ParsedInputs {
     /// Maps a concrete input type to its offset in the values array.
-    values: UnorderedHashMap<ConcreteTypeId, usize>,
+    reduced_inputs: UnorderedHashMap<ConcreteTypeId, usize>,
     /// The offsets for the mul gates that are used to reduce the inputs.
     mul_offsets: Vec<GateOffsets>,
 }
