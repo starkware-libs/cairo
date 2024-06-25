@@ -1,7 +1,9 @@
 use std::array;
 use std::ops::{Deref, Shl};
 
-use cairo_lang_sierra::extensions::circuit::{BUILTIN_INSTANCE_SIZE, OFFSETS_PER_GATE, VALUE_SIZE};
+use cairo_lang_sierra::extensions::circuit::{
+    MOD_BUILTIN_INSTANCE_SIZE, OFFSETS_PER_GATE, VALUE_SIZE,
+};
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::vm_core::VirtualMachine;
@@ -214,7 +216,7 @@ pub fn fill_instances(
     mut offsets_ptr: Relocatable,
 ) -> Result<(), HintError> {
     for i in 0..n_instances {
-        let instance_ptr = (builtin_ptr + i * BUILTIN_INSTANCE_SIZE)?;
+        let instance_ptr = (builtin_ptr + i * MOD_BUILTIN_INSTANCE_SIZE)?;
 
         for (idx, value) in modulus.iter().enumerate() {
             vm.insert_value((instance_ptr + idx)?, *value)?;

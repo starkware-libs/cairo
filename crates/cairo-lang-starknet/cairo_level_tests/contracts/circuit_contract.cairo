@@ -2,7 +2,7 @@
 mod circuit_contract {
     use core::circuit::{
         CircuitElement, CircuitInput, circuit_add, circuit_inverse, CircuitOutputsTrait,
-        CircuitModulus, FillInputResultTrait, CircuitInputs, EvalCircuitTrait, EvalCircuitResult
+        CircuitModulus, AddInputResultTrait, CircuitInputs, EvalCircuitTrait, EvalCircuitResult
     };
 
 
