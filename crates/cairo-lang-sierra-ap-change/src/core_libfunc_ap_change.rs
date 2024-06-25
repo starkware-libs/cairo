@@ -392,6 +392,12 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0)]
             }
             BoundedIntConcreteLibfunc::IntoGuarantee(_) => vec![ApChange::Known(0)],
+            BoundedIntConcreteLibfunc::Felt252Constrain(_) => {
+                vec![ApChange::Known(1), ApChange::Known(1)]
+            }
+            BoundedIntConcreteLibfunc::VerifyGuarantee(_) => {
+                todo!("Implement bounded_int_verify_guarantee")
+            }
         },
         Circuit(CircuitConcreteLibfunc::TryIntoCircuitModulus(_)) => {
             vec![ApChange::Known(1), ApChange::Known(1)]

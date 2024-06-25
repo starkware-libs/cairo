@@ -3,9 +3,10 @@ use std::ops::Shl;
 use cairo_lang_utils::require;
 use itertools::Itertools;
 use num_bigint::{BigInt, ToBigInt};
-use num_traits::{One, Signed};
+use num_traits::{One, Signed, Zero};
 use starknet_types_core::felt::Felt as Felt252;
 
+use super::felt252::Felt252Type;
 use super::non_zero::{nonzero_ty, NonZeroType};
 use super::range_check::RangeCheckType;
 use super::utils::{reinterpret_cast_signature, Range};
@@ -20,8 +21,8 @@ use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
 use crate::extensions::{
-    args_as_single_type, args_as_two_types, ConcreteType, NamedLibfunc, NamedType,
-    OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
+    args_as_single_type, args_as_single_value, args_as_two_types, ConcreteType, NamedLibfunc,
+    NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
@@ -114,6 +115,8 @@ define_libfunc_hierarchy! {
         IsZero(BoundedIntIsZeroLibfunc),
         WrapNonZero(BoundedIntWrapNonZeroLibfunc),
         IntoGuarantee(BoundedIntIntoGuaranteeLibfunc),
+        Felt252Constrain(BoundedIntFelt252ConstrainLibfunc),
+        VerifyGuarantee(BoundedIntVerifyGuaranteeLibfunc),
     }, BoundedIntConcreteLibfunc
 }
 
@@ -516,6 +519,80 @@ impl SignatureOnlyGenericLibfunc for BoundedIntIntoGuaranteeLibfunc {
         let ty = args_as_single_type(args)?;
         let guarantee_ty = bounded_int_guarantee_ty(context, ty.clone())?;
         Ok(reinterpret_cast_signature(ty, guarantee_ty))
+    }
+}
+
+/// Libfunc for wrapping a given bounded int with a guarantee.
+#[derive(Default)]
+pub struct BoundedIntVerifyGuaranteeLibfunc {}
+impl SignatureOnlyGenericLibfunc for BoundedIntVerifyGuaranteeLibfunc {
+    const STR_ID: &'static str = "bounded_int_verify_guarantee";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(bounded_int_guarantee_ty(context, ty.clone())?),
+            ],
+            vec![OutputVarInfo::new_builtin(range_check_type.clone(), 0)],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+/// Libfunc for constraining a BoundedInt<Min, Max> to one of two non-empty ranges: [Min, Boundary)
+/// or [Boundary, Max]. The libfunc is also applicable for standard types such as u* and i*.
+#[derive(Default)]
+pub struct BoundedIntFelt252ConstrainLibfunc {}
+impl NamedLibfunc for BoundedIntFelt252ConstrainLibfunc {
+    type Concrete = BoundedIntConstrainConcreteLibfunc;
+
+    const STR_ID: &'static str = "bounded_int_felt252_constrain";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let boundary = args_as_single_value(args)?;
+        let zero = BigInt::zero();
+        let prime = Felt252::prime().into();
+        require(zero < boundary && boundary < prime)
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let low_range = Range::half_open(zero, boundary.clone());
+        let high_range = Range::half_open(boundary.clone(), prime);
+        let felt252_ty = context.get_concrete_type(Felt252Type::ID, &[])?;
+        let branch_signature = |rng: Range| {
+            let bounded_int_ty = bounded_int_ty(context, rng.lower, rng.upper - 1)?;
+            Ok(BranchSignature {
+                vars: vec![OutputVarInfo {
+                    ty: bounded_int_guarantee_ty(context, bounded_int_ty)?,
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                }],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            })
+        };
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(felt252_ty)],
+            branch_signatures: vec![branch_signature(low_range)?, branch_signature(high_range)?],
+            fallthrough: Some(0),
+        })
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let boundary = args_as_single_value(args)?;
+        let context = context.upcast();
+        Ok(Self::Concrete { boundary, signature: self.specialize_signature(context, args)? })
     }
 }
 

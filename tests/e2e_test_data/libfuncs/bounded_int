@@ -858,3 +858,59 @@ test::foo@0([0]: u8) -> (BoundedIntGuarantee<u8>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 100})
+
+//! > ==========================================================================
+
+//! > bounded_int_felt252_constrain
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::internal::{ConstraitFelt252Result, bounded_int_felt252_constrain};
+
+
+fn foo(val: felt252) -> ConstraitFelt252Result<
+    0xffffffffffffffffffffffff, 0x1000000000000000000000000
+> {
+    bounded_int_felt252_constrain(val)
+}
+
+//! > casm
+%{ memory[ap + 0] = 79228162514264337593543950335 <= memory[fp + -3] %}
+jmp rel 6 if [ap + 0] != 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> = BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedIntGuarantee<BoundedInt<79228162514264337593543950336, 3618502788666131213697322783095070105623107215331596699973092056135872020480>> = BoundedIntGuarantee<BoundedInt<79228162514264337593543950336, 3618502788666131213697322783095070105623107215331596699973092056135872020480>> [storable: true, drop: false, dup: false, zero_sized: false];
+type core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336> = Enum<ut@core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336>, BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>, BoundedIntGuarantee<BoundedInt<79228162514264337593543950336, 3618502788666131213697322783095070105623107215331596699973092056135872020480>>> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedInt<79228162514264337593543950336, 3618502788666131213697322783095070105623107215331596699973092056135872020480> = BoundedInt<79228162514264337593543950336, 3618502788666131213697322783095070105623107215331596699973092056135872020480> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_felt252_constrain<79228162514264337593543950336> = bounded_int_felt252_constrain<79228162514264337593543950336>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336>, 0> = enum_init<core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336>, 0>;
+libfunc store_temp<core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336>> = store_temp<core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336>>;
+libfunc enum_init<core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336>, 1> = enum_init<core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336>, 1>;
+
+bounded_int_felt252_constrain<79228162514264337593543950336>([0]) { fallthrough([1]) 5([2]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336>, 0>([1]) -> ([3]); // 2
+store_temp<core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336>>([3]) -> ([3]); // 3
+return([3]); // 4
+branch_align() -> (); // 5
+enum_init<core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336>, 1>([2]) -> ([4]); // 6
+store_temp<core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336>>([4]) -> ([4]); // 7
+return([4]); // 8
+
+test::foo@0([0]: felt252) -> (core::internal::ConstraitFelt252Result::<79228162514264337593543950335, 79228162514264337593543950336>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
