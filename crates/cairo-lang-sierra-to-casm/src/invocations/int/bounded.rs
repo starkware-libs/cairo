@@ -12,7 +12,7 @@ use num_bigint::BigInt;
 use num_traits::One;
 
 use crate::invocations::felt252::build_felt252_op_with_var;
-use crate::invocations::misc::{build_identity, build_is_zero};
+use crate::invocations::misc::{build_identity, build_is_zero, validate_under_limit};
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
@@ -45,8 +45,8 @@ pub fn build(
         BoundedIntConcreteLibfunc::Felt252Constrain(libfunc) => {
             build_felt252_constrain(builder, &libfunc.boundary)
         }
-        BoundedIntConcreteLibfunc::VerifyGuarantee(_) => {
-            todo!("Implement bounded_int_verify_guarantee")
+        BoundedIntConcreteLibfunc::VerifyGuarantee(libfunc) => {
+            build_verify_guarantee(builder, &libfunc.range)
         }
     }
 }
@@ -249,5 +249,45 @@ fn build_felt252_constrain(
         casm_builder,
         [("Fallthrough", &[&[value]], None), ("Over", &[&[value]], Some(target_statement_id))],
         Default::default(),
+    ))
+}
+
+/// Build verify guarantee on bounded ints.
+fn build_verify_guarantee(
+    builder: CompiledInvocationBuilder<'_>,
+    range: &Range,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [range_check, value] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(1) range_check;
+        deref value;
+    };
+    casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
+        const lower = range.lower.clone();
+        maybe_tempvar shifted_value = value - lower;
+    };
+    let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
+    validate_under_limit::<2>(
+        &mut casm_builder,
+        &range.size(),
+        shifted_value,
+        range_check,
+        &auxiliary_vars,
+    );
+    casm_build_extend! (casm_builder, Done: );
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check]], None)],
+        CostValidationInfo {
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
+            extra_costs: None,
+        },
     ))
 }
