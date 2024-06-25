@@ -577,6 +577,13 @@ enum AllowedEnumMember {
     variant: DisallowedType,
 }
 
+trait ATrait {}
+
+impl BadATraitImpl<+UnstableTrait> of ATrait;
+
+#[feature("unstable-trait")]
+impl ATraitImpl<+UnstableTrait> of ATrait;
+
 //! > function_body
 
 //! > expected_diagnostics
@@ -595,13 +602,18 @@ warning: Usage of unstable feature `"unstable-member"` with no `#[feature("unsta
     variant: DisallowedType,
              ^************^
 
+warning: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
+ --> lib.cairo:42:21
+impl BadATraitImpl<+UnstableTrait> of ATrait;
+                    ^***********^
+
 warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
- --> lib.cairo:41:15
+ --> lib.cairo:48:15
   let _fail = deprecated_function_with_note();
               ^***************************^
 
 warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
- --> lib.cairo:44:15
+ --> lib.cairo:51:15
   let _fail = deprecated_function_no_note();
               ^*************************^
 
