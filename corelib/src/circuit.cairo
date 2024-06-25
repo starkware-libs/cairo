@@ -296,6 +296,45 @@ impl U384IntoCircuitInputValue of IntoCircuitInputValue<u384> {
     }
 }
 
+impl CircuitPendingInputIntoCircuitInputValue of IntoCircuitInputValue<CircuitPendingInput> {
+    fn into_circuit_input_value(self: CircuitPendingInput) -> [U96Guarantee; 4] {
+        self.value
+    }
+}
+
+/// A type that contains a pending input for a circuit.
+pub struct CircuitPendingInput {
+    value: [U96Guarantee; 4],
+}
+impl CircuitPendingInputDestruct of Destruct<CircuitPendingInput> {
+    fn destruct(self: CircuitPendingInput) nopanic {
+        let [_val0, _val1, _val2, _val3] = self.value;
+    }
+}
+
+impl Felt252sTryIntoCircuitPendingInput of TryInto<[felt252; 4], CircuitPendingInput> {
+    fn try_into(self: [felt252; 4]) -> Option<CircuitPendingInput> {
+        let [val0, val1, val2, val3] = self;
+        Option::Some(
+            CircuitPendingInput {
+                value: [val0.try_into()?, val1.try_into()?, val2.try_into()?, val3.try_into()?,]
+            }
+        )
+    }
+}
+
+impl Felt252TryIntoU96Guarantee of TryInto<felt252, U96Guarantee> {
+    fn try_into(self: felt252) -> Option<U96Guarantee> {
+        match core::internal::bounded_int_felt252_constrain::<0x1000000000000000000000000>(self) {
+            core::internal::ConstraitFelt252Result::Under(guarantee) => Option::Some(guarantee),
+            core::internal::ConstraitFelt252Result::Over(guarantee) => {
+                core::internal::bounded_int_verify_guarantee(guarantee);
+                Option::None
+            }
+        }
+    }
+}
+
 /// A trait for evaluating a circuit.
 #[generate_trait]
 pub impl EvalCircuitImpl<C> of EvalCircuitTrait<C> {

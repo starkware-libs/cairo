@@ -1,7 +1,7 @@
 use core::circuit::{
     RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, circuit_add, circuit_sub,
     circuit_mul, circuit_inverse, EvalCircuitTrait, u384, CircuitOutputsTrait, CircuitModulus,
-    FillInputResultTrait, CircuitInputs,
+    FillInputResultTrait, CircuitInputs, CircuitPendingInput,
 };
 
 use core::test::test_utils::assert_eq;
@@ -99,4 +99,17 @@ fn test_fill_inputs_loop() {
     };
 
     circuit_inputs.done();
+}
+
+fn test_into_u96_guarantee() {
+    let input_opt: Option<CircuitPendingInput> = [1, 2, 3, 4].try_into();
+    assert!(input_opt.is_some());
+    let input_opt: Option<CircuitPendingInput> = [0x1000000000000000000000001, 2, 3, 4].try_into();
+    assert!(input_opt.is_none());
+    let input_opt: Option<CircuitPendingInput> = [1, 0x1000000000000000000000002, 3, 4].try_into();
+    assert!(input_opt.is_none());
+    let input_opt: Option<CircuitPendingInput> = [1, 2, 0x1000000000000000000000003, 4].try_into();
+    assert!(input_opt.is_none());
+    let input_opt: Option<CircuitPendingInput> = [1, 2, 3, 0x1000000000000000000000004].try_into();
+    assert!(input_opt.is_none());
 }
