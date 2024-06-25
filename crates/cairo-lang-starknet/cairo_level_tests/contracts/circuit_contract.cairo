@@ -16,6 +16,20 @@ mod circuit_contract {
         let in1 = CircuitElement::<CircuitInput<0>> {};
         let in2 = CircuitElement::<CircuitInput<1>> {};
         let add = circuit_add(in1, in2);
+        // Making the type much larger.
+        let add = circuit_add(add, add);
+        let add = circuit_add(add, add);
+        let add = circuit_add(add, add);
+        let add = circuit_add(add, add);
+        let add = circuit_add(add, add);
+        let add = circuit_add(add, add);
+        let add = circuit_add(add, add);
+        let add = circuit_add(add, add);
+        let add = circuit_add(add, add);
+        let add = circuit_add(add, add);
+        let add = circuit_add(add, add);
+        let add = circuit_add(add, add);
+        let add = circuit_add(add, add);
         let inv = circuit_inverse(add);
 
         let modulus = TryInto::<_, CircuitModulus>::try_into([7, 0, 0, 0]).unwrap();
