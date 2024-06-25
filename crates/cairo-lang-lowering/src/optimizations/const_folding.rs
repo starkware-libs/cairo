@@ -5,6 +5,7 @@ mod test;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_semantic::corelib::{self};
 use cairo_lang_semantic::items::constant::ConstValue;
+use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::Intern;
@@ -41,20 +42,30 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
 
     let semantic_db = db.upcast();
     let to_lowering_id = |id| FunctionLongId::Semantic(id).intern(db);
-    let get_extern = |module, name: &str, fullpath: &str| {
+    let get_extern = |module, name: &str| {
         let Ok(Some(ModuleItemId::ExternFunction(id))) =
             db.module_item_by_name(module, name.into())
         else {
-            unreachable!("`{fullpath}` not found");
+            unreachable!("`{}::{name}` not found", module.full_path(db.upcast()));
         };
         id
     };
     let felt_sub =
         to_lowering_id(corelib::get_core_function_id(semantic_db, "felt252_sub".into(), vec![]));
     let box_module = corelib::core_submodule(db.upcast(), "box");
-    let into_box = get_extern(box_module, "into_box", "core::box::into_box");
+    let into_box = get_extern(box_module, "into_box");
     let integer_module = corelib::core_submodule(db.upcast(), "integer");
-    let upcast = get_extern(integer_module, "upcast", "core::integer::upcast");
+    let upcast = get_extern(integer_module, "upcast");
+    let starknet_module = corelib::core_submodule(db.upcast(), "starknet");
+    let storage_access_module =
+        corelib::get_submodule(db.upcast(), starknet_module, "storage_access")
+            .expect("`starknet::storage_access` missing.");
+    let storage_base_address_from_felt252 = to_lowering_id(corelib::get_function_id(
+        db.upcast(),
+        storage_access_module,
+        "storage_base_address_from_felt252".into(),
+        vec![],
+    ));
     let nz_fns = UnorderedHashSet::<_>::from_iter(
         chain!(
             [corelib::get_core_function_id(semantic_db, "felt252_is_zero".into(), vec![])],
@@ -110,6 +121,21 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                             if val.is_zero() {
                                 var_info.insert(outputs[0], VarInfo::Var(inputs[0]));
                             }
+                        }
+                    } else if function == &storage_base_address_from_felt252 {
+                        let input_var = inputs[0].var_id;
+                        if let Some(VarInfo::Const(ConstValue::Int(val, ty))) =
+                            var_info.get(&input_var)
+                        {
+                            inputs.clear();
+                            *function = to_lowering_id(corelib::get_function_id(
+                                db.upcast(),
+                                storage_access_module,
+                                "storage_base_address_const".into(),
+                                vec![GenericArgumentId::Constant(
+                                    ConstValue::Int(val.clone(), *ty).intern(db),
+                                )],
+                            ));
                         }
                     } else if let Some(extrn) = function.get_extern(db) {
                         if extrn == into_box {

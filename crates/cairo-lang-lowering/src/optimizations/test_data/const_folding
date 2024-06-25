@@ -763,3 +763,42 @@ End:
   Return(v20)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > StorageBaseAddress const.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> starknet::StorageBaseAddress {
+    starknet::storage_access::storage_base_address_from_felt252(10)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 10
+  (v1: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_from_felt252(v0)
+End:
+  Return(v1)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 10
+  (v1: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_const::<10>()
+End:
+  Return(v1)
+
+//! > lowering_diagnostics
