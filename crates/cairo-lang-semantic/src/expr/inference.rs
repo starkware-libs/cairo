@@ -733,8 +733,7 @@ impl<'db> Inference<'db> {
                     ty,
                     self.db
                         .impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_ty, self.db))
-                        .map_err(|_| ErrorSet)?
-                        .unwrap(),
+                        .map_err(|_| ErrorSet)?,
                 )?;
             }
             for (trait_constant, constant_id) in mappings.constants {
@@ -1101,7 +1100,7 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
                         impl_type_id_rewrite_result
                     }
                     ImplLongId::Concrete(_) => {
-                        if let Ok(Some(ty)) = self.db.impl_type_concrete_implized(ImplTypeId::new(
+                        if let Ok(ty) = self.db.impl_type_concrete_implized(ImplTypeId::new(
                             impl_id, trait_ty, self.db,
                         )) {
                             *value = self.rewrite(ty).no_err().lookup_intern(self.db);

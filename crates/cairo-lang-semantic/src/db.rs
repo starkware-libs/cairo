@@ -720,7 +720,7 @@ pub trait SemanticGroup:
         &self,
         impl_def_id: ImplDefId,
         trait_type_id: TraitTypeId,
-    ) -> Maybe<Option<ImplTypeDefId>>;
+    ) -> Maybe<ImplTypeDefId>;
 
     /// Returns the constant items in the impl.
     #[salsa::invoke(items::imp::impl_constants)]
@@ -838,7 +838,7 @@ pub trait SemanticGroup:
     /// type with a concrete impl.
     #[salsa::invoke(items::imp::impl_type_concrete_implized)]
     #[salsa::cycle(items::imp::impl_type_concrete_implized_cycle)]
-    fn impl_type_concrete_implized(&self, impl_type_def_id: ImplTypeId) -> Maybe<Option<TypeId>>;
+    fn impl_type_concrete_implized(&self, impl_type_def_id: ImplTypeId) -> Maybe<TypeId>;
 
     // Impl constant def.
     // ================
@@ -1055,7 +1055,7 @@ pub trait SemanticGroup:
         &self,
         trait_type_def_id: TraitTypeId,
         impl_def_id: ImplDefId,
-    ) -> Maybe<Option<TypeId>>;
+    ) -> Maybe<TypeId>;
 
     // Free function.
     // ==============
