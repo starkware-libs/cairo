@@ -4,12 +4,12 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{extract_matches, require};
 use num_bigint::BigInt;
-use num_traits::{One, Signed, ToPrimitive, Zero};
+use num_traits::{One, ToPrimitive, Zero};
 use once_cell::sync::Lazy;
 
+use super::bounded_int::bounded_int_guarantee_ty;
 use super::range_check::RangeCheck96Type;
 use super::structure::StructType;
-use super::utils::{reinterpret_cast_signature, Range};
 use crate::extensions::bounded_int::bounded_int_ty;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -66,7 +66,6 @@ define_type_hierarchy! {
         InverseGate(InverseGate),
         MulModGate(MulModGate),
         SubModGate(SubModGate),
-        U96Guarantee(U96Guarantee),
         U96LimbsLessThanGuarantee(U96LimbsLessThanGuarantee),
     }, CircuitTypeConcrete
 }
@@ -80,7 +79,6 @@ define_libfunc_hierarchy! {
         GetOutput(GetOutputLibFunc),
         TryIntoCircuitModulus(TryIntoCircuitModulusLibFunc),
         FailureGuaranteeVerify(CircuitFailureGuaranteeVerifyLibFunc),
-        IntoU96Guarantee(IntoU96GuaranteeLibFunc),
         U96GuaranteeVerify(U96GuaranteeVerifyLibFunc),
         U96LimbsLessThanGuaranteeVerify(U96LimbsLessThanGuaranteeVerifyLibfunc),
         U96SingleLimbLessThanGuaranteeVerify(U96SingleLimbLessThanGuaranteeVerifyLibfunc),
@@ -617,18 +615,6 @@ impl ConcreteType for ConcreteU96LimbsLessThanGuarantee {
     }
 }
 
-/// A value that is guaranteed to fit in a u96.
-/// This value can only be dropped by being written to a 96bit range check.
-#[derive(Default)]
-pub struct U96Guarantee {}
-impl NoGenericArgsGenericType for U96Guarantee {
-    const ID: GenericTypeId = GenericTypeId::new_inline("U96Guarantee");
-    const STORABLE: bool = true;
-    const DUPLICATABLE: bool = false;
-    const DROPPABLE: bool = false;
-    const ZERO_SIZED: bool = false;
-}
-
 /// A type representing a circuit instance data with all the inputs filled.
 #[derive(Default)]
 pub struct CircuitDescriptor {}
@@ -806,7 +792,7 @@ impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
         let circuit_data_ty =
             context.get_concrete_type(CircuitData::id(), &[GenericArg::Type(ty)])?;
 
-        let u96_guarantee_ty = context.get_concrete_type(U96Guarantee::id(), &[])?;
+        let u96_guarantee_ty = u96_guarantee_ty(context)?;
 
         let val_ty = context.get_concrete_type(
             StructType::id(),
@@ -981,30 +967,6 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
 
 pub type EvalCircuitLibFunc = WrapSignatureAndTypeGenericLibfunc<EvalCircuitLibFuncWrapped>;
 
-/// Converts 'T' into a 'U96Guarantee'.
-/// 'T' must be a value that fits inside a u96, for example: u8, u96 or BoundedInt<0, 12>.
-#[derive(Default)]
-pub struct IntoU96GuaranteeLibFuncWrapped {}
-impl SignatureAndTypeGenericLibfunc for IntoU96GuaranteeLibFuncWrapped {
-    const STR_ID: &'static str = "into_u96_guarantee";
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-        ty: ConcreteTypeId,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let range = Range::from_type(context, ty.clone())?;
-        require(!range.lower.is_negative() && range.upper <= BigInt::one().shl(96))
-            .ok_or(SpecializationError::UnsupportedGenericArg)?;
-
-        let guarantee_ty = context.get_concrete_type(U96Guarantee::id(), &[])?;
-        Ok(reinterpret_cast_signature(ty, guarantee_ty))
-    }
-}
-
-pub type IntoU96GuaranteeLibFunc =
-    WrapSignatureAndTypeGenericLibfunc<IntoU96GuaranteeLibFuncWrapped>;
-
 /// Libfunc for verifying and dropping a `U96Guarantee`.
 #[derive(Default)]
 pub struct U96GuaranteeVerifyLibFunc {}
@@ -1016,7 +978,7 @@ impl NoGenericArgsGenericLibfunc for U96GuaranteeVerifyLibFunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let range_check96_type = context.get_concrete_type(RangeCheck96Type::id(), &[])?;
-        let guarantee_ty = context.get_concrete_type(U96Guarantee::id(), &[])?;
+        let guarantee_ty = u96_guarantee_ty(context)?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(range_check96_type.clone()).with_allow_add_const(),
@@ -1144,7 +1106,7 @@ impl NamedLibfunc for U96LimbsLessThanGuaranteeVerifyLibfunc {
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         require(limb_count > 1).ok_or(SpecializationError::UnsupportedGenericArg)?;
         let in_guarantee_ty = u96_limbs_less_than_guarantee_ty(context, limb_count)?;
-        let u96_lt_guarantee_ty = context.get_concrete_type(U96Guarantee::id(), &[])?;
+        let u96_lt_guarantee_ty = u96_guarantee_ty(context)?;
         let eq_guarantee_ty = u96_limbs_less_than_guarantee_ty(context, limb_count - 1)?;
         Ok(LibfuncSignature {
             param_signatures: vec![ParamSignature::new(in_guarantee_ty)],
@@ -1207,7 +1169,7 @@ impl NoGenericArgsGenericLibfunc for U96SingleLimbLessThanGuaranteeVerifyLibfunc
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let in_guarantee_ty = u96_limbs_less_than_guarantee_ty(context, 1)?;
-        let u96_lt_guarantee_ty = context.get_concrete_type(U96Guarantee::id(), &[])?;
+        let u96_lt_guarantee_ty = u96_guarantee_ty(context)?;
         Ok(LibfuncSignature::new_non_branch(
             vec![in_guarantee_ty],
             vec![OutputVarInfo {
@@ -1499,4 +1461,11 @@ fn u96_limbs_less_than_guarantee_ty(
 ) -> Result<ConcreteTypeId, SpecializationError> {
     context
         .get_concrete_type(U96LimbsLessThanGuarantee::id(), &[GenericArg::Value(limb_count.into())])
+}
+
+/// Returns the guarantee type for a u96 number.
+fn u96_guarantee_ty(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    bounded_int_guarantee_ty(context, get_u96_type(context)?)
 }

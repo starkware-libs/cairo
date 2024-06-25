@@ -86,9 +86,10 @@ type Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core
 type core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> = AddModGate<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<2> = CircuitInput<2> [storable: false, drop: false, dup: false, zero_sized: false];
 type (core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>) = Struct<ut@Tuple, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>> [storable: false, drop: false, dup: false, zero_sized: false];
-type U96Guarantee = U96Guarantee [storable: true, drop: false, dup: false, zero_sized: false];
-type Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee> = Struct<ut@Tuple, U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> = BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: false, dup: false, zero_sized: false];
+type Tuple<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>, BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>, BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>, BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>> = Struct<ut@Tuple, BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>, BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>, BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>, BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>> [storable: true, drop: false, dup: false, zero_sized: false];
 type core::circuit::CircuitInput::<1> = CircuitInput<1> [storable: false, drop: false, dup: false, zero_sized: false];
+type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: false];
 
 libfunc fill_circuit_input<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = fill_circuit_input<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>;
@@ -107,7 +108,7 @@ enum_init<core::circuit::FillInputResult::<core::circuit::Circuit::<(core::circu
 store_temp<core::circuit::FillInputResult::<core::circuit::Circuit::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>>([5]) -> ([5]); // 7
 return([5]); // 8
 
-test::foo@0([0]: CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [1]: Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>) -> (core::circuit::FillInputResult::<core::circuit::Circuit::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>);
+test::foo@0([0]: CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, [1]: Tuple<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>, BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>, BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>, BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>>) -> (core::circuit::FillInputResult::<core::circuit::Circuit::<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 1000})
@@ -730,16 +731,19 @@ ret;
 
 //! > sierra_code
 type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
-type U96Guarantee = U96Guarantee [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> = BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc into_u96_guarantee<u8> = into_u96_guarantee<u8>;
-libfunc store_temp<U96Guarantee> = store_temp<U96Guarantee>;
+libfunc upcast<u8, BoundedInt<0, 79228162514264337593543950335>> = upcast<u8, BoundedInt<0, 79228162514264337593543950335>>;
+libfunc bounded_int_into_guarantee<BoundedInt<0, 79228162514264337593543950335>> = bounded_int_into_guarantee<BoundedInt<0, 79228162514264337593543950335>>;
+libfunc store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>> = store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>>;
 
-into_u96_guarantee<u8>([0]) -> ([1]); // 0
-store_temp<U96Guarantee>([1]) -> ([1]); // 1
-return([1]); // 2
+upcast<u8, BoundedInt<0, 79228162514264337593543950335>>([0]) -> ([1]); // 0
+bounded_int_into_guarantee<BoundedInt<0, 79228162514264337593543950335>>([1]) -> ([2]); // 1
+store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>>([2]) -> ([2]); // 2
+return([2]); // 3
 
-test::foo@0([0]: u8) -> (U96Guarantee);
+test::foo@0([0]: u8) -> (BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 100})
@@ -767,7 +771,8 @@ ret;
 //! > sierra_code
 type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type U96Guarantee = U96Guarantee [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> = BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u96_guarantee_verify = u96_guarantee_verify;
 libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
@@ -776,7 +781,7 @@ u96_guarantee_verify([0], [1]) -> ([2]); // 0
 store_temp<RangeCheck96>([2]) -> ([2]); // 1
 return([2]); // 2
 
-test::foo@0([0]: RangeCheck96, [1]: U96Guarantee) -> (RangeCheck96);
+test::foo@0([0]: RangeCheck96, [1]: BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>) -> (RangeCheck96);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 256})
@@ -820,8 +825,9 @@ ret;
 //! > sierra_code
 type U96LimbsLTGuarantee<4> = U96LimbsLTGuarantee<4> [storable: true, drop: false, dup: false, zero_sized: false];
 type U96LimbsLTGuarantee<3> = U96LimbsLTGuarantee<3> [storable: true, drop: false, dup: false, zero_sized: false];
-type U96Guarantee = U96Guarantee [storable: true, drop: false, dup: false, zero_sized: false];
-type core::circuit::NextU96LessThanGuarantee::<3> = Enum<ut@core::circuit::NextU96LessThanGuarantee::<3>, U96LimbsLTGuarantee<3>, U96Guarantee> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> = BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: false, dup: false, zero_sized: false];
+type core::circuit::NextU96LessThanGuarantee::<3> = Enum<ut@core::circuit::NextU96LessThanGuarantee::<3>, U96LimbsLTGuarantee<3>, BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u96_limbs_less_than_guarantee_verify<4> = u96_limbs_less_than_guarantee_verify<4>;
 libfunc branch_align = branch_align;
@@ -866,16 +872,17 @@ ret;
 
 //! > sierra_code
 type U96LimbsLTGuarantee<1> = U96LimbsLTGuarantee<1> [storable: true, drop: false, dup: false, zero_sized: false];
-type U96Guarantee = U96Guarantee [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> = BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u96_single_limb_less_than_guarantee_verify = u96_single_limb_less_than_guarantee_verify;
-libfunc store_temp<U96Guarantee> = store_temp<U96Guarantee>;
+libfunc store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>> = store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>>;
 
 u96_single_limb_less_than_guarantee_verify([0]) -> ([1]); // 0
-store_temp<U96Guarantee>([1]) -> ([1]); // 1
+store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>>([1]) -> ([1]); // 1
 return([1]); // 2
 
-test::foo@0([0]: U96LimbsLTGuarantee<1>) -> (U96Guarantee);
+test::foo@0([0]: U96LimbsLTGuarantee<1>) -> (BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 100})
@@ -916,15 +923,16 @@ type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized:
 type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
 type U96LimbsLTGuarantee<1> = U96LimbsLTGuarantee<1> [storable: true, drop: false, dup: false, zero_sized: false];
 type U96LimbsLTGuarantee<2> = U96LimbsLTGuarantee<2> [storable: true, drop: false, dup: false, zero_sized: false];
-type U96Guarantee = U96Guarantee [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> = BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>> [storable: true, drop: false, dup: false, zero_sized: false];
 type U96LimbsLTGuarantee<3> = U96LimbsLTGuarantee<3> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedInt<0, 79228162514264337593543950335> = BoundedInt<0, 79228162514264337593543950335> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u96_limbs_less_than_guarantee_verify<4> = u96_limbs_less_than_guarantee_verify<4>;
 libfunc branch_align = branch_align;
 libfunc u96_limbs_less_than_guarantee_verify<3> = u96_limbs_less_than_guarantee_verify<3>;
 libfunc u96_limbs_less_than_guarantee_verify<2> = u96_limbs_less_than_guarantee_verify<2>;
 libfunc u96_single_limb_less_than_guarantee_verify = u96_single_limb_less_than_guarantee_verify;
-libfunc store_temp<U96Guarantee> = store_temp<U96Guarantee>;
+libfunc store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>> = store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>>;
 libfunc jump = jump;
 libfunc u96_guarantee_verify = u96_guarantee_verify;
 libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
@@ -936,16 +944,16 @@ branch_align() -> (); // 3
 u96_limbs_less_than_guarantee_verify<2>([4]) { fallthrough([6]) 9([7]) }; // 4
 branch_align() -> (); // 5
 u96_single_limb_less_than_guarantee_verify([6]) -> ([8]); // 6
-store_temp<U96Guarantee>([8]) -> ([9]); // 7
+store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>>([8]) -> ([9]); // 7
 jump() { 17() }; // 8
 branch_align() -> (); // 9
-store_temp<U96Guarantee>([7]) -> ([9]); // 10
+store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>>([7]) -> ([9]); // 10
 jump() { 17() }; // 11
 branch_align() -> (); // 12
-store_temp<U96Guarantee>([5]) -> ([9]); // 13
+store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>>([5]) -> ([9]); // 13
 jump() { 17() }; // 14
 branch_align() -> (); // 15
-store_temp<U96Guarantee>([3]) -> ([9]); // 16
+store_temp<BoundedIntGuarantee<BoundedInt<0, 79228162514264337593543950335>>>([3]) -> ([9]); // 16
 u96_guarantee_verify([0], [9]) -> ([10]); // 17
 store_temp<RangeCheck96>([10]) -> ([10]); // 18
 return([10]); // 19

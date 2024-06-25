@@ -507,6 +507,7 @@ pub fn core_libfunc_cost(
             BoundedIntConcreteLibfunc::WrapNonZero(_) => {
                 vec![ConstCost::steps(0).into()]
             }
+            BoundedIntConcreteLibfunc::IntoGuarantee(_) => vec![ConstCost::steps(0).into()],
         },
         Circuit(libfunc) => match libfunc {
             CircuitConcreteLibfunc::FillInput(_) => {
@@ -549,9 +550,6 @@ pub fn core_libfunc_cost(
             }
             CircuitConcreteLibfunc::GetDescriptor(_) => {
                 vec![ConstCost::steps(6).into()]
-            }
-            CircuitConcreteLibfunc::IntoU96Guarantee(_) => {
-                vec![ConstCost::steps(0).into()]
             }
             CircuitConcreteLibfunc::U96GuaranteeVerify(_) => {
                 vec![ConstCost { steps: 1, holes: 0, range_checks: 0, range_checks96: 1 }.into()]

@@ -41,6 +41,7 @@ pub fn build(
         }
         BoundedIntConcreteLibfunc::IsZero(_) => build_is_zero(builder),
         BoundedIntConcreteLibfunc::WrapNonZero(_) => build_identity(builder),
+        BoundedIntConcreteLibfunc::IntoGuarantee(_) => build_identity(builder),
     }
 }
 

@@ -11,7 +11,6 @@ use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::casts::IntoOrPanic;
 use itertools::chain;
 
-use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CostValidationInfo,
@@ -42,7 +41,6 @@ pub fn build(
         CircuitConcreteLibfunc::FailureGuaranteeVerify(_) => {
             build_failure_guarantee_verify(builder)
         }
-        CircuitConcreteLibfunc::IntoU96Guarantee(_) => build_identity(builder),
         CircuitConcreteLibfunc::U96GuaranteeVerify(_) => build_u96_guarantee_verify(builder),
         CircuitConcreteLibfunc::U96LimbsLessThanGuaranteeVerify(libfunc) => {
             build_u96_limbs_less_than_guarantee_verify(libfunc.limb_count, builder)
