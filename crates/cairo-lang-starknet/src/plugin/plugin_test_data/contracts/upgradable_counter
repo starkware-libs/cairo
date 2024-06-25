@@ -669,6 +669,8 @@ impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispat
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageICounterContractDispatcher of starknet::storage_access::DeriveStorage::<ICounterContractDispatcher> {}
 impl ICounterContractLibraryDispatcherCopy of core::traits::Copy::<ICounterContractLibraryDispatcher>;
 impl ICounterContractLibraryDispatcherDrop of core::traits::Drop::<ICounterContractLibraryDispatcher>;
 impl ICounterContractLibraryDispatcherSerde of core::serde::Serde::<ICounterContractLibraryDispatcher> {
@@ -712,6 +714,8 @@ impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContrac
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageICounterContractLibraryDispatcher of starknet::storage_access::DeriveStorage::<ICounterContractLibraryDispatcher> {}
 impl ICounterContractSafeLibraryDispatcherCopy of core::traits::Copy::<ICounterContractSafeLibraryDispatcher>;
 impl ICounterContractSafeLibraryDispatcherDrop of core::traits::Drop::<ICounterContractSafeLibraryDispatcher>;
 impl ICounterContractSafeLibraryDispatcherSerde of core::serde::Serde::<ICounterContractSafeLibraryDispatcher> {
@@ -755,6 +759,8 @@ impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterCon
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageICounterContractSafeLibraryDispatcher of starknet::storage_access::DeriveStorage::<ICounterContractSafeLibraryDispatcher> {}
 impl ICounterContractSafeDispatcherCopy of core::traits::Copy::<ICounterContractSafeDispatcher>;
 impl ICounterContractSafeDispatcherDrop of core::traits::Drop::<ICounterContractSafeDispatcher>;
 impl ICounterContractSafeDispatcherSerde of core::serde::Serde::<ICounterContractSafeDispatcher> {
@@ -798,6 +804,8 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageICounterContractSafeDispatcher of starknet::storage_access::DeriveStorage::<ICounterContractSafeDispatcher> {}
 
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
