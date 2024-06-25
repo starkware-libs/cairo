@@ -389,6 +389,8 @@ impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDi
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutHelloStarknetTraitDispatcher of starknet::storage_access::SimpleStorageLayout::<HelloStarknetTraitDispatcher> {}
 impl HelloStarknetTraitLibraryDispatcherCopy of core::traits::Copy::<HelloStarknetTraitLibraryDispatcher>;
 impl HelloStarknetTraitLibraryDispatcherDrop of core::traits::Drop::<HelloStarknetTraitLibraryDispatcher>;
 impl HelloStarknetTraitLibraryDispatcherSerde of core::serde::Serde::<HelloStarknetTraitLibraryDispatcher> {
@@ -432,6 +434,8 @@ impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknet
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutHelloStarknetTraitLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<HelloStarknetTraitLibraryDispatcher> {}
 impl HelloStarknetTraitSafeLibraryDispatcherCopy of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcher>;
 impl HelloStarknetTraitSafeLibraryDispatcherDrop of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcher>;
 impl HelloStarknetTraitSafeLibraryDispatcherSerde of core::serde::Serde::<HelloStarknetTraitSafeLibraryDispatcher> {
@@ -475,6 +479,8 @@ impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStar
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutHelloStarknetTraitSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<HelloStarknetTraitSafeLibraryDispatcher> {}
 impl HelloStarknetTraitSafeDispatcherCopy of core::traits::Copy::<HelloStarknetTraitSafeDispatcher>;
 impl HelloStarknetTraitSafeDispatcherDrop of core::traits::Drop::<HelloStarknetTraitSafeDispatcher>;
 impl HelloStarknetTraitSafeDispatcherSerde of core::serde::Serde::<HelloStarknetTraitSafeDispatcher> {
@@ -518,6 +524,8 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutHelloStarknetTraitSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<HelloStarknetTraitSafeDispatcher> {}
 
     #[storage]
     struct Storage {

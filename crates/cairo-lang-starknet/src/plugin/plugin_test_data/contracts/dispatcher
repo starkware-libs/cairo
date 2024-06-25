@@ -249,6 +249,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractDispatcher> {}
 
 
 lib.cairo:1:1
@@ -306,6 +308,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -363,6 +367,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -420,6 +426,8 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeDispatcher> {}
 
 //! > expected_diagnostics
 
@@ -552,6 +560,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractDispatcher> {}
 
 
 lib.cairo:1:1
@@ -609,6 +619,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -666,6 +678,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -723,6 +737,8 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeDispatcher> {}
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `starknet::interface` functions don't support `ref` parameters other than the first one.
@@ -935,6 +951,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractDispatcher> {}
 
 
 lib.cairo:1:1
@@ -992,6 +1010,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -1049,6 +1069,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -1106,3 +1128,5 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeDispatcher> {}

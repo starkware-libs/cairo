@@ -2875,6 +2875,8 @@ impl StoreInterfaceTraitDispatcher of starknet::Store::<InterfaceTraitDispatcher
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterfaceTraitDispatcher of starknet::storage_access::SimpleStorageLayout::<InterfaceTraitDispatcher> {}
 
 
 lib.cairo:1:1
@@ -2932,6 +2934,8 @@ impl StoreInterfaceTraitLibraryDispatcher of starknet::Store::<InterfaceTraitLib
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterfaceTraitLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<InterfaceTraitLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -2989,6 +2993,8 @@ impl StoreInterfaceTraitSafeLibraryDispatcher of starknet::Store::<InterfaceTrai
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterfaceTraitSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<InterfaceTraitSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -3046,6 +3052,8 @@ impl StoreInterfaceTraitSafeDispatcher of starknet::Store::<InterfaceTraitSafeDi
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterfaceTraitSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<InterfaceTraitSafeDispatcher> {}
 
 
 lib.cairo:8:1
@@ -3918,6 +3926,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractDispatcher> {}
 
 
 lib.cairo:1:1
@@ -3975,6 +3985,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -4032,6 +4044,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -4089,6 +4103,8 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeDispatcher> {}
 
 //! > ==========================================================================
 
@@ -4255,6 +4271,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractDispatcher> {}
 
 
 lib.cairo:1:1
@@ -4312,6 +4330,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -4369,6 +4389,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -4426,6 +4448,8 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeDispatcher> {}
 
 //! > ==========================================================================
 
@@ -4558,6 +4582,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractDispatcher> {}
 
 
 lib.cairo:1:1
@@ -4615,6 +4641,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -4672,6 +4700,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -4729,6 +4759,8 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeDispatcher> {}
 
 //! > ==========================================================================
 
@@ -4868,6 +4900,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractDispatcher> {}
 
 
 lib.cairo:1:1
@@ -4925,6 +4959,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -4982,6 +5018,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -5039,6 +5077,8 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutIContractSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<IContractSafeDispatcher> {}
 
 //! > ==========================================================================
 
@@ -5424,6 +5464,8 @@ impl StoreInterfaceDispatcher of starknet::Store::<InterfaceDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterfaceDispatcher of starknet::storage_access::SimpleStorageLayout::<InterfaceDispatcher> {}
 
 
 lib.cairo:1:1
@@ -5481,6 +5523,8 @@ impl StoreInterfaceLibraryDispatcher of starknet::Store::<InterfaceLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterfaceLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<InterfaceLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -5538,6 +5582,8 @@ impl StoreInterfaceSafeLibraryDispatcher of starknet::Store::<InterfaceSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterfaceSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<InterfaceSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -5595,6 +5641,8 @@ impl StoreInterfaceSafeDispatcher of starknet::Store::<InterfaceSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterfaceSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<InterfaceSafeDispatcher> {}
 
 //! > ==========================================================================
 
@@ -5956,6 +6004,8 @@ impl StoreInterfaceDispatcher of starknet::Store::<InterfaceDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterfaceDispatcher of starknet::storage_access::SimpleStorageLayout::<InterfaceDispatcher> {}
 
 
 lib.cairo:1:1
@@ -6013,6 +6063,8 @@ impl StoreInterfaceLibraryDispatcher of starknet::Store::<InterfaceLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterfaceLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<InterfaceLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -6070,6 +6122,8 @@ impl StoreInterfaceSafeLibraryDispatcher of starknet::Store::<InterfaceSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterfaceSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<InterfaceSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -6127,6 +6181,8 @@ impl StoreInterfaceSafeDispatcher of starknet::Store::<InterfaceSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterfaceSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<InterfaceSafeDispatcher> {}
 
 
 lib.cairo:7:1
@@ -7156,6 +7212,8 @@ impl StoreComp3TraitDispatcher of starknet::Store::<Comp3TraitDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutComp3TraitDispatcher of starknet::storage_access::SimpleStorageLayout::<Comp3TraitDispatcher> {}
 
 
 lib.cairo:30:1
@@ -7213,6 +7271,8 @@ impl StoreComp3TraitLibraryDispatcher of starknet::Store::<Comp3TraitLibraryDisp
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutComp3TraitLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<Comp3TraitLibraryDispatcher> {}
 
 
 lib.cairo:30:1
@@ -7270,6 +7330,8 @@ impl StoreComp3TraitSafeLibraryDispatcher of starknet::Store::<Comp3TraitSafeLib
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutComp3TraitSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<Comp3TraitSafeLibraryDispatcher> {}
 
 
 lib.cairo:30:1
@@ -7327,6 +7389,8 @@ impl StoreComp3TraitSafeDispatcher of starknet::Store::<Comp3TraitSafeDispatcher
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutComp3TraitSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<Comp3TraitSafeDispatcher> {}
 
 
 lib.cairo:1:1
@@ -8150,6 +8214,8 @@ impl StoreComp3TraitDispatcher of starknet::Store::<Comp3TraitDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutComp3TraitDispatcher of starknet::storage_access::SimpleStorageLayout::<Comp3TraitDispatcher> {}
 
 
 lib.cairo:27:1
@@ -8207,6 +8273,8 @@ impl StoreComp3TraitLibraryDispatcher of starknet::Store::<Comp3TraitLibraryDisp
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutComp3TraitLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<Comp3TraitLibraryDispatcher> {}
 
 
 lib.cairo:27:1
@@ -8264,6 +8332,8 @@ impl StoreComp3TraitSafeLibraryDispatcher of starknet::Store::<Comp3TraitSafeLib
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutComp3TraitSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<Comp3TraitSafeLibraryDispatcher> {}
 
 
 lib.cairo:27:1
@@ -8321,6 +8391,8 @@ impl StoreComp3TraitSafeDispatcher of starknet::Store::<Comp3TraitSafeDispatcher
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutComp3TraitSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<Comp3TraitSafeDispatcher> {}
 
 
 lib.cairo:1:1
@@ -8992,6 +9064,8 @@ impl StoreContractTraitDispatcher of starknet::Store::<ContractTraitDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutContractTraitDispatcher of starknet::storage_access::SimpleStorageLayout::<ContractTraitDispatcher> {}
 
 
 lib.cairo:1:1
@@ -9049,6 +9123,8 @@ impl StoreContractTraitLibraryDispatcher of starknet::Store::<ContractTraitLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutContractTraitLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<ContractTraitLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -9106,6 +9182,8 @@ impl StoreContractTraitSafeLibraryDispatcher of starknet::Store::<ContractTraitS
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutContractTraitSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<ContractTraitSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -9163,6 +9241,8 @@ impl StoreContractTraitSafeDispatcher of starknet::Store::<ContractTraitSafeDisp
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutContractTraitSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<ContractTraitSafeDispatcher> {}
 
 
 lib.cairo:6:1
@@ -9579,6 +9659,8 @@ impl StoreContractTraitDispatcher of starknet::Store::<ContractTraitDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutContractTraitDispatcher of starknet::storage_access::SimpleStorageLayout::<ContractTraitDispatcher> {}
 
 
 lib.cairo:9:1
@@ -9636,6 +9718,8 @@ impl StoreContractTraitLibraryDispatcher of starknet::Store::<ContractTraitLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutContractTraitLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<ContractTraitLibraryDispatcher> {}
 
 
 lib.cairo:9:1
@@ -9693,6 +9777,8 @@ impl StoreContractTraitSafeLibraryDispatcher of starknet::Store::<ContractTraitS
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutContractTraitSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<ContractTraitSafeLibraryDispatcher> {}
 
 
 lib.cairo:9:1
@@ -9750,6 +9836,8 @@ impl StoreContractTraitSafeDispatcher of starknet::Store::<ContractTraitSafeDisp
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutContractTraitSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<ContractTraitSafeDispatcher> {}
 
 
 lib.cairo:1:1
@@ -10074,6 +10162,713 @@ impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
 lib.cairo:14:1
+#[starknet::contract]
+^*******************^
+impls:
+
+impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
+impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+
+//! > ==========================================================================
+
+//! > Test sub pointers of a non `SimpleStorageLayout` type.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::sub_pointers]
+struct u256Pair {
+    a: u256,
+    b: u256
+}
+
+impl u256PairStore of starknet::Store<u256Pair> {
+    fn read(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+    ) -> starknet::SyscallResult<u256Pair> {
+        let a = starknet::Store::<u256>::read(address_domain, base)?;
+        let b = starknet::Store::<u256>::read_at_offset(address_domain, base, 2)?;
+        starknet::SyscallResult::Ok(u256Pair { a, b })
+    }
+    fn write(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: u256Pair
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<u256>::write(address_domain, base, value.a)?;
+        starknet::Store::<u256>::write_at_offset(address_domain, base, 2, value.b)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+    ) -> starknet::SyscallResult<u256Pair> {
+        let a = starknet::Store::<u256>::read_at_offset(address_domain, base, offset)?;
+        let b = starknet::Store::<u256>::read_at_offset(address_domain, base, offset + 2)?;
+        starknet::SyscallResult::Ok(u256Pair { a, b })
+    }
+    fn write_at_offset(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        offset: u8,
+        value: u256Pair
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<u256>::write_at_offset(address_domain, base, offset, value.a)?;
+        starknet::Store::<u256>::write_at_offset(address_domain, base, offset + 2, value.b)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn size() -> u8 {
+        4
+    }
+}
+
+#[starknet::interface]
+trait ContractTrait<TContractState> {
+    fn foo(self: @TContractState) -> u256;
+}
+
+#[starknet::contract]
+mod contract {
+    use super::ContractTrait;
+    #[storage]
+    struct Storage {
+        u256_pair: super::u256Pair
+    }
+
+    #[abi(embed_v0)]
+    impl ContractInterfaceImpl of ContractTrait<ContractState> {
+        fn foo(self: @ContractState) -> u256 {
+            self.u256_pair.a.read()
+        }
+    }
+}
+
+//! > expected_diagnostics
+error: Type "core::starknet::storage::StorageBase::<test::u256Pair>" has no member "a"
+ --> lib.cairo:60:28
+            self.u256_pair.a.read()
+                           ^
+
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: StorageMapReadAccessTrait::read and StoragePointerReadAccess::read. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:60:30
+            self.u256_pair.a.read()
+                             ^**^
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::sub_pointers]
+struct u256Pair {
+    a: u256,
+    b: u256
+}
+
+impl u256PairStore of starknet::Store<u256Pair> {
+    fn read(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+    ) -> starknet::SyscallResult<u256Pair> {
+        let a = starknet::Store::<u256>::read(address_domain, base)?;
+        let b = starknet::Store::<u256>::read_at_offset(address_domain, base, 2)?;
+        starknet::SyscallResult::Ok(u256Pair { a, b })
+    }
+    fn write(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: u256Pair
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<u256>::write(address_domain, base, value.a)?;
+        starknet::Store::<u256>::write_at_offset(address_domain, base, 2, value.b)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+    ) -> starknet::SyscallResult<u256Pair> {
+        let a = starknet::Store::<u256>::read_at_offset(address_domain, base, offset)?;
+        let b = starknet::Store::<u256>::read_at_offset(address_domain, base, offset + 2)?;
+        starknet::SyscallResult::Ok(u256Pair { a, b })
+    }
+    fn write_at_offset(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        offset: u8,
+        value: u256Pair
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<u256>::write_at_offset(address_domain, base, offset, value.a)?;
+        starknet::Store::<u256>::write_at_offset(address_domain, base, offset + 2, value.b)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn size() -> u8 {
+        4
+    }
+}
+
+#[starknet::interface]
+trait ContractTrait<TContractState> {
+    fn foo(self: @TContractState) -> u256;
+}
+
+#[starknet::contract]
+mod contract {
+    use super::ContractTrait;
+    #[storage]
+    struct Storage {
+        u256_pair: super::u256Pair
+    }
+
+    #[abi(embed_v0)]
+    impl ContractInterfaceImpl of ContractTrait<ContractState> {
+        fn foo(self: @ContractState) -> u256 {
+            self.u256_pair.a.read()
+        }
+    }
+}
+
+lib.cairo:1:1
+#[starknet::sub_pointers]
+^***********************^
+storage_node:
+
+#[derive(Drop, Copy)]
+struct u256PairSubPointers {
+    a: starknet::storage::StoragePointer<u256>,
+    b: starknet::storage::StoragePointer<u256>,
+}
+#[feature("simple-storage-layout")]
+impl u256PairSubPointersImpl<+starknet::storage_access::SimpleStorageLayout<u256Pair>> of starknet::storage::SubPointers<u256Pair> {
+    type SubPointersType = u256PairSubPointers;
+       fn sub_pointers(self: starknet::storage::StoragePointer<u256Pair>) -> u256PairSubPointers {
+                   let base_address = self.address;
+        let mut current_offset = self.offset;
+        let a_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<u256>::size();
+        let b_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                u256PairSubPointers {
+           a: a_value,
+           b: b_value,
+        }
+    }
+}
+
+
+lib.cairo:44:1
+#[starknet::interface]
+^********************^
+ContractTraitDispatcherTrait:
+
+trait ContractTraitDispatcherTrait<T> {
+    fn foo(self: T) -> u256;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct ContractTraitDispatcher {
+    pub contract_address: starknet::ContractAddress,
+}
+
+impl ContractTraitDispatcherImpl of ContractTraitDispatcherTrait<ContractTraitDispatcher> {
+    fn foo(self: ContractTraitDispatcher) -> u256 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("foo"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct ContractTraitLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
+}
+
+impl ContractTraitLibraryDispatcherImpl of ContractTraitDispatcherTrait<ContractTraitLibraryDispatcher> {
+    fn foo(self: ContractTraitLibraryDispatcher) -> u256 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+
+}
+
+trait ContractTraitSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
+    fn foo(self: T) -> starknet::SyscallResult<u256>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct ContractTraitSafeLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
+}
+
+impl ContractTraitSafeLibraryDispatcherImpl of ContractTraitSafeDispatcherTrait<ContractTraitSafeLibraryDispatcher> {
+    fn foo(self: ContractTraitSafeLibraryDispatcher) -> starknet::SyscallResult<u256> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct ContractTraitSafeDispatcher {
+    pub contract_address: starknet::ContractAddress,
+}
+
+impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<ContractTraitSafeDispatcher> {
+    fn foo(self: ContractTraitSafeDispatcher) -> starknet::SyscallResult<u256> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("foo"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+
+}
+
+
+lib.cairo:1:1
+#[starknet::sub_pointers]
+^***********************^
+impls:
+
+impl u256PairSubPointersDrop of core::traits::Drop::<u256PairSubPointers>;
+impl u256PairSubPointersCopy of core::traits::Copy::<u256PairSubPointers>;
+
+
+lib.cairo:44:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl ContractTraitDispatcherCopy of core::traits::Copy::<ContractTraitDispatcher>;
+impl ContractTraitDispatcherDrop of core::traits::Drop::<ContractTraitDispatcher>;
+impl ContractTraitDispatcherSerde of core::serde::Serde::<ContractTraitDispatcher> {
+    fn serialize(self: @ContractTraitDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitDispatcher> {
+        core::option::Option::Some(ContractTraitDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+lib.cairo:44:1
+#[starknet::interface]
+^********************^
+starknet_derive:
+
+impl StoreContractTraitDispatcher of starknet::Store::<ContractTraitDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ContractTraitDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            ContractTraitDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ContractTraitDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ContractTraitDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            ContractTraitDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ContractTraitDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutContractTraitDispatcher of starknet::storage_access::SimpleStorageLayout::<ContractTraitDispatcher> {}
+
+
+lib.cairo:44:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl ContractTraitLibraryDispatcherCopy of core::traits::Copy::<ContractTraitLibraryDispatcher>;
+impl ContractTraitLibraryDispatcherDrop of core::traits::Drop::<ContractTraitLibraryDispatcher>;
+impl ContractTraitLibraryDispatcherSerde of core::serde::Serde::<ContractTraitLibraryDispatcher> {
+    fn serialize(self: @ContractTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitLibraryDispatcher> {
+        core::option::Option::Some(ContractTraitLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+lib.cairo:44:1
+#[starknet::interface]
+^********************^
+starknet_derive:
+
+impl StoreContractTraitLibraryDispatcher of starknet::Store::<ContractTraitLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ContractTraitLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            ContractTraitLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ContractTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ContractTraitLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            ContractTraitLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ContractTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutContractTraitLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<ContractTraitLibraryDispatcher> {}
+
+
+lib.cairo:44:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl ContractTraitSafeLibraryDispatcherCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
+impl ContractTraitSafeLibraryDispatcherDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcher>;
+impl ContractTraitSafeLibraryDispatcherSerde of core::serde::Serde::<ContractTraitSafeLibraryDispatcher> {
+    fn serialize(self: @ContractTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeLibraryDispatcher> {
+        core::option::Option::Some(ContractTraitSafeLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+lib.cairo:44:1
+#[starknet::interface]
+^********************^
+starknet_derive:
+
+impl StoreContractTraitSafeLibraryDispatcher of starknet::Store::<ContractTraitSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ContractTraitSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            ContractTraitSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ContractTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ContractTraitSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            ContractTraitSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ContractTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutContractTraitSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<ContractTraitSafeLibraryDispatcher> {}
+
+
+lib.cairo:44:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl ContractTraitSafeDispatcherCopy of core::traits::Copy::<ContractTraitSafeDispatcher>;
+impl ContractTraitSafeDispatcherDrop of core::traits::Drop::<ContractTraitSafeDispatcher>;
+impl ContractTraitSafeDispatcherSerde of core::serde::Serde::<ContractTraitSafeDispatcher> {
+    fn serialize(self: @ContractTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeDispatcher> {
+        core::option::Option::Some(ContractTraitSafeDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+lib.cairo:44:1
+#[starknet::interface]
+^********************^
+starknet_derive:
+
+impl StoreContractTraitSafeDispatcher of starknet::Store::<ContractTraitSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ContractTraitSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            ContractTraitSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ContractTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ContractTraitSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            ContractTraitSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ContractTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutContractTraitSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<ContractTraitSafeDispatcher> {}
+
+
+lib.cairo:49:1
+#[starknet::contract]
+^*******************^
+contract:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
+
+
+#[derive(Drop, Copy)]
+struct ContractStorageBase {
+    u256_pair: starknet::storage::StorageBase<super::u256Pair>,
+}
+#[derive(Drop, Copy)]
+struct ContractStorageBaseMut {
+    u256_pair: starknet::storage::StorageBase<starknet::storage::Mutable<super::u256Pair>>,
+}
+impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+    type BaseType = ContractStorageBase;
+    type BaseMutType = ContractStorageBaseMut;
+    fn storage_base(self: @ContractState) -> ContractStorageBase {
+        ContractStorageBase {
+           u256_pair: starknet::storage::StorageBase{ address: selector!("u256_pair") },
+        }
+    }
+    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           u256_pair: starknet::storage::StorageBase{ address: selector!("u256_pair") },
+        }
+    }
+}
+pub struct ContractState {
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = ContractStorageBase;
+    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
+        self.storage_base()
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = ContractStorageBaseMut;
+    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
+        self.storage_base_mut()
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+#[cfg(target: 'test')]
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
+
+use starknet::storage::{
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
+    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
+};
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+use starknet::storage::Map as LegacyMap;
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: felt252 = 0x1ef205582bfa9cd0a088bc1b88a40d43b5ed2c42cf4087763c93ef1eb5803a6;
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+fn __wrapper__ContractInterfaceImpl__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = ContractInterfaceImpl::foo(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<u256>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+
+pub mod __external {
+    pub use super::__wrapper__ContractInterfaceImpl__foo as foo;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+
+
+lib.cairo:49:1
+#[starknet::contract]
+^*******************^
+impls:
+
+impl EventDrop of core::traits::Drop::<Event>;
+
+
+lib.cairo:49:1
+#[starknet::contract]
+^*******************^
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
+
+
+lib.cairo:49:1
+#[starknet::contract]
+^*******************^
+impls:
+
+impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
+impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+
+
+lib.cairo:49:1
 #[starknet::contract]
 ^*******************^
 impls:

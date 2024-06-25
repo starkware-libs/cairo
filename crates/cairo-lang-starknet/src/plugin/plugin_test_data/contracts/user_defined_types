@@ -260,6 +260,8 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
         starknet::Store::<felt252>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutWrappedFelt252 of starknet::storage_access::SimpleStorageLayout::<WrappedFelt252> {}
 
 
 lib.cairo:17:1
@@ -327,6 +329,8 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
         0
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutZeroSize of starknet::storage_access::SimpleStorageLayout::<ZeroSize> {}
 
 
 lib.cairo:19:1

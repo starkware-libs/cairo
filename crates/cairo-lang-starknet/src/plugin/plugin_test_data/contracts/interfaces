@@ -321,6 +321,8 @@ impl StoreInterface1Dispatcher of starknet::Store::<Interface1Dispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterface1Dispatcher of starknet::storage_access::SimpleStorageLayout::<Interface1Dispatcher> {}
 
 
 lib.cairo:1:1
@@ -378,6 +380,8 @@ impl StoreInterface1LibraryDispatcher of starknet::Store::<Interface1LibraryDisp
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterface1LibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<Interface1LibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -435,6 +439,8 @@ impl StoreInterface1SafeLibraryDispatcher of starknet::Store::<Interface1SafeLib
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterface1SafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<Interface1SafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -492,6 +498,8 @@ impl StoreInterface1SafeDispatcher of starknet::Store::<Interface1SafeDispatcher
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterface1SafeDispatcher of starknet::storage_access::SimpleStorageLayout::<Interface1SafeDispatcher> {}
 
 
 lib.cairo:6:1
@@ -549,6 +557,8 @@ impl StoreInterface2Dispatcher of starknet::Store::<Interface2Dispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterface2Dispatcher of starknet::storage_access::SimpleStorageLayout::<Interface2Dispatcher> {}
 
 
 lib.cairo:6:1
@@ -606,6 +616,8 @@ impl StoreInterface2LibraryDispatcher of starknet::Store::<Interface2LibraryDisp
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterface2LibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<Interface2LibraryDispatcher> {}
 
 
 lib.cairo:6:1
@@ -663,6 +675,8 @@ impl StoreInterface2SafeLibraryDispatcher of starknet::Store::<Interface2SafeLib
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterface2SafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<Interface2SafeLibraryDispatcher> {}
 
 
 lib.cairo:6:1
@@ -720,6 +734,8 @@ impl StoreInterface2SafeDispatcher of starknet::Store::<Interface2SafeDispatcher
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutInterface2SafeDispatcher of starknet::storage_access::SimpleStorageLayout::<Interface2SafeDispatcher> {}
 
 
 lib.cairo:11:1

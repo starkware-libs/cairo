@@ -143,6 +143,8 @@ impl StoreMyType of starknet::Store::<MyType> {
         starknet::Store::<u32>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutMyType of starknet::storage_access::SimpleStorageLayout::<MyType> {}
 
 
 lib.cairo:41:1
@@ -371,6 +373,8 @@ impl StoreMyTraitDispatcher of starknet::Store::<MyTraitDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutMyTraitDispatcher of starknet::storage_access::SimpleStorageLayout::<MyTraitDispatcher> {}
 
 
 lib.cairo:41:1
@@ -428,6 +432,8 @@ impl StoreMyTraitLibraryDispatcher of starknet::Store::<MyTraitLibraryDispatcher
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutMyTraitLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<MyTraitLibraryDispatcher> {}
 
 
 lib.cairo:41:1
@@ -485,6 +491,8 @@ impl StoreMyTraitSafeLibraryDispatcher of starknet::Store::<MyTraitSafeLibraryDi
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutMyTraitSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<MyTraitSafeLibraryDispatcher> {}
 
 
 lib.cairo:41:1
@@ -542,6 +550,8 @@ impl StoreMyTraitSafeDispatcher of starknet::Store::<MyTraitSafeDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutMyTraitSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<MyTraitSafeDispatcher> {}
 
 
 lib.cairo:6:1

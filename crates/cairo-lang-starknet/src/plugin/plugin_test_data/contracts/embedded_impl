@@ -369,6 +369,8 @@ impl StoreOutsideTraitDispatcher of starknet::Store::<OutsideTraitDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitDispatcher> {}
 
 
 lib.cairo:1:1
@@ -426,6 +428,8 @@ impl StoreOutsideTraitLibraryDispatcher of starknet::Store::<OutsideTraitLibrary
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -483,6 +487,8 @@ impl StoreOutsideTraitSafeLibraryDispatcher of starknet::Store::<OutsideTraitSaf
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -540,6 +546,8 @@ impl StoreOutsideTraitSafeDispatcher of starknet::Store::<OutsideTraitSafeDispat
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitSafeDispatcher> {}
 
 
 lib.cairo:17:1
@@ -1153,6 +1161,8 @@ impl StoreOutsideTraitWithDestructDispatcher of starknet::Store::<OutsideTraitWi
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitWithDestructDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitWithDestructDispatcher> {}
 
 
 lib.cairo:1:1
@@ -1210,6 +1220,8 @@ impl StoreOutsideTraitWithDestructLibraryDispatcher of starknet::Store::<Outside
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitWithDestructLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitWithDestructLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -1267,6 +1279,8 @@ impl StoreOutsideTraitWithDestructSafeLibraryDispatcher of starknet::Store::<Out
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitWithDestructSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitWithDestructSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -1324,6 +1338,8 @@ impl StoreOutsideTraitWithDestructSafeDispatcher of starknet::Store::<OutsideTra
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitWithDestructSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitWithDestructSafeDispatcher> {}
 
 
 lib.cairo:15:1
@@ -1381,6 +1397,8 @@ impl StoreOutsideTraitWithPanicDestructDispatcher of starknet::Store::<OutsideTr
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitWithPanicDestructDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitWithPanicDestructDispatcher> {}
 
 
 lib.cairo:15:1
@@ -1438,6 +1456,8 @@ impl StoreOutsideTraitWithPanicDestructLibraryDispatcher of starknet::Store::<Ou
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitWithPanicDestructLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitWithPanicDestructLibraryDispatcher> {}
 
 
 lib.cairo:15:1
@@ -1495,6 +1515,8 @@ impl StoreOutsideTraitWithPanicDestructSafeLibraryDispatcher of starknet::Store:
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitWithPanicDestructSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {}
 
 
 lib.cairo:15:1
@@ -1552,6 +1574,8 @@ impl StoreOutsideTraitWithPanicDestructSafeDispatcher of starknet::Store::<Outsi
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitWithPanicDestructSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitWithPanicDestructSafeDispatcher> {}
 
 
 lib.cairo:29:1
@@ -1987,6 +2011,8 @@ impl StoreOutsideTraitWithDropDispatcher of starknet::Store::<OutsideTraitWithDr
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitWithDropDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitWithDropDispatcher> {}
 
 
 lib.cairo:1:1
@@ -2044,6 +2070,8 @@ impl StoreOutsideTraitWithDropLibraryDispatcher of starknet::Store::<OutsideTrai
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitWithDropLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitWithDropLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -2101,6 +2129,8 @@ impl StoreOutsideTraitWithDropSafeLibraryDispatcher of starknet::Store::<Outside
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitWithDropSafeLibraryDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitWithDropSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -2158,6 +2188,8 @@ impl StoreOutsideTraitWithDropSafeDispatcher of starknet::Store::<OutsideTraitWi
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl SimpleStorageLayoutOutsideTraitWithDropSafeDispatcher of starknet::storage_access::SimpleStorageLayout::<OutsideTraitWithDropSafeDispatcher> {}
 
 
 lib.cairo:15:1
