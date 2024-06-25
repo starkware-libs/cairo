@@ -436,6 +436,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
                 )
             }
+            SemanticDiagnosticKind::InternalFeature { feature_name, note } => {
+                format!(
+                    "Usage of internal feature `{feature_name}` with no \
+                     `#[feature({feature_name})]` attribute.{}",
+                    note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
+                )
+            }
             SemanticDiagnosticKind::FeatureMarkerDiagnostic(diagnostic) => match diagnostic {
                 FeatureMarkerDiagnostic::MultipleMarkers => {
                     "Multiple feature marker attributes.".into()
@@ -1015,6 +1022,10 @@ pub enum SemanticDiagnosticKind {
         note: Option<SmolStr>,
     },
     DeprecatedFeature {
+        feature_name: SmolStr,
+        note: Option<SmolStr>,
+    },
+    InternalFeature {
         feature_name: SmolStr,
         note: Option<SmolStr>,
     },
