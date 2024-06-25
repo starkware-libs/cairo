@@ -22,10 +22,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '22.x'
           cache: npm
           cache-dependency-path: vscode-cairo/package-lock.json
       - run: npm ci
       - run: npm run lint-fmt
       - run: npm run lint-eslint
       - run: npm run compile-test
+      - run: npm run test

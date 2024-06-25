@@ -141,9 +141,11 @@
     "compile-watch": "npm run compile -- --watch",
     "compile-test": "tsc -p ./",
     "fmt": "prettier --write .",
+    "gen-cairo-snippets": "node ./bin/gen-cairo-snippets.mjs",
     "lint": "npm run lint-fmt && npm run lint-eslint",
     "lint-eslint": "eslint . src --ext .ts,.tsx",
-    "lint-fmt": "prettier --check ."
+    "lint-fmt": "prettier --check .",
+    "test": "node --test"
   },
   "engines": {
     "vscode": "^1.84.0"
@@ -162,6 +164,8 @@
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "3.2.4",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.0.0"
   }
 }

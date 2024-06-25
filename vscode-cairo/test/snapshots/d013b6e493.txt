@@ -1,0 +1,10 @@
+//! > cairo_code
+#[cairofmt::skip]
+
+//! > syntax
+#                    source.cairo meta.attribute.cairo punctuation.definition.attribute.cairo
+[                    source.cairo meta.attribute.cairo punctuation.brackets.attribute.cairo
+cairofmt             source.cairo meta.attribute.cairo
+::                   source.cairo meta.attribute.cairo keyword.operator.namespace.cairo
+skip                 source.cairo meta.attribute.cairo
+]                    source.cairo meta.attribute.cairo punctuation.brackets.attribute.cairo
