@@ -7,7 +7,9 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
 
-use super::{STORAGE_NODE_ATTR, STORAGE_SUB_POINTERS_ATTR, STORE_TRAIT};
+use super::{
+    SIMPLE_STORAGE_LAYOUT_TRAIT, STORAGE_NODE_ATTR, STORAGE_SUB_POINTERS_ATTR, STORE_TRAIT,
+};
 
 /// Generates an impl for the `starknet::StorageNode` to point to a generate a struct to to be
 /// pointed to allowing further access to each of its members (i.e. there will be a fitting member
@@ -148,11 +150,20 @@ impl StorageNodeType {
             Self::SubPointers => "starknet::storage::StoragePointer<$struct_name$>".to_string(),
         }
     }
+    /// Returns the attributes that should be added to the impl of the storage node.
+    fn node_impl_attributes(&self) -> String {
+        match self {
+            Self::StorageNode => "".to_string(),
+            Self::SubPointers => "#[feature(\"simple-storage-layout\")]".to_string(),
+        }
+    }
     /// Returns the name of the generated impl for the storage node.
     fn node_impl_name(&self) -> String {
         match self {
             Self::StorageNode => "$struct_name$StorageNodeImpl".to_string(),
-            Self::SubPointers => "$struct_name$SubPointersImpl".to_string(),
+            Self::SubPointers => format!(
+                "$struct_name$SubPointersImpl<+{SIMPLE_STORAGE_LAYOUT_TRAIT}<$struct_name$>>"
+            ),
         }
     }
     /// Returns the type of the members of the storage node generated struct.
@@ -215,6 +226,7 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
     let node_type_name = storage_node_type.node_type_name();
     let struct_name_rewrite_node = RewriteNode::new_trimmed(struct_name_syntax.clone());
     let node_members_type = storage_node_type.node_members_type();
+    let node_impl_attributes = storage_node_type.node_impl_attributes();
     let node_impl_name = storage_node_type.node_impl_name();
     let node_trait_name = storage_node_type.node_trait_name();
     let node_type = storage_node_type.node_type();
@@ -249,7 +261,8 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
 
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "impl {node_impl_name} of {node_trait_name} {{
+            "{node_impl_attributes}
+             impl {node_impl_name} of {node_trait_name} {{
                  type {node_type} = {node_type_name};
                     fn {node_init_function_name}(self: {originating_type}) -> {node_type_name} {{
                         {node_constructor_prefix_code}
