@@ -3368,7 +3368,7 @@ mod test_contract {
     #[derive(Drop, starknet::Event)]
     enum Event {
         Comp1Event: super::component1::Event,
-    // Comp2Event: super::component2::Event,
+        // Comp2Event: super::component2::Event,
     }
 
     #[external(v0)]
@@ -3424,7 +3424,7 @@ mod test_contract {
     #[derive(Drop, starknet::Event)]
     enum Event {
         Comp1Event: super::component1::Event,
-    // Comp2Event: super::component2::Event,
+        // Comp2Event: super::component2::Event,
     }
 
     #[external(v0)]
@@ -3764,7 +3764,7 @@ use starknet::storage::{
 )]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x3aa40c01c626d72d07c8dbda3c92460e7f71827931a5429b93fc69603190369;
+pub const TEST_CLASS_HASH: felt252 = 0xa09b926ceb282d29edce76bb84e4aeb97f1a82ce15099322f1c2869a49b549;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
