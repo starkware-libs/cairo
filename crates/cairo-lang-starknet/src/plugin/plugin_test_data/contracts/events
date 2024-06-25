@@ -156,6 +156,8 @@ impl StoreA of starknet::Store::<A> {
         starknet::Store::<usize>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl DeriveStorageA of starknet::storage_access::DeriveStorage::<A> {}
 
 
 lib.cairo:7:1

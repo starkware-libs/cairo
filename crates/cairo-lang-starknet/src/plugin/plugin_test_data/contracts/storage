@@ -130,6 +130,8 @@ impl StoreOuterType of starknet::Store::<OuterType> {
         starknet::Store::<u32>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl DeriveStorageOuterType of starknet::storage_access::DeriveStorage::<OuterType> {}
 
 
 lib.cairo:7:1

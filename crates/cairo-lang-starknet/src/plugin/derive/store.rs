@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use indent::indent_by;
 use indoc::formatdoc;
 
-use crate::plugin::consts::STORE_TRAIT;
+use crate::plugin::consts::{SIMPLE_STORAGE_LAYOUT_TRAIT, STORE_TRAIT};
 
 /// Returns the rewrite node for the `#[derive(starknet::Store)]` attribute.
 pub fn handle_store_derive(
@@ -141,6 +141,8 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<R
                 {sizes}
             }}
         }}
+        #[feature(\"simple-storage-layout\")]
+        impl DeriveStorage{struct_name} of {SIMPLE_STORAGE_LAYOUT_TRAIT}::<{struct_name}> {{}}
         ",
         struct_name = struct_ast.name(db).as_syntax_node().get_text_without_trivia(db),
         reads_values_at_offset = reads_values_at_offset.join("\n        "),

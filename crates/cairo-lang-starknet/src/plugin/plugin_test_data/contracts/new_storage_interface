@@ -910,10 +910,11 @@ struct BalancePairStorageNode {
     balance1: starknet::storage::PendingStoragePath<u256>,
     balance2: starknet::storage::PendingStoragePath<felt252>,
 }
+
 impl BalancePairStorageNodeImpl of starknet::storage::StorageNode<BalancePair> {
-type NodeType = BalancePairStorageNode;
-   fn storage_node(self: starknet::storage::StoragePath<BalancePair>) -> BalancePairStorageNode {
-       
+    type NodeType = BalancePairStorageNode;
+       fn storage_node(self: starknet::storage::StoragePath<BalancePair>) -> BalancePairStorageNode {
+           
         let balance1_value = starknet::storage::PendingStoragePath { 
             hash_state: self.hash_state,
             pending_key: selector!("balance1") 
@@ -985,6 +986,8 @@ impl StoreSlicedBalanceTrio of starknet::Store::<SlicedBalanceTrio> {
         starknet::Store::<SlicedBalancePair>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl DeriveStorageSlicedBalanceTrio of starknet::storage_access::DeriveStorage::<SlicedBalanceTrio> {}
 
 
 lib.cairo:27:1
@@ -997,10 +1000,11 @@ struct SlicedBalanceTrioSubPointers {
     balance1: starknet::storage::StoragePointer<u256>,
     balance12: starknet::storage::StoragePointer<SlicedBalancePair>,
 }
-impl SlicedBalanceTrioSubPointersImpl of starknet::storage::SubPointers<SlicedBalanceTrio> {
-type SubPointersType = SlicedBalanceTrioSubPointers;
-   fn sub_pointers(self: starknet::storage::StoragePointer<SlicedBalanceTrio>) -> SlicedBalanceTrioSubPointers {
-               let base_address = self.address;
+#[feature("simple-storage-layout")]
+impl SlicedBalanceTrioSubPointersImpl<+starknet::storage_access::DeriveStorage<SlicedBalanceTrio>> of starknet::storage::SubPointers<SlicedBalanceTrio> {
+    type SubPointersType = SlicedBalanceTrioSubPointers;
+       fn sub_pointers(self: starknet::storage::StoragePointer<SlicedBalanceTrio>) -> SlicedBalanceTrioSubPointers {
+                   let base_address = self.address;
         let mut current_offset = self.offset;
         let balance1_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -1074,6 +1078,8 @@ impl StoreSlicedBalancePair of starknet::Store::<SlicedBalancePair> {
         starknet::Store::<felt252>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl DeriveStorageSlicedBalancePair of starknet::storage_access::DeriveStorage::<SlicedBalancePair> {}
 
 
 lib.cairo:34:1
@@ -1086,10 +1092,11 @@ struct SlicedBalancePairSubPointers {
     balance1: starknet::storage::StoragePointer<u256>,
     balance2: starknet::storage::StoragePointer<felt252>,
 }
-impl SlicedBalancePairSubPointersImpl of starknet::storage::SubPointers<SlicedBalancePair> {
-type SubPointersType = SlicedBalancePairSubPointers;
-   fn sub_pointers(self: starknet::storage::StoragePointer<SlicedBalancePair>) -> SlicedBalancePairSubPointers {
-               let base_address = self.address;
+#[feature("simple-storage-layout")]
+impl SlicedBalancePairSubPointersImpl<+starknet::storage_access::DeriveStorage<SlicedBalancePair>> of starknet::storage::SubPointers<SlicedBalancePair> {
+    type SubPointersType = SlicedBalancePairSubPointers;
+       fn sub_pointers(self: starknet::storage::StoragePointer<SlicedBalancePair>) -> SlicedBalancePairSubPointers {
+                   let base_address = self.address;
         let mut current_offset = self.offset;
         let balance1_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -1163,6 +1170,8 @@ impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDi
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl DeriveStorageHelloStarknetTraitDispatcher of starknet::storage_access::DeriveStorage::<HelloStarknetTraitDispatcher> {}
 
 
 lib.cairo:1:1
@@ -1220,6 +1229,8 @@ impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknet
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl DeriveStorageHelloStarknetTraitLibraryDispatcher of starknet::storage_access::DeriveStorage::<HelloStarknetTraitLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -1277,6 +1288,8 @@ impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStar
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl DeriveStorageHelloStarknetTraitSafeLibraryDispatcher of starknet::storage_access::DeriveStorage::<HelloStarknetTraitSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -1334,6 +1347,8 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl DeriveStorageHelloStarknetTraitSafeDispatcher of starknet::storage_access::DeriveStorage::<HelloStarknetTraitSafeDispatcher> {}
 
 
 lib.cairo:21:1

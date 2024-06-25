@@ -89,6 +89,15 @@ pub trait Store<T> {
     fn size() -> u8;
 }
 
+/// A trait that indicates that the `Store` implementation of type `T` is simple, i.e., the size of
+/// each member of type `T` is the same as `Store<T>::size()`.
+/// Derived `Store` are by default simple, and thus the trait is implemented for them.
+#[internal(
+    feature: "simple-storage-layout",
+    note: "Manually implementing `DeriveStorage` is not advised. Use #[derive(Store)] instead."
+)]
+pub trait DeriveStorage<T> {}
+
 /// Trait for easier implementation of `Store` used for packing and unpacking values into values
 /// that already implement `Store`, and having `Store` implemented using this conversion.
 pub trait StorePacking<T, PackedT> {
@@ -276,6 +285,9 @@ impl StorePackingU256 of StorePacking<u256, (u128, u128)> {
         u256 { low, high }
     }
 }
+
+#[feature("simple-storage-layout")]
+impl DeriveStorageU256 of DeriveStorage<u256> {}
 
 impl StorePackingBytes31 of StorePacking<bytes31, felt252> {
     fn pack(value: bytes31) -> felt252 {

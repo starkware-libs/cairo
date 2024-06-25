@@ -538,6 +538,8 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl DeriveStorageGetSupplyDispatcher of starknet::storage_access::DeriveStorage::<GetSupplyDispatcher> {}
 impl GetSupplyLibraryDispatcherCopy of core::traits::Copy::<GetSupplyLibraryDispatcher>;
 impl GetSupplyLibraryDispatcherDrop of core::traits::Drop::<GetSupplyLibraryDispatcher>;
 impl GetSupplyLibraryDispatcherSerde of core::serde::Serde::<GetSupplyLibraryDispatcher> {
@@ -581,6 +583,8 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl DeriveStorageGetSupplyLibraryDispatcher of starknet::storage_access::DeriveStorage::<GetSupplyLibraryDispatcher> {}
 impl GetSupplySafeLibraryDispatcherCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcher>;
 impl GetSupplySafeLibraryDispatcherDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcher>;
 impl GetSupplySafeLibraryDispatcherSerde of core::serde::Serde::<GetSupplySafeLibraryDispatcher> {
@@ -624,6 +628,8 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl DeriveStorageGetSupplySafeLibraryDispatcher of starknet::storage_access::DeriveStorage::<GetSupplySafeLibraryDispatcher> {}
 impl GetSupplySafeDispatcherCopy of core::traits::Copy::<GetSupplySafeDispatcher>;
 impl GetSupplySafeDispatcherDrop of core::traits::Drop::<GetSupplySafeDispatcher>;
 impl GetSupplySafeDispatcherSerde of core::serde::Serde::<GetSupplySafeDispatcher> {
@@ -667,6 +673,8 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("simple-storage-layout")]
+impl DeriveStorageGetSupplySafeDispatcher of starknet::storage_access::DeriveStorage::<GetSupplySafeDispatcher> {}
 
     use starknet::ContractAddress;
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
