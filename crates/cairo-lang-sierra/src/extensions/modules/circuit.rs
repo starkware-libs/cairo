@@ -941,7 +941,10 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(add_mod_builtin_ty.clone(), 0),
-                        OutputVarInfo::new_builtin(mul_mod_builtin_ty.clone(), 1),
+                        OutputVarInfo {
+                            ty: mul_mod_builtin_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
                         OutputVarInfo {
                             ty: context.get_concrete_type(
                                 CircuitOutputs::id(),
@@ -957,7 +960,10 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(add_mod_builtin_ty, 0),
-                        OutputVarInfo::new_builtin(mul_mod_builtin_ty, 1),
+                        OutputVarInfo {
+                            ty: mul_mod_builtin_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
                         OutputVarInfo {
                             ty: context.get_concrete_type(
                                 CircuitPartialOutputs::id(),
