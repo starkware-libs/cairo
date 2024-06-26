@@ -348,7 +348,7 @@ pub struct U96LimbsLessThanGuarantee {}
 impl NamedType for U96LimbsLessThanGuarantee {
     type Concrete = ConcreteU96LimbsLessThanGuarantee;
     // Shortened name to fit in the 23 bytes limit.
-    const ID: GenericTypeId = GenericTypeId::new_inline("U96LimbsLTGuarantee");
+    const ID: GenericTypeId = GenericTypeId::new_inline("U96LimbsLtGuarantee");
 
     fn specialize(
         &self,
