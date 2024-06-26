@@ -22,7 +22,7 @@ pub trait OptionTrait<T> {
     fn unwrap(self: Option<T>) -> T;
     /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Option::Some(v)` to
     /// `Result::Ok(v)` and `Option::None` to `Result::Err(err)`.
-    fn ok_or<E, +Drop<E>>(self: Option<T>, err: E) -> Result<T, E>;
+    fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E>;
     /// Returns `true` if the `Option` is `Option::Some`.
     #[must_use]
     fn is_some(self: @Option<T>) -> bool;
@@ -30,7 +30,7 @@ pub trait OptionTrait<T> {
     #[must_use]
     fn is_none(self: @Option<T>) -> bool;
     /// If `self` is `Option::Some(x)`, returns `x`. Otherwise, returns the provided default.
-    fn unwrap_or<+Drop<T>>(self: Option<T>, default: T) -> T;
+    fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T;
     /// If `self` is `Option::Some(x)`, returns `x`. Otherwise, returns `Default::<T>::default()`.
     fn unwrap_or_default<+Default<T>>(self: Option<T>) -> T;
 }
@@ -50,7 +50,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
-    fn ok_or<E, +Drop<E>>(self: Option<T>, err: E) -> Result<T, E> {
+    fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E> {
         match self {
             Option::Some(v) => Result::Ok(v),
             Option::None => Result::Err(err),
@@ -74,7 +74,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
-    fn unwrap_or<+Drop<T>>(self: Option<T>, default: T) -> T {
+    fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T {
         match self {
             Option::Some(x) => x,
             Option::None => default,
