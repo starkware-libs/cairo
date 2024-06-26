@@ -8,12 +8,11 @@ use cairo_lang_syntax::node::ast::{Expr, Pattern, TerminalIdentifier};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
-use itertools::Itertools;
 use tower_lsp::lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::markdown::Markdown;
+use crate::markdown::{fenced_code_block, RULE};
 
 /// Legacy hover rendering backported from Cairo 2.6.3 codebase.
 ///
@@ -34,13 +33,7 @@ pub fn legacy(db: &AnalysisDatabase, identifier: &TerminalIdentifier) -> Option<
         hints.push(hint);
     };
 
-    // TODO(mkaput): Simply replace with std::Iterator::intersperse when it stabilizes.
-    #[allow(unstable_name_collisions)]
-    let hints =
-        hints.into_iter().intersperse(Markdown::rule()).fold(Markdown::empty(), |mut acc, hint| {
-            acc.append(hint);
-            acc
-        });
+    let hints = hints.join(RULE);
     Some(Hover { contents: markdown_contents(hints), range: None })
 }
 
@@ -49,7 +42,7 @@ fn get_identifier_hint(
     db: &AnalysisDatabase,
     lookup_item_id: LookupItemId,
     node: SyntaxNode,
-) -> Option<Markdown> {
+) -> Option<String> {
     let syntax_db = db.upcast();
     if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
         return None;
@@ -59,7 +52,7 @@ fn get_identifier_hint(
 
     // TODO(spapini): Also include concrete item hints.
     // TODO(spapini): Format this better.
-    Some(format!("`{}`", item.full_path(db)).into())
+    Some(format!("`{}`", item.full_path(db)))
 }
 
 /// If the node is an expression, retrieves a hover hint for it.
@@ -67,7 +60,7 @@ fn get_expr_hint(
     db: &AnalysisDatabase,
     function_id: FunctionWithBodyId,
     node: SyntaxNode,
-) -> Option<Markdown> {
+) -> Option<String> {
     let semantic_expr = nearest_semantic_expr(db, node, function_id)?;
     let text = match semantic_expr {
         cairo_lang_semantic::Expr::FunctionCall(call) => {
@@ -102,7 +95,7 @@ fn get_expr_hint(
         _ => semantic_expr.ty().format(db),
     };
     // Format the hover text.
-    Some(Markdown::fenced_code_block(&text))
+    Some(fenced_code_block(&text))
 }
 
 /// Returns the semantic expression for the current node.
@@ -131,10 +124,10 @@ fn get_pattern_hint(
     db: &AnalysisDatabase,
     function_id: FunctionWithBodyId,
     node: SyntaxNode,
-) -> Option<Markdown> {
+) -> Option<String> {
     let semantic_pattern = nearest_semantic_pat(db, node, function_id)?;
     // Format the hover text.
-    Some(format!("Type: `{}`", semantic_pattern.ty().format(db)).into())
+    Some(format!("Type: `{}`", semantic_pattern.ty().format(db)))
 }
 
 /// Returns the semantic pattern for the current node.

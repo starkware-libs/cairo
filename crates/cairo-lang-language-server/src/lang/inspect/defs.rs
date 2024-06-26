@@ -20,7 +20,6 @@ use smol_str::SmolStr;
 use tracing::error;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::markdown::Markdown;
 use crate::{find_definition, ResolvedItem};
 
 /// Keeps information about the symbol that is being searched for/inspected.
@@ -121,11 +120,11 @@ impl ItemDef {
     }
 
     /// Gets item documentation in a final form usable for display.
-    pub fn documentation(&self, db: &AnalysisDatabase) -> Option<Markdown> {
-        db.get_item_documentation(self.lookup_item_id).map(Markdown::from)
+    pub fn documentation(&self, db: &AnalysisDatabase) -> Option<String> {
+        db.get_item_documentation(self.lookup_item_id)
     }
 
-    /// Gets full path (including crate name and defining trait/impl if applicable)
+    /// Gets the full path (including crate name and defining trait/impl if applicable)
     /// to the module containing the item.
     pub fn definition_path(&self, db: &AnalysisDatabase) -> String {
         let defs_db = db.upcast();
