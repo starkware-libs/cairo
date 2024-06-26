@@ -31,15 +31,12 @@ fn test_circuit_success() {
 
     let modulus = TryInto::<_, CircuitModulus>::try_into([7, 0, 0, 0]).unwrap();
     let outputs =
-        match (mul, add, inv)
+        (mul, add, inv)
             .new_inputs()
             .next([3, 0, 0, 0])
             .next([6, 0, 0, 0])
             .done()
-            .eval(modulus) {
-        Result::Ok(outputs) => { outputs },
-        Result::Err(_) => { panic!("Expected success") }
-    };
+            .eval(modulus).unwrap();
 
     assert_eq!(outputs.get_output(add), u384 { limb0: 2, limb1: 0, limb2: 0, limb3: 0 });
     assert_eq!(outputs.get_output(inv), u384 { limb0: 4, limb1: 0, limb2: 0, limb3: 0 });
