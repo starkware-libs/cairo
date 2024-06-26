@@ -116,12 +116,12 @@ extern fn eval_circuit<C>(
 ) -> EvalCircuitResult<C> implicits(AddMod, MulMod) nopanic;
 
 /// Fill an input in the circuit instance's data.
-extern fn fill_circuit_input<C>(
+extern fn add_circuit_input<C>(
     accumulator: CircuitInputAccumulator<C>, value: [U96Guarantee; 4]
-) -> FillInputResult<C> nopanic;
+) -> AddInputResult<C> nopanic;
 
 /// The result of filling an input in the circuit instance's data.
-pub enum FillInputResult<C> {
+pub enum AddInputResult<C> {
     /// All inputs have been filled.
     Done: CircuitData<C>,
     /// More inputs are needed to fill the circuit instance's data.
@@ -129,21 +129,19 @@ pub enum FillInputResult<C> {
 }
 
 mod internal {
-    impl FillInputResultDrop<C> of Drop<super::FillInputResult<C>>;
-    pub impl PanicDestructFillInputResult<C> of PanicDestruct<super::FillInputResult<C>> {
+    impl AddInputResultDrop<C> of Drop<super::AddInputResult<C>>;
+    pub impl PanicDestructAddInputResult<C> of PanicDestruct<super::AddInputResult<C>> {
         // Inlining to make sure possibly huge `C` won't be in a user function name.
         #[inline(always)]
-        fn panic_destruct(
-            self: super::FillInputResult<C>, ref panic: core::panics::Panic
-        ) nopanic {}
+        fn panic_destruct(self: super::AddInputResult<C>, ref panic: core::panics::Panic) nopanic {}
     }
 }
-impl PanicDestructFillInputResult<C> = internal::PanicDestructFillInputResult<C>;
+impl PanicDestructAddInputResult<C> = internal::PanicDestructAddInputResult<C>;
 
 /// Type for accumulating inputs into the circuit instance's data.
 extern type CircuitInputAccumulator<C>;
 
-/// A type representing a circuit instance data with all the inputs filled.
+/// A type representing a circuit instance data with all the inputs addeded.
 extern type CircuitData<C>;
 
 /// A type representing a circuit instance where the outputs are filled.
@@ -233,8 +231,8 @@ pub impl CircuitInputsImpl<CES> of CircuitInputs<CES> {
     #[inline]
     fn new_inputs<impl CD: CircuitDefinition<CES>, +Drop<CES>>(
         self: CES
-    ) -> FillInputResult<CD::CircuitType> {
-        FillInputResult::More(init_circuit_data::<CD::CircuitType>())
+    ) -> AddInputResult<CD::CircuitType> {
+        AddInputResult::More(init_circuit_data::<CD::CircuitType>())
     }
 }
 
@@ -253,26 +251,26 @@ impl GetCircuitDescriptorImpl<CES> of GetCircuitDescriptor<CES> {
 
 /// A trait for filling inputs in a circuit instance's data.
 #[generate_trait]
-pub impl FillInputResultImpl<C> of FillInputResultTrait<C> {
+pub impl AddInputResultImpl<C> of AddInputResultTrait<C> {
     /// Adds an input to the accumulator.
     // Inlining to make sure possibly huge `C` won't be in a user function name.
     #[inline]
     fn next<Value, +IntoCircuitInputValue<Value>, +Drop<Value>>(
-        self: FillInputResult<C>, value: Value
-    ) -> FillInputResult<C> {
+        self: AddInputResult<C>, value: Value
+    ) -> AddInputResult<C> {
         match self {
-            FillInputResult::More(accumulator) => fill_circuit_input(
+            AddInputResult::More(accumulator) => add_circuit_input(
                 accumulator, value.into_circuit_input_value()
             ),
-            FillInputResult::Done(_) => panic!("All inputs have been filled"),
+            AddInputResult::Done(_) => panic!("All inputs have been filled"),
         }
     }
     // Inlining to make sure possibly huge `C` won't be in a user function name.
     #[inline(always)]
-    fn done(self: FillInputResult<C>) -> CircuitData<C> {
+    fn done(self: AddInputResult<C>) -> CircuitData<C> {
         match self {
-            FillInputResult::Done(data) => data,
-            FillInputResult::More(_) => panic!("Not all inputs have been filled"),
+            AddInputResult::Done(data) => data,
+            AddInputResult::More(_) => panic!("Not all inputs have been filled"),
         }
     }
 }

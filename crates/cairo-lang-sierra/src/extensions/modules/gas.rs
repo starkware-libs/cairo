@@ -139,7 +139,8 @@ impl NoGenericArgsGenericLibfunc for GetAvailableGasLibfunc {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CostTokenType {
     /// A compile time known cost unit. This is a linear combination of the runtime tokens
-    /// ([CostTokenType::Step], [CostTokenType::Hole], [CostTokenType::RangeCheck]).
+    /// ([CostTokenType::Step], [CostTokenType::Hole], [CostTokenType::RangeCheck],
+    /// [CostTokenType::RangeCheck96]).
     Const,
 
     // Runtime post-cost token types:
@@ -149,6 +150,8 @@ pub enum CostTokenType {
     Hole,
     /// The number of 128-bit range check builtins.
     RangeCheck,
+    /// The number of 96-bit range check builtins.
+    RangeCheck96,
 
     // Pre-cost token types (builtins):
     /// One invocation of the pedersen hash function.
@@ -159,8 +162,6 @@ pub enum CostTokenType {
     Bitwise,
     /// One invocation of the EC op builtin.
     EcOp,
-    /// The number of 96-bit range check builtins.
-    RangeCheck96,
     // Add mod builtin.
     AddMod,
     // mul mod builtin.

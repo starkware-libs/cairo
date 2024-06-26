@@ -4,7 +4,7 @@ use cairo_lang_casm::hints::CoreHint;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::circuit::{
-    CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE, OFFSETS_PER_GATE, VALUE_SIZE,
+    CircuitConcreteLibfunc, CircuitInfo, MOD_BUILTIN_INSTANCE_SIZE, OFFSETS_PER_GATE, VALUE_SIZE,
 };
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -28,7 +28,7 @@ pub fn build(
         CircuitConcreteLibfunc::TryIntoCircuitModulus(_libfunc) => {
             build_try_into_circuit_modulus(builder)
         }
-        CircuitConcreteLibfunc::FillInput(_libfunc) => build_fill_input(builder),
+        CircuitConcreteLibfunc::AddInput(_libfunc) => build_add_input(builder),
         CircuitConcreteLibfunc::Eval(libfunc) => build_circuit_eval(&libfunc.ty, builder),
         CircuitConcreteLibfunc::GetDescriptor(libfunc) => {
             build_get_descriptor(&libfunc.ty, builder)
@@ -71,31 +71,33 @@ fn build_init_circuit_data(
         buffer(1) rc96;
     };
     casm_build_extend! {casm_builder,
-        const value_size = VALUE_SIZE;
-        let inputs_start = rc96 + value_size;
+        let rc96_start = rc96;
+        // Skip the constant `1`.
+        const input_start_offset = VALUE_SIZE;
+        let input_start = rc96 + input_start_offset;
         // This size of all the inputs including the input 1.
-        const inputs_size = (1 + n_inputs) * VALUE_SIZE;
-        let inputs_end = rc96 + inputs_size;
+        const input_end_offset = (1 + n_inputs) * VALUE_SIZE;
+        let input_end = rc96 + input_end_offset;
         const rc96_usage = rc96_usage;
-        let vals_end = rc96 + rc96_usage;
+        let rc96 = rc96 + rc96_usage;
     };
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[vals_end], &[inputs_start, inputs_end]], None)],
+        [("Fallthrough", &[&[rc96], &[input_start, input_end]], None)],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
                 cost_token_ty: CostTokenType::RangeCheck96,
-                start: rc96,
-                end: vals_end,
+                start: rc96_start,
+                end: rc96,
             }],
             extra_costs: None,
         },
     ))
 }
 
-/// Handles a Sierra statement for popping an element from the beginning of an array.
-fn build_fill_input(
+/// Handles a Sierra statement for adding an input to the input accumulator.
+fn build_add_input(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_handle, elem] = builder.try_get_refs()?;
@@ -114,14 +116,17 @@ fn build_fill_input(
     casm_build_extend! {casm_builder,
         tempvar new_start = start;
         tempvar remaining = end - new_start;
-        jump More if remaining != 0;
+        jump MoreInputs if remaining != 0;
         Done:
     };
-    let more_handle = get_non_fallthrough_statement_id(&builder);
+    let more_inputs_handle = get_non_fallthrough_statement_id(&builder);
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[end]], None), ("More", &[&[new_start, end]], Some(more_handle))],
+        [
+            ("Fallthrough", &[&[end]], None),
+            ("MoreInputs", &[&[new_start, end]], Some(more_inputs_handle)),
+        ],
         Default::default(),
     ))
 }
@@ -136,11 +141,10 @@ fn build_get_descriptor(
 
     let ctx = casm! {
         // The relocation will point the `call` to the `ret;` instruction that precedes the
-        // relevant const.
+        // add and mul tables.
         call rel 0;
         // The relocation table will add const offset to the `1` below, making it point to the
-        // constant value (the `1` is to skip the `ret` instruction).
-        // TODO(Gil): Support relocatable CellExpression and return an unstored "[ap - 1] + 1".
+        // add and mul tables (the `1` is to skip the `ret` instruction).
         [ap] = [ap - 1] + 1, ap++;
         [ap] = (add_offsets.len()), ap++;
         [ap] = [ap - 2] + (add_offsets.len() * OFFSETS_PER_GATE), ap++;
@@ -190,7 +194,7 @@ fn build_circuit_eval(
     let one = expr_one.try_unpack_single()?;
     let mut casm_builder = CasmBuilder::default();
 
-    let instance_size = BUILTIN_INSTANCE_SIZE.into_or_panic();
+    let instance_size = MOD_BUILTIN_INSTANCE_SIZE.into_or_panic();
     add_input_variables! {casm_builder,
         buffer(instance_size) add_mod;
         buffer(instance_size) mul_mod;
@@ -214,10 +218,10 @@ fn build_circuit_eval(
 
     casm_build_extend! {casm_builder,
         // input size including the input 1.
-        const inputs_size = (n_inputs + 1) * VALUE_SIZE;
+        const inputs_size = (1 + n_inputs) * VALUE_SIZE;
         tempvar values = inputs_end - inputs_size;
 
-        // Add the input 1 at the end of the inputs.
+        // Add the constant `1` at the beginning of the values' segment.
         assert one = values[0];
         assert zero = values[1];
         assert zero = values[2];
@@ -248,18 +252,18 @@ fn build_circuit_eval(
             n_mul_mods: n_muls, mul_mod_builtin: mul_mod
         };
         // Read the number of mul gates that were actually computed by the hint from the builtin.
-        tempvar computed_gates = mul_mod[6];
+        tempvar actual_mul_gates = mul_mod[6];
 
-        const add_mod_usage = (BUILTIN_INSTANCE_SIZE * add_offsets.len());
+        const add_mod_usage = (MOD_BUILTIN_INSTANCE_SIZE * add_offsets.len());
         let new_add_mod = add_mod + add_mod_usage;
 
-        const instance_size = BUILTIN_INSTANCE_SIZE;
-        tempvar mul_mod_usage = computed_gates * instance_size;
+        const instance_size = MOD_BUILTIN_INSTANCE_SIZE;
+        tempvar mul_mod_usage = actual_mul_gates * instance_size;
         let new_mul_mod = mul_mod + mul_mod_usage;
 
         // Compute the number of mul gates that were not evaluated.
-        tempvar skipped_gates = n_muls - computed_gates;
-        jump Failure if skipped_gates != 0;
+        tempvar skipped_mul_gates = n_muls - actual_mul_gates;
+        jump Failure if skipped_mul_gates != 0;
     };
 
     let failure_handle = get_non_fallthrough_statement_id(&builder);
@@ -283,12 +287,12 @@ fn build_circuit_eval(
                     &[new_add_mod],
                     &[new_mul_mod],
                     // CircuitPartialOutputs
-                    &[values, modulus0, modulus1, modulus2, modulus3, computed_gates],
+                    &[values, modulus0, modulus1, modulus2, modulus3, actual_mul_gates],
                     // CircuitFailureGuarantee
                     &[
                         mul_mod_offsets,
                         n_muls,
-                        computed_gates,
+                        actual_mul_gates,
                         values,
                         modulus0,
                         modulus1,
@@ -351,7 +355,7 @@ fn build_failure_guarantee_verify(
     let mut casm_builder = CasmBuilder::default();
     let rc_usage = (2 + VALUE_SIZE).into_or_panic();
 
-    let instance_size = BUILTIN_INSTANCE_SIZE.into_or_panic();
+    let instance_size = MOD_BUILTIN_INSTANCE_SIZE.into_or_panic();
     add_input_variables! {casm_builder,
         buffer(rc_usage) rc96;
         buffer(instance_size) mul_mod;
@@ -375,10 +379,12 @@ fn build_failure_guarantee_verify(
         tempvar failing_gate_offset = fail_idx * offsets_per_gate;
         tempvar failing_gate_ptr = orig_mul_mod_offsets + failing_gate_offset;
 
-        tempvar nullifier_offset = failing_gate_ptr[0];
-        tempvar zero_divisor_offset = failing_gate_ptr[1];
-        // The output of the failing gate points to the const zero.
+        // The output of the failing gate points to the const one, at offset zero.
+        // This implies that the failing gate is an inverse gate.
         assert zero = failing_gate_ptr[2];
+
+        tempvar inv_input_offset = failing_gate_ptr[1];  // RHS (the input of the inverse).
+        tempvar nullifier_offset = failing_gate_ptr[0];  // LHS (the output of the inverse).
 
         tempvar zero_offset = rc96 - values;
         // Write the value 0 to rc96.
@@ -387,13 +393,14 @@ fn build_failure_guarantee_verify(
         assert zero = *(rc96++);
         assert zero = *(rc96++);
 
+        // Create a circuit that checks that
+        //   `values[inv_input_offset] * values[nullifier_offset] = 0 (mod modulus)`.
         tempvar mul_mod_offsets;
         hint AllocSegment {} into {dst: mul_mod_offsets};
 
         assert nullifier_offset = mul_mod_offsets[0];
-        assert zero_divisor_offset = mul_mod_offsets[1];
+        assert inv_input_offset = mul_mod_offsets[1];
         assert zero_offset = mul_mod_offsets[2];
-
 
         // Check that 0 <= fail_idx <= n_muls;
         // Note that since we are in the failure case we know that fail_idx != n_muls.
@@ -409,6 +416,12 @@ fn build_failure_guarantee_verify(
         assert mul_mod_offsets = mul_mod[5];
         assert one = mul_mod[6];
 
+        // Verify that nullifier > 0.
+        // We return a guarantee that checks that nullifier < modulus.
+        // This implies:
+        //   0 < nullifier < modulus,
+        //   inv_input * nullifier = 0 (mod modulus).
+        // Which implies that inv_input is not invertible.
         tempvar nullifier_ptr = values + nullifier_offset;
         tempvar nullifier0 = nullifier_ptr[0];
         tempvar nullifier1 = nullifier_ptr[1];
@@ -419,13 +432,12 @@ fn build_failure_guarantee_verify(
         jump Done if nullifier2 != 0;
         jump Done if nullifier3 != 0;
 
-        // If the nullifer is zero, add an unsatisfiable constraint.
-        assert one = zero;
+        // If the nullifier is zero, add an unsatisfiable constraint.
+        fail;
 
         Done:
-        const mul_mod_usage = BUILTIN_INSTANCE_SIZE;
+        const mul_mod_usage = MOD_BUILTIN_INSTANCE_SIZE;
         let new_mul_mod = mul_mod + mul_mod_usage;
-
     };
 
     Ok(builder.build_from_casm_builder(
@@ -470,19 +482,15 @@ fn build_get_output(
     let output_offset = values.get(output_ty).unwrap();
 
     add_input_variables! {casm_builder,
-
         deref values_ptr;
 
         deref modulus0;
         deref modulus1;
         deref modulus2;
         deref modulus3;
-
-
     };
 
     casm_build_extend! {casm_builder,
-
         const output_offset = output_offset * VALUE_SIZE;
         // We compute output_ptr instead of using an offset to overcome the 15 bit offset limit.
         tempvar output_ptr = values_ptr + output_offset;
