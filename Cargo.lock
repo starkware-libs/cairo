@@ -578,6 +578,8 @@ name = "cairo-lang-doc"
 version = "2.6.4"
 dependencies = [
  "cairo-lang-defs",
+ "cairo-lang-formatter",
+ "cairo-lang-parser",
  "cairo-lang-syntax",
  "cairo-lang-utils",
  "indoc",
