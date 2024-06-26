@@ -124,3 +124,8 @@ fn test_get_available_gas_no_gas_supply() {
 fn test_get_available_gas_with_gas_supply() {
     assert_gt(core::testing::get_available_gas(), 5000, 'high amount of gas used')
 }
+
+#[test]
+fn test_assert_eq_path_requiring_inference() {
+    assert_eq!(Option::<u32>::None, Option::None);
+}

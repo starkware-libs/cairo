@@ -17,7 +17,7 @@ use crate::extensions::lib_func::{
     SpecializationContext, WrapSignatureAndTypeGenericLibfunc,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
-use crate::extensions::types::TypeInfo;
+use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
     args_as_single_type, args_as_single_value, args_as_two_types, extract_type_generic_args,
     ConcreteType, NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
@@ -42,8 +42,8 @@ static CIRCUIT_COMPONENTS: Lazy<UnorderedHashSet<GenericTypeId>> = Lazy::new(|| 
 
 /// The number of limbs used to represent a single value in the circuit.
 pub const VALUE_SIZE: usize = 4;
-/// The size of a builtin instance.
-pub const BUILTIN_INSTANCE_SIZE: usize = 7;
+/// The size of the AddMod and MulMod builtin instances.
+pub const MOD_BUILTIN_INSTANCE_SIZE: usize = 7;
 /// A gate is defined by 3 offsets, the first two are the inputs and the third is the output.
 pub const OFFSETS_PER_GATE: usize = 3;
 /// The offset of the values in the values array.
@@ -73,7 +73,7 @@ define_type_hierarchy! {
 
 define_libfunc_hierarchy! {
     pub enum CircuitLibFunc {
-        FillInput(FillCircuitInputLibFunc),
+        AddInput(AddCircuitInputLibFunc),
         Eval(EvalCircuitLibFunc),
         GetDescriptor(GetCircuitDescriptorLibFunc),
         InitCircuitData(InitCircuitDataLibFunc),
@@ -109,10 +109,13 @@ impl NamedType for CircuitInput {
 
     fn specialize(
         &self,
-        context: &dyn TypeSpecializationContext,
+        _context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Self::Concrete::new(context, args)
+        let idx = args_as_single_value(args)?
+            .to_usize()
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        Ok(Self::Concrete { info: circuit_component_type_info(Self::ID, args), idx })
     }
 }
 
@@ -122,30 +125,6 @@ pub struct ConcreteCircuitInput {
     pub info: TypeInfo,
     // The index of the circuit input.
     pub idx: usize,
-}
-
-impl ConcreteCircuitInput {
-    fn new(
-        _context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self, SpecializationError> {
-        let idx = args_as_single_value(args)?
-            .to_usize()
-            .ok_or(SpecializationError::UnsupportedGenericArg)?;
-        Ok(Self {
-            info: TypeInfo {
-                long_id: ConcreteTypeLongId {
-                    generic_id: "CircuitInput".into(),
-                    generic_args: args.to_vec(),
-                },
-                duplicatable: false,
-                droppable: false,
-                storable: false,
-                zero_sized: false,
-            },
-            idx,
-        })
-    }
 }
 
 impl ConcreteType for ConcreteCircuitInput {
@@ -169,7 +148,7 @@ fn validate_gate_generic_args(
 #[derive(Default)]
 pub struct AddModGate {}
 impl NamedType for AddModGate {
-    type Concrete = ConcreteAddModGate;
+    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("AddModGate");
 
     fn specialize(
@@ -177,38 +156,8 @@ impl NamedType for AddModGate {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Self::Concrete::new(context, args)
-    }
-}
-
-pub struct ConcreteAddModGate {
-    pub info: TypeInfo,
-}
-
-impl ConcreteAddModGate {
-    fn new(
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self, SpecializationError> {
         validate_gate_generic_args(context, args)?;
-        Ok(Self {
-            info: TypeInfo {
-                long_id: ConcreteTypeLongId {
-                    generic_id: "AddModGate".into(),
-                    generic_args: args.to_vec(),
-                },
-                duplicatable: false,
-                droppable: false,
-                storable: false,
-                zero_sized: false,
-            },
-        })
-    }
-}
-
-impl ConcreteType for ConcreteAddModGate {
-    fn info(&self) -> &TypeInfo {
-        &self.info
+        Ok(Self::Concrete { info: circuit_component_type_info(Self::ID, args) })
     }
 }
 
@@ -216,7 +165,7 @@ impl ConcreteType for ConcreteAddModGate {
 #[derive(Default)]
 pub struct SubModGate {}
 impl NamedType for SubModGate {
-    type Concrete = ConcreteSubModGate;
+    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("SubModGate");
 
     fn specialize(
@@ -224,38 +173,8 @@ impl NamedType for SubModGate {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Self::Concrete::new(context, args)
-    }
-}
-
-pub struct ConcreteSubModGate {
-    pub info: TypeInfo,
-}
-
-impl ConcreteSubModGate {
-    fn new(
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self, SpecializationError> {
         validate_gate_generic_args(context, args)?;
-        Ok(Self {
-            info: TypeInfo {
-                long_id: ConcreteTypeLongId {
-                    generic_id: "SubModGate".into(),
-                    generic_args: args.to_vec(),
-                },
-                duplicatable: false,
-                droppable: false,
-                storable: false,
-                zero_sized: false,
-            },
-        })
-    }
-}
-
-impl ConcreteType for ConcreteSubModGate {
-    fn info(&self) -> &TypeInfo {
-        &self.info
+        Ok(Self::Concrete { info: circuit_component_type_info(Self::ID, args) })
     }
 }
 
@@ -263,7 +182,7 @@ impl ConcreteType for ConcreteSubModGate {
 #[derive(Default)]
 pub struct MulModGate {}
 impl NamedType for MulModGate {
-    type Concrete = ConcreteMulModGate;
+    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("MulModGate");
 
     fn specialize(
@@ -271,38 +190,8 @@ impl NamedType for MulModGate {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Self::Concrete::new(context, args)
-    }
-}
-
-pub struct ConcreteMulModGate {
-    pub info: TypeInfo,
-}
-
-impl ConcreteMulModGate {
-    fn new(
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self, SpecializationError> {
         validate_gate_generic_args(context, args)?;
-        Ok(Self {
-            info: TypeInfo {
-                long_id: ConcreteTypeLongId {
-                    generic_id: "MulModGate".into(),
-                    generic_args: args.to_vec(),
-                },
-                duplicatable: false,
-                droppable: false,
-                storable: false,
-                zero_sized: false,
-            },
-        })
-    }
-}
-
-impl ConcreteType for ConcreteMulModGate {
-    fn info(&self) -> &TypeInfo {
-        &self.info
+        Ok(Self::Concrete { info: circuit_component_type_info(Self::ID, args) })
     }
 }
 
@@ -310,7 +199,7 @@ impl ConcreteType for ConcreteMulModGate {
 #[derive(Default)]
 pub struct InverseGate {}
 impl NamedType for InverseGate {
-    type Concrete = ConcreteInverseGate;
+    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("InverseGate");
 
     fn specialize(
@@ -318,42 +207,11 @@ impl NamedType for InverseGate {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Self::Concrete::new(context, args)
-    }
-}
-
-pub struct ConcreteInverseGate {
-    pub info: TypeInfo,
-}
-
-impl ConcreteInverseGate {
-    fn new(
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self, SpecializationError> {
         if args.len() != 1 {
             return Err(SpecializationError::WrongNumberOfGenericArgs);
         }
         validate_args_are_circuit_components(context, args.iter())?;
-
-        Ok(Self {
-            info: TypeInfo {
-                long_id: ConcreteTypeLongId {
-                    generic_id: "InverseGate".into(),
-                    generic_args: args.to_vec(),
-                },
-                duplicatable: false,
-                droppable: false,
-                storable: false,
-                zero_sized: false,
-            },
-        })
-    }
-}
-
-impl ConcreteType for ConcreteInverseGate {
-    fn info(&self) -> &TypeInfo {
-        &self.info
+        Ok(Self::Concrete { info: circuit_component_type_info(Self::ID, args) })
     }
 }
 
@@ -361,7 +219,7 @@ impl ConcreteType for ConcreteInverseGate {
 #[derive(Default)]
 pub struct CircuitInputAccumulator {}
 impl NamedType for CircuitInputAccumulator {
-    type Concrete = ConcreteCircuitInputAccumulator;
+    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("CircuitInputAccumulator");
 
     fn specialize(
@@ -369,39 +227,17 @@ impl NamedType for CircuitInputAccumulator {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Self::Concrete::new(context, args)
-    }
-}
-
-pub struct ConcreteCircuitInputAccumulator {
-    pub info: TypeInfo,
-}
-
-impl ConcreteCircuitInputAccumulator {
-    fn new(
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self, SpecializationError> {
         let circ_ty = args_as_single_type(args)?;
         validate_is_circuit(context, circ_ty)?;
-        Ok(Self {
+        Ok(Self::Concrete {
             info: TypeInfo {
-                long_id: ConcreteTypeLongId {
-                    generic_id: "CircuitInputAccumulator".into(),
-                    generic_args: args.to_vec(),
-                },
+                long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
                 duplicatable: false,
                 droppable: true,
                 storable: true,
                 zero_sized: false,
             },
         })
-    }
-}
-
-impl ConcreteType for ConcreteCircuitInputAccumulator {
-    fn info(&self) -> &TypeInfo {
-        &self.info
     }
 }
 
@@ -416,11 +252,11 @@ impl NoGenericArgsGenericType for CircuitModulus {
     const ZERO_SIZED: bool = false;
 }
 
-/// A type representing a circuit instance data with all the inputs filled.
+/// A type representing a circuit instance data with all the inputs added.
 #[derive(Default)]
 pub struct CircuitData {}
 impl NamedType for CircuitData {
-    type Concrete = ConcreteCircuitData;
+    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("CircuitData");
 
     fn specialize(
@@ -428,27 +264,11 @@ impl NamedType for CircuitData {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Self::Concrete::new(context, args)
-    }
-}
-
-pub struct ConcreteCircuitData {
-    pub info: TypeInfo,
-}
-
-impl ConcreteCircuitData {
-    fn new(
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self, SpecializationError> {
         let circ_ty = args_as_single_type(args)?;
         validate_is_circuit(context, circ_ty)?;
-        Ok(Self {
+        Ok(Self::Concrete {
             info: TypeInfo {
-                long_id: ConcreteTypeLongId {
-                    generic_id: "CircuitData".into(),
-                    generic_args: args.to_vec(),
-                },
+                long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
                 duplicatable: false,
                 droppable: true,
                 storable: true,
@@ -458,17 +278,11 @@ impl ConcreteCircuitData {
     }
 }
 
-impl ConcreteType for ConcreteCircuitData {
-    fn info(&self) -> &TypeInfo {
-        &self.info
-    }
-}
-
 /// A type representing a circuit instance where the outputs is filled.
 #[derive(Default)]
 pub struct CircuitOutputs {}
 impl NamedType for CircuitOutputs {
-    type Concrete = ConcreteCircuitOutputs;
+    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("CircuitOutputs");
 
     fn specialize(
@@ -476,27 +290,11 @@ impl NamedType for CircuitOutputs {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Self::Concrete::new(context, args)
-    }
-}
-
-pub struct ConcreteCircuitOutputs {
-    pub info: TypeInfo,
-}
-
-impl ConcreteCircuitOutputs {
-    fn new(
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self, SpecializationError> {
         let circ_ty = args_as_single_type(args)?;
         validate_is_circuit(context, circ_ty)?;
-        Ok(Self {
+        Ok(Self::Concrete {
             info: TypeInfo {
-                long_id: ConcreteTypeLongId {
-                    generic_id: "CircuitOutputs".into(),
-                    generic_args: args.to_vec(),
-                },
+                long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
                 duplicatable: true,
                 droppable: true,
                 storable: true,
@@ -506,18 +304,12 @@ impl ConcreteCircuitOutputs {
     }
 }
 
-impl ConcreteType for ConcreteCircuitOutputs {
-    fn info(&self) -> &TypeInfo {
-        &self.info
-    }
-}
-
 /// A type representing a circuit instance where the outputs are partially filled as
 /// the evaluation of one of the inverse gates failed.
 #[derive(Default)]
 pub struct CircuitPartialOutputs {}
 impl NamedType for CircuitPartialOutputs {
-    type Concrete = ConcreteCircuitPartialOutputs;
+    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("CircuitPartialOutputs");
 
     fn specialize(
@@ -525,39 +317,17 @@ impl NamedType for CircuitPartialOutputs {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Self::Concrete::new(context, args)
-    }
-}
-
-pub struct ConcreteCircuitPartialOutputs {
-    pub info: TypeInfo,
-}
-
-impl ConcreteCircuitPartialOutputs {
-    fn new(
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self, SpecializationError> {
         let circ_ty = args_as_single_type(args)?;
         validate_is_circuit(context, circ_ty)?;
-        Ok(Self {
+        Ok(Self::Concrete {
             info: TypeInfo {
-                long_id: ConcreteTypeLongId {
-                    generic_id: "CircuitPartialOutputs".into(),
-                    generic_args: args.to_vec(),
-                },
+                long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
                 duplicatable: false,
                 droppable: true,
                 storable: true,
                 zero_sized: false,
             },
         })
-    }
-}
-
-impl ConcreteType for ConcreteCircuitPartialOutputs {
-    fn info(&self) -> &TypeInfo {
-        &self.info
     }
 }
 
@@ -588,7 +358,6 @@ impl NamedType for U96LimbsLessThanGuarantee {
         let limb_count = args_as_single_value(args)?
             .to_usize()
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
-        // The guarantee is only useful if there are at least two limbs.
         require(limb_count >= 1).ok_or(SpecializationError::UnsupportedGenericArg)?;
         Ok(Self::Concrete {
             info: TypeInfo {
@@ -629,11 +398,11 @@ impl NoGenericArgsGenericType for U96Guarantee {
     const ZERO_SIZED: bool = false;
 }
 
-/// A type representing a circuit instance data with all the inputs filled.
+/// A type representing the circuit add and mul tables.
 #[derive(Default)]
 pub struct CircuitDescriptor {}
 impl NamedType for CircuitDescriptor {
-    type Concrete = ConcreteCircuitDescriptor;
+    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("CircuitDescriptor");
 
     fn specialize(
@@ -641,39 +410,17 @@ impl NamedType for CircuitDescriptor {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Self::Concrete::new(context, args)
-    }
-}
-
-pub struct ConcreteCircuitDescriptor {
-    pub info: TypeInfo,
-}
-
-impl ConcreteCircuitDescriptor {
-    fn new(
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self, SpecializationError> {
         let circ_ty = args_as_single_type(args)?;
         validate_is_circuit(context, circ_ty.clone())?;
-        Ok(Self {
+        Ok(Self::Concrete {
             info: TypeInfo {
-                long_id: ConcreteTypeLongId {
-                    generic_id: "CircuitDescriptor".into(),
-                    generic_args: args.to_vec(),
-                },
+                long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
                 duplicatable: true,
                 droppable: true,
                 storable: true,
                 zero_sized: false,
             },
         })
-    }
-}
-
-impl ConcreteType for ConcreteCircuitDescriptor {
-    fn info(&self) -> &TypeInfo {
-        &self.info
     }
 }
 
@@ -789,11 +536,11 @@ impl SignatureAndTypeGenericLibfunc for InitCircuitDataLibFuncWrapped {
 
 pub type InitCircuitDataLibFunc = WrapSignatureAndTypeGenericLibfunc<InitCircuitDataLibFuncWrapped>;
 
-/// libfunc for filling an input in the circuit instance's data.
+/// libfunc for adding an input in the circuit instance's data.
 #[derive(Default)]
-pub struct FillCircuitInputLibFuncWrapped {}
-impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
-    const STR_ID: &'static str = "fill_circuit_input";
+pub struct AddCircuitInputLibFuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for AddCircuitInputLibFuncWrapped {
+    const STR_ID: &'static str = "add_circuit_input";
 
     fn specialize_signature(
         &self,
@@ -824,7 +571,7 @@ impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
                 ParamSignature::new(val_ty),
             ],
             branch_signatures: vec![
-                // All inputs were filled.
+                // All inputs were added.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: circuit_data_ty,
@@ -832,7 +579,7 @@ impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
-                // More inputs to fill.
+                // More inputs to add.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: circuit_input_accumulator_ty,
@@ -846,8 +593,7 @@ impl SignatureAndTypeGenericLibfunc for FillCircuitInputLibFuncWrapped {
     }
 }
 
-pub type FillCircuitInputLibFunc =
-    WrapSignatureAndTypeGenericLibfunc<FillCircuitInputLibFuncWrapped>;
+pub type AddCircuitInputLibFunc = WrapSignatureAndTypeGenericLibfunc<AddCircuitInputLibFuncWrapped>;
 
 /// A zero-input function that returns an handle to the offsets of a circuit.
 #[derive(Default)]
@@ -941,7 +687,10 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(add_mod_builtin_ty.clone(), 0),
-                        OutputVarInfo::new_builtin(mul_mod_builtin_ty.clone(), 1),
+                        OutputVarInfo {
+                            ty: mul_mod_builtin_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
                         OutputVarInfo {
                             ty: context.get_concrete_type(
                                 CircuitOutputs::id(),
@@ -953,11 +702,14 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
 
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
-                // Failure.
+                // Failure (inverse of non-invertible).
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo::new_builtin(add_mod_builtin_ty, 0),
-                        OutputVarInfo::new_builtin(mul_mod_builtin_ty, 1),
+                        OutputVarInfo {
+                            ty: mul_mod_builtin_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
                         OutputVarInfo {
                             ty: context.get_concrete_type(
                                 CircuitPartialOutputs::id(),
@@ -1149,7 +901,7 @@ impl NamedLibfunc for U96LimbsLessThanGuaranteeVerifyLibfunc {
         Ok(LibfuncSignature {
             param_signatures: vec![ParamSignature::new(in_guarantee_ty)],
             branch_signatures: vec![
-                // Limbs are equal - move to the next smaller guarantee.
+                // Most significant limbs are equal - move to the next smaller guarantee.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: eq_guarantee_ty,
@@ -1157,7 +909,7 @@ impl NamedLibfunc for U96LimbsLessThanGuaranteeVerifyLibfunc {
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
-                // Limbs different - checking the diff is in u96 range.
+                // Most significant limbs are different - checking the diff is in u96 range.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: u96_lt_guarantee_ty,
@@ -1266,7 +1018,7 @@ impl NoGenericArgsGenericLibfunc for TryIntoCircuitModulusLibFunc {
         Ok(LibfuncSignature {
             param_signatures: vec![ParamSignature::new(value_type)],
             branch_signatures: vec![
-                // Success.
+                // Success (value >= 2).
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: context.get_concrete_type(CircuitModulus::id(), &[])?,
@@ -1274,7 +1026,7 @@ impl NoGenericArgsGenericLibfunc for TryIntoCircuitModulusLibFunc {
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
-                // Failure.
+                // Failure (value is zero or one).
                 BranchSignature {
                     vars: vec![],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -1305,7 +1057,7 @@ fn get_circuit_info(
 
     validate_args_are_circuit_components(context, circ_outputs.clone())?;
 
-    let ParsedInputs { mut values, mut mul_offsets } =
+    let ParsedInputs { reduced_inputs: mut values, mut mul_offsets } =
         parse_circuit_inputs(context, circ_outputs.clone())?;
     let n_inputs = values.len();
     require(n_inputs >= 1).ok_or(SpecializationError::UnsupportedGenericArg)?;
@@ -1419,18 +1171,18 @@ fn parse_circuit_inputs<'a>(
         }
     }
 
-    let mut values: UnorderedHashMap<ConcreteTypeId, usize> = Default::default();
+    let mut reduced_inputs: UnorderedHashMap<ConcreteTypeId, usize> = Default::default();
     let n_inputs = inputs.len();
 
-    // The reduced_inputs start at n_inputs + 1 since we need to reserve slot 0 for the constant
-    // value 1.
-    let reduced_input_start = n_inputs + 1;
+    // The reduced_inputs start at `1 + n_inputs` since we need to reserve slot 0 for the constant
+    // value `1`.
+    let reduced_input_start = 1 + n_inputs;
     let mut mul_offsets = vec![];
 
     for (idx, (input_idx, ty)) in inputs.iter_sorted().enumerate() {
         // Validate that the input indices are `[0, 1, ..., n_inputs - 1]`.
         require(idx == *input_idx).ok_or(SpecializationError::UnsupportedGenericArg)?;
-        assert!(values.insert(ty.clone(), reduced_input_start + idx).is_none());
+        assert!(reduced_inputs.insert(ty.clone(), reduced_input_start + idx).is_none());
         // Add the gate `1 * input = result` to reduce the input module the modulus.
         mul_offsets.push(GateOffsets {
             lhs: ONE_OFFSET,
@@ -1439,7 +1191,7 @@ fn parse_circuit_inputs<'a>(
         });
     }
 
-    Ok(ParsedInputs { values, mul_offsets })
+    Ok(ParsedInputs { reduced_inputs, mul_offsets })
 }
 
 /// Describes the offset that define a gate in a circuit.
@@ -1480,7 +1232,7 @@ impl CircuitInfo {
 
 struct ParsedInputs {
     /// Maps a concrete input type to its offset in the values array.
-    values: UnorderedHashMap<ConcreteTypeId, usize>,
+    reduced_inputs: UnorderedHashMap<ConcreteTypeId, usize>,
     /// The offsets for the mul gates that are used to reduce the inputs.
     mul_offsets: Vec<GateOffsets>,
 }
@@ -1499,4 +1251,15 @@ fn u96_limbs_less_than_guarantee_ty(
 ) -> Result<ConcreteTypeId, SpecializationError> {
     context
         .get_concrete_type(U96LimbsLessThanGuarantee::id(), &[GenericArg::Value(limb_count.into())])
+}
+
+/// Returns the type info of the circuit component.
+fn circuit_component_type_info(generic_id: GenericTypeId, args: &[GenericArg]) -> TypeInfo {
+    TypeInfo {
+        long_id: ConcreteTypeLongId { generic_id, generic_args: args.to_vec() },
+        duplicatable: false,
+        droppable: false,
+        storable: false,
+        zero_sized: false,
+    }
 }

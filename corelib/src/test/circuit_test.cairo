@@ -1,7 +1,7 @@
 use core::circuit::{
     RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, circuit_add, circuit_sub,
     circuit_mul, circuit_inverse, EvalCircuitTrait, u384, CircuitOutputsTrait, CircuitModulus,
-    FillInputResultTrait, CircuitInputs,
+    AddInputResultTrait, CircuitInputs,
 };
 
 use core::test::test_utils::assert_eq;

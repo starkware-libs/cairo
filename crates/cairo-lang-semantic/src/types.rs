@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplTypeDefId, ModuleFileId,
-    NamedLanguageElementId, StructId, TraitTypeId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, NamedLanguageElementId,
+    StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -26,7 +26,7 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
-use crate::items::imp::{ImplId, ImplLongId, ImplLookupContext};
+use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId, GenericArgumentId};
@@ -404,18 +404,6 @@ impl ImplTypeId {
     }
     pub fn ty(&self) -> TraitTypeId {
         self.ty
-    }
-    /// Gets the impl type def (language element), if `self.impl_id` is of a concrete impl.
-    pub fn impl_type_def(&self, db: &dyn SemanticGroup) -> Maybe<Option<ImplTypeDefId>> {
-        match self.impl_id.lookup_intern(db) {
-            ImplLongId::Concrete(concrete_impl_id) => {
-                concrete_impl_id.get_impl_type_def(db, self.ty)
-            }
-            ImplLongId::GenericParameter(_)
-            | ImplLongId::ImplVar(_)
-            | ImplLongId::ImplImpl(_)
-            | ImplLongId::TraitImpl(_) => Ok(None),
-        }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
         format!("{}::{}", self.impl_id.name(db.upcast()), self.ty.name(db.upcast())).into()
