@@ -793,7 +793,10 @@ impl NamedLibfunc for GetOutputLibFunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let (circ_ty, _output_ty) = args_as_two_types(args)?;
+        let (circ_ty, output_ty) = args_as_two_types(args)?;
+        if !CIRCUIT_COMPONENTS.contains(&context.get_type_info(output_ty)?.long_id.generic_id) {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
 
         let outputs_ty =
             context.get_concrete_type(CircuitOutputs::id(), &[GenericArg::Type(circ_ty)])?;
