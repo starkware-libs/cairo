@@ -1,7 +1,6 @@
-use cairo_lang_compiler::db::RootDatabase;
 use tower_lsp::lsp_types::{Hover, HoverContents, HoverParams, MarkupContent, MarkupKind};
 
-use crate::lang::db::LsSyntaxGroup;
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::markdown::Markdown;
 
@@ -13,7 +12,7 @@ mod render;
     skip_all,
     fields(uri = %params.text_document_position_params.text_document.uri)
 )]
-pub fn hover(params: HoverParams, db: &RootDatabase) -> Option<Hover> {
+pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
     let file_id = db.file_for_url(&params.text_document_position_params.text_document.uri)?;
     let position = params.text_document_position_params.position.to_cairo();
     let identifier = db.find_identifier_at_position(file_id, position)?;

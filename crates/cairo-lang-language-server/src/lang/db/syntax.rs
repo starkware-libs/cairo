@@ -7,6 +7,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 
+// TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// Language server-specific extensions to the syntax group of the Cairo compiler.
 pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
     /// Finds the most specific [`SyntaxNode`] at the given [`TextPosition`] in file.

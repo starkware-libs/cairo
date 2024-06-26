@@ -1,4 +1,3 @@
-use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::ids::{FunctionWithBodyId, LookupItemId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -8,17 +7,18 @@ use cairo_lang_semantic::Mutability;
 use cairo_lang_syntax::node::ast::{Expr, Pattern, TerminalIdentifier};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 use tower_lsp::lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
-use crate::lang::db::LsSemanticGroup;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::markdown::Markdown;
 
 /// Legacy hover rendering backported from Cairo 2.6.3 codebase.
 ///
 /// This logic is meant for gradual replacement with new-style hovers and eventually be removed.
-pub fn legacy(db: &RootDatabase, identifier: &TerminalIdentifier) -> Option<Hover> {
+pub fn legacy(db: &AnalysisDatabase, identifier: &TerminalIdentifier) -> Option<Hover> {
     let node = identifier.as_syntax_node();
     let lookup_item_id = db.find_lookup_item(&node)?;
     let function_id = lookup_item_id.function_with_body()?;
@@ -46,7 +46,7 @@ pub fn legacy(db: &RootDatabase, identifier: &TerminalIdentifier) -> Option<Hove
 
 /// If the node is an identifier, retrieves a hover hint for it.
 fn get_identifier_hint(
-    db: &(dyn SemanticGroup + 'static),
+    db: &AnalysisDatabase,
     lookup_item_id: LookupItemId,
     node: SyntaxNode,
 ) -> Option<Markdown> {
@@ -64,7 +64,7 @@ fn get_identifier_hint(
 
 /// If the node is an expression, retrieves a hover hint for it.
 fn get_expr_hint(
-    db: &(dyn SemanticGroup + 'static),
+    db: &AnalysisDatabase,
     function_id: FunctionWithBodyId,
     node: SyntaxNode,
 ) -> Option<Markdown> {
@@ -107,7 +107,7 @@ fn get_expr_hint(
 
 /// Returns the semantic expression for the current node.
 fn nearest_semantic_expr(
-    db: &dyn SemanticGroup,
+    db: &AnalysisDatabase,
     mut node: SyntaxNode,
     function_id: FunctionWithBodyId,
 ) -> Option<cairo_lang_semantic::Expr> {
@@ -128,7 +128,7 @@ fn nearest_semantic_expr(
 
 /// If the node is a pattern, retrieves a hover hint for it.
 fn get_pattern_hint(
-    db: &(dyn SemanticGroup + 'static),
+    db: &AnalysisDatabase,
     function_id: FunctionWithBodyId,
     node: SyntaxNode,
 ) -> Option<Markdown> {
@@ -139,7 +139,7 @@ fn get_pattern_hint(
 
 /// Returns the semantic pattern for the current node.
 fn nearest_semantic_pat(
-    db: &dyn SemanticGroup,
+    db: &AnalysisDatabase,
     mut node: SyntaxNode,
     function_id: FunctionWithBodyId,
 ) -> Option<cairo_lang_semantic::Pattern> {
