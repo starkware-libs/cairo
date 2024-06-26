@@ -208,7 +208,7 @@ fn get_type_info(
                 storable: false,
                 droppable: false,
                 duplicatable: false,
-                zero_sized: false,
+                zero_sized: true,
             }));
         }
     };
