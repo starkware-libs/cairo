@@ -74,7 +74,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
-    fn unwrap_or<+Drop<T>>(self: Option<T>, default: T) -> T {
+    fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T {
         match self {
             Option::Some(x) => x,
             Option::None => default,
