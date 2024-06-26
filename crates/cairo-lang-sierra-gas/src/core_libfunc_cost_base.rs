@@ -10,7 +10,7 @@ use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
 use cairo_lang_sierra::extensions::circuit::{
-    CircuitConcreteLibfunc, CircuitInfo, BUILTIN_INSTANCE_SIZE,
+    CircuitConcreteLibfunc, CircuitInfo, MOD_BUILTIN_INSTANCE_SIZE,
 };
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
@@ -509,13 +509,13 @@ pub fn core_libfunc_cost(
             }
         },
         Circuit(libfunc) => match libfunc {
-            CircuitConcreteLibfunc::FillInput(_) => {
+            CircuitConcreteLibfunc::AddInput(_) => {
                 vec![ConstCost::steps(7).into(), ConstCost::steps(7).into()]
             }
             CircuitConcreteLibfunc::Eval(libfunc) => {
                 let info = info_provider.circuit_info(&libfunc.ty);
 
-                let instance_size: i32 = BUILTIN_INSTANCE_SIZE.into_or_panic();
+                let instance_size: i32 = MOD_BUILTIN_INSTANCE_SIZE.into_or_panic();
                 let mut steps: i32 = 8 + instance_size;
 
                 if !info.add_offsets.is_empty() {
@@ -575,10 +575,10 @@ pub fn core_libfunc_cost(
                 ]
             }
             CircuitConcreteLibfunc::FailureGuaranteeVerify(_) => {
-                // The libfunc also costs 1 mulmod instance, however, in the failure case
-                // `eval_circuit` uses less mulmod gates then it actaually uses, so
-                // the mulmod is already paid for.
-                vec![ConstCost { steps: 33, holes: 0, range_checks: 0, range_checks96: 6 }.into()]
+                // The libfunc costs 1 MulMod instance (in addition to the cost below).
+                // However, in the failure case `eval_circuit` uses at least one MulMod gate less
+                // than it actually costs, so the MulMod is already paid for.
+                vec![ConstCost { steps: 32, holes: 0, range_checks: 0, range_checks96: 6 }.into()]
             }
         },
     }
