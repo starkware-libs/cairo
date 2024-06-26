@@ -1263,6 +1263,6 @@ fn circuit_component_type_info(generic_id: GenericTypeId, args: &[GenericArg]) -
         duplicatable: false,
         droppable: false,
         storable: false,
-        zero_sized: false,
+        zero_sized: true,
     }
 }
