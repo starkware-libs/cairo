@@ -132,6 +132,7 @@ impl ConcreteCircuitInput {
         let idx = args_as_single_value(args)?
             .to_usize()
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        // TODO: Refactor TypeInfo{...} into a function and use in the other 4 gates.
         Ok(Self {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId {
@@ -141,7 +142,7 @@ impl ConcreteCircuitInput {
                 duplicatable: false,
                 droppable: false,
                 storable: false,
-                zero_sized: false,
+                zero_sized: false, // TODO: Should be true?
             },
             idx,
         })
@@ -213,6 +214,7 @@ impl ConcreteType for ConcreteAddModGate {
 }
 
 // Represents the action of adding two fields elements in the circuits builtin.
+// TODO: Can we share code between gates? (including inv?)
 #[derive(Default)]
 pub struct SubModGate {}
 impl NamedType for SubModGate {
@@ -1297,6 +1299,7 @@ fn get_circuit_info(
     context: &dyn TypeSpecializationContext,
     outputs_tuple_ty: &ConcreteTypeId,
 ) -> Result<CircuitInfo, SpecializationError> {
+    // TODO: Consider moving the validate_output_tuple logic here.
     let struct_generic_args = extract_type_generic_args::<StructType>(context, outputs_tuple_ty)?;
     let mut generic_args = struct_generic_args.iter();
     if !matches!(
@@ -1328,10 +1331,13 @@ fn get_circuit_info(
         .map(|generic_arg| (extract_matches!(generic_arg, GenericArg::Type).clone(), true))
         .collect();
 
+    // TODO: Consider making `one_offset` a constant in the file.
+    // TODO: Add `seen` set + test that each gate is constructed once.
     while let Some((ty, first_visit)) = stack.pop() {
         let long_id = context.get_type_info(ty.clone())?.long_id;
         let generic_id = long_id.generic_id;
 
+        // TODO: Consider using the seen set for this `if` as well.
         if values.contains_key(&ty) {
             // The value was already processed.
             continue;
@@ -1378,6 +1384,7 @@ fn get_circuit_info(
             } else {
                 return Err(SpecializationError::UnsupportedGenericArg);
             };
+            // TODO: Check input_offsets is now empty.
 
             // Make sure all the gate inputs were consumed.
             assert!(input_offsets.next().is_none());
@@ -1399,6 +1406,7 @@ fn parse_circuit_inputs<'a>(
 
     let mut inputs: UnorderedHashMap<usize, ConcreteTypeId> = Default::default();
 
+    // TODO: Add "seen" set to avoid visiting the same gate twice.
     let mut visited = UnorderedHashSet::<_>::default();
 
     while let Some(ty) = stack.pop() {
@@ -1413,6 +1421,7 @@ fn parse_circuit_inputs<'a>(
             let idx = args_as_single_value(&long_id.generic_args)?
                 .to_usize()
                 .ok_or(SpecializationError::UnsupportedGenericArg)?;
+            // TODO: panic if idx is already in inputs.
             assert!(inputs.insert(idx, ty).is_none());
         } else {
             // generic_id must be a gate. This was validated in `validate_output_tuple`.
