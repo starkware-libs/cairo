@@ -1,6 +1,5 @@
 use std::iter;
 
-use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, ModuleItemId, TopLevelLanguageElementId, TraitItemId,
@@ -20,7 +19,7 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 use tracing::error;
 
-use crate::lang::db::LsSemanticGroup;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::markdown::Markdown;
 use crate::{find_definition, ResolvedItem};
 
@@ -36,7 +35,7 @@ pub enum SymbolDef {
 impl SymbolDef {
     /// Finds definition of the symbol referred by the given identifier.
     #[tracing::instrument(name = "SymbolDef::find", level = "trace", skip_all)]
-    pub fn find(db: &RootDatabase, identifier: &TerminalIdentifier) -> Option<Self> {
+    pub fn find(db: &AnalysisDatabase, identifier: &TerminalIdentifier) -> Option<Self> {
         // Get the resolved item info and the syntax node of the definition.
         let (definition_item, definition_node) = {
             let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
@@ -91,7 +90,7 @@ pub struct ItemDef {
 
 impl ItemDef {
     /// Constructs new [`ItemDef`] instance.
-    fn new(db: &RootDatabase, definition_node: &SyntaxNode) -> Option<Self> {
+    fn new(db: &AnalysisDatabase, definition_node: &SyntaxNode) -> Option<Self> {
         let mut lookup_item_ids = db.collect_lookup_items_stack(definition_node)?.into_iter();
 
         // Pull the lookup item representing the defining item.
@@ -115,14 +114,14 @@ impl ItemDef {
     }
 
     /// Get item signature without its body including signatures of its contexts.
-    pub fn signature(&self, db: &RootDatabase) -> String {
+    pub fn signature(&self, db: &AnalysisDatabase) -> String {
         let contexts = self.context_items.iter().map(|item| db.get_item_signature(*item)).rev();
         let this = iter::once(db.get_item_signature(self.lookup_item_id));
         contexts.chain(this).map(fmt).join("\n")
     }
 
     /// Gets item documentation in a final form usable for display.
-    pub fn documentation(&self, db: &RootDatabase) -> Option<Markdown> {
+    pub fn documentation(&self, db: &AnalysisDatabase) -> Option<Markdown> {
         db.get_item_documentation(self.lookup_item_id)
             // Nullify empty documentation strings in case the compiler fails to output something.
             .and_then(|doc| (!doc.is_empty()).then_some(doc))
@@ -137,7 +136,7 @@ impl ItemDef {
 
     /// Gets full path (including crate name and defining trait/impl if applicable)
     /// to the module containing the item.
-    pub fn definition_path(&self, db: &RootDatabase) -> String {
+    pub fn definition_path(&self, db: &AnalysisDatabase) -> String {
         let defs_db = db.upcast();
         match self.lookup_item_id {
             LookupItemId::ModuleItem(item) => item.parent_module(defs_db).full_path(defs_db),
@@ -155,7 +154,7 @@ pub struct VariableDef {
 
 impl VariableDef {
     /// Constructs new [`VariableDef`] instance.
-    fn new(db: &RootDatabase, definition_node: SyntaxNode) -> Option<Self> {
+    fn new(db: &AnalysisDatabase, definition_node: SyntaxNode) -> Option<Self> {
         match definition_node.kind(db.upcast()) {
             SyntaxKind::TerminalIdentifier => {
                 let definition_node = definition_node.parent()?;
@@ -189,7 +188,7 @@ impl VariableDef {
 
     /// Constructs new [`VariableDef`] instance for [`PatternIdentifier`].
     fn new_pattern_identifier(
-        db: &RootDatabase,
+        db: &AnalysisDatabase,
         pattern_identifier: PatternIdentifier,
     ) -> Option<Self> {
         let name = pattern_identifier.name(db.upcast()).text(db.upcast());
@@ -217,7 +216,7 @@ impl VariableDef {
     }
 
     /// Constructs new [`VariableDef`] instance for [`Param`].
-    fn new_param(db: &RootDatabase, param: Param) -> Option<Self> {
+    fn new_param(db: &AnalysisDatabase, param: Param) -> Option<Self> {
         let name = param.name(db.upcast()).text(db.upcast());
 
         // Get the function which contains the variable/parameter.
@@ -233,7 +232,7 @@ impl VariableDef {
     }
 
     /// Gets variable signature, which tries to resemble the way how it is defined in code.
-    pub fn signature(&self, db: &RootDatabase) -> String {
+    pub fn signature(&self, db: &AnalysisDatabase) -> String {
         let Self { name, var } = self;
 
         let prefix = match var {

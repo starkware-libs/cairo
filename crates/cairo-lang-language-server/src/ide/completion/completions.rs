@@ -1,7 +1,9 @@
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, ModuleFileId, ModuleId, NamedLanguageElementId,
     TopLevelLanguageElementId, TraitFunctionId,
 };
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -19,16 +21,16 @@ use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 use tracing::debug;
 
-use crate::lang::db::LsSemanticGroup;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn generic_completions(
-    db: &(dyn SemanticGroup + 'static),
+    db: &AnalysisDatabase,
     module_file_id: ModuleFileId,
     lookup_items: Vec<LookupItemId>,
 ) -> Vec<CompletionItem> {
@@ -106,7 +108,7 @@ fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> Completio
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn colon_colon_completions(
-    db: &(dyn SemanticGroup + 'static),
+    db: &AnalysisDatabase,
     module_file_id: ModuleFileId,
     lookup_items: Vec<LookupItemId>,
     segments: Vec<PathSegment>,
@@ -181,7 +183,7 @@ pub fn colon_colon_completions(
 
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn dot_completions(
-    db: &(dyn SemanticGroup + 'static),
+    db: &AnalysisDatabase,
     file_id: FileId,
     lookup_items: Vec<LookupItemId>,
     expr: ast::ExprBinary,
@@ -256,7 +258,7 @@ pub fn dot_completions(
 /// Returns a completion item for a method.
 #[tracing::instrument(level = "trace", skip_all)]
 fn completion_for_method(
-    db: &dyn SemanticGroup,
+    db: &AnalysisDatabase,
     module_id: ModuleId,
     trait_function: TraitFunctionId,
     position: Position,
@@ -292,7 +294,7 @@ fn completion_for_method(
 /// Checks if a module has a trait in scope.
 #[tracing::instrument(level = "trace", skip_all)]
 fn module_has_trait(
-    db: &dyn SemanticGroup,
+    db: &AnalysisDatabase,
     module_id: ModuleId,
     trait_id: cairo_lang_defs::ids::TraitId,
 ) -> Option<bool> {
@@ -310,7 +312,7 @@ fn module_has_trait(
 /// Finds all methods that can be called on a type.
 #[tracing::instrument(level = "trace", skip_all)]
 fn find_methods_for_type(
-    db: &dyn SemanticGroup,
+    db: &AnalysisDatabase,
     mut resolver: Resolver<'_>,
     ty: cairo_lang_semantic::TypeId,
     stable_ptr: cairo_lang_syntax::node::ids::SyntaxStablePtrId,
