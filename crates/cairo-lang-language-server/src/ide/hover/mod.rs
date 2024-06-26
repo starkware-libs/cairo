@@ -2,7 +2,6 @@ use tower_lsp::lsp_types::{Hover, HoverContents, HoverParams, MarkupContent, Mar
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
-use crate::markdown::Markdown;
 
 mod render;
 
@@ -23,6 +22,6 @@ pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
 }
 
 /// Convenience shortcut for building hover contents from markdown block.
-fn markdown_contents(md: Markdown) -> HoverContents {
-    HoverContents::Markup(MarkupContent { kind: MarkupKind::Markdown, value: md.into() })
+fn markdown_contents(md: String) -> HoverContents {
+    HoverContents::Markup(MarkupContent { kind: MarkupKind::Markdown, value: md })
 }

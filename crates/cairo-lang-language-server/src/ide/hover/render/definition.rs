@@ -8,7 +8,7 @@ use crate::ide::hover::markdown_contents;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::inspect::defs::SymbolDef;
 use crate::lang::lsp::ToLsp;
-use crate::markdown::Markdown;
+use crate::markdown::{fenced_code_block, RULE};
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.
 #[tracing::instrument(level = "trace", skip_all)]
@@ -21,18 +21,17 @@ pub fn definition(
 
     let md = match &symbol {
         SymbolDef::Item(item) => {
-            // TODO(mkaput): Format this with Cairo formatter.
-            let mut md = Markdown::empty();
-            md += Markdown::fenced_code_block(&item.definition_path(db));
-            md += Markdown::fenced_code_block(&item.signature(db));
+            let mut md = String::new();
+            md += &fenced_code_block(&item.definition_path(db));
+            md += &fenced_code_block(&item.signature(db));
             if let Some(doc) = item.documentation(db) {
-                md += Markdown::rule();
-                md += doc;
+                md += RULE;
+                md += &doc;
             }
             md
         }
 
-        SymbolDef::Variable(var) => Markdown::fenced_code_block(&var.signature(db)),
+        SymbolDef::Variable(var) => fenced_code_block(&var.signature(db)),
     };
 
     Some(Hover {
