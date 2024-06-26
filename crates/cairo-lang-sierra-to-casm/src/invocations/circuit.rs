@@ -433,7 +433,7 @@ fn build_failure_guarantee_verify(
         jump Done if nullifier3 != 0;
 
         // If the nullifier is zero, add an unsatisfiable constraint.
-        fail;
+        unsatisfiable_assert one = zero;
 
         Done:
         const mul_mod_usage = MOD_BUILTIN_INSTANCE_SIZE;

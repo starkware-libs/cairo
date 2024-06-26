@@ -598,6 +598,12 @@ impl CasmBuilder {
             false,
         );
         self.statements.push(Statement::Final(instruction));
+        self.mark_unreachable();
+    }
+
+    /// Marks the current state as unreachable.
+    /// Useful for removing bookkeeping after unsatisfiable conditions.
+    pub fn mark_unreachable(&mut self) {
         self.reachable = false;
     }
 
@@ -887,6 +893,11 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, fail; $($tok:tt)*) => {
         $builder.fail();
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, unsatisfiable_assert $dst:ident = $res:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, assert $dst = $res;);
+        $builder.mark_unreachable();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)+ {
