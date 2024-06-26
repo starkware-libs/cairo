@@ -202,3 +202,6 @@ fn function_for_a_comment() {
     let x = 1;
 }
 
+// leading words
+// long_single_word_that_should_not_be_broken_not_creating_addional_empty_lines_padding_padding_padding_padding
+fn function_for_a_comment() {}
