@@ -660,7 +660,9 @@ fn format_leading_comment(content: &str, cur_indent: usize, max_line_width: usiz
         };
         last_line_broken = false;
         for word in orig_comment_line.content.split(' ') {
-            if current_line.content.len() + word.len() <= max_comment_width {
+            if current_line.content.is_empty()
+                || current_line.content.len() + word.len() <= max_comment_width
+            {
                 current_line.content.push_str(word);
                 current_line.content.push(' ');
             } else {
