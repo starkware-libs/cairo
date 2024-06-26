@@ -574,6 +574,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-lang-doc"
+version = "2.6.4"
+dependencies = [
+ "cairo-lang-defs",
+ "cairo-lang-syntax",
+ "cairo-lang-utils",
+ "indoc",
+ "itertools 0.12.1",
+ "salsa",
+]
+
+[[package]]
 name = "cairo-lang-eq-solver"
 version = "2.6.4"
 dependencies = [
@@ -628,6 +640,7 @@ dependencies = [
  "cairo-lang-compiler",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
+ "cairo-lang-doc",
  "cairo-lang-filesystem",
  "cairo-lang-formatter",
  "cairo-lang-language-server",

@@ -1,12 +1,5 @@
-use std::borrow::Cow;
 use std::fmt;
 use std::ops::AddAssign;
-
-use itertools::Itertools;
-
-#[cfg(test)]
-#[path = "markdown_test.rs"]
-mod test;
 
 /// A convenience wrapper for building Markdown texts for used to display rich text in the IDE.
 ///
@@ -67,44 +60,5 @@ impl fmt::Display for Markdown {
 impl AddAssign for Markdown {
     fn add_assign(&mut self, rhs: Self) {
         self.append(rhs)
-    }
-}
-
-/// High-level operations used throughout LS functionality.
-impl Markdown {
-    /// Adds `cairo` language code to all fenced code blocks in the text that do not specify
-    /// language.
-    pub fn convert_fenced_code_blocks_to_cairo(&mut self) {
-        let mut in_cairo_fence = false;
-        self.text = self
-            .text
-            .lines()
-            .map(|line| match (line.strip_prefix("```"), in_cairo_fence) {
-                // Start of a fenced code block without language code.
-                (Some(rest), false) if rest.trim_start().is_empty() => {
-                    in_cairo_fence = true;
-                    Cow::Owned(format!("```cairo{rest}"))
-                }
-                // Start of a fenced code block but with some language code.
-                (Some(_), false) => {
-                    in_cairo_fence = true;
-                    Cow::Borrowed(line)
-                }
-                // End of a fenced code block.
-                (Some(_), true) => {
-                    in_cairo_fence = false;
-                    Cow::Borrowed(line)
-                }
-                // Unrelated line.
-                (None, _) => Cow::Borrowed(line),
-            })
-            .join("\n");
-    }
-
-    /// Ensures that the text ends with `\n`.
-    pub fn ensure_trailing_newline(&mut self) {
-        if !self.text.ends_with('\n') {
-            self.text.push('\n');
-        }
     }
 }

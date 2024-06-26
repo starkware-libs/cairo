@@ -1,9 +1,9 @@
 use std::iter;
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, ModuleItemId, TopLevelLanguageElementId, TraitItemId,
 };
+use cairo_lang_doc::db::DocGroup;
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
@@ -122,16 +122,7 @@ impl ItemDef {
 
     /// Gets item documentation in a final form usable for display.
     pub fn documentation(&self, db: &AnalysisDatabase) -> Option<Markdown> {
-        db.get_item_documentation(self.lookup_item_id)
-            // Nullify empty documentation strings in case the compiler fails to output something.
-            .and_then(|doc| (!doc.is_empty()).then_some(doc))
-            // Convert to a Markdown object and perform usual transformations.
-            .map(|doc| {
-                let mut md = Markdown::from(doc);
-                md.convert_fenced_code_blocks_to_cairo();
-                md.ensure_trailing_newline();
-                md
-            })
+        db.get_item_documentation(self.lookup_item_id).map(Markdown::from)
     }
 
     /// Gets full path (including crate name and defining trait/impl if applicable)
