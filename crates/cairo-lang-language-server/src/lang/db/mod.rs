@@ -1,4 +1,5 @@
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
+use cairo_lang_doc::db::DocDatabase;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
@@ -25,7 +26,8 @@ mod syntax;
     LoweringDatabase,
     ParserDatabase,
     SemanticDatabase,
-    SyntaxDatabase
+    SyntaxDatabase,
+    DocDatabase
 )]
 pub struct AnalysisDatabase {
     storage: salsa::Storage<Self>,

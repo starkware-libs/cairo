@@ -1,9 +1,9 @@
 use indoc::indoc;
 
-use super::Markdown;
+use super::cleanup_doc_markdown;
 
 #[test]
-fn test_convert_fenced_code_blocks_to_cairo() {
+fn fenced_code_blocks() {
     let input = indoc! {r#"
         This documentation block tests markdown manipulation performed by LS.
 
@@ -54,8 +54,6 @@ fn test_convert_fenced_code_blocks_to_cairo() {
         ```
     "#};
 
-    let mut actual = Markdown::from(input);
-    actual.convert_fenced_code_blocks_to_cairo();
-    actual.ensure_trailing_newline();
-    assert_eq!(expected, actual.to_string());
+    let actual = cleanup_doc_markdown(input.to_owned());
+    assert_eq!(expected, actual);
 }
