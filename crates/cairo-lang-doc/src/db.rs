@@ -1,5 +1,6 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, LookupItemId};
+use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::Upcast;
@@ -17,7 +18,6 @@ pub trait DocGroup: Upcast<dyn DefsGroup> + Upcast<dyn SyntaxGroup> + SyntaxGrou
     fn get_item_documentation(&self, item_id: LookupItemId) -> Option<String>;
 
     // TODO(mkaput): Add tests.
-    // TODO(mkaput): Signatures should be formatted.
     /// Gets the signature of an item (i.e., item without its body).
     fn get_item_signature(&self, item_id: LookupItemId) -> String;
 }
@@ -129,5 +129,18 @@ fn get_item_signature(db: &dyn DocGroup, item_id: LookupItemId) -> String {
         }
         _ => "".to_owned(),
     };
-    definition
+    fmt(definition)
+}
+
+/// Run Cairo formatter over code with extra post-processing that is specific to signatures.
+fn fmt(code: String) -> String {
+    let code = cairo_lang_formatter::format_string(&SimpleParserDatabase::default(), code);
+
+    code
+        // Trim any whitespace that formatter tends to leave.
+        .trim_end()
+        // Trim trailing semicolons, that are present in trait/impl functions, constants, etc.
+        // and that formatter tends to put in separate line.
+        .trim_end_matches("\n;")
+        .to_owned()
 }
