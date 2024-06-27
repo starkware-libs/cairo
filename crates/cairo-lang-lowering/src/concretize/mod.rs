@@ -37,8 +37,10 @@ pub fn concretize_lowered(
     // Substitute all types.
     for (_, var) in lowered.variables.iter_mut() {
         var.ty = rewriter.rewrite(var.ty)?;
-        if let Ok(impl_id) = &mut var.destruct_impl {
-            *impl_id = rewriter.rewrite(*impl_id)?;
+
+        for impl_id in [&mut var.destruct_impl, &mut var.panic_destruct_impl].into_iter().flatten()
+        {
+            rewriter.internal_rewrite(impl_id)?;
         }
     }
     // Substitute all statements.
