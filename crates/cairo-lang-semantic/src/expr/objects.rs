@@ -303,8 +303,10 @@ pub struct ExprWhile {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprFor {
-    pub into_iter: ExprId,
+    pub into_iter: FunctionId,
+    pub into_iter_member_path: ExprVarMemberPath,
     pub next_function_id: FunctionId,
+    pub expr_id: ExprId,
     pub pattern: PatternId,
     pub body: ExprId,
     pub ty: semantic::TypeId,
