@@ -1,5 +1,6 @@
 {
     "allowed_libfuncs": [
+        "add_circuit_input",
         "alloc_local",
         "array_append",
         "array_get",
@@ -79,7 +80,6 @@
         "felt252_mul_const",
         "felt252_sub",
         "felt252_sub_const",
-        "fill_circuit_input",
         "finalize_locals",
         "function_call",
         "get_block_hash_syscall",

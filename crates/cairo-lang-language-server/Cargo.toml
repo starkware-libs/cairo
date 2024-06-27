@@ -14,6 +14,7 @@ anyhow.workspace = true
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.6.4" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.6.4" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.6.4" }
+cairo-lang-doc = { path = "../cairo-lang-doc", version = "~2.6.4" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.6.4" }
 cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.6.4" }
 cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "~2.6.4" }

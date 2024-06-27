@@ -194,6 +194,9 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -248,6 +251,9 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -302,6 +308,9 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -356,6 +365,9 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -485,6 +497,9 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -539,6 +554,9 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -593,6 +611,9 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -647,6 +668,9 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -856,6 +880,9 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -910,6 +937,9 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -964,6 +994,9 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -1018,6 +1051,9 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;

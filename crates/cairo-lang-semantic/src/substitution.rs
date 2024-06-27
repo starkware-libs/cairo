@@ -434,12 +434,14 @@ impl<'a> SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<
             }
             TypeLongId::ImplType(impl_type_id) => {
                 let impl_type_id_rewrite_result = self.internal_rewrite(impl_type_id)?;
-                return Ok(if let Some(ty) = self.db.impl_type_concrete_implized(*impl_type_id)? {
-                    *value = ty.lookup_intern(self.db);
-                    RewriteResult::Modified
+                let new_value =
+                    self.db.impl_type_concrete_implized(*impl_type_id)?.lookup_intern(self.db);
+                if new_value != *value {
+                    *value = new_value;
+                    return Ok(RewriteResult::Modified);
                 } else {
-                    impl_type_id_rewrite_result
-                });
+                    return Ok(impl_type_id_rewrite_result);
+                }
             }
             TypeLongId::TraitType(trait_type_id) => {
                 if let Some(self_impl) = &self.substitution.self_impl {
@@ -448,11 +450,8 @@ impl<'a> SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<
                         self_impl.concrete_trait(self.db)?.trait_id(self.db)
                     );
                     let impl_type_id = ImplTypeId::new(*self_impl, *trait_type_id, self.db);
-                    *value = if let Some(ty) = self.db.impl_type_concrete_implized(impl_type_id)? {
-                        ty.lookup_intern(self.db)
-                    } else {
-                        TypeLongId::ImplType(impl_type_id)
-                    };
+                    *value =
+                        self.db.impl_type_concrete_implized(impl_type_id)?.lookup_intern(self.db);
                     return Ok(RewriteResult::Modified);
                 }
             }

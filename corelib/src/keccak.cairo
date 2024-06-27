@@ -148,3 +148,28 @@ fn finalize_padding(ref input: Array<u64>, num_padding_words: u32) {
     finalize_padding(ref input, num_padding_words - 1);
 }
 
+/// Computes the Keccak hash of the input ByteArray.
+///
+/// Returns the hash as a little endian u256.
+pub fn compute_keccak_byte_array(arr: @ByteArray) -> u256 {
+    let mut input = array![];
+    let mut i = 0;
+    let mut inner = 0;
+    let mut limb: u64 = 0;
+    let mut factor: u64 = 1;
+    while let Option::Some(b) = arr.at(i) {
+        limb = limb + b.into() * factor;
+        i += 1;
+        inner += 1;
+        if inner == 8 {
+            input.append(limb);
+            inner = 0;
+            limb = 0;
+            factor = 1;
+        } else {
+            factor *= 0x100;
+        }
+    };
+    add_padding(ref input, limb, inner);
+    starknet::syscalls::keccak_syscall(input.span()).unwrap_syscall()
+}

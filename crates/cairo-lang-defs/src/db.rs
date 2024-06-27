@@ -7,19 +7,17 @@ use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongI
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
     DEPRECATED_ATTR, FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR,
-    MUST_USE_ATTR, PHANTOM_ATTR, STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
+    INTERNAL_ATTR, MUST_USE_ATTR, PHANTOM_ATTR, STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
 };
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::element_list::ElementList;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, Upcast};
-use itertools::Itertools;
 
 use crate::ids::*;
 use crate::plugin::{
@@ -113,16 +111,6 @@ pub trait DefsGroup:
     fn module_file(&self, module_id: ModuleFileId) -> Maybe<FileId>;
     /// Gets the directory of a module.
     fn module_dir(&self, module_id: ModuleId) -> Maybe<Directory>;
-
-    // TODO(mkaput): Add tests.
-    // TODO(mkaput): Support #[doc] attribute. This will be a bigger chunk of work because it would
-    //   be the best to convert all /// comments to #[doc] attrs before processing items by plugins,
-    //   so that plugins would get a nice and clean syntax of documentation to manipulate further.
-    /// Gets the documentation above an item definition.
-    fn get_item_documentation(&self, item_id: LookupItemId) -> Option<String>;
-    // TODO(mkaput): Add tests.
-    /// Gets the signature of an item (i.e., item without its body).
-    fn get_item_signature(&self, item_id: LookupItemId) -> String;
 
     // File to module.
     fn crate_modules(&self, crate_id: CrateId) -> Arc<Vec<ModuleId>>;
@@ -242,6 +230,7 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
         MUST_USE_ATTR.into(),
         UNSTABLE_ATTR.into(),
         DEPRECATED_ATTR.into(),
+        INTERNAL_ATTR.into(),
         FEATURE_ATTR.into(),
         PHANTOM_ATTR.into(),
         IMPLICIT_PRECEDENCE_ATTR.into(),
@@ -313,114 +302,6 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
     }
 }
 
-/// Gets the documentation above an item definition.
-fn get_item_documentation(db: &dyn DefsGroup, item_id: LookupItemId) -> Option<String> {
-    // Get the text of the item (trivia + definition)
-    let doc = item_id.stable_location(db).syntax_node(db).get_text(db.upcast());
-    // Only get the doc comments (start with `///` or `//!`) above the function.
-    let doc = doc
-        .lines()
-        .take_while_ref(|line| {
-            !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
-        })
-        .filter_map(|line| {
-            // Remove indentation.
-            let dedent = line.trim_start();
-            // Check if this is a doc comment.
-            for prefix in ["///", "//!"] {
-                if let Some(content) = dedent.strip_prefix(prefix) {
-                    // TODO(mkaput): The way how removing this indentation is performed is probably
-                    //   wrong. The code should probably learn how many spaces are used at the first
-                    //   line of comments block, and then remove the same amount of spaces in the
-                    //   block, instead of assuming just one space.
-                    // Remove inner indentation if one exists.
-                    return Some(content.strip_prefix(' ').unwrap_or(content));
-                }
-            }
-            None
-        })
-        .collect::<Vec<&str>>();
-    (!doc.is_empty()).then(|| doc.join("\n"))
-}
-
-fn get_item_signature(db: &dyn DefsGroup, item_id: LookupItemId) -> String {
-    let syntax_node = item_id.stable_location(db).syntax_node(db);
-    let definition = match syntax_node.green_node(db.upcast()).kind {
-        SyntaxKind::ItemConstant
-        | SyntaxKind::TraitItemFunction
-        | SyntaxKind::ItemTypeAlias
-        | SyntaxKind::ItemImplAlias => syntax_node.clone().get_text_without_trivia(db.upcast()),
-        SyntaxKind::FunctionWithBody | SyntaxKind::ItemExternFunction => {
-            let children =
-                <dyn DefsGroup as Upcast<dyn SyntaxGroup>>::upcast(db).get_children(syntax_node);
-            children[1..]
-                .iter()
-                .map_while(|node| {
-                    let kind = node.kind(db.upcast());
-                    (kind != SyntaxKind::ExprBlock
-                        && kind != SyntaxKind::ImplBody
-                        && kind != SyntaxKind::TraitBody)
-                        .then_some(
-                            if kind == SyntaxKind::VisibilityPub
-                                || kind == SyntaxKind::TerminalExtern
-                            {
-                                node.clone().get_text_without_trivia(db.upcast()).trim().to_owned()
-                                    + " "
-                            } else {
-                                node.clone()
-                                    .get_text_without_trivia(db.upcast())
-                                    .lines()
-                                    .map(|line| line.trim())
-                                    .collect::<Vec<&str>>()
-                                    .join("")
-                            },
-                        )
-                })
-                .collect::<Vec<String>>()
-                .join("")
-        }
-        SyntaxKind::ItemEnum | SyntaxKind::ItemExternType | SyntaxKind::ItemStruct => {
-            <dyn DefsGroup as Upcast<dyn SyntaxGroup>>::upcast(db)
-                .get_children(syntax_node)
-                .iter()
-                .skip(1)
-                .map(|node| node.clone().get_text(db.upcast()))
-                .collect::<Vec<String>>()
-                .join("")
-        }
-        SyntaxKind::ItemTrait | SyntaxKind::ItemImpl => {
-            let children =
-                <dyn DefsGroup as Upcast<dyn SyntaxGroup>>::upcast(db).get_children(syntax_node);
-            children[1..]
-                .iter()
-                .enumerate()
-                .map_while(|(index, node)| {
-                    let kind = node.kind(db.upcast());
-                    if kind != SyntaxKind::ImplBody && kind != SyntaxKind::TraitBody {
-                        let text = node
-                            .clone()
-                            .get_text_without_trivia(db.upcast())
-                            .lines()
-                            .map(|line| line.trim())
-                            .collect::<Vec<&str>>()
-                            .join("");
-
-                        Some(if index == 0 || kind == SyntaxKind::WrappedGenericParamList {
-                            text
-                        } else {
-                            " ".to_owned() + &text
-                        })
-                    } else {
-                        None
-                    }
-                })
-                .collect::<Vec<String>>()
-                .join("")
-        }
-        _ => "".to_owned(),
-    };
-    definition
-}
 /// Appends all the modules under the given module, including nested modules.
 fn collect_modules_under(db: &dyn DefsGroup, modules: &mut Vec<ModuleId>, module_id: ModuleId) {
     modules.push(module_id);

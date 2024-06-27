@@ -161,6 +161,13 @@ impl LineComponent {
             }
         }
     }
+    /// Returns if the component is a trivia component, i.e. does not contain any code.
+    fn is_trivia(&self) -> bool {
+        matches!(
+            self,
+            Self::Comment { .. } | Self::Space | Self::Indent(_) | Self::BreakLinePoint(_)
+        )
+    }
 }
 impl fmt::Display for LineComponent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -418,6 +425,15 @@ impl LineBuilder {
                 }
                 _ => 0,
             };
+            // If a comment follows the last IndentedWithTail break point, it should also be
+            // indented.
+            let mut comment_only_added_indent = if let BreakLinePointIndentation::IndentedWithTail =
+                break_line_point_properties.break_indentation
+            {
+                if i == n_break_points - 1 { tab_size } else { 0 }
+            } else {
+                0
+            };
             let cur_indent = base_indent + added_indent;
             trees.push(LineBuilder::new(cur_indent));
             for j in current_line_start..*current_line_end {
@@ -430,14 +446,22 @@ impl LineBuilder {
                         }
                     }
                     LineComponent::Comment { content, is_trailing } if !is_trailing => {
-                        let formatted_comment =
-                            format_leading_comment(content, cur_indent, max_line_width);
+                        trees.last_mut().unwrap().push_str(&" ".repeat(comment_only_added_indent));
+                        let formatted_comment = format_leading_comment(
+                            content,
+                            cur_indent + comment_only_added_indent,
+                            max_line_width,
+                        );
                         trees.last_mut().unwrap().push_child(LineComponent::Comment {
                             content: formatted_comment,
                             is_trailing: *is_trailing,
                         });
                     }
                     _ => trees.last_mut().unwrap().push_child(self.children[j].clone()),
+                }
+                // Indent the comment only if it directly follows the break point.
+                if !self.children[j].is_trivia() {
+                    comment_only_added_indent = 0;
                 }
             }
             current_line_start = *current_line_end + 1;
@@ -636,7 +660,9 @@ fn format_leading_comment(content: &str, cur_indent: usize, max_line_width: usiz
         };
         last_line_broken = false;
         for word in orig_comment_line.content.split(' ') {
-            if current_line.content.len() + word.len() <= max_comment_width {
+            if current_line.content.is_empty()
+                || current_line.content.len() + word.len() <= max_comment_width
+            {
                 current_line.content.push_str(word);
                 current_line.content.push(' ');
             } else {

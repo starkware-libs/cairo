@@ -13,6 +13,8 @@ mod erc20_test;
 #[cfg(test)]
 mod interoperability;
 #[cfg(test)]
+mod keccak;
+#[cfg(test)]
 mod l2_to_l1_messages;
 #[cfg(test)]
 mod multi_component_test;

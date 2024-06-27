@@ -56,7 +56,9 @@ trait CompareAssertionPlugin: NamedPlugin {
         let lhs_escaped = escape_node(db, lhs.as_syntax_node());
         let rhs_escaped = escape_node(db, rhs.as_syntax_node());
         let mut builder = PatchBuilder::new(db, syntax);
-        let (lhs_value, maybe_assign_lhs) = if matches!(lhs, ast::Expr::Path(_)) {
+        // Checks if the expression is a variable, to not create an extra variable.
+        let is_var = |expr: &ast::Expr| matches!(expr, ast::Expr::Path(path) if path.elements(db).len() == 1);
+        let (lhs_value, maybe_assign_lhs) = if is_var(&lhs) {
             (RewriteNode::new_trimmed(lhs.as_syntax_node()), "")
         } else {
             (
@@ -67,7 +69,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 "let $lhs_value$ = $lhs$;",
             )
         };
-        let (rhs_value, maybe_assign_rhs) = if matches!(rhs, ast::Expr::Path(_)) {
+        let (rhs_value, maybe_assign_rhs) = if is_var(&rhs) {
             (RewriteNode::new_trimmed(rhs.as_syntax_node()), "")
         } else {
             (

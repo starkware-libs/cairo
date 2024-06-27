@@ -475,7 +475,7 @@ impl Inference<'_> {
         let trait_ty = impl_type_id.ty();
         if let ImplLongId::ImplVar(var) = impl_id.lookup_intern(self.db) {
             Ok(self.rewritten_impl_type(var, trait_ty))
-        } else if let Ok(Some(ty)) =
+        } else if let Ok(ty) =
             self.db.impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_ty, self.db))
         {
             Ok(ty)

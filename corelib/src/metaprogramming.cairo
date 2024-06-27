@@ -636,3 +636,27 @@ impl TupleSnapForwardFixedSizedArraySized10<T> of TupleSnapForward<[T; 10]> {
         [e0, e1, e2, e3, e4, e5, e6, e7, e8, e9]
     }
 }
+
+/// A trait for removing a wrapping snapshot from the types in tuple style struct.
+pub(crate) trait SnapRemove<T> {
+    type Result;
+}
+impl SnapRemoveSnap<T> of SnapRemove<@T> {
+    type Result = T;
+}
+impl SnapRemoveTupleBase of SnapRemove<()> {
+    type Result = ();
+}
+impl SnapRemoveTupleNext<
+    T,
+    +IsTuple<T>,
+    impl TS: TupleSplit<T>,
+    impl HeadNoSnap: SnapRemove<TS::Head>,
+    impl RestNoSnap: SnapRemove<TS::Rest>,
+    impl TEF: TupleExtendFront<RestNoSnap::Result, HeadNoSnap::Result>,
+> of SnapRemove<T> {
+    type Result = TEF::Result;
+}
+impl SnapRemoveFixedSizedArray<T, const N: usize> of SnapRemove<[@T; N]> {
+    type Result = [T; N];
+}

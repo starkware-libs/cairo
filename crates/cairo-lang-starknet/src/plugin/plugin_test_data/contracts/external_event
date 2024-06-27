@@ -53,6 +53,9 @@ mod test_contract {
     }
 }
 
+lib.cairo:1:1
+#[derive(Drop, starknet::Event)]
+^******************************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -114,6 +117,9 @@ impl EventBestEventEverIntoEvent of Into<BestEventEver, Event> {
 
 
 
+lib.cairo:6:1
+#[derive(Drop, starknet::Event)]
+^******************************^
 impls:
 
 impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
@@ -137,6 +143,9 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
 }
 
 
+lib.cairo:8:1
+#[derive(Drop, starknet::Event)]
+^******************************^
 impls:
 
 impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;
@@ -253,12 +262,18 @@ pub mod __constructor {
 
 
 
+lib.cairo:11:1
+#[starknet::contract]
+^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
+lib.cairo:11:1
+#[starknet::contract]
+^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;

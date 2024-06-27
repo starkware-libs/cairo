@@ -1,4 +1,3 @@
-use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::ids::{FunctionWithBodyId, LookupItemId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -8,17 +7,17 @@ use cairo_lang_semantic::Mutability;
 use cairo_lang_syntax::node::ast::{Expr, Pattern, TerminalIdentifier};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use itertools::Itertools;
+use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
-use crate::lang::db::LsSemanticGroup;
-use crate::markdown::Markdown;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::markdown::{fenced_code_block, RULE};
 
 /// Legacy hover rendering backported from Cairo 2.6.3 codebase.
 ///
 /// This logic is meant for gradual replacement with new-style hovers and eventually be removed.
-pub fn legacy(db: &RootDatabase, identifier: &TerminalIdentifier) -> Option<Hover> {
+pub fn legacy(db: &AnalysisDatabase, identifier: &TerminalIdentifier) -> Option<Hover> {
     let node = identifier.as_syntax_node();
     let lookup_item_id = db.find_lookup_item(&node)?;
     let function_id = lookup_item_id.function_with_body()?;
@@ -34,22 +33,16 @@ pub fn legacy(db: &RootDatabase, identifier: &TerminalIdentifier) -> Option<Hove
         hints.push(hint);
     };
 
-    // TODO(mkaput): Simply replace with std::Iterator::intersperse when it stabilizes.
-    #[allow(unstable_name_collisions)]
-    let hints =
-        hints.into_iter().intersperse(Markdown::rule()).fold(Markdown::empty(), |mut acc, hint| {
-            acc.append(hint);
-            acc
-        });
+    let hints = hints.join(RULE);
     Some(Hover { contents: markdown_contents(hints), range: None })
 }
 
 /// If the node is an identifier, retrieves a hover hint for it.
 fn get_identifier_hint(
-    db: &(dyn SemanticGroup + 'static),
+    db: &AnalysisDatabase,
     lookup_item_id: LookupItemId,
     node: SyntaxNode,
-) -> Option<Markdown> {
+) -> Option<String> {
     let syntax_db = db.upcast();
     if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
         return None;
@@ -59,15 +52,15 @@ fn get_identifier_hint(
 
     // TODO(spapini): Also include concrete item hints.
     // TODO(spapini): Format this better.
-    Some(format!("`{}`", item.full_path(db)).into())
+    Some(format!("`{}`", item.full_path(db)))
 }
 
 /// If the node is an expression, retrieves a hover hint for it.
 fn get_expr_hint(
-    db: &(dyn SemanticGroup + 'static),
+    db: &AnalysisDatabase,
     function_id: FunctionWithBodyId,
     node: SyntaxNode,
-) -> Option<Markdown> {
+) -> Option<String> {
     let semantic_expr = nearest_semantic_expr(db, node, function_id)?;
     let text = match semantic_expr {
         cairo_lang_semantic::Expr::FunctionCall(call) => {
@@ -102,12 +95,12 @@ fn get_expr_hint(
         _ => semantic_expr.ty().format(db),
     };
     // Format the hover text.
-    Some(Markdown::fenced_code_block(&text))
+    Some(fenced_code_block(&text))
 }
 
 /// Returns the semantic expression for the current node.
 fn nearest_semantic_expr(
-    db: &dyn SemanticGroup,
+    db: &AnalysisDatabase,
     mut node: SyntaxNode,
     function_id: FunctionWithBodyId,
 ) -> Option<cairo_lang_semantic::Expr> {
@@ -128,18 +121,18 @@ fn nearest_semantic_expr(
 
 /// If the node is a pattern, retrieves a hover hint for it.
 fn get_pattern_hint(
-    db: &(dyn SemanticGroup + 'static),
+    db: &AnalysisDatabase,
     function_id: FunctionWithBodyId,
     node: SyntaxNode,
-) -> Option<Markdown> {
+) -> Option<String> {
     let semantic_pattern = nearest_semantic_pat(db, node, function_id)?;
     // Format the hover text.
-    Some(format!("Type: `{}`", semantic_pattern.ty().format(db)).into())
+    Some(format!("Type: `{}`", semantic_pattern.ty().format(db)))
 }
 
 /// Returns the semantic pattern for the current node.
 fn nearest_semantic_pat(
-    db: &dyn SemanticGroup,
+    db: &AnalysisDatabase,
     mut node: SyntaxNode,
     function_id: FunctionWithBodyId,
 ) -> Option<cairo_lang_semantic::Pattern> {

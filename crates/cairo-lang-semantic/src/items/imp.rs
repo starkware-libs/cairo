@@ -56,9 +56,7 @@ use super::type_aliases::{
     type_alias_semantic_data_helper, TypeAliasData,
 };
 use super::{resolve_trait_path, TraitOrImplContext};
-use crate::corelib::{
-    concrete_iterator_trait, copy_trait, deref_trait, drop_trait, into_iterator_trait,
-};
+use crate::corelib::{copy_trait, deref_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -132,13 +130,6 @@ impl ConcreteImplId {
         function: TraitFunctionId,
     ) -> Maybe<Option<ImplFunctionId>> {
         db.impl_function_by_trait_function(self.impl_def_id(db), function)
-    }
-    pub fn get_impl_type_def(
-        &self,
-        db: &dyn SemanticGroup,
-        ty: TraitTypeId,
-    ) -> Maybe<Option<ImplTypeDefId>> {
-        db.impl_type_by_trait_type(self.impl_def_id(db), ty)
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.impl_def_id(db).name(db.upcast())
@@ -649,32 +640,11 @@ pub fn impl_semantic_definition_diagnostics(
             .concrete_trait
             .unwrap()
             .trait_id(db);
-        // check that into iterator impl type implements Iterator.
-        // TODO(Tomer-StarkWare) Remove when proper trait bounds are implemented.
-        if trait_id == into_iterator_trait(db) {
-            handle_into_iterator_impl(db, impl_def_id, &mut diagnostics);
-        }
         if trait_id == deref_trait(db) {
             handle_deref_impl(db, impl_def_id, &mut diagnostics);
         }
     }
     diagnostics.build()
-}
-
-/// Validates that the IntoIterator impl type implements Iterator.
-fn handle_into_iterator_impl(
-    db: &dyn SemanticGroup,
-    impl_def_id: ImplDefId,
-    diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
-) {
-    if let Err((err, impl_type_def_id)) =
-        get_impl_based_on_single_impl_type(db, impl_def_id, |ty| concrete_iterator_trait(db, ty))
-    {
-        diagnostics.report(
-            impl_type_def_id.stable_ptr(db.upcast()),
-            SemanticDiagnosticKind::InvalidIntoIteratorTraitImpl(err),
-        );
-    };
 }
 
 /// Checks that there are no cycles of Deref impls.
@@ -818,16 +788,20 @@ pub fn impl_type_by_trait_type(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
     trait_type_id: TraitTypeId,
-) -> Maybe<Option<ImplTypeDefId>> {
+) -> Maybe<ImplTypeDefId> {
     if trait_type_id.trait_id(db.upcast()) != db.impl_def_trait(impl_def_id)? {
-        // The trait type belongs to a trait other than the one the impl implements.
-        return Ok(None);
+        unreachable!(
+            "impl_type_by_trait_type called with a trait type that does not belong to the impl's \
+             trait"
+        )
     }
 
     let defs_db = db.upcast();
     let name = trait_type_id.name(defs_db);
-    db.impl_item_by_name(impl_def_id, name).map(|maybe_item_id| {
-        maybe_item_id.and_then(|item_id| try_extract_matches!(item_id, ImplItemId::Type))
+    // If the trait type's name is not found, then a missing item diagnostic is reported.
+    db.impl_item_by_name(impl_def_id, name).and_then(|maybe_item_id| match maybe_item_id {
+        Some(item_id) => Ok(extract_matches!(item_id, ImplItemId::Type)),
+        None => Err(skip_diagnostic()),
     })
 }
 
@@ -854,8 +828,11 @@ pub fn impl_constant_by_trait_constant(
 
     let defs_db = db.upcast();
     let name = trait_constant_id.name(defs_db);
-    db.impl_item_by_name(impl_def_id, name)
-        .map(|maybe_item_id| extract_matches!(maybe_item_id.unwrap(), ImplItemId::Constant))
+    // If the trait constant's name is not found, then a missing item diagnostic is reported.
+    db.impl_item_by_name(impl_def_id, name).and_then(|maybe_item_id| match maybe_item_id {
+        Some(item_id) => Ok(extract_matches!(item_id, ImplItemId::Constant)),
+        None => Err(skip_diagnostic()),
+    })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_impls].
@@ -898,8 +875,11 @@ pub fn impl_impl_by_trait_impl(
 
     let defs_db = db.upcast();
     let name = trait_impl_id.name(defs_db);
-    db.impl_item_by_name(impl_def_id, name)
-        .map(|maybe_item_id| extract_matches!(maybe_item_id.unwrap(), ImplItemId::Impl))
+    // If the trait impl's name is not found, then a missing item diagnostic is reported.
+    db.impl_item_by_name(impl_def_id, name).and_then(|maybe_item_id| match maybe_item_id {
+        Some(item_id) => Ok(extract_matches!(item_id, ImplItemId::Impl)),
+        None => Err(skip_diagnostic()),
+    })
 }
 
 // --- Computation ---
@@ -1825,32 +1805,30 @@ fn validate_impl_item_type(
 pub fn impl_type_concrete_implized(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
-) -> Maybe<Option<TypeId>> {
+) -> Maybe<TypeId> {
     let concrete_impl = match impl_type_id.impl_id().lookup_intern(db) {
         ImplLongId::Concrete(concrete_impl) => concrete_impl,
         ImplLongId::ImplImpl(imp_impl_id) => {
             let ImplLongId::Concrete(concrete_impl) =
                 db.impl_impl_concrete_implized(imp_impl_id)?.lookup_intern(db)
             else {
-                return Ok(Some(TypeLongId::ImplType(impl_type_id).intern(db)));
+                return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
             };
             concrete_impl
         }
-        ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => {
-            return Ok(Some(TypeLongId::ImplType(impl_type_id).intern(db)));
+        ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) | ImplLongId::ImplVar(_) => {
+            return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
         }
-
-        ImplLongId::ImplVar(_) => return Ok(None),
     };
 
     let impl_def_id = concrete_impl.impl_def_id(db);
     let ty = db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id);
-    let Ok(Some(ty)) = ty else {
+    let Ok(ty) = ty else {
         return ty;
     };
 
     let substitution = &concrete_impl.substitution(db)?;
-    SubstitutionRewriter { db, substitution }.rewrite(ty).map(Some)
+    SubstitutionRewriter { db, substitution }.rewrite(ty)
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_type_concrete_implized].
@@ -1858,7 +1836,7 @@ pub fn impl_type_concrete_implized_cycle(
     db: &dyn SemanticGroup,
     _cycle: &[String],
     impl_type_id: &ImplTypeId,
-) -> Maybe<Option<TypeId>> {
+) -> Maybe<TypeId> {
     // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
     impl_type_concrete_implized(db, *impl_type_id)
 }

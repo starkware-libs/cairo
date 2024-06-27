@@ -27,6 +27,7 @@ cargo publish --package cairo-lang-utils &&
     cargo publish --package cairo-lang-runner &&
     cargo publish --package cairo-lang-test-plugin &&
     cargo publish --package cairo-lang-test-runner &&
+    cargo publish --package cairo-lang-doc &&
     cargo publish --package cairo-lang-language-server &&
     cargo publish --package cairo-compile &&
     cargo publish --package cairo-format &&

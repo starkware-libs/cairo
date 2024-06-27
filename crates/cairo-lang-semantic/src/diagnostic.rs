@@ -436,6 +436,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
                 )
             }
+            SemanticDiagnosticKind::InternalFeature { feature_name, note } => {
+                format!(
+                    "Usage of internal feature `{feature_name}` with no \
+                     `#[feature({feature_name})]` attribute.{}",
+                    note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
+                )
+            }
             SemanticDiagnosticKind::FeatureMarkerDiagnostic(diagnostic) => match diagnostic {
                 FeatureMarkerDiagnostic::MultipleMarkers => {
                     "Multiple feature marker attributes.".into()
@@ -557,12 +564,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::InvalidDropTraitImpl(inference_error) => {
                 format!("Invalid drop trait implementation, {}", inference_error.format(db))
-            }
-            SemanticDiagnosticKind::InvalidIntoIteratorTraitImpl(inference_error) => {
-                format!(
-                    "Invalid into iterator trait implementation, {}",
-                    inference_error.format(db)
-                )
             }
             SemanticDiagnosticKind::InvalidImplItem(item_kw) => {
                 format!("`{item_kw}` is not allowed inside impl.")
@@ -1024,6 +1025,10 @@ pub enum SemanticDiagnosticKind {
         feature_name: SmolStr,
         note: Option<SmolStr>,
     },
+    InternalFeature {
+        feature_name: SmolStr,
+        note: Option<SmolStr>,
+    },
     FeatureMarkerDiagnostic(FeatureMarkerDiagnostic),
     UnhandledMustUseFunction,
     UnusedVariable,
@@ -1069,7 +1074,6 @@ pub enum SemanticDiagnosticKind {
     },
     InvalidCopyTraitImpl(InferenceError),
     InvalidDropTraitImpl(InferenceError),
-    InvalidIntoIteratorTraitImpl(InferenceError),
     InvalidImplItem(SmolStr),
     MissingItemsInImpl(Vec<SmolStr>),
     PassPanicAsNopanic {

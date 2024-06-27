@@ -3,16 +3,18 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{bail, ensure, Context, Result};
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    CrateConfiguration, CrateSettings, Edition, ExperimentalFeaturesConfig, FilesGroupEx,
-    CORELIB_CRATE_NAME,
+    AsFilesGroupMut, CrateConfiguration, CrateSettings, Edition, ExperimentalFeaturesConfig,
+    FilesGroupEx, CORELIB_CRATE_NAME,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Intern;
 use scarb_metadata::{Metadata, PackageMetadata};
 use tracing::{debug, warn};
+
+use crate::lang::db::AnalysisDatabase;
 
 /// Updates crate roots in the database with the information from Scarb metadata.
 ///
@@ -27,7 +29,7 @@ use tracing::{debug, warn};
 //  once. Often packages declare several targets (lib, starknet-contract, test), which currently
 //  causes overriding of the crate within single call of this function. This is an UX problem, for
 //  which we do not know the solution yet.
-pub fn update_crate_roots(metadata: &Metadata, db: &mut dyn SemanticGroup) {
+pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
     #[derive(Debug)]
     struct Root<'a> {
         crate_long_id: CrateLongId,
@@ -190,7 +192,7 @@ fn scarb_package_experimental_features(
 /// This approach allows compiling crates that do not define `lib.cairo` file. For example, single
 /// file crates can be created this way. The actual single file module is defined as `mod` item in
 /// created lib file.
-fn inject_virtual_wrapper_lib(crate_id: CrateId, file_stem: &str, db: &mut dyn SemanticGroup) {
+fn inject_virtual_wrapper_lib(crate_id: CrateId, file_stem: &str, db: &mut AnalysisDatabase) {
     let module_id = ModuleId::CrateRoot(crate_id);
     let file_id = db.module_main_file(module_id).unwrap();
     // Inject virtual lib file wrapper.

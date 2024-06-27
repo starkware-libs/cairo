@@ -1,13 +1,15 @@
 use std::collections::HashMap;
 
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax::node::SyntaxNode;
+use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::{CodeAction, Diagnostic, TextEdit, Url, WorkspaceEdit};
+
+use crate::lang::db::AnalysisDatabase;
 
 /// Create a code action that prefixes an unused variable with an `_`.
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn rename_unused_variable(
-    db: &dyn SemanticGroup,
+    db: &AnalysisDatabase,
     node: &SyntaxNode,
     diagnostic: Diagnostic,
     uri: Url,
