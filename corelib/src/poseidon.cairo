@@ -56,6 +56,37 @@ impl HashStateImpl of HashStateTrait<HashState> {
     }
 }
 
+/// Helper trait for computing the Poseidon hash of a value.
+trait HashValueHelper<V> {
+    fn hash_value(v: V) -> felt252;
+}
+
+/// impl of the HashValueHelper trait for a single value.
+/// value must be convertible to felt252.
+impl SingleHashValueHelper<V, +Into<V, felt252>> of HashValueHelper<V> {
+    fn hash_value(v: V) -> felt252 {
+        let (r, _, _) = hades_permutation(v.into(), 0, 1);
+        r
+    }
+}
+
+/// impl of the HashValueHelper trait for a tuple of containing two values.
+/// values must be convertible to felt252.
+impl PairHashValueHelper<
+    V0, V1, +Drop<V0>, +Drop<V1>, +Into<V0, felt252>, +Into<V1, felt252>
+> of HashValueHelper<(V0, V1)> {
+    fn hash_value(v: (V0, V1)) -> felt252 {
+        let (v0, v1) = v;
+        let (r, _, _) = hades_permutation(v0.into(), v1.into(), 2);
+        r
+    }
+}
+
+/// Computes the Poseidon hash of either a single value or a pair of values.
+pub fn hash_value<V, +HashValueHelper<V>>(v: V) -> felt252 {
+    HashValueHelper::hash_value(v)
+}
+
 /// Computes the Poseidon hash on the given input.
 ///
 /// Applies the sponge construction to digest many elements.
