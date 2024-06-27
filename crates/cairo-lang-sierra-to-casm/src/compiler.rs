@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
+use cairo_lang_casm::hints::{Hint, PythonicHint};
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
-use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::{
@@ -11,30 +11,36 @@ use cairo_lang_sierra::extensions::core::{
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
+use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{
-    BranchTarget, GenericArg, Invocation, Program, Statement, StatementIdx,
+    BranchTarget, Function, GenericArg, Invocation, Program, Statement, StatementIdx,
 };
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
+use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+// use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use itertools::{chain, zip_eq};
-use num_bigint::BigInt;
-use num_traits::{ToPrimitive, Zero};
+use itertools::{chain, zip_eq, Itertools};
+use num_bigint::{BigInt, BigUint};
+use num_integer::Integer;
+use num_traits::{Signed, ToPrimitive, Zero};
+use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
 use crate::circuit::CircuitsInfo;
+use crate::compiler_version::current_compiler_version_id;
 use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
-    BranchChanges, InvocationError, ProgramInfo, check_references_on_stack, compile_invocation,
+    check_references_on_stack, compile_invocation, BranchChanges, InvocationError, ProgramInfo,
 };
 use crate::metadata::Metadata;
-use crate::references::{ReferenceValue, ReferencesError, check_types_match};
-use crate::relocations::{RelocationEntry, relocate_instructions};
+use crate::references::{check_types_match, ReferenceValue, ReferencesError};
+use crate::relocations::{relocate_instructions, RelocationEntry};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -94,8 +100,51 @@ pub struct SierraToCasmConfig {
     pub max_bytecode_size: usize,
 }
 
+/// Represents a serialized Cairo program.
+#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CasmCairoProgram {
+    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
+    pub prime: BigUint,
+    pub compiler_version: String,
+    pub bytecode: Vec<BigUintAsHex>,
+    pub hints: Vec<(usize, Vec<Hint>)>,
+    pub pythonic_hints: Vec<(usize, Vec<String>)>,
+    pub main_func: Vec<Function>,
+}
+
+impl CasmCairoProgram {
+    pub fn new(cairo_program: &CairoProgram, main_func: &Function) -> Self {
+        let prime = Felt252::prime();
+
+        let compiler_version = current_compiler_version_id().to_string();
+
+        let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
+
+        let bytecode: Vec<BigUintAsHex> = bytecode
+            .iter()
+            .map(|big_int| {
+                let (_q, remainder) = big_int.magnitude().div_rem(&prime);
+                BigUintAsHex {
+                    value: if big_int.is_negative() { &prime - remainder } else { remainder },
+                }
+            })
+            .collect();
+
+        let pythonic_hints = hints
+            .iter()
+            .map(|(pc, hints)| {
+                (*pc, hints.iter().map(|hint| hint.get_pythonic_hint()).collect_vec())
+            })
+            .collect_vec();
+
+        let main_func = vec![main_func.clone()];
+
+        Self { prime, compiler_version, bytecode, hints, pythonic_hints, main_func }
+    }
+}
+
 /// The casm program representation.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CairoProgram {
     pub instructions: Vec<Instruction>,
     pub debug_info: CairoProgramDebugInfo,
@@ -176,7 +225,7 @@ impl CairoProgram {
 }
 
 /// The debug information of a compilation from Sierra to casm.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct SierraStatementDebugInfo {
     /// The start offset of the sierra statement within the bytecode.
     pub start_offset: usize,
@@ -190,21 +239,21 @@ pub struct SierraStatementDebugInfo {
 
 /// Additional debug information for a Sierra statement, depending on its kind
 /// (invoke/return/dummy).
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum StatementKindDebugInfo {
     Return(ReturnStatementDebugInfo),
     Invoke(InvokeStatementDebugInfo),
 }
 
 /// Additional debug information for a return Sierra statement.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct ReturnStatementDebugInfo {
     /// The references of a Sierra return statement.
     pub ref_values: Vec<ReferenceValue>,
 }
 
 /// Additional debug information for an invoke Sierra statement.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct InvokeStatementDebugInfo {
     /// The result branch changes of a Sierra invoke statement.
     pub result_branch_changes: Vec<BranchChanges>,
@@ -213,14 +262,14 @@ pub struct InvokeStatementDebugInfo {
 }
 
 /// The debug information of a compilation from Sierra to casm.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CairoProgramDebugInfo {
     /// The debug information per Sierra statement.
     pub sierra_statement_info: Vec<SierraStatementDebugInfo>,
 }
 
 /// The information about the constants used in the program.
-#[derive(Debug, Eq, PartialEq, Default, Clone)]
+#[derive(Debug, Eq, PartialEq, Default, Clone, Serialize, Deserialize)]
 pub struct ConstsInfo {
     pub segments: OrderedHashMap<u32, ConstSegment>,
     pub total_segments_size: usize,
@@ -315,12 +364,12 @@ impl ConstsInfo {
 }
 
 /// The data for a single segment.
-#[derive(Debug, Eq, PartialEq, Default, Clone)]
+#[derive(Debug, Eq, PartialEq, Default, Clone, Serialize, Deserialize)]
 pub struct ConstSegment {
     /// The values in the segment.
     pub values: Vec<BigInt>,
     /// The offset of each const within the segment.
-    pub const_offset: UnorderedHashMap<ConcreteTypeId, usize>,
+    pub const_offset: OrderedHashMap<ConcreteTypeId, usize>,
     /// The offset of the segment relative to the end of the code segment.
     pub segment_offset: usize,
 }
