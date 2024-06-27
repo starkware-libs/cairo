@@ -217,3 +217,30 @@ fn test_array_snap_into_span() {
 fn test_span_into_array_snap() {
     assert_eq!(@array![1, 2, 3], array![1, 2, 3].span().into());
 }
+
+#[test]
+fn test_for_loop_array_sum() {
+    let mut sum = 0;
+    for x in array![10, 11, 12] {
+        sum += x;
+    };
+    assert_eq!(sum, 33);
+}
+
+#[test]
+fn test_for_loop_array_variables() {
+    let mut i = 10;
+    for x in array![10] {
+        assert_eq!(x, 10);
+    };
+}
+
+// #[test]
+// fn test_for_loop_array_tuples() {
+//     let mut i = 10;
+//     for (x, y) in array![(10, 10), (11, 11), (12, 12)] {
+//         assert_eq!(x, i);
+//         assert_eq!(y, i);
+//         i += 1;
+//     };
+// }

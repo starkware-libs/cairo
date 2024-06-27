@@ -1251,7 +1251,6 @@ fn compute_expr_for_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprFor,
 ) -> Maybe<Expr> {
-    println!("aaaaaaaaaaaaaaa");
     let db = ctx.db;
     let syntax_db = db.upcast();
     let expr_ptr = syntax.expr(syntax_db).stable_ptr();
