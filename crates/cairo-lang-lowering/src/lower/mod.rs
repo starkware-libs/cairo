@@ -188,20 +188,23 @@ pub fn lower_for_loop(
     .add(ctx, &mut builder.statements);
     let next_iterator = next_call.extra_outputs.first().unwrap();
     let next_value = next_call.returns.first().unwrap();
-    let next_value_type =
+    let (some_variant, none_variant) =
         match unwrap_error_propagation_type(semantic_db, ctx.variables[next_value.var_id].ty)
             .unwrap()
         {
-            ErrorPropagationType::Option { some_variant, .. } => some_variant.ty,
+            ErrorPropagationType::Option { some_variant, none_variant } => {
+                (some_variant, none_variant)
+            }
             _ => unreachable!(),
         };
+    let next_value_type = some_variant.ty;
     builder.update_ref(ctx, &loop_expr.into_iter_member_path, next_iterator.var_id);
     let pattern = ctx.function_body.patterns[loop_expr.pattern].clone();
     let unit_ty = corelib::unit_ty(semantic_db);
     let some_block: cairo_lang_semantic::ExprBlock =
         extract_matches!(&ctx.function_body.exprs[loop_expr.body], semantic::Expr::Block).clone();
     let mut some_subscope = create_subscope(ctx, builder);
-
+    let some_subscope_block_id = some_subscope.block_id;
     let some_var_id = ctx.new_var(VarRequest {
         ty: next_value_type,
         location: ctx.get_location(some_block.stable_ptr.untyped()),
@@ -225,7 +228,7 @@ pub fn lower_for_loop(
                     loop_expr.stable_ptr.untyped(),
                 )
             })();
-            lowered_expr_to_block_scope_end(ctx, some_subscope.clone(), block_expr)
+            lowered_expr_to_block_scope_end(ctx, some_subscope, block_expr)
         }
         Err(err) => lowering_flow_error_to_sealed_block(ctx, some_subscope.clone(), err),
     }
@@ -244,22 +247,16 @@ pub fn lower_for_loop(
     .map_err(LoweringFlowError::Failed)?;
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
-        concrete_enum_id: corelib::core_bool_enum(semantic_db),
+        concrete_enum_id: some_variant.concrete_enum_id,
         input: *next_value,
         arms: vec![
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::option_some_variant(
-                    semantic_db,
-                    GenericArgumentId::Type(unit_ty),
-                )),
-                block_id: some_subscope.block_id,
+                arm_selector: MatchArmSelector::VariantId(some_variant),
+                block_id: some_subscope_block_id,
                 var_ids: vec![some_var_id],
             },
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::option_none_variant(
-                    semantic_db,
-                    GenericArgumentId::Type(unit_ty),
-                )),
+                arm_selector: MatchArmSelector::VariantId(none_variant),
                 block_id: none_subscope.block_id,
                 var_ids: vec![none_var_id],
             },
@@ -1358,6 +1355,11 @@ fn lower_expr_loop(
     // Determine signature.
     let params = usage.usage.iter().map(|(_, expr)| expr.clone()).collect_vec();
     let extra_rets = usage.changes.iter().map(|(_, expr)| expr.clone()).collect_vec();
+    if matches!(ctx.function_body.exprs[loop_expr_id].clone(), semantic::Expr::For { .. }) {
+        for param in &params {
+            println!("p {:?}", param.ty().debug(ctx.db));
+        }
+    }
 
     let loop_signature = Signature {
         params,
@@ -1380,6 +1382,8 @@ fn lower_expr_loop(
     let lowered =
         lower_loop_function(encapsulating_ctx, function, loop_signature.clone(), loop_expr_id)
             .map_err(LoweringFlowError::Failed)?;
+    // let lowered_formatter = LoweredFormatter::new(encapsulating_ctx.db, &lowered.variables);
+    // println!("lowered111 {:?}", lowered.debug(&lowered_formatter));
     // TODO(spapini): Recursive call.
     encapsulating_ctx.lowerings.insert(loop_expr_id, lowered);
 

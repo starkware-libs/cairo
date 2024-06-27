@@ -229,18 +229,20 @@ fn test_for_loop_array_sum() {
 
 #[test]
 fn test_for_loop_array_variables() {
-    let mut i = 10;
+    let mut _i = 10;
     for x in array![10] {
         assert_eq!(x, 10);
     };
 }
+#[test]
+fn test_for_loop_array_tuples() {
+    let mut i = 10;
+    for (
+        x, y
+    ) in array![(10, 10), (11, 11), (12, 12)] {
+        assert_eq!(x, i);
+        assert_eq!(y, i);
+        i += 1;
+    };
+}
 
-// #[test]
-// fn test_for_loop_array_tuples() {
-//     let mut i = 10;
-//     for (x, y) in array![(10, 10), (11, 11), (12, 12)] {
-//         assert_eq!(x, i);
-//         assert_eq!(y, i);
-//         i += 1;
-//     };
-// }

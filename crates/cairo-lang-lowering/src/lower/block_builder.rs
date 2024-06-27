@@ -196,16 +196,13 @@ impl BlockBuilder {
         sealed_blocks: Vec<SealedBlockBuilder>,
         location: LocationId,
     ) -> LoweringResult<LoweredExpr> {
-        println!("Hello, world!!!!!!!!!!!!!!!!!");
         let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location)
         else {
             return Err(LoweringFlowError::Match(match_info));
         };
-        println!("Hello, world!");
         let new_scope = self.sibling_block_builder(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
         prev_scope.finalize(ctx, FlatBlockEnd::Match { info: match_info });
-        println!("123123");
         Ok(merged_expr)
     }
 
