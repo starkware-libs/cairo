@@ -200,7 +200,6 @@ impl BlockBuilder {
         else {
             return Err(LoweringFlowError::Match(match_info));
         };
-
         let new_scope = self.sibling_block_builder(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
         prev_scope.finalize(ctx, FlatBlockEnd::Match { info: match_info });

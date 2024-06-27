@@ -208,7 +208,22 @@ impl BlockUsages {
 
                 self.block_usages.insert(expr_id, usage);
             }
-            Expr::For(_expr) => todo!("Handle usages of `for` loop expression"),
+            Expr::For(expr) => {
+                let mut usage: Usage = Default::default();
+                usage.usage.insert(
+                    (&expr.into_iter_member_path).into(),
+                    expr.into_iter_member_path.clone(),
+                );
+                usage.changes.insert(
+                    (&expr.into_iter_member_path).into(),
+                    expr.into_iter_member_path.clone(),
+                );
+                Self::handle_pattern(&function_body.patterns, expr.pattern, &mut usage);
+                self.handle_expr(function_body, expr.body, &mut usage);
+                usage.finalize_as_scope();
+                current.add_usage_and_changes(&usage);
+                self.block_usages.insert(expr_id, usage);
+            }
             Expr::FunctionCall(expr) => {
                 for arg in &expr.args {
                     match arg {
