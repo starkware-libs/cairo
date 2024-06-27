@@ -47,10 +47,11 @@ impl RootDatabase {
         plugins: Vec<Arc<dyn MacroPlugin>>,
         inline_macro_plugins: OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
         analyzer_plugins: Vec<Arc<dyn AnalyzerPlugin>>,
+        disable_inlining: bool
     ) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        init_lowering_group(&mut res);
+        init_lowering_group(&mut res, disable_inlining);
         res.set_macro_plugins(plugins);
         res.set_inline_macro_plugins(inline_macro_plugins.into());
         res.set_analyzer_plugins(analyzer_plugins);
@@ -84,6 +85,7 @@ pub struct RootDatabaseBuilder {
     auto_withdraw_gas: bool,
     project_config: Option<Box<ProjectConfig>>,
     cfg_set: Option<CfgSet>,
+    disable_inlining: bool
 }
 
 impl RootDatabaseBuilder {
@@ -94,6 +96,7 @@ impl RootDatabaseBuilder {
             auto_withdraw_gas: true,
             project_config: None,
             cfg_set: None,
+            disable_inlining: false,
         }
     }
 
@@ -104,6 +107,11 @@ impl RootDatabaseBuilder {
 
     pub fn clear_plugins(&mut self) -> &mut Self {
         self.plugin_suite = get_default_plugin_suite();
+        self
+    }
+
+    pub fn disable_inlining(&mut self) -> &mut Self {
+        self.disable_inlining = true;
         self
     }
 
@@ -136,6 +144,7 @@ impl RootDatabaseBuilder {
             self.plugin_suite.plugins.clone(),
             self.plugin_suite.inline_macro_plugins.clone(),
             self.plugin_suite.analyzer_plugins.clone(),
+            self.disable_inlining
         );
 
         if let Some(cfg_set) = &self.cfg_set {

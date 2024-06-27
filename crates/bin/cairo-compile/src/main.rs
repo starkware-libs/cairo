@@ -22,6 +22,9 @@ struct Args {
     /// Replaces sierra ids with human-readable ones.
     #[arg(short, long, default_value_t = false)]
     replace_ids: bool,
+    /// Disables inlining functions
+    #[arg(short, long, default_value_t = false)]
+    disable_inlining: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -35,7 +38,9 @@ fn main() -> anyhow::Result<()> {
 
     let sierra_program = compile_cairo_project_at_path(
         &args.path,
-        CompilerConfig { replace_ids: args.replace_ids, ..CompilerConfig::default() },
+        CompilerConfig { replace_ids: args.replace_ids,
+            disable_inlining: args.disable_inlining,
+            ..CompilerConfig::default() },
     )?;
 
     match args.output {

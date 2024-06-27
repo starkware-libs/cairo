@@ -21,6 +21,8 @@ pub struct OptimizationConfig {
     /// The size of functions (in lowering statements) below which they are marked as
     /// `should_inline`.
     pub inline_small_functions_threshold: usize,
+    /// Determines whether inlining is disabled.
+    pub disable_inlining: bool,
 }
 
 impl OptimizationConfig {
@@ -41,6 +43,11 @@ impl OptimizationConfig {
         self.inline_small_functions_threshold = inline_small_functions_threshold;
         self
     }
+    /// Sets the `disable_inlining` flag
+    pub fn with_disable_inlining(mut self, disable_inlining: bool) -> Self {
+        self.disable_inlining = disable_inlining;
+        self
+    }
 }
 
 impl Default for OptimizationConfig {
@@ -48,6 +55,7 @@ impl Default for OptimizationConfig {
         Self {
             moveable_functions: vec![],
             inline_small_functions_threshold: DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD,
+            disable_inlining: false
         }
     }
 }
