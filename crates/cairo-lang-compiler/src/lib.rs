@@ -34,6 +34,9 @@ pub struct CompilerConfig<'c> {
     /// Replaces sierra ids with human-readable ones.
     pub replace_ids: bool,
 
+    /// Disables inlining functions.
+    pub disable_inlining: bool,
+
     /// The name of the allowed libfuncs list to use in compilation.
     /// If None the default list of audited libfuncs will be used.
     pub allowed_libfuncs_list_name: Option<String>,
@@ -57,7 +60,11 @@ pub fn compile_cairo_project_at_path(
     path: &Path,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
-    let mut db = RootDatabase::builder().detect_corelib().build()?;
+    let mut builder = RootDatabase::builder();
+    if compiler_config.disable_inlining {
+        builder.disable_inlining();
+    }
+    let mut db = builder.detect_corelib().build()?;
     let main_crate_ids = setup_project(&mut db, path)?;
     compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
 }

@@ -334,7 +334,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn type_size(&self, ty: TypeId) -> usize;
 }
 
-pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
+pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static), disable_inlining: bool) {
     let mut moveable_functions: Vec<String> =
         ["bool_not_impl", "felt252_add", "felt252_sub", "felt252_mul", "felt252_div"]
             .into_iter()
@@ -346,7 +346,7 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
     }
 
     db.set_optimization_config(Arc::new(
-        OptimizationConfig::default().with_moveable_functions(moveable_functions),
+        OptimizationConfig::default().with_moveable_functions(moveable_functions).with_disable_inlining(disable_inlining)
     ));
 }
 
