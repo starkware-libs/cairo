@@ -22,6 +22,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::circuit::CircuitsInfo;
@@ -95,7 +96,7 @@ pub enum InvocationError {
 }
 
 /// Describes a simple change in the ap tracking itself.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ApTrackingChange {
     /// Enables the tracking if not already enabled.
     Enable,
@@ -107,7 +108,7 @@ pub enum ApTrackingChange {
 
 /// Describes the changes to the set of references at a single branch target, as well as changes to
 /// the environment.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BranchChanges {
     /// New references defined at a given branch.
     /// should correspond to BranchInfo.results.
@@ -746,10 +747,9 @@ trait ReferenceExpressionView: Sized {
 /// conditional jump.
 pub fn get_non_fallthrough_statement_id(builder: &CompiledInvocationBuilder<'_>) -> StatementIdx {
     match builder.invocation.branches.as_slice() {
-        [
-            BranchInfo { target: BranchTarget::Fallthrough, results: _ },
-            BranchInfo { target: BranchTarget::Statement(target_statement_id), results: _ },
-        ] => *target_statement_id,
+        [BranchInfo { target: BranchTarget::Fallthrough, results: _ }, BranchInfo { target: BranchTarget::Statement(target_statement_id), results: _ }] => {
+            *target_statement_id
+        }
         _ => panic!("malformed invocation"),
     }
 }
