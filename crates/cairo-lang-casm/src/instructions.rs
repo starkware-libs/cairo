@@ -4,13 +4,14 @@ use core::fmt::Display;
 
 use crate::hints::{Hint, PythonicHint};
 use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
+use serde::{Deserialize, Serialize};
 
 #[cfg(test)]
 #[path = "instructions_test.rs"]
 mod test;
 
 // An enum of Cairo instructions.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum InstructionBody {
     AddAp(AddApInstruction),
     AssertEq(AssertEqInstruction),
@@ -46,7 +47,7 @@ impl Display for InstructionBody {
 }
 
 /// Represents an instruction, including the ap++ flag (inc_ap).
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Instruction {
     pub body: InstructionBody,
     pub inc_ap: bool,
@@ -79,7 +80,7 @@ impl Display for Instruction {
 }
 
 /// Represents a call instruction "call rel/abs target".
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CallInstruction {
     pub target: DerefOrImmediate,
     pub relative: bool,
@@ -99,7 +100,7 @@ impl CallInstruction {
 }
 
 /// Represents the InstructionBody "jmp rel/abs target".
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct JumpInstruction {
     pub target: DerefOrImmediate,
     pub relative: bool,
@@ -119,7 +120,7 @@ impl Display for JumpInstruction {
 }
 
 /// Represents the InstructionBody "jmp rel <jump_offset> if condition != 0".
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct JnzInstruction {
     pub jump_offset: DerefOrImmediate,
     pub condition: CellRef,
@@ -152,7 +153,7 @@ pub fn op_size_based_on_res_operands(operand: &ResOperand) -> usize {
 }
 
 /// Represents the InstructionBody "a = b" for two operands a, b.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct AssertEqInstruction {
     pub a: CellRef,
     pub b: ResOperand,
@@ -169,7 +170,7 @@ impl Display for AssertEqInstruction {
 }
 
 /// Represents a return instruction, "ret".
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct RetInstruction {}
 impl Display for RetInstruction {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -184,7 +185,7 @@ impl RetInstruction {
 }
 
 /// Represents the InstructionBody "ap += op" for a given operand op.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct AddApInstruction {
     pub operand: ResOperand,
 }
