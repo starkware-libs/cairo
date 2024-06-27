@@ -375,8 +375,8 @@ pub fn add_destructs(
                     stmts.push(StatementCall {
                         function: semantic_function.lowered(db),
                         inputs: vec![
-                            VarUsage { var_id: last_panic_var, location },
                             VarUsage { var_id: panic_destruct.var_id, location },
+                            VarUsage { var_id: last_panic_var, location },
                         ],
                         with_coupon: false,
                         outputs: vec![new_panic_var, output_var],
