@@ -46,7 +46,8 @@ fn main() -> anyhow::Result<()> {
 
     let main_func = program.find_function("::main")?;
 
-    let casm_cairo_program = CasmCairoProgram::new(&cairo_program, main_func);
+    let casm_cairo_program = CasmCairoProgram::new(&cairo_program, main_func)
+        .with_context(|| "Sierra to Casm compilation failed.")?;
 
     let res = serde_json::to_string_pretty(&casm_cairo_program)
         .with_context(|| "Casm contract Serialization failed.")?;
