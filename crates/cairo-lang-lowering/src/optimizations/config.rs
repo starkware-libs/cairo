@@ -55,7 +55,7 @@ impl Default for OptimizationConfig {
         Self {
             moveable_functions: vec![],
             inline_small_functions_threshold: DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD,
-            disable_inlining: false
+            disable_inlining: false,
         }
     }
 }
