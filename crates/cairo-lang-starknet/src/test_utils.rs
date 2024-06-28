@@ -84,6 +84,7 @@ pub fn get_test_contract(example_file_name: &str) -> ContractClass {
             allowed_libfuncs_list_name: Some(BUILTIN_ALL_LIBFUNCS_LIST.to_string()),
             diagnostics_reporter,
             add_statements_functions: false,
+            disable_inlining: false
         },
     )
     .expect("compile_path failed")
