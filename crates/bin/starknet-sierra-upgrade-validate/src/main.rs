@@ -4,11 +4,11 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use anyhow::Context;
+use cairo_lang_sierra_to_casm::compiler_version::VersionId;
 use cairo_lang_starknet_classes::allowed_libfuncs::{AllowedLibfuncsError, ListSelector};
 use cairo_lang_starknet_classes::casm_contract_class::{
     CasmContractClass, StarknetSierraCompilationError,
 };
-use cairo_lang_starknet_classes::compiler_version::VersionId;
 use cairo_lang_starknet_classes::contract_class::{ContractClass, ContractEntryPoints};
 use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::{Parser, arg};
@@ -52,8 +52,8 @@ struct Cli {
     /// files should be provided.
     #[arg(
         long,
-        requires_all = &["FullnodeArgs"], 
-        required_unless_present = "input_files", 
+        requires_all = &["FullnodeArgs"],
+        required_unless_present = "input_files",
         conflicts_with = "input_files"
     )]
     fullnode_url: Option<String>,
