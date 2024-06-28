@@ -1,5 +1,4 @@
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use clap;
 
 use crate::ids::LocationId;
 use crate::{
