@@ -674,7 +674,6 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "clap",
  "env_logger",
  "id-arena",
  "indoc",
