@@ -42,7 +42,7 @@ struct Args {
     #[arg(short, long, default_value_t = false)]
     replace_ids: bool,
     /// Overrides inlining behavior
-    #[arg(short, long)]
+    #[arg(short, long, default_value = "default")]
     inlining_strategy: InliningStrategy,
 }
 
