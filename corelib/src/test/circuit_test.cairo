@@ -83,6 +83,7 @@ fn test_into_u384() {
 }
 
 
+#[test]
 fn test_fill_inputs_loop() {
     let in1 = CircuitElement::<CircuitInput<0>> {};
     let in2 = CircuitElement::<CircuitInput<1>> {};
