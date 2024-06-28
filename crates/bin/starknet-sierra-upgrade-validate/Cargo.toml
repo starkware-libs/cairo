@@ -17,10 +17,10 @@ serde_json.workspace = true
 tokio.workspace = true
 cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.8.4" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.8.4", features = [
-    "serde",
+  "serde",
 ] }
 
-# This is not a direct dependency of this package, but it is included here to make sure that the 
+# This is not a direct dependency of this package, but it is included here to make sure that the
 # `vendored` feature is enabled (needed for the compilation to succeed on remote machines).
 openssl = { workspace = true, features = ["vendored"] }
 
