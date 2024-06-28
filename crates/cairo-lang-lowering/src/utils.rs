@@ -1,4 +1,5 @@
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use clap;
 
 use crate::ids::LocationId;
 use crate::{
@@ -7,6 +8,18 @@ use crate::{
     StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
     VarUsage, VariableId,
 };
+
+/// Options for the `inlining` arguments
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, clap::ValueEnum)]
+pub enum InliningStrategy {
+    /// Do not override inlining strategy
+    #[default]
+    Default,
+    /// Inline only in the case of a `inline(always)` annotation
+    Avoid,
+    /// Never inline
+    Forbid,
+}
 
 /// A rebuilder trait for rebuilding lowered representation.
 pub trait Rebuilder {

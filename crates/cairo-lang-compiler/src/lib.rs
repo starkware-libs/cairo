@@ -8,6 +8,7 @@ use std::sync::Arc;
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -35,7 +36,7 @@ pub struct CompilerConfig<'c> {
     pub replace_ids: bool,
 
     /// Disables inlining functions.
-    pub disable_inlining: bool,
+    pub inlining_strategy: InliningStrategy,
 
     /// The name of the allowed libfuncs list to use in compilation.
     /// If None the default list of audited libfuncs will be used.
@@ -60,11 +61,10 @@ pub fn compile_cairo_project_at_path(
     path: &Path,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
-    let mut builder = RootDatabase::builder();
-    if compiler_config.disable_inlining {
-        builder.disable_inlining();
-    }
-    let mut db = builder.detect_corelib().build()?;
+    let mut db = RootDatabase::builder()
+        .with_inlining_strategy(compiler_config.inlining_strategy)
+        .detect_corelib()
+        .build()?;
     let main_crate_ids = setup_project(&mut db, path)?;
     compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
 }

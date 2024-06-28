@@ -471,6 +471,7 @@ version = "2.6.4"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
+ "cairo-lang-lowering",
  "cairo-lang-utils",
  "clap",
  "log",
@@ -688,6 +689,7 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
+ "clap",
  "env_logger",
  "id-arena",
  "indoc",

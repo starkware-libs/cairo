@@ -13,6 +13,7 @@ use cairo_lang_utils::Upcast;
 use once_cell::sync::Lazy;
 
 use crate::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
+use crate::utils::InliningStrategy;
 
 #[salsa::database(
     LoweringDatabase,
@@ -47,7 +48,7 @@ pub static SHARED_DB: Lazy<Mutex<LoweringDatabaseForTesting>> = Lazy::new(|| {
 
     let corelib_path = detect_corelib().expect("Corelib not found in default location.");
     init_dev_corelib(&mut res, corelib_path);
-    init_lowering_group(&mut res, false);
+    init_lowering_group(&mut res, InliningStrategy::Default);
     Mutex::new(res)
 });
 impl Default for LoweringDatabaseForTesting {
