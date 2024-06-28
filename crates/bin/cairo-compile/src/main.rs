@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use anyhow::Context;
 use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_compiler::{compile_cairo_project_at_path, CompilerConfig};
+use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
 
@@ -22,9 +23,9 @@ struct Args {
     /// Replaces sierra ids with human-readable ones.
     #[arg(short, long, default_value_t = false)]
     replace_ids: bool,
-    /// Disables inlining functions
-    #[arg(short, long, default_value_t = false)]
-    disable_inlining: bool,
+    /// Overrides inlining behavior
+    #[arg(short, long)]
+    inlining_strategy: InliningStrategy,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -40,7 +41,7 @@ fn main() -> anyhow::Result<()> {
         &args.path,
         CompilerConfig {
             replace_ids: args.replace_ids,
-            disable_inlining: args.disable_inlining,
+            inlining_strategy: args.inlining_strategy,
             ..CompilerConfig::default()
         },
     )?;

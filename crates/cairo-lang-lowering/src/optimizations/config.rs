@@ -7,6 +7,7 @@ use cairo_lang_utils::Intern;
 
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId};
+use crate::utils::InliningStrategy;
 
 /// The default threshold for inlining small functions. Decided according to sample contracts
 /// profiling.
@@ -22,7 +23,7 @@ pub struct OptimizationConfig {
     /// `should_inline`.
     pub inline_small_functions_threshold: usize,
     /// Determines whether inlining is disabled.
-    pub disable_inlining: bool,
+    pub inlining_strategy: InliningStrategy,
 }
 
 impl OptimizationConfig {
@@ -43,9 +44,9 @@ impl OptimizationConfig {
         self.inline_small_functions_threshold = inline_small_functions_threshold;
         self
     }
-    /// Sets the `disable_inlining` flag
-    pub fn with_disable_inlining(mut self, disable_inlining: bool) -> Self {
-        self.disable_inlining = disable_inlining;
+    /// Sets the `inlining_strategy` flag
+    pub fn with_inlining_strategy(mut self, inlining_strategy: InliningStrategy) -> Self {
+        self.inlining_strategy = inlining_strategy;
         self
     }
 }
@@ -55,7 +56,7 @@ impl Default for OptimizationConfig {
         Self {
             moveable_functions: vec![],
             inline_small_functions_threshold: DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD,
-            disable_inlining: false,
+            inlining_strategy: InliningStrategy::Default,
         }
     }
 }
