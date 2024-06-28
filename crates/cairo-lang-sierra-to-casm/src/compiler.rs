@@ -3,16 +3,25 @@ use std::fmt::Display;
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
+use cairo_lang_sierra::extensions::bitwise::BitwiseType;
+use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
 use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::{
     CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
 };
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
+use cairo_lang_sierra::extensions::ec::EcOpType;
+use cairo_lang_sierra::extensions::gas::GasBuiltinType;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
+use cairo_lang_sierra::extensions::pedersen::PedersenType;
+use cairo_lang_sierra::extensions::poseidon::PoseidonType;
+use cairo_lang_sierra::extensions::range_check::{RangeCheck96Type, RangeCheckType};
+use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
-use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, VarId};
+use cairo_lang_sierra::extensions::NamedType;
+use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, GenericTypeId, VarId};
 use cairo_lang_sierra::program::{
     BranchTarget, Function, GenericArg, Invocation, Program, Statement, StatementIdx,
 };
@@ -21,8 +30,9 @@ use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-// use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+
+use convert_case::{Case, Casing};
 use itertools::{chain, zip_eq, Itertools};
 use num_bigint::{BigInt, BigUint};
 use num_integer::Integer;
@@ -89,6 +99,10 @@ pub enum CompilationError {
     StatementNotSupportingApChangeVariables(StatementIdx),
     #[error("Expected all gas variables to be positive.")]
     MetadataNegativeGasVariable,
+    #[error("Invalid entry point signature.")]
+    InvalidEntryPointSignature,
+    #[error("{0} is not a supported builtin type.")]
+    InvalidBuiltinType(ConcreteTypeId),
 }
 
 /// Configuration for the Sierra to CASM compilation.
@@ -109,11 +123,15 @@ pub struct CasmCairoProgram {
     pub bytecode: Vec<BigUintAsHex>,
     pub hints: Vec<(usize, Vec<Hint>)>,
     pub pythonic_hints: Vec<(usize, Vec<String>)>,
-    pub main_func: Vec<Function>,
+    pub entrypoint: usize,
+    pub builtins: Vec<String>,
 }
 
 impl CasmCairoProgram {
-    pub fn new(cairo_program: &CairoProgram, main_func: &Function) -> Self {
+    pub fn new(
+        cairo_program: &CairoProgram,
+        main_func: &Function,
+    ) -> Result<Self, CompilationError> {
         let prime = Felt252::prime();
 
         let compiler_version = current_compiler_version_id().to_string();
@@ -137,9 +155,36 @@ impl CasmCairoProgram {
             })
             .collect_vec();
 
-        let main_func = vec![main_func.clone()];
+        let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
+            RangeCheckType::id(),
+            BitwiseType::id(),
+            PedersenType::id(),
+            EcOpType::id(),
+            PoseidonType::id(),
+            RangeCheck96Type::id(),
+            GasBuiltinType::id(),
+            SegmentArenaType::id(),
+            AddModType::id(),
+            MulModType::id(),
+        ]);
 
-        Self { prime, compiler_version, bytecode, hints, pythonic_hints, main_func }
+        let entrypoint = main_func.entry_point.0;
+
+        let mut builtins: Vec<String> = Vec::new();
+
+        for type_id in main_func.signature.param_types.iter() {
+            let debug_name = match type_id.debug_name.clone() {
+                Some(debug_name) => debug_name,
+                None => panic!(),
+            };
+            let generic_id = GenericTypeId::from(debug_name);
+            if !builtin_types.contains(&generic_id) {
+                return Err(CompilationError::InvalidBuiltinType(type_id.clone()));
+            };
+            builtins.push(generic_id.0.as_str().to_case(Case::Snake));
+        }
+
+        Ok(Self { prime, compiler_version, bytecode, hints, pythonic_hints, entrypoint, builtins })
     }
 }
 
