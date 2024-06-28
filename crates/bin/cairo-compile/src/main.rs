@@ -38,9 +38,11 @@ fn main() -> anyhow::Result<()> {
 
     let sierra_program = compile_cairo_project_at_path(
         &args.path,
-        CompilerConfig { replace_ids: args.replace_ids,
+        CompilerConfig {
+            replace_ids: args.replace_ids,
             disable_inlining: args.disable_inlining,
-            ..CompilerConfig::default() },
+            ..CompilerConfig::default()
+        },
     )?;
 
     match args.output {

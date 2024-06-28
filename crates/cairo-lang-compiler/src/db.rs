@@ -47,7 +47,7 @@ impl RootDatabase {
         plugins: Vec<Arc<dyn MacroPlugin>>,
         inline_macro_plugins: OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
         analyzer_plugins: Vec<Arc<dyn AnalyzerPlugin>>,
-        disable_inlining: bool
+        disable_inlining: bool,
     ) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
@@ -85,7 +85,7 @@ pub struct RootDatabaseBuilder {
     auto_withdraw_gas: bool,
     project_config: Option<Box<ProjectConfig>>,
     cfg_set: Option<CfgSet>,
-    disable_inlining: bool
+    disable_inlining: bool,
 }
 
 impl RootDatabaseBuilder {
@@ -144,7 +144,7 @@ impl RootDatabaseBuilder {
             self.plugin_suite.plugins.clone(),
             self.plugin_suite.inline_macro_plugins.clone(),
             self.plugin_suite.analyzer_plugins.clone(),
-            self.disable_inlining
+            self.disable_inlining,
         );
 
         if let Some(cfg_set) = &self.cfg_set {

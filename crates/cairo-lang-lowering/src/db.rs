@@ -346,7 +346,9 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static), disable_inlin
     }
 
     db.set_optimization_config(Arc::new(
-        OptimizationConfig::default().with_moveable_functions(moveable_functions).with_disable_inlining(disable_inlining)
+        OptimizationConfig::default()
+            .with_moveable_functions(moveable_functions)
+            .with_disable_inlining(disable_inlining),
     ));
 }
 

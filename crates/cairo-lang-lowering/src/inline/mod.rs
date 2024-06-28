@@ -69,8 +69,9 @@ pub fn priv_should_inline(
         InlineConfiguration::Never(_) => false,
         InlineConfiguration::Should(_) => !db.optimization_config().disable_inlining,
         InlineConfiguration::Always(_) => true,
-        InlineConfiguration::None => !db.optimization_config().disable_inlining
-          && should_inline_lowered(db, function_id)?,
+        InlineConfiguration::None => {
+            !db.optimization_config().disable_inlining && should_inline_lowered(db, function_id)?
+        }
     })
 }
 
