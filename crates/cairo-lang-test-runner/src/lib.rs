@@ -26,8 +26,8 @@ use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::test_config::{PanicExpectation, TestExpectation};
 use cairo_lang_test_plugin::{
-    compile_test_prepared_db, test_plugin_suite, TestCompilation, TestCompilationMetadata,
-    TestConfig,
+    compile_test_prepared_db, test_plugin_suite, TestCompilation, TestCompilationConfig,
+    TestCompilationMetadata, TestConfig,
 };
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -238,7 +238,7 @@ impl TestCompiler {
     pub fn build(&self) -> Result<TestCompilation> {
         compile_test_prepared_db(
             &self.db,
-            self.starknet,
+            TestCompilationConfig { starknet: self.starknet, add_statements_functions: false },
             self.main_crate_ids.clone(),
             self.test_crate_ids.clone(),
         )

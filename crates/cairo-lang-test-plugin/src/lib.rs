@@ -1,3 +1,4 @@
+use std::default::Default;
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
@@ -11,7 +12,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
-use cairo_lang_sierra::debug_info::DebugInfo;
+use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{ProgramArtifact, StatementIdx};
@@ -44,6 +45,12 @@ const IGNORE_ATTR: &str = "ignore";
 const AVAILABLE_GAS_ATTR: &str = "available_gas";
 const STATIC_GAS_ARG: &str = "static";
 
+/// Configuration for test compilation.
+pub struct TestCompilationConfig {
+    pub starknet: bool,
+    pub add_statements_functions: bool,
+}
+
 /// Runs Cairo compiler.
 ///
 /// # Arguments
@@ -57,11 +64,11 @@ const STATIC_GAS_ARG: &str = "static";
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_test_prepared_db(
     db: &RootDatabase,
-    starknet: bool,
+    test_compilation_config: TestCompilationConfig,
     main_crate_ids: Vec<CrateId>,
     test_crate_ids: Vec<CrateId>,
 ) -> Result<TestCompilation> {
-    let all_entry_points = if starknet {
+    let all_entry_points = if test_compilation_config.starknet {
         find_contracts(db, &main_crate_ids)
             .iter()
             .flat_map(|contract| {
@@ -105,8 +112,16 @@ pub fn compile_test_prepared_db(
     );
     let replacer = DebugReplacer { db };
     replacer.enrich_function_names(&mut sierra_program);
-    let statements_functions =
+
+    let statements_functions_for_tests =
         debug_info.statements_locations.get_statements_functions_map_for_tests(db);
+
+    let annotations = if test_compilation_config.add_statements_functions {
+        Annotations::from(debug_info.statements_locations.extract_statements_functions(db))
+    } else {
+        Annotations::default()
+    };
+
     let executables = collect_executables(db, executable_functions, &sierra_program);
     let named_tests = all_tests
         .into_iter()
@@ -127,15 +142,18 @@ pub fn compile_test_prepared_db(
         })
         .collect_vec();
     let contracts_info = get_contracts_info(db, main_crate_ids.clone(), &replacer)?;
-    let sierra_program = ProgramArtifact::stripped(sierra_program)
-        .with_debug_info(DebugInfo { executables, ..DebugInfo::default() });
+    let sierra_program = ProgramArtifact::stripped(sierra_program).with_debug_info(DebugInfo {
+        executables,
+        annotations,
+        ..DebugInfo::default()
+    });
     Ok(TestCompilation {
         sierra_program,
         metadata: TestCompilationMetadata {
             named_tests,
             function_set_costs,
             contracts_info,
-            statements_functions,
+            statements_functions: statements_functions_for_tests,
         },
     })
 }
