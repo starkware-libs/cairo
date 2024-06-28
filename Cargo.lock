@@ -934,6 +934,7 @@ dependencies = [
  "cairo-lang-sierra-type-size",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
+ "convert_case",
  "env_logger",
  "indoc",
  "itertools 0.12.1",
@@ -3734,6 +3735,7 @@ version = "2.8.4"
 dependencies = [
  "anyhow",
  "async-channel",
+ "cairo-lang-sierra-to-casm",
  "cairo-lang-starknet-classes",
  "cairo-lang-utils",
  "clap",
