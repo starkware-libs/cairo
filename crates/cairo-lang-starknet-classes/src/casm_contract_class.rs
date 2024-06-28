@@ -19,11 +19,13 @@ use cairo_lang_sierra::extensions::structure::StructType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
-use cairo_lang_sierra_to_casm::compiler::{
-    CairoProgramDebugInfo, CompilationError, SierraToCasmConfig,
-};
-use cairo_lang_sierra_to_casm::metadata::{
-    calc_metadata, MetadataComputationConfig, MetadataError,
+use cairo_lang_sierra_to_casm::{
+    compiler::{CairoProgramDebugInfo, CompilationError, SierraToCasmConfig},
+    compiler_version::{
+        current_compiler_version_id, current_sierra_version_id, VersionId,
+        CONTRACT_SEGMENTATION_MINOR_VERSION,
+    },
+    metadata::{calc_metadata, MetadataComputationConfig, MetadataError},
 };
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -42,10 +44,6 @@ use starknet_types_core::hash::{Poseidon, StarkHash};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
-use crate::compiler_version::{
-    current_compiler_version_id, current_sierra_version_id, VersionId,
-    CONTRACT_SEGMENTATION_MINOR_VERSION,
-};
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::contract_segmentation::{
     compute_bytecode_segment_lengths, NestedIntList, SegmentationError,
