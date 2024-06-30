@@ -2,8 +2,10 @@ use std::vec;
 
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_diagnostics::{DiagnosticAdded, Diagnostics, Maybe};
-use cairo_lang_semantic::corelib;
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_semantic::corelib::{self, unwrap_error_propagation_type, ErrorPropagationType};
+use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::{LocalVariable, VarId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -160,6 +162,104 @@ pub fn lower_function(
         signature: ctx.signature.clone(),
         parameters,
     })
+}
+
+/// Lowers an expression of type [semantic::ExprFor].
+pub fn lower_for_loop(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    loop_expr: semantic::ExprFor,
+    loop_expr_id: semantic::ExprId,
+) -> LoweringResult<LoweredExpr> {
+    let semantic_db: &dyn SemanticGroup = ctx.db.upcast();
+    let for_location = ctx.get_location(loop_expr.stable_ptr.untyped());
+    let next_semantic_signature =
+        semantic_db.concrete_function_signature(loop_expr.next_function_id).unwrap();
+    let into_iter = builder.get_ref(ctx, &loop_expr.into_iter_member_path).unwrap();
+    let next_call = generators::Call {
+        function: loop_expr.next_function_id.lowered(ctx.db),
+        inputs: vec![into_iter],
+        coupon_input: None,
+        extra_ret_tys: vec![next_semantic_signature.params.first().unwrap().ty],
+        ret_tys: vec![next_semantic_signature.return_type],
+        location: for_location,
+    }
+    .add(ctx, &mut builder.statements);
+    let next_iterator = next_call.extra_outputs.first().unwrap();
+    let next_value = next_call.returns.first().unwrap();
+    let ErrorPropagationType::Option { some_variant, none_variant } =
+        unwrap_error_propagation_type(semantic_db, ctx.variables[next_value.var_id].ty)
+            .expect("Expected Option type for next function return.")
+    else {
+        unreachable!("Return type for next function must be Option.")
+    };
+    let next_value_type = some_variant.ty;
+    builder.update_ref(ctx, &loop_expr.into_iter_member_path, next_iterator.var_id);
+    let pattern = ctx.function_body.patterns[loop_expr.pattern].clone();
+    let unit_ty = corelib::unit_ty(semantic_db);
+    let some_block: cairo_lang_semantic::ExprBlock =
+        extract_matches!(&ctx.function_body.exprs[loop_expr.body], semantic::Expr::Block).clone();
+    let mut some_subscope = create_subscope(ctx, builder);
+    let some_subscope_block_id = some_subscope.block_id;
+    let some_var_id = ctx.new_var(VarRequest {
+        ty: next_value_type,
+        location: ctx.get_location(some_block.stable_ptr.untyped()),
+    });
+    let variant_expr = LoweredExpr::AtVariable(VarUsage {
+        var_id: some_var_id,
+        location: ctx.get_location(some_block.stable_ptr.untyped()),
+    });
+    let lowered_pattern = lower_single_pattern(ctx, &mut some_subscope, pattern, variant_expr);
+    let sealed_some = match lowered_pattern {
+        Ok(_) => {
+            let block_expr = (|| {
+                lower_expr_block(ctx, &mut some_subscope, &some_block)?;
+                // Add recursive call.
+                let signature = ctx.signature.clone();
+                call_loop_func(
+                    ctx,
+                    signature,
+                    &mut some_subscope,
+                    loop_expr_id,
+                    loop_expr.stable_ptr.untyped(),
+                )
+            })();
+            lowered_expr_to_block_scope_end(ctx, some_subscope, block_expr)
+        }
+        Err(err) => lowering_flow_error_to_sealed_block(ctx, some_subscope.clone(), err),
+    }
+    .map_err(LoweringFlowError::Failed)?;
+
+    let none_subscope = create_subscope(ctx, builder);
+    let none_var_id = ctx.new_var(VarRequest {
+        ty: unit_ty,
+        location: ctx.get_location(some_block.stable_ptr.untyped()),
+    });
+    let sealed_none = lowered_expr_to_block_scope_end(
+        ctx,
+        none_subscope.clone(),
+        Ok(LoweredExpr::Tuple { exprs: vec![], location: for_location }),
+    )
+    .map_err(LoweringFlowError::Failed)?;
+
+    let match_info = MatchInfo::Enum(MatchEnumInfo {
+        concrete_enum_id: some_variant.concrete_enum_id,
+        input: *next_value,
+        arms: vec![
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(some_variant),
+                block_id: some_subscope_block_id,
+                var_ids: vec![some_var_id],
+            },
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(none_variant),
+                block_id: none_subscope.block_id,
+                var_ids: vec![none_var_id],
+            },
+        ],
+        location: for_location,
+    });
+    builder.merge_and_end_with_match(ctx, match_info, vec![sealed_some, sealed_none], for_location)
 }
 
 /// Lowers an expression of type [semantic::ExprWhile].
@@ -361,7 +461,14 @@ pub fn lower_loop_function(
                 let block_expr = lower_while_loop(&mut ctx, &mut builder, while_expr, loop_expr_id);
                 (block_expr, stable_ptr)
             }
-            _ => unreachable!("Loop expression must be either loop or while."),
+
+            semantic::Expr::For(for_expr) => {
+                let stable_ptr: cairo_lang_syntax::node::ast::ExprPtr = for_expr.stable_ptr;
+                let block_expr: Result<LoweredExpr, LoweringFlowError> =
+                    lower_for_loop(&mut ctx, &mut builder, for_expr, loop_expr_id);
+                (block_expr, stable_ptr)
+            }
+            _ => unreachable!("Loop expression must be either loop, while or for."),
         };
 
         let block_sealed = lowered_expr_to_block_scope_end(&mut ctx, builder, block_expr)?;
@@ -736,10 +843,9 @@ fn lower_expr(
         semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, expr, builder),
         semantic::Expr::Match(expr) => lower_expr_match(ctx, expr, builder),
         semantic::Expr::If(expr) => lower_expr_if(ctx, builder, expr),
-        semantic::Expr::Loop(_) | semantic::Expr::While(_) => {
+        semantic::Expr::Loop(_) | semantic::Expr::While(_) | semantic::Expr::For(_) => {
             lower_expr_loop(ctx, builder, expr_id)
         }
-        semantic::Expr::For(_) => Err(LoweringFlowError::Failed(DiagnosticAdded)),
         semantic::Expr::Var(expr) => {
             let member_path = ExprVarMemberPath::Var(expr.clone());
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
@@ -1199,10 +1305,44 @@ fn lower_expr_loop(
     builder: &mut BlockBuilder,
     loop_expr_id: ExprId,
 ) -> LoweringResult<LoweredExpr> {
-    let (stable_ptr, return_type) = match ctx.function_body.exprs[loop_expr_id] {
+    let (stable_ptr, return_type) = match ctx.function_body.exprs[loop_expr_id].clone() {
         semantic::Expr::Loop(semantic::ExprLoop { stable_ptr, ty, .. }) => (stable_ptr, ty),
         semantic::Expr::While(semantic::ExprWhile { stable_ptr, ty, .. }) => (stable_ptr, ty),
-        _ => unreachable!("Loop expression must be either loop or while."),
+        semantic::Expr::For(semantic::ExprFor {
+            stable_ptr,
+            ty,
+            into_iter,
+            expr_id,
+            into_iter_member_path,
+            ..
+        }) => {
+            let semantic_db: &dyn SemanticGroup = ctx.db.upcast();
+            let var_id = lower_expr(ctx, builder, expr_id)?.as_var_usage(ctx, builder)?;
+            let into_iter_call = generators::Call {
+                function: into_iter.lowered(ctx.db),
+                inputs: vec![var_id],
+                coupon_input: None,
+                extra_ret_tys: vec![],
+                ret_tys: vec![
+                    semantic_db.concrete_function_signature(into_iter).unwrap().return_type,
+                ],
+                location: ctx.get_location(stable_ptr.untyped()),
+            }
+            .add(ctx, &mut builder.statements);
+            let into_iter_var = into_iter_call.returns.into_iter().next().unwrap();
+            let sem_var = LocalVariable {
+                ty: semantic_db.concrete_function_signature(into_iter).unwrap().return_type,
+                is_mut: true,
+                id: extract_matches!(into_iter_member_path.base_var(), VarId::Local),
+            };
+            builder.put_semantic(into_iter_member_path.base_var(), into_iter_var.var_id);
+
+            ctx.semantic_defs
+                .insert(into_iter_member_path.base_var(), semantic::Variable::Local(sem_var));
+
+            (stable_ptr, ty)
+        }
+        _ => unreachable!("Loop expression must be either loop, while or for."),
     };
 
     let usage = &ctx.block_usages.block_usages[&loop_expr_id];
