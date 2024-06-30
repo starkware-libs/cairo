@@ -11,7 +11,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, MemberId,
-    TraitFunctionId, TraitId,
+    NamedLanguageElementId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -1256,11 +1256,12 @@ fn compute_expr_for_semantic(
     let expr_ptr = syntax.expr(syntax_db).stable_ptr();
 
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    let expr_id = expr.id;
 
     let into_iterator_trait =
         get_core_trait(ctx.db, CoreTraitContext::Iterator, "IntoIterator".into());
 
-    let (iterator_function_id, fixed_into_iter_var, into_iter_mutability) =
+    let (into_iterator_function_id, fixed_into_iter_var, into_iter_mutability) =
         compute_method_function_call_data(
             ctx,
             &[into_iterator_trait],
@@ -1285,12 +1286,27 @@ fn compute_expr_for_semantic(
         )?;
     let into_iter_call = expr_function_call(
         ctx,
-        iterator_function_id,
+        into_iterator_function_id,
         vec![NamedArg(fixed_into_iter_var, None, into_iter_mutability)],
         expr_ptr,
         expr_ptr,
     )?;
-    let into_iter_call_id = ctx.exprs.alloc(into_iter_call.clone());
+
+    let into_iter_variable =
+        LocalVarLongId(ctx.resolver.module_file_id, syntax.identifier(syntax_db).stable_ptr())
+            .intern(ctx.db);
+
+    let into_iter_expr = Expr::Var(ExprVar {
+        var: VarId::Local(into_iter_variable),
+        ty: into_iter_call.ty(),
+        stable_ptr: into_iter_call.stable_ptr(),
+    });
+    let into_iter_member_path = ExprVarMemberPath::Var(ExprVar {
+        var: VarId::Local(into_iter_variable),
+        ty: into_iter_call.ty(),
+        stable_ptr: into_iter_call.stable_ptr(),
+    });
+    let into_iter_expr_id = ctx.exprs.alloc(into_iter_expr.clone());
 
     let iterator_trait = get_core_trait(ctx.db, CoreTraitContext::Iterator, "Iterator".into());
 
@@ -1298,7 +1314,7 @@ fn compute_expr_for_semantic(
         ctx,
         &[iterator_trait],
         "next".into(),
-        ExprAndId { expr: into_iter_call, id: into_iter_call_id },
+        ExprAndId { expr: into_iter_expr, id: into_iter_expr_id },
         expr_ptr.into(),
         None,
         |ty, _, inference_errors| {
@@ -1313,14 +1329,22 @@ fn compute_expr_for_semantic(
         },
     )?;
 
+    let next_success_variant =
+        match db.concrete_function_signature(next_function_id)?.return_type.lookup_intern(db) {
+            TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
+                assert_eq!(enm.enum_id(db.upcast()).name(db.upcast()), "Option");
+                db.concrete_enum_variants(enm).unwrap().into_iter().next().unwrap()
+            }
+            _ => unreachable!(),
+        };
     let (body_id, pattern) = ctx.run_in_subscope(|new_ctx| {
-        let pattern = compute_pattern_semantic(
+        let inner_pattern = compute_pattern_semantic(
             new_ctx,
             &syntax.pattern(syntax_db),
-            db.concrete_function_signature(next_function_id).unwrap().return_type,
+            next_success_variant.ty,
             &mut UnorderedHashMap::default(),
         );
-        let variables = pattern.variables(&new_ctx.patterns);
+        let variables = inner_pattern.variables(&new_ctx.patterns);
         for v in variables {
             let var_def = Variable::Local(v.var.clone());
             new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
@@ -1328,12 +1352,13 @@ fn compute_expr_for_semantic(
         }
         let (body, _loop_ctx) =
             compute_loop_body_semantic(new_ctx, syntax.body(syntax_db), LoopContext::For);
-        (body, pattern.id)
+        (body, new_ctx.patterns.alloc(inner_pattern.pattern))
     });
-
     Ok(Expr::For(ExprFor {
-        into_iter: into_iter_call_id,
+        into_iter: into_iterator_function_id,
+        into_iter_member_path,
         next_function_id,
+        expr_id,
         pattern,
         body: body_id,
         ty: unit_ty(ctx.db),
