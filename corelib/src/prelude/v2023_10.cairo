@@ -63,3 +63,8 @@ pub use core::traits::Index;
 pub use core::traits::IndexView;
 pub use core::zeroable::NonZero;
 pub use core::ops::Deref;
+
+pub use starknet::storage::{
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, StorableStoragePointerReadAccess,
+    StorableStoragePointerWriteAccess
+};
