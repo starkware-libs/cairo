@@ -61,6 +61,8 @@ pub enum Edition {
     V2023_10,
     #[serde(rename = "2023_11")]
     V2023_11,
+    #[serde(rename = "2024_07")]
+    V2024_07,
 }
 impl Edition {
     /// Returns the latest stable edition.
@@ -68,7 +70,7 @@ impl Edition {
     /// This Cairo edition is recommended for use in new projects and, in case of existing projects,
     /// to migrate to when possible.
     pub const fn latest() -> Self {
-        Self::V2023_11
+        Self::V2024_07
     }
 
     /// The name of the prelude submodule of `core::prelude` for this compatibility version.
@@ -76,6 +78,7 @@ impl Edition {
         match self {
             Self::V2023_01 => "v2023_01",
             Self::V2023_10 | Self::V2023_11 => "v2023_10",
+            Self::V2024_07 => "v2024_07",
         }
     }
 
@@ -83,7 +86,14 @@ impl Edition {
     pub fn ignore_visibility(&self) -> bool {
         match self {
             Self::V2023_01 | Self::V2023_10 => true,
-            Self::V2023_11 => false,
+            Self::V2023_11 | Self::V2024_07 => false,
+        }
+    }
+
+    pub fn backwards_compatible_storage(&self) -> bool {
+        match self {
+            Self::V2023_01 | Self::V2023_10 | Self::V2023_11 => true,
+            Self::V2024_07 => false,
         }
     }
 }
