@@ -59,3 +59,12 @@ fn test_option_some_is_none() {
 fn test_option_none_is_none() {
     assert!(Option::<felt252>::None.is_none());
 }
+
+#[derive(Drop)]
+struct NonCopy {}
+
+#[test]
+fn test_default_for_option() {
+    assert!(Default::<Option<felt252>>::default().is_none());
+    assert!(Default::<Option<NonCopy>>::default().is_none());
+}
