@@ -103,19 +103,26 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+          pub var: WrappedFelt252,
+          pub zero_size: ZeroSize,
+          pub mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
+          pub zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    var: starknet::storage::StorageBase<WrappedFelt252>,
-    zero_size: starknet::storage::StorageBase<ZeroSize>,
-    mapping: starknet::storage::StorageBase<LegacyMap::<WrappedFelt252, WrappedFelt252>>,
-    zero_size_mapping: starknet::storage::StorageBase<LegacyMap::<ZeroSize, ZeroSize>>,
+pub struct ContractStorageBase {
+    pub var: starknet::storage::StorageBase<WrappedFelt252>,
+    pub zero_size: starknet::storage::StorageBase<ZeroSize>,
+    pub mapping: starknet::storage::StorageBase<LegacyMap::<WrappedFelt252, WrappedFelt252>>,
+    pub zero_size_mapping: starknet::storage::StorageBase<LegacyMap::<ZeroSize, ZeroSize>>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    var: starknet::storage::StorageBase<starknet::storage::Mutable<WrappedFelt252>>,
-    zero_size: starknet::storage::StorageBase<starknet::storage::Mutable<ZeroSize>>,
-    mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<WrappedFelt252, WrappedFelt252>>>,
-    zero_size_mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<ZeroSize, ZeroSize>>>,
+pub struct ContractStorageBaseMut {
+    pub var: starknet::storage::StorageBase<starknet::storage::Mutable<WrappedFelt252>>,
+    pub zero_size: starknet::storage::StorageBase<starknet::storage::Mutable<ZeroSize>>,
+    pub mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<WrappedFelt252, WrappedFelt252>>>,
+    pub zero_size_mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<ZeroSize, ZeroSize>>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;

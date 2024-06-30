@@ -6,6 +6,7 @@ use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile,
     PluginResult,
 };
+use cairo_lang_filesystem::db::Edition;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -242,7 +243,7 @@ pub(super) fn handle_module_by_storage(
             },
         }),
         diagnostics,
-        remove_original_item: false,
+        remove_original_item: backwards_compatible_storage(metadata.edition),
     })
 }
 
@@ -296,4 +297,11 @@ fn grand_grand_parent_starknet_module(
     let module_ast = ast::ItemModule::from_syntax_node(db, module_node);
     let (module_kind, attr) = StarknetModuleKind::from_module(db, &module_ast)?;
     Some((module_ast, module_kind, attr))
+}
+
+pub fn backwards_compatible_storage(edition: Edition) -> bool {
+    match edition {
+        Edition::V2023_01 | Edition::V2023_10 | Edition::V2023_11 => true,
+        Edition::V2024_07 => false,
+    }
 }
