@@ -51,7 +51,7 @@ pub struct CrateSettings {
 /// updates with the same major version. Compiler major version updates may remove support for older
 /// editions. Editions may be added to provide features that are not backwards compatible, while
 /// allowing user to opt-in to them, and be ready for later compiler updates.
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize, PartialOrd)]
 pub enum Edition {
     /// The base edition, dated for the first release of the compiler.
     #[default]
@@ -61,6 +61,8 @@ pub enum Edition {
     V2023_10,
     #[serde(rename = "2023_11")]
     V2023_11,
+    #[serde(rename = "2024_07")]
+    V2024_07,
 }
 impl Edition {
     /// Returns the latest stable edition.
@@ -68,7 +70,7 @@ impl Edition {
     /// This Cairo edition is recommended for use in new projects and, in case of existing projects,
     /// to migrate to when possible.
     pub const fn latest() -> Self {
-        Self::V2023_11
+        Self::V2024_07
     }
 
     /// The name of the prelude submodule of `core::prelude` for this compatibility version.
@@ -76,15 +78,17 @@ impl Edition {
         match self {
             Self::V2023_01 => "v2023_01",
             Self::V2023_10 | Self::V2023_11 => "v2023_10",
+            Self::V2024_07 => "v2024_07",
         }
     }
 
     /// Whether to ignore visibility modifiers.
     pub fn ignore_visibility(&self) -> bool {
-        match self {
-            Self::V2023_01 | Self::V2023_10 => true,
-            Self::V2023_11 => false,
-        }
+        self <= &Self::V2023_10
+    }
+
+    pub fn backwards_compatible_storage(&self) -> bool {
+        self <= &Self::V2023_11
     }
 }
 
