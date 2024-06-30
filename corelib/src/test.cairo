@@ -17,6 +17,7 @@ mod keccak_test;
 mod math_test;
 mod nullable_test;
 mod num_test;
+mod option_test;
 mod plugins_test;
 mod print_test;
 mod result_test;
