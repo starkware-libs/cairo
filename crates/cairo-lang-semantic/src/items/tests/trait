@@ -449,20 +449,27 @@ fn foo() {}
 foo
 
 //! > module_code
+trait OtherTrait {}
 trait MyTrait {
     fn foo1();
     fn foo2();
     type X;
     const C: u32;
-    impl Z: Self;
+    impl Z: OtherTrait;
 }
 impl MyImpl of MyTrait;
+///TODO(TomerStarkware): improve diagnostics for missing impls.
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X', 'C', 'Z'.
- --> lib.cairo:8:6
+error: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X', 'C'.
+ --> lib.cairo:9:6
 impl MyImpl of MyTrait;
      ^****^
+
+error: Trait has no implementation in context: test::OtherTrait.
+ --> lib.cairo:9:1
+impl MyImpl of MyTrait;
+^*********************^
 
 //! > ==========================================================================
 
@@ -478,6 +485,10 @@ fn foo() {}
 foo
 
 //! > module_code
+trait OtherTrait {}
+mod inner {
+    impl I of super::OtherTrait {}
+}
 trait MyTrait {
     fn foo1();
     fn foo2();
@@ -486,21 +497,26 @@ trait MyTrait {
     type Y;
     const C: u32;
     const D: u32;
-    impl E: Self;
-    impl F: Self;
+    impl E: OtherTrait;
+    impl F: OtherTrait;
 }
 impl MyImpl of MyTrait {
     type X = u32;
     const C: u32 = 3;
-    impl E = Self;
+    impl E = inner::I;
     fn foo2() {}
 }
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D', 'F'.
- --> lib.cairo:12:6
+error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D'.
+ --> lib.cairo:16:6
 impl MyImpl of MyTrait {
      ^****^
+
+error: Trait has no implementation in context: test::OtherTrait.
+ --> lib.cairo:16:1
+impl MyImpl of MyTrait {
+^**********************^
 
 //! > ==========================================================================
 
@@ -1077,10 +1093,10 @@ impl FooIntoIterator of core::iter::IntoIterator<Foo> {
 }
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'Iterator'.
- --> lib.cairo:6:6
-impl FooIntoIterator of core::iter::IntoIterator<Foo> {
-     ^*************^
+error: Trait has no implementation in context: core::iter::traits::iterator::Iterator::<test::FooIter>.
+ --> lib.cairo:5:1
+#[feature("collections-into-iter")]
+^*********************************^
 
 //! > ==========================================================================
 

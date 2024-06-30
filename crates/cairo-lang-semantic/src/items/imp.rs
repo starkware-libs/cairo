@@ -593,6 +593,9 @@ pub struct ImplDefinitionData {
 
     /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
     item_id_by_name: Arc<OrderedHashMap<SmolStr, ImplItemId>>,
+
+    /// Mapping of missing impl names item names to the trait id.
+    implicit_impls_id_by_name: Arc<OrderedHashMap<SmolStr, TraitImplId>>,
 }
 
 // --- Selectors ---
@@ -631,6 +634,10 @@ pub fn impl_semantic_definition_diagnostics(
     }
     for impl_item_impl_id in data.item_impl_asts.keys() {
         diagnostics.extend(db.impl_impl_def_semantic_diagnostics(*impl_item_impl_id));
+    }
+    for implicit_impl_id in data.implicit_impls_id_by_name.values() {
+        diagnostics
+            .extend(db.implicit_impl_impl_semantic_diagnostics(impl_def_id, *implicit_impl_id));
     }
     // Diagnostics for special traits.
     if diagnostics.error_count == 0 {
@@ -758,6 +765,15 @@ pub fn impl_item_by_name(
     Ok(db.priv_impl_definition_data(impl_def_id)?.item_id_by_name.get(&name).cloned())
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_implicit_impl_by_name].
+pub fn impl_implicit_impl_by_name(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    name: SmolStr,
+) -> Maybe<Option<TraitImplId>> {
+    Ok(db.priv_impl_definition_data(impl_def_id)?.implicit_impls_id_by_name.get(&name).cloned())
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_types].
 pub fn impl_types(
     db: &dyn SemanticGroup,
@@ -880,6 +896,25 @@ pub fn impl_impl_by_trait_impl(
         Some(item_id) => Ok(extract_matches!(item_id, ImplItemId::Impl)),
         None => Err(skip_diagnostic()),
     })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::implicit_impl_impl_by_trait_impl].
+pub fn implicit_impl_impl_by_trait_impl(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    trait_impl_id: TraitImplId,
+) -> Maybe<Option<TraitImplId>> {
+    if trait_impl_id.trait_id(db.upcast()) != db.impl_def_trait(impl_def_id)? {
+        unreachable!(
+            "impl_impl_by_trait_impl called with a trait impl that does not belong to the impl's \
+             trait"
+        )
+    }
+
+    let defs_db = db.upcast();
+    let name = trait_impl_id.name(defs_db);
+    // If the trait impl's name is not found, then a missing item diagnostic is reported.
+    db.impl_implicit_impl_by_name(impl_def_id, name)
 }
 
 // --- Computation ---
@@ -1017,11 +1052,21 @@ pub fn priv_impl_definition_data(
         }
     }
 
+    let mut implicit_impls_id_by_name = OrderedHashMap::default();
+
+    let trait_id = concrete_trait.lookup_intern(db).trait_id;
+    for trait_impl_id in db.trait_impls(trait_id)? {
+        if item_id_by_name.contains_key(&trait_impl_id.0) {
+            continue;
+        }
+        implicit_impls_id_by_name.insert(trait_impl_id.0, trait_impl_id.1);
+    }
+
     // It is later verified that all items in this impl match items from `concrete_trait`.
     // To ensure exact match (up to trait functions with default implementation), it is sufficient
     // to verify here that all items in `concrete_trait` appear in this impl.
     let impl_item_names: OrderedHashSet<SmolStr> = item_id_by_name.keys().cloned().collect();
-    let trait_id = concrete_trait.lookup_intern(db).trait_id;
+
     let trait_required_item_names = db.trait_required_item_names(trait_id)?;
     let missing_items_in_impl =
         trait_required_item_names.difference(&impl_item_names).cloned().collect::<Vec<_>>();
@@ -1043,6 +1088,7 @@ pub fn priv_impl_definition_data(
         item_id_by_name: item_id_by_name.into(),
         item_constant_asts: item_constant_asts.into(),
         item_impl_asts: item_impl_asts.into(),
+        implicit_impls_id_by_name: implicit_impls_id_by_name.into(),
     })
 }
 
@@ -2342,6 +2388,89 @@ fn validate_impl_item_impl(
     Ok(trait_impl_id)
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ImplicitImplImplData {
+    resolved_impl: Maybe<ImplId>,
+    trait_impl_id: TraitImplId,
+    diagnostics: Diagnostics<SemanticDiagnostic>,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::implicit_impl_impl_semantic_diagnostics].
+pub fn implicit_impl_impl_semantic_diagnostics(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    trait_impl_id: TraitImplId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_implcit_impl_impl_semantic_data(impl_def_id, trait_impl_id)
+        .map(|data| data.diagnostics)
+        .unwrap_or_default()
+}
+/// Query implementation of [crate::db::SemanticGroup::implicit_impl_impl_impl].
+pub fn implicit_impl_impl_impl(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    trait_impl_id: TraitImplId,
+) -> Maybe<ImplId> {
+    db.priv_implcit_impl_impl_semantic_data(impl_def_id, trait_impl_id)?.resolved_impl
+}
+/// Query implementation of [crate::db::SemanticGroup::implicit_impl_impl_impl].
+pub fn implicit_impl_impl_impl_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_def_id: &ImplDefId,
+    trait_impl_id: &TraitImplId,
+) -> Maybe<ImplId> {
+    db.priv_implcit_impl_impl_semantic_data(*impl_def_id, *trait_impl_id)?.resolved_impl
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_implcit_impl_impl_semantic_data].
+pub fn priv_implcit_impl_impl_semantic_data(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    trait_impl_id: TraitImplId,
+) -> Maybe<ImplicitImplImplData> {
+    let mut diagnostics = SemanticDiagnostics::default();
+    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id));
+
+    let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
+    let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
+
+    let mut resolver =
+        Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
+    // We cannot use `Self` as it will always find the implicit impl.
+    resolver.trait_or_impl_ctx = TraitOrImplContext::None;
+    let trait_impl_concrete_trait =
+        db.trait_impl_concrete_trait(trait_impl_id).and_then(|concrete_trait_id| {
+            let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
+            SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
+                .rewrite(concrete_trait_id)
+        });
+    let impl_lookup_context = resolver.impl_lookup_context();
+    let resolved_impl = trait_impl_concrete_trait.map(|concrete_trait| {
+        resolver.inference().new_impl_var(concrete_trait, None, impl_lookup_context)
+    });
+    resolver.inference().finalize(&mut diagnostics, impl_def_id.stable_ptr(db.upcast()).untyped());
+    Ok(ImplicitImplImplData { resolved_impl, trait_impl_id, diagnostics: diagnostics.build() })
+}
+/// Cycle handling for [crate::db::SemanticGroup::priv_implcit_impl_impl_semantic_data].
+pub fn priv_implcit_impl_impl_semantic_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_def_id: &ImplDefId,
+    trait_impl_id: &TraitImplId,
+) -> Maybe<ImplicitImplImplData> {
+    // TODO(TomerStarkware): Add test case for implicit impl cycle if possible.
+    let mut diagnostics = SemanticDiagnostics::default();
+    let err =
+        Err(diagnostics.report(impl_def_id.stable_ptr(db.upcast()).untyped(), ImplAliasCycle));
+    Ok(ImplicitImplImplData {
+        resolved_impl: err,
+        trait_impl_id: *trait_impl_id,
+        diagnostics: diagnostics.build(),
+    })
+}
+
 // === Impl Impl ===
 
 /// Query implementation of [crate::db::SemanticGroup::impl_impl_implized_by_context].
@@ -2350,6 +2479,12 @@ pub fn impl_impl_implized_by_context(
     impl_impl_id: ImplImplId,
     impl_def_id: ImplDefId,
 ) -> Maybe<ImplId> {
+    if let Some(trait_impl_id) =
+        db.implicit_impl_impl_by_trait_impl(impl_def_id, impl_impl_id.trait_impl_id())?
+    {
+        return db.implicit_impl_impl_impl(impl_def_id, trait_impl_id);
+    }
+
     let impl_impl_def_id = db.impl_impl_by_trait_impl(impl_def_id, impl_impl_id.trait_impl_id())?;
 
     db.impl_impl_def_impl(impl_impl_def_id)
