@@ -20,15 +20,6 @@ mod counter_contract {
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
 
-    #[storage]
-    struct Storage {
-        counter: u128,
-        #[substorage(v0)]
-        upgradable: upgradable_comp::Storage,
-        #[substorage(v0)]
-        ownable: ownable_comp::Storage
-    }
-
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
@@ -76,17 +67,23 @@ mod counter_contract {
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
+pub struct Storage {
+          pub counter: u128,
+          pub upgradable: upgradable_comp::Storage,
+          pub ownable: ownable_comp::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    counter: starknet::storage::StorageBase<u128>,
-    upgradable: starknet::storage::StorageBase<upgradable_comp::Storage>,
-    ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+pub struct ContractStorageBase {
+    pub counter: starknet::storage::StorageBase<u128>,
+    pub upgradable: starknet::storage::StorageBase<upgradable_comp::Storage>,
+    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
-    upgradable: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
-    ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+    pub upgradable: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
+    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -810,15 +807,6 @@ impl DeriveStorageICounterContractSafeDispatcher of starknet::storage_access::De
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
 
-    #[storage]
-    struct Storage {
-        counter: u128,
-        #[substorage(v0)]
-        upgradable: upgradable_comp::Storage,
-        #[substorage(v0)]
-        ownable: ownable_comp::Storage
-    }
-
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
@@ -866,17 +854,23 @@ impl DeriveStorageICounterContractSafeDispatcher of starknet::storage_access::De
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
+pub struct Storage {
+          pub counter: u128,
+          pub upgradable: upgradable_comp::Storage,
+          pub ownable: ownable_comp::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    counter: starknet::storage::StorageBase<u128>,
-    upgradable: starknet::storage::StorageBase<upgradable_comp::Storage>,
-    ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+pub struct ContractStorageBase {
+    pub counter: starknet::storage::StorageBase<u128>,
+    pub upgradable: starknet::storage::StorageBase<upgradable_comp::Storage>,
+    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
-    upgradable: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
-    ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+    pub upgradable: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
+    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;

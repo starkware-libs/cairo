@@ -1,12 +1,12 @@
 use cairo_lang_defs::patcher::RewriteNode;
-use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
 
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
-use super::starknet_module::StarknetModuleKind;
+use super::starknet_module::{backwards_compatible_storage, StarknetModuleKind};
 use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, STORAGE_STRUCT_NAME};
 use crate::plugin::SUBSTORAGE_ATTR;
 
@@ -17,6 +17,7 @@ pub fn handle_storage_struct(
     struct_ast: ast::ItemStruct,
     starknet_module_kind: StarknetModuleKind,
     data: &mut StarknetModuleCommonGenerationData,
+    metadata: &MacroPluginMetadata<'_>,
 ) {
     let state_struct_name = starknet_module_kind.get_state_struct_name();
     let generic_arg_str = starknet_module_kind.get_generic_arg_str();
@@ -30,10 +31,12 @@ pub fn handle_storage_struct(
     let mut members_init_code = vec![];
     let mut substorage_members_struct_code = vec![];
     let mut substorage_members_init_code = vec![];
-
+    let mut storage_struct_members = vec![];
     for member in struct_ast.members(db).elements(db) {
         if member.has_attr(db, SUBSTORAGE_ATTR) {
-            if let Some((struct_code, init_code)) = get_substorage_member_code(db, &member) {
+            if let Some((struct_code, init_code)) =
+                get_substorage_member_code(db, &member, metadata)
+            {
                 substorage_members_struct_code.push(struct_code);
                 substorage_members_init_code.push(init_code);
             } else {
@@ -46,23 +49,41 @@ pub fn handle_storage_struct(
                 ));
             }
         }
-        let SimpleMemberGeneratedCode { struct_code, struct_code_mut, init_code } =
-            get_simple_member_code(db, &member);
+        let SimpleMemberGeneratedCode { struct_code, struct_code_mut, init_code, storage_member } =
+            get_simple_member_code(db, &member, metadata);
         members_struct_code.push(struct_code);
         members_struct_code_mut.push(struct_code_mut);
         members_init_code.push(init_code);
+        storage_struct_members.push(storage_member);
     }
 
     let module_kind = starknet_module_kind.to_str_lower();
     let unsafe_new_function_name = format!("unsafe_new_{module_kind}_state");
+    let storage_struct_code = if backwards_compatible_storage(metadata.edition) {
+        formatdoc!(
+            "
+            pub struct Storage {{$storage_struct_members$
+            }}
+            "
+        )
+    } else {
+        "".to_string()
+    };
+    let storage_struct_visibility = if backwards_compatible_storage(metadata.edition) {
+        RewriteNode::text("pub")
+    } else {
+        RewriteNode::from_ast(&struct_ast.visibility(db))
+    };
     data.state_struct_code = RewriteNode::interpolate_patched(
         &formatdoc!(
             "
+            {storage_struct_code}
             #[derive(Drop, Copy)]
-            struct {storage_base_struct_name} {{$members_struct_code$
+            $storage_struct_visibility$ struct {storage_base_struct_name} {{$members_struct_code$
             }}
             #[derive(Drop, Copy)]
-            struct {storage_base_mut_struct_name} {{$members_struct_code_mut$
+            $storage_struct_visibility$ struct {storage_base_mut_struct_name} \
+             {{$members_struct_code_mut$
             }}
             impl StorageBaseImpl{generic_arg_str} of \
              starknet::storage::StorageBaseTrait<{full_state_struct_name}> {{
@@ -86,8 +107,7 @@ pub fn handle_storage_struct(
             impl {state_struct_name}Deref{generic_arg_str} of \
              core::ops::SnapshotDeref<{full_state_struct_name}> {{
                 type Target = {storage_base_struct_name};
-                fn snapshot_deref(self: @{full_state_struct_name}) -> {storage_base_struct_name} \
-             {{
+                fn snapshot_deref(self: @{full_state_struct_name}) -> {storage_base_struct_name} {{
                     self.storage_base()
                 }}
             }}
@@ -112,6 +132,11 @@ pub fn handle_storage_struct(
             ",
         ),
         &[
+            ("storage_struct_visibility".to_string(), storage_struct_visibility),
+            (
+                "storage_struct_members".to_string(),
+                RewriteNode::new_modified(storage_struct_members),
+            ),
             (
                 "substorage_members_struct_code".to_string(),
                 RewriteNode::new_modified(substorage_members_struct_code),
@@ -135,7 +160,13 @@ pub fn handle_storage_struct(
 fn get_substorage_member_code(
     db: &dyn SyntaxGroup,
     member: &ast::Member,
+    metadata: &MacroPluginMetadata<'_>,
 ) -> Option<(RewriteNode, RewriteNode)> {
+    let member_visibility = if backwards_compatible_storage(metadata.edition) {
+        RewriteNode::text("pub")
+    } else {
+        RewriteNode::from_ast(&member.visibility(db))
+    };
     match member.type_clause(db).ty(db) {
         ast::Expr::Path(type_path) => {
             let elements = &type_path.elements(db);
@@ -154,8 +185,12 @@ fn get_substorage_member_code(
 
                     Some((
                         RewriteNode::interpolate_patched(
-                            &format!("\n        pub $name$: $component_path$::{CONCRETE_COMPONENT_STATE_NAME},"),
+                            &format!("\n        $member_visibility$ $name$: $component_path$::{CONCRETE_COMPONENT_STATE_NAME},"),
                             &[
+                                (
+                                    "member_visibility".to_string(),
+                                    member_visibility,
+                                ),
                                 (
                                     "name".to_string(),
                                     RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
@@ -190,27 +225,39 @@ struct SimpleMemberGeneratedCode {
     struct_code: RewriteNode,
     struct_code_mut: RewriteNode,
     init_code: RewriteNode,
+    storage_member: RewriteNode,
 }
 
 /// Returns the relevant code for a substorage storage member.
-fn get_simple_member_code(db: &dyn SyntaxGroup, member: &ast::Member) -> SimpleMemberGeneratedCode {
+fn get_simple_member_code(
+    db: &dyn SyntaxGroup,
+    member: &ast::Member,
+    metadata: &MacroPluginMetadata<'_>,
+) -> SimpleMemberGeneratedCode {
     let member_name = member.name(db).as_syntax_node();
     let member_type = member.type_clause(db).ty(db).as_syntax_node();
-    // TODO(Gil): Add a const-propagation optimization to convert the address initialized here into
-    // a `storage_base_address_const` in case of no storage path updated.
+    let member_visibility = if backwards_compatible_storage(metadata.edition) {
+        RewriteNode::text("pub")
+    } else {
+        RewriteNode::from_ast(&member.visibility(db))
+    };
+
     SimpleMemberGeneratedCode {
         struct_code: RewriteNode::interpolate_patched(
-            "\n    $member_name$: starknet::storage::StorageBase<$member_type$>,",
+            "\n    $member_visibility$ $member_name$: \
+             starknet::storage::StorageBase<$member_type$>,",
             &[
+                ("member_visibility".to_string(), member_visibility.clone()),
                 ("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone())),
                 ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
             ]
             .into(),
         ),
         struct_code_mut: RewriteNode::interpolate_patched(
-            "\n    $member_name$: \
+            "\n    $member_visibility$ $member_name$: \
              starknet::storage::StorageBase<starknet::storage::Mutable<$member_type$>>,",
             &[
+                ("member_visibility".to_string(), member_visibility.clone()),
                 ("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone())),
                 ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
             ]
@@ -220,6 +267,15 @@ fn get_simple_member_code(db: &dyn SyntaxGroup, member: &ast::Member) -> SimpleM
             "\n           $member_name$: starknet::storage::StorageBase{ address: \
              selector!(\"$member_name$\") },",
             &[("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone()))].into(),
+        ),
+        storage_member: RewriteNode::interpolate_patched(
+            "\n          $member_visibility$ $member_name$: $member_type$,",
+            &[
+                ("member_visibility".to_string(), member_visibility),
+                ("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone())),
+                ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
+            ]
+            .into(),
         ),
     }
 }
