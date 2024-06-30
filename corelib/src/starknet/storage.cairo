@@ -523,7 +523,11 @@ struct u256SubPointers {
     low: starknet::storage::StoragePointer<u128>,
     high: starknet::storage::StoragePointer<u128>,
 }
-impl u256SubPointersImpl of starknet::storage::SubPointers<u256> {
+
+#[feature("derive-storage")]
+impl u256SubPointersImpl<
+    +starknet::storage_access::DeriveStorage<u256>
+> of starknet::storage::SubPointers<u256> {
     type SubPointersType = u256SubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<u256>) -> u256SubPointers {
         let base_address = self.address;

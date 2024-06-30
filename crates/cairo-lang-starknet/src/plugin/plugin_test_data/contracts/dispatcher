@@ -249,6 +249,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageIContractDispatcher of starknet::storage_access::DeriveStorage::<IContractDispatcher> {}
 
 
 lib.cairo:1:1
@@ -306,6 +308,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageIContractLibraryDispatcher of starknet::storage_access::DeriveStorage::<IContractLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -363,6 +367,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageIContractSafeLibraryDispatcher of starknet::storage_access::DeriveStorage::<IContractSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -420,6 +426,8 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageIContractSafeDispatcher of starknet::storage_access::DeriveStorage::<IContractSafeDispatcher> {}
 
 //! > expected_diagnostics
 
@@ -552,6 +560,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageIContractDispatcher of starknet::storage_access::DeriveStorage::<IContractDispatcher> {}
 
 
 lib.cairo:1:1
@@ -609,6 +619,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageIContractLibraryDispatcher of starknet::storage_access::DeriveStorage::<IContractLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -666,6 +678,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageIContractSafeLibraryDispatcher of starknet::storage_access::DeriveStorage::<IContractSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -723,6 +737,8 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageIContractSafeDispatcher of starknet::storage_access::DeriveStorage::<IContractSafeDispatcher> {}
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `starknet::interface` functions don't support `ref` parameters other than the first one.
@@ -935,6 +951,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageIContractDispatcher of starknet::storage_access::DeriveStorage::<IContractDispatcher> {}
 
 
 lib.cairo:1:1
@@ -992,6 +1010,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageIContractLibraryDispatcher of starknet::storage_access::DeriveStorage::<IContractLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -1049,6 +1069,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageIContractSafeLibraryDispatcher of starknet::storage_access::DeriveStorage::<IContractSafeLibraryDispatcher> {}
 
 
 lib.cairo:1:1
@@ -1106,3 +1128,5 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+#[feature("derive-storage")]
+impl DeriveStorageIContractSafeDispatcher of starknet::storage_access::DeriveStorage::<IContractSafeDispatcher> {}

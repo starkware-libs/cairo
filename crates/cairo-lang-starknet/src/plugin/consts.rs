@@ -21,6 +21,7 @@ pub const DEPRECATED_ABI_ATTR: &str = "abi";
 pub const EVENT_ATTR: &str = "event";
 pub const EVENT_TRAIT: &str = "starknet::Event";
 pub const STORE_TRAIT: &str = "starknet::Store";
+pub const DERIVE_STORAGE_TRAIT: &str = "starknet::storage_access::DeriveStorage";
 pub const STORAGE_AS_POINTER_TRAIT: &str = "starknet::storage::StorageAsPointer";
 pub const STORAGE_AS_PATH_TRAIT: &str = "starknet::storage::StorageAsPath";
 pub const STORAGE_NODE_ATTR: &str = "starknet::storage_node";
