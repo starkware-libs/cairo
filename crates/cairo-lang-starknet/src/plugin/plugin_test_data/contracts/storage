@@ -144,41 +144,58 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+           var_felt252: felt252,
+           var_u8: u8,
+           var_u16: u16,
+           var_u32: u32,
+           var_u64: u64,
+           var_u128: u128,
+           var_bool: bool,
+           felt252_to_u128: LegacyMap::<felt252, u128>,
+           u128_to_bool: LegacyMap::<u128, bool>,
+           bool_to_felt252: LegacyMap::<bool, felt252>,
+           outer_type_var: super::OuterType,
+           outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
+           inner_type_var: inner::InnerType,
+           inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    var_felt252: starknet::storage::StorageBase<felt252>,
-    var_u8: starknet::storage::StorageBase<u8>,
-    var_u16: starknet::storage::StorageBase<u16>,
-    var_u32: starknet::storage::StorageBase<u32>,
-    var_u64: starknet::storage::StorageBase<u64>,
-    var_u128: starknet::storage::StorageBase<u128>,
-    var_bool: starknet::storage::StorageBase<bool>,
-    felt252_to_u128: starknet::storage::StorageBase<LegacyMap::<felt252, u128>>,
-    u128_to_bool: starknet::storage::StorageBase<LegacyMap::<u128, bool>>,
-    bool_to_felt252: starknet::storage::StorageBase<LegacyMap::<bool, felt252>>,
-    outer_type_var: starknet::storage::StorageBase<super::OuterType>,
-    outer_type_to_outer_type: starknet::storage::StorageBase<LegacyMap::<super::OuterType, super::OuterType>>,
-    inner_type_var: starknet::storage::StorageBase<inner::InnerType>,
-    inner_type_to_inner_type: starknet::storage::StorageBase<LegacyMap::<inner::InnerType, inner::InnerType>>,
+pub struct ContractStorageBase {
+    pub var_felt252: starknet::storage::StorageBase<felt252>,
+    pub var_u8: starknet::storage::StorageBase<u8>,
+    pub var_u16: starknet::storage::StorageBase<u16>,
+    pub var_u32: starknet::storage::StorageBase<u32>,
+    pub var_u64: starknet::storage::StorageBase<u64>,
+    pub var_u128: starknet::storage::StorageBase<u128>,
+    pub var_bool: starknet::storage::StorageBase<bool>,
+    pub felt252_to_u128: starknet::storage::StorageBase<LegacyMap::<felt252, u128>>,
+    pub u128_to_bool: starknet::storage::StorageBase<LegacyMap::<u128, bool>>,
+    pub bool_to_felt252: starknet::storage::StorageBase<LegacyMap::<bool, felt252>>,
+    pub outer_type_var: starknet::storage::StorageBase<super::OuterType>,
+    pub outer_type_to_outer_type: starknet::storage::StorageBase<LegacyMap::<super::OuterType, super::OuterType>>,
+    pub inner_type_var: starknet::storage::StorageBase<inner::InnerType>,
+    pub inner_type_to_inner_type: starknet::storage::StorageBase<LegacyMap::<inner::InnerType, inner::InnerType>>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    var_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
-    var_u8: starknet::storage::StorageBase<starknet::storage::Mutable<u8>>,
-    var_u16: starknet::storage::StorageBase<starknet::storage::Mutable<u16>>,
-    var_u32: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
-    var_u64: starknet::storage::StorageBase<starknet::storage::Mutable<u64>>,
-    var_u128: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
-    var_bool: starknet::storage::StorageBase<starknet::storage::Mutable<bool>>,
-    felt252_to_u128: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<felt252, u128>>>,
-    u128_to_bool: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<u128, bool>>>,
-    bool_to_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<bool, felt252>>>,
-    outer_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<super::OuterType>>,
-    outer_type_to_outer_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<super::OuterType, super::OuterType>>>,
-    inner_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<inner::InnerType>>,
-    inner_type_to_inner_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<inner::InnerType, inner::InnerType>>>,
+pub struct ContractStorageBaseMut {
+    pub var_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
+    pub var_u8: starknet::storage::StorageBase<starknet::storage::Mutable<u8>>,
+    pub var_u16: starknet::storage::StorageBase<starknet::storage::Mutable<u16>>,
+    pub var_u32: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
+    pub var_u64: starknet::storage::StorageBase<starknet::storage::Mutable<u64>>,
+    pub var_u128: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+    pub var_bool: starknet::storage::StorageBase<starknet::storage::Mutable<bool>>,
+    pub felt252_to_u128: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<felt252, u128>>>,
+    pub u128_to_bool: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<u128, bool>>>,
+    pub bool_to_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<bool, felt252>>>,
+    pub outer_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<super::OuterType>>,
+    pub outer_type_to_outer_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<super::OuterType, super::OuterType>>>,
+    pub inner_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<inner::InnerType>>,
+    pub inner_type_to_inner_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<inner::InnerType, inner::InnerType>>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -221,15 +238,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()

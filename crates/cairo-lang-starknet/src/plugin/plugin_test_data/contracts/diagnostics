@@ -41,13 +41,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -62,15 +65,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -234,13 +237,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -255,15 +261,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -437,13 +443,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -458,15 +467,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -696,13 +705,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -717,15 +729,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -894,13 +906,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -915,15 +930,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -1090,13 +1105,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -1111,15 +1129,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -1314,13 +1332,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -1335,15 +1356,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -1529,13 +1550,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -1550,15 +1574,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -1840,13 +1864,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -1861,15 +1888,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -2052,15 +2079,19 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+           same_name: felt252,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    same_name: starknet::storage::StorageBase<felt252>,
+pub struct ContractStorageBase {
+    pub same_name: starknet::storage::StorageBase<felt252>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    same_name: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
+pub struct ContractStorageBaseMut {
+    pub same_name: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -2077,15 +2108,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -2306,13 +2337,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -2327,15 +2361,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -3066,13 +3100,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -3087,15 +3124,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -3364,13 +3401,16 @@ contract:
 
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -3385,15 +3425,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -3544,13 +3584,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -3565,15 +3608,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -6195,13 +6238,16 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+pub impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
     type BaseMutType = ComponentStorageBaseMut;
     fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
@@ -6216,15 +6262,15 @@ impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<Comp
 pub struct ComponentState<TContractState> {
 }
 
-impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+pub impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+pub impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
     type Target = ComponentStorageBase;
     fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
         self.storage_base()
     }
 }
-impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
+pub impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
     type Target = ComponentStorageBaseMut;
     fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
         self.storage_base_mut()
@@ -6419,15 +6465,19 @@ contract:
 
 
 
+pub struct Storage {
+           component_storage: super::component::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    component_storage: starknet::storage::StorageBase<super::component::Storage>,
+pub struct ContractStorageBase {
+    pub component_storage: starknet::storage::StorageBase<super::component::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    component_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::component::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub component_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::component::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -6445,15 +6495,15 @@ pub struct ContractState {
         pub component_storage: super::component::ComponentState<ContractState>,
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -6678,13 +6728,16 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -6699,15 +6752,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -7403,13 +7456,16 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+pub impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
     type BaseMutType = ComponentStorageBaseMut;
     fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
@@ -7424,15 +7480,15 @@ impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<Comp
 pub struct ComponentState<TContractState> {
 }
 
-impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+pub impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+pub impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
     type Target = ComponentStorageBase;
     fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
         self.storage_base()
     }
 }
-impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
+pub impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
     type Target = ComponentStorageBaseMut;
     fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
         self.storage_base_mut()
@@ -7539,13 +7595,16 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+pub impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
     type BaseMutType = ComponentStorageBaseMut;
     fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
@@ -7560,15 +7619,15 @@ impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<Comp
 pub struct ComponentState<TContractState> {
 }
 
-impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+pub impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+pub impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
     type Target = ComponentStorageBase;
     fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
         self.storage_base()
     }
 }
-impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
+pub impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
     type Target = ComponentStorageBaseMut;
     fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
         self.storage_base_mut()
@@ -7675,13 +7734,16 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+pub impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
     type BaseMutType = ComponentStorageBaseMut;
     fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
@@ -7696,15 +7758,15 @@ impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<Comp
 pub struct ComponentState<TContractState> {
 }
 
-impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+pub impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+pub impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
     type Target = ComponentStorageBase;
     fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
         self.storage_base()
     }
 }
-impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
+pub impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
     type Target = ComponentStorageBaseMut;
     fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
         self.storage_base_mut()
@@ -8405,13 +8467,16 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+pub impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
     type BaseMutType = ComponentStorageBaseMut;
     fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
@@ -8426,15 +8491,15 @@ impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<Comp
 pub struct ComponentState<TContractState> {
 }
 
-impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+pub impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+pub impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
     type Target = ComponentStorageBase;
     fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
         self.storage_base()
     }
 }
-impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
+pub impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
     type Target = ComponentStorageBaseMut;
     fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
         self.storage_base_mut()
@@ -8541,13 +8606,16 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+pub impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
     type BaseMutType = ComponentStorageBaseMut;
     fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
@@ -8562,15 +8630,15 @@ impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<Comp
 pub struct ComponentState<TContractState> {
 }
 
-impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+pub impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+pub impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
     type Target = ComponentStorageBase;
     fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
         self.storage_base()
     }
 }
-impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
+pub impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
     type Target = ComponentStorageBaseMut;
     fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
         self.storage_base_mut()
@@ -8677,13 +8745,16 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+pub impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
     type BaseMutType = ComponentStorageBaseMut;
     fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
@@ -8698,15 +8769,15 @@ impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<Comp
 pub struct ComponentState<TContractState> {
 }
 
-impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+pub impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+pub impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
     type Target = ComponentStorageBase;
     fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
         self.storage_base()
     }
 }
-impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
+pub impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
     type Target = ComponentStorageBaseMut;
     fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
         self.storage_base_mut()
@@ -9255,15 +9326,19 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+           a_member: felt252,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    a_member: starknet::storage::StorageBase<felt252>,
+pub struct ContractStorageBase {
+    pub a_member: starknet::storage::StorageBase<felt252>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    a_member: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
+pub struct ContractStorageBaseMut {
+    pub a_member: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -9280,15 +9355,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -9850,15 +9925,19 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+           data: u32,
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
-    data: starknet::storage::StorageBase<u32>,
+pub struct ComponentStorageBase {
+    pub data: starknet::storage::StorageBase<u32>,
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
-    data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
+pub struct ComponentStorageBaseMut {
+    pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+pub impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
     type BaseMutType = ComponentStorageBaseMut;
     fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
@@ -9875,15 +9954,15 @@ impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<Comp
 pub struct ComponentState<TContractState> {
 }
 
-impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+pub impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+pub impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
     type Target = ComponentStorageBase;
     fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
         self.storage_base()
     }
 }
-impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
+pub impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
     type Target = ComponentStorageBaseMut;
     fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
         self.storage_base_mut()
@@ -9975,15 +10054,19 @@ contract:
 
 
 
+pub struct Storage {
+           component_member: super::test_component::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    component_member: starknet::storage::StorageBase<super::test_component::Storage>,
+pub struct ContractStorageBase {
+    pub component_member: starknet::storage::StorageBase<super::test_component::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    component_member: starknet::storage::StorageBase<starknet::storage::Mutable<super::test_component::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub component_member: starknet::storage::StorageBase<starknet::storage::Mutable<super::test_component::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -10001,15 +10084,15 @@ pub struct ContractState {
         pub component_member: super::test_component::ComponentState<ContractState>,
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -10719,15 +10802,19 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+           u256_pair: super::u256Pair,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    u256_pair: starknet::storage::StorageBase<super::u256Pair>,
+pub struct ContractStorageBase {
+    pub u256_pair: starknet::storage::StorageBase<super::u256Pair>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    u256_pair: starknet::storage::StorageBase<starknet::storage::Mutable<super::u256Pair>>,
+pub struct ContractStorageBaseMut {
+    pub u256_pair: starknet::storage::StorageBase<starknet::storage::Mutable<super::u256Pair>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -10744,15 +10831,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()

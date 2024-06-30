@@ -561,19 +561,25 @@ component:
 
 
 
+pub struct Storage {
+           data: u32,
+           map: LegacyMap<u32, u32>,
+           my_type_var: super::MyType,
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
-    data: starknet::storage::StorageBase<u32>,
-    map: starknet::storage::StorageBase<LegacyMap<u32, u32>>,
-    my_type_var: starknet::storage::StorageBase<super::MyType>,
+pub struct ComponentStorageBase {
+    pub data: starknet::storage::StorageBase<u32>,
+    pub map: starknet::storage::StorageBase<LegacyMap<u32, u32>>,
+    pub my_type_var: starknet::storage::StorageBase<super::MyType>,
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
-    data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
-    map: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap<u32, u32>>>,
-    my_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<super::MyType>>,
+pub struct ComponentStorageBaseMut {
+    pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
+    pub map: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap<u32, u32>>>,
+    pub my_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<super::MyType>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+pub impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
     type BaseMutType = ComponentStorageBaseMut;
     fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
@@ -594,15 +600,15 @@ impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<Comp
 pub struct ComponentState<TContractState> {
 }
 
-impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+pub impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+pub impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
     type Target = ComponentStorageBase;
     fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
         self.storage_base()
     }
 }
-impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
+pub impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
     type Target = ComponentStorageBaseMut;
     fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
         self.storage_base_mut()

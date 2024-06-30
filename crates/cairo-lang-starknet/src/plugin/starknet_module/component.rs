@@ -91,6 +91,7 @@ fn handle_component_item(
                 item_struct.clone(),
                 StarknetModuleKind::Component,
                 &mut data.common,
+                metadata,
             );
         }
         _ => {}
