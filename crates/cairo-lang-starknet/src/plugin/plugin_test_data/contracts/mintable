@@ -18,15 +18,6 @@ mod mintable_erc20_ownable {
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::mintable::mintable as mintable_comp;
-    #[storage]
-    struct Storage {
-        #[substorage(v0)]
-        erc20_storage: erc20_comp::Storage,
-        #[substorage(v0)]
-        ownable_storage: ownable_comp::Storage,
-        #[substorage(v0)]
-        mintable_storage: mintable_comp::Storage,
-    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -75,19 +66,25 @@ mod mintable_erc20_ownable {
     }
 
 
+pub struct Storage {
+           erc20_storage: erc20_comp::Storage,
+           ownable_storage: ownable_comp::Storage,
+           mintable_storage: mintable_comp::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
-    ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
-    mintable_storage: starknet::storage::StorageBase<mintable_comp::Storage>,
+pub struct ContractStorageBase {
+    pub erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
+    pub ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
+    pub mintable_storage: starknet::storage::StorageBase<mintable_comp::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
-    ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-    mintable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<mintable_comp::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
+    pub ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+    pub mintable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<mintable_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -111,15 +108,15 @@ pub struct ContractState {
         pub mintable_storage: mintable_comp::ComponentState<ContractState>,
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -680,15 +677,6 @@ impl DeriveStorageGetSupplySafeDispatcher of starknet::storage_access::DeriveSto
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::mintable::mintable as mintable_comp;
-    #[storage]
-    struct Storage {
-        #[substorage(v0)]
-        erc20_storage: erc20_comp::Storage,
-        #[substorage(v0)]
-        ownable_storage: ownable_comp::Storage,
-        #[substorage(v0)]
-        mintable_storage: mintable_comp::Storage,
-    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -737,19 +725,25 @@ impl DeriveStorageGetSupplySafeDispatcher of starknet::storage_access::DeriveSto
     }
 
 
+pub struct Storage {
+           erc20_storage: erc20_comp::Storage,
+           ownable_storage: ownable_comp::Storage,
+           mintable_storage: mintable_comp::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
-    ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
-    mintable_storage: starknet::storage::StorageBase<mintable_comp::Storage>,
+pub struct ContractStorageBase {
+    pub erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
+    pub ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
+    pub mintable_storage: starknet::storage::StorageBase<mintable_comp::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
-    ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-    mintable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<mintable_comp::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
+    pub ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+    pub mintable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<mintable_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -773,15 +767,15 @@ pub struct ContractState {
         pub mintable_storage: mintable_comp::ComponentState<ContractState>,
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()

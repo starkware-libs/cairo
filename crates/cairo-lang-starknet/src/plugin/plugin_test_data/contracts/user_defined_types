@@ -103,21 +103,28 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+           var: WrappedFelt252,
+           zero_size: ZeroSize,
+           mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
+           zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    var: starknet::storage::StorageBase<WrappedFelt252>,
-    zero_size: starknet::storage::StorageBase<ZeroSize>,
-    mapping: starknet::storage::StorageBase<LegacyMap::<WrappedFelt252, WrappedFelt252>>,
-    zero_size_mapping: starknet::storage::StorageBase<LegacyMap::<ZeroSize, ZeroSize>>,
+pub struct ContractStorageBase {
+    pub var: starknet::storage::StorageBase<WrappedFelt252>,
+    pub zero_size: starknet::storage::StorageBase<ZeroSize>,
+    pub mapping: starknet::storage::StorageBase<LegacyMap::<WrappedFelt252, WrappedFelt252>>,
+    pub zero_size_mapping: starknet::storage::StorageBase<LegacyMap::<ZeroSize, ZeroSize>>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    var: starknet::storage::StorageBase<starknet::storage::Mutable<WrappedFelt252>>,
-    zero_size: starknet::storage::StorageBase<starknet::storage::Mutable<ZeroSize>>,
-    mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<WrappedFelt252, WrappedFelt252>>>,
-    zero_size_mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<ZeroSize, ZeroSize>>>,
+pub struct ContractStorageBaseMut {
+    pub var: starknet::storage::StorageBase<starknet::storage::Mutable<WrappedFelt252>>,
+    pub zero_size: starknet::storage::StorageBase<starknet::storage::Mutable<ZeroSize>>,
+    pub mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<WrappedFelt252, WrappedFelt252>>>,
+    pub zero_size_mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<ZeroSize, ZeroSize>>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -140,15 +147,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()

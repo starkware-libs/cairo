@@ -242,7 +242,7 @@ pub(super) fn handle_module_by_storage(
             },
         }),
         diagnostics,
-        remove_original_item: false,
+        remove_original_item: metadata.edition.backwards_compatible_storage(),
     })
 }
 

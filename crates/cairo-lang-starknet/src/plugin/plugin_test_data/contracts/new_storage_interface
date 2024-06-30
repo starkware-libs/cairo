@@ -1388,25 +1388,34 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+           balance: usize,
+           user_balance: Map<usize, usize>,
+           user_balance_subbalance: Map<usize, Map<usize, usize>>,
+           legacy_map_balace: LegacyMap<usize, usize>,
+           balance_pair: BalancePair,
+           sliced_balance_trio: SlicedBalanceTrio,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    balance: starknet::storage::StorageBase<usize>,
-    user_balance: starknet::storage::StorageBase<Map<usize, usize>>,
-    user_balance_subbalance: starknet::storage::StorageBase<Map<usize, Map<usize, usize>>>,
-    legacy_map_balace: starknet::storage::StorageBase<LegacyMap<usize, usize>>,
-    balance_pair: starknet::storage::StorageBase<BalancePair>,
-    sliced_balance_trio: starknet::storage::StorageBase<SlicedBalanceTrio>,
+pub struct ContractStorageBase {
+    pub balance: starknet::storage::StorageBase<usize>,
+    pub user_balance: starknet::storage::StorageBase<Map<usize, usize>>,
+    pub user_balance_subbalance: starknet::storage::StorageBase<Map<usize, Map<usize, usize>>>,
+    pub legacy_map_balace: starknet::storage::StorageBase<LegacyMap<usize, usize>>,
+    pub balance_pair: starknet::storage::StorageBase<BalancePair>,
+    pub sliced_balance_trio: starknet::storage::StorageBase<SlicedBalanceTrio>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    balance: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
-    user_balance: starknet::storage::StorageBase<starknet::storage::Mutable<Map<usize, usize>>>,
-    user_balance_subbalance: starknet::storage::StorageBase<starknet::storage::Mutable<Map<usize, Map<usize, usize>>>>,
-    legacy_map_balace: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap<usize, usize>>>,
-    balance_pair: starknet::storage::StorageBase<starknet::storage::Mutable<BalancePair>>,
-    sliced_balance_trio: starknet::storage::StorageBase<starknet::storage::Mutable<SlicedBalanceTrio>>,
+pub struct ContractStorageBaseMut {
+    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
+    pub user_balance: starknet::storage::StorageBase<starknet::storage::Mutable<Map<usize, usize>>>,
+    pub user_balance_subbalance: starknet::storage::StorageBase<starknet::storage::Mutable<Map<usize, Map<usize, usize>>>>,
+    pub legacy_map_balace: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap<usize, usize>>>,
+    pub balance_pair: starknet::storage::StorageBase<starknet::storage::Mutable<BalancePair>>,
+    pub sliced_balance_trio: starknet::storage::StorageBase<starknet::storage::Mutable<SlicedBalanceTrio>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -1433,15 +1442,15 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
 pub struct ContractState {
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()

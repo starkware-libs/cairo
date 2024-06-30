@@ -266,6 +266,7 @@ fn handle_contract_item(
                 item_struct.clone(),
                 StarknetModuleKind::Contract,
                 &mut data.common,
+                metadata,
             );
             for member in item_struct.members(db).elements(db) {
                 // v0 is not validated here to not create multiple diagnostics. It's already

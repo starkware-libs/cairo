@@ -13,12 +13,6 @@ mod ownable_balance {
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
-    #[storage]
-    struct Storage {
-        #[substorage(v0)]
-        ownable: ownable_comp::Storage,
-        balance: u128,
-    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -51,17 +45,22 @@ mod ownable_balance {
     }
 
 
+pub struct Storage {
+           ownable: ownable_comp::Storage,
+           balance: u128,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
-    balance: starknet::storage::StorageBase<u128>,
+pub struct ContractStorageBase {
+    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+    pub balance: starknet::storage::StorageBase<u128>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-    balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+pub struct ContractStorageBaseMut {
+    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -81,15 +80,15 @@ pub struct ContractState {
         pub ownable: ownable_comp::ComponentState<ContractState>,
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -280,12 +279,6 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
-    #[storage]
-    struct Storage {
-        #[substorage(v0)]
-        ownable: ownable_comp::Storage,
-        balance: u128,
-    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -318,17 +311,22 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
     }
 
 
+pub struct Storage {
+           ownable: ownable_comp::Storage,
+           balance: u128,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
-    balance: starknet::storage::StorageBase<u128>,
+pub struct ContractStorageBase {
+    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+    pub balance: starknet::storage::StorageBase<u128>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-    balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+pub struct ContractStorageBaseMut {
+    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -348,15 +346,15 @@ pub struct ContractState {
         pub ownable: ownable_comp::ComponentState<ContractState>,
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()

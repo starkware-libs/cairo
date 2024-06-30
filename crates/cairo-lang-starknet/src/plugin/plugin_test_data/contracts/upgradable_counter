@@ -20,15 +20,6 @@ mod counter_contract {
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
 
-    #[storage]
-    struct Storage {
-        counter: u128,
-        #[substorage(v0)]
-        upgradable: upgradable_comp::Storage,
-        #[substorage(v0)]
-        ownable: ownable_comp::Storage
-    }
-
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
@@ -76,19 +67,25 @@ mod counter_contract {
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
+pub struct Storage {
+           counter: u128,
+           upgradable: upgradable_comp::Storage,
+           ownable: ownable_comp::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    counter: starknet::storage::StorageBase<u128>,
-    upgradable: starknet::storage::StorageBase<upgradable_comp::Storage>,
-    ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+pub struct ContractStorageBase {
+    pub counter: starknet::storage::StorageBase<u128>,
+    pub upgradable: starknet::storage::StorageBase<upgradable_comp::Storage>,
+    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
-    upgradable: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
-    ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+    pub upgradable: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
+    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -111,15 +108,15 @@ pub struct ContractState {
         pub ownable: ownable_comp::ComponentState<ContractState>,
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
@@ -810,15 +807,6 @@ impl DeriveStorageICounterContractSafeDispatcher of starknet::storage_access::De
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
 
-    #[storage]
-    struct Storage {
-        counter: u128,
-        #[substorage(v0)]
-        upgradable: upgradable_comp::Storage,
-        #[substorage(v0)]
-        ownable: ownable_comp::Storage
-    }
-
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
@@ -866,19 +854,25 @@ impl DeriveStorageICounterContractSafeDispatcher of starknet::storage_access::De
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
+pub struct Storage {
+           counter: u128,
+           upgradable: upgradable_comp::Storage,
+           ownable: ownable_comp::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    counter: starknet::storage::StorageBase<u128>,
-    upgradable: starknet::storage::StorageBase<upgradable_comp::Storage>,
-    ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+pub struct ContractStorageBase {
+    pub counter: starknet::storage::StorageBase<u128>,
+    pub upgradable: starknet::storage::StorageBase<upgradable_comp::Storage>,
+    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
-    upgradable: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
-    ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+    pub upgradable: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
+    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+pub impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
     type BaseMutType = ContractStorageBaseMut;
     fn storage_base(self: @ContractState) -> ContractStorageBase {
@@ -901,15 +895,15 @@ pub struct ContractState {
         pub ownable: ownable_comp::ComponentState<ContractState>,
 }
 
-impl ContractStateDrop of Drop<ContractState> {}
+pub impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+pub impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
     type Target = ContractStorageBase;
     fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
         self.storage_base()
     }
 }
-impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+pub impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
     type Target = ContractStorageBaseMut;
     fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
         self.storage_base_mut()
