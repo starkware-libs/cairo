@@ -709,3 +709,35 @@ error: Cycle detected while resolving 'const' items.
  --> lib.cairo:7:5
     const Y: u32 = Self::X;
     ^*********************^
+
+//! > ==========================================================================
+
+//! > Use of missing Impl constants missing.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> i32 {
+    MyImpl::Y
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const Y: u32;
+}
+impl MyImpl of MyTrait {}
+
+//! > expected_diagnostics
+error: Not all trait items are implemented. Missing: 'Y'.
+ --> lib.cairo:4:6
+impl MyImpl of MyTrait {}
+     ^****^
+
+error: Trait has no implementation in context: test::MyTrait.
+ --> lib.cairo:5:17
+fn foo() -> i32 {
+                ^

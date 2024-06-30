@@ -494,7 +494,8 @@ pub fn trait_required_item_names(
                 let body = id.stable_ptr(db.upcast()).lookup(db.upcast()).body(db.upcast());
                 matches!(body, ast::MaybeTraitFunctionBody::None(_))
             }
-            TraitItemId::Type(_) | TraitItemId::Constant(_) | TraitItemId::Impl(_) => true,
+            TraitItemId::Type(_) | TraitItemId::Constant(_) => true,
+            TraitItemId::Impl(_) => false,
         } {
             required_items.insert(item_name.clone());
         }
