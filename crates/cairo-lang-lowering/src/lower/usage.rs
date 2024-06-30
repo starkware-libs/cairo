@@ -195,9 +195,9 @@ impl BlockUsages {
                     semantic::Condition::BoolExpr(expr) => {
                         self.handle_expr(function_body, *expr, &mut usage);
                     }
-                    semantic::Condition::Let(expr, pattterns) => {
+                    semantic::Condition::Let(expr, patterns) => {
                         self.handle_expr(function_body, *expr, &mut usage);
-                        for pattern in pattterns {
+                        for pattern in patterns {
                             Self::handle_pattern(&function_body.patterns, *pattern, &mut usage);
                         }
                     }
