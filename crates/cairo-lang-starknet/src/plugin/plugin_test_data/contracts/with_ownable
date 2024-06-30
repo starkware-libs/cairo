@@ -13,12 +13,6 @@ mod ownable_balance {
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
-    #[storage]
-    struct Storage {
-        #[substorage(v0)]
-        ownable: ownable_comp::Storage,
-        balance: u128,
-    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -51,15 +45,20 @@ mod ownable_balance {
     }
 
 
+pub struct Storage {
+          pub ownable: ownable_comp::Storage,
+          pub balance: u128,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
-    balance: starknet::storage::StorageBase<u128>,
+pub struct ContractStorageBase {
+    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+    pub balance: starknet::storage::StorageBase<u128>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-    balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+pub struct ContractStorageBaseMut {
+    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -280,12 +279,6 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
-    #[storage]
-    struct Storage {
-        #[substorage(v0)]
-        ownable: ownable_comp::Storage,
-        balance: u128,
-    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -318,15 +311,20 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
     }
 
 
+pub struct Storage {
+          pub ownable: ownable_comp::Storage,
+          pub balance: u128,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
-    balance: starknet::storage::StorageBase<u128>,
+pub struct ContractStorageBase {
+    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+    pub balance: starknet::storage::StorageBase<u128>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-    balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+pub struct ContractStorageBaseMut {
+    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;

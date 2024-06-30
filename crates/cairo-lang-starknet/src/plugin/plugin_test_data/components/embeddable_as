@@ -389,11 +389,14 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
 impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;

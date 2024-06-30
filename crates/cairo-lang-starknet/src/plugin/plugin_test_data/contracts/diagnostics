@@ -41,11 +41,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -234,11 +237,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -437,11 +443,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -696,11 +705,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -894,11 +906,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -1090,11 +1105,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -1314,11 +1332,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -1529,11 +1550,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -1840,11 +1864,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -2052,13 +2079,17 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+          pub same_name: felt252,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    same_name: starknet::storage::StorageBase<felt252>,
+pub struct ContractStorageBase {
+    pub same_name: starknet::storage::StorageBase<felt252>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    same_name: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
+pub struct ContractStorageBaseMut {
+    pub same_name: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -2306,11 +2337,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -3066,11 +3100,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -3364,11 +3401,14 @@ contract:
 
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -3544,11 +3584,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -6195,11 +6238,14 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
 impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
@@ -6419,13 +6465,17 @@ contract:
 
 
 
+pub struct Storage {
+          pub component_storage: super::component::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    component_storage: starknet::storage::StorageBase<super::component::Storage>,
+pub struct ContractStorageBase {
+    pub component_storage: starknet::storage::StorageBase<super::component::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    component_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::component::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub component_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::component::Storage>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -6678,11 +6728,14 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -7403,11 +7456,14 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
 impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
@@ -7539,11 +7595,14 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
 impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
@@ -7675,11 +7734,14 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
 impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
@@ -8405,11 +8467,14 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
 impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
@@ -8541,11 +8606,14 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
 impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
@@ -8677,11 +8745,14 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
 impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
@@ -9255,13 +9326,17 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+          pub a_member: felt252,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    a_member: starknet::storage::StorageBase<felt252>,
+pub struct ContractStorageBase {
+    pub a_member: starknet::storage::StorageBase<felt252>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    a_member: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
+pub struct ContractStorageBaseMut {
+    pub a_member: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -9850,13 +9925,17 @@ component:
 pub enum Event {}
 
 
+pub struct Storage {
+          pub data: u32,
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
-    data: starknet::storage::StorageBase<u32>,
+pub struct ComponentStorageBase {
+    pub data: starknet::storage::StorageBase<u32>,
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
-    data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
+pub struct ComponentStorageBaseMut {
+    pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
 impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
@@ -9975,13 +10054,17 @@ contract:
 
 
 
+pub struct Storage {
+          pub component_member: super::test_component::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    component_member: starknet::storage::StorageBase<super::test_component::Storage>,
+pub struct ContractStorageBase {
+    pub component_member: starknet::storage::StorageBase<super::test_component::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    component_member: starknet::storage::StorageBase<starknet::storage::Mutable<super::test_component::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub component_member: starknet::storage::StorageBase<starknet::storage::Mutable<super::test_component::Storage>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -10719,13 +10802,17 @@ contract:
 pub enum Event {}
 
 
+pub struct Storage {
+          pub u256_pair: super::u256Pair,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    u256_pair: starknet::storage::StorageBase<super::u256Pair>,
+pub struct ContractStorageBase {
+    pub u256_pair: starknet::storage::StorageBase<super::u256Pair>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    u256_pair: starknet::storage::StorageBase<starknet::storage::Mutable<super::u256Pair>>,
+pub struct ContractStorageBaseMut {
+    pub u256_pair: starknet::storage::StorageBase<starknet::storage::Mutable<super::u256Pair>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;

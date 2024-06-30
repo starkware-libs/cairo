@@ -17,10 +17,6 @@ trait HelloStarknetTrait<TContractState> {
 
 #[starknet::contract]
 mod hello_starknet {
-    #[storage]
-    struct Storage {
-        balance: usize,
-    }
 
     #[abi(embed_v0)]
     impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
@@ -36,13 +32,17 @@ mod hello_starknet {
 pub enum Event {}
 
 
+pub struct Storage {
+          pub balance: usize,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    balance: starknet::storage::StorageBase<usize>,
+pub struct ContractStorageBase {
+    pub balance: starknet::storage::StorageBase<usize>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    balance: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
+pub struct ContractStorageBaseMut {
+    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -527,10 +527,6 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
 #[feature("derive-storage")]
 impl DeriveStorageHelloStarknetTraitSafeDispatcher of starknet::storage_access::DeriveStorage::<HelloStarknetTraitSafeDispatcher> {}
 
-    #[storage]
-    struct Storage {
-        balance: usize,
-    }
 
     #[abi(embed_v0)]
     impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
@@ -546,13 +542,17 @@ impl DeriveStorageHelloStarknetTraitSafeDispatcher of starknet::storage_access::
 pub enum Event {}
 
 
+pub struct Storage {
+          pub balance: usize,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    balance: starknet::storage::StorageBase<usize>,
+pub struct ContractStorageBase {
+    pub balance: starknet::storage::StorageBase<usize>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    balance: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
+pub struct ContractStorageBaseMut {
+    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
