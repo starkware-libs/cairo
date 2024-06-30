@@ -438,10 +438,6 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
 }
 
 
-use starknet::storage::{
-    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
-    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
-};
 // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
 #[deprecated(
     feature: "deprecated_legacy_map",
