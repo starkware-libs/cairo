@@ -10329,6 +10329,32 @@ impl u256PairSubPointersImpl<+starknet::storage_access::DeriveStorage<u256Pair>>
         }
     }
 }
+#[derive(Drop, Copy)]
+struct Mutableu256PairSubPointers {
+    a: starknet::storage::StoragePointer<starknet::storage::Mutable::<u256>>,
+    b: starknet::storage::StoragePointer<starknet::storage::Mutable::<u256>>,
+}
+#[feature("derive-storage")]
+impl Mutableu256PairSubPointersImpl<+starknet::storage_access::DeriveStorage<u256Pair>> of starknet::storage::MutableSubPointers<u256Pair> {
+    type SubPointersType = Mutableu256PairSubPointers;
+       fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<u256Pair>>) -> Mutableu256PairSubPointers {
+                   let base_address = self.address;
+        let mut current_offset = self.offset;
+        let a_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<u256>::size();
+        let b_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                Mutableu256PairSubPointers {
+           a: a_value,
+           b: b_value,
+        }
+    }
+}
 
 
 lib.cairo:44:1
@@ -10450,6 +10476,15 @@ impls:
 
 impl u256PairSubPointersDrop of core::traits::Drop::<u256PairSubPointers>;
 impl u256PairSubPointersCopy of core::traits::Copy::<u256PairSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::sub_pointers]
+^***********************^
+impls:
+
+impl Mutableu256PairSubPointersDrop of core::traits::Drop::<Mutableu256PairSubPointers>;
+impl Mutableu256PairSubPointersCopy of core::traits::Copy::<Mutableu256PairSubPointers>;
 
 
 lib.cairo:44:1
