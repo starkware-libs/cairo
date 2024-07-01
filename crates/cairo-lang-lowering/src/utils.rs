@@ -8,13 +8,13 @@ use crate::{
     VarUsage, VariableId,
 };
 
-/// Options for the `inlining` arguments
+/// Options for the `inlining-strategy` arguments.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum InliningStrategy {
-    /// Do not override inlining strategy
+    /// Do not override inlining strategy.
     #[default]
     Default,
-    /// Inline only in the case of a `inline(always)` annotation
+    /// Inline only in the case of an `inline(always)` annotation.
     Avoid,
 }
 

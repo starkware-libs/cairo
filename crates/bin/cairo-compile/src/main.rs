@@ -7,13 +7,13 @@ use cairo_lang_compiler::{compile_cairo_project_at_path, CompilerConfig};
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
 
-/// Options for the `inlining` arguments
+/// Options for the `inlining-strategy` arguments.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, clap::ValueEnum)]
 pub enum InliningStrategy {
-    /// Do not override inlining strategy
+    /// Do not override inlining strategy.
     #[default]
     Default,
-    /// Inline only in the case of a `inline(always)` annotation
+    /// Inline only in the case of an `inline(always)` annotation.
     Avoid,
 }
 
@@ -41,7 +41,7 @@ struct Args {
     /// Replaces sierra ids with human-readable ones.
     #[arg(short, long, default_value_t = false)]
     replace_ids: bool,
-    /// Overrides inlining behavior
+    /// Overrides inlining behavior.
     #[arg(short, long, default_value = "default")]
     inlining_strategy: InliningStrategy,
 }
