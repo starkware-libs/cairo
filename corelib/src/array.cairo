@@ -421,6 +421,15 @@ impl ArrayIntoIterator<T> of core::iter::IntoIterator<Array<T>> {
     }
 }
 
+#[feature("collections-into-iter")]
+impl ArrayIterIntoIterator<T> of core::iter::IntoIterator<ArrayIter<T>> {
+    type IntoIter = ArrayIter<T>;
+    impl Iterator = ArrayIterator<T>;
+    fn into_iter(self: ArrayIter<T>) -> ArrayIter<T> {
+        self
+    }
+}
+
 /// Information about a fixed-sized array.
 trait FixedSizedArrayInfo<S> {
     /// The type of the elements in the array.
