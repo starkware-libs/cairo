@@ -1,3 +1,4 @@
+use std::env::args;
 use std::{fs, iter};
 use std::cmp::{min, max, Ordering};
 use std::path::{Path, PathBuf};
@@ -17,7 +18,7 @@ use cairo_lang_casm::builder::{
     ExprDesc,
     VarDesc,
     AssertDesc,
-    Var, JumpDesc,
+    JumpDesc,
 };
 use cairo_lang_casm::instructions::{InstructionBody, Instruction, AddApInstruction};
 use cairo_lang_casm::operand::{ CellRef, DerefOrImmediate, Register, ResOperand };
@@ -89,6 +90,39 @@ fn make_subscript(idx: usize) -> String {
     res
 }
 
+/// A description of the arguments of a block.
+struct BlockArgs {
+    args: Vec<(String, CellExpression)>
+}
+
+impl BlockArgs {
+
+    fn arg_name_iter(&self) -> impl Iterator <Item = &String> {
+        self.args.iter().map(|(name, _)| name)
+    }
+
+    fn arg_and_expr_iter(&self) -> impl Iterator <Item = &(String, CellExpression)> {
+        self.args.iter()
+    }
+
+    /// Returns an iterator over the deref arguments of the block (most arguments are derefs, but,
+    /// at least in the main block, arguments may also be constants). For each deref argument returns
+    /// the name, the register and the offset.
+    fn deref_arg_iter(&self) -> impl Iterator <Item = (&String, (String, i16))> {
+        self.args.iter().filter(
+            |(_, expr)| match expr { CellExpression::Deref(_) => true, _ => false }
+        ).map(
+            |(arg_name, expr)| {
+                (arg_name, get_ref_from_deref(expr).expect("Argument expression is not a deref."))
+            }
+        )
+    }
+
+    fn len(&self) -> usize {
+        self.args.len()
+    }
+}
+
 /// This structure stores information about a single block in the function.
 /// A block must always begin at a label, except for the main block (which is
 /// the whole function).
@@ -99,7 +133,7 @@ struct FuncBlock {
     // The ap offset when entering this block.
     ap_offset: usize,
     label: Option<String>,
-    args: Vec<String>,
+    args: BlockArgs,
     // Reachable return blocks.
     ret_labels: HashSet<String>,
     // The first ap offset to be allocated in this block. This does not necessarily
@@ -131,6 +165,10 @@ impl FuncBlock {
     /// block, that is, a variable which was allocated before this block.
     fn is_non_local_ap_offset(&self, ap_offset: i16) -> bool {
         ap_offset < 0 || (ap_offset as usize) < self.start_local_ap
+    }
+
+    fn get_arg_names(&self) -> Vec<String> {
+        self.args.arg_name_iter().map(|arg_name| arg_name.clone()).collect()
     }
 }
 
@@ -421,6 +459,11 @@ impl VarRebind {
         Self { vars: HashMap::new() }
     }
 
+    /// Indicates whether the given variable already appears in the rebind table.
+    pub fn has_var_name(&self, name: &str) -> bool {
+        self.vars.contains_key(name)
+    }
+
     pub fn get_var_name(&self, name: &str) -> String {
         let count = if let Some(entry) = self.vars.get(name) { entry.0 } else { 0 };
         if count == 0 {
@@ -457,6 +500,15 @@ impl VarRebind {
         .or_insert((0, cell_expr.clone())).0
     }
 
+    /// Adds the variable to the rebind table only if the variable does not yet appear in the
+    /// rebind table.
+    pub fn add_initial_rebind(&mut self, name: &str, cell_expr: &CellExpression) {
+        if self.has_var_name(name) {
+            return;
+        }
+        self.rebind(name, cell_expr);
+    }
+
     pub fn get_rebind_name(&mut self, name: &str, cell_expr: &CellExpression) -> String {
         self.rebind(name, cell_expr);
         self.get_var_name(name)
@@ -490,32 +542,54 @@ impl VarRebind {
             *count = 0;
         }
     }
+
+    pub fn get_all_names(&self) -> Vec<String> {
+        self.vars.keys().cloned().collect()
+    }
+
+    /// Checks whether a variable with the given offset has already been bound.
+    /// If yes, returns the base name of that variable (excluding subscript) and its expression.
+    pub fn get_arg_by_offset(&self, offset: i16) -> Option<(&String, &CellExpression)> {
+        for (name, (_, expr)) in &self.vars {
+            if let Some((_, var_offset)) = get_ref_from_deref(expr) {
+                if var_offset == offset {
+                    return Some((name, expr));
+                }
+            }
+        }
+
+        None
+    }
 }
 
 /// Expression formatting.
 
-fn ref_to_lean(cell_ref: &CellRef, paren: bool, is_vm: bool, use_ap: bool) -> String {
-
+fn reg_and_offset_to_lean(reg: &String, offset: i16, paren: bool, is_vm: bool, use_ap: bool) -> String {
     if is_vm {
         return if paren {
-            format!("({})", ref_to_lean(cell_ref, false, is_vm, use_ap))
+            format!("({})", reg_and_offset_to_lean(reg, offset, false, is_vm, use_ap))
         } else {
-            format!("exec {}", ref_to_lean(cell_ref, true, false, use_ap))
+            format!("exec {}", reg_and_offset_to_lean(reg, offset, true, false, use_ap))
         };
     }
 
-    // Since the initial FP and AP are the same, it is often easier to owrk with
+    // Since the initial FP and AP are the same, it is often easier to work with
     // the expressions relative to the initial AP.
-    let reg = if use_ap { Register::AP } else { cell_ref.register };
-    if cell_ref.offset == 0 {
+    let ap_reg = format!("{ap_reg}", ap_reg = Register::AP);
+    let reg = if use_ap { &ap_reg } else { reg };
+    if offset == 0 {
         format!("σ.{reg}")
     } else if paren {
-        format!("({})", ref_to_lean(cell_ref, false, false, use_ap))
-    } else if cell_ref.offset < 0 {
-        format!("σ.{reg} - {offset}", offset = -cell_ref.offset)
+        format!("({})", reg_and_offset_to_lean(reg, offset, false, false, use_ap))
+    } else if offset < 0 {
+        format!("σ.{reg} - {offset}", offset = -offset)
     } else {
-        format!("σ.{reg} + {offset}", offset = cell_ref.offset)
+        format!("σ.{reg} + {offset}", offset = offset)
     }
+}
+
+fn ref_to_lean(cell_ref: &CellRef, paren: bool, is_vm: bool, use_ap: bool) -> String {
+    reg_and_offset_to_lean(&format!("{reg}", reg=cell_ref.register), cell_ref.offset, paren, is_vm, use_ap)
 }
 
 fn cell_expr_to_lean(expr: &CellExpression, paren: bool, is_vm: bool, use_ap: bool) -> String {
@@ -676,7 +750,7 @@ impl<'a> LeanFuncInfo<'a> {
                 pc_start_pos: 0,
                 ap_offset: 0,
                 label: None,
-                args: self.get_arg_names(),
+                args: self.make_main_block_args(),
                 ret_labels: self.make_ret_labels(0),
                 start_local_ap: 0,
                 start_rc: 0,
@@ -695,7 +769,7 @@ impl<'a> LeanFuncInfo<'a> {
                             pc_start_pos: self.get_pc_at(casm_start_pos),
                             ap_offset: desc.ap_change,
                             label: Some(desc.label.clone()),
-                            args: Vec::from_iter(self.get_sorted_block_args(i, &desc.label)),
+                            args: self.make_block_args_at_label(i, &desc.label),
                             ret_labels: self.make_ret_labels(i),
                             start_local_ap: self.find_max_next_ap(0, &desc.label).unwrap_or(0)
                                 .to_usize().expect("ap offset expected to be non-negative"),
@@ -1014,6 +1088,16 @@ impl<'a> LeanFuncInfo<'a> {
         ).collect()
     }
 
+    /// Returns the arguments of the function together with their reference in
+    /// memory (register name + offset).
+    fn get_arg_names_and_refs(&self) -> Vec<(String, (String, i16))> {
+        self.get_arg_names_and_cell_expr().iter().map(
+            |arg| -> (String, (String, i16)) {
+                (arg.0.clone(), get_ref_from_deref(&arg.1).expect("Argument expression is not a reference."))
+            }
+        ).collect()
+    }
+
     pub fn has_range_check_arg(&self) -> bool {
         self.get_arg_names().iter().any(|a| self.is_range_check_var(a))
     }
@@ -1126,21 +1210,20 @@ impl<'a> LeanFuncInfo<'a> {
 
     // True if this expression represents a range check: x = [<range check pointer>]
     pub fn is_range_check(&self, expr: &ExprDesc) -> bool {
-        expr.op == "*()" &&
-        if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
-            self.is_range_check_var(str)
-        } else { false }
+        expr.op == "*()" && self.is_range_check_var(&expr.var_a.name)
     }
 
     // If this expression represents a range check, x = [<range check pointer>], returns
     // the name of the range check pointer.
-    pub fn get_range_check_ptr_name(&self, expr: &ExprDesc) -> Option<&str> {
+    pub fn get_range_check_ptr_name<'b>(&self, expr: &'b ExprDesc) -> Option<&'b str> {
         if expr.op != "*()" {
             return None;
         }
-        if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
-            if self.is_range_check_var(str) { Some(str) } else { None }
-        } else { None }
+        if self.is_range_check_var(&expr.var_a.name) {
+            Some(&expr.var_a.name)
+        } else {
+            None
+        }
     }
 
     /// Returns the offset in *() operations.
@@ -1160,10 +1243,7 @@ impl<'a> LeanFuncInfo<'a> {
 
     // True if this expression increments the range check pointer.
     pub fn is_range_check_inc(&self, expr: &ExprDesc) -> bool {
-        expr.op == "++" &&
-        if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
-            self.is_range_check_var(str)
-        } else { false }
+        expr.op == "++" && self.is_range_check_var(&expr.var_a.name)
     }
 
     /// If a block has a single maximal number of range checks (same for all
@@ -1288,9 +1368,150 @@ impl<'a> LeanFuncInfo<'a> {
         )
     }
 
+    /// Given the start position of a block, returns all variable used in the block such that
+    /// the AP/FP offset of the variable is before the first AP offset of the block. These are the
+    /// variables which are arguments to the block.
+    fn get_block_args(
+        &self,
+        block_start: usize,
+        label: &String,
+        // This argument is used for the recursive call to this function. The initial call to this
+        // function should use None here.
+        start_ap_offset: Option<i16>,
+    ) -> HashMap<String, CellExpression> {
+
+        // If not given, find the start AP of the block. Variables with AP offsets smaller than this are block
+        // arguments.
+        let start_ap_offset = match start_ap_offset {
+            Some(offset) => offset,
+             _ => self.find_max_next_ap(0,  label).unwrap_or(0)
+        };
+
+        let mut vars = HashMap::new();
+
+        // If the variable's offset is before the block's start offset, it should be added as an argument.
+        // In this case we provide its offset.
+        let should_add_arg = |var : &VarBaseDesc| {
+            if let Some((reg, var_offset)) = get_ref_from_deref(&var.var_expr) {
+                if var_offset < start_ap_offset {
+                    Some((reg, var_offset))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        };
+
+        for statement in self.aux_info.statements[block_start..].iter() {
+            match statement {
+                StatementDesc::TempVar(var)|StatementDesc::LocalVar(var) => {
+                    if let Some(expr) = &var.expr {
+                        if let Some(offset) = should_add_arg(&expr.var_a) {
+                            vars.insert(expr.var_a.name.clone(), expr.var_a.var_expr.clone());
+                        }
+                        if let Some(var_b) = &expr.var_b {
+                            if let Some(offset) = should_add_arg(&var_b) {
+                                vars.insert(var_b.name.clone(), var_b.var_expr.clone());
+                            }
+                        }
+                    }
+                },
+                StatementDesc::Let(assign) => {
+                    if let Some(offset) = should_add_arg(&assign.expr.var_a) {
+                        vars.insert(assign.expr.var_a.name.clone(), assign.expr.var_a.var_expr.clone());
+                    }
+                    if let Some(var_b) = &assign.expr.var_b {
+                        if let Some(offset) = should_add_arg(&var_b) {
+                            vars.insert(var_b.name.clone(), var_b.var_expr.clone());
+                        }
+                    }
+                },
+                StatementDesc::Assert(assign) => {
+                    if let Some(offset) = should_add_arg(&assign.lhs) {
+                        vars.insert(assign.lhs.name.clone(), assign.lhs.var_expr.clone());
+                    }
+                    if let Some(offset) = should_add_arg(&assign.expr.var_a) {
+                        vars.insert(assign.expr.var_a.name.clone(), assign.expr.var_a.var_expr.clone());
+                    }
+                    if let Some(var_b) = &assign.expr.var_b {
+                        if let Some(offset) = should_add_arg(&var_b) {
+                            vars.insert(var_b.name.clone(), var_b.var_expr.clone());
+                        }
+                    }
+                },
+                StatementDesc::Jump(jump) => {
+
+                    if let Some(cond_var) = &jump.cond_var {
+                        if let Some(offset) = should_add_arg(&cond_var) {
+                            vars.insert(cond_var.name.clone(), cond_var.var_expr.clone());
+                        }
+                    };
+
+                    if let Some(target) = self.get_jump_target_pos(jump) {
+                        // Add the variables used in the branch which are declared before the start of this block.
+                        for (arg_name, arg_expr) in self.get_block_args(
+                            target + 1,
+                            &jump.target,
+                            Some(start_ap_offset),
+                        ) {
+                            vars.insert(arg_name, arg_expr);
+                        }
+                    } else { // jump to a return label
+                        for (arg_name, arg_expr) in self.get_ret_block_args(&jump.target, start_ap_offset) {
+                            vars.insert(arg_name, arg_expr);
+                        }
+                    }
+                    if jump.cond_var.is_none() {
+                        return vars;
+                    }
+                },
+                StatementDesc::Fail => {
+                    return vars;
+                },
+                StatementDesc::ApPlus(_) => {},
+                StatementDesc::Label(_) => {},
+            }
+        }
+
+        // Handle the Fallthrough return block.
+        for (arg_name, arg_expr) in self.get_ret_block_args("Fallthrough", start_ap_offset) {
+            vars.insert(arg_name, arg_expr);
+        }
+
+        vars
+    }
+
+    fn get_ret_block_args(&self, label: &str, start_ap_offset: i16) -> HashMap<String, CellExpression> {
+
+        let mut block_args: HashMap<String, CellExpression> = HashMap::new();
+
+        if let Some(branch) =
+                self.aux_info.return_branches.iter().filter(|b| b.name == *label).next() {
+            // We assume the variable being returned was rebound somewhere.
+            let rebind = self.get_rebinds_before_label(label, 0, None);
+            if let Some(rebind) = rebind {
+                for name in branch.flat_exprs() {
+                    if let Some(expr) = rebind.get_expr(&name) {
+                        if let Some((_, offset)) = get_ref_from_deref(&expr) {
+                            if offset < start_ap_offset {
+                                block_args.insert(name.clone(), expr.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        block_args
+    }
+
     /// Given the start position of a block, returns all variable names used in the block before
-    /// being defined. These are the variables which are the input argument to the block.
-    fn get_block_args(&self, block_start: usize) -> HashSet<String> {
+    /// being defined. These variables include both variables which are input arguments to the block
+    /// and variables which are implicitly defined in the block (variables which are not defined using
+    /// a declaration through the casm builder).
+    /// xxxxxxxxxxxxx remove this.
+    fn get_block_uninitialized_vars(&self, block_start: usize) -> HashSet<String> {
 
         let mut vars = HashSet::new();
         let mut declared: HashSet<String> = HashSet::new();
@@ -1338,7 +1559,7 @@ impl<'a> LeanFuncInfo<'a> {
                 },
                 StatementDesc::Jump(jump) => {
                     if let Some(target) = self.get_jump_target_pos(jump) {
-                        let branch_args = self.get_block_args(target + 1);
+                        let branch_args = self.get_block_uninitialized_vars(target + 1);
                         // Add the variables used in the branch before being declared.
                         for name in branch_args {
                             if !declared.contains(&name) {
@@ -1346,7 +1567,7 @@ impl<'a> LeanFuncInfo<'a> {
                             }
                         }
                     } else { // jump to a return label
-                        self.add_ret_block_args(&jump.target, &declared, &mut vars);
+                        self.add_uninitialized_ret_args(&jump.target, &declared, &mut vars);
                     }
                     if jump.cond_var.is_none() {
                         return vars;
@@ -1361,23 +1582,27 @@ impl<'a> LeanFuncInfo<'a> {
         }
 
         // Handle the Fallthrough return block.
-        self.add_ret_block_args("Fallthrough", &declared, &mut vars);
+        self.add_uninitialized_ret_args("Fallthrough", &declared, &mut vars);
 
         vars
     }
 
-    fn get_sorted_block_args(&self, block_start: usize, label: &String) -> Vec<String> {
-        let vars = self.get_block_args(block_start);
-        let bindings = self.get_rebinds_before_label(label, 0);
+    /// Returns the list of block arguments. These are the variables which are declared
+    /// before the block and used inside the block. The function arguments are considered
+    /// to be declared before the block.
+    /// xxxxxxxxxxxxx remove this and the functions it calls.
+    fn get_sorted_block_args_old(&self, block_start: usize, label: &String) -> Vec<String> {
+        // Variables used in the block before being defined.
+        let vars = self.get_block_uninitialized_vars(block_start);
+        // Variables declared/used before the block.
+        let bindings = self.get_rebinds_before_label(label, 0, None).expect("Block unreachable from start.");
+
         let mut vars_with_ref: Vec<(String, Option<(String, i16)>)> = Vec::from_iter(
-            vars.iter().map(
+            // Only variables which are bound before the block are arguments of the block.
+            vars.iter().filter(|name| bindings.has_var_name(name)).map(
                 |name| {
-                    if let Some(bindings) = &bindings {
-                        if let Some(expr) = bindings.get_expr(name) {
-                            (name.clone(), get_ref_from_deref(&expr))
-                        } else {
-                            (name.clone(), None)
-                        }
+                    if let Some(expr) = bindings.get_expr(name) {
+                        (name.clone(), get_ref_from_deref(&expr))
                     } else {
                         (name.clone(), None)
                     }
@@ -1409,21 +1634,58 @@ impl<'a> LeanFuncInfo<'a> {
         vars_with_ref.iter().map(|v| v.0.clone()).collect()
     }
 
-    fn add_ret_block_args(&self, label: &str, declared: &HashSet<String>, block_args: &mut HashSet<String>) {
+    // xxxxxxxxxxxx remove this.
+    fn add_uninitialized_ret_args(&self, label: &str, declared: &HashSet<String>, uninitialized: &mut HashSet<String>) {
 
         if let Some(branch) =
                 self.aux_info.return_branches.iter().filter(|b| b.name == *label).next() {
             for name in branch.flat_exprs() {
                 if !declared.contains(&name) {
-                    block_args.insert(name);
+                    uninitialized.insert(name);
                 }
             }
         }
     }
 
+    fn make_main_block_args(&self) -> BlockArgs {
+        BlockArgs {
+            args: self.get_arg_names_and_cell_expr().iter().map(
+                |(name, expr)| (name.clone(), (*expr).clone())
+            ).collect()
+        }
+    }
+
+    /// Returns the list of block arguments. These are the variables which are used in the block
+    /// and whose offset is before the first offset of the block. The arguments are sorted, with fp arguments
+    /// before ap arguments and in increasing offset order. Each argument is returned together
+    /// with its cell expression (which is expected to be a Deref).
+    fn make_block_args_at_label(&self, block_start: usize, label: &String) -> BlockArgs {
+
+        let mut args = Vec::from_iter(self.get_block_args(block_start, label, None));
+
+        // Sort by the reference ('fp' before 'ap' with increasing offset).
+        args.sort_by(|a, b| {
+            let (reg_a, offset_a) = get_ref_from_deref(&a.1).expect("block argument is not a deref");
+            let (reg_b, offset_b) = get_ref_from_deref(&b.1).expect("block argument is not a deref");
+            if reg_a == reg_b {
+                offset_a.cmp(&offset_b)
+            } else {
+                reg_b.cmp(&reg_a)
+            }
+        });
+
+        BlockArgs { args: args }
+    }
+
     /// Given a label, returns a rebind structure with the rebinds beginning at the given start position and
     /// accumulated up to first reaching the label. If the label is not reached, None is returned.
-    fn get_rebinds_before_label(&self, label: &String, start_pos: usize) -> Option<VarRebind> {
+    fn get_rebinds_before_label(
+        &self,
+        label: &str,
+        start_pos: usize,
+        // Variable already declared at the start position, so these should not be added implicitly.
+        declared: Option<Vec<String>>,
+    ) -> Option<VarRebind> {
         let mut rebind = VarRebind::new();
         if start_pos == 0 {
             // The input arguments to the function.
@@ -1437,16 +1699,41 @@ impl<'a> LeanFuncInfo<'a> {
             match statement {
                 StatementDesc::TempVar(var)|StatementDesc::LocalVar(var) => {
                     rebind_var_assignment(var, &mut rebind);
+                    // Variables appearing on the rhs are added to the rebind table only if the variables do not
+                    // yet appear in the rebind table (this is an implicit variable definition).
+                    if let Some(expr) = &var.expr {
+                        implicit_rebind(&expr.var_a.name, &expr.var_a.var_expr, &mut rebind, &declared);
+                        if let Some(var_b) = &expr.var_b {
+                            implicit_rebind(&var_b.name, &var_b.var_expr, &mut rebind, &declared);
+                        }
+                    }
                 },
                 StatementDesc::Let(assign) => {
                     rebind_assignment_lhs(assign, &mut rebind);
+                },
+                StatementDesc::Assert(assert_desc) => {
+                    // Variables appearing in an assert are added to the rebind table only if the variables do not
+                    // yet appear in the rebind table (this is an implicit variable definition).
+                    implicit_rebind(&assert_desc.lhs.name, &assert_desc.lhs.var_expr, &mut rebind, &declared);
+                    implicit_rebind(&assert_desc.expr.var_a.name, &assert_desc.expr.var_a.var_expr, &mut rebind, &declared);
+                    if let Some(var_b) = &assert_desc.expr.var_b {
+                        implicit_rebind(&var_b.name, &var_b.var_expr, &mut rebind, &declared);
+                    }
                 },
                 StatementDesc::Jump(jump) => {
                     if &jump.target == label {
                         return Some(rebind); // Reached the label.
                     }
                     if let Some(target) = self.get_jump_target_pos(jump) {
-                        let branch_rebinds = self.get_rebinds_before_label(label, target + 1);
+                        let mut declared_before_jump = rebind.get_all_names();
+                        if let Some(declared) = &declared {
+                            declared_before_jump.extend(declared.clone());
+                        }
+                        let branch_rebinds = self.get_rebinds_before_label(
+                            label,
+                            target + 1,
+                            Some(declared_before_jump),
+                        );
                         if let Some(branch_rebinds) = branch_rebinds {
                             // Branch reached the label add the rebinds to the ones already collected.
                             rebind.add_rebinds(&branch_rebinds);
@@ -1469,34 +1756,27 @@ impl<'a> LeanFuncInfo<'a> {
             }
         }
 
-        None // Did not reach the label.
-    }
-
-    /// Returns the names and cell expressions for the arguments of a block.
-    fn get_block_args_and_exprs(&self, block: &FuncBlock) -> Vec<(String, CellExpression)>{
-        if let Some(label) = &block.label {
-            let arg_rebinds = self.get_rebinds_before_label(&label, 0).expect("Failed to reach label.");
-            block.args.iter().map(
-                |name| (name.clone(), arg_rebinds.get_expr(name).expect("Failed to find variable expression").clone())
-            ).collect_vec()
+        if label == "Fallthrough" {
+            Some(rebind)
         } else {
-            self.get_arg_names_and_cell_expr().iter().map(|(name, expr)| (name.clone(), (*expr).clone())).collect_vec()
+            None // Did not reach the label.
         }
     }
 
     /// Returns the names and Lean expressions for the arguments of a block.
     fn get_block_args_and_lean_exprs(&self, block: &FuncBlock, is_vm: bool, use_ap: bool) -> Vec<(String, String)>{
-        self.get_block_args_and_exprs(block).iter().map(
-            |(name, expr)| (name.clone(), cell_expr_to_lean(expr, false, is_vm, use_ap).clone())
+            block.args.arg_and_expr_iter().map(
+            |(name, expr)|
+                (name.clone(), cell_expr_to_lean(&expr, false, is_vm, use_ap))
         ).collect_vec()
     }
 
     /// Given an AP offset, this function returns the name of the block argument at the given offset.
     fn get_arg_by_offset(&self, block: &FuncBlock, offset: i16) -> Option<String> {
 
-        for (arg_name, expr) in self.get_block_args_and_exprs(block) {
-            if offset == get_ref_from_deref(&expr).expect("Failed to find argument offset.").1 {
-                return Some(arg_name);
+        for (arg_name, (_, arg_offset)) in block.args.deref_arg_iter() {
+            if offset == arg_offset {
+                return Some(arg_name.clone());
             }
         }
 
@@ -1532,6 +1812,22 @@ fn rebind_assignment_lhs(
     rebind: &mut VarRebind,
 ) -> String {
     rebind.get_rebind_name(&assignment.lhs.name, &assignment.lhs.var_expr)
+}
+
+fn implicit_rebind(
+    var_name: &String,
+    var_expr: &CellExpression,
+    rebind: &mut VarRebind,
+    // These variables were already defined before the for which the rebinds are
+    // currently calculated.
+    declared: &Option<Vec<String>>,
+) {
+    if let Some(declared) = declared {
+        if declared.contains(var_name) {
+            return;
+        }
+    }
+    rebind.add_initial_rebind(var_name, var_expr);
 }
 
 // Soundness generation functions
@@ -1699,6 +1995,48 @@ trait LeanGenerator {
         indent: usize,
     );
 
+    /// Gnerates a variable which is used but was not yet defined. This function
+    /// determines whether this should be a 'let' or 'tempvar' and then adds
+    /// the required code.
+    fn generate_implicit_var(
+        &mut self,
+        var_desc: &VarBaseDesc,
+        lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
+        rebind: &mut VarRebind,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    ) {
+        let (_, var_offset) = get_ref_from_deref(&var_desc.var_expr).expect("Implicit variable is not a deref.");
+
+        // If this variable points at the same offset as an existing variable, this is
+        // a 'let' variable. Otherwise, it is a 'tempvar'.
+        if let Some((name, expr)) = rebind.get_arg_by_offset(var_offset) {
+            // let variable
+            self.generate_let(
+                &AssertDesc {
+                    lhs: var_desc.clone(),
+                    expr: ExprDesc {
+                        expr: name.clone(),
+                        var_a: VarBaseDesc {
+                            name: name.clone(),
+                            var_expr: expr.clone(),
+                        },
+                        op: "".into(),
+                        var_b: None,
+                    },
+                    ap_change: 0, // Not used here.
+                },
+                lean_info,
+                rebind,
+                indent
+            );
+        } else {
+            self.generate_implicit_temp_var(var_desc, lean_info, block, rebind, pc, op_size, indent);
+        }
+    }
+
     fn generate_assert_missing_vars(
         &mut self,
         assert: &AssertDesc,
@@ -1710,16 +2048,16 @@ trait LeanGenerator {
         indent: usize,
     ) {
         if !rebind.vars.contains_key(&assert.lhs.name) && !lean_info.is_const(&assert.lhs.name) {
-            self.generate_implicit_temp_var(&assert.lhs, lean_info, block, rebind, pc, op_size, indent);
+            self.generate_implicit_var(&assert.lhs, lean_info, block, rebind, pc, op_size, indent);
         }
 
         if !rebind.vars.contains_key(&assert.expr.var_a.name) && !lean_info.is_const(&assert.expr.var_a.name) {
-            self.generate_implicit_temp_var(&assert.expr.var_a, lean_info, block, rebind, pc, op_size, indent);
+            self.generate_implicit_var(&assert.expr.var_a, lean_info, block, rebind, pc, op_size, indent);
         }
 
         if let Some(var_desc) = &assert.expr.var_b {
             if !rebind.vars.contains_key(&var_desc.name)  && !lean_info.is_const(&var_desc.name) {
-                self.generate_implicit_temp_var(&var_desc, lean_info, block, rebind, pc, op_size, indent);
+                self.generate_implicit_var(&var_desc, lean_info, block, rebind, pc, op_size, indent);
             }
         }
     }
@@ -1771,6 +2109,30 @@ trait LeanGenerator {
         indent: usize,
     ) -> usize;
 
+    fn generate_missing_block_args(
+        &mut self,
+        lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
+        calling_block: &FuncBlock,
+        rebind: &mut VarRebind,
+        indent: usize,
+    ) {
+        for (arg_name, expr) in block.args.arg_and_expr_iter() {
+            if !rebind.has_var_name(arg_name) {
+                self.generate_implicit_var(
+                    &VarBaseDesc { name: arg_name.clone(), var_expr: expr.clone() },
+                    lean_info,
+                    calling_block,
+                    rebind,
+                    // pc and op_size not used, as there is no assignment to the variable.
+                    0,
+                    0,
+                    indent
+                )
+            }
+        }
+    }
+
     fn generate_label_block(
         &mut self,
         func_name: &str,
@@ -1784,7 +2146,7 @@ trait LeanGenerator {
     /// Returns the indentation after the branch intro.
     fn generate_branch_intro(
         &mut self,
-        cond_var: &(String, Var),
+        cond_var: &VarBaseDesc,
         is_eq: bool,
         lean_info: &LeanFuncInfo,
         // The block in which the jnz statement was called.
@@ -1952,8 +2314,7 @@ impl LeanGenerator for AutoSpecs {
         block: &FuncBlock,
         indent: usize,
     ) {
-        let args_str =
-        block.args.iter().chain(
+        let args_str = block.get_arg_names().iter().chain(
                 lean_info.get_explicit_ret_arg_names().iter()
             ).join(" ");
 
@@ -1995,6 +2356,8 @@ impl LeanGenerator for AutoSpecs {
         self.generate_var(var, lean_info, rebind, indent);
     }
 
+    // xxxxxxxxxx use this also before calling a block and for the condition variable in a jnz.
+
     fn generate_implicit_temp_var(
         &mut self,
         var_desc: &VarBaseDesc,
@@ -2008,7 +2371,6 @@ impl LeanGenerator for AutoSpecs {
         self.generate_var(
             &VarDesc {
                 name: var_desc.name.clone(),
-                var_id: var_desc.var_id,
                 var_expr: var_desc.var_expr.clone(),
                 expr: None,
                 ap_change: 0, // not used here.
@@ -2117,7 +2479,7 @@ impl LeanGenerator for AutoSpecs {
 
     fn generate_branch_intro(
         &mut self,
-        cond_var: &(String, Var),
+        cond_var: &VarBaseDesc,
         is_eq: bool,
         lean_info: &LeanFuncInfo,
         calling_block: &FuncBlock,
@@ -2134,7 +2496,7 @@ impl LeanGenerator for AutoSpecs {
             indent
         };
 
-        let var_name = rebind.get_var_name(&cond_var.0);
+        let var_name = rebind.get_var_name(&cond_var.name);
         self.push_spec(indent, &format!("({var_name} {op} 0", op = if is_eq { "=" } else { "≠" }));
 
         indent + 2
@@ -2158,7 +2520,7 @@ impl LeanGenerator for AutoSpecs {
                 block_suffix = block.block_suffix())
         );
 
-        let args_str = block.args.iter().chain(
+        let args_str = block.get_arg_names().iter().chain(
             lean_info.get_explicit_ret_arg_names().iter()
         ).map(|arg| { rebind.get_var_name(arg) }).join(" ");
 
@@ -2523,7 +2885,7 @@ impl LeanGenerator for AutoProof {
 
         let mut indent = indent + 2;
 
-        let args_str = block.args.join(" ");
+        let args_str = block.get_arg_names().join(" ");
 
         // Arguments and hypotheses.
 
@@ -2658,7 +3020,6 @@ impl LeanGenerator for AutoProof {
         self.generate_var(
             &VarDesc {
                 name: var_desc.name.clone(),
-                var_id: var_desc.var_id,
                 var_expr: var_desc.var_expr.clone(),
                 expr: None,
                 ap_change: 0, // not used here.
@@ -2780,7 +3141,7 @@ impl LeanGenerator for AutoProof {
 
     fn generate_branch_intro(
         &mut self,
-        cond_var: &(String, Var),
+        cond_var: &VarBaseDesc,
         is_eq: bool,
         lean_info: &LeanFuncInfo,
         calling_block: &FuncBlock,
@@ -2789,7 +3150,7 @@ impl LeanGenerator for AutoProof {
         indent: usize,
     ) -> usize {
         let mut indent = indent;
-        let var_name = rebind.get_var_name(&cond_var.0);
+        let var_name = rebind.get_var_name(&cond_var.name);
         if is_eq {
             self.push_main(indent, "·");
             indent += 2;
@@ -2823,7 +3184,7 @@ impl LeanGenerator for AutoProof {
                 block_suffix = block.block_suffix())
         );
 
-        let arg_strs: Vec<String> = block.args.iter().map(
+        let arg_strs: Vec<String> = block.get_arg_names().iter().map(
             |arg| { rebind.get_var_name(arg) }
         ).collect();
 
@@ -3152,7 +3513,7 @@ impl CompletenessProof {
     /// then we would need to add both rewrites (but the method used in this function cannot
     /// detect the intermediate variable).
     fn get_non_local_var_rws(var_name: &str, offset: i16, lean_info: &LeanFuncInfo, block: &FuncBlock) -> (String, String) {
-        if block.args.contains(&var_name.to_string()) {
+        if block.get_arg_names().contains(&var_name.to_string()) {
             // The variable is a block argument.
             (format!("htv_{var_name}"), "".into())
         } else if let Some(orig_arg_name) = lean_info.get_arg_by_offset(&block, offset) {
@@ -3170,7 +3531,7 @@ impl CompletenessProof {
         block: &FuncBlock,
         indent: usize,
     ) {
-        let args_str = block.args.join(" ");
+        let args_str = block.get_arg_names().join(" ");
         if block.has_args() {
             self.push_statement(indent, "-- arguments");
             self.push_statement(indent, &format!("({args_str} : ℤ)"));
@@ -3795,10 +4156,9 @@ impl CompletenessProof {
         indent: usize,
     ) {
 
-        for (arg_name, expr) in lean_info.get_block_args_and_exprs(block) {
+        for (arg_name, (reg, offset)) in block.args.deref_arg_iter() {
             let var_type = lean_info.get_vm_var_type(&arg_name);
             // Need to distinguish between arguments in the local assignment and outside it
-            let (_, offset) = get_ref_from_deref(&expr).expect("Failed to find argument offset.");
             if 0 <= offset && calling_block.start_local_ap <= offset as usize {
                 // Auxiliary construction.
                 self.push_lean(
@@ -3806,7 +4166,7 @@ impl CompletenessProof {
                     &format!(
                         "have h_{arg_name}_exec_pos := assign_exec_pos mem loc₀ {var_ref}",
                         // Here we use the non-vm expression (as the theorem takes an offset in Z).
-                        var_ref = get_lean_ref_from_deref(&expr, true, false, true),
+                        var_ref = reg_and_offset_to_lean(&reg, offset, true, false, true),
                     )
                 );
                 self.push_lean(
@@ -3824,7 +4184,7 @@ impl CompletenessProof {
                 indent,
                 &format!(
                     "have h_{arg_name}_ap : {var_type} ↑{arg_name} = Assign mem loc₀ {var_ref} := by",
-                    var_ref = get_lean_ref_from_deref(&expr, true, true, true),
+                    var_ref = reg_and_offset_to_lean(&reg, offset, true, true, true),
                 )
             );
 
@@ -3838,7 +4198,7 @@ impl CompletenessProof {
                         &format!(
                             "simp only [assign_exec_of_lt mem loc₀ {var_ref} (by apply Int.sub_lt_self ; norm_num1), htv_{arg_name}]",
                             // Here we use the non-vm expression (as the theorem takes an offset in Z).
-                            var_ref = get_lean_ref_from_deref(&expr, true, false, true),
+                            var_ref = reg_and_offset_to_lean(&reg, offset, true, false, true),
                         ),
                     );
                 } else {
@@ -3847,7 +4207,7 @@ impl CompletenessProof {
                         &format!(
                             "have := assign_exec_of_lt mem loc₀ {var_ref}",
                             // Here we use the non-vm expression (as the theorem takes an offset in Z).
-                            var_ref = get_lean_ref_from_deref(&expr, true, false, true),
+                            var_ref = reg_and_offset_to_lean(&reg, offset, true, false, true),
                         ),
                     );
                     self.push_lean(
@@ -3867,7 +4227,7 @@ impl CompletenessProof {
                     &format!(
                         "simp only [assign_exec_of_lt mem loc₀ {var_ref} (by apply {simp_lemma} ; norm_num1), {var_rw}{rw_sep}{orig_arg_rw}]",
                         // Here we use the non-vm expression (as the theorem takes an offset in Z).
-                        var_ref = get_lean_ref_from_deref(&expr, true, false, true),
+                        var_ref = reg_and_offset_to_lean(&reg, offset, true, false, true),
                         simp_lemma = if offset == 0 { "Int.lt_add_of_pos_right" } else { "Int.add_lt_add_left" },
                         rw_sep = if orig_arg_rw == "" { "" } else { ", " },
                     ),
@@ -3894,44 +4254,37 @@ impl CompletenessProof {
         block: &FuncBlock,
     ) {
 
-        for (arg_name, expr) in lean_info.get_block_args_and_exprs(block) {
+        for (arg_name, (_, offset)) in block.args.deref_arg_iter() {
             let var_type = lean_info.get_vm_var_type(&arg_name);
             // Need to distinguish between arguments in the local assignment and outside it.
-            if let Some((_, offset)) = get_ref_from_deref(&expr) {
-                if offset < 0 {
-                    self.push_lean(
-                        indent,
-                        &format!(
-                            "have h_ap_minus_{min_offset} := assign_exec_of_lt mem loc (σ.ap - {min_offset})",
-                            min_offset = -offset
-                        ),
-                    );
-                    self.push_lean(
-                        indent + 2,
-                        if 0 < block.start_local_ap {
-                            "(by apply lt_trans _ (Int.lt_add_of_pos_right _ (by norm_num1)) ; apply Int.sub_lt_self ; norm_num1)"
-                        } else {
-                            "(by apply Int.sub_lt_self ; norm_num1)"
-                        }
-                    )
-                } else if offset == 0 {
-                    self.push_lean(
-                        indent,
-                        &format!("have h_ap_plus_{offset} := assign_exec_of_lt mem loc σ.ap"),
-                    );
-                    self.push_lean(indent + 2, "(by apply Int.lt_add_of_pos_right ; norm_num1)");
-                } else {
-                    self.push_lean(
-                        indent,
-                        &format!("have h_ap_plus_{offset} := assign_exec_of_lt mem loc (σ.ap + {offset})"),
-                    );
-                    self.push_lean(indent + 2, "(by apply Int.add_lt_add_left ; norm_num1)");
-                }
+            if offset < 0 {
+                self.push_lean(
+                    indent,
+                    &format!(
+                        "have h_ap_minus_{min_offset} := assign_exec_of_lt mem loc (σ.ap - {min_offset})",
+                        min_offset = -offset
+                    ),
+                );
+                self.push_lean(
+                    indent + 2,
+                    if 0 < block.start_local_ap {
+                        "(by apply lt_trans _ (Int.lt_add_of_pos_right _ (by norm_num1)) ; apply Int.sub_lt_self ; norm_num1)"
+                    } else {
+                        "(by apply Int.sub_lt_self ; norm_num1)"
+                    }
+                )
+            } else if offset == 0 {
+                self.push_lean(
+                    indent,
+                    &format!("have h_ap_plus_{offset} := assign_exec_of_lt mem loc σ.ap"),
+                );
+                self.push_lean(indent + 2, "(by apply Int.lt_add_of_pos_right ; norm_num1)");
             } else {
                 self.push_lean(
                     indent,
-                    &format!("-- Did not generate hypothesis for {arg_name} because could not find its offset."),
-                )
+                    &format!("have h_ap_plus_{offset} := assign_exec_of_lt mem loc (σ.ap + {offset})"),
+                );
+                self.push_lean(indent + 2, "(by apply Int.add_lt_add_left ; norm_num1)");
             }
         }
     }
@@ -4182,7 +4535,6 @@ impl LeanGenerator for CompletenessProof {
         self.generate_var(
             &VarDesc {
                 name: var_desc.name.clone(),
-                var_id: var_desc.var_id,
                 var_expr: var_desc.var_expr.clone(),
                 expr: None,
                 ap_change: 0, // not used here.
@@ -4341,9 +4693,9 @@ impl LeanGenerator for CompletenessProof {
                 theorem_name = self.make_block_theorem_name(lean_info, block),
             ),
         );
-        let block_args_str = if block.has_args() { String::from(" ") + &block.args.join(" ") } else { "".into() };
+        let block_args_str = if block.has_args() { String::from(" ") + &block.get_arg_names().join(" ") } else { "".into() };
         let arg_hyp_str = if block.has_args() {
-                String::from(" ") + &block.args.iter().map(|arg| format!("h_{arg}_ap")).join(" ")
+                String::from(" ") + &block.get_arg_names().iter().map(|arg| format!("h_{arg}_ap")).join(" ")
             } else {
                 "".into()
             };
@@ -4409,7 +4761,7 @@ impl LeanGenerator for CompletenessProof {
 
     fn generate_branch_intro(
         &mut self,
-        cond_var: &(String, Var),
+        cond_var: &VarBaseDesc,
         is_eq: bool,
         lean_info: &LeanFuncInfo,
         calling_block: &FuncBlock,
@@ -4422,7 +4774,7 @@ impl LeanGenerator for CompletenessProof {
         // Use 0 indentation (indentation is added later).
         let indent = 0;
 
-        let cond_var_name = &cond_var.0;
+        let cond_var_name = &cond_var.name;
 
         // Add the condition hypothesis to the rcases.
         self.spec_rcases.push(format!("hc_{cond_var_name}"));
@@ -4669,7 +5021,7 @@ fn generate_completeness_block_spec_hyp(
 
     let func_name = &lean_info.func_name[..];
     let block_suffix = block.block_suffix();
-    let args_str = block.args.join(" ");
+    let args_str = block.get_arg_names().join(" ");
     let ret_args_str = lean_info.get_explicit_ret_arg_names().join(" ");
 
     let sep = if 0 < args_str.len() { " " } else { "" };
@@ -4726,23 +5078,12 @@ fn generate_completeness_auto_theorem(lean_info: &LeanFuncInfo) -> Vec<String> {
 }
 
 fn generate_auto(lean_gen: &mut dyn LeanGenerator, lean_info: &LeanFuncInfo, block: &FuncBlock) {
-    let mut rebind = match &block.label {
-        Some(label) => {
-            if let Some(mut prev_rebind) = lean_info.get_rebinds_before_label(label, 0) {
-                prev_rebind.reset_counts();
-                prev_rebind
-            } else {
-                VarRebind::new()
-            }
-        },
-        _ => {
-            let mut rebind = VarRebind::new();
-            for (arg_name, arg_expr) in lean_info.get_arg_names_and_cell_expr() {
-                rebind.rebind(&arg_name, arg_expr);
-            }
-            rebind
-        }
-    };
+
+    let mut rebind = VarRebind::new();
+
+    for (arg_name, arg_expr) in block.args.arg_and_expr_iter() {
+        rebind.rebind(arg_name, arg_expr);
+    }
 
     lean_gen.generate_statement(&lean_info.main_func_name, &lean_info.func_name, lean_info, block, 0);
     lean_gen.generate_intro(&lean_info.main_func_name, &lean_info.func_name, lean_info, block, 2);
@@ -4808,7 +5149,11 @@ fn generate_auto_block(
                 match &jump.cond_var {
                     Some(cond_var) => {
 
-                        let indent = lean_gen.generate_jnz(&cond_var.0, &jump.target, rebind, pc, op_size, indent);
+                        if !rebind.vars.contains_key(&cond_var.name) {
+                            lean_gen.generate_implicit_var(&cond_var, lean_info, block, rebind, pc, op_size, indent);
+                        }
+
+                        let indent = lean_gen.generate_jnz(&cond_var.name, &jump.target, rebind, pc, op_size, indent);
 
                         // Conditional jump, must generate both branches.
 
@@ -4869,6 +5214,13 @@ fn generate_auto_block(
             StatementDesc::Label(desc) => {
                 // Fallthrough to next block.
                 if let Some(target_block) = lean_info.get_block_by_label(&desc.label) {
+                    lean_gen.generate_missing_block_args(
+                        lean_info,
+                        target_block,
+                        block,
+                        rebind,
+                        indent,
+                    );
                     lean_gen.generate_label_block(
                         &lean_info.func_name,
                         lean_info,
@@ -4913,6 +5265,13 @@ fn generate_jump_to_label(
     let pc_jump = lean_info.pc_jump(casm_pos, casm_pos + casm_jump);
 
     if let Some(target_block) = lean_info.get_block_by_label(&jump.target) {
+        lean_gen.generate_missing_block_args(
+            lean_info,
+            target_block,
+            block,
+            rebind,
+            indent,
+        );
         lean_gen.generate_label_block(
             &lean_info.func_name,
             lean_info,

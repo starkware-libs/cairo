@@ -716,7 +716,6 @@ impl Default for CasmBuilder {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct VarBaseDesc {
     pub name: String,
-    pub var_id: Var,
     pub var_expr: CellExpression,
 }
 
@@ -731,7 +730,6 @@ pub struct ExprDesc {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct VarDesc {
     pub name: String,
-    pub var_id: Var,
     pub var_expr: CellExpression,
     pub expr: Option<ExprDesc>,
     pub ap_change: usize,
@@ -747,7 +745,6 @@ pub struct AssertDesc {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ConstDesc {
     pub name: String,
-    pub var_id: Var,
     pub expr: String,
     pub value: CellExpression,
 }
@@ -755,7 +752,7 @@ pub struct ConstDesc {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct JumpDesc {
     pub target: String,
-    pub cond_var: Option<(String, Var)>,
+    pub cond_var: Option<VarBaseDesc>,
     pub ap_change: usize,
 }
 
@@ -871,7 +868,6 @@ impl CasmBuilderAuxiliaryInfo {
         self.statements.push(StatementDesc::TempVar(
             VarDesc {
                 name: String::from(var_name),
-                var_id: var,
                 var_expr: var_expr,
                 expr: None,
                 ap_change: ap_change,
@@ -884,7 +880,6 @@ impl CasmBuilderAuxiliaryInfo {
         self.statements.push(StatementDesc::LocalVar(
             VarDesc {
                 name: String::from(var_name),
-                var_id: var,
                 var_expr: var_expr,
                 expr: None,
                 ap_change: ap_change,
@@ -896,7 +891,6 @@ impl CasmBuilderAuxiliaryInfo {
         self.var_names.insert(var, String::from(var_name));
         self.consts.push(ConstDesc {
             name: String::from(var_name),
-            var_id: var,
             expr: String::from(expr),
             value: value,
         });
@@ -905,13 +899,14 @@ impl CasmBuilderAuxiliaryInfo {
     pub fn add_let(
         &mut self,
         lhs: VarBaseDesc,
+        lhs_id: Var,
         expr: &str,
         var_a: VarBaseDesc,
         op: &str,
         var_b: Option<VarBaseDesc>,
         ap_change: usize,
     ) {
-        self.var_names.insert(lhs.var_id, String::from(&lhs.name));
+        self.var_names.insert(lhs_id, String::from(&lhs.name));
         self.statements.push(StatementDesc::Let(
             AssertDesc {
                 lhs: lhs,
@@ -933,7 +928,6 @@ impl CasmBuilderAuxiliaryInfo {
     pub fn make_var_desc(&self, name: &str, id: Var, expr: CellExpression) -> VarBaseDesc {
         VarBaseDesc {
             name: name.into(),
-            var_id: id,
             var_expr: expr,
         }
     }
@@ -994,10 +988,10 @@ impl CasmBuilderAuxiliaryInfo {
         }));
     }
 
-    pub fn add_jump_nz(&mut self, label: &str, cond_var_name: &str, cond_var: Var, ap_change: usize) {
+    pub fn add_jump_nz(&mut self, label: &str, cond_var: VarBaseDesc, ap_change: usize) {
         self.statements.push(StatementDesc::Jump(JumpDesc {
             target: String::from(label),
-            cond_var: Some((String::from(cond_var_name), cond_var)),
+            cond_var: Some(cond_var),
             ap_change: ap_change,
         }));
     }
@@ -1325,6 +1319,7 @@ macro_rules! casm_build_extend {
         if let Some(aux_info) = &mut $builder.aux_info {
             aux_info.add_let(
                 aux_info.make_var_desc(stringify!($dst), $dst, dst_expr),
+                $dst,
                 stringify!($a + $b),
                 aux_info.make_var_desc(stringify!($a), $a, a_expr),
                 "+",
@@ -1343,6 +1338,7 @@ macro_rules! casm_build_extend {
         if let Some(aux_info) = &mut $builder.aux_info {
             aux_info.add_let(
                 aux_info.make_var_desc(stringify!($dst), $dst, dst_expr),
+                $dst,
                 stringify!($a * $b),
                 aux_info.make_var_desc(stringify!($a), $a, a_expr),
                 "*",
@@ -1361,6 +1357,7 @@ macro_rules! casm_build_extend {
         if let Some(aux_info) = &mut $builder.aux_info {
             aux_info.add_let(
                 aux_info.make_var_desc(stringify!($dst), $dst, dst_expr),
+                $dst,
                 stringify!($a - $b),
                 aux_info.make_var_desc(stringify!($a), $a, a_expr),
                 "-",
@@ -1379,6 +1376,7 @@ macro_rules! casm_build_extend {
         if let Some(aux_info) = &mut $builder.aux_info {
             aux_info.add_let(
                 aux_info.make_var_desc(stringify!($dst), $dst, dst_expr),
+                $dst,
                 stringify!($a / $b),
                 aux_info.make_var_desc(stringify!($a), $a, a_expr),
                 "/",
@@ -1396,21 +1394,13 @@ macro_rules! casm_build_extend {
         if let Some(aux_info) = &mut $builder.aux_info {
             aux_info.add_let(
                 aux_info.make_var_desc(stringify!($dst), $dst, dst_expr),
+                $dst,
                 &format!("mem {}", stringify!($buffer)),
                 aux_info.make_var_desc(stringify!($buffer), $buffer, buffer_expr),
                 "*()",
                 None,
                 ap_change,
             );
-            // Currently, we do not create intermediate variables for these steps,
-            // but this may change in the future.
-            /*aux_info.add_let(
-                aux_info.make_var_desc(stringify!($buffer), $buffer, buffer_expr),
-                &format!("{} + 1", stringify!($buffer)),
-                aux_info.make_var_desc(stringify!($buffer), $buffer, buffer_expr),
-                "++",
-                None,
-            );*/
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
@@ -1422,6 +1412,7 @@ macro_rules! casm_build_extend {
         if let Some(aux_info) = &mut $builder.aux_info {
             aux_info.add_let(
                 aux_info.make_var_desc(stringify!($dst), $dst, dst_expr),
+                $dst,
                 &format!("mem ({} + ({}))", stringify!($buffer), stringify!($offset)),
                 aux_info.make_var_desc(stringify!($buffer), $buffer, buffer_expr),
                 "*(+)",
@@ -1440,6 +1431,7 @@ macro_rules! casm_build_extend {
         if let Some(aux_info) = &mut $builder.aux_info {
             aux_info.add_let(
                 aux_info.make_var_desc(stringify!($dst), $dst, dst_expr),
+                $dst,
                 &format!("mem {}", stringify!($buffer)),
                 aux_info.make_var_desc(stringify!($buffer), $buffer, buffer_expr),
                 "*()",
@@ -1457,6 +1449,7 @@ macro_rules! casm_build_extend {
         if let Some(aux_info) = &mut $builder.aux_info {
             aux_info.add_let(
                 aux_info.make_var_desc(stringify!($dst), $dst, dst_expr),
+                $dst,
                 stringify!($src),
                 aux_info.make_var_desc(stringify!($src), $src, src_expr),
                 "",
@@ -1476,9 +1469,14 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, jump $target:ident if $condition:ident != 0; $($tok:tt)*) => {
         $builder.jump_nz($condition, $crate::builder::ToOwned::to_owned(core::stringify!($target)));
+        let cond_var_expr = $builder.get_value($condition, false);
         let ap_change = $builder.get_ap_change();
         if let Some(aux_info) = &mut $builder.aux_info {
-            aux_info.add_jump_nz(stringify!($target), stringify!($condition), $condition, ap_change);
+            aux_info.add_jump_nz(
+                stringify!($target),
+                aux_info.make_var_desc(stringify!($condition), $condition, cond_var_expr),
+                ap_change,
+            );
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
