@@ -96,86 +96,139 @@ impl MacroPlugin for StorageNodePlugin {
     }
 }
 
-/// Helper enum to generate the code snippets for the different types of storage nodes.
+/// The different types of storage nodes that can be generated.
 enum StorageNodeType {
     StorageNode,
     SubPointers,
 }
 
+/// Helper enum to generate the code snippets for the different types of storage nodes.
+struct StorageNodeInfo {
+    node_type: StorageNodeType,
+    is_mutable: bool,
+}
+
 /// Code generation for the different types of storage nodes.
-impl StorageNodeType {
-    fn from_struct_ast(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<Self> {
+impl StorageNodeInfo {
+    fn from_struct_ast(
+        db: &dyn SyntaxGroup,
+        struct_ast: &ast::ItemStruct,
+        is_mutable: bool,
+    ) -> Option<Self> {
         if struct_ast.has_attr(db, STORAGE_NODE_ATTR) {
-            Some(Self::StorageNode)
+            Some(Self { node_type: StorageNodeType::StorageNode, is_mutable })
         } else if struct_ast.has_attr(db, STORAGE_SUB_POINTERS_ATTR) {
-            Some(Self::SubPointers)
+            Some(Self { node_type: StorageNodeType::SubPointers, is_mutable })
         } else {
             None
         }
     }
+    /// Returns the mutable prefix of snakecase names.
+    fn mutable_snakecase(&self) -> String {
+        if self.is_mutable { "mutable_".to_string() } else { "".to_string() }
+    }
+    /// Returns the mutable prefix of camelcase names.
+    fn mutable_camelcase(&self) -> String {
+        if self.is_mutable { "Mutable".to_string() } else { "".to_string() }
+    }
+    /// Returns a mutable type with a given generic arg.
+    fn mutable_type(&self, inner_type: &str) -> String {
+        if self.is_mutable {
+            format!("starknet::storage::Mutable::<{inner_type}>")
+        } else {
+            inner_type.to_string()
+        }
+    }
     /// Returns the name of the storage node type of the specific struct.
     fn node_type_name(&self) -> String {
-        match self {
-            Self::StorageNode => "$struct_name$StorageNode".to_string(),
-            Self::SubPointers => "$struct_name$SubPointers".to_string(),
+        let mutable_prefix = self.mutable_camelcase();
+        match self.node_type {
+            StorageNodeType::StorageNode => {
+                format!("{mutable_prefix}$struct_name$StorageNode")
+            }
+            StorageNodeType::SubPointers => {
+                format!("{mutable_prefix}$struct_name$SubPointers")
+            }
         }
     }
     /// Returns the name of the trait that the storage node implements.
     fn node_trait_name(&self) -> String {
-        match self {
-            Self::StorageNode => "starknet::storage::StorageNode<$struct_name$>".to_string(),
-            Self::SubPointers => "starknet::storage::SubPointers<$struct_name$>".to_string(),
+        let mutable_prefix = self.mutable_camelcase();
+        match self.node_type {
+            StorageNodeType::StorageNode => {
+                format!("starknet::storage::{mutable_prefix}StorageNode<$struct_name$>")
+            }
+            StorageNodeType::SubPointers => {
+                format!("starknet::storage::{mutable_prefix}SubPointers<$struct_name$>")
+            }
         }
     }
     /// Returns the name of the associated type of the storage node.
     fn node_type(&self) -> String {
-        match self {
-            Self::StorageNode => "NodeType".to_string(),
-            Self::SubPointers => "SubPointersType".to_string(),
+        match self.node_type {
+            StorageNodeType::StorageNode => "NodeType".to_string(),
+            StorageNodeType::SubPointers => "SubPointersType".to_string(),
         }
     }
     /// Returns the name of the function that initializes the storage node.
     fn node_init_function_name(&self) -> String {
-        match self {
-            Self::StorageNode => "storage_node".to_string(),
-            Self::SubPointers => "sub_pointers".to_string(),
+        let mutable_prefix = self.mutable_snakecase();
+        match self.node_type {
+            StorageNodeType::StorageNode => format!("{mutable_prefix}storage_node"),
+            StorageNodeType::SubPointers => format!("{mutable_prefix}sub_pointers"),
         }
     }
     /// Returns the name of the type that the storage node originates from.
     fn originating_type(&self) -> String {
-        match self {
-            Self::StorageNode => "starknet::storage::StoragePath<$struct_name$>".to_string(),
-            Self::SubPointers => "starknet::storage::StoragePointer<$struct_name$>".to_string(),
+        let mutable_type = self.mutable_type("$struct_name$");
+        match self.node_type {
+            StorageNodeType::StorageNode => {
+                format!("starknet::storage::StoragePath<{mutable_type}>")
+            }
+            StorageNodeType::SubPointers => {
+                format!("starknet::storage::StoragePointer<{mutable_type}>")
+            }
         }
     }
     /// Returns the attributes that should be added to the impl of the storage node.
     fn node_impl_attributes(&self) -> String {
-        match self {
-            Self::StorageNode => "".to_string(),
-            Self::SubPointers => "#[feature(\"derive-storage\")]".to_string(),
+        match self.node_type {
+            StorageNodeType::StorageNode => "".to_string(),
+            StorageNodeType::SubPointers => "#[feature(\"derive-storage\")]".to_string(),
         }
     }
     /// Returns the name of the generated impl for the storage node.
     fn node_impl_name(&self) -> String {
-        match self {
-            Self::StorageNode => "$struct_name$StorageNodeImpl".to_string(),
-            Self::SubPointers => {
-                format!("$struct_name$SubPointersImpl<+{DERIVE_STORAGE_TRAIT}<$struct_name$>>")
+        let mutable_prefix = self.mutable_camelcase();
+        match self.node_type {
+            StorageNodeType::StorageNode => {
+                format!("{mutable_prefix}$struct_name$StorageNodeImpl")
+            }
+            StorageNodeType::SubPointers => {
+                format!("{mutable_prefix}$struct_name$SubPointersImpl<+{DERIVE_STORAGE_TRAIT}<$struct_name$>>")
             }
         }
     }
     /// Returns the type of the members of the storage node generated struct.
-    fn node_members_type(&self) -> String {
-        match self {
-            Self::StorageNode => "starknet::storage::PendingStoragePath".to_string(),
-            Self::SubPointers => "starknet::storage::StoragePointer".to_string(),
+    fn generic_node_members_type(&self) -> String {
+        match self.node_type {
+            StorageNodeType::StorageNode => {
+                format!("starknet::storage::PendingStoragePath")
+            }
+            StorageNodeType::SubPointers => {
+                format!("starknet::storage::StoragePointer")
+            }
         }
+    }
+    /// Returns the type of the members of the storage node generated struct, with the generic arg.
+    fn concrete_node_members_type(&self) -> String {
+        format!("{}<{}>", self.generic_node_members_type(), self.mutable_type("$field_type$"))
     }
     /// Returns the code that should be added before the initialization of the storage node struct.
     fn node_constructor_prefix_code(&self) -> String {
-        match self {
-            Self::StorageNode => "".to_string(),
-            Self::SubPointers => "        let base_address = self.address;
+        match self.node_type {
+            StorageNodeType::StorageNode => "".to_string(),
+            StorageNodeType::SubPointers => "        let base_address = self.address;
         let mut current_offset = self.offset;"
                 .to_string(),
         }
@@ -183,9 +236,9 @@ impl StorageNodeType {
     /// Returns the code that should be added for the initialization of each field of the storage
     /// node struct.
     fn node_constructor_field_init_code(&self, is_last: bool) -> String {
-        match self {
-            Self::StorageNode => {
-                let member_type = self.node_members_type();
+        let member_type = self.generic_node_members_type();
+        match self.node_type {
+            StorageNodeType::StorageNode => {
                 format!(
                     "        let $field_name$_value = {member_type} {{ 
             hash_state: self.hash_state,
@@ -193,8 +246,7 @@ impl StorageNodeType {
         }};\n"
                 )
             }
-            Self::SubPointers => {
-                let member_type = self.node_members_type();
+            StorageNodeType::SubPointers => {
                 let offset_increment = if is_last {
                     "".to_string()
                 } else {
@@ -215,22 +267,42 @@ impl StorageNodeType {
     }
 }
 
-/// Generates the trait and impl for a storage node.
+/// Generates the storage node structs (two variants, mutable and immutable) and their contrtor
+/// impls.
 fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
-    let storage_node_type = StorageNodeType::from_struct_ast(db, &struct_ast).unwrap();
-    let struct_name_syntax = struct_ast.name(db).as_syntax_node();
     let mut builder = PatchBuilder::new(db, &struct_ast);
 
-    let node_type_name = storage_node_type.node_type_name();
+    add_node_struct_definition(db, &mut builder, &struct_ast, false);
+    add_node_impl(db, &mut builder, &struct_ast, false);
+    add_node_struct_definition(db, &mut builder, &struct_ast, true);
+    add_node_impl(db, &mut builder, &struct_ast, true);
+
+    let (content, code_mappings) = builder.build();
+    PluginResult {
+        code: Some(PluginGeneratedFile {
+            name: "storage_node".into(),
+            content,
+            code_mappings,
+            aux_data: None,
+        }),
+        diagnostics: vec![],
+        remove_original_item: false,
+    }
+}
+
+/// Generates the struct definition for the storage node.
+fn add_node_struct_definition(
+    db: &dyn SyntaxGroup,
+    builder: &mut PatchBuilder,
+    struct_ast: &ast::ItemStruct,
+    is_mutable: bool,
+) {
+    let storage_node_info = StorageNodeInfo::from_struct_ast(db, &struct_ast, is_mutable).unwrap();
+    let struct_name_syntax = struct_ast.name(db).as_syntax_node();
+
+    let node_type_name = storage_node_info.node_type_name();
     let struct_name_rewrite_node = RewriteNode::new_trimmed(struct_name_syntax.clone());
-    let node_members_type = storage_node_type.node_members_type();
-    let node_impl_attributes = storage_node_type.node_impl_attributes();
-    let node_impl_name = storage_node_type.node_impl_name();
-    let node_trait_name = storage_node_type.node_trait_name();
-    let node_type = storage_node_type.node_type();
-    let node_init_function_name = storage_node_type.node_init_function_name();
-    let originating_type = storage_node_type.originating_type();
-    let node_constructor_prefix_code = storage_node_type.node_constructor_prefix_code();
+    let concrete_node_members_type = storage_node_info.concrete_node_members_type();
 
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
@@ -238,7 +310,7 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
             struct {node_type_name} {{
 ",
         ),
-        &[("struct_name".to_string(), struct_name_rewrite_node)].into(),
+        &[("struct_name".to_string(), struct_name_rewrite_node.clone())].into(),
     ));
 
     for field in struct_ast.members(db).elements(db) {
@@ -246,7 +318,7 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
         let field_type = field.type_clause(db).ty(db).as_syntax_node();
 
         builder.add_modified(RewriteNode::interpolate_patched(
-            &format!("    $field_name$: {node_members_type}<$field_type$>,\n",),
+            &format!("    $field_name$: {concrete_node_members_type},\n",),
             &[
                 ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
                 ("field_type".to_string(), RewriteNode::new_trimmed(field_type)),
@@ -254,8 +326,26 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
             .into(),
         ));
     }
-
     builder.add_str("}\n");
+}
+
+/// Generates the impl for the storage node.
+fn add_node_impl(
+    db: &dyn SyntaxGroup,
+    builder: &mut PatchBuilder,
+    struct_ast: &ast::ItemStruct,
+    is_mutable: bool,
+) {
+    let storage_node_info = StorageNodeInfo::from_struct_ast(db, &struct_ast, is_mutable).unwrap();
+    let struct_name_syntax = struct_ast.name(db).as_syntax_node();
+    let node_type_name = storage_node_info.node_type_name();
+    let node_impl_attributes = storage_node_info.node_impl_attributes();
+    let node_impl_name = storage_node_info.node_impl_name();
+    let node_trait_name = storage_node_info.node_trait_name();
+    let node_type = storage_node_info.node_type();
+    let node_init_function_name = storage_node_info.node_init_function_name();
+    let originating_type = storage_node_info.originating_type();
+    let node_constructor_prefix_code = storage_node_info.node_constructor_prefix_code();
 
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
@@ -276,7 +366,7 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
         let field_type = field.type_clause(db).ty(db).as_syntax_node();
         let is_last = fields_iter.peek().is_none();
         builder.add_modified(RewriteNode::interpolate_patched(
-            &storage_node_type.node_constructor_field_init_code(is_last),
+            &storage_node_info.node_constructor_field_init_code(is_last),
             &[
                 ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
                 ("field_type".to_string(), RewriteNode::new_trimmed(field_type)),
@@ -286,7 +376,7 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
     }
 
     builder.add_modified(RewriteNode::interpolate_patched(
-        &formatdoc!("        {} {{\n", storage_node_type.node_type_name()),
+        &formatdoc!("        {} {{\n", storage_node_info.node_type_name()),
         &[("struct_name".to_string(), RewriteNode::new_trimmed(struct_name_syntax))].into(),
     ));
 
@@ -299,16 +389,4 @@ fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plu
     }
 
     builder.add_str("        }\n    }\n}\n");
-
-    let (content, code_mappings) = builder.build();
-    PluginResult {
-        code: Some(PluginGeneratedFile {
-            name: "storage_node".into(),
-            content,
-            code_mappings,
-            aux_data: None,
-        }),
-        diagnostics: vec![],
-        remove_original_item: false,
-    }
 }
