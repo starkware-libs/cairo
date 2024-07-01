@@ -861,18 +861,8 @@ impl NoGenericArgsGenericLibfunc for CircuitFailureGuaranteeVerifyLibFunc {
         Ok(LibfuncSignature::new_non_branch(
             vec![range_check96_type.clone(), mul_mod_builtin_ty.clone(), guarantee_ty, zero, one],
             vec![
-                OutputVarInfo {
-                    ty: range_check96_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
-                OutputVarInfo {
-                    ty: mul_mod_builtin_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 1,
-                    }),
-                },
+                OutputVarInfo::new_builtin(range_check96_type, 0),
+                OutputVarInfo::new_builtin(mul_mod_builtin_ty, 1),
                 OutputVarInfo {
                     ty: u384_less_than_guarantee_ty(context)?,
                     ref_info: OutputVarReferenceInfo::SimpleDerefs,
