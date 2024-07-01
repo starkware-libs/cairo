@@ -16,7 +16,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::{
-    BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
+    BinaryOperator, BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -596,7 +596,15 @@ fn call_core_binary_op(
         })?;
 
     let mut lexpr = compute_expr_semantic(ctx, lhs_syntax);
+
+    if let (Expr::Missing(_), BinaryOperator::LT(_)) = (&lexpr.expr, &binary_op) {
+        return Err(ctx
+            .diagnostics
+            .report(binary_op.stable_ptr(), SemanticDiagnosticKind::MissingColonColon));
+    }
+
     let mut rexpr = compute_expr_semantic(ctx, rhs_syntax);
+
     ctx.reduce_ty(lexpr.ty()).check_not_missing(db)?;
     ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
 
