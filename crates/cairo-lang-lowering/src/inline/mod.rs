@@ -72,7 +72,7 @@ pub fn priv_should_inline(
             InlineConfiguration::Always(_) => true,
             InlineConfiguration::None => should_inline_lowered(db, function_id)?,
         },
-        InliningStrategy::Avoid => !matches!(config, InlineConfiguration::Always(_))
+        InliningStrategy::Avoid => !matches!(config, InlineConfiguration::Always(_)),
     })
 }
 
