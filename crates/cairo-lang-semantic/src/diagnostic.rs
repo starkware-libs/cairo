@@ -4,7 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleItemId, NamedLanguageElementId,
-    StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitImplId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
@@ -21,8 +21,8 @@ use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
 use crate::items::feature_kind::FeatureMarkerDiagnostic;
 use crate::resolve::ResolvedConcreteItem;
-use crate::semantic;
 use crate::types::peel_snapshots;
+use crate::{semantic, ConcreteTraitId};
 
 #[cfg(test)]
 #[path = "diagnostic_test.rs"]
@@ -117,6 +117,18 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     impl_def_id.name(defs_db),
                     impl_item_name,
                     trait_id.name(defs_db)
+                )
+            }
+            SemanticDiagnosticKind::ImplicitImplNotInferred {
+                trait_impl_id,
+                concrete_trait_id,
+            } => {
+                let defs_db = db.upcast();
+                format!(
+                    "Cannot infer implicit impl `{}.`\nCould not find implementation of trait \
+                     `{:?}`",
+                    trait_impl_id.name(defs_db),
+                    concrete_trait_id.debug(db)
                 )
             }
             SemanticDiagnosticKind::GenericsNotSupportedInItem { scope, item_kind } => {
@@ -875,6 +887,10 @@ pub enum SemanticDiagnosticKind {
         impl_item_name: SmolStr,
         trait_id: TraitId,
         item_kind: String,
+    },
+    ImplicitImplNotInferred {
+        trait_impl_id: TraitImplId,
+        concrete_trait_id: ConcreteTraitId,
     },
     GenericsNotSupportedInItem {
         scope: String,
