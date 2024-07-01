@@ -46,8 +46,12 @@ const AVAILABLE_GAS_ATTR: &str = "available_gas";
 const STATIC_GAS_ARG: &str = "static";
 
 /// Configuration for test compilation.
-pub struct TestCompilationConfig {
+pub struct TestsCompilationConfig {
+    /// Adds the starknet contracts to the compiled tests.
     pub starknet: bool,
+
+    /// Adds mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
+    /// [Annotations] in [DebugInfo] in the compiled tests.
     pub add_statements_functions: bool,
 }
 
@@ -55,7 +59,7 @@ pub struct TestCompilationConfig {
 ///
 /// # Arguments
 /// * `db` - Preloaded compilation database.
-/// * `starknet` - Add the starknet contracts to the compiled tests.
+/// * `tests_compilation_config` - The compiler configuration for tests compilation.
 /// * `main_crate_ids` - [`CrateId`]s to compile. Use `CrateLongId::Real(name).intern(db)` in order
 ///   to obtain [`CrateId`] from its name.
 /// * `test_crate_ids` - [`CrateId`]s to find tests cases in. Must be a subset of `main_crate_ids`.
@@ -64,11 +68,11 @@ pub struct TestCompilationConfig {
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_test_prepared_db(
     db: &RootDatabase,
-    test_compilation_config: TestCompilationConfig,
+    tests_compilation_config: TestsCompilationConfig,
     main_crate_ids: Vec<CrateId>,
     test_crate_ids: Vec<CrateId>,
 ) -> Result<TestCompilation> {
-    let all_entry_points = if test_compilation_config.starknet {
+    let all_entry_points = if tests_compilation_config.starknet {
         find_contracts(db, &main_crate_ids)
             .iter()
             .flat_map(|contract| {
@@ -116,7 +120,7 @@ pub fn compile_test_prepared_db(
     let statements_functions_for_tests =
         debug_info.statements_locations.get_statements_functions_map_for_tests(db);
 
-    let annotations = if test_compilation_config.add_statements_functions {
+    let annotations = if tests_compilation_config.add_statements_functions {
         Annotations::from(debug_info.statements_locations.extract_statements_functions(db))
     } else {
         Annotations::default()
