@@ -2189,11 +2189,6 @@ error: Type annotations needed. Failed to infer ?0.
     x.t
       ^
 
-error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo:6:18
-    let x = Trt::foo();
-                 ^*^
-
 //! > ==========================================================================
 
 //! > Using self calls.
