@@ -946,12 +946,16 @@ dependencies = [
  "cairo-lang-sierra-type-size",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
+ "convert_case",
  "env_logger",
  "indoc",
  "itertools 0.12.1",
  "num-bigint",
+ "num-integer",
  "num-traits 0.2.19",
  "pretty_assertions",
+ "serde",
+ "serde_json",
  "starknet-types-core",
  "test-case",
  "test-log",
@@ -3509,6 +3513,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "sierra-compile-json"
+version = "2.6.4"
+dependencies = [
+ "anyhow",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-to-casm",
+ "cairo-lang-utils",
+ "clap",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "signal-hook-registry"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3666,6 +3683,7 @@ version = "2.6.4"
 dependencies = [
  "anyhow",
  "async-channel",
+ "cairo-lang-sierra-to-casm",
  "cairo-lang-starknet-classes",
  "cairo-lang-utils",
  "clap",

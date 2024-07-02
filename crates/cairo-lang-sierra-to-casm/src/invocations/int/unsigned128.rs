@@ -240,7 +240,7 @@ fn build_u128_from_felt252(
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let u128_bound: BigInt = BigInt::from(u128::MAX) + 1; // = 2**128.
-    // Represent the maximal possible value (PRIME - 1) as 2**128 * max_x + max_y.
+                                                          // Represent the maximal possible value (PRIME - 1) as 2**128 * max_x + max_y.
     let max_x: i128 = 10633823966279327296825105735305134080;
     let max_y: i128 = 0;
     let mut casm_builder = CasmBuilder::default();

@@ -7,6 +7,7 @@ use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::write_comma_separated;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::invocations::InvocationError;
@@ -27,7 +28,7 @@ pub type StatementRefs = OrderedHashMap<VarId, ReferenceValue>;
 
 /// A Sierra reference to a value.
 /// Corresponds to an argument or return value of a Sierra statement.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
@@ -48,7 +49,7 @@ impl ReferenceValue {
 }
 
 /// The location where a value was introduced.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct IntroductionPoint {
     /// The index of the statement creating the value, None if introduced as a function param.
     pub source_statement_idx: Option<StatementIdx>,
@@ -74,7 +75,7 @@ impl core::fmt::Display for IntroductionPoint {
 
 /// A Sierra reference to a value.
 /// Returned from a libfunc.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct OutputReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
@@ -86,7 +87,7 @@ pub struct OutputReferenceValue {
 }
 
 /// The location where a value was introduced for output reference values.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum OutputReferenceValueIntroductionPoint {
     /// A new point introduced by a libfunc. The inner value is the output index.
     New(usize),
@@ -95,7 +96,7 @@ pub enum OutputReferenceValueIntroductionPoint {
 }
 
 /// A collection of Cell Expression which represents one logical object.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceExpression {
     pub cells: Vec<CellExpression>,
 }
