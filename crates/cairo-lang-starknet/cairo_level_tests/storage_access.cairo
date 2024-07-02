@@ -1,16 +1,15 @@
-use starknet::{
-    ClassHash, ContractAddress, EthAddress, StorageAddress, SyscallResult,
-    storage_address_to_felt252, storage_address_try_from_felt252
-};
-use core::test::test_utils::assert_eq;
+use core::traits::TryInto;
+use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress, SyscallResult,};
 use super::utils::{deserialized, serialized};
 use core::integer::BoundedInt;
-use core::zeroable::Zeroable;
+use core::num::traits::Zero;
 use core::byte_array::ByteArrayTrait;
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
-        storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs)
+        let lhs: felt252 = (*lhs).into();
+        let rhs: felt252 = (*rhs).into();
+        lhs == rhs
     }
 }
 
@@ -26,7 +25,9 @@ struct TupleStructure {
     v1: u256,
     v2: u256,
 }
-impl TupleStructureStorePacking of starknet::StorePacking<TupleStructure, (felt252, felt252)> {
+impl TupleStructureStorePacking of starknet::storage_access::StorePacking<
+    TupleStructure, (felt252, felt252)
+> {
     fn pack(value: TupleStructure) -> (felt252, felt252) {
         (value.v1.try_into().unwrap(), value.v2.try_into().unwrap())
     }
@@ -139,9 +140,9 @@ fn write_read_struct() {
         d: 4_u64,
         e: 5_u128,
         f: BoundedInt::max() - 1,
-        g: Zeroable::zero(),
-        h: Zeroable::zero(),
-        i: storage_address_try_from_felt252(123_felt252).unwrap(),
+        g: Zero::zero(),
+        h: Zero::zero(),
+        i: 123.try_into().unwrap(),
         j: true,
         k: 123_felt252.try_into().unwrap(),
         abc: Abc { a: 1_u8, b: 2_u16, c: 3_u32, },
@@ -185,18 +186,20 @@ fn write_read_byte_arrays() {
     assert!(test_contract::__external::set_byte_arrays(serialized(x.clone())).is_empty());
     assert_eq!(deserialized(test_contract::__external::get_byte_arrays(serialized(()))), x);
     // Make sure the lengths were saved correctly.
-    let base_address = starknet::storage_base_address_from_felt252(selector!("byte_arrays"));
+    let base_address = starknet::storage_access::storage_base_address_from_felt252(
+        selector!("byte_arrays")
+    );
     assert!(starknet::Store::read_at_offset(0, base_address, 0).unwrap() == 0_usize);
     assert!(starknet::Store::read_at_offset(0, base_address, 1).unwrap() == 15_usize);
     assert!(starknet::Store::read_at_offset(0, base_address, 2).unwrap() == 36_usize);
     assert!(starknet::Store::read_at_offset(0, base_address, 3).unwrap() == 16384_usize);
     // Make sure the internal data was saved correctly.
     let (r, _, _) = core::poseidon::hades_permutation(
-        starknet::storage_address_from_base_and_offset(base_address, 3).into(),
+        starknet::storage_access::storage_address_from_base_and_offset(base_address, 3).into(),
         2,
         'ByteArray'_felt252
     );
-    let internal_data_address = starknet::storage_base_address_from_felt252(r);
+    let internal_data_address = starknet::storage_access::storage_base_address_from_felt252(r);
     assert_eq!(
         starknet::Store::read_at_offset(0, internal_data_address, 0).unwrap(),
         '0123456789abcdef0123456789abcde'_felt252

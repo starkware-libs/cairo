@@ -9,8 +9,8 @@ use starknet::storage_access::storage_base_address_from_felt252;
 /// A pointer to an address in storage, can be used to read and write values, if the generic type
 /// supports it (e.g. basic types like `felt252`).
 pub struct StoragePointer<T> {
-    address: StorageBaseAddress,
-    offset: u8,
+    pub address: StorageBaseAddress,
+    pub offset: u8,
 }
 
 impl StoragePointerCopy<T> of Copy<StoragePointer<T>> {}
@@ -520,8 +520,8 @@ impl MutableImpl<T> of MutableTrait<Mutable<T>> {
 /// Implementation of SubPointers for core types.
 #[derive(Drop, Copy)]
 struct u256SubPointers {
-    low: starknet::storage::StoragePointer<u128>,
-    high: starknet::storage::StoragePointer<u128>,
+    pub low: starknet::storage::StoragePointer<u128>,
+    pub high: starknet::storage::StoragePointer<u128>,
 }
 
 #[feature("derive-storage")]
