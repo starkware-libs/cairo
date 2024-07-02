@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut, Index};
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LanguageElementId, ModuleFileId};
-use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
@@ -301,7 +301,11 @@ impl LoweredExpr {
                 wrap_in_snapshots(ctx.db.upcast(), expr.ty(ctx), 1)
             }
             LoweredExpr::FixedSizeArray { exprs, .. } => semantic::TypeLongId::FixedSizeArray {
-                type_id: exprs[0].ty(ctx),
+                type_id: exprs
+                    .first()
+                    .map_or(TypeLongId::Missing(skip_diagnostic()).intern(ctx.db), |expr| {
+                        expr.ty(ctx)
+                    }),
                 size: value_as_const_value(
                     ctx.db.upcast(),
                     get_usize_ty(ctx.db.upcast()),

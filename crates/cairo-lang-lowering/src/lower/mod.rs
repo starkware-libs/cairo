@@ -3,9 +3,9 @@ use std::vec;
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
-use cairo_lang_semantic::corelib::{self, unwrap_error_propagation_type, ErrorPropagationType};
+use cairo_lang_semantic::corelib::{unwrap_error_propagation_type, ErrorPropagationType};
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::{LocalVariable, VarId};
+use cairo_lang_semantic::{corelib, ExprVar, LocalVariable, VarId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -1116,8 +1116,21 @@ fn lower_expr_snapshot(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a snapshot: {:?}", expr.debug(&ctx.expr_formatter));
+    let lowered = lower_expr(ctx, builder, expr.inner)?;
+
+    // If the inner expression is already a snapshot of the same type, we can just return it.
+    if expr.ty == lowered.ty(ctx) {
+        return Ok(lowered);
+    }
+    if let LoweredExpr::Member(member_path, _) = &lowered {
+        if let Some(var) = builder.get_ref(ctx, member_path) {
+            if ctx.variables[var.var_id].ty == expr.ty {
+                return Ok(lowered);
+            }
+        }
+    }
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let expr = Box::new(lower_expr(ctx, builder, expr.inner)?);
+    let expr = Box::new(lowered);
     Ok(LoweredExpr::Snapshot { expr, location })
 }
 
@@ -1348,7 +1361,26 @@ fn lower_expr_loop(
     let usage = &ctx.block_usages.block_usages[&loop_expr_id];
 
     // Determine signature.
-    let params = usage.usage.iter().map(|(_, expr)| expr.clone()).collect_vec();
+    let params = usage
+        .usage
+        .iter()
+        .map(|(_, expr)| expr.clone())
+        .chain(usage.snap_usage.iter().map(|(_, expr)| match expr {
+            ExprVarMemberPath::Var(var) => ExprVarMemberPath::Var(ExprVar {
+                ty: wrap_in_snapshots(ctx.db.upcast(), var.ty, 1),
+                ..*var
+            }),
+            ExprVarMemberPath::Member { parent, member_id, stable_ptr, concrete_struct_id, ty } => {
+                ExprVarMemberPath::Member {
+                    parent: parent.clone(),
+                    member_id: *member_id,
+                    stable_ptr: *stable_ptr,
+                    concrete_struct_id: *concrete_struct_id,
+                    ty: wrap_in_snapshots(ctx.db.upcast(), *ty, 1),
+                }
+            }
+        }))
+        .collect_vec();
     let extra_rets = usage.changes.iter().map(|(_, expr)| expr.clone()).collect_vec();
 
     let loop_signature = Signature {
@@ -1374,10 +1406,26 @@ fn lower_expr_loop(
             .map_err(LoweringFlowError::Failed)?;
     // TODO(spapini): Recursive call.
     encapsulating_ctx.lowerings.insert(loop_expr_id, lowered);
-
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
     let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
+    let snap_usage = &ctx.block_usages.block_usages[&loop_expr_id].snap_usage.clone();
+    let original_vals = snap_usage
+        .values()
+        .map(|snapshot_param| {
+            let input = builder.get_ref(ctx, snapshot_param).unwrap();
+            let (original, snapped) = generators::Snapshot {
+                input,
+                location: ctx.get_location(snapshot_param.stable_ptr().untyped()),
+            }
+            .add(ctx, &mut builder.statements);
+            builder.update_ref(ctx, snapshot_param, snapped);
+            original
+        })
+        .collect_vec();
     let call = call_loop_func(ctx, loop_signature, builder, loop_expr_id, stable_ptr.untyped());
+    for (snapshot_param, original) in snap_usage.values().zip_eq(original_vals) {
+        builder.update_ref(ctx, snapshot_param, original);
+    }
     ctx.current_loop_expr_id = old_loop_expr_id;
     call
 }
