@@ -114,11 +114,14 @@ contract:
 
 
 
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
+pub struct ContractStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
+pub struct ContractStorageBaseMut {
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
