@@ -266,6 +266,45 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
 #[feature("derive-storage")]
 impl DeriveStorageWrappedFelt252 of starknet::storage_access::DeriveStorage::<WrappedFelt252> {}
 
+#[derive(Drop, Copy)]
+struct WrappedFelt252SubPointers {
+    value: starknet::storage::StoragePointer<felt252>,
+}
+#[feature("derive-storage")]
+impl WrappedFelt252SubPointersImpl<+starknet::storage_access::DeriveStorage<WrappedFelt252>> of starknet::storage::SubPointers<WrappedFelt252> {
+    type SubPointersType = WrappedFelt252SubPointers;
+       fn sub_pointers(self: starknet::storage::StoragePointer<WrappedFelt252>) -> WrappedFelt252SubPointers {
+                   let base_address = self.address;
+        let mut current_offset = self.offset;
+        let value_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                WrappedFelt252SubPointers {
+           value: value_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableWrappedFelt252SubPointers {
+    value: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
+}
+#[feature("derive-storage")]
+impl MutableWrappedFelt252SubPointersImpl<+starknet::storage_access::DeriveStorage<WrappedFelt252>> of starknet::storage::MutableSubPointers<WrappedFelt252> {
+    type SubPointersType = MutableWrappedFelt252SubPointers;
+       fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<WrappedFelt252>>) -> MutableWrappedFelt252SubPointers {
+                   let base_address = self.address;
+        let mut current_offset = self.offset;
+        let value_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableWrappedFelt252SubPointers {
+           value: value_value,
+        }
+    }
+}
+
 
 lib.cairo:17:1
     #[derive(Drop, Hash, Serde, starknet::Store)]
@@ -334,6 +373,33 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
 }
 #[feature("derive-storage")]
 impl DeriveStorageZeroSize of starknet::storage_access::DeriveStorage::<ZeroSize> {}
+
+#[derive(Drop, Copy)]
+struct ZeroSizeSubPointers {
+}
+#[feature("derive-storage")]
+impl ZeroSizeSubPointersImpl<+starknet::storage_access::DeriveStorage<ZeroSize>> of starknet::storage::SubPointers<ZeroSize> {
+    type SubPointersType = ZeroSizeSubPointers;
+       fn sub_pointers(self: starknet::storage::StoragePointer<ZeroSize>) -> ZeroSizeSubPointers {
+                   let base_address = self.address;
+        let mut current_offset = self.offset;
+        ZeroSizeSubPointers {
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableZeroSizeSubPointers {
+}
+#[feature("derive-storage")]
+impl MutableZeroSizeSubPointersImpl<+starknet::storage_access::DeriveStorage<ZeroSize>> of starknet::storage::MutableSubPointers<ZeroSize> {
+    type SubPointersType = MutableZeroSizeSubPointers;
+       fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ZeroSize>>) -> MutableZeroSizeSubPointers {
+                   let base_address = self.address;
+        let mut current_offset = self.offset;
+        MutableZeroSizeSubPointers {
+        }
+    }
+}
 
 
 lib.cairo:19:1
@@ -655,6 +721,42 @@ impls:
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
 impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
+
+lib.cairo:13:26
+    #[derive(Drop, Hash, starknet::Store)]
+                         ^*************^
+impls:
+
+impl WrappedFelt252SubPointersDrop of core::traits::Drop::<WrappedFelt252SubPointers>;
+impl WrappedFelt252SubPointersCopy of core::traits::Copy::<WrappedFelt252SubPointers>;
+
+
+lib.cairo:13:26
+    #[derive(Drop, Hash, starknet::Store)]
+                         ^*************^
+impls:
+
+impl MutableWrappedFelt252SubPointersDrop of core::traits::Drop::<MutableWrappedFelt252SubPointers>;
+impl MutableWrappedFelt252SubPointersCopy of core::traits::Copy::<MutableWrappedFelt252SubPointers>;
+
+
+lib.cairo:17:33
+    #[derive(Drop, Hash, Serde, starknet::Store)]
+                                ^*************^
+impls:
+
+impl ZeroSizeSubPointersDrop of core::traits::Drop::<ZeroSizeSubPointers>;
+impl ZeroSizeSubPointersCopy of core::traits::Copy::<ZeroSizeSubPointers>;
+
+
+lib.cairo:17:33
+    #[derive(Drop, Hash, Serde, starknet::Store)]
+                                ^*************^
+impls:
+
+impl MutableZeroSizeSubPointersDrop of core::traits::Drop::<MutableZeroSizeSubPointers>;
+impl MutableZeroSizeSubPointersCopy of core::traits::Copy::<MutableZeroSizeSubPointers>;
+
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`
  --> lib.cairo:39:9
@@ -690,3 +792,23 @@ warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[featur
  --> lib.cairo:11:28
         zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
                            ^*******^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:17:33
+    #[derive(Drop, Hash, Serde, starknet::Store)]
+                                ^*************^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:17:33
+    #[derive(Drop, Hash, Serde, starknet::Store)]
+                                ^*************^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:17:33
+    #[derive(Drop, Hash, Serde, starknet::Store)]
+                                ^*************^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:17:33
+    #[derive(Drop, Hash, Serde, starknet::Store)]
+                                ^*************^

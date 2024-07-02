@@ -159,6 +159,59 @@ impl StoreA of starknet::Store::<A> {
 #[feature("derive-storage")]
 impl DeriveStorageA of starknet::storage_access::DeriveStorage::<A> {}
 
+#[derive(Drop, Copy)]
+struct ASubPointers {
+    x: starknet::storage::StoragePointer<felt252>,
+    data: starknet::storage::StoragePointer<usize>,
+}
+#[feature("derive-storage")]
+impl ASubPointersImpl<+starknet::storage_access::DeriveStorage<A>> of starknet::storage::SubPointers<A> {
+    type SubPointersType = ASubPointers;
+       fn sub_pointers(self: starknet::storage::StoragePointer<A>) -> ASubPointers {
+                   let base_address = self.address;
+        let mut current_offset = self.offset;
+        let x_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<felt252>::size();
+        let data_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                ASubPointers {
+           x: x_value,
+           data: data_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableASubPointers {
+    x: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
+    data: starknet::storage::StoragePointer<starknet::storage::Mutable::<usize>>,
+}
+#[feature("derive-storage")]
+impl MutableASubPointersImpl<+starknet::storage_access::DeriveStorage<A>> of starknet::storage::MutableSubPointers<A> {
+    type SubPointersType = MutableASubPointers;
+       fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<A>>) -> MutableASubPointers {
+                   let base_address = self.address;
+        let mut current_offset = self.offset;
+        let x_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<felt252>::size();
+        let data_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableASubPointers {
+           x: x_value,
+           data: data_value,
+        }
+    }
+}
+
 
 lib.cairo:7:1
 
@@ -392,5 +445,24 @@ impl MyEventEnumDIntoEvent of Into<NestedEventEnum, MyEventEnum> {
         MyEventEnum::D(self)
     }
 }
+
+
+
+lib.cairo:1:27
+#[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
+                          ^*************^
+impls:
+
+impl ASubPointersDrop of core::traits::Drop::<ASubPointers>;
+impl ASubPointersCopy of core::traits::Copy::<ASubPointers>;
+
+
+lib.cairo:1:27
+#[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
+                          ^*************^
+impls:
+
+impl MutableASubPointersDrop of core::traits::Drop::<MutableASubPointers>;
+impl MutableASubPointersCopy of core::traits::Copy::<MutableASubPointers>;
 
 //! > expected_diagnostics

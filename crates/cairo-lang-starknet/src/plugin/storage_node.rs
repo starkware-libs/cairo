@@ -2,12 +2,14 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
+use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
 
-use super::{DERIVE_STORAGE_TRAIT, STORAGE_NODE_ATTR, STORAGE_SUB_POINTERS_ATTR, STORE_TRAIT};
+use super::utils::has_derive;
+use super::{DERIVE_STORAGE_TRAIT, STORAGE_NODE_ATTR, STORE_TRAIT};
 
 /// Generates an impl for the `starknet::StorageNode` to point to a generate a struct to to be
 /// pointed to allowing further access to each of its members (i.e. there will be a fitting member
@@ -57,24 +59,16 @@ impl MacroPlugin for StorageNodePlugin {
             ast::ModuleItem::Struct(struct_ast) => {
                 let mut diagnostics = vec![];
                 let storage_node_attrs = struct_ast.query_attr(db, STORAGE_NODE_ATTR);
-                let storage_sub_pointers_attrs =
-                    struct_ast.query_attr(db, STORAGE_SUB_POINTERS_ATTR);
-                if storage_node_attrs.is_empty() && storage_sub_pointers_attrs.is_empty() {
+                if storage_node_attrs.is_empty() {
                     return PluginResult::default();
                 }
-                if storage_node_attrs.len() > 1 && storage_sub_pointers_attrs.is_empty() {
+                if storage_node_attrs.len() > 1 {
                     diagnostics.push(PluginDiagnostic::error(
                         struct_ast.as_syntax_node().stable_ptr(),
                         "Multiple storage node attributes are not allowed.".to_string(),
                     ));
                 }
-                if storage_sub_pointers_attrs.len() > 1 && storage_node_attrs.is_empty() {
-                    diagnostics.push(PluginDiagnostic::error(
-                        struct_ast.as_syntax_node().stable_ptr(),
-                        "Multiple storage sub pointers attributes are not allowed.".to_string(),
-                    ));
-                }
-                if storage_node_attrs.len() + storage_sub_pointers_attrs.len() > 1 {
+                if has_derive(&struct_ast, db, STORE_TRAIT).is_some() {
                     diagnostics.push(PluginDiagnostic::error(
                         struct_ast.as_syntax_node().stable_ptr(),
                         "Storage node and storage sub pointers attributes cannot be used
@@ -85,14 +79,24 @@ impl MacroPlugin for StorageNodePlugin {
                 if !diagnostics.is_empty() {
                     return PluginResult { code: None, diagnostics, remove_original_item: false };
                 }
-                handle_storage_node(db, struct_ast)
+                let (content, code_mappings) = handle_storage_node(db, &struct_ast);
+                PluginResult {
+                    code: Some(PluginGeneratedFile {
+                        name: "storage_node".into(),
+                        content,
+                        code_mappings,
+                        aux_data: None,
+                    }),
+                    diagnostics: vec![],
+                    remove_original_item: false,
+                }
             }
             _ => PluginResult::default(),
         }
     }
 
     fn declared_attributes(&self) -> Vec<String> {
-        vec![STORAGE_NODE_ATTR.to_string(), STORAGE_SUB_POINTERS_ATTR.to_string()]
+        vec![STORAGE_NODE_ATTR.to_string()]
     }
 }
 
@@ -117,7 +121,7 @@ impl StorageNodeInfo {
     ) -> Option<Self> {
         if struct_ast.has_attr(db, STORAGE_NODE_ATTR) {
             Some(Self { node_type: StorageNodeType::StorageNode, is_mutable })
-        } else if struct_ast.has_attr(db, STORAGE_SUB_POINTERS_ATTR) {
+        } else if has_derive(struct_ast, db, STORE_TRAIT).is_some() {
             Some(Self { node_type: StorageNodeType::SubPointers, is_mutable })
         } else {
             None
@@ -263,27 +267,21 @@ impl StorageNodeInfo {
     }
 }
 
-/// Generates the storage node structs (two variants, mutable and immutable) and their constructor
-/// impls.
-fn handle_storage_node(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
-    let mut builder = PatchBuilder::new(db, &struct_ast);
+/// Adds the storage node structs (two variants, mutable and immutable) and their constructor
+/// impls to the given builder. Used for both storage nodes and storage sub pointers which are
+/// triggered by `#[derive(Store)]`.
+pub fn handle_storage_node(
+    db: &dyn SyntaxGroup,
+    struct_ast: &ast::ItemStruct,
+) -> (String, Vec<CodeMapping>) {
+    let mut builder = PatchBuilder::new(db, struct_ast);
 
-    add_node_struct_definition(db, &mut builder, &struct_ast, false);
-    add_node_impl(db, &mut builder, &struct_ast, false);
-    add_node_struct_definition(db, &mut builder, &struct_ast, true);
-    add_node_impl(db, &mut builder, &struct_ast, true);
+    add_node_struct_definition(db, &mut builder, struct_ast, false);
+    add_node_impl(db, &mut builder, struct_ast, false);
+    add_node_struct_definition(db, &mut builder, struct_ast, true);
+    add_node_impl(db, &mut builder, struct_ast, true);
 
-    let (content, code_mappings) = builder.build();
-    PluginResult {
-        code: Some(PluginGeneratedFile {
-            name: "storage_node".into(),
-            content,
-            code_mappings,
-            aux_data: None,
-        }),
-        diagnostics: vec![],
-        remove_original_item: false,
-    }
+    builder.build()
 }
 
 /// Generates the struct definition for the storage node.

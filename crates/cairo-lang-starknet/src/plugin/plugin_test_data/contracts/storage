@@ -133,6 +133,63 @@ impl StoreOuterType of starknet::Store::<OuterType> {
 #[feature("derive-storage")]
 impl DeriveStorageOuterType of starknet::storage_access::DeriveStorage::<OuterType> {}
 
+#[derive(Drop, Copy)]
+struct OuterTypeSubPointers {
+    x: starknet::storage::StoragePointer<u32>,
+}
+#[feature("derive-storage")]
+impl OuterTypeSubPointersImpl<+starknet::storage_access::DeriveStorage<OuterType>> of starknet::storage::SubPointers<OuterType> {
+    type SubPointersType = OuterTypeSubPointers;
+       fn sub_pointers(self: starknet::storage::StoragePointer<OuterType>) -> OuterTypeSubPointers {
+                   let base_address = self.address;
+        let mut current_offset = self.offset;
+        let x_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                OuterTypeSubPointers {
+           x: x_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableOuterTypeSubPointers {
+    x: starknet::storage::StoragePointer<starknet::storage::Mutable::<u32>>,
+}
+#[feature("derive-storage")]
+impl MutableOuterTypeSubPointersImpl<+starknet::storage_access::DeriveStorage<OuterType>> of starknet::storage::MutableSubPointers<OuterType> {
+    type SubPointersType = MutableOuterTypeSubPointers;
+       fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<OuterType>>) -> MutableOuterTypeSubPointers {
+                   let base_address = self.address;
+        let mut current_offset = self.offset;
+        let x_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableOuterTypeSubPointers {
+           x: x_value,
+        }
+    }
+}
+
+
+lib.cairo:1:16
+#[derive(Drop, starknet::Store, Hash)]
+               ^*************^
+impls:
+
+impl OuterTypeSubPointersDrop of core::traits::Drop::<OuterTypeSubPointers>;
+impl OuterTypeSubPointersCopy of core::traits::Copy::<OuterTypeSubPointers>;
+
+
+lib.cairo:1:16
+#[derive(Drop, starknet::Store, Hash)]
+               ^*************^
+impls:
+
+impl MutableOuterTypeSubPointersDrop of core::traits::Drop::<MutableOuterTypeSubPointers>;
+impl MutableOuterTypeSubPointersCopy of core::traits::Copy::<MutableOuterTypeSubPointers>;
+
 
 lib.cairo:7:1
 #[starknet::contract]

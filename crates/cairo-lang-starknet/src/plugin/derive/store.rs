@@ -7,6 +7,7 @@ use indent::indent_by;
 use indoc::formatdoc;
 
 use crate::plugin::consts::{DERIVE_STORAGE_TRAIT, STORE_TRAIT};
+use crate::plugin::storage_node::handle_storage_node;
 
 /// Returns the rewrite node for the `#[derive(starknet::Store)]` attribute.
 pub fn handle_store_derive(
@@ -15,14 +16,27 @@ pub fn handle_store_derive(
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<RewriteNode> {
     match item_ast {
-        ast::ModuleItem::Struct(struct_ast) => handle_struct(db, struct_ast),
+        ast::ModuleItem::Struct(struct_ast) => {
+            // In case of a struct, we need to generate the `Store` trait implementation as well as
+            // a sub-pointers implementation.
+            let store_trait_code = handle_struct_store(db, struct_ast)?;
+            let (sub_pointers_code, _) = handle_storage_node(db, struct_ast);
+            Some(RewriteNode::interpolate_patched(
+                "$store_trait$\n$sub_pointers$",
+                &[
+                    ("store_trait".to_string(), store_trait_code),
+                    ("sub_pointers".to_string(), RewriteNode::Text(sub_pointers_code)),
+                ]
+                .into(),
+            ))
+        }
         ast::ModuleItem::Enum(enum_ast) => handle_enum(db, enum_ast, diagnostics),
         _ => None,
     }
 }
 
 /// Derive the `Store` trait for structs annotated with `derive(starknet::Store)`.
-fn handle_struct(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<RewriteNode> {
+fn handle_struct_store(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<RewriteNode> {
     let mut reads_values = Vec::new();
     let mut reads_values_at_offset = Vec::new();
     let mut reads_fields = Vec::new();
