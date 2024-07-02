@@ -910,3 +910,557 @@ Statements:
   (v20: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Err(v19)
 End:
   Return(v5, v6, v20)
+
+//! > ==========================================================================
+
+//! > Test snap usage after loop.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() -> bool {
+    let mut s = S {};
+    loop {
+        s.foo();
+        break;
+    };
+    s.foo();
+    false
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct S {}
+trait T {
+    fn foo(self: @S);
+}
+impl I of T {
+    fn foo(self: @S) {}
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::S) <- struct_construct()
+  (v1: test::S, v2: @test::S) <- snapshot(v0)
+  (v3: ()) <- test::foo[expr5](v2)
+  (v4: ()) <- test::I::foo(v2)
+  (v5: ()) <- struct_construct()
+  (v6: core::bool) <- bool::False(v5)
+End:
+  Return(v6)
+
+
+Final lowering:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: ()) <- struct_construct()
+  (v1: core::bool) <- bool::False(v0)
+End:
+  Return(v1)
+
+
+Generated lowering for source location:
+    loop {
+    ^****^
+
+Parameters: v0: @test::S
+blk0 (root):
+Statements:
+  (v1: ()) <- test::I::foo(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Final lowering:
+Parameters: v0: @test::S
+blk0 (root):
+Statements:
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test snap usage after loop of member.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() {
+    let t = T { s: S {} };
+    loop {
+        TT::f1oo(@t.s);
+        break;
+    };
+    TT::f1oo(@t.s);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct S {}
+#[derive(Drop)]
+struct T {
+    s: S
+}
+trait TT {
+    fn f1oo(self: @S);
+}
+impl STT of TT {
+    fn f1oo(self: @S) {}
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::S) <- struct_construct()
+  (v1: test::T) <- struct_construct(v0)
+  (v2: test::S) <- struct_destructure(v1)
+  (v3: test::S, v4: @test::S) <- snapshot(v2)
+  (v5: ()) <- test::foo[expr7](v4)
+  (v6: ()) <- test::STT::f1oo(v4)
+  (v7: ()) <- struct_construct()
+End:
+  Return(v7)
+
+
+Final lowering:
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated lowering for source location:
+    loop {
+    ^****^
+
+Parameters: v0: @test::S
+blk0 (root):
+Statements:
+  (v1: ()) <- test::STT::f1oo(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Final lowering:
+Parameters: v0: @test::S
+blk0 (root):
+Statements:
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test real usage of inner with snap usage of outer.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() {
+    let a = A { b: B { c: 3 } };
+    loop {
+        let _x = @a.b;
+        ex1(_x);
+        loop {
+            let _y = a.b.c;
+            ex(_y);
+            break;
+        };
+        break;
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn ex(a: u32) nopanic;
+extern fn ex1(a: @B) nopanic;
+#[derive(Drop)]
+struct B {
+    c: u32
+}
+#[derive(Drop)]
+struct A {
+    b: B
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u32) <- 3
+  (v1: test::B) <- struct_construct(v0)
+  (v2: test::A) <- struct_construct(v1)
+  (v3: test::B) <- struct_destructure(v2)
+  (v4: test::B, v5: @test::B) <- snapshot(v3)
+  (v6: core::integer::u32) <- struct_destructure(v4)
+  (v7: test::B) <- struct_construct(v6)
+  (v8: ()) <- test::foo[expr16](v6, v5)
+  (v9: ()) <- struct_construct()
+End:
+  Return(v9)
+
+
+Final lowering:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u32) <- 3
+  (v1: test::B) <- struct_construct(v0)
+  (v2: test::B, v3: @test::B) <- snapshot(v1)
+  () <- test::ex1(v3)
+  (v4: core::integer::u32) <- struct_destructure(v2)
+  () <- test::ex(v4)
+End:
+  Return()
+
+
+Generated lowering for source location:
+        loop {
+        ^****^
+
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::ex(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::ex(v0)
+End:
+  Return()
+
+
+Generated lowering for source location:
+    loop {
+    ^****^
+
+Parameters: v0: core::integer::u32, v1: @test::B
+blk0 (root):
+Statements:
+  () <- test::ex1(v1)
+  (v2: ()) <- test::foo[expr14](v0)
+  (v3: ()) <- struct_construct()
+End:
+  Return(v3)
+
+
+Final lowering:
+Parameters: v0: core::integer::u32, v1: @test::B
+blk0 (root):
+Statements:
+  () <- test::ex1(v1)
+  () <- test::ex(v0)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test snap usage of inner with real usage of outer.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() {
+    let a = A { b: B { c: 3 } };
+    loop {
+        let _x = a.b;
+        ex1(_x);
+        loop {
+            let _y = @a.b.c;
+            ex(_y);
+            break;
+        };
+        break;
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn ex(a: @u32) nopanic;
+extern fn ex1(a: B) nopanic;
+#[derive(Drop, Copy)]
+struct B {
+    c: u32
+}
+#[derive(Drop)]
+struct A {
+    b: B
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u32) <- 3
+  (v1: test::B) <- struct_construct(v0)
+  (v2: test::A) <- struct_construct(v1)
+  (v3: test::B) <- struct_destructure(v2)
+  (v4: ()) <- test::foo[expr16](v3)
+  (v5: ()) <- struct_construct()
+End:
+  Return(v5)
+
+
+Final lowering:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u32) <- 3
+  (v1: test::B) <- struct_construct(v0)
+  () <- test::ex1(v1)
+  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v0)
+  () <- test::ex(v3)
+End:
+  Return()
+
+
+Generated lowering for source location:
+        loop {
+        ^****^
+
+Parameters: v0: @core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::ex(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: @core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::ex(v0)
+End:
+  Return()
+
+
+Generated lowering for source location:
+    loop {
+    ^****^
+
+Parameters: v0: test::B
+blk0 (root):
+Statements:
+  () <- test::ex1(v0)
+  (v1: core::integer::u32) <- struct_destructure(v0)
+  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
+  (v4: ()) <- test::foo[expr14](v3)
+  (v5: ()) <- struct_construct()
+End:
+  Return(v5)
+
+
+Final lowering:
+Parameters: v0: test::B
+blk0 (root):
+Statements:
+  () <- test::ex1(v0)
+  (v1: core::integer::u32) <- struct_destructure(v0)
+  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
+  () <- test::ex(v3)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test change usage of inner with snap usage of outer.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() {
+    let mut a = A { b: B { c: 3 } };
+    loop {
+        a.b.c += 1;
+        ex1(@a.b);
+        break;
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn ex(a: @u32) nopanic;
+extern fn ex1(a: @B) nopanic;
+#[derive(Drop, Copy)]
+struct B {
+    c: u32
+}
+#[derive(Drop)]
+struct A {
+    b: B
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u32) <- 3
+  (v1: test::B) <- struct_construct(v0)
+  (v2: test::A) <- struct_construct(v1)
+  (v3: test::B) <- struct_destructure(v2)
+  (v5: core::integer::u32, v4: ()) <- test::foo[expr13](v3)
+  (v6: core::integer::u32) <- struct_destructure(v3)
+  (v7: ()) <- struct_construct()
+End:
+  Return(v7)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- 3
+  (v2: core::integer::u32) <- 1
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v1, v2) {
+    Result::Ok(v3, v4) => blk1,
+    Result::Err(v5, v6) => blk2,
+  })
+
+blk1:
+Statements:
+  (v7: test::B) <- struct_construct(v4)
+  (v8: test::B, v9: @test::B) <- snapshot(v7)
+  () <- test::ex1(v9)
+  (v10: ()) <- struct_construct()
+  (v11: ((),)) <- struct_construct(v10)
+  (v12: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v11)
+End:
+  Return(v3, v12)
+
+blk2:
+Statements:
+  (v13: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v14: core::felt252) <- 155785504323917466144735657540098748279
+  (v15: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v13, v14)
+  (v16: core::panics::Panic) <- struct_construct()
+  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v16, v15)
+  (v18: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v17)
+End:
+  Return(v5, v18)
+
+
+Generated lowering for source location:
+    loop {
+    ^****^
+
+Parameters: v0: test::B
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- 1
+  (v2: core::integer::u32) <- struct_destructure(v0)
+  (v4: core::integer::u32, v3: ()) <- core::ops::arith::DeprecatedAddAssign::<core::integer::u32, core::integer::op_eq_by_op::AddEqImpl::<core::integer::u32, core::integer::U32Add>>::add_assign(v2, v1)
+  (v5: test::B) <- struct_construct(v4)
+  (v6: test::B, v7: @test::B) <- snapshot(v5)
+  () <- test::ex1(v7)
+  (v8: ()) <- struct_construct()
+  (v9: core::integer::u32) <- struct_destructure(v6)
+End:
+  Return(v9, v8)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: test::B
+blk0 (root):
+Statements:
+  (v2: core::integer::u32) <- 1
+  (v3: core::integer::u32) <- struct_destructure(v1)
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v3, v2) {
+    Result::Ok(v4, v5) => blk1,
+    Result::Err(v6, v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: test::B) <- struct_construct(v5)
+  (v9: test::B, v10: @test::B) <- snapshot(v8)
+  () <- test::ex1(v10)
+  (v11: core::integer::u32) <- struct_destructure(v9)
+  (v12: ()) <- struct_construct()
+  (v13: (core::integer::u32, ())) <- struct_construct(v11, v12)
+  (v14: core::panics::PanicResult::<(core::integer::u32, ())>) <- PanicResult::Ok(v13)
+End:
+  Return(v4, v14)
+
+blk2:
+Statements:
+  (v15: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v16: core::felt252) <- 155785504323917466144735657540098748279
+  (v17: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v15, v16)
+  (v18: core::panics::Panic) <- struct_construct()
+  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v18, v17)
+  (v20: core::panics::PanicResult::<(core::integer::u32, ())>) <- PanicResult::Err(v19)
+End:
+  Return(v6, v20)
