@@ -98,11 +98,6 @@ error: Invalid member expression.
     y.SomeOtherPrefix::is_bar();
       ^***********************^
 
-error: Candidate impl test::AnotherMyTraitImpl::<?0> has an unused generic parameter.
- --> lib.cairo:38:7
-    x.is_bla();
-      ^****^
-
 //! > ==========================================================================
 
 //! > Test calling a method of a trait from the generic arguments.

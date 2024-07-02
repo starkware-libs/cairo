@@ -82,11 +82,6 @@ error: A numeric literal of type core::bool cannot be created.
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                              ^
 
-error: Trait has no implementation in context: core::traits::Add::<core::bool>.
- --> lib.cairo:6:42
-const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                         ^***^
-
 error: This expression is not supported as constant.
  --> lib.cairo:14:47
 const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
@@ -114,11 +109,6 @@ error: A numeric literal of type core::bool cannot be created.
 const DEFAULT_VAR: bool = 1;
                           ^
 
-error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
- --> lib.cairo:1:27
-const DEFAULT_VAR: bool = 1;
-                          ^
-
 //! > ==========================================================================
 
 //! > Const of negative values out of range.
@@ -137,11 +127,6 @@ const B: u8 = -1;
 
 //! > expected_diagnostics
 error: The value does not fit within the range of type core::integer::u8.
- --> lib.cairo:1:15
-const B: u8 = -1;
-              ^^
-
-error: Trait has no implementation in context: core::traits::Neg::<core::integer::u8>.
  --> lib.cairo:1:15
 const B: u8 = -1;
               ^^

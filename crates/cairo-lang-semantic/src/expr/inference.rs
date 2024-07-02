@@ -669,11 +669,16 @@ impl<'db> Inference<'db> {
         stable_ptr: SyntaxStablePtrId,
     ) {
         if let Err((err_set, err_stable_ptr)) = self.finalize_without_reporting() {
-            let diag = self.report_on_pending_error(
-                err_set,
-                diagnostics,
-                err_stable_ptr.unwrap_or(stable_ptr),
-            );
+            let diag = if diagnostics.error_count == 0 {
+                self.report_on_pending_error(
+                    err_set,
+                    diagnostics,
+                    err_stable_ptr.unwrap_or(stable_ptr),
+                )
+            } else {
+                // `diagnostics` is not empty, so it is safe to return 'DiagnosticAdded' here.
+                skip_diagnostic()
+            };
 
             let ty_missing = TypeId::missing(self.db, diag);
             for id in 0..self.type_vars.len() {

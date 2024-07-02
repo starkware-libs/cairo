@@ -25,11 +25,6 @@ error: Function not found.
 1 + foo()
     ^*^
 
-error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo:3:1
-1 + foo()
-^*******^
-
 //! > ==========================================================================
 
 //! > Test function lookup
@@ -175,11 +170,6 @@ error: Wrong number of arguments. Expected 1, found: 0
 error: Unknown type.
  --> lib.cairo:8:14
     let _b = 123_u129;
-             ^******^
-
-error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
- --> lib.cairo:6:14
-    let _b = 123_bool;
              ^******^
 
 //! > ==========================================================================
@@ -758,8 +748,3 @@ error: Are you missing a `::`?.
  --> lib.cairo:4:18
   let _fail = bar<felt252>(1);
                  ^
-
-error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo:4:15
-  let _fail = bar<felt252>(1);
-              ^*************^
