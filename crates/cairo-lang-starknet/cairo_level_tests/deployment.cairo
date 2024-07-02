@@ -1,5 +1,5 @@
 use core::result::ResultTrait;
-use starknet::deploy_syscall;
+use starknet::syscalls::deploy_syscall;
 
 #[starknet::interface]
 trait IValue<TContractState> {
@@ -10,7 +10,7 @@ trait IValue<TContractState> {
 #[starknet::contract]
 mod self_caller {
     use core::traits::TryInto;
-    use starknet::{ClassHash, deploy_syscall};
+    use starknet::{ClassHash, syscalls::deploy_syscall};
     use super::{IValueDispatcher, IValueDispatcherTrait};
     #[storage]
     struct Storage {
