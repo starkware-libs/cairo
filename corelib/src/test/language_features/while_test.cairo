@@ -23,3 +23,13 @@ fn test_outer_loop_break() {
     };
     assert_eq!(i, 10);
 }
+
+#[test]
+fn test_borrow_usage() {
+    let mut i = 0;
+    let arr = array![1, 2, 3, 4];
+    while i != arr.len() {
+        i += 1;
+    };
+    assert_eq!(arr.len(), 4);
+}
