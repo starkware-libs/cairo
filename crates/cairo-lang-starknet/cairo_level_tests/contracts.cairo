@@ -5,7 +5,7 @@ pub mod test_contract;
 mod new_syntax_test_contract;
 mod minimal_contract;
 mod hello_starknet;
-mod erc20;
+pub mod erc20;
 mod token_bridge;
 mod with_erc20;
 mod with_ownable;
