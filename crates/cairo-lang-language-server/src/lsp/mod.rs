@@ -1,1 +1,2 @@
-pub mod client_capabilities;
+pub(crate) mod client_capabilities;
+pub mod methods;

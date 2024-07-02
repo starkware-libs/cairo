@@ -3,6 +3,7 @@ pub mod cursor;
 pub mod fixture;
 pub mod jsonrpc;
 mod mock_client;
+pub mod normalize;
 mod runtime;
 
 pub use self::cursor::cursors;
