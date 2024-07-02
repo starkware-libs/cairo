@@ -25,11 +25,6 @@ error: Function not found.
 1 + foo()
     ^*^
 
-error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo:3:1
-1 + foo()
-^*******^
-
 //! > ==========================================================================
 
 //! > Test function lookup
@@ -758,8 +753,3 @@ error: Are you missing a `::`?.
  --> lib.cairo:4:18
   let _fail = bar<felt252>(1);
                  ^
-
-error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo:4:15
-  let _fail = bar<felt252>(1);
-              ^*************^

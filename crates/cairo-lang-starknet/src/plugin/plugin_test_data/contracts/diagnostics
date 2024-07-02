@@ -1261,11 +1261,6 @@ error: Type not found.
 #[starknet::contract]
 ^*******************^
 
-error: Type annotations needed. Failed to infer ?2.
- --> lib.cairo:1:1
-#[starknet::contract]
-^*******************^
-
 error: Variable not dropped.
  --> lib.cairo:6:40
     fn foo<T>(ref self: ContractState, x: T) {}
@@ -7928,11 +7923,6 @@ error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro mu
  --> lib.cairo:58:44
             get_dep_component_mut!(ref mut self, Comp1).foo1();
                                            ^**^
-
-error: Type annotations needed. Failed to infer ?2.
- --> lib.cairo:51:49
-            get_dep_component_mut!(Comp1, self).foo1();
-                                                ^**^
 
 //! > generated_cairo_code
 lib.cairo:
