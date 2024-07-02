@@ -59,6 +59,14 @@ impl ProjectManifestPath {
             None
         }
     }
+
+    /// Coerces to a [`Path`] slice.
+    pub fn as_path(&self) -> &Path {
+        match self {
+            ProjectManifestPath::CairoProject(path) => path,
+            ProjectManifestPath::Scarb(path) => path,
+        }
+    }
 }
 
 impl fmt::Display for ProjectManifestPath {

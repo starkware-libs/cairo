@@ -5,7 +5,7 @@ use assert_fs::TempDir;
 use cairo_lang_project::PROJECT_FILE_NAME;
 
 use super::ProjectManifestPath;
-use crate::toolchain::scarb::SCARB_TOML;
+use crate::toolchain::scarb::{SCARB_LOCK, SCARB_TOML};
 
 fn check_some(
     source: impl AsRef<Path>,
@@ -75,7 +75,7 @@ fn discover_precedence() {
     let scarb_manifest = t.child(SCARB_TOML);
     scarb_manifest.touch().unwrap();
 
-    let scarb_lock = t.child("Scarb.lock");
+    let scarb_lock = t.child(SCARB_LOCK);
     scarb_lock.touch().unwrap();
 
     let cairo_manifest = t.child(PROJECT_FILE_NAME);
