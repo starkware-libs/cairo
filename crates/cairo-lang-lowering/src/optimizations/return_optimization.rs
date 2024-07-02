@@ -3,7 +3,9 @@
 mod test;
 
 use cairo_lang_semantic as semantic;
-use cairo_lang_utils::{extract_matches, require};
+use cairo_lang_utils::require;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use id_arena::Arena;
 use itertools::Itertools;
 use semantic::MatchArmSelector;
 
@@ -13,7 +15,7 @@ use crate::ids::LocationId;
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure, VarRemapping,
-    VarUsage, VariableId,
+    VarUsage, Variable, VariableId,
 };
 
 /// Adds early returns when applicable.
@@ -38,17 +40,58 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     }
 
     for FixInfo { location: (block_id, statement_idx), return_info } in ctx.fixes.into_iter() {
+        let mut reconstructed = UnorderedHashMap::default();
         let block = &mut lowered.blocks[block_id];
         block.statements.truncate(statement_idx);
         block.end = FlatBlockEnd::Return(
-            return_info
-                .returned_vars
-                .iter()
-                .map(|var_info| *extract_matches!(var_info, ValueInfo::Var))
-                .collect_vec(),
+            get_return_var_usages(
+                &mut lowered.variables,
+                &mut block.statements,
+                return_info.location,
+                &mut reconstructed,
+                &return_info.returned_vars,
+            ),
             return_info.location,
         )
     }
+}
+
+fn get_return_var_usages(
+    variables: &mut Arena<Variable>,
+    statements: &mut Vec<Statement>,
+    location: LocationId,
+    reconstructed: &mut UnorderedHashMap<VariableId, VariableId>,
+    infos: &[ValueInfo],
+) -> Vec<VarUsage> {
+    infos
+        .iter()
+        .map(|var_info| match var_info {
+            ValueInfo::Var(var_usage) => *var_usage,
+            ValueInfo::StructConstruct { var, var_infos, .. } => {
+                if !reconstructed.contains_key(var) {
+                    let output_var = variables.alloc(variables[*var].clone());
+                    let struct_construct_stmt = StatementStructConstruct {
+                        inputs: get_return_var_usages(
+                            variables,
+                            statements,
+                            location,
+                            reconstructed,
+                            var_infos,
+                        ),
+                        output: output_var,
+                    };
+
+                    statements.push(Statement::StructConstruct(struct_construct_stmt));
+                    reconstructed.insert(*var, output_var);
+                }
+
+                VarUsage { var_id: reconstructed[var], location }
+            }
+            _ => {
+                unreachable!("Early return possible should prevent has from reaching this point.",)
+            }
+        })
+        .collect_vec()
 }
 
 pub struct ReturnOptimizerContext<'a> {
@@ -129,6 +172,7 @@ pub enum ValueInfo {
     Interchangeable(semantic::TypeId),
     /// The value is the result of a StructConstruct statement.
     StructConstruct {
+        var: VariableId,
         /// The type of the struct.
         ty: semantic::TypeId,
         /// The inputs to the StructConstruct statement.
@@ -161,7 +205,7 @@ impl ValueInfo {
     {
         match self {
             ValueInfo::Var(var_usage) => *self = f(var_usage),
-            ValueInfo::StructConstruct { ty: _, ref mut var_infos } => {
+            ValueInfo::StructConstruct { var: _, ty: _, ref mut var_infos } => {
                 for var_info in var_infos.iter_mut() {
                     var_info.apply(f);
                 }
@@ -188,7 +232,7 @@ impl ValueInfo {
                     OpResult::NoChange
                 }
             }
-            ValueInfo::StructConstruct { ty, var_infos } => {
+            ValueInfo::StructConstruct { var: _, ty, var_infos } => {
                 let mut cancels_out = ty == &ctx.lowered.variables[stmt.input.var_id].ty
                     && var_infos.len() == stmt.outputs.len();
                 for (var_info, output) in var_infos.iter().zip(stmt.outputs.iter()) {
@@ -249,7 +293,7 @@ impl ValueInfo {
                     OpResult::NoChange
                 }
             }
-            ValueInfo::StructConstruct { ty: _, ref mut var_infos } => {
+            ValueInfo::StructConstruct { var: _, ty: _, ref mut var_infos } => {
                 let mut input_consumed = false;
                 for var_info in var_infos.iter_mut() {
                     match var_info.apply_match_arm(input, arm) {
@@ -309,6 +353,16 @@ pub struct ReturnInfo {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AnalyzerInfo {
     opt_return_info: Option<ReturnInfo>,
+}
+
+/// Returns true if an early return is possible according to 'self'.
+fn early_return_possible_for_infos(infos: &[ValueInfo]) -> bool {
+    infos.iter().all(|var_info| match var_info {
+        ValueInfo::Var(_) => true,
+        ValueInfo::StructConstruct { var_infos, .. } => early_return_possible_for_infos(var_infos),
+        ValueInfo::EnumConstruct { .. } => false,
+        ValueInfo::Interchangeable(_) => false,
+    })
 }
 
 impl AnalyzerInfo {
@@ -397,12 +451,7 @@ impl AnalyzerInfo {
     fn early_return_possible(&self) -> bool {
         let Some(ReturnInfo { ref returned_vars, .. }) = self.opt_return_info else { return false };
 
-        returned_vars.iter().all(|var_info| match var_info {
-            ValueInfo::Var(_) => true,
-            ValueInfo::StructConstruct { .. } => false,
-            ValueInfo::EnumConstruct { .. } => false,
-            ValueInfo::Interchangeable(_) => false,
-        })
+        early_return_possible_for_infos(returned_vars)
     }
 }
 
@@ -425,6 +474,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 info.replace(
                     *output,
                     ValueInfo::StructConstruct {
+                        var: *output,
                         ty: self.lowered.variables[*output].ty,
                         var_infos: inputs.iter().map(|input| self.get_var_info(input)).collect(),
                     },
