@@ -1,7 +1,7 @@
 use core::{
     integer,
     integer::{
-        BoundedInt, u128_sqrt, u128_wrapping_sub, u16_sqrt, u256_sqrt, u256_wide_mul, u32_sqrt,
+        BoundedInt, u128_sqrt, u128_wrapping_sub, u16_sqrt, u256_sqrt, u256_wide_mul, u256_wide_sqr, u32_sqrt,
         u512_safe_div_rem_by_u256, u512, u64_sqrt, u8_sqrt
     }
 };
@@ -757,6 +757,19 @@ fn test_u256_wide_mul() {
             limb2: 0x21222222322332333333433443444444,
             limb3: 0x1001101111112112
         },
+        'long calculation failed'
+    );
+}
+
+#[test]
+fn test_u256_wide_sqr() {
+    assert_eq(@u256_wide_sqr(0), @u512 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 }, '0 * 0 != 0');
+    assert_eq(
+        @u256_wide_mul(
+            0x5445544554455445444332332232444344334333322222122112111111011001,
+            0x5445544554455445444332332232444344334333322222122112111111011001
+        ),
+        @u256_wide_sqr(0x5445544554455445444332332232444344334333322222122112111111011001),
         'long calculation failed'
     );
 }
