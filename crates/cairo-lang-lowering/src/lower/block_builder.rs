@@ -1,6 +1,7 @@
 use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -26,6 +27,8 @@ use crate::{
 pub struct BlockBuilder {
     /// A store for semantic variables, owning their OwnedVariable instances.
     pub semantics: SemanticLoweringMapping,
+    /// The semantic variables that are captured as snapshots in this block.
+    pub snapped_semantics: OrderedHashMap<MemberPath, VariableId>,
     /// The semantic variables that are added/changed in this block.
     changed_member_paths: OrderedHashSet<MemberPath>,
     /// Current sequence of lowered statements emitted.
@@ -38,6 +41,7 @@ impl BlockBuilder {
     pub fn root(_ctx: &mut LoweringContext<'_, '_>, block_id: BlockId) -> Self {
         BlockBuilder {
             semantics: Default::default(),
+            snapped_semantics: Default::default(),
             changed_member_paths: Default::default(),
             statements: Default::default(),
             block_id,
@@ -48,6 +52,7 @@ impl BlockBuilder {
     pub fn child_block_builder(&self, block_id: BlockId) -> BlockBuilder {
         BlockBuilder {
             semantics: self.semantics.clone(),
+            snapped_semantics: self.snapped_semantics.clone(),
             changed_member_paths: Default::default(),
             statements: Default::default(),
             block_id,
@@ -59,6 +64,7 @@ impl BlockBuilder {
     pub fn sibling_block_builder(&self, block_id: BlockId) -> BlockBuilder {
         BlockBuilder {
             semantics: self.semantics.clone(),
+            snapped_semantics: self.snapped_semantics.clone(),
             changed_member_paths: self.changed_member_paths.clone(),
             statements: Default::default(),
             block_id,
@@ -117,6 +123,45 @@ impl BlockBuilder {
                 member_path,
             )
             .map(|var_id| VarUsage { var_id, location })
+    }
+
+    pub fn update_snap_ref(&mut self, member_path: &ExprVarMemberPath, var: VariableId) {
+        self.snapped_semantics.insert(member_path.into(), var);
+    }
+    pub fn get_snap_ref(
+        &mut self,
+        ctx: &mut LoweringContext<'_, '_>,
+        member_path: &ExprVarMemberPath,
+    ) -> Option<VarUsage> {
+        let location = ctx.get_location(member_path.stable_ptr().untyped());
+        if let Some(var_id) = self.snapped_semantics.get::<MemberPath>(&member_path.into()) {
+            return Some(VarUsage { var_id: *var_id, location });
+        }
+        let ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } = member_path
+        else {
+            return None;
+        };
+        // TODO(TomerStarkware): Consider adding the result to snap_semantics to avoid
+        // recomputation.
+        let parent_var = self.get_snap_ref(ctx, parent)?;
+        let members = ctx.db.concrete_struct_members(*concrete_struct_id).ok()?;
+        let (parent_number_of_snapshots, _) =
+            peel_snapshots(ctx.db.upcast(), ctx.variables[parent_var.var_id].ty);
+        let member_idx = members.iter().position(|(_, member)| member.id == *member_id)?;
+        Some(
+            generators::StructMemberAccess {
+                input: parent_var,
+                member_tys: members
+                    .into_iter()
+                    .map(|(_, member)| {
+                        wrap_in_snapshots(ctx.db.upcast(), member.ty, parent_number_of_snapshots)
+                    })
+                    .collect(),
+                member_idx,
+                location,
+            }
+            .add(ctx, &mut self.statements),
+        )
     }
 
     /// Gets the type of a semantic variable.
