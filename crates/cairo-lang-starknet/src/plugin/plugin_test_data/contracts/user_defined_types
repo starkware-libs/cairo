@@ -263,8 +263,43 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
         starknet::Store::<felt252>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageWrappedFelt252 of starknet::storage_access::DeriveStorage::<WrappedFelt252> {}
+
+#[derive(Drop, Copy)]
+struct WrappedFelt252SubPointers {
+    value: starknet::storage::StoragePointer<felt252>,
+}
+impl WrappedFelt252SubPointersImpl of starknet::storage::SubPointers<WrappedFelt252> {
+type SubPointersType = WrappedFelt252SubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<WrappedFelt252>) -> WrappedFelt252SubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let value_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                WrappedFelt252SubPointers {
+           value: value_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableWrappedFelt252SubPointers {
+    value: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
+}
+impl MutableWrappedFelt252SubPointersImpl of starknet::storage::MutableSubPointers<WrappedFelt252> {
+type SubPointersType = MutableWrappedFelt252SubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<WrappedFelt252>>) -> MutableWrappedFelt252SubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let value_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableWrappedFelt252SubPointers {
+           value: value_value,
+        }
+    }
+}
 
 
 lib.cairo:17:1
@@ -332,8 +367,7 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
         0
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageZeroSize of starknet::storage_access::DeriveStorage::<ZeroSize> {}
+
 
 
 lib.cairo:19:1
@@ -654,6 +688,24 @@ impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
 impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+
+
+lib.cairo:13:26
+    #[derive(Drop, Hash, starknet::Store)]
+                         ^*************^
+impls:
+
+impl WrappedFelt252SubPointersDrop of core::traits::Drop::<WrappedFelt252SubPointers>;
+impl WrappedFelt252SubPointersCopy of core::traits::Copy::<WrappedFelt252SubPointers>;
+
+
+lib.cairo:13:26
+    #[derive(Drop, Hash, starknet::Store)]
+                         ^*************^
+impls:
+
+impl MutableWrappedFelt252SubPointersDrop of core::traits::Drop::<MutableWrappedFelt252SubPointers>;
+impl MutableWrappedFelt252SubPointersCopy of core::traits::Copy::<MutableWrappedFelt252SubPointers>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`

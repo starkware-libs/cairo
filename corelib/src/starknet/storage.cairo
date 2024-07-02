@@ -576,10 +576,7 @@ struct u256SubPointers {
     pub high: starknet::storage::StoragePointer<u128>,
 }
 
-#[feature("derive-storage")]
-impl u256SubPointersImpl<
-    +starknet::storage_access::DeriveStorage<u256>
-> of starknet::storage::SubPointers<u256> {
+impl u256SubPointersImpl of starknet::storage::SubPointers<u256> {
     type SubPointersType = u256SubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<u256>) -> u256SubPointers {
         let base_address = self.address;
@@ -602,10 +599,7 @@ struct MutableU256SubPointers {
     pub high: starknet::storage::StoragePointer<Mutable<u128>>,
 }
 
-#[feature("derive-storage")]
-impl MutableU256SubPointersImpl<
-    +starknet::storage_access::DeriveStorage<u256>
-> of starknet::storage::MutableSubPointers<u256> {
+impl MutableU256SubPointersImpl of starknet::storage::MutableSubPointers<u256> {
     type SubPointersType = MutableU256SubPointers;
     fn mutable_sub_pointers(
         self: starknet::storage::StoragePointer<Mutable<u256>>
