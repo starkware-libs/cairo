@@ -810,6 +810,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     )
                 }
             }
+            SemanticDiagnosticKind::MaybeMissingColonColon => "Are you missing a `::`?.".into(),
         }
     }
 
@@ -1141,6 +1142,7 @@ pub enum SemanticDiagnosticKind {
     DerefCycle {
         deref_chain: String,
     },
+    MaybeMissingColonColon,
 }
 
 /// The kind of an expression with multiple possible return types.
