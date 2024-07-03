@@ -12,3 +12,4 @@ mod with_ownable;
 mod ownable_erc20;
 mod upgradable_counter;
 mod mintable;
+mod storage_accesses;

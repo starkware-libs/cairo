@@ -1034,15 +1034,15 @@ impl BalancePairStorageNodeImpl of starknet::storage::StorageNode<BalancePair> {
 type NodeType = BalancePairStorageNode;
    fn storage_node(self: starknet::storage::StoragePath<BalancePair>) -> BalancePairStorageNode {
        
-        let balance1_value = starknet::storage::PendingStoragePath { 
-            hash_state: self.hash_state,
-            pending_key: selector!("balance1") 
-        };
-        let balance2_value = starknet::storage::PendingStoragePath { 
-            hash_state: self.hash_state,
-            pending_key: selector!("balance2") 
-        };
-        BalancePairStorageNode {
+        let balance1_value = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("balance1")
+                    );
+                            let balance2_value = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("balance2")
+                    );
+                            BalancePairStorageNode {
            balance1: balance1_value,
            balance2: balance2_value,
         }
@@ -1057,15 +1057,15 @@ impl MutableBalancePairStorageNodeImpl of starknet::storage::MutableStorageNode<
 type NodeType = MutableBalancePairStorageNode;
    fn mutable_storage_node(self: starknet::storage::StoragePath<starknet::storage::Mutable::<BalancePair>>) -> MutableBalancePairStorageNode {
        
-        let balance1_value = starknet::storage::PendingStoragePath { 
-            hash_state: self.hash_state,
-            pending_key: selector!("balance1") 
-        };
-        let balance2_value = starknet::storage::PendingStoragePath { 
-            hash_state: self.hash_state,
-            pending_key: selector!("balance2") 
-        };
-        MutableBalancePairStorageNode {
+        let balance1_value = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("balance1")
+                    );
+                            let balance2_value = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("balance2")
+                    );
+                            MutableBalancePairStorageNode {
            balance1: balance1_value,
            balance2: balance2_value,
         }

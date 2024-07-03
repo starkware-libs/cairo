@@ -436,9 +436,21 @@ impl StoragePointer0OffsetDeref<T> of core::ops::Deref<StoragePointer0Offset<T>>
 
 
 /// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
-struct PendingStoragePath<T> {
+pub struct PendingStoragePath<T> {
     hash_state: StoragePathHashState,
-    pending_key: felt252
+    pending_key: felt252,
+}
+
+/// A trait for creating a `PendingStoragePath` from a hash state and a key.
+pub trait PendingStoragePathTrait<T, S> {
+    fn new(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T>;
+}
+
+/// An implementation of `StoragePathEntry` for `PendingStoragePath`.
+impl PendingStoragePathImpl<T, S> of PendingStoragePathTrait<T, S> {
+    fn new(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T> {
+        PendingStoragePath { hash_state: *storage_path.hash_state, pending_key }
+    }
 }
 
 impl PendingStoragePathDrop<T> of Drop<PendingStoragePath<T>> {}
