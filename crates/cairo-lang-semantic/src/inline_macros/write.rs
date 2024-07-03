@@ -2,7 +2,8 @@ use std::fmt;
 
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
+    PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
@@ -22,6 +23,7 @@ impl InlineMacroExprPlugin for WriteMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata,
     ) -> InlinePluginResult {
         generate_code_inner(syntax, db, false)
     }
@@ -38,6 +40,7 @@ impl InlineMacroExprPlugin for WritelnMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata,
     ) -> InlinePluginResult {
         generate_code_inner(syntax, db, true)
     }

@@ -149,6 +149,7 @@ impl ResolverData {
 pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
     pub data: ResolverData,
+    pub owning_crate_id: CrateId,
     pub edition: Edition,
 }
 impl Deref for Resolver<'_> {
@@ -202,11 +203,8 @@ impl<'db> Resolver<'db> {
     }
 
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
-        Self {
-            edition: extract_edition(db, data.module_file_id.0.owning_crate(db.upcast())),
-            db,
-            data,
-        }
+        let owning_crate_id = data.module_file_id.0.owning_crate(db.upcast());
+        Self { owning_crate_id, edition: extract_edition(db, owning_crate_id), db, data }
     }
 
     pub fn inference(&mut self) -> Inference<'_> {

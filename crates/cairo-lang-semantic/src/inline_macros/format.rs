@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
+    PluginGeneratedFile,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
@@ -18,6 +19,7 @@ impl InlineMacroExprPlugin for FormatMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata,
     ) -> InlinePluginResult {
         let arguments = syntax.arguments(db);
         let mut builder = PatchBuilder::new(db, syntax);

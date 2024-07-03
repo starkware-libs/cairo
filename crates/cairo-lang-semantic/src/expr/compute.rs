@@ -13,7 +13,9 @@ use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, MemberId,
     NamedLanguageElementId, TraitFunctionId, TraitId, VarId,
 };
+use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToOption};
+use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::{
     BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
@@ -132,6 +134,7 @@ pub struct ComputationContext<'ctx> {
     /// Definitions of semantic variables.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
     loop_ctx: Option<LoopContext>,
+    cfg_set: Arc<CfgSet>,
 }
 impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
@@ -143,6 +146,7 @@ impl<'ctx> ComputationContext<'ctx> {
     ) -> Self {
         let semantic_defs =
             environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
+        let owning_crate_id = resolver.owning_crate_id;
         Self {
             db,
             diagnostics,
@@ -154,6 +158,10 @@ impl<'ctx> ComputationContext<'ctx> {
             statements: Arena::default(),
             semantic_defs,
             loop_ctx: None,
+            cfg_set: db
+                .crate_config(owning_crate_id)
+                .and_then(|cfg| cfg.settings.cfg_set.map(Arc::new))
+                .unwrap_or(db.cfg_set()),
         }
     }
 
@@ -353,7 +361,15 @@ fn compute_expr_inline_macro_semantic(
         return Err(ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into())));
     };
 
-    let result = macro_plugin.generate_code(syntax_db, syntax);
+    let result = macro_plugin.generate_code(
+        syntax_db,
+        syntax,
+        &MacroPluginMetadata {
+            cfg_set: &ctx.cfg_set,
+            declared_derives: &ctx.db.declared_derives(),
+            edition: ctx.resolver.edition,
+        },
+    );
     let mut diag_added = None;
     for diagnostic in result.diagnostics {
         diag_added =

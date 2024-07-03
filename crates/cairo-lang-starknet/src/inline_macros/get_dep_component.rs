@@ -1,7 +1,8 @@
 use cairo_lang_defs::extract_macro_unnamed_args;
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
+    PluginGeneratedFile,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
@@ -18,6 +19,7 @@ impl InlineMacroExprPlugin for GetDepComponentMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata,
     ) -> InlinePluginResult {
         get_dep_component_generate_code_helper(db, syntax, false)
     }
@@ -34,6 +36,7 @@ impl InlineMacroExprPlugin for GetDepComponentMutMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata,
     ) -> InlinePluginResult {
         get_dep_component_generate_code_helper(db, syntax, true)
     }
