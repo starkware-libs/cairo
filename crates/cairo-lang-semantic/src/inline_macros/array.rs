@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::PatchBuilder;
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
+    PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::unsupported_bracket_diagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -16,6 +17,7 @@ impl InlineMacroExprPlugin for ArrayMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         let ast::WrappedArgList::BracketedArgList(args) = syntax.arguments(db) else {
             return unsupported_bracket_diagnostic(db, syntax);

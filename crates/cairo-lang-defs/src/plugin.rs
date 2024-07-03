@@ -144,6 +144,7 @@ pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: &ast::ExprInlineMacro,
+        metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult;
 }
 
