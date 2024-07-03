@@ -1,6 +1,3 @@
-#[feature("collections-into-iter")]
-use core::iter::{IntoIterator, Iterator};
-
 #[test]
 fn test_for_loop_array_sum() {
     let mut sum = 0;
