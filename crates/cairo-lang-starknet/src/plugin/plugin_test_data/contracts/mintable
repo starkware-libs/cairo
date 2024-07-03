@@ -531,8 +531,43 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageGetSupplyDispatcher of starknet::storage_access::DeriveStorage::<GetSupplyDispatcher> {}
+
+#[derive(Drop, Copy)]
+struct GetSupplyDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl GetSupplyDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplyDispatcher> {
+type SubPointersType = GetSupplyDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplyDispatcher>) -> GetSupplyDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                GetSupplyDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableGetSupplyDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl MutableGetSupplyDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<GetSupplyDispatcher> {
+type SubPointersType = MutableGetSupplyDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplyDispatcher>>) -> MutableGetSupplyDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableGetSupplyDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
 impl GetSupplyLibraryDispatcherCopy of core::traits::Copy::<GetSupplyLibraryDispatcher>;
 impl GetSupplyLibraryDispatcherDrop of core::traits::Drop::<GetSupplyLibraryDispatcher>;
 impl GetSupplyLibraryDispatcherSerde of core::serde::Serde::<GetSupplyLibraryDispatcher> {
@@ -576,8 +611,43 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageGetSupplyLibraryDispatcher of starknet::storage_access::DeriveStorage::<GetSupplyLibraryDispatcher> {}
+
+#[derive(Drop, Copy)]
+struct GetSupplyLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl GetSupplyLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplyLibraryDispatcher> {
+type SubPointersType = GetSupplyLibraryDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplyLibraryDispatcher>) -> GetSupplyLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                GetSupplyLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableGetSupplyLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl MutableGetSupplyLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<GetSupplyLibraryDispatcher> {
+type SubPointersType = MutableGetSupplyLibraryDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplyLibraryDispatcher>>) -> MutableGetSupplyLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableGetSupplyLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
 impl GetSupplySafeLibraryDispatcherCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcher>;
 impl GetSupplySafeLibraryDispatcherDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcher>;
 impl GetSupplySafeLibraryDispatcherSerde of core::serde::Serde::<GetSupplySafeLibraryDispatcher> {
@@ -621,8 +691,43 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageGetSupplySafeLibraryDispatcher of starknet::storage_access::DeriveStorage::<GetSupplySafeLibraryDispatcher> {}
+
+#[derive(Drop, Copy)]
+struct GetSupplySafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl GetSupplySafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplySafeLibraryDispatcher> {
+type SubPointersType = GetSupplySafeLibraryDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplySafeLibraryDispatcher>) -> GetSupplySafeLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                GetSupplySafeLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableGetSupplySafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl MutableGetSupplySafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<GetSupplySafeLibraryDispatcher> {
+type SubPointersType = MutableGetSupplySafeLibraryDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplySafeLibraryDispatcher>>) -> MutableGetSupplySafeLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableGetSupplySafeLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
 impl GetSupplySafeDispatcherCopy of core::traits::Copy::<GetSupplySafeDispatcher>;
 impl GetSupplySafeDispatcherDrop of core::traits::Drop::<GetSupplySafeDispatcher>;
 impl GetSupplySafeDispatcherSerde of core::serde::Serde::<GetSupplySafeDispatcher> {
@@ -666,8 +771,59 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageGetSupplySafeDispatcher of starknet::storage_access::DeriveStorage::<GetSupplySafeDispatcher> {}
+
+#[derive(Drop, Copy)]
+struct GetSupplySafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl GetSupplySafeDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplySafeDispatcher> {
+type SubPointersType = GetSupplySafeDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplySafeDispatcher>) -> GetSupplySafeDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                GetSupplySafeDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableGetSupplySafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl MutableGetSupplySafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<GetSupplySafeDispatcher> {
+type SubPointersType = MutableGetSupplySafeDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplySafeDispatcher>>) -> MutableGetSupplySafeDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableGetSupplySafeDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+impl GetSupplyDispatcherSubPointersDrop of core::traits::Drop::<GetSupplyDispatcherSubPointers>;
+impl GetSupplyDispatcherSubPointersCopy of core::traits::Copy::<GetSupplyDispatcherSubPointers>;
+impl MutableGetSupplyDispatcherSubPointersDrop of core::traits::Drop::<MutableGetSupplyDispatcherSubPointers>;
+impl MutableGetSupplyDispatcherSubPointersCopy of core::traits::Copy::<MutableGetSupplyDispatcherSubPointers>;
+impl GetSupplyLibraryDispatcherSubPointersDrop of core::traits::Drop::<GetSupplyLibraryDispatcherSubPointers>;
+impl GetSupplyLibraryDispatcherSubPointersCopy of core::traits::Copy::<GetSupplyLibraryDispatcherSubPointers>;
+impl MutableGetSupplyLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableGetSupplyLibraryDispatcherSubPointers>;
+impl MutableGetSupplyLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableGetSupplyLibraryDispatcherSubPointers>;
+impl GetSupplySafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcherSubPointers>;
+impl GetSupplySafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcherSubPointers>;
+impl MutableGetSupplySafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableGetSupplySafeLibraryDispatcherSubPointers>;
+impl MutableGetSupplySafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableGetSupplySafeLibraryDispatcherSubPointers>;
+impl GetSupplySafeDispatcherSubPointersDrop of core::traits::Drop::<GetSupplySafeDispatcherSubPointers>;
+impl GetSupplySafeDispatcherSubPointersCopy of core::traits::Copy::<GetSupplySafeDispatcherSubPointers>;
+impl MutableGetSupplySafeDispatcherSubPointersDrop of core::traits::Drop::<MutableGetSupplySafeDispatcherSubPointers>;
+impl MutableGetSupplySafeDispatcherSubPointersCopy of core::traits::Copy::<MutableGetSupplySafeDispatcherSubPointers>;
 
     use starknet::ContractAddress;
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;

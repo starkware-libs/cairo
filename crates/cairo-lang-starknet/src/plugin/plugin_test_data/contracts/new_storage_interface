@@ -33,14 +33,12 @@ struct BalancePair {
 }
 
 #[derive(Drop, starknet::Store)]
-#[starknet::sub_pointers]
 struct SlicedBalanceTrio {
     balance1: u256,
     balance12: SlicedBalancePair,
 }
 
 #[derive(Drop, starknet::Store)]
-#[starknet::sub_pointers]
 struct SlicedBalancePair {
     balance1: u256,
     balance2: felt252,
@@ -140,14 +138,12 @@ struct BalancePair {
 }
 
 #[derive(Drop, starknet::Store)]
-#[starknet::sub_pointers]
 struct SlicedBalanceTrio {
     balance1: u256,
     balance12: SlicedBalancePair,
 }
 
 #[derive(Drop, starknet::Store)]
-#[starknet::sub_pointers]
 struct SlicedBalancePair {
     balance1: u256,
     balance2: felt252,
@@ -1034,11 +1030,10 @@ struct BalancePairStorageNode {
     balance1: starknet::storage::PendingStoragePath<u256>,
     balance2: starknet::storage::PendingStoragePath<felt252>,
 }
-
 impl BalancePairStorageNodeImpl of starknet::storage::StorageNode<BalancePair> {
-    type NodeType = BalancePairStorageNode;
-       fn storage_node(self: starknet::storage::StoragePath<BalancePair>) -> BalancePairStorageNode {
-           
+type NodeType = BalancePairStorageNode;
+   fn storage_node(self: starknet::storage::StoragePath<BalancePair>) -> BalancePairStorageNode {
+       
         let balance1_value = starknet::storage::PendingStoragePath { 
             hash_state: self.hash_state,
             pending_key: selector!("balance1") 
@@ -1058,11 +1053,10 @@ struct MutableBalancePairStorageNode {
     balance1: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<u256>>,
     balance2: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<felt252>>,
 }
-
 impl MutableBalancePairStorageNodeImpl of starknet::storage::MutableStorageNode<BalancePair> {
-    type NodeType = MutableBalancePairStorageNode;
-       fn mutable_storage_node(self: starknet::storage::StoragePath<starknet::storage::Mutable::<BalancePair>>) -> MutableBalancePairStorageNode {
-           
+type NodeType = MutableBalancePairStorageNode;
+   fn mutable_storage_node(self: starknet::storage::StoragePath<starknet::storage::Mutable::<BalancePair>>) -> MutableBalancePairStorageNode {
+       
         let balance1_value = starknet::storage::PendingStoragePath { 
             hash_state: self.hash_state,
             pending_key: selector!("balance1") 
@@ -1134,25 +1128,16 @@ impl StoreSlicedBalanceTrio of starknet::Store::<SlicedBalanceTrio> {
         starknet::Store::<SlicedBalancePair>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageSlicedBalanceTrio of starknet::storage_access::DeriveStorage::<SlicedBalanceTrio> {}
-
-
-lib.cairo:29:1
-#[derive(Drop, starknet::Store)]
-^******************************^
-storage_node:
 
 #[derive(Drop, Copy)]
 struct SlicedBalanceTrioSubPointers {
     balance1: starknet::storage::StoragePointer<u256>,
     balance12: starknet::storage::StoragePointer<SlicedBalancePair>,
 }
-#[feature("derive-storage")]
-impl SlicedBalanceTrioSubPointersImpl<+starknet::storage_access::DeriveStorage<SlicedBalanceTrio>> of starknet::storage::SubPointers<SlicedBalanceTrio> {
-    type SubPointersType = SlicedBalanceTrioSubPointers;
-       fn sub_pointers(self: starknet::storage::StoragePointer<SlicedBalanceTrio>) -> SlicedBalanceTrioSubPointers {
-                   let base_address = self.address;
+impl SlicedBalanceTrioSubPointersImpl of starknet::storage::SubPointers<SlicedBalanceTrio> {
+type SubPointersType = SlicedBalanceTrioSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<SlicedBalanceTrio>) -> SlicedBalanceTrioSubPointers {
+               let base_address = self.address;
         let mut current_offset = self.offset;
         let balance1_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -1174,11 +1159,10 @@ struct MutableSlicedBalanceTrioSubPointers {
     balance1: starknet::storage::StoragePointer<starknet::storage::Mutable::<u256>>,
     balance12: starknet::storage::StoragePointer<starknet::storage::Mutable::<SlicedBalancePair>>,
 }
-#[feature("derive-storage")]
-impl MutableSlicedBalanceTrioSubPointersImpl<+starknet::storage_access::DeriveStorage<SlicedBalanceTrio>> of starknet::storage::MutableSubPointers<SlicedBalanceTrio> {
-    type SubPointersType = MutableSlicedBalanceTrioSubPointers;
-       fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<SlicedBalanceTrio>>) -> MutableSlicedBalanceTrioSubPointers {
-                   let base_address = self.address;
+impl MutableSlicedBalanceTrioSubPointersImpl of starknet::storage::MutableSubPointers<SlicedBalanceTrio> {
+type SubPointersType = MutableSlicedBalanceTrioSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<SlicedBalanceTrio>>) -> MutableSlicedBalanceTrioSubPointers {
+               let base_address = self.address;
         let mut current_offset = self.offset;
         let balance1_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -1197,7 +1181,7 @@ impl MutableSlicedBalanceTrioSubPointersImpl<+starknet::storage_access::DeriveSt
 }
 
 
-lib.cairo:35:1
+lib.cairo:34:1
 
 ^
 impls:
@@ -1205,7 +1189,7 @@ impls:
 impl SlicedBalancePairDrop of core::traits::Drop::<SlicedBalancePair>;
 
 
-lib.cairo:36:16
+lib.cairo:35:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 starknet_derive:
@@ -1252,25 +1236,16 @@ impl StoreSlicedBalancePair of starknet::Store::<SlicedBalancePair> {
         starknet::Store::<felt252>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageSlicedBalancePair of starknet::storage_access::DeriveStorage::<SlicedBalancePair> {}
-
-
-lib.cairo:36:1
-#[derive(Drop, starknet::Store)]
-^******************************^
-storage_node:
 
 #[derive(Drop, Copy)]
 struct SlicedBalancePairSubPointers {
     balance1: starknet::storage::StoragePointer<u256>,
     balance2: starknet::storage::StoragePointer<felt252>,
 }
-#[feature("derive-storage")]
-impl SlicedBalancePairSubPointersImpl<+starknet::storage_access::DeriveStorage<SlicedBalancePair>> of starknet::storage::SubPointers<SlicedBalancePair> {
-    type SubPointersType = SlicedBalancePairSubPointers;
-       fn sub_pointers(self: starknet::storage::StoragePointer<SlicedBalancePair>) -> SlicedBalancePairSubPointers {
-                   let base_address = self.address;
+impl SlicedBalancePairSubPointersImpl of starknet::storage::SubPointers<SlicedBalancePair> {
+type SubPointersType = SlicedBalancePairSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<SlicedBalancePair>) -> SlicedBalancePairSubPointers {
+               let base_address = self.address;
         let mut current_offset = self.offset;
         let balance1_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -1292,11 +1267,10 @@ struct MutableSlicedBalancePairSubPointers {
     balance1: starknet::storage::StoragePointer<starknet::storage::Mutable::<u256>>,
     balance2: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
 }
-#[feature("derive-storage")]
-impl MutableSlicedBalancePairSubPointersImpl<+starknet::storage_access::DeriveStorage<SlicedBalancePair>> of starknet::storage::MutableSubPointers<SlicedBalancePair> {
-    type SubPointersType = MutableSlicedBalancePairSubPointers;
-       fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<SlicedBalancePair>>) -> MutableSlicedBalancePairSubPointers {
-                   let base_address = self.address;
+impl MutableSlicedBalancePairSubPointersImpl of starknet::storage::MutableSubPointers<SlicedBalancePair> {
+type SubPointersType = MutableSlicedBalancePairSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<SlicedBalancePair>>) -> MutableSlicedBalancePairSubPointers {
+               let base_address = self.address;
         let mut current_offset = self.offset;
         let balance1_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -1370,8 +1344,43 @@ impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDi
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageHelloStarknetTraitDispatcher of starknet::storage_access::DeriveStorage::<HelloStarknetTraitDispatcher> {}
+
+#[derive(Drop, Copy)]
+struct HelloStarknetTraitDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl HelloStarknetTraitDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitDispatcher> {
+type SubPointersType = HelloStarknetTraitDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitDispatcher>) -> HelloStarknetTraitDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                HelloStarknetTraitDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableHelloStarknetTraitDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl MutableHelloStarknetTraitDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<HelloStarknetTraitDispatcher> {
+type SubPointersType = MutableHelloStarknetTraitDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitDispatcher>>) -> MutableHelloStarknetTraitDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableHelloStarknetTraitDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
 
 
 lib.cairo:1:1
@@ -1429,8 +1438,43 @@ impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknet
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageHelloStarknetTraitLibraryDispatcher of starknet::storage_access::DeriveStorage::<HelloStarknetTraitLibraryDispatcher> {}
+
+#[derive(Drop, Copy)]
+struct HelloStarknetTraitLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl HelloStarknetTraitLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitLibraryDispatcher> {
+type SubPointersType = HelloStarknetTraitLibraryDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitLibraryDispatcher>) -> HelloStarknetTraitLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                HelloStarknetTraitLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableHelloStarknetTraitLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl MutableHelloStarknetTraitLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<HelloStarknetTraitLibraryDispatcher> {
+type SubPointersType = MutableHelloStarknetTraitLibraryDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitLibraryDispatcher>>) -> MutableHelloStarknetTraitLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableHelloStarknetTraitLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
 
 
 lib.cairo:1:1
@@ -1488,8 +1532,43 @@ impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStar
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageHelloStarknetTraitSafeLibraryDispatcher of starknet::storage_access::DeriveStorage::<HelloStarknetTraitSafeLibraryDispatcher> {}
+
+#[derive(Drop, Copy)]
+struct HelloStarknetTraitSafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl HelloStarknetTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitSafeLibraryDispatcher> {
+type SubPointersType = HelloStarknetTraitSafeLibraryDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitSafeLibraryDispatcher>) -> HelloStarknetTraitSafeLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                HelloStarknetTraitSafeLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableHelloStarknetTraitSafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl MutableHelloStarknetTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<HelloStarknetTraitSafeLibraryDispatcher> {
+type SubPointersType = MutableHelloStarknetTraitSafeLibraryDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitSafeLibraryDispatcher>>) -> MutableHelloStarknetTraitSafeLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableHelloStarknetTraitSafeLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
 
 
 lib.cairo:1:1
@@ -1547,8 +1626,43 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageHelloStarknetTraitSafeDispatcher of starknet::storage_access::DeriveStorage::<HelloStarknetTraitSafeDispatcher> {}
+
+#[derive(Drop, Copy)]
+struct HelloStarknetTraitSafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl HelloStarknetTraitSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitSafeDispatcher> {
+type SubPointersType = HelloStarknetTraitSafeDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitSafeDispatcher>) -> HelloStarknetTraitSafeDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                HelloStarknetTraitSafeDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableHelloStarknetTraitSafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl MutableHelloStarknetTraitSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<HelloStarknetTraitSafeDispatcher> {
+type SubPointersType = MutableHelloStarknetTraitSafeDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitSafeDispatcher>>) -> MutableHelloStarknetTraitSafeDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableHelloStarknetTraitSafeDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
 
 
 lib.cairo:23:1
@@ -1569,43 +1683,115 @@ impl MutableBalancePairStorageNodeDrop of core::traits::Drop::<MutableBalancePai
 impl MutableBalancePairStorageNodeCopy of core::traits::Copy::<MutableBalancePairStorageNode>;
 
 
-lib.cairo:29:1
+lib.cairo:29:16
 #[derive(Drop, starknet::Store)]
-^******************************^
+               ^*************^
 impls:
 
 impl SlicedBalanceTrioSubPointersDrop of core::traits::Drop::<SlicedBalanceTrioSubPointers>;
 impl SlicedBalanceTrioSubPointersCopy of core::traits::Copy::<SlicedBalanceTrioSubPointers>;
 
 
-lib.cairo:29:1
+lib.cairo:29:16
 #[derive(Drop, starknet::Store)]
-^******************************^
+               ^*************^
 impls:
 
 impl MutableSlicedBalanceTrioSubPointersDrop of core::traits::Drop::<MutableSlicedBalanceTrioSubPointers>;
 impl MutableSlicedBalanceTrioSubPointersCopy of core::traits::Copy::<MutableSlicedBalanceTrioSubPointers>;
 
 
-lib.cairo:36:1
+lib.cairo:35:16
 #[derive(Drop, starknet::Store)]
-^******************************^
+               ^*************^
 impls:
 
 impl SlicedBalancePairSubPointersDrop of core::traits::Drop::<SlicedBalancePairSubPointers>;
 impl SlicedBalancePairSubPointersCopy of core::traits::Copy::<SlicedBalancePairSubPointers>;
 
 
-lib.cairo:36:1
+lib.cairo:35:16
 #[derive(Drop, starknet::Store)]
-^******************************^
+               ^*************^
 impls:
 
 impl MutableSlicedBalancePairSubPointersDrop of core::traits::Drop::<MutableSlicedBalancePairSubPointers>;
 impl MutableSlicedBalancePairSubPointersCopy of core::traits::Copy::<MutableSlicedBalancePairSubPointers>;
 
 
-lib.cairo:43:1
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl HelloStarknetTraitDispatcherSubPointersDrop of core::traits::Drop::<HelloStarknetTraitDispatcherSubPointers>;
+impl HelloStarknetTraitDispatcherSubPointersCopy of core::traits::Copy::<HelloStarknetTraitDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MutableHelloStarknetTraitDispatcherSubPointersDrop of core::traits::Drop::<MutableHelloStarknetTraitDispatcherSubPointers>;
+impl MutableHelloStarknetTraitDispatcherSubPointersCopy of core::traits::Copy::<MutableHelloStarknetTraitDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl HelloStarknetTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<HelloStarknetTraitLibraryDispatcherSubPointers>;
+impl HelloStarknetTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<HelloStarknetTraitLibraryDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MutableHelloStarknetTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableHelloStarknetTraitLibraryDispatcherSubPointers>;
+impl MutableHelloStarknetTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableHelloStarknetTraitLibraryDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl HelloStarknetTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcherSubPointers>;
+impl HelloStarknetTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MutableHelloStarknetTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableHelloStarknetTraitSafeLibraryDispatcherSubPointers>;
+impl MutableHelloStarknetTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableHelloStarknetTraitSafeLibraryDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl HelloStarknetTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<HelloStarknetTraitSafeDispatcherSubPointers>;
+impl HelloStarknetTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<HelloStarknetTraitSafeDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MutableHelloStarknetTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableHelloStarknetTraitSafeDispatcherSubPointers>;
+impl MutableHelloStarknetTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableHelloStarknetTraitSafeDispatcherSubPointers>;
+
+
+lib.cairo:41:1
 #[starknet::contract]
 ^*******************^
 contract:
@@ -2001,7 +2187,7 @@ pub mod __constructor {
 
 
 
-lib.cairo:43:1
+lib.cairo:41:1
 #[starknet::contract]
 ^*******************^
 impls:
@@ -2009,7 +2195,7 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:43:1
+lib.cairo:41:1
 #[starknet::contract]
 ^*******************^
 starknet_derive:
@@ -2031,7 +2217,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:43:1
+lib.cairo:41:1
 #[starknet::contract]
 ^*******************^
 impls:
@@ -2040,7 +2226,7 @@ impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:43:1
+lib.cairo:41:1
 #[starknet::contract]
 ^*******************^
 impls:
@@ -2050,16 +2236,16 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:55:28
+ --> lib.cairo:53:28
         legacy_map_balace: LegacyMap<usize, usize>,
                            ^*******^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:55:28
+ --> lib.cairo:53:28
         legacy_map_balace: LegacyMap<usize, usize>,
                            ^*******^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:55:28
+ --> lib.cairo:53:28
         legacy_map_balace: LegacyMap<usize, usize>,
                            ^*******^

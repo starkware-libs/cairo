@@ -662,8 +662,43 @@ impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispat
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageICounterContractDispatcher of starknet::storage_access::DeriveStorage::<ICounterContractDispatcher> {}
+
+#[derive(Drop, Copy)]
+struct ICounterContractDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl ICounterContractDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractDispatcher> {
+type SubPointersType = ICounterContractDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractDispatcher>) -> ICounterContractDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                ICounterContractDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableICounterContractDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl MutableICounterContractDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ICounterContractDispatcher> {
+type SubPointersType = MutableICounterContractDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractDispatcher>>) -> MutableICounterContractDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableICounterContractDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
 impl ICounterContractLibraryDispatcherCopy of core::traits::Copy::<ICounterContractLibraryDispatcher>;
 impl ICounterContractLibraryDispatcherDrop of core::traits::Drop::<ICounterContractLibraryDispatcher>;
 impl ICounterContractLibraryDispatcherSerde of core::serde::Serde::<ICounterContractLibraryDispatcher> {
@@ -707,8 +742,43 @@ impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContrac
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageICounterContractLibraryDispatcher of starknet::storage_access::DeriveStorage::<ICounterContractLibraryDispatcher> {}
+
+#[derive(Drop, Copy)]
+struct ICounterContractLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl ICounterContractLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractLibraryDispatcher> {
+type SubPointersType = ICounterContractLibraryDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractLibraryDispatcher>) -> ICounterContractLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                ICounterContractLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableICounterContractLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl MutableICounterContractLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ICounterContractLibraryDispatcher> {
+type SubPointersType = MutableICounterContractLibraryDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractLibraryDispatcher>>) -> MutableICounterContractLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableICounterContractLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
 impl ICounterContractSafeLibraryDispatcherCopy of core::traits::Copy::<ICounterContractSafeLibraryDispatcher>;
 impl ICounterContractSafeLibraryDispatcherDrop of core::traits::Drop::<ICounterContractSafeLibraryDispatcher>;
 impl ICounterContractSafeLibraryDispatcherSerde of core::serde::Serde::<ICounterContractSafeLibraryDispatcher> {
@@ -752,8 +822,43 @@ impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterCon
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageICounterContractSafeLibraryDispatcher of starknet::storage_access::DeriveStorage::<ICounterContractSafeLibraryDispatcher> {}
+
+#[derive(Drop, Copy)]
+struct ICounterContractSafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl ICounterContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractSafeLibraryDispatcher> {
+type SubPointersType = ICounterContractSafeLibraryDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractSafeLibraryDispatcher>) -> ICounterContractSafeLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                ICounterContractSafeLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableICounterContractSafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl MutableICounterContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ICounterContractSafeLibraryDispatcher> {
+type SubPointersType = MutableICounterContractSafeLibraryDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractSafeLibraryDispatcher>>) -> MutableICounterContractSafeLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableICounterContractSafeLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
 impl ICounterContractSafeDispatcherCopy of core::traits::Copy::<ICounterContractSafeDispatcher>;
 impl ICounterContractSafeDispatcherDrop of core::traits::Drop::<ICounterContractSafeDispatcher>;
 impl ICounterContractSafeDispatcherSerde of core::serde::Serde::<ICounterContractSafeDispatcher> {
@@ -797,8 +902,59 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
-#[feature("derive-storage")]
-impl DeriveStorageICounterContractSafeDispatcher of starknet::storage_access::DeriveStorage::<ICounterContractSafeDispatcher> {}
+
+#[derive(Drop, Copy)]
+struct ICounterContractSafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl ICounterContractSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractSafeDispatcher> {
+type SubPointersType = ICounterContractSafeDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractSafeDispatcher>) -> ICounterContractSafeDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                ICounterContractSafeDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableICounterContractSafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl MutableICounterContractSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ICounterContractSafeDispatcher> {
+type SubPointersType = MutableICounterContractSafeDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractSafeDispatcher>>) -> MutableICounterContractSafeDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableICounterContractSafeDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+impl ICounterContractDispatcherSubPointersDrop of core::traits::Drop::<ICounterContractDispatcherSubPointers>;
+impl ICounterContractDispatcherSubPointersCopy of core::traits::Copy::<ICounterContractDispatcherSubPointers>;
+impl MutableICounterContractDispatcherSubPointersDrop of core::traits::Drop::<MutableICounterContractDispatcherSubPointers>;
+impl MutableICounterContractDispatcherSubPointersCopy of core::traits::Copy::<MutableICounterContractDispatcherSubPointers>;
+impl ICounterContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<ICounterContractLibraryDispatcherSubPointers>;
+impl ICounterContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<ICounterContractLibraryDispatcherSubPointers>;
+impl MutableICounterContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableICounterContractLibraryDispatcherSubPointers>;
+impl MutableICounterContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableICounterContractLibraryDispatcherSubPointers>;
+impl ICounterContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<ICounterContractSafeLibraryDispatcherSubPointers>;
+impl ICounterContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ICounterContractSafeLibraryDispatcherSubPointers>;
+impl MutableICounterContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableICounterContractSafeLibraryDispatcherSubPointers>;
+impl MutableICounterContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableICounterContractSafeLibraryDispatcherSubPointers>;
+impl ICounterContractSafeDispatcherSubPointersDrop of core::traits::Drop::<ICounterContractSafeDispatcherSubPointers>;
+impl ICounterContractSafeDispatcherSubPointersCopy of core::traits::Copy::<ICounterContractSafeDispatcherSubPointers>;
+impl MutableICounterContractSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableICounterContractSafeDispatcherSubPointers>;
+impl MutableICounterContractSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableICounterContractSafeDispatcherSubPointers>;
 
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;

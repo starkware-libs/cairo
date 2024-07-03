@@ -45,7 +45,6 @@ enum Efg {
 }
 
 #[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]
-#[starknet::sub_pointers]
 struct AbcEtc {
     a: u8,
     b: u16,
