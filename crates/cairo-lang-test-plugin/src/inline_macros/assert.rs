@@ -6,6 +6,7 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_defs::plugin_utils::{
     escape_node, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
 };
+use cairo_lang_filesystem::cfg::Cfg;
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
@@ -19,6 +20,7 @@ trait CompareAssertionPlugin: NamedPlugin {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         let WrappedArgList::ParenthesizedArgList(arguments_syntax) = syntax.arguments(db) else {
             return unsupported_bracket_diagnostic(db, syntax);
@@ -161,6 +163,15 @@ trait CompareAssertionPlugin: NamedPlugin {
             ",
         });
         let (content, code_mappings) = builder.build();
+        let mut diagnostics = vec![];
+        if !metadata.cfg_set.contains(&Cfg::kv("target", "test"))
+            && !metadata.cfg_set.contains(&Cfg::name("test"))
+        {
+            diagnostics.push(PluginDiagnostic::error(
+                syntax,
+                format!("`{}` macro is only available in test mode.", Self::NAME),
+            ));
+        }
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
                 name: format!("{}_macro", Self::NAME).into(),
@@ -168,7 +179,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 code_mappings,
                 aux_data: None,
             }),
-            diagnostics: vec![],
+            diagnostics,
         }
     }
 }
@@ -191,9 +202,9 @@ macro_rules! define_compare_assert_macro {
                 &self,
                 db: &dyn SyntaxGroup,
                 syntax: &ast::ExprInlineMacro,
-                _metadata: &MacroPluginMetadata<'_>,
+                metadata: &MacroPluginMetadata<'_>,
             ) -> InlinePluginResult {
-                CompareAssertionPlugin::generate_code(self, db, syntax)
+                CompareAssertionPlugin::generate_code(self, db, syntax, metadata)
             }
         }
     };
