@@ -264,7 +264,6 @@ impl StorableEntryReadAccess<
     +core::hash::Hash<EntryInfo::<T>::Key, StoragePathHashState>,
     +starknet::Store<EntryInfo::<T>::Value>,
     +Drop<EntryInfo::<T>::Key>,
-    +Drop<EntryInfo::<T>::Value>
 > of StorageMapReadAccessTrait<StoragePath<T>> {
     type Key = EntryInfo::<T>::Key;
     type Value = EntryInfo::<T>::Value;
@@ -297,7 +296,6 @@ impl MutableStorableEntryReadAccess<
     +core::hash::Hash<EntryInfo::<MutableTrait::<T>::InnerType>::Key, StoragePathHashState>,
     +starknet::Store<EntryInfo::<MutableTrait::<T>::InnerType>::Value>,
     +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Key>,
-    +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Value>
 > of StorageMapReadAccessTrait<StoragePath<T>> {
     type Key = EntryInfo::<MutableTrait::<T>::InnerType>::Key;
     type Value = EntryInfo::<MutableTrait::<T>::InnerType>::Value;
@@ -512,7 +510,6 @@ impl StorablePointerReadAccessImpl<
     impl PointerImpl: StorageAsPointer<T>,
     impl AccessImpl: StoragePointerReadAccess<StoragePointer0Offset<PointerImpl::Value>>,
     +Drop<T>,
-    +Drop<AccessImpl::Value>,
 > of StoragePointerReadAccess<T> {
     type Value = AccessImpl::Value;
     fn read(self: @T) -> Self::Value {
