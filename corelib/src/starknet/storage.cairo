@@ -143,7 +143,7 @@ impl MutableStorableStoragePointerWriteAccess<
 /// `StorageAsPointer` in order to be able to get the address of the storage path. Otherwise, if
 /// T is not storable then it should implement some kind of updating trait, e.g. `StoragePathEntry`.
 pub struct StoragePath<T> {
-    hash_state: StoragePathHashState,
+    pub hash_state: StoragePathHashState,
 }
 
 /// The hash state of a storage path.
@@ -436,9 +436,9 @@ impl StoragePointer0OffsetDeref<T> of core::ops::Deref<StoragePointer0Offset<T>>
 
 
 /// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
-struct PendingStoragePath<T> {
-    hash_state: StoragePathHashState,
-    pending_key: felt252
+pub struct PendingStoragePath<T> {
+    pub hash_state: StoragePathHashState,
+    pub pending_key: felt252
 }
 
 impl PendingStoragePathDrop<T> of Drop<PendingStoragePath<T>> {}
