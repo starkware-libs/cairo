@@ -231,14 +231,12 @@ impl StorageNodeInfo {
     fn node_constructor_field_init_code(&self, is_last: bool) -> String {
         let member_type = self.generic_node_members_type();
         match self.node_type {
-            StorageNodeType::StorageNode => {
-                format!(
-                    "        let $field_name$_value = {member_type} {{ 
-            hash_state: self.hash_state,
-            pending_key: selector!(\"$field_name$\") 
-        }};\n"
-                )
-            }
+            StorageNodeType::StorageNode => "        let $field_name$_value = \
+                                             starknet::storage::PendingStoragePathTrait::new(
+                        starknet::storage::StoragePathProperties::get_hash_state(@self), 
+                        selector!(\"$field_name$\")
+                    );"
+            .to_string(),
             StorageNodeType::SubPointers => {
                 let offset_increment = if is_last {
                     "".to_string()

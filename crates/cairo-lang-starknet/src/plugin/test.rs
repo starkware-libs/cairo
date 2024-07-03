@@ -156,6 +156,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         ownable_erc20: "ownable_erc20",
         mintable: "mintable",
         multi_component: "multi_component",
+        erc20_new: "erc20_new",
     },
     ExpandContractFromCrateTestRunner
 );
