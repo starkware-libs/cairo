@@ -4005,7 +4005,7 @@
         "offset": 0,
         "builtins": [
           "range_check",
-          "range_check_96",
+          "range_check96",
           "add_mod",
           "mul_mod"
         ]
