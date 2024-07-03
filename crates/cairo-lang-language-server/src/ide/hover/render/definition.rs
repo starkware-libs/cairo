@@ -1,3 +1,4 @@
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -32,6 +33,10 @@ pub fn definition(
         }
 
         SymbolDef::Variable(var) => fenced_code_block(&var.signature(db)),
+        SymbolDef::ExprInlineMacro(macro_name) => {
+            // TODO(orizi): Consider still writing something if no doc is provided by macro.
+            db.inline_macro_plugins().get(macro_name)?.documentation()?
+        }
     };
 
     Some(Hover {
