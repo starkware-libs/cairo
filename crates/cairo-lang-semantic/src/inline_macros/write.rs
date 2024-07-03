@@ -10,6 +10,7 @@ use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{try_extract_matches, OptionHelper};
+use indoc::indoc;
 use num_bigint::{BigInt, Sign};
 
 /// Macro for writing into a formatter.
@@ -27,6 +28,34 @@ impl InlineMacroExprPlugin for WriteMacro {
     ) -> InlinePluginResult {
         generate_code_inner(syntax, db, false)
     }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            indoc! {r#"
+            Writes formatted data into a formatter.
+
+            This macro accepts a `formatter`, a format string, and a list of arguments. \
+            Arguments will be formatted according to the specified format string and the result \
+            will be passed to the formatter. The formatter is of the type `core::fmt::Formatter`. \
+            The macro returns `Result<(), core::fmt::Error>`.
+
+            # Panics
+            Panics if any of the formatting of arguments fails.
+
+            # Examples
+            ```cairo
+            let f: core::fmt::Formatter = Default::default();
+            write!(f, "hello"); // `f` contains "hello".
+            let world: ByteArray = "world"; 
+            write!(f, "hello {}", world_ba); // `f` contains "hellohello world".
+            write!(f, "hello {world_ba}"); // `f` contains "hellohello worldhello world".
+            let (x, y) = (1, 2);
+            write!(f, "{x} + {y} = 3");  // `f` contains "hellohello worldhello world1 + 2 = 3".
+            ```
+        "#}
+            .to_string(),
+        )
+    }
 }
 
 /// Macro for writing into a formatter with an additional new line.
@@ -43,6 +72,34 @@ impl InlineMacroExprPlugin for WritelnMacro {
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         generate_code_inner(syntax, db, true)
+    }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            indoc! {r#"
+            Writes formatted data into a formatter, with an additional newline.
+
+            This macro accepts a `formatter`, a format string, and a list of arguments. \
+            Arguments will be formatted according to the specified format string and the result \
+            will be passed to the formatter. The formatter is of the type `core::fmt::Formatter`. \
+            The macro returns `Result<(), core::fmt::Error>`.
+
+            # Panics
+            Panics if any of the formatting of arguments fails.
+
+            # Examples
+            ```cairo
+            let f: core::fmt::Formatter = Default::default();
+            writeln!(f, "hello"); // `f` contains "hello\n".
+            let world: ByteArray = "world"; 
+            writeln!(f, "hello {}", world_ba); // `f` contains "hello\nhello world\n".
+            writeln!(f, "hello {world_ba}"); // `f` contains "hello\nhello world\nhello world\n".
+            let (x, y) = (1, 2);
+            writeln!(f, "{x}+{y}=3"); // `f` contains "hello\nhello world\nhello world\n1+2=3\n".
+            ```
+        "#}
+            .to_string(),
+        )
     }
 }
 
