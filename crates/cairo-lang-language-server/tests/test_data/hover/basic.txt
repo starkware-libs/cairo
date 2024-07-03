@@ -87,11 +87,13 @@ Type: `core::integer::u32`
 // = source context
     p<caret>rintln!("The value of x is: {}", x);
 // = highlight
-No highlight information.
+    <sel>println</sel>!("The value of x is: {}", x);
 // = popover
 ```cairo
-()
+println
 ```
+---
+Prints the format string, with the injected arguments, followed by a new line.
 
 //! > hover #2
 // = source context

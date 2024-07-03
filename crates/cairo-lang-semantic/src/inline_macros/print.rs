@@ -25,6 +25,10 @@ impl InlineMacroExprPlugin for PrintMacro {
     ) -> InlinePluginResult {
         generate_code_inner(syntax, db, false)
     }
+
+    fn documentation(&self) -> Option<String> {
+        Some("Prints the format string, with the injected arguments.".to_string())
+    }
 }
 
 /// Macro for printing with a new line.
@@ -41,6 +45,13 @@ impl InlineMacroExprPlugin for PrintlnMacro {
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         generate_code_inner(syntax, db, true)
+    }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            "Prints the format string, with the injected arguments, followed by a new line."
+                .to_string(),
+        )
     }
 }
 
