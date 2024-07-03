@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
+    PluginGeneratedFile,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
@@ -20,6 +21,7 @@ impl InlineMacroExprPlugin for PrintMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         generate_code_inner(syntax, db, false)
     }
@@ -36,6 +38,7 @@ impl InlineMacroExprPlugin for PrintlnMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         generate_code_inner(syntax, db, true)
     }
