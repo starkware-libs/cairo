@@ -151,6 +151,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     {
         hello_starknet: "hello_starknet",
         with_ownable: "with_ownable",
+        with_ownable_mini: "with_ownable_mini",
         with_erc20: "with_erc20",
         upgradable_counter: "upgradable_counter",
         ownable_erc20: "ownable_erc20",
