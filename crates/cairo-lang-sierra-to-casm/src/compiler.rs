@@ -189,7 +189,7 @@ impl CasmCairoProgram {
 }
 
 /// The casm program representation.
-#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct CairoProgram {
     pub instructions: Vec<Instruction>,
     pub debug_info: CairoProgramDebugInfo,
@@ -270,7 +270,7 @@ impl CairoProgram {
 }
 
 /// The debug information of a compilation from Sierra to casm.
-#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct SierraStatementDebugInfo {
     /// The start offset of the sierra statement within the bytecode.
     pub start_offset: usize,
@@ -284,21 +284,21 @@ pub struct SierraStatementDebugInfo {
 
 /// Additional debug information for a Sierra statement, depending on its kind
 /// (invoke/return/dummy).
-#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum StatementKindDebugInfo {
     Return(ReturnStatementDebugInfo),
     Invoke(InvokeStatementDebugInfo),
 }
 
 /// Additional debug information for a return Sierra statement.
-#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct ReturnStatementDebugInfo {
     /// The references of a Sierra return statement.
     pub ref_values: Vec<ReferenceValue>,
 }
 
 /// Additional debug information for an invoke Sierra statement.
-#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct InvokeStatementDebugInfo {
     /// The result branch changes of a Sierra invoke statement.
     pub result_branch_changes: Vec<BranchChanges>,
@@ -307,14 +307,14 @@ pub struct InvokeStatementDebugInfo {
 }
 
 /// The debug information of a compilation from Sierra to casm.
-#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct CairoProgramDebugInfo {
     /// The debug information per Sierra statement.
     pub sierra_statement_info: Vec<SierraStatementDebugInfo>,
 }
 
 /// The information about the constants used in the program.
-#[derive(Debug, Eq, PartialEq, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Default, Clone)]
 pub struct ConstsInfo {
     pub segments: OrderedHashMap<u32, ConstSegment>,
     pub total_segments_size: usize,
@@ -409,7 +409,7 @@ impl ConstsInfo {
 }
 
 /// The data for a single segment.
-#[derive(Debug, Eq, PartialEq, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Default, Clone)]
 pub struct ConstSegment {
     /// The values in the segment.
     pub values: Vec<BigInt>,

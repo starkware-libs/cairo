@@ -28,7 +28,7 @@ pub type StatementRefs = OrderedHashMap<VarId, ReferenceValue>;
 
 /// A Sierra reference to a value.
 /// Corresponds to an argument or return value of a Sierra statement.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
@@ -75,7 +75,7 @@ impl core::fmt::Display for IntroductionPoint {
 
 /// A Sierra reference to a value.
 /// Returned from a libfunc.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OutputReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
@@ -96,7 +96,7 @@ pub enum OutputReferenceValueIntroductionPoint {
 }
 
 /// A collection of Cell Expression which represents one logical object.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReferenceExpression {
     pub cells: Vec<CellExpression>,
 }
