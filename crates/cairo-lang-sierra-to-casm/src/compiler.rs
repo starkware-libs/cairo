@@ -126,7 +126,7 @@ pub struct CasmCairoProgram {
     pub pythonic_hints: Vec<(usize, Vec<String>)>,
     pub entrypoint: usize,
     pub builtins: Vec<String>,
-    pub input_args: Vec<String>,
+    pub input_args_type: Vec<String>,
     pub return_type: String,
 }
 
@@ -175,7 +175,7 @@ impl CasmCairoProgram {
 
         let mut builtins: Vec<String> = Vec::new();
 
-        let mut input_args: Vec<String> = Vec::new();
+        let mut input_args_type: Vec<String> = Vec::new();
 
         for type_id in main_func.signature.param_types.iter() {
             let debug_name = match type_id.debug_name.clone() {
@@ -186,7 +186,7 @@ impl CasmCairoProgram {
             if builtin_types.contains(&generic_id) {
                 builtins.push(generic_id.0.as_str().to_case(Case::Snake));
             } else {
-                input_args.push(generic_id.0.as_str().to_string());
+                input_args_type.push(generic_id.0.as_str().to_string());
             };
         }
 
@@ -208,7 +208,7 @@ impl CasmCairoProgram {
             pythonic_hints,
             entrypoint,
             builtins,
-            input_args,
+            input_args_type,
             return_type,
         })
     }
