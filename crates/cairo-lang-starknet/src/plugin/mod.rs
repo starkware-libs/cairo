@@ -87,4 +87,8 @@ impl MacroPlugin for StarkNetPlugin {
     fn declared_derives(&self) -> Vec<String> {
         vec!["starknet::Event".to_string(), "starknet::Store".to_string()]
     }
+
+    fn phantom_type_attributes(&self) -> Vec<String> {
+        vec![STORAGE_ATTR.to_string()]
+    }
 }

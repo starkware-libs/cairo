@@ -45,6 +45,7 @@ mod ownable_balance {
     }
 
 
+#[phantom]
 pub struct Storage {
           pub ownable: ownable_comp::Storage,
           pub balance: u128,
@@ -307,6 +308,7 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
     }
 
 
+#[phantom]
 pub struct Storage {
           pub ownable: ownable_comp::Storage,
           pub balance: u128,

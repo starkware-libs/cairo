@@ -98,6 +98,10 @@ impl MacroPlugin for StorageNodePlugin {
     fn declared_attributes(&self) -> Vec<String> {
         vec![STORAGE_NODE_ATTR.to_string()]
     }
+
+    fn phantom_type_attributes(&self) -> Vec<String> {
+        vec![STORAGE_NODE_ATTR.to_string()]
+    }
 }
 
 /// The different types of storage nodes that can be generated.

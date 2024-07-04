@@ -772,6 +772,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub value: felt252,
 }
@@ -2224,6 +2225,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -3049,6 +3051,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 

@@ -155,6 +155,7 @@ mod storage_accesses {
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub user_info: UserInfo,
           pub transaction_info: TransactionInfo,
@@ -1871,6 +1872,7 @@ impl MutableIERC20SafeDispatcherSubPointersCopy of core::traits::Copy::<MutableI
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub user_info: UserInfo,
           pub transaction_info: TransactionInfo,
