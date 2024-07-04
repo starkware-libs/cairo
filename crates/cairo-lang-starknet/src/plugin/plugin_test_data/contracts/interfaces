@@ -1172,6 +1172,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -1451,6 +1452,7 @@ contract:
 
 
 
+#[phantom]
 pub struct Storage {
           pub comp_storage: super::comp::Storage,
 }

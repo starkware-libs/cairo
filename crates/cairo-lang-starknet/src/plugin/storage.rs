@@ -62,6 +62,7 @@ pub fn handle_storage_struct(
     let storage_struct_code = if backwards_compatible_storage(metadata.edition) {
         formatdoc!(
             "
+            #[phantom]
             pub struct Storage {{$storage_struct_members$
             }}
             "
@@ -107,8 +108,7 @@ pub fn handle_storage_struct(
             impl {state_struct_name}Deref{generic_arg_str} of \
              core::ops::SnapshotDeref<{full_state_struct_name}> {{
                 type Target = {storage_base_struct_name};
-                fn snapshot_deref(self: @{full_state_struct_name}) -> {storage_base_struct_name} \
-             {{
+                fn snapshot_deref(self: @{full_state_struct_name}) -> {storage_base_struct_name} {{
                     self.storage_base()
                 }}
             }}

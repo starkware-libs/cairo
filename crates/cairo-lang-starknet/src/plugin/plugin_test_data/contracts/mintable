@@ -66,6 +66,7 @@ mod mintable_erc20_ownable {
     }
 
 
+#[phantom]
 pub struct Storage {
           pub erc20_storage: erc20_comp::Storage,
           pub ownable_storage: ownable_comp::Storage,
@@ -877,6 +878,7 @@ impl MutableGetSupplySafeDispatcherSubPointersCopy of core::traits::Copy::<Mutab
     }
 
 
+#[phantom]
 pub struct Storage {
           pub erc20_storage: erc20_comp::Storage,
           pub ownable_storage: ownable_comp::Storage,

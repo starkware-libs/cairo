@@ -206,6 +206,7 @@ pub trait StoragePathEntry<C> {
 /// A struct that represents a map in a contract storage.
 // TODO(Gil): Make it a phantom type once we can annotate a type as phantom from within another
 // attribute, specifically from #[storage].
+#[phantom]
 pub struct Map<K, V> {}
 
 /// A trait for making a map like type support implement the `StoragePathEntry` trait.
@@ -559,6 +560,7 @@ impl PathableStorageEntryImpl<
 
 /// A wrapper around different storage related types, indicating that the instance is mutable,
 /// i.e. originally created from a `ref` contract state.
+#[phantom]
 pub struct Mutable<T> {}
 
 impl MutableDrop<T> of Drop<Mutable<T>> {}

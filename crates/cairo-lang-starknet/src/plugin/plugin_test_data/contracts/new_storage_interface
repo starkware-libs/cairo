@@ -1801,6 +1801,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub balance: usize,
           pub user_balance: Map<usize, usize>,

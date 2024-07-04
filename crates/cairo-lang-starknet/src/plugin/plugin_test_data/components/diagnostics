@@ -53,6 +53,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -228,6 +229,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -403,6 +405,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -574,6 +577,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -745,6 +749,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -920,6 +925,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -1091,6 +1097,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -1258,6 +1265,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -1437,6 +1445,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -1661,6 +1670,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -1836,6 +1846,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
