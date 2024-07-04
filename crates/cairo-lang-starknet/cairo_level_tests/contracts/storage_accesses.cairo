@@ -37,7 +37,7 @@ mod storage_accesses {
     use starknet::get_caller_address;
     use starknet::ContractAddress;
     use super::{UserInfo, TransactionInfo};
-    use starknet::storage::{StoragePathEntry};
+    use starknet::storage::StoragePathEntry;
 
     #[storage]
     struct Storage {
