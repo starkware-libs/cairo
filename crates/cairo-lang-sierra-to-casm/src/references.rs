@@ -7,7 +7,6 @@ use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::write_comma_separated;
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::invocations::InvocationError;
@@ -49,7 +48,7 @@ impl ReferenceValue {
 }
 
 /// The location where a value was introduced.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct IntroductionPoint {
     /// The index of the statement creating the value, None if introduced as a function param.
     pub source_statement_idx: Option<StatementIdx>,
@@ -87,7 +86,7 @@ pub struct OutputReferenceValue {
 }
 
 /// The location where a value was introduced for output reference values.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum OutputReferenceValueIntroductionPoint {
     /// A new point introduced by a libfunc. The inner value is the output index.
     New(usize),
