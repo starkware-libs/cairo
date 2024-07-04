@@ -1,4 +1,4 @@
-use core::dict::Felt252DictEntryTrait;
+use core::dict::{Felt252DictEntryTrait, Felt252Dict};
 use core::test::test_utils::{assert_eq, assert_ne};
 use core::nullable;
 

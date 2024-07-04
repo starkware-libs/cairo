@@ -153,9 +153,9 @@ pub(crate) mod one_based {
 }
 
 // Oneable impls
-impl U8Oneable = math::one_based::OneableImpl<u8>;
-impl U16Oneable = math::one_based::OneableImpl<u16>;
-impl U32Oneable = math::one_based::OneableImpl<u32>;
-impl U64Oneable = math::one_based::OneableImpl<u64>;
-impl U128Oneable = math::one_based::OneableImpl<u128>;
-impl U256Oneable = math::one_based::OneableImpl<u256>;
+impl U8Oneable = one_based::OneableImpl<u8>;
+impl U16Oneable = one_based::OneableImpl<u16>;
+impl U32Oneable = one_based::OneableImpl<u32>;
+impl U64Oneable = one_based::OneableImpl<u64>;
+impl U128Oneable = one_based::OneableImpl<u128>;
+impl U256Oneable = one_based::OneableImpl<u256>;

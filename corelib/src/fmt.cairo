@@ -21,7 +21,7 @@ impl DisplayByteArray of Display<ByteArray> {
 }
 
 impl DisplayInteger<
-    T, +to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
+    T, +core::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
 > of Display<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         // TODO(yuval): determine base according to Formatter parameters.
@@ -85,7 +85,7 @@ impl DebugByteArray of Debug<ByteArray> {
 }
 
 impl DebugInteger<
-    T, +to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
+    T, +core::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
 > of Debug<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         Display::fmt(self, ref f)
