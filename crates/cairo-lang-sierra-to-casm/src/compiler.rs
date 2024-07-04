@@ -127,7 +127,7 @@ pub struct CasmCairoProgram {
     pub entrypoint: usize,
     pub builtins: Vec<String>,
     pub input_args_type: Vec<String>,
-    pub return_type: String,
+    pub return_type: Vec<String>,
 }
 
 impl CasmCairoProgram {
@@ -190,14 +190,17 @@ impl CasmCairoProgram {
             };
         }
 
-        let return_type = match main_func.signature.ret_types.last() {
+        let mut return_type = Vec::new();
+        match main_func.signature.ret_types.last() {
             Some(ty)
                 if !builtin_types
                     .contains(&GenericTypeId::from(ty.clone().debug_name.unwrap())) =>
             {
-                GenericTypeId::from(ty.clone().debug_name.unwrap()).0.as_str().to_string()
+                return_type.push(
+                    GenericTypeId::from(ty.clone().debug_name.unwrap()).0.as_str().to_string(),
+                )
             }
-            _ => "".to_string(),
+            _ => (),
         };
 
         Ok(Self {
