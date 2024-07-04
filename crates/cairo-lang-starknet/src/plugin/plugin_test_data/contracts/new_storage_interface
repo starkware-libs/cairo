@@ -24,6 +24,7 @@ trait HelloStarknetTrait<TContractState> {
     fn set_balance_pair_balance1(ref self: TContractState, value: u256);
     fn get_balance_trio_sub_member(self: @TContractState) -> u128;
     fn set_balance_trio_sub_member(ref self: TContractState, value: u128);
+    fn get_third_list_value(self: @TContractState) -> felt252;
 }
 
 #[starknet::storage_node]
@@ -44,12 +45,18 @@ struct SlicedBalancePair {
     balance2: felt252,
 }
 
+#[starknet::storage_node]
+struct LinkedList {
+    value: felt252,
+    next: LinkedList,
+}
+
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
         StorageAsPointer, StorageAsPath, StoragePathEntry, Map, SubPointersDeref
     };
-    use super::{BalancePair, SlicedBalancePair, SlicedBalanceTrio};
+    use super::{BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList};
     use super::MutableBalancePairStorageNodeImpl;
     #[storage]
     struct Storage {
@@ -59,6 +66,7 @@ mod hello_starknet {
         legacy_map_balace: LegacyMap<usize, usize>,
         balance_pair: BalancePair,
         sliced_balance_trio: SlicedBalanceTrio,
+        linked_list: LinkedList,
     }
 
     #[abi(embed_v0)]
@@ -102,6 +110,9 @@ mod hello_starknet {
         }
         fn set_balance_trio_sub_member(ref self: ContractState, value: u128) {
             self.sliced_balance_trio.balance12.balance1.high.write(value);
+        }
+        fn get_third_list_value(self: @ContractState) -> felt252 {
+            self.linked_list.next.next.value.read()
         }
     }
 }
@@ -129,6 +140,7 @@ trait HelloStarknetTrait<TContractState> {
     fn set_balance_pair_balance1(ref self: TContractState, value: u256);
     fn get_balance_trio_sub_member(self: @TContractState) -> u128;
     fn set_balance_trio_sub_member(ref self: TContractState, value: u128);
+    fn get_third_list_value(self: @TContractState) -> felt252;
 }
 
 #[starknet::storage_node]
@@ -149,12 +161,18 @@ struct SlicedBalancePair {
     balance2: felt252,
 }
 
+#[starknet::storage_node]
+struct LinkedList {
+    value: felt252,
+    next: LinkedList,
+}
+
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
         StorageAsPointer, StorageAsPath, StoragePathEntry, Map, SubPointersDeref
     };
-    use super::{BalancePair, SlicedBalancePair, SlicedBalanceTrio};
+    use super::{BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList};
     use super::MutableBalancePairStorageNodeImpl;
     #[storage]
     struct Storage {
@@ -164,6 +182,7 @@ mod hello_starknet {
         legacy_map_balace: LegacyMap<usize, usize>,
         balance_pair: BalancePair,
         sliced_balance_trio: SlicedBalanceTrio,
+        linked_list: LinkedList,
     }
 
     #[abi(embed_v0)]
@@ -207,6 +226,9 @@ mod hello_starknet {
         }
         fn set_balance_trio_sub_member(ref self: ContractState, value: u128) {
             self.sliced_balance_trio.balance12.balance1.high.write(value);
+        }
+        fn get_third_list_value(self: @ContractState) -> felt252 {
+            self.linked_list.next.next.value.read()
         }
     }
 }
@@ -235,6 +257,7 @@ self: T, user_id: usize, subbalance_id: usize
     fn set_balance_pair_balance1(self: T, value: u256);
     fn get_balance_trio_sub_member(self: T) -> u128;
     fn set_balance_trio_sub_member(self: T, value: u128);
+    fn get_third_list_value(self: T) -> felt252;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -413,6 +436,20 @@ self: HelloStarknetTraitDispatcher, user_id: usize, subbalance_id: usize
         );
         let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
+    }
+    fn get_third_list_value(self: HelloStarknetTraitDispatcher) -> felt252 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_third_list_value"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
     }
 
 }
@@ -594,6 +631,20 @@ self: HelloStarknetTraitLibraryDispatcher, user_id: usize, subbalance_id: usize
         let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
+    fn get_third_list_value(self: HelloStarknetTraitLibraryDispatcher) -> felt252 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_third_list_value"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
 
 }
 
@@ -628,6 +679,8 @@ self: T, user_id: usize, subbalance_id: usize
     fn get_balance_trio_sub_member(self: T) -> starknet::SyscallResult<u128>;
     #[unstable(feature: "safe_dispatcher")]
     fn set_balance_trio_sub_member(self: T, value: u128) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn get_third_list_value(self: T) -> starknet::SyscallResult<felt252>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -820,6 +873,22 @@ self: HelloStarknetTraitSafeLibraryDispatcher, user_id: usize, subbalance_id: us
         );
         let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
+    }
+    fn get_third_list_value(self: HelloStarknetTraitSafeLibraryDispatcher) -> starknet::SyscallResult<felt252> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_third_list_value"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
     }
 
 }
@@ -1016,11 +1085,27 @@ self: HelloStarknetTraitSafeDispatcher, user_id: usize, subbalance_id: usize
         let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
+    fn get_third_list_value(self: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<felt252> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_third_list_value"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
 
 }
 
 
-lib.cairo:23:1
+lib.cairo:24:1
 #[starknet::storage_node]
 ^***********************^
 storage_node:
@@ -1073,7 +1158,7 @@ type NodeType = MutableBalancePairStorageNode;
 }
 
 
-lib.cairo:28:1
+lib.cairo:29:1
 
 ^
 impls:
@@ -1081,7 +1166,7 @@ impls:
 impl SlicedBalanceTrioDrop of core::traits::Drop::<SlicedBalanceTrio>;
 
 
-lib.cairo:29:16
+lib.cairo:30:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 starknet_derive:
@@ -1181,7 +1266,7 @@ type SubPointersType = MutableSlicedBalanceTrioSubPointers;
 }
 
 
-lib.cairo:34:1
+lib.cairo:35:1
 
 ^
 impls:
@@ -1189,7 +1274,7 @@ impls:
 impl SlicedBalancePairDrop of core::traits::Drop::<SlicedBalancePair>;
 
 
-lib.cairo:35:16
+lib.cairo:36:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 starknet_derive:
@@ -1284,6 +1369,59 @@ type SubPointersType = MutableSlicedBalancePairSubPointers;
                 MutableSlicedBalancePairSubPointers {
            balance1: balance1_value,
            balance2: balance2_value,
+        }
+    }
+}
+
+
+lib.cairo:42:1
+#[starknet::storage_node]
+^***********************^
+storage_node:
+
+#[derive(Drop, Copy)]
+struct LinkedListStorageNode {
+    value: starknet::storage::PendingStoragePath<felt252>,
+    next: starknet::storage::PendingStoragePath<LinkedList>,
+}
+impl LinkedListStorageNodeImpl of starknet::storage::StorageNode<LinkedList> {
+type NodeType = LinkedListStorageNode;
+   fn storage_node(self: starknet::storage::StoragePath<LinkedList>) -> LinkedListStorageNode {
+       
+        let value_value = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("value")
+                    );
+                            let next_value = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("next")
+                    );
+                            LinkedListStorageNode {
+           value: value_value,
+           next: next_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableLinkedListStorageNode {
+    value: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<felt252>>,
+    next: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<LinkedList>>,
+}
+impl MutableLinkedListStorageNodeImpl of starknet::storage::MutableStorageNode<LinkedList> {
+type NodeType = MutableLinkedListStorageNode;
+   fn mutable_storage_node(self: starknet::storage::StoragePath<starknet::storage::Mutable::<LinkedList>>) -> MutableLinkedListStorageNode {
+       
+        let value_value = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("value")
+                    );
+                            let next_value = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("next")
+                    );
+                            MutableLinkedListStorageNode {
+           value: value_value,
+           next: next_value,
         }
     }
 }
@@ -1665,7 +1803,7 @@ type SubPointersType = MutableHelloStarknetTraitSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:23:1
+lib.cairo:24:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -1674,7 +1812,7 @@ impl BalancePairStorageNodeDrop of core::traits::Drop::<BalancePairStorageNode>;
 impl BalancePairStorageNodeCopy of core::traits::Copy::<BalancePairStorageNode>;
 
 
-lib.cairo:23:1
+lib.cairo:24:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -1683,7 +1821,7 @@ impl MutableBalancePairStorageNodeDrop of core::traits::Drop::<MutableBalancePai
 impl MutableBalancePairStorageNodeCopy of core::traits::Copy::<MutableBalancePairStorageNode>;
 
 
-lib.cairo:29:16
+lib.cairo:30:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 impls:
@@ -1692,7 +1830,7 @@ impl SlicedBalanceTrioSubPointersDrop of core::traits::Drop::<SlicedBalanceTrioS
 impl SlicedBalanceTrioSubPointersCopy of core::traits::Copy::<SlicedBalanceTrioSubPointers>;
 
 
-lib.cairo:29:16
+lib.cairo:30:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 impls:
@@ -1701,7 +1839,7 @@ impl MutableSlicedBalanceTrioSubPointersDrop of core::traits::Drop::<MutableSlic
 impl MutableSlicedBalanceTrioSubPointersCopy of core::traits::Copy::<MutableSlicedBalanceTrioSubPointers>;
 
 
-lib.cairo:35:16
+lib.cairo:36:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 impls:
@@ -1710,13 +1848,31 @@ impl SlicedBalancePairSubPointersDrop of core::traits::Drop::<SlicedBalancePairS
 impl SlicedBalancePairSubPointersCopy of core::traits::Copy::<SlicedBalancePairSubPointers>;
 
 
-lib.cairo:35:16
+lib.cairo:36:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 impls:
 
 impl MutableSlicedBalancePairSubPointersDrop of core::traits::Drop::<MutableSlicedBalancePairSubPointers>;
 impl MutableSlicedBalancePairSubPointersCopy of core::traits::Copy::<MutableSlicedBalancePairSubPointers>;
+
+
+lib.cairo:42:1
+#[starknet::storage_node]
+^***********************^
+impls:
+
+impl LinkedListStorageNodeDrop of core::traits::Drop::<LinkedListStorageNode>;
+impl LinkedListStorageNodeCopy of core::traits::Copy::<LinkedListStorageNode>;
+
+
+lib.cairo:42:1
+#[starknet::storage_node]
+^***********************^
+impls:
+
+impl MutableLinkedListStorageNodeDrop of core::traits::Drop::<MutableLinkedListStorageNode>;
+impl MutableLinkedListStorageNodeCopy of core::traits::Copy::<MutableLinkedListStorageNode>;
 
 
 lib.cairo:1:1
@@ -1791,7 +1947,7 @@ impl MutableHelloStarknetTraitSafeDispatcherSubPointersDrop of core::traits::Dro
 impl MutableHelloStarknetTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableHelloStarknetTraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:41:1
+lib.cairo:48:1
 #[starknet::contract]
 ^*******************^
 contract:
@@ -1809,6 +1965,7 @@ pub struct Storage {
           pub legacy_map_balace: LegacyMap<usize, usize>,
           pub balance_pair: BalancePair,
           pub sliced_balance_trio: SlicedBalanceTrio,
+          pub linked_list: LinkedList,
 }
 
 #[derive(Drop, Copy)]
@@ -1819,6 +1976,7 @@ pub struct ContractStorageBase {
     pub legacy_map_balace: starknet::storage::StorageBase<LegacyMap<usize, usize>>,
     pub balance_pair: starknet::storage::StorageBase<BalancePair>,
     pub sliced_balance_trio: starknet::storage::StorageBase<SlicedBalanceTrio>,
+    pub linked_list: starknet::storage::StorageBase<LinkedList>,
 }
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
@@ -1828,6 +1986,7 @@ pub struct ContractStorageBaseMut {
     pub legacy_map_balace: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap<usize, usize>>>,
     pub balance_pair: starknet::storage::StorageBase<starknet::storage::Mutable<BalancePair>>,
     pub sliced_balance_trio: starknet::storage::StorageBase<starknet::storage::Mutable<SlicedBalanceTrio>>,
+    pub linked_list: starknet::storage::StorageBase<starknet::storage::Mutable<LinkedList>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -1840,6 +1999,7 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
            legacy_map_balace: starknet::storage::StorageBase{ address: selector!("legacy_map_balace") },
            balance_pair: starknet::storage::StorageBase{ address: selector!("balance_pair") },
            sliced_balance_trio: starknet::storage::StorageBase{ address: selector!("sliced_balance_trio") },
+           linked_list: starknet::storage::StorageBase{ address: selector!("linked_list") },
         }
     }
     fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
@@ -1850,6 +2010,7 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
            legacy_map_balace: starknet::storage::StorageBase{ address: selector!("legacy_map_balace") },
            balance_pair: starknet::storage::StorageBase{ address: selector!("balance_pair") },
            sliced_balance_trio: starknet::storage::StorageBase{ address: selector!("sliced_balance_trio") },
+           linked_list: starknet::storage::StorageBase{ address: selector!("linked_list") },
         }
     }
 }
@@ -1887,7 +2048,7 @@ pub fn contract_state_for_testing() -> ContractState {
 )]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x2150cf058d95c0ec3dcf33d204e303ceba98972b30f27ace3872c37f4cc3b9e;
+pub const TEST_CLASS_HASH: felt252 = 0x29e7f88fe33b0c80d1d63769fd10e46da6bc5e3f7261a1c10d02af304d6d4d5;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -2148,6 +2309,25 @@ fn __wrapper__HelloStarknetImpl__set_balance_trio_sub_member(mut data: Span::<fe
     core::array::ArrayTrait::span(@arr)
 }
 
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+fn __wrapper__HelloStarknetImpl__get_third_list_value(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = HelloStarknetImpl::get_third_list_value(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<felt252>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
 
 pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
@@ -2162,6 +2342,7 @@ pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__set_balance_pair_balance1 as set_balance_pair_balance1;
     pub use super::__wrapper__HelloStarknetImpl__get_balance_trio_sub_member as get_balance_trio_sub_member;
     pub use super::__wrapper__HelloStarknetImpl__set_balance_trio_sub_member as set_balance_trio_sub_member;
+    pub use super::__wrapper__HelloStarknetImpl__get_third_list_value as get_third_list_value;
 }
 pub mod __l1_handler {
 }
@@ -2188,7 +2369,7 @@ pub mod __constructor {
 
 
 
-lib.cairo:41:1
+lib.cairo:48:1
 #[starknet::contract]
 ^*******************^
 impls:
@@ -2196,7 +2377,7 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:41:1
+lib.cairo:48:1
 #[starknet::contract]
 ^*******************^
 starknet_derive:
@@ -2218,7 +2399,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:41:1
+lib.cairo:48:1
 #[starknet::contract]
 ^*******************^
 impls:
@@ -2227,7 +2408,7 @@ impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:41:1
+lib.cairo:48:1
 #[starknet::contract]
 ^*******************^
 impls:
@@ -2237,16 +2418,16 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:53:28
+ --> lib.cairo:60:28
         legacy_map_balace: LegacyMap<usize, usize>,
                            ^*******^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:53:28
+ --> lib.cairo:60:28
         legacy_map_balace: LegacyMap<usize, usize>,
                            ^*******^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:53:28
+ --> lib.cairo:60:28
         legacy_map_balace: LegacyMap<usize, usize>,
                            ^*******^

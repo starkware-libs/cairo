@@ -462,6 +462,14 @@ impl PendingStoragePathAsPath<T> of StorageAsPath<PendingStoragePath<T>> {
     }
 }
 
+/// Deref pending storage path into a storage path.
+impl PendingStoragePathDeref<T> of core::ops::Deref<PendingStoragePath<T>> {
+    type Target = StoragePath<T>;
+    fn deref(self: PendingStoragePath<T>) -> Self::Target {
+        self.as_path()
+    }
+}
+
 /// A struct for holding an address to initialize a storage path with. The members (not direct
 /// members, but accessible using deref) of the contract state are `StorageBase` instances, with the
 /// generic type representing the type of the stored member.
