@@ -126,6 +126,13 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     fn executable_attributes(&self) -> Vec<String> {
         Vec::new()
     }
+
+    /// Attributes that mark a type as a phantom type. Must return a subset of
+    /// `declared_attributes`.
+    /// This mechanism is optional.
+    fn phantom_type_attributes(&self) -> Vec<String> {
+        Vec::new()
+    }
 }
 
 /// Result of plugin code generation.

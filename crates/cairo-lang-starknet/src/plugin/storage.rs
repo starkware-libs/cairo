@@ -62,6 +62,7 @@ pub fn handle_storage_struct(
     let storage_struct_code = if backwards_compatible_storage(metadata.edition) {
         formatdoc!(
             "
+            #[phantom]
             pub struct Storage {{$storage_struct_members$
             }}
             "

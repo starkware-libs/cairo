@@ -41,6 +41,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 

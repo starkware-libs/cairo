@@ -103,6 +103,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub var: WrappedFelt252,
           pub zero_size: ZeroSize,

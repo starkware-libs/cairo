@@ -67,6 +67,7 @@ mod counter_contract {
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
+#[phantom]
 pub struct Storage {
           pub counter: u128,
           pub upgradable: upgradable_comp::Storage,
@@ -1006,6 +1007,7 @@ impl MutableICounterContractSafeDispatcherSubPointersCopy of core::traits::Copy:
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
+#[phantom]
 pub struct Storage {
           pub counter: u128,
           pub upgradable: upgradable_comp::Storage,

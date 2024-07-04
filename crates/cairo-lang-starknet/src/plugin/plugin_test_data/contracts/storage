@@ -197,6 +197,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub var_felt252: felt252,
           pub var_u8: u8,
