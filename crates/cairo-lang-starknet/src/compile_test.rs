@@ -18,6 +18,7 @@ use crate::test_utils::{get_example_file_path, get_test_contract};
 #[test_case("token_bridge::token_bridge")]
 #[test_case("with_erc20::erc20_contract")]
 #[test_case("with_ownable::ownable_balance")]
+#[test_case("with_ownable_mini::ownable_mini_contract")]
 #[test_case("ownable_erc20::ownable_erc20_contract")]
 #[test_case("upgradable_counter::counter_contract")]
 #[test_case("mintable::mintable_erc20_ownable")]
