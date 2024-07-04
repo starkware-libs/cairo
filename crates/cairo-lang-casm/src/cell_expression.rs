@@ -5,7 +5,6 @@ use num_bigint::BigInt;
 use num_traits::cast::ToPrimitive;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum CellOperator {
     Add,
     Sub,
@@ -26,7 +25,6 @@ impl core::fmt::Display for CellOperator {
 
 /// The expression representing a cell in the casm memory.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum CellExpression {
     Deref(CellRef),
     /// Represents an expression of the form `[[cell_ref] + offset]`.
