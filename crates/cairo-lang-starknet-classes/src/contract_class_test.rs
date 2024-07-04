@@ -57,6 +57,7 @@ fn test_serialization() {
 #[test_case("test_contract__test_contract")]
 #[test_case("hello_starknet__hello_starknet")]
 #[test_case("erc20__erc_20")]
+#[test_case("storage_accesses__storage_accesses")]
 #[test_case("with_erc20__erc20_contract")]
 #[test_case("with_ownable__ownable_balance")]
 #[test_case("ownable_erc20__ownable_erc20_contract")]

@@ -19,6 +19,7 @@ use crate::test_utils::get_example_file_path;
 #[test_case("with_erc20")]
 #[test_case("with_ownable")]
 #[test_case("ownable_erc20")]
+#[test_case("with_storage_accesses")]
 #[test_case("upgradable_counter")]
 #[test_case("mintable")]
 #[test_case("multi_component__contract_with_4_components")]

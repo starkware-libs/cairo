@@ -157,6 +157,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         mintable: "mintable",
         multi_component: "multi_component",
         storage_accesses: "storage_accesses",
+        with_storage_accesses: "with_storage_accesses",
     },
     ExpandContractFromCrateTestRunner
 );
