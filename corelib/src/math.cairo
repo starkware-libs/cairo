@@ -2,6 +2,7 @@ use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 use core::traits::{Into, TryInto};
 use core::option::OptionTrait;
 use core::integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
+use core::RangeCheck;
 
 // TODO(yuval): use signed integers once supported.
 // TODO(yuval): use a single impl of a trait with associated impls, once associated impls are
