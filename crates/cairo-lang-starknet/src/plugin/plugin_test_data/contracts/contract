@@ -114,6 +114,7 @@ contract:
 
 
 
+#[phantom]
 pub struct Storage {
 }
 

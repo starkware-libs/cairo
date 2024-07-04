@@ -41,6 +41,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -233,6 +234,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -435,6 +437,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -693,6 +696,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -890,6 +894,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -1085,6 +1090,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -1308,6 +1314,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -1522,6 +1529,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -1832,6 +1840,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -2043,6 +2052,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub same_name: felt252,
 }
@@ -2297,6 +2307,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -3268,6 +3279,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -3565,6 +3577,7 @@ contract:
 
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -3744,6 +3757,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -7666,6 +7680,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -7889,6 +7904,7 @@ contract:
 
 
 
+#[phantom]
 pub struct Storage {
           pub component_storage: super::component::Storage,
 }
@@ -8148,6 +8164,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -9084,6 +9101,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -9219,6 +9237,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -9354,6 +9373,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -10295,6 +10315,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -10430,6 +10451,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -10565,6 +10587,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
 }
 
@@ -11354,6 +11377,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub a_member: felt252,
 }
@@ -12161,6 +12185,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub data: u32,
 }
@@ -12286,6 +12311,7 @@ contract:
 
 
 
+#[phantom]
 pub struct Storage {
           pub component_member: super::test_component::Storage,
 }
@@ -13198,6 +13224,7 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub u256_pair: super::u256Pair,
 }

@@ -49,6 +49,7 @@ mod ownable_erc20_contract {
     }
 
 
+#[phantom]
 pub struct Storage {
           pub ownable_storage: ownable_comp::Storage,
           pub erc20_storage: erc20_comp::Storage,
@@ -338,6 +339,7 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
     }
 
 
+#[phantom]
 pub struct Storage {
           pub ownable_storage: ownable_comp::Storage,
           pub erc20_storage: erc20_comp::Storage,

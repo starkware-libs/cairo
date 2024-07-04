@@ -32,6 +32,7 @@ mod hello_starknet {
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub balance: usize,
 }
@@ -694,6 +695,7 @@ impl MutableHelloStarknetTraitSafeDispatcherSubPointersCopy of core::traits::Cop
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub balance: usize,
 }
