@@ -126,6 +126,8 @@ pub struct CasmCairoProgram {
     pub pythonic_hints: Vec<(usize, Vec<String>)>,
     pub entrypoint: usize,
     pub builtins: Vec<String>,
+    pub input_args: Vec<String>,
+    pub return_type: String,
 }
 
 impl CasmCairoProgram {
@@ -173,19 +175,42 @@ impl CasmCairoProgram {
 
         let mut builtins: Vec<String> = Vec::new();
 
+        let mut input_args: Vec<String> = Vec::new();
+
         for type_id in main_func.signature.param_types.iter() {
             let debug_name = match type_id.debug_name.clone() {
                 Some(debug_name) => debug_name,
                 None => panic!(),
             };
             let generic_id = GenericTypeId::from(debug_name);
-            if !builtin_types.contains(&generic_id) {
-                return Err(CompilationError::InvalidBuiltinType(type_id.clone()));
+            if builtin_types.contains(&generic_id) {
+                builtins.push(generic_id.0.as_str().to_case(Case::Snake));
+            } else {
+                input_args.push(generic_id.0.as_str().to_string());
             };
-            builtins.push(generic_id.0.as_str().to_case(Case::Snake));
         }
 
-        Ok(Self { prime, compiler_version, bytecode, hints, pythonic_hints, entrypoint, builtins })
+        let return_type = match main_func.signature.ret_types.last() {
+            Some(ty)
+                if !builtin_types
+                    .contains(&GenericTypeId::from(ty.clone().debug_name.unwrap())) =>
+            {
+                GenericTypeId::from(ty.clone().debug_name.unwrap()).0.as_str().to_string()
+            }
+            _ => "".to_string(),
+        };
+
+        Ok(Self {
+            prime,
+            compiler_version,
+            bytecode,
+            hints,
+            pythonic_hints,
+            entrypoint,
+            builtins,
+            input_args,
+            return_type,
+        })
     }
 }
 
