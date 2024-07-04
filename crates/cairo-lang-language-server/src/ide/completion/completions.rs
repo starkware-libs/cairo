@@ -282,7 +282,7 @@ fn completion_for_method(
 
     let completion = CompletionItem {
         label: format!("{}()", name),
-        insert_text: Some(format!("{}(", name)),
+        insert_text: Some(format!("{}(", name))),
         detail: Some(detail),
         kind: Some(CompletionItemKind::METHOD),
         additional_text_edits: Some(additional_text_edits),
