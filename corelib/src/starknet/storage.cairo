@@ -375,6 +375,17 @@ impl MutableStorageNodeDeref<
     }
 }
 
+/// A trait for creating a storage node from a storage path.
+pub trait HasStorage<
+    TContractState,
+    Storage,
+    impl Node: starknet::storage::StorageNode<Storage>,
+    impl NodeMut: starknet::storage::MutableStorageNode<Storage>
+> {
+    fn storage(self: @TContractState) -> Node::NodeType;
+    fn storage_mut(ref self: TContractState) -> NodeMut::NodeType;
+}
+
 /// Similar to storage node, but for structs which are stored sequentially in the storage. In
 /// contrast to storage node, the fields of the struct are just offsetted from the base address of
 /// the struct.
