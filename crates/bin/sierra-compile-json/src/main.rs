@@ -17,9 +17,6 @@ struct Args {
     file: String,
     /// The output file name (default: stdout).
     output: Option<String>,
-    /// Add pythonic hints.
-    #[arg(long, default_value_t = false)]
-    add_pythonic_hints: bool,
     /// Add gas usage check
     #[arg(long, default_value_t = false)]
     gas_usage_check: bool,
