@@ -3,13 +3,12 @@ use core::fmt::Display;
 use cairo_lang_utils::casts::IntoOrPanic;
 
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
-use serde::{Deserialize, Serialize};
 
 #[cfg(test)]
 #[path = "ap_change_test.rs"]
 mod test;
 
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ApChange {
     Known(usize),
     Unknown,
