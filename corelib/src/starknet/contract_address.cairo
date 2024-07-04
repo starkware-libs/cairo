@@ -1,6 +1,7 @@
 use core::zeroable::Zeroable;
 use core::serde::Serde;
 use core::hash::{Hash, HashStateTrait};
+use core::RangeCheck;
 
 /// Represents a Starknet contract address.
 /// The value range of this type is `[0, 2**251)`.

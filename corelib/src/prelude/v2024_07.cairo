@@ -1,4 +1,4 @@
-pub use core::{RangeCheck, SegmentArena, assert, bool, felt252, usize};
+pub use core::{assert, bool, felt252, usize};
 
 pub use core::array::{Array, ArrayTrait, Span, SpanTrait, ToSpanTrait};
 pub use core::box::{Box, BoxTrait};
@@ -6,7 +6,6 @@ pub use core::bytes_31::{Bytes31Trait, bytes31};
 pub use core::byte_array::{ByteArray, ByteArrayTrait};
 pub use core::clone::Clone;
 pub use core::dict::{Felt252Dict, Felt252DictTrait, SquashedFelt252Dict};
-pub use core::gas::GasBuiltin;
 pub use core::integer::{Bitwise, i128, i16, i32, i64, i8, u128, u16, u256, u32, u64, u8};
 pub use core::keccak;
 pub use core::math;

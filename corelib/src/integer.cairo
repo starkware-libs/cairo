@@ -4,6 +4,7 @@ use core::traits::{Into, TryInto, Default, Felt252DictValue};
 use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 use core::array::ArrayTrait;
 use core::array::SpanTrait;
+use core::RangeCheck;
 
 // TODO(spapini): Add method for const creation from Integer.
 pub trait NumericLiteral<T>;
@@ -2067,6 +2068,8 @@ impl I128PartialOrd of PartialOrd<i128> {
 
 mod signed_div_rem {
     use core::internal::BoundedInt;
+    use core::RangeCheck;
+
     trait ConstrainHelper<T, const BOUNDARY: felt252> {
         type LowT;
         type HighT;

@@ -7,6 +7,7 @@ use core::option::OptionTrait;
 use core::serde::Serde;
 use core::metaprogramming::TypeEqual;
 use core::iter::Iterator;
+use core::RangeCheck;
 
 #[derive(Drop)]
 pub extern type Array<T>;
