@@ -83,3 +83,58 @@ error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:1
 array![]
 ^******^
+
+//! > ==========================================================================
+
+//! > Test expansion of panic macro with no arguments
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > expr_code
+panic!()
+
+//! > expanded_code
+core::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 0)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of panic macro with simple string
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > expr_code
+panic!("0123456")
+
+//! > expanded_code
+core::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 1,'0123456')
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of panic macro with args
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > expr_code
+panic!("bad_format(})")
+
+//! > expanded_code
+{
+    let mut __formatter_for_panic_macro__: core::fmt::Formatter = core::traits::Default::default();
+    core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+write!(__formatter_for_panic_macro__, "bad_format(})")
+    );
+    core::panics::panic_with_byte_array(@__formatter_for_panic_macro__.buffer)
+}
+
+//! > diagnostics
+error: Plugin diagnostic: Closing `}` without a matching `{`.
+ --> lib.cairo:2:8
+panic!("bad_format(})")
+       ^*************^
