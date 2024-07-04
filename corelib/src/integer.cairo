@@ -1,6 +1,6 @@
 use core::option::OptionTrait;
 use core::result::ResultTrait;
-use core::traits::{Into, TryInto, Default, Felt252DictValue};
+use core::traits::{BitAnd, BitNot, BitOr, BitXor, Into, TryInto, Default, Felt252DictValue};
 use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 use core::array::ArrayTrait;
 use core::array::SpanTrait;
@@ -187,28 +187,28 @@ impl U128PartialOrd of PartialOrd<u128> {
 pub extern type Bitwise;
 /// Returns the bitwise operations (AND, XOR, OR) between `lhs` and `rhs`.
 extern fn bitwise(lhs: u128, rhs: u128) -> (u128, u128, u128) implicits(Bitwise) nopanic;
-impl U128BitAnd of BitAnd<u128> {
+impl U128BitAnd of core::traits::BitAnd<u128> {
     #[inline(always)]
     fn bitand(lhs: u128, rhs: u128) -> u128 {
         let (v, _, _) = bitwise(lhs, rhs);
         v
     }
 }
-impl U128BitXor of BitXor<u128> {
+impl U128BitXor of core::traits::BitXor<u128> {
     #[inline(always)]
     fn bitxor(lhs: u128, rhs: u128) -> u128 {
         let (_, v, _) = bitwise(lhs, rhs);
         v
     }
 }
-impl U128BitOr of BitOr<u128> {
+impl U128BitOr of core::traits::BitOr<u128> {
     #[inline(always)]
     fn bitor(lhs: u128, rhs: u128) -> u128 {
         let (_, _, v) = bitwise(lhs, rhs);
         v
     }
 }
-impl U128BitNot of BitNot<u128> {
+impl U128BitNot of core::traits::BitNot<u128> {
     fn bitnot(a: u128) -> u128 {
         BoundedInt::max() - a
     }
