@@ -2,6 +2,7 @@
 //! secp256r1 curve.
 
 use core::option::OptionTrait;
+use core::gas::GasBuiltin;
 use starknet::{
     EthAddress, secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait
 };

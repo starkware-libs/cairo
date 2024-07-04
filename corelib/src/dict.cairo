@@ -5,6 +5,8 @@ pub extern type Felt252Dict<T>;
 pub extern type SquashedFelt252Dict<T>;
 pub extern type Felt252DictEntry<T>;
 impl SquashedFelt252DictDrop<T, +Drop<T>> of Drop<SquashedFelt252Dict<T>>;
+use core::{RangeCheck, SegmentArena};
+use core::gas::GasBuiltin;
 
 pub(crate) extern fn felt252_dict_new<T>() -> Felt252Dict<T> implicits(SegmentArena) nopanic;
 
