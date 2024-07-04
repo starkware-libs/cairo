@@ -146,6 +146,11 @@ pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send {
         item_ast: &ast::ExprInlineMacro,
         metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult;
+
+    /// Allows for the plugin to provide documentation for an inline macro.
+    fn documentation(&self) -> Option<String> {
+        None
+    }
 }
 
 /// A trait for easier addition of macro plugins.
