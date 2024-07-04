@@ -24,42 +24,6 @@ pub use core::traits::{
 };
 
 
-#[deprecated(
-    feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0"
-)]
-#[feature("deprecated-op-assign-traits")]
-pub use core::traits::AddEq;
-#[deprecated(
-    feature: "deprecated-op-assign-traits", note: "Use `core::ops::SubAssign`.", since: "2.7.0"
-)]
-#[feature("deprecated-op-assign-traits")]
-pub use core::traits::SubEq;
-#[deprecated(
-    feature: "deprecated-op-assign-traits", note: "Use `core::ops::MulAssign`.", since: "2.7.0"
-)]
-#[feature("deprecated-op-assign-traits")]
-pub use core::traits::MulEq;
-#[deprecated(
-    feature: "deprecated-op-assign-traits", note: "Use `core::ops::DivAssign`.", since: "2.7.0"
-)]
-#[feature("deprecated-op-assign-traits")]
-pub use core::traits::DivEq;
-#[deprecated(
-    feature: "deprecated-op-assign-traits", note: "Use `core::ops::RemAssign`.", since: "2.7.0"
-)]
-#[feature("deprecated-op-assign-traits")]
-pub use core::traits::RemEq;
-
-#[deprecated(
-    feature: "deprecated-index-traits", note: "Use `core::ops::index::Index`.", since: "2.7.0"
-)]
-#[feature("deprecated-index-traits")]
-pub use core::traits::Index;
-#[deprecated(
-    feature: "deprecated-index-traits", note: "Use `core::ops::index::IndexView`.", since: "2.7.0"
-)]
-#[feature("deprecated-index-traits")]
-pub use core::traits::IndexView;
 pub use core::zeroable::NonZero;
 pub use core::ops::Deref;
 

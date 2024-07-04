@@ -31,7 +31,7 @@ pub impl Bytes31Impl of Bytes31Trait {
 }
 
 #[feature("deprecated-index-traits")]
-pub(crate) impl Bytes31IndexView of IndexView<bytes31, usize, u8> {
+pub(crate) impl Bytes31IndexView of core::traits::IndexView<bytes31, usize, u8> {
     fn index(self: @bytes31, index: usize) -> u8 {
         self.at(index)
     }

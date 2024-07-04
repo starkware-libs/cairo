@@ -195,7 +195,7 @@ impl EcPointAdd of Add<EcPoint> {
 }
 
 #[feature("deprecated-op-assign-traits")]
-impl EcPointAddEq of AddEq<EcPoint> {
+impl EcPointAddEq of core::traits::AddEq<EcPoint> {
     #[inline(always)]
     fn add_eq(ref self: EcPoint, other: EcPoint) {
         self = Add::add(self, other);
@@ -216,7 +216,7 @@ impl EcPointSub of Sub<EcPoint> {
 }
 
 #[feature("deprecated-op-assign-traits")]
-impl EcPointSubEq of SubEq<EcPoint> {
+impl EcPointSubEq of core::traits::SubEq<EcPoint> {
     #[inline(always)]
     fn sub_eq(ref self: EcPoint, other: EcPoint) {
         self = Sub::sub(self, other);

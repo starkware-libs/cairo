@@ -2399,27 +2399,27 @@ impl I128Rem = by_div_rem::RemImpl<i128>;
 // Implementations for `*Eq` operations.
 #[feature("deprecated-op-assign-traits")]
 mod op_eq_by_op {
-    pub impl AddEqImpl<T, +Add<T>> of AddEq<T> {
+    pub impl AddEqImpl<T, +Add<T>> of core::traits::AddEq<T> {
         fn add_eq(ref self: T, other: T) {
             self = Add::add(self, other);
         }
     }
-    pub impl SubEqImpl<T, +Sub<T>> of SubEq<T> {
+    pub impl SubEqImpl<T, +Sub<T>> of core::traits::SubEq<T> {
         fn sub_eq(ref self: T, other: T) {
             self = Sub::sub(self, other);
         }
     }
-    pub impl MulEqImpl<T, +Mul<T>> of MulEq<T> {
+    pub impl MulEqImpl<T, +Mul<T>> of core::traits::MulEq<T> {
         fn mul_eq(ref self: T, other: T) {
             self = Mul::mul(self, other);
         }
     }
-    pub impl DivEqImpl<T, +Div<T>> of DivEq<T> {
+    pub impl DivEqImpl<T, +Div<T>> of core::traits::DivEq<T> {
         fn div_eq(ref self: T, other: T) {
             self = Div::div(self, other);
         }
     }
-    pub impl RemEqImpl<T, +Rem<T>> of RemEq<T> {
+    pub impl RemEqImpl<T, +Rem<T>> of core::traits::RemEq<T> {
         fn rem_eq(ref self: T, other: T) {
             self = Rem::rem(self, other);
         }
