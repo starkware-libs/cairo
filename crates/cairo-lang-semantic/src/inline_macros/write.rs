@@ -11,6 +11,8 @@ use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{try_extract_matches, OptionHelper};
 use num_bigint::{BigInt, Sign};
 
+pub const FELT252_BYTES: usize = 31;
+
 /// Macro for writing into a formatter.
 #[derive(Debug, Default)]
 pub struct WriteMacro;
@@ -347,7 +349,6 @@ impl FormattingInfo {
         pending_chars: &mut String,
         ident_count: usize,
     ) {
-        const FELT252_BYTES: usize = 31;
         for chunk in pending_chars.as_bytes().chunks(FELT252_BYTES) {
             self.add_indentation(builder, ident_count);
             builder.add_modified(RewriteNode::interpolate_patched(
