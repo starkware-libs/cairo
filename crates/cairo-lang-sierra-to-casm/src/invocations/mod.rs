@@ -22,7 +22,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::circuit::CircuitsInfo;
@@ -96,7 +95,7 @@ pub enum InvocationError {
 }
 
 /// Describes a simple change in the ap tracking itself.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ApTrackingChange {
     /// Enables the tracking if not already enabled.
     Enable,
