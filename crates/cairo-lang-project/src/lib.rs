@@ -72,4 +72,9 @@ impl ProjectConfig {
         let content = toml::from_str(&std::fs::read_to_string(filename)?)?;
         Ok(ProjectConfig { base_path, content, corelib: None })
     }
+
+    /// Returns the crate root's absolute path, according to the base path of this project.
+    pub fn absolute_crate_root(&self, root: &Path) -> PathBuf {
+        if root.is_relative() { self.base_path.join(root) } else { root.to_owned() }
+    }
 }
