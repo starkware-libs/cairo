@@ -95,7 +95,17 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
             maybe_replace_inputs(&var_info, stmt.inputs_mut());
             match stmt {
                 Statement::Const(StatementConst { value, output }) => {
-                    var_info.insert(*output, VarInfo::Const(value.clone()));
+                    // Preventing the insertion of non-member consts values (such as a `Box` of a
+                    // const).
+                    if matches!(
+                        value,
+                        ConstValue::Int(..)
+                            | ConstValue::Struct(..)
+                            | ConstValue::Enum(..)
+                            | ConstValue::NonZero(..)
+                    ) {
+                        var_info.insert(*output, VarInfo::Const(value.clone()));
+                    }
                 }
                 Statement::Snapshot(stmt) => {
                     if let Some(VarInfo::Const(val)) = var_info.get(&stmt.input.var_id) {
