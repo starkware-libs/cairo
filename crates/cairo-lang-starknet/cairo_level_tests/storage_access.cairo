@@ -4,6 +4,7 @@ use super::utils::{deserialized, serialized};
 use core::integer::BoundedInt;
 use core::num::traits::Zero;
 use core::byte_array::ByteArrayTrait;
+use starknet::storage::StorageArray;
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
@@ -78,15 +79,24 @@ struct NonZeros {
     value_felt252: NonZero<felt252>,
 }
 
+#[starknet::storage_node]
+struct StorageArrays {
+    array: StorageArray<u32>,
+    array_of_arrays: StorageArray<StorageArray<u32>>,
+}
+
 #[starknet::contract]
 mod test_contract {
-    use super::{AbcEtc, ByteArrays, NonZeros};
+    use core::starknet::storage::StoragePointerWriteAccess;
+    use super::{AbcEtc, ByteArrays, NonZeros, StorageArrays,};
+    use starknet::storage::{StorageArrayTrait, MutableStorageArrayTrait, StorageAsPath,};
 
     #[storage]
     struct Storage {
         data: AbcEtc,
         byte_arrays: ByteArrays,
         non_zeros: NonZeros,
+        arrays: StorageArrays,
     }
 
     #[external(v0)]
@@ -127,6 +137,46 @@ mod test_contract {
     #[external(v0)]
     pub fn get_non_zeros(self: @ContractState) -> NonZeros {
         self.non_zeros.read()
+    }
+
+    #[external(v0)]
+    pub fn append_to_array(ref self: ContractState, value: u32) {
+        self.arrays.array.append().write(value);
+    }
+
+    #[external(v0)]
+    pub fn get_array_length(self: @ContractState) -> u64 {
+        self.arrays.array.len()
+    }
+
+    #[external(v0)]
+    pub fn get_array_element(self: @ContractState, index: u64) -> u32 {
+        self.arrays.array.at(index).read()
+    }
+
+    #[external(v0)]
+    pub fn append_an_array(ref self: ContractState) {
+        self.arrays.array_of_arrays.append();
+    }
+
+    #[external(v0)]
+    pub fn append_to_nested_array(ref self: ContractState, index: u64, value: u32) {
+        self.arrays.array_of_arrays.at(index).append().write(value);
+    }
+
+    #[external(v0)]
+    pub fn get_array_of_arrays_length(self: @ContractState) -> u64 {
+        self.arrays.array_of_arrays.len()
+    }
+
+    #[external(v0)]
+    pub fn get_nested_array_length(self: @ContractState, index: u64) -> u64 {
+        self.arrays.array_of_arrays.at(index).len()
+    }
+
+    #[external(v0)]
+    pub fn get_nested_array_element(self: @ContractState, index: u64, nested_index: u64) -> u32 {
+        self.arrays.array_of_arrays.at(index).at(nested_index).read()
     }
 }
 
@@ -223,4 +273,34 @@ fn test_read_write_non_zero() {
 
     assert!(test_contract::__external::set_non_zeros(serialized(x.clone())).is_empty());
     assert_eq!(deserialized(test_contract::__external::get_non_zeros(serialized(()))), x);
+}
+
+#[test]
+fn test_storage_array() {
+    assert!(test_contract::__external::append_to_array(serialized(1_u32)).is_empty());
+    assert!(test_contract::__external::append_to_array(serialized(2_u32)).is_empty());
+    assert!(test_contract::__external::append_to_array(serialized(3_u32)).is_empty());
+    assert_eq!(deserialized(test_contract::__external::get_array_length(serialized(()))), 3);
+    assert_eq!(deserialized(test_contract::__external::get_array_element(serialized(0_u64))), 1);
+    assert_eq!(deserialized(test_contract::__external::get_array_element(serialized(1_u64))), 2);
+    assert_eq!(deserialized(test_contract::__external::get_array_element(serialized(2_u64))), 3);
+}
+
+#[test]
+fn test_storage_array_of_arrays() {
+    assert!(test_contract::__external::append_an_array(serialized(())).is_empty());
+    assert!(test_contract::__external::append_to_nested_array(serialized((0_u64, 1_u32))).is_empty());
+    assert!(test_contract::__external::append_to_nested_array(serialized((0_u64, 2_u32))).is_empty());
+    assert!(test_contract::__external::append_to_nested_array(serialized((0_u64, 3_u32))).is_empty());
+    assert!(test_contract::__external::append_an_array(serialized(())).is_empty());
+    assert!(test_contract::__external::append_to_nested_array(serialized((1_u64, 4_u32))).is_empty());
+    assert!(test_contract::__external::append_to_nested_array(serialized((1_u64, 5_u32))).is_empty());
+    assert_eq!(deserialized(test_contract::__external::get_array_of_arrays_length(serialized(()))), 2);
+    assert_eq!(deserialized(test_contract::__external::get_nested_array_length(serialized(0_u64))), 3);
+    assert_eq!(deserialized(test_contract::__external::get_nested_array_element(serialized((0_u64, 0_u64)))), 1);
+    assert_eq!(deserialized(test_contract::__external::get_nested_array_element(serialized((0_u64, 1_u64)))), 2);
+    assert_eq!(deserialized(test_contract::__external::get_nested_array_element(serialized((0_u64, 2_u64)))), 3);
+    assert_eq!(deserialized(test_contract::__external::get_nested_array_length(serialized(1_u64))), 2);
+    assert_eq!(deserialized(test_contract::__external::get_nested_array_element(serialized((1_u64, 0_u64)))), 4);
+    assert_eq!(deserialized(test_contract::__external::get_nested_array_element(serialized((1_u64, 1_u64)))), 5);
 }
