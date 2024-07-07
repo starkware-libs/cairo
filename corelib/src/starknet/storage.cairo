@@ -5,6 +5,9 @@ use starknet::storage_access::StorageBaseAddress;
 use starknet::SyscallResult;
 use starknet::storage_access::storage_base_address_from_felt252;
 
+mod array;
+pub use array::{StorageArray, StorageArrayTrait, MutableStorageArrayTrait};
+
 
 /// A pointer to an address in storage, can be used to read and write values, if the generic type
 /// supports it (e.g. basic types like `felt252`).
