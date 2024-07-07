@@ -168,6 +168,28 @@ impl StoragePathImpl<T> of StoragePathTrait<T> {
     }
 }
 
+trait StoragePathUpdateTrait<T, Key> {
+    fn update(self: StoragePath<T>, value: Key) -> StoragePath<T>;
+}
+
+impl StoragePathUpdateImpl<
+    T, Key, +core::hash::Hash<Key, StoragePathHashState>
+> of StoragePathUpdateTrait<T, Key> {
+    fn update(self: StoragePath<T>, value: Key) -> StoragePath<T> {
+        StoragePath {
+            hash_state: core::hash::Hash::<
+                Key, StoragePathHashState
+            >::update_state(self.hash_state, value)
+        }
+    }
+}
+
+impl StoragePathSIntoT<S, T> of core::traits::Into<StoragePath<S>, StoragePath<T>> {
+    fn into(self: StoragePath<S>) -> StoragePath<T> {
+        StoragePath::<T> { hash_state: self.hash_state }
+    }
+}
+
 
 /// Trait for creating a new `StoragePath` from a storage member.
 pub trait StorageAsPath<TMemberState> {
@@ -227,13 +249,7 @@ impl EntryInfoStoragePathEntry<
     type Key = EntryInfo::<T>::Key;
     type Value = EntryInfo::<T>::Value;
     fn entry(self: StoragePath<T>, key: EntryInfo::<T>::Key) -> StoragePath<EntryInfo::<T>::Value> {
-        StoragePath::<
-            EntryInfo::<T>::Value
-        > {
-            hash_state: core::hash::Hash::<
-                EntryInfo::<T>::Key, StoragePathHashState
-            >::update_state(self.hash_state, key)
-        }
+        self.update(key).into()
     }
 }
 
@@ -248,13 +264,7 @@ impl MutableEntryStoragePathEntry<
     type Key = EntryImpl::Key;
     type Value = Mutable<EntryImpl::Value>;
     fn entry(self: StoragePath<T>, key: EntryImpl::Key) -> StoragePath<Mutable<EntryImpl::Value>> {
-        StoragePath::<
-            Mutable<EntryImpl::Value>
-        > {
-            hash_state: core::hash::Hash::<
-                EntryImpl::Key, StoragePathHashState
-            >::update_state(self.hash_state, key)
-        }
+        self.update(key).into()
     }
 }
 
