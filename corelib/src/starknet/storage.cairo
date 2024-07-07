@@ -168,6 +168,25 @@ impl StoragePathImpl<T> of StoragePathTrait<T> {
     }
 }
 
+/// Trait for updating the hash state of a storage path with a value. Notice that when updating the
+/// hash state, usually the generic type of the storage path should be changed, however, this is not
+/// done here, and `into` should be called to convert the storage path to the new type.
+trait StoragePathUpdateTrait<S, T, Key> {
+    fn update(self: StoragePath<S>, value: Key) -> StoragePath<T>;
+}
+
+impl StoragePathUpdateImpl<
+    S, T, Key, +core::hash::Hash<Key, StoragePathHashState>
+> of StoragePathUpdateTrait<S, T, Key> {
+    fn update(self: StoragePath<S>, value: Key) -> StoragePath<T> {
+        StoragePath {
+            hash_state: core::hash::Hash::<
+                Key, StoragePathHashState
+            >::update_state(self.hash_state, value)
+        }
+    }
+}
+
 
 /// Trait for creating a new `StoragePath` from a storage member.
 pub trait StorageAsPath<TMemberState> {
@@ -227,13 +246,7 @@ impl EntryInfoStoragePathEntry<
     type Key = EntryInfo::<T>::Key;
     type Value = EntryInfo::<T>::Value;
     fn entry(self: StoragePath<T>, key: EntryInfo::<T>::Key) -> StoragePath<EntryInfo::<T>::Value> {
-        StoragePath::<
-            EntryInfo::<T>::Value
-        > {
-            hash_state: core::hash::Hash::<
-                EntryInfo::<T>::Key, StoragePathHashState
-            >::update_state(self.hash_state, key)
-        }
+        self.update(key)
     }
 }
 
@@ -248,13 +261,7 @@ impl MutableEntryStoragePathEntry<
     type Key = EntryImpl::Key;
     type Value = Mutable<EntryImpl::Value>;
     fn entry(self: StoragePath<T>, key: EntryImpl::Key) -> StoragePath<Mutable<EntryImpl::Value>> {
-        StoragePath::<
-            Mutable<EntryImpl::Value>
-        > {
-            hash_state: core::hash::Hash::<
-                EntryImpl::Key, StoragePathHashState
-            >::update_state(self.hash_state, key)
-        }
+        self.update(key)
     }
 }
 
