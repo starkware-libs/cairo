@@ -7,6 +7,7 @@ use core::option::OptionTrait;
 use core::serde::Serde;
 use core::metaprogramming::TypeEqual;
 use core::iter::Iterator;
+use core::RangeCheck;
 
 #[derive(Drop)]
 pub extern type Array<T>;
@@ -384,10 +385,8 @@ impl SpanIterator<T> of Iterator<SpanIter<T>> {
     }
 }
 
-#[feature("collections-into-iter")]
 impl SpanIntoIterator<T> of core::iter::IntoIterator<Span<T>> {
     type IntoIter = SpanIter<T>;
-    impl Iterator = SpanIterator<T>;
     fn into_iter(self: Span<T>) -> SpanIter<T> {
         SpanIter { span: self }
     }
@@ -412,10 +411,8 @@ impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
     }
 }
 
-#[feature("collections-into-iter")]
 impl ArrayIntoIterator<T> of core::iter::IntoIterator<Array<T>> {
     type IntoIter = ArrayIter<T>;
-    impl Iterator = ArrayIterator<T>;
     fn into_iter(self: Array<T>) -> ArrayIter<T> {
         ArrayIter { array: self }
     }

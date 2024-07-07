@@ -23,6 +23,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 
 use crate::project::{update_crate_root, update_crate_roots_from_project_config};
+use crate::InliningStrategy;
 
 #[salsa::database(
     DefsDatabase,
@@ -47,10 +48,11 @@ impl RootDatabase {
         plugins: Vec<Arc<dyn MacroPlugin>>,
         inline_macro_plugins: OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
         analyzer_plugins: Vec<Arc<dyn AnalyzerPlugin>>,
+        inlining_strategy: InliningStrategy,
     ) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        init_lowering_group(&mut res);
+        init_lowering_group(&mut res, inlining_strategy);
         res.set_macro_plugins(plugins);
         res.set_inline_macro_plugins(inline_macro_plugins.into());
         res.set_analyzer_plugins(analyzer_plugins);
@@ -84,6 +86,7 @@ pub struct RootDatabaseBuilder {
     auto_withdraw_gas: bool,
     project_config: Option<Box<ProjectConfig>>,
     cfg_set: Option<CfgSet>,
+    inlining_strategy: InliningStrategy,
 }
 
 impl RootDatabaseBuilder {
@@ -94,6 +97,7 @@ impl RootDatabaseBuilder {
             auto_withdraw_gas: true,
             project_config: None,
             cfg_set: None,
+            inlining_strategy: InliningStrategy::Default,
         }
     }
 
@@ -104,6 +108,11 @@ impl RootDatabaseBuilder {
 
     pub fn clear_plugins(&mut self) -> &mut Self {
         self.plugin_suite = get_default_plugin_suite();
+        self
+    }
+
+    pub fn with_inlining_strategy(&mut self, inlining_strategy: InliningStrategy) -> &mut Self {
+        self.inlining_strategy = inlining_strategy;
         self
     }
 
@@ -136,6 +145,7 @@ impl RootDatabaseBuilder {
             self.plugin_suite.plugins.clone(),
             self.plugin_suite.inline_macro_plugins.clone(),
             self.plugin_suite.analyzer_plugins.clone(),
+            self.inlining_strategy,
         );
 
         if let Some(cfg_set) = &self.cfg_set {

@@ -1,4 +1,7 @@
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_syntax::attribute::structured::{
+    AttributeArg, AttributeArgVariant, AttributeStructurize,
+};
 use cairo_lang_syntax::node::ast::{self, Attribute, Modifier};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{is_single_arg_attr, QueryAttrs};
@@ -262,4 +265,29 @@ pub fn forbid_attribute_in_impl(
             ),
         ));
     }
+}
+
+/// Returns true if the type has a derive attribute with the given type.
+pub fn has_derive<T: QueryAttrs>(
+    with_attrs: &T,
+    db: &dyn SyntaxGroup,
+    derived_type: &str,
+) -> Option<ast::Arg> {
+    with_attrs.query_attr(db, "derive").into_iter().find_map(|attr| {
+        let attr = attr.structurize(db);
+        for arg in attr.args {
+            let AttributeArg {
+                variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)),
+                arg,
+                ..
+            } = arg
+            else {
+                continue;
+            };
+            if path.as_syntax_node().get_text_without_trivia(db) == derived_type {
+                return Some(arg);
+            }
+        }
+        None
+    })
 }

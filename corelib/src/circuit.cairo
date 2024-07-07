@@ -424,6 +424,8 @@ extern fn get_circuit_output<C, Output>(
 /// Helper module to convert into `u384`.
 mod conversions {
     use core::internal::BoundedInt;
+    use core::RangeCheck;
+
 
     trait AddHelper<Lhs, Rhs> {
         type Result;

@@ -1,5 +1,3 @@
-use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax::node::SyntaxNode;
 use tower_lsp::lsp_types::{
     CodeAction, CodeActionOrCommand, CodeActionParams, CodeActionResponse, Diagnostic,
@@ -7,7 +5,7 @@ use tower_lsp::lsp_types::{
 };
 use tracing::debug;
 
-use crate::lang::db::LsSyntaxGroup;
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 mod rename_unused_variable;
@@ -19,7 +17,7 @@ mod rename_unused_variable;
     skip_all,
     fields(uri = %params.text_document.uri)
 )]
-pub fn code_actions(params: CodeActionParams, db: &RootDatabase) -> Option<CodeActionResponse> {
+pub fn code_actions(params: CodeActionParams, db: &AnalysisDatabase) -> Option<CodeActionResponse> {
     let mut actions = Vec::with_capacity(params.context.diagnostics.len());
     let file_id = db.file_for_url(&params.text_document.uri)?;
     let node = db.find_syntax_node_at_position(file_id, params.range.start.to_cairo())?;
@@ -46,7 +44,7 @@ pub fn code_actions(params: CodeActionParams, db: &RootDatabase) -> Option<CodeA
 ///
 /// A vector of [`CodeAction`] objects that can be applied to resolve the diagnostic.
 fn get_code_actions_for_diagnostic(
-    db: &dyn SemanticGroup,
+    db: &AnalysisDatabase,
     node: &SyntaxNode,
     diagnostic: &Diagnostic,
     params: &CodeActionParams,

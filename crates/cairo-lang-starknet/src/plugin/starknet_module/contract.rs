@@ -204,10 +204,6 @@ impl ContractSpecificGenerationData {
     ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             &formatdoc! {"
-                use starknet::storage::{{
-                    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
-                    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
-                }};
                 // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
                 #[deprecated(
                     feature: \"deprecated_legacy_map\",
@@ -266,6 +262,7 @@ fn handle_contract_item(
                 item_struct.clone(),
                 StarknetModuleKind::Contract,
                 &mut data.common,
+                metadata,
             );
             for member in item_struct.members(db).elements(db) {
                 // v0 is not validated here to not create multiple diagnostics. It's already

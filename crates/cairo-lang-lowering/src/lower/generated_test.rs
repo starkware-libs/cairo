@@ -18,6 +18,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         loop_ :"loop",
         while_ :"while",
+        for_ :"for",
     },
     test_generated_function
 );

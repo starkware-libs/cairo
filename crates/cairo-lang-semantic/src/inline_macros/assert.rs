@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
+    PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::{
     escape_node, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
@@ -21,6 +22,7 @@ impl InlineMacroExprPlugin for AssertMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         let WrappedArgList::ParenthesizedArgList(arguments_syntax) = syntax.arguments(db) else {
             return unsupported_bracket_diagnostic(db, syntax);

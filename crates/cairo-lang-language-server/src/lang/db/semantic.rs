@@ -15,6 +15,7 @@ use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::{Intern, Upcast};
 
+// TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// Language server-specific extensions to the semantic group.
 pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {
     /// Returns a [`LookupItemId`] corresponding to the node or its first parent all the way up to

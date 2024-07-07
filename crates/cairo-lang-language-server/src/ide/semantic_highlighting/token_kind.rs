@@ -5,9 +5,10 @@ use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::grandparent_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
+use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::SemanticTokenType;
 
-use crate::lang::db::LsSemanticGroup;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 #[allow(dead_code)]
 pub enum SemanticTokenKind {
@@ -34,10 +35,7 @@ pub enum SemanticTokenKind {
     GenericParamImpl,
 }
 impl SemanticTokenKind {
-    pub fn from_syntax_node(
-        db: &(dyn SemanticGroup + 'static),
-        mut node: SyntaxNode,
-    ) -> Option<Self> {
+    pub fn from_syntax_node(db: &AnalysisDatabase, mut node: SyntaxNode) -> Option<Self> {
         let syntax_db = db.upcast();
         let mut expr_path_ptr = None;
         let kind = node.kind(syntax_db);

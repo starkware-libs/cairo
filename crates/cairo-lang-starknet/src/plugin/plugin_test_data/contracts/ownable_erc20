@@ -12,13 +12,6 @@ mod ownable_erc20_contract {
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use starknet::ContractAddress;
-    #[storage]
-    struct Storage {
-        #[substorage(v0)]
-        ownable_storage: ownable_comp::Storage,
-        #[substorage(v0)]
-        erc20_storage: erc20_comp::Storage,
-    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -56,15 +49,21 @@ mod ownable_erc20_contract {
     }
 
 
+#[phantom]
+pub struct Storage {
+          pub ownable_storage: ownable_comp::Storage,
+          pub erc20_storage: erc20_comp::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
-    erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
+pub struct ContractStorageBase {
+    pub ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
+    pub erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-    erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+    pub erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -108,10 +107,6 @@ pub fn unsafe_new_contract_state() -> ContractState {
     }
 }
 
-use starknet::storage::{
-    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
-    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
-};
 // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
 #[deprecated(
     feature: "deprecated_legacy_map",
@@ -307,13 +302,6 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use starknet::ContractAddress;
-    #[storage]
-    struct Storage {
-        #[substorage(v0)]
-        ownable_storage: ownable_comp::Storage,
-        #[substorage(v0)]
-        erc20_storage: erc20_comp::Storage,
-    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -351,15 +339,21 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
     }
 
 
+#[phantom]
+pub struct Storage {
+          pub ownable_storage: ownable_comp::Storage,
+          pub erc20_storage: erc20_comp::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
-    erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
+pub struct ContractStorageBase {
+    pub ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
+    pub erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-    erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+    pub erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -403,10 +397,6 @@ pub fn unsafe_new_contract_state() -> ContractState {
     }
 }
 
-use starknet::storage::{
-    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
-    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
-};
 // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
 #[deprecated(
     feature: "deprecated_legacy_map",

@@ -1,4 +1,3 @@
-use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_semantic::items::us::get_use_segments;
 use cairo_lang_semantic::resolve::AsSegments;
 use cairo_lang_syntax::node::ast::PathSegment;
@@ -10,7 +9,7 @@ use tower_lsp::lsp_types::{CompletionParams, CompletionResponse, CompletionTrigg
 use tracing::debug;
 
 use self::completions::{colon_colon_completions, dot_completions, generic_completions};
-use crate::lang::db::{LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 mod completions;
@@ -21,7 +20,7 @@ mod completions;
     skip_all,
     fields(uri = %params.text_document_position.text_document.uri)
 )]
-pub fn complete(params: CompletionParams, db: &RootDatabase) -> Option<CompletionResponse> {
+pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<CompletionResponse> {
     let text_document_position = params.text_document_position;
     let file_id = db.file_for_url(&text_document_position.text_document.uri)?;
     let mut position = text_document_position.position;
@@ -63,7 +62,7 @@ enum CompletionKind {
 }
 
 #[tracing::instrument(level = "trace", skip_all)]
-fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
+fn completion_kind(db: &AnalysisDatabase, node: SyntaxNode) -> CompletionKind {
     debug!("node.kind: {:#?}", node.kind(db));
     match node.kind(db) {
         SyntaxKind::TerminalDot => {
@@ -152,7 +151,7 @@ fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
 }
 
 #[tracing::instrument(level = "trace", skip_all)]
-fn completion_kind_from_path_node(db: &RootDatabase, parent: SyntaxNode) -> CompletionKind {
+fn completion_kind_from_path_node(db: &AnalysisDatabase, parent: SyntaxNode) -> CompletionKind {
     debug!("completion_kind_from_path_node: {}", parent.clone().get_text_without_trivia(db));
     let expr = ast::ExprPath::from_syntax_node(db, parent);
     debug!("has_tail: {}", expr.has_tail(db));

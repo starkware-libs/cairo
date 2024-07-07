@@ -1,4 +1,3 @@
-use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_parser::db::ParserGroup;
@@ -6,6 +5,7 @@ use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::{DocumentFormattingParams, Position, Range, TextEdit};
 use tracing::error;
 
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 
 /// Format a whole document.
@@ -14,7 +14,7 @@ use crate::lang::lsp::LsProtoGroup;
     skip_all,
     fields(uri = %params.text_document.uri)
 )]
-pub fn format(params: DocumentFormattingParams, db: &RootDatabase) -> Option<Vec<TextEdit>> {
+pub fn format(params: DocumentFormattingParams, db: &AnalysisDatabase) -> Option<Vec<TextEdit>> {
     let file_uri = params.text_document.uri;
     let file = db.file_for_url(&file_uri)?;
 

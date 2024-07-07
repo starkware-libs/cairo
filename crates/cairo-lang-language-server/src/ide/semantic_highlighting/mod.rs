@@ -1,7 +1,5 @@
-use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{self};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -13,6 +11,7 @@ use tracing::error;
 
 use self::encoder::{EncodedToken, TokenEncoder};
 pub use self::token_kind::SemanticTokenKind;
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 
 mod encoder;
@@ -26,7 +25,7 @@ mod token_kind;
 )]
 pub fn semantic_highlight_full(
     params: SemanticTokensParams,
-    db: &RootDatabase,
+    db: &AnalysisDatabase,
 ) -> Option<SemanticTokensResult> {
     let file_uri = params.text_document.uri;
     let file = db.file_for_url(&file_uri)?;
@@ -53,7 +52,7 @@ struct SemanticTokensTraverser {
 impl SemanticTokensTraverser {
     pub fn find_semantic_tokens(
         &mut self,
-        db: &(dyn SemanticGroup + 'static),
+        db: &AnalysisDatabase,
         data: &mut Vec<SemanticToken>,
         node: SyntaxNode,
     ) {

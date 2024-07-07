@@ -479,7 +479,7 @@ fn must_use_function() -> felt252 {
 //! > Test usage of unstable.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -520,7 +520,7 @@ warning: Usage of unstable feature `"testing"` with no `#[feature("testing")]` a
 //! > Test usage of deprecated.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -572,6 +572,13 @@ enum AllowedEnumMember {
     variant: DisallowedType,
 }
 
+trait ATrait {}
+
+impl BadATraitImpl<+UnstableTrait> of ATrait;
+
+#[feature("unstable-trait")]
+impl ATraitImpl<+UnstableTrait> of ATrait;
+
 //! > function_body
 
 //! > expected_diagnostics
@@ -590,15 +597,105 @@ warning: Usage of unstable feature `"unstable-member"` with no `#[feature("unsta
     variant: DisallowedType,
              ^************^
 
+warning: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
+ --> lib.cairo:42:21
+impl BadATraitImpl<+UnstableTrait> of ATrait;
+                    ^***********^
+
 warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
- --> lib.cairo:41:15
+ --> lib.cairo:48:15
   let _fail = deprecated_function_with_note();
               ^***************************^
 
 warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
- --> lib.cairo:44:15
+ --> lib.cairo:51:15
   let _fail = deprecated_function_no_note();
               ^*************************^
+
+//! > ==========================================================================
+
+//! > Test usage of internal.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let _fail = internal_function_with_note();
+  #[feature("internal")]
+  let _work = internal_function_with_note();
+  let _fail = internal_function_no_note();
+  #[feature("internal")]
+  let _work = internal_function_no_note();
+}
+
+//! > module_code
+#[internal(feature: "internal", note: "Some reason", since: "1.0.0")]
+fn internal_function_with_note() -> felt252 {
+    0
+}
+
+#[internal(feature: "internal")]
+fn internal_function_no_note() -> felt252 {
+    0
+}
+
+#[internal(feature: "internal-trait")]
+trait InternalTrait;
+
+impl BadInternalImpl of InternalTrait;
+
+#[feature("internal-trait")]
+impl AllowedInternalImpl of InternalTrait;
+
+#[internal(feature: "internal-member")]
+struct DisallowedType {}
+
+struct BadStructMember {
+    member: DisallowedType,
+}
+
+#[feature("internal-member")]
+struct AllowedStructMember {
+    member: DisallowedType,
+}
+
+enum BadEnumVariant {
+    variant: DisallowedType,
+}
+
+#[feature("internal-member")]
+enum AllowedEnumMember {
+    variant: DisallowedType,
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Usage of internal feature `"internal-trait"` with no `#[feature("internal-trait")]` attribute.
+ --> lib.cairo:14:25
+impl BadInternalImpl of InternalTrait;
+                        ^***********^
+
+error: Usage of internal feature `"internal-member"` with no `#[feature("internal-member")]` attribute.
+ --> lib.cairo:23:13
+    member: DisallowedType,
+            ^************^
+
+error: Usage of internal feature `"internal-member"` with no `#[feature("internal-member")]` attribute.
+ --> lib.cairo:32:14
+    variant: DisallowedType,
+             ^************^
+
+error: Usage of internal feature `"internal"` with no `#[feature("internal")]` attribute. Note: "Some reason"
+ --> lib.cairo:41:15
+  let _fail = internal_function_with_note();
+              ^*************************^
+
+error: Usage of internal feature `"internal"` with no `#[feature("internal")]` attribute.
+ --> lib.cairo:44:15
+  let _fail = internal_function_no_note();
+              ^***********************^
 
 //! > ==========================================================================
 
@@ -645,6 +742,11 @@ fn multiple_unstable_feature_markers() {}
 #[deprecated(feature: "testing1")]
 #[unstable(feature: "testing2")]
 fn multiple_mixed_feature_markers() {}
+
+
+#[deprecated(feature: "testing1")]
+#[internal(feature: "testing2")]
+fn multiple_mixed_feature_markers2() {}
 
 //! > function_body
 
@@ -701,6 +803,11 @@ error: Multiple feature marker attributes.
 
 error: Multiple feature marker attributes.
  --> lib.cairo:32:1
+#[deprecated(feature: "testing1")]
+^********************************^
+
+error: Multiple feature marker attributes.
+ --> lib.cairo:37:1
 #[deprecated(feature: "testing1")]
 ^********************************^
 

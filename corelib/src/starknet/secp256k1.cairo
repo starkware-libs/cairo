@@ -2,6 +2,7 @@
 //! secp256k1 curve.
 
 use core::option::OptionTrait;
+use core::gas::GasBuiltin;
 use starknet::{
     secp256_trait::{
         Secp256Trait, Secp256PointTrait, recover_public_key, is_signature_entry_valid, Signature

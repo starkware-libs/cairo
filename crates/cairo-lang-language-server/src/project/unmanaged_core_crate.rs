@@ -2,14 +2,15 @@ use std::path;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
-use cairo_lang_filesystem::db::{init_dev_corelib, FilesGroup};
+use cairo_lang_filesystem::db::init_dev_corelib;
 use tracing::{error, warn};
 
 use crate::config::Config;
+use crate::lang::db::AnalysisDatabase;
 
 /// Try to find a Cairo `core` crate (see [`find_unmanaged_core`]) and initialize it in the
 /// provided database.
-pub fn try_to_init_unmanaged_core(config: &Config, db: &mut (dyn FilesGroup + 'static)) {
+pub fn try_to_init_unmanaged_core(config: &Config, db: &mut AnalysisDatabase) {
     if let Some(path) = find_unmanaged_core(config) {
         init_dev_corelib(db, path);
     } else {
