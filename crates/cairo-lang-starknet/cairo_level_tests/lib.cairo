@@ -25,3 +25,5 @@ mod storage_access;
 #[cfg(test)]
 mod contract_address_test;
 mod utils;
+#[cfg(test)]
+mod collections_test;
