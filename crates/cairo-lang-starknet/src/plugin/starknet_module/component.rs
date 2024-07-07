@@ -32,10 +32,6 @@ impl ComponentSpecificGenerationData {
     ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             indoc! {"
-            use starknet::storage::{
-                StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
-                StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
-            };
             // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
             #[deprecated(
                 feature: \"deprecated_legacy_map\",
@@ -91,6 +87,7 @@ fn handle_component_item(
                 item_struct.clone(),
                 StarknetModuleKind::Component,
                 &mut data.common,
+                metadata,
             );
         }
         _ => {}

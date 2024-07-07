@@ -46,14 +46,12 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use anyhow::{bail, Context};
-use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, ModuleId, SubmoduleLongId,
 };
 use cairo_lang_diagnostics::Diagnostics;
-use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
@@ -70,13 +68,12 @@ use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
-use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use salsa::ParallelDatabase;
 use serde_json::Value;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
@@ -86,7 +83,7 @@ use tracing::{debug, error, info, trace_span, warn, Instrument};
 
 use crate::config::Config;
 use crate::ide::semantic_highlighting::SemanticTokenKind;
-use crate::lang::db::{LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::client_capabilities::ClientCapabilitiesExt;
@@ -224,29 +221,11 @@ fn init_logging() -> Option<impl Drop> {
     guard
 }
 
-fn configured_db(tricks: &Tricks) -> RootDatabase {
-    let mut b = RootDatabase::builder();
-
-    // TODO(mkaput): Cfg items should be pulled from Scarb metadata.
-    b.with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]));
-
-    b.with_plugin_suite(starknet_plugin_suite());
-    b.with_plugin_suite(test_plugin_suite());
-
-    if let Some(extra_plugin_suites) = tricks.extra_plugin_suites {
-        for suite in extra_plugin_suites() {
-            b.with_plugin_suite(suite);
-        }
-    }
-
-    b.build().expect("salsa initialization should never fail")
-}
-
 /// Makes sure that all open files exist in the new db, with their current changes.
 #[tracing::instrument(level = "trace", skip_all)]
 fn ensure_exists_in_db(
-    new_db: &mut RootDatabase,
-    old_db: &RootDatabase,
+    new_db: &mut AnalysisDatabase,
+    old_db: &AnalysisDatabase,
     open_files: impl Iterator<Item = Url>,
 ) {
     let overrides = old_db.file_overrides();
@@ -281,7 +260,7 @@ struct Backend {
     tricks: Tricks,
     // TODO(spapini): Remove this once we support ParallelDatabase.
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
-    db_mutex: tokio::sync::Mutex<RootDatabase>,
+    db_mutex: tokio::sync::Mutex<AnalysisDatabase>,
     state_mutex: tokio::sync::Mutex<State>,
     config: tokio::sync::RwLock<Config>,
     scarb_toolchain: ScarbToolchain,
@@ -297,7 +276,7 @@ impl Backend {
     }
 
     fn new(client: Client, tricks: Tricks) -> Self {
-        let db = configured_db(&tricks);
+        let db = AnalysisDatabase::new(&tricks);
         let notifier = Notifier::new(&client);
         let scarb_toolchain = ScarbToolchain::new(&notifier);
         Self {
@@ -317,12 +296,12 @@ impl Backend {
     /// Catches panics and returns Err.
     async fn with_db<F, T>(&self, f: F) -> LSPResult<T>
     where
-        F: FnOnce(&RootDatabase) -> T + std::panic::UnwindSafe,
+        F: FnOnce(&AnalysisDatabase) -> T + std::panic::UnwindSafe,
     {
         let db_mut = self.db_mut().await;
         let db = db_mut.snapshot();
         drop(db_mut);
-        std::panic::catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
+        catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
             error!("caught panic in LSP worker thread");
             LSPError::internal_error()
         })
@@ -330,7 +309,7 @@ impl Backend {
 
     /// Locks and gets a database instance.
     #[tracing::instrument(level = "trace", skip_all)]
-    async fn db_mut(&self) -> tokio::sync::MutexGuard<'_, RootDatabase> {
+    async fn db_mut(&self) -> tokio::sync::MutexGuard<'_, AnalysisDatabase> {
         self.db_mutex.lock().await
     }
 
@@ -483,7 +462,7 @@ impl Backend {
             .with_db({
                 let tricks = &self.tricks;
                 |db| {
-                    let mut new_db = configured_db(tricks);
+                    let mut new_db = AnalysisDatabase::new(tricks);
                     ensure_exists_in_db(&mut new_db, db, open_files.iter().cloned());
                     new_db
                 }
@@ -505,10 +484,10 @@ impl Backend {
     #[tracing::instrument(level = "trace", skip_all)]
     async fn ensure_diagnostics_queries_up_to_date(
         &self,
-        db: &mut RootDatabase,
+        db: &mut AnalysisDatabase,
         open_files: impl Iterator<Item = Url>,
     ) {
-        let query_diags = |db: &RootDatabase, file_id| {
+        let query_diags = |db: &AnalysisDatabase, file_id| {
             db.file_syntax_diagnostics(file_id);
             let _ = db.file_semantic_diagnostics(file_id);
             let _ = db.file_lowering_diagnostics(file_id);
@@ -547,7 +526,7 @@ impl Backend {
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
     #[tracing::instrument(level = "trace", skip_all)]
-    async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: PathBuf) {
+    async fn detect_crate_for(&self, db: &mut AnalysisDatabase, file_path: PathBuf) {
         match ProjectManifestPath::discover(&file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
                 let scarb = self.scarb_toolchain.clone();
@@ -882,7 +861,7 @@ enum ResolvedItem {
 // TODO(mkaput): Move this to crate::lang::inspect::defs and make private.
 #[tracing::instrument(level = "trace", skip_all)]
 fn find_definition(
-    db: &RootDatabase,
+    db: &AnalysisDatabase,
     identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
 ) -> Option<(ResolvedItem, SyntaxStablePtrId)> {
@@ -928,7 +907,7 @@ fn find_definition(
 
 #[tracing::instrument(level = "trace", skip_all)]
 fn resolved_concrete_item_def(
-    db: &dyn SemanticGroup,
+    db: &AnalysisDatabase,
     item: ResolvedConcreteItem,
 ) -> Option<SyntaxStablePtrId> {
     match item {
@@ -952,7 +931,7 @@ fn resolved_concrete_item_def(
 
 #[tracing::instrument(level = "trace", skip_all)]
 fn resolved_generic_item_def(
-    db: &dyn SemanticGroup,
+    db: &AnalysisDatabase,
     item: ResolvedGenericItem,
 ) -> SyntaxStablePtrId {
     let defs_db = db.upcast();
@@ -1013,7 +992,7 @@ fn is_cairo_file_path(file_path: &Url) -> bool {
 ///
 /// The [FileId] and [TextSpan] of the expression definition if found.
 fn get_definition_location(
-    db: &RootDatabase,
+    db: &AnalysisDatabase,
     file: FileId,
     position: TextPosition,
 ) -> Option<(FileId, TextSpan)> {

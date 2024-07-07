@@ -23,7 +23,7 @@ use crate::diagnostic::{
 };
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId, LocationId};
 use crate::lower::context::{VarRequest, VariableAllocator};
-use crate::utils::{Rebuilder, RebuilderEx};
+use crate::utils::{InliningStrategy, Rebuilder, RebuilderEx};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall, VarRemapping,
     VariableId,
@@ -65,11 +65,14 @@ pub fn priv_should_inline(
         function_id.function_with_body_id(db).base_semantic_function(db),
     )?;
 
-    Ok(match config {
-        InlineConfiguration::Never(_) => false,
-        InlineConfiguration::Should(_) => true,
-        InlineConfiguration::Always(_) => true,
-        InlineConfiguration::None => should_inline_lowered(db, function_id)?,
+    Ok(match db.optimization_config().inlining_strategy {
+        InliningStrategy::Default => match config {
+            InlineConfiguration::Never(_) => false,
+            InlineConfiguration::Should(_) => true,
+            InlineConfiguration::Always(_) => true,
+            InlineConfiguration::None => should_inline_lowered(db, function_id)?,
+        },
+        InliningStrategy::Avoid => !matches!(config, InlineConfiguration::Always(_)),
     })
 }
 

@@ -1,13 +1,11 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{DynGeneratedFileAuxData, PluginGeneratedFile, PluginResult};
-use cairo_lang_syntax::attribute::structured::{
-    AttributeArg, AttributeArgVariant, AttributeStructurize,
-};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 
 use super::consts::{EVENT_TRAIT, STORE_TRAIT};
+use super::utils::has_derive;
 
 mod event;
 mod store;
@@ -16,31 +14,6 @@ mod store;
 pub fn derive_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) -> bool {
     has_derive(with_attrs, db, EVENT_TRAIT).is_some()
         || has_derive(with_attrs, db, STORE_TRAIT).is_some()
-}
-
-/// Returns true if the type has a derive attribute with the given type.
-fn has_derive<T: QueryAttrs>(
-    with_attrs: &T,
-    db: &dyn SyntaxGroup,
-    derived_type: &str,
-) -> Option<ast::Arg> {
-    with_attrs.query_attr(db, "derive").into_iter().find_map(|attr| {
-        let attr = attr.structurize(db);
-        for arg in attr.args {
-            let AttributeArg {
-                variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)),
-                arg,
-                ..
-            } = arg
-            else {
-                continue;
-            };
-            if path.as_syntax_node().get_text_without_trivia(db) == derived_type {
-                return Some(arg);
-            }
-        }
-        None
-    })
 }
 
 /// Handles the derive attributes for the given item.

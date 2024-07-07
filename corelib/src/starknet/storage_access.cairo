@@ -9,6 +9,7 @@ use starknet::{
     class_hash::{ClassHash, Felt252TryIntoClassHash, ClassHashIntoFelt252}
 };
 use core::serde::Serde;
+use core::RangeCheck;
 
 /// Represents the address of a storage value in a Starknet contract.
 /// The value range of this type is `[0, 2**251)`.
@@ -88,6 +89,7 @@ pub trait Store<T> {
     ) -> SyscallResult<()>;
     fn size() -> u8;
 }
+
 
 /// Trait for easier implementation of `Store` used for packing and unpacking values into values
 /// that already implement `Store`, and having `Store` implemented using this conversion.

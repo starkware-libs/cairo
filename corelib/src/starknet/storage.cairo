@@ -9,8 +9,8 @@ use starknet::storage_access::storage_base_address_from_felt252;
 /// A pointer to an address in storage, can be used to read and write values, if the generic type
 /// supports it (e.g. basic types like `felt252`).
 pub struct StoragePointer<T> {
-    address: StorageBaseAddress,
-    offset: u8,
+    pub address: StorageBaseAddress,
+    pub offset: u8,
 }
 
 impl StoragePointerCopy<T> of Copy<StoragePointer<T>> {}
@@ -108,15 +108,31 @@ pub impl StorableStoragePointerReadAccess<
     }
 }
 
-/// Simple implementation of `StoragePointerWriteAccess` for any type that implements `Store` for
-/// any offset.
-pub impl StorableStoragePointerWriteAccess<
-    T, +starknet::Store<T>
-> of StoragePointerWriteAccess<StoragePointer<T>> {
-    type Value = T;
-    fn write(self: StoragePointer<T>, value: T) {
+/// Simple implementation of `StoragePointerReadAccess` for any mutable type that implements `Store`
+impl MutableStorableStoragePointerReadAccess<
+    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>
+> of StoragePointerReadAccess<StoragePointer<T>> {
+    type Value = MutableTrait::<T>::InnerType;
+    fn read(self: @StoragePointer<T>) -> MutableTrait::<T>::InnerType {
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<T>::write_at_offset(0, self.address, self.offset, value)
+            starknet::Store::<
+                MutableTrait::<T>::InnerType
+            >::read_at_offset(0, *self.address, *self.offset)
+        )
+    }
+}
+
+/// Simple implementation of `StoragePointerWriteAccess` for any mutable type that implements
+/// `Store`.
+impl MutableStorableStoragePointerWriteAccess<
+    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>
+> of StoragePointerWriteAccess<StoragePointer<T>> {
+    type Value = MutableTrait::<T>::InnerType;
+    fn write(self: StoragePointer<T>, value: MutableTrait::<T>::InnerType) {
+        starknet::SyscallResultTrait::unwrap_syscall(
+            starknet::Store::<
+                MutableTrait::<T>::InnerType
+            >::write_at_offset(0, self.address, self.offset, value)
         )
     }
 }
@@ -190,6 +206,7 @@ pub trait StoragePathEntry<C> {
 /// A struct that represents a map in a contract storage.
 // TODO(Gil): Make it a phantom type once we can annotate a type as phantom from within another
 // attribute, specifically from #[storage].
+#[phantom]
 pub struct Map<K, V> {}
 
 /// A trait for making a map like type support implement the `StoragePathEntry` trait.
@@ -247,8 +264,6 @@ impl StorableEntryReadAccess<
     +EntryInfo<T>,
     +core::hash::Hash<EntryInfo::<T>::Key, StoragePathHashState>,
     +starknet::Store<EntryInfo::<T>::Value>,
-    +Drop<EntryInfo::<T>::Key>,
-    +Drop<EntryInfo::<T>::Value>
 > of StorageMapReadAccessTrait<StoragePath<T>> {
     type Key = EntryInfo::<T>::Key;
     type Value = EntryInfo::<T>::Value;
@@ -280,8 +295,6 @@ impl MutableStorableEntryReadAccess<
     +EntryInfo<MutableTrait::<T>::InnerType>,
     +core::hash::Hash<EntryInfo::<MutableTrait::<T>::InnerType>::Key, StoragePathHashState>,
     +starknet::Store<EntryInfo::<MutableTrait::<T>::InnerType>::Value>,
-    +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Key>,
-    +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Value>
 > of StorageMapReadAccessTrait<StoragePath<T>> {
     type Key = EntryInfo::<MutableTrait::<T>::InnerType>::Key;
     type Value = EntryInfo::<MutableTrait::<T>::InnerType>::Value;
@@ -302,7 +315,6 @@ impl MutableStorableEntryWriteAccess<
     +EntryInfo<MutableTrait::<T>::InnerType>,
     +core::hash::Hash<EntryInfo::<MutableTrait::<T>::InnerType>::Key, StoragePathHashState>,
     +starknet::Store<EntryInfo::<MutableTrait::<T>::InnerType>::Value>,
-    +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Key>,
     +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Value>
 > of StorageMapWriteAccessTrait<StoragePath<T>> {
     type Key = EntryInfo::<MutableTrait::<T>::InnerType>::Key;
@@ -339,10 +351,27 @@ pub trait StorageNode<T> {
     fn storage_node(self: StoragePath<T>) -> Self::NodeType;
 }
 
+/// This makes the storage node members directly accessible from a path to the parent struct.
 impl StorageNodeDeref<T, +StorageNode<T>> of core::ops::Deref<StoragePath<T>> {
     type Target = StorageNode::<T>::NodeType;
     fn deref(self: StoragePath<T>) -> Self::Target {
         self.storage_node()
+    }
+}
+
+/// A mutable version of `StorageNode`, works the same way, but on `Mutable<T>`.
+pub trait MutableStorageNode<T> {
+    type NodeType;
+    fn mutable_storage_node(self: StoragePath<Mutable<T>>) -> Self::NodeType;
+}
+
+/// This makes the storage node members directly accessible from a path to the parent struct.
+impl MutableStorageNodeDeref<
+    T, +MutableStorageNode<T>
+> of core::ops::Deref<StoragePath<Mutable<T>>> {
+    type Target = MutableStorageNode::<T>::NodeType;
+    fn deref(self: StoragePath<Mutable<T>>) -> Self::Target {
+        self.mutable_storage_node()
     }
 }
 
@@ -364,6 +393,25 @@ impl SubPointersDeref<T, +SubPointers<T>> of core::ops::Deref<StoragePointer<T>>
     }
 }
 
+/// A mutable version of `SubPointers`, works the same way, but on `Mutable<T>`.
+pub trait MutableSubPointers<T> {
+    /// The type of the storage pointers, generated for the struct T.
+    type SubPointersType;
+    /// Creates a sub pointers struct for the given storage pointer to a struct T.
+    fn mutable_sub_pointers(self: StoragePointer<Mutable<T>>) -> Self::SubPointersType;
+}
+
+/// This makes the sub-pointers members directly accessible from a pointer to the parent struct.
+impl MutableSubPointersDeref<
+    T, +MutableSubPointers<T>
+> of core::ops::Deref<StoragePointer<Mutable<T>>> {
+    type Target = MutableSubPointers::<T>::SubPointersType;
+    fn deref(self: StoragePointer<Mutable<T>>) -> Self::Target {
+        self.mutable_sub_pointers()
+    }
+}
+
+
 /// Implement deref for storage paths that implements StorageAsPointer.
 impl StoragePathDeref<
     T, impl PointerImpl: StorageAsPointer<StoragePath<T>>
@@ -384,9 +432,21 @@ impl StoragePointer0OffsetDeref<T> of core::ops::Deref<StoragePointer0Offset<T>>
 
 
 /// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
-struct PendingStoragePath<T> {
+pub struct PendingStoragePath<T> {
     hash_state: StoragePathHashState,
-    pending_key: felt252
+    pending_key: felt252,
+}
+
+/// A trait for creating a `PendingStoragePath` from a hash state and a key.
+pub trait PendingStoragePathTrait<T, S> {
+    fn new(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T>;
+}
+
+/// An implementation of `StoragePathEntry` for `PendingStoragePath`.
+impl PendingStoragePathImpl<T, S> of PendingStoragePathTrait<T, S> {
+    fn new(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T> {
+        PendingStoragePath { hash_state: *storage_path.hash_state, pending_key }
+    }
 }
 
 impl PendingStoragePathDrop<T> of Drop<PendingStoragePath<T>> {}
@@ -399,6 +459,14 @@ impl PendingStoragePathAsPath<T> of StorageAsPath<PendingStoragePath<T>> {
         StoragePath::<
             T
         > { hash_state: core::hash::HashStateTrait::update(*self.hash_state, *self.pending_key) }
+    }
+}
+
+/// Deref pending storage path into a storage path.
+impl PendingStoragePathDeref<T> of core::ops::Deref<PendingStoragePath<T>> {
+    type Target = StoragePath<T>;
+    fn deref(self: PendingStoragePath<T>) -> Self::Target {
+        self.as_path()
     }
 }
 
@@ -459,8 +527,6 @@ impl StorablePointerReadAccessImpl<
     T,
     impl PointerImpl: StorageAsPointer<T>,
     impl AccessImpl: StoragePointerReadAccess<StoragePointer0Offset<PointerImpl::Value>>,
-    +Drop<T>,
-    +Drop<AccessImpl::Value>,
 > of StoragePointerReadAccess<T> {
     type Value = AccessImpl::Value;
     fn read(self: @T) -> Self::Value {
@@ -502,6 +568,7 @@ impl PathableStorageEntryImpl<
 
 /// A wrapper around different storage related types, indicating that the instance is mutable,
 /// i.e. originally created from a `ref` contract state.
+#[phantom]
 pub struct Mutable<T> {}
 
 impl MutableDrop<T> of Drop<Mutable<T>> {}
@@ -520,9 +587,10 @@ impl MutableImpl<T> of MutableTrait<Mutable<T>> {
 /// Implementation of SubPointers for core types.
 #[derive(Drop, Copy)]
 struct u256SubPointers {
-    low: starknet::storage::StoragePointer<u128>,
-    high: starknet::storage::StoragePointer<u128>,
+    pub low: starknet::storage::StoragePointer<u128>,
+    pub high: starknet::storage::StoragePointer<u128>,
 }
+
 impl u256SubPointersImpl of starknet::storage::SubPointers<u256> {
     type SubPointersType = u256SubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<u256>) -> u256SubPointers {
@@ -537,5 +605,30 @@ impl u256SubPointersImpl of starknet::storage::SubPointers<u256> {
         > { address: base_address, offset: current_offset, };
 
         u256SubPointers { low: low_value, high: high_value, }
+    }
+}
+
+#[derive(Drop, Copy)]
+struct MutableU256SubPointers {
+    pub low: starknet::storage::StoragePointer<Mutable<u128>>,
+    pub high: starknet::storage::StoragePointer<Mutable<u128>>,
+}
+
+impl MutableU256SubPointersImpl of starknet::storage::MutableSubPointers<u256> {
+    type SubPointersType = MutableU256SubPointers;
+    fn mutable_sub_pointers(
+        self: starknet::storage::StoragePointer<Mutable<u256>>
+    ) -> MutableU256SubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let low_value = starknet::storage::StoragePointer::<
+            Mutable<u128>
+        > { address: base_address, offset: current_offset, };
+        current_offset = current_offset + starknet::Store::<u128>::size();
+        let high_value = starknet::storage::StoragePointer::<
+            Mutable<u128>
+        > { address: base_address, offset: current_offset, };
+
+        MutableU256SubPointers { low: low_value, high: high_value, }
     }
 }

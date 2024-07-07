@@ -103,19 +103,27 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
+pub struct Storage {
+          pub var: WrappedFelt252,
+          pub zero_size: ZeroSize,
+          pub mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
+          pub zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    var: starknet::storage::StorageBase<WrappedFelt252>,
-    zero_size: starknet::storage::StorageBase<ZeroSize>,
-    mapping: starknet::storage::StorageBase<LegacyMap::<WrappedFelt252, WrappedFelt252>>,
-    zero_size_mapping: starknet::storage::StorageBase<LegacyMap::<ZeroSize, ZeroSize>>,
+pub struct ContractStorageBase {
+    pub var: starknet::storage::StorageBase<WrappedFelt252>,
+    pub zero_size: starknet::storage::StorageBase<ZeroSize>,
+    pub mapping: starknet::storage::StorageBase<LegacyMap::<WrappedFelt252, WrappedFelt252>>,
+    pub zero_size_mapping: starknet::storage::StorageBase<LegacyMap::<ZeroSize, ZeroSize>>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    var: starknet::storage::StorageBase<starknet::storage::Mutable<WrappedFelt252>>,
-    zero_size: starknet::storage::StorageBase<starknet::storage::Mutable<ZeroSize>>,
-    mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<WrappedFelt252, WrappedFelt252>>>,
-    zero_size_mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<ZeroSize, ZeroSize>>>,
+pub struct ContractStorageBaseMut {
+    pub var: starknet::storage::StorageBase<starknet::storage::Mutable<WrappedFelt252>>,
+    pub zero_size: starknet::storage::StorageBase<starknet::storage::Mutable<ZeroSize>>,
+    pub mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<WrappedFelt252, WrappedFelt252>>>,
+    pub zero_size_mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<ZeroSize, ZeroSize>>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -164,10 +172,6 @@ pub fn contract_state_for_testing() -> ContractState {
     unsafe_new_contract_state()
 }
 
-use starknet::storage::{
-    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
-    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
-};
 // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
 #[deprecated(
     feature: "deprecated_legacy_map",
@@ -261,6 +265,43 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
     }
 }
 
+#[derive(Drop, Copy)]
+struct WrappedFelt252SubPointers {
+    value: starknet::storage::StoragePointer<felt252>,
+}
+impl WrappedFelt252SubPointersImpl of starknet::storage::SubPointers<WrappedFelt252> {
+type SubPointersType = WrappedFelt252SubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<WrappedFelt252>) -> WrappedFelt252SubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let value_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                WrappedFelt252SubPointers {
+           value: value_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableWrappedFelt252SubPointers {
+    value: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
+}
+impl MutableWrappedFelt252SubPointersImpl of starknet::storage::MutableSubPointers<WrappedFelt252> {
+type SubPointersType = MutableWrappedFelt252SubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<WrappedFelt252>>) -> MutableWrappedFelt252SubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let value_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableWrappedFelt252SubPointers {
+           value: value_value,
+        }
+    }
+}
+
 
 lib.cairo:17:1
     #[derive(Drop, Hash, Serde, starknet::Store)]
@@ -327,6 +368,7 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
         0
     }
 }
+
 
 
 lib.cairo:19:1
@@ -647,6 +689,24 @@ impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
 impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+
+
+lib.cairo:13:26
+    #[derive(Drop, Hash, starknet::Store)]
+                         ^*************^
+impls:
+
+impl WrappedFelt252SubPointersDrop of core::traits::Drop::<WrappedFelt252SubPointers>;
+impl WrappedFelt252SubPointersCopy of core::traits::Copy::<WrappedFelt252SubPointers>;
+
+
+lib.cairo:13:26
+    #[derive(Drop, Hash, starknet::Store)]
+                         ^*************^
+impls:
+
+impl MutableWrappedFelt252SubPointersDrop of core::traits::Drop::<MutableWrappedFelt252SubPointers>;
+impl MutableWrappedFelt252SubPointersCopy of core::traits::Copy::<MutableWrappedFelt252SubPointers>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`

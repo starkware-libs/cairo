@@ -357,7 +357,7 @@ impl ByteArrayAddEq of core::traits::AddEq<ByteArray> {
 }
 
 #[feature("deprecated-index-traits")]
-pub(crate) impl ByteArrayIndexView of IndexView<ByteArray, usize, u8> {
+pub(crate) impl ByteArrayIndexView of core::traits::IndexView<ByteArray, usize, u8> {
     fn index(self: @ByteArray, index: usize) -> u8 {
         self.at(index).expect('Index out of bounds')
     }

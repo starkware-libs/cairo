@@ -15,109 +15,100 @@ for _a in array![1, 2].span() {
 //! > expected_semantics
 For(
     ExprFor {
-        into_iter: FunctionCall(
+        into_iter: core::array::SpanIntoIterator::<core::felt252>::into_iter,
+        into_iter_member_path: LocalVarId(test::in),
+        next_function_id: core::array::SpanIterator::<core::felt252>::next,
+        expr_id: FunctionCall(
             ExprFunctionCall {
-                function: core::array::SpanIntoIterator::<core::felt252>::into_iter,
+                function: core::array::ArrayToSpan::<core::felt252>::span,
                 args: [
                     Value(
-                        FunctionCall(
-                            ExprFunctionCall {
-                                function: core::array::ArrayToSpan::<core::felt252>::span,
-                                args: [
-                                    Value(
-                                        Snapshot(
-                                            ExprSnapshot {
-                                                inner: Block(
-                                                    ExprBlock {
-                                                        statements: [
-                                                            Let(
-                                                                StatementLet {
-                                                                    pattern: Variable(
-                                                                        __array_builder_macro_result__,
-                                                                    ),
-                                                                    expr: FunctionCall(
-                                                                        ExprFunctionCall {
-                                                                            function: core::array::ArrayImpl::<core::felt252>::new,
-                                                                            args: [],
-                                                                            coupon_arg: None,
-                                                                            ty: core::array::Array::<core::felt252>,
+                        Snapshot(
+                            ExprSnapshot {
+                                inner: Block(
+                                    ExprBlock {
+                                        statements: [
+                                            Let(
+                                                StatementLet {
+                                                    pattern: Variable(
+                                                        __array_builder_macro_result__,
+                                                    ),
+                                                    expr: FunctionCall(
+                                                        ExprFunctionCall {
+                                                            function: core::array::ArrayImpl::<core::felt252>::new,
+                                                            args: [],
+                                                            coupon_arg: None,
+                                                            ty: core::array::Array::<core::felt252>,
+                                                        },
+                                                    ),
+                                                },
+                                            ),
+                                            Expr(
+                                                StatementExpr {
+                                                    expr: FunctionCall(
+                                                        ExprFunctionCall {
+                                                            function: core::array::ArrayImpl::<core::felt252>::append,
+                                                            args: [
+                                                                Reference(
+                                                                    LocalVarId(test::__array_builder_macro_result__),
+                                                                ),
+                                                                Value(
+                                                                    Literal(
+                                                                        ExprLiteral {
+                                                                            value: 1,
+                                                                            ty: core::felt252,
                                                                         },
                                                                     ),
-                                                                },
-                                                            ),
-                                                            Expr(
-                                                                StatementExpr {
-                                                                    expr: FunctionCall(
-                                                                        ExprFunctionCall {
-                                                                            function: core::array::ArrayImpl::<core::felt252>::append,
-                                                                            args: [
-                                                                                Reference(
-                                                                                    LocalVarId(test::__array_builder_macro_result__),
-                                                                                ),
-                                                                                Value(
-                                                                                    Literal(
-                                                                                        ExprLiteral {
-                                                                                            value: 1,
-                                                                                            ty: core::felt252,
-                                                                                        },
-                                                                                    ),
-                                                                                ),
-                                                                            ],
-                                                                            coupon_arg: None,
-                                                                            ty: (),
+                                                                ),
+                                                            ],
+                                                            coupon_arg: None,
+                                                            ty: (),
+                                                        },
+                                                    ),
+                                                },
+                                            ),
+                                            Expr(
+                                                StatementExpr {
+                                                    expr: FunctionCall(
+                                                        ExprFunctionCall {
+                                                            function: core::array::ArrayImpl::<core::felt252>::append,
+                                                            args: [
+                                                                Reference(
+                                                                    LocalVarId(test::__array_builder_macro_result__),
+                                                                ),
+                                                                Value(
+                                                                    Literal(
+                                                                        ExprLiteral {
+                                                                            value: 2,
+                                                                            ty: core::felt252,
                                                                         },
                                                                     ),
-                                                                },
-                                                            ),
-                                                            Expr(
-                                                                StatementExpr {
-                                                                    expr: FunctionCall(
-                                                                        ExprFunctionCall {
-                                                                            function: core::array::ArrayImpl::<core::felt252>::append,
-                                                                            args: [
-                                                                                Reference(
-                                                                                    LocalVarId(test::__array_builder_macro_result__),
-                                                                                ),
-                                                                                Value(
-                                                                                    Literal(
-                                                                                        ExprLiteral {
-                                                                                            value: 2,
-                                                                                            ty: core::felt252,
-                                                                                        },
-                                                                                    ),
-                                                                                ),
-                                                                            ],
-                                                                            coupon_arg: None,
-                                                                            ty: (),
-                                                                        },
-                                                                    ),
-                                                                },
-                                                            ),
-                                                        ],
-                                                        tail: Some(
-                                                            Var(
-                                                                LocalVarId(test::__array_builder_macro_result__),
-                                                            ),
-                                                        ),
-                                                        ty: core::array::Array::<core::felt252>,
-                                                    },
-                                                ),
-                                                ty: @core::array::Array::<core::felt252>,
-                                            },
+                                                                ),
+                                                            ],
+                                                            coupon_arg: None,
+                                                            ty: (),
+                                                        },
+                                                    ),
+                                                },
+                                            ),
+                                        ],
+                                        tail: Some(
+                                            Var(
+                                                LocalVarId(test::__array_builder_macro_result__),
+                                            ),
                                         ),
-                                    ),
-                                ],
-                                coupon_arg: None,
-                                ty: core::array::Span::<core::felt252>,
+                                        ty: core::array::Array::<core::felt252>,
+                                    },
+                                ),
+                                ty: @core::array::Array::<core::felt252>,
                             },
                         ),
                     ),
                 ],
                 coupon_arg: None,
-                ty: core::array::SpanIter::<core::felt252>,
+                ty: core::array::Span::<core::felt252>,
             },
         ),
-        next_function_id: core::array::SpanIterator::<core::felt252>::next,
         pattern: Variable(
             _a,
         ),

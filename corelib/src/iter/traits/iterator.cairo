@@ -15,3 +15,10 @@ pub trait IntoIterator<T> {
     /// Creates an iterator from a collection.
     fn into_iter(self: T) -> Self::IntoIter;
 }
+
+impl IteratorIntoIterator<T, +Iterator<T>> of IntoIterator<T> {
+    type IntoIter = T;
+    fn into_iter(self: T) -> T {
+        self
+    }
+}

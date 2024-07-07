@@ -131,6 +131,61 @@ impl StoreOuterType of starknet::Store::<OuterType> {
     }
 }
 
+#[derive(Drop, Copy)]
+struct OuterTypeSubPointers {
+    x: starknet::storage::StoragePointer<u32>,
+}
+impl OuterTypeSubPointersImpl of starknet::storage::SubPointers<OuterType> {
+type SubPointersType = OuterTypeSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<OuterType>) -> OuterTypeSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let x_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                OuterTypeSubPointers {
+           x: x_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableOuterTypeSubPointers {
+    x: starknet::storage::StoragePointer<starknet::storage::Mutable::<u32>>,
+}
+impl MutableOuterTypeSubPointersImpl of starknet::storage::MutableSubPointers<OuterType> {
+type SubPointersType = MutableOuterTypeSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<OuterType>>) -> MutableOuterTypeSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let x_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableOuterTypeSubPointers {
+           x: x_value,
+        }
+    }
+}
+
+
+lib.cairo:1:16
+#[derive(Drop, starknet::Store, Hash)]
+               ^*************^
+impls:
+
+impl OuterTypeSubPointersDrop of core::traits::Drop::<OuterTypeSubPointers>;
+impl OuterTypeSubPointersCopy of core::traits::Copy::<OuterTypeSubPointers>;
+
+
+lib.cairo:1:16
+#[derive(Drop, starknet::Store, Hash)]
+               ^*************^
+impls:
+
+impl MutableOuterTypeSubPointersDrop of core::traits::Drop::<MutableOuterTypeSubPointers>;
+impl MutableOuterTypeSubPointersCopy of core::traits::Copy::<MutableOuterTypeSubPointers>;
+
 
 lib.cairo:7:1
 #[starknet::contract]
@@ -142,39 +197,57 @@ contract:
 pub enum Event {}
 
 
+#[phantom]
+pub struct Storage {
+          pub var_felt252: felt252,
+          pub var_u8: u8,
+          pub var_u16: u16,
+          pub var_u32: u32,
+          pub var_u64: u64,
+          pub var_u128: u128,
+          pub var_bool: bool,
+          pub felt252_to_u128: LegacyMap::<felt252, u128>,
+          pub u128_to_bool: LegacyMap::<u128, bool>,
+          pub bool_to_felt252: LegacyMap::<bool, felt252>,
+          pub outer_type_var: super::OuterType,
+          pub outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
+          pub inner_type_var: inner::InnerType,
+          pub inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    var_felt252: starknet::storage::StorageBase<felt252>,
-    var_u8: starknet::storage::StorageBase<u8>,
-    var_u16: starknet::storage::StorageBase<u16>,
-    var_u32: starknet::storage::StorageBase<u32>,
-    var_u64: starknet::storage::StorageBase<u64>,
-    var_u128: starknet::storage::StorageBase<u128>,
-    var_bool: starknet::storage::StorageBase<bool>,
-    felt252_to_u128: starknet::storage::StorageBase<LegacyMap::<felt252, u128>>,
-    u128_to_bool: starknet::storage::StorageBase<LegacyMap::<u128, bool>>,
-    bool_to_felt252: starknet::storage::StorageBase<LegacyMap::<bool, felt252>>,
-    outer_type_var: starknet::storage::StorageBase<super::OuterType>,
-    outer_type_to_outer_type: starknet::storage::StorageBase<LegacyMap::<super::OuterType, super::OuterType>>,
-    inner_type_var: starknet::storage::StorageBase<inner::InnerType>,
-    inner_type_to_inner_type: starknet::storage::StorageBase<LegacyMap::<inner::InnerType, inner::InnerType>>,
+pub struct ContractStorageBase {
+    pub var_felt252: starknet::storage::StorageBase<felt252>,
+    pub var_u8: starknet::storage::StorageBase<u8>,
+    pub var_u16: starknet::storage::StorageBase<u16>,
+    pub var_u32: starknet::storage::StorageBase<u32>,
+    pub var_u64: starknet::storage::StorageBase<u64>,
+    pub var_u128: starknet::storage::StorageBase<u128>,
+    pub var_bool: starknet::storage::StorageBase<bool>,
+    pub felt252_to_u128: starknet::storage::StorageBase<LegacyMap::<felt252, u128>>,
+    pub u128_to_bool: starknet::storage::StorageBase<LegacyMap::<u128, bool>>,
+    pub bool_to_felt252: starknet::storage::StorageBase<LegacyMap::<bool, felt252>>,
+    pub outer_type_var: starknet::storage::StorageBase<super::OuterType>,
+    pub outer_type_to_outer_type: starknet::storage::StorageBase<LegacyMap::<super::OuterType, super::OuterType>>,
+    pub inner_type_var: starknet::storage::StorageBase<inner::InnerType>,
+    pub inner_type_to_inner_type: starknet::storage::StorageBase<LegacyMap::<inner::InnerType, inner::InnerType>>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    var_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
-    var_u8: starknet::storage::StorageBase<starknet::storage::Mutable<u8>>,
-    var_u16: starknet::storage::StorageBase<starknet::storage::Mutable<u16>>,
-    var_u32: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
-    var_u64: starknet::storage::StorageBase<starknet::storage::Mutable<u64>>,
-    var_u128: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
-    var_bool: starknet::storage::StorageBase<starknet::storage::Mutable<bool>>,
-    felt252_to_u128: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<felt252, u128>>>,
-    u128_to_bool: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<u128, bool>>>,
-    bool_to_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<bool, felt252>>>,
-    outer_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<super::OuterType>>,
-    outer_type_to_outer_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<super::OuterType, super::OuterType>>>,
-    inner_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<inner::InnerType>>,
-    inner_type_to_inner_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<inner::InnerType, inner::InnerType>>>,
+pub struct ContractStorageBaseMut {
+    pub var_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
+    pub var_u8: starknet::storage::StorageBase<starknet::storage::Mutable<u8>>,
+    pub var_u16: starknet::storage::StorageBase<starknet::storage::Mutable<u16>>,
+    pub var_u32: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
+    pub var_u64: starknet::storage::StorageBase<starknet::storage::Mutable<u64>>,
+    pub var_u128: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+    pub var_bool: starknet::storage::StorageBase<starknet::storage::Mutable<bool>>,
+    pub felt252_to_u128: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<felt252, u128>>>,
+    pub u128_to_bool: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<u128, bool>>>,
+    pub bool_to_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<bool, felt252>>>,
+    pub outer_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<super::OuterType>>,
+    pub outer_type_to_outer_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<super::OuterType, super::OuterType>>>,
+    pub inner_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<inner::InnerType>>,
+    pub inner_type_to_inner_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<inner::InnerType, inner::InnerType>>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -243,10 +316,6 @@ pub fn contract_state_for_testing() -> ContractState {
     unsafe_new_contract_state()
 }
 
-use starknet::storage::{
-    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
-    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
-};
 // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
 #[deprecated(
     feature: "deprecated_legacy_map",

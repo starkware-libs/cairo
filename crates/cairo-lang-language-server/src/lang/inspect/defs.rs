@@ -1,11 +1,9 @@
 use std::iter;
 
-use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, ModuleItemId, TopLevelLanguageElementId, TraitItemId,
 };
-use cairo_lang_parser::utils::SimpleParserDatabase;
+use cairo_lang_doc::db::DocGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
@@ -14,14 +12,14 @@ use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{Mutability, Variable};
 use cairo_lang_syntax::node::ast::{Param, PatternIdentifier, PatternPtr, TerminalIdentifier};
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 use smol_str::SmolStr;
 use tracing::error;
 
-use crate::lang::db::LsSemanticGroup;
-use crate::markdown::Markdown;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::{find_definition, ResolvedItem};
 
 /// Keeps information about the symbol that is being searched for/inspected.
@@ -31,12 +29,25 @@ use crate::{find_definition, ResolvedItem};
 pub enum SymbolDef {
     Item(ItemDef),
     Variable(VariableDef),
+    ExprInlineMacro(String),
 }
 
 impl SymbolDef {
     /// Finds definition of the symbol referred by the given identifier.
     #[tracing::instrument(name = "SymbolDef::find", level = "trace", skip_all)]
-    pub fn find(db: &RootDatabase, identifier: &TerminalIdentifier) -> Option<Self> {
+    pub fn find(db: &AnalysisDatabase, identifier: &TerminalIdentifier) -> Option<Self> {
+        if let Some(parent) = identifier.as_syntax_node().parent() {
+            if parent.kind(db.upcast()) == SyntaxKind::PathSegmentSimple
+                && is_grandparent_of_kind(db, &parent, SyntaxKind::ExprInlineMacro)
+            {
+                return Some(Self::ExprInlineMacro(
+                    parent
+                        .parent()
+                        .expect("Grandparent already exists")
+                        .get_text_without_trivia(db.upcast()),
+                ));
+            }
+        }
         // Get the resolved item info and the syntax node of the definition.
         let (definition_item, definition_node) = {
             let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
@@ -91,7 +102,7 @@ pub struct ItemDef {
 
 impl ItemDef {
     /// Constructs new [`ItemDef`] instance.
-    fn new(db: &RootDatabase, definition_node: &SyntaxNode) -> Option<Self> {
+    fn new(db: &AnalysisDatabase, definition_node: &SyntaxNode) -> Option<Self> {
         let mut lookup_item_ids = db.collect_lookup_items_stack(definition_node)?.into_iter();
 
         // Pull the lookup item representing the defining item.
@@ -115,29 +126,20 @@ impl ItemDef {
     }
 
     /// Get item signature without its body including signatures of its contexts.
-    pub fn signature(&self, db: &RootDatabase) -> String {
-        let contexts = self.context_items.iter().map(|item| db.get_item_signature(*item)).rev();
-        let this = iter::once(db.get_item_signature(self.lookup_item_id));
-        contexts.chain(this).map(fmt).join("\n")
+    pub fn signature(&self, db: &AnalysisDatabase) -> String {
+        let contexts = self.context_items.iter().copied().rev();
+        let this = iter::once(self.lookup_item_id);
+        contexts.chain(this).map(|item| db.get_item_signature(item)).join("\n")
     }
 
     /// Gets item documentation in a final form usable for display.
-    pub fn documentation(&self, db: &RootDatabase) -> Option<Markdown> {
+    pub fn documentation(&self, db: &AnalysisDatabase) -> Option<String> {
         db.get_item_documentation(self.lookup_item_id)
-            // Nullify empty documentation strings in case the compiler fails to output something.
-            .and_then(|doc| (!doc.is_empty()).then_some(doc))
-            // Convert to a Markdown object and perform usual transformations.
-            .map(|doc| {
-                let mut md = Markdown::from(doc);
-                md.convert_fenced_code_blocks_to_cairo();
-                md.ensure_trailing_newline();
-                md
-            })
     }
 
-    /// Gets full path (including crate name and defining trait/impl if applicable)
+    /// Gets the full path (including crate name and defining trait/impl if applicable)
     /// to the module containing the item.
-    pub fn definition_path(&self, db: &RootDatabase) -> String {
+    pub fn definition_path(&self, db: &AnalysisDatabase) -> String {
         let defs_db = db.upcast();
         match self.lookup_item_id {
             LookupItemId::ModuleItem(item) => item.parent_module(defs_db).full_path(defs_db),
@@ -155,7 +157,7 @@ pub struct VariableDef {
 
 impl VariableDef {
     /// Constructs new [`VariableDef`] instance.
-    fn new(db: &RootDatabase, definition_node: SyntaxNode) -> Option<Self> {
+    fn new(db: &AnalysisDatabase, definition_node: SyntaxNode) -> Option<Self> {
         match definition_node.kind(db.upcast()) {
             SyntaxKind::TerminalIdentifier => {
                 let definition_node = definition_node.parent()?;
@@ -189,7 +191,7 @@ impl VariableDef {
 
     /// Constructs new [`VariableDef`] instance for [`PatternIdentifier`].
     fn new_pattern_identifier(
-        db: &RootDatabase,
+        db: &AnalysisDatabase,
         pattern_identifier: PatternIdentifier,
     ) -> Option<Self> {
         let name = pattern_identifier.name(db.upcast()).text(db.upcast());
@@ -217,7 +219,7 @@ impl VariableDef {
     }
 
     /// Constructs new [`VariableDef`] instance for [`Param`].
-    fn new_param(db: &RootDatabase, param: Param) -> Option<Self> {
+    fn new_param(db: &AnalysisDatabase, param: Param) -> Option<Self> {
         let name = param.name(db.upcast()).text(db.upcast());
 
         // Get the function which contains the variable/parameter.
@@ -233,7 +235,7 @@ impl VariableDef {
     }
 
     /// Gets variable signature, which tries to resemble the way how it is defined in code.
-    pub fn signature(&self, db: &RootDatabase) -> String {
+    pub fn signature(&self, db: &AnalysisDatabase) -> String {
         let Self { name, var } = self;
 
         let prefix = match var {
@@ -260,17 +262,4 @@ impl VariableDef {
 
         format!("{prefix}{mutability}{name}: {ty}")
     }
-}
-
-/// Run Cairo formatter over code with extra post-processing that is specific to signatures.
-fn fmt(code: String) -> String {
-    let code = cairo_lang_formatter::format_string(&SimpleParserDatabase::default(), code);
-
-    code
-        // Trim any whitespace that formatter tends to leave.
-        .trim_end()
-        // Trim trailing semicolons, that are present in trait/impl functions, constants, etc.
-        // and that formatter tends to put in separate line.
-        .trim_end_matches("\n;")
-        .to_owned()
 }

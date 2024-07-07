@@ -29,6 +29,7 @@ members = [
     "crates/cairo-lang-debug",
     "crates/cairo-lang-defs",
     "crates/cairo-lang-diagnostics",
+    "crates/cairo-lang-doc",
     "crates/cairo-lang-eq-solver",
     "crates/cairo-lang-filesystem",
     "crates/cairo-lang-formatter",

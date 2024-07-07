@@ -2,7 +2,9 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::DiagnosticsBuilder;
-use cairo_lang_syntax::attribute::consts::{DEPRECATED_ATTR, FEATURE_ATTR, UNSTABLE_ATTR};
+use cairo_lang_syntax::attribute::consts::{
+    DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR,
+};
 use cairo_lang_syntax::attribute::structured::{
     self, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -25,6 +27,8 @@ pub enum FeatureKind {
     /// The feature of the item is deprecated, with the given name to allow, and an optional note
     /// to appear in diagnostics.
     Deprecated { feature: SmolStr, note: Option<SmolStr> },
+    /// This feature is for internal corelib use only. Using it in user code is not advised.
+    Internal { feature: SmolStr, note: Option<SmolStr> },
 }
 impl FeatureKind {
     pub fn from_ast(
@@ -34,23 +38,30 @@ impl FeatureKind {
     ) -> Self {
         let unstable_attrs = attrs.query_attr(db, UNSTABLE_ATTR);
         let deprecated_attrs = attrs.query_attr(db, DEPRECATED_ATTR);
-        if unstable_attrs.is_empty() && deprecated_attrs.is_empty() {
+        let internal_attrs = attrs.query_attr(db, INTERNAL_ATTR);
+        if unstable_attrs.is_empty() && deprecated_attrs.is_empty() && internal_attrs.is_empty() {
             return Self::Stable;
         };
-        if unstable_attrs.len() + deprecated_attrs.len() > 1 {
+        if unstable_attrs.len() + deprecated_attrs.len() + internal_attrs.len() > 1 {
             add_diag(diagnostics, &attrs.stable_ptr(), FeatureMarkerDiagnostic::MultipleMarkers);
             return Self::Stable;
         }
-        if deprecated_attrs.is_empty() {
+
+        if !unstable_attrs.is_empty() {
             let attr = unstable_attrs.into_iter().next().unwrap().structurize(db);
             let [feature, note, _] =
                 parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
             feature.map(|feature| Self::Unstable { feature, note }).ok_or(attr)
-        } else {
+        } else if !deprecated_attrs.is_empty() {
             let attr = deprecated_attrs.into_iter().next().unwrap().structurize(db);
             let [feature, note, _] =
                 parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
             feature.map(|feature| Self::Deprecated { feature, note }).ok_or(attr)
+        } else {
+            let attr = internal_attrs.into_iter().next().unwrap().structurize(db);
+            let [feature, note, _] =
+                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
+            feature.map(|feature| Self::Internal { feature, note }).ok_or(attr)
         }
         .unwrap_or_else(|attr| {
             add_diag(diagnostics, &attr.stable_ptr, FeatureMarkerDiagnostic::MissingAllowFeature);
