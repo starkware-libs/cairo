@@ -11,16 +11,8 @@ anyhow.workspace = true
 clap.workspace = true
 log.workspace = true
 
-<<<<<<< HEAD
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.7.0-rc.0" }
+cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.7.0-rc.0" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.7.0-rc.0", features = [
-||||||| cd8cb4d06
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.6.4" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.6.4", features = [
-=======
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.6.4" }
-cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.6.4" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.6.4", features = [
->>>>>>> origin/main
     "env_logger",
 ] }

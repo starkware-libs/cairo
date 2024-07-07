@@ -576,7 +576,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-doc"
-version = "2.6.4"
+version = "2.7.0-rc.0"
 dependencies = [
  "cairo-lang-defs",
  "cairo-lang-formatter",

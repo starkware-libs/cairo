@@ -85,13 +85,7 @@ ark-secp256r1 = "0.4.0"
 ark-std = "0.4.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
-<<<<<<< HEAD
 cairo-vm = { version = "1.0.0-rc4", features = ["mod_builtin"]}
-||||||| cd8cb4d06
-cairo-vm = { version = "1.0.0-rc3", features = ["mod_builtin"]}
-=======
-cairo-vm = { version = "1.0.0-rc3", features = ["mod_builtin"] }
->>>>>>> origin/main
 clap = { version = "4.5.4", features = ["derive"] }
 colored = "2.1.0"
 const-fnv1a-hash = "1.1.0"
