@@ -20,13 +20,16 @@ struct Args {
     /// Add gas usage check
     #[arg(long, default_value_t = false)]
     gas_usage_check: bool,
+    #[arg(long, default_value_t = false)]
+    /// Add pythonic hints
+    add_pythonic_hints: bool,
 }
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     let sierra_code = fs::read_to_string(args.file).with_context(|| "Could not read file!")?;
-    let Ok(program) = ProgramParser::new().parse(&sierra_code) else {
+    let Ok(sierra_program) = ProgramParser::new().parse(&sierra_code) else {
         anyhow::bail!("Failed to parse Sierra program.")
     };
 
@@ -34,19 +37,18 @@ fn main() -> anyhow::Result<()> {
         SierraToCasmConfig { gas_usage_check: args.gas_usage_check, max_bytecode_size: usize::MAX };
 
     let cairo_program = compile(
-        &program,
-        &calc_metadata(&program, Default::default())
+        &sierra_program,
+        &calc_metadata(&sierra_program, Default::default())
             .with_context(|| "Failed calculating Sierra variables.")?,
         sierra_to_casm_config,
     )
     .with_context(|| "Compilation failed.")?;
 
-    let main_func = program.find_function("::main")?;
+    let casm_cairo_program =
+        CasmCairoProgram::new(&sierra_program, &cairo_program, args.add_pythonic_hints)
+            .with_context(|| "Sierra to Casm compilation failed.")?;
 
-    let casm_cairo_program = CasmCairoProgram::new(&cairo_program, main_func)
-        .with_context(|| "Sierra to Casm compilation failed.")?;
-
-    let res = serde_json::to_string_pretty(&casm_cairo_program)
+    let res = serde_json::to_string(&casm_cairo_program)
         .with_context(|| "Casm contract Serialization failed.")?;
 
     match args.output {
