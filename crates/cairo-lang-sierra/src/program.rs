@@ -136,27 +136,6 @@ impl Program {
     }
 }
 
-#[derive(Debug, Error)]
-pub enum ProgramError {
-    #[error("Function with suffix `{suffix}` to run not found.")]
-    MissingFunction { suffix: String },
-}
-
-impl Program {
-    pub fn find_function(&self, name_suffix: &str) -> Result<&Function, ProgramError> {
-        self.funcs
-            .iter()
-            .find(|f| {
-                if let Some(name) = &f.id.debug_name {
-                    name.ends_with(name_suffix)
-                } else {
-                    false
-                }
-            })
-            .ok_or_else(|| ProgramError::MissingFunction { suffix: name_suffix.to_owned() })
-    }
-}
-
 /// Declaration of a concrete type.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct TypeDeclaration {
