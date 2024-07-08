@@ -46,7 +46,7 @@ mod storage_accesses {
     use starknet::get_caller_address;
     use starknet::ContractAddress;
     use super::{UserInfo, TransactionInfo};
-    use starknet::storage::{StoragePathEntry};
+    use starknet::storage::StoragePathEntry;
 
     #[constructor]
     fn constructor(
@@ -1763,7 +1763,7 @@ impl MutableIERC20SafeDispatcherSubPointersCopy of core::traits::Copy::<MutableI
     use starknet::get_caller_address;
     use starknet::ContractAddress;
     use super::{UserInfo, TransactionInfo};
-    use starknet::storage::{StoragePathEntry};
+    use starknet::storage::StoragePathEntry;
 
     #[constructor]
     fn constructor(
