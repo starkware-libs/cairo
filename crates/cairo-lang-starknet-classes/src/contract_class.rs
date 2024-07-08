@@ -8,8 +8,10 @@ use thiserror::Error;
 
 use crate::abi::Contract;
 use crate::allowed_libfuncs::{lookup_allowed_libfuncs_list, AllowedLibfuncsError, ListSelector};
-use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id};
-use crate::felt252_serde::{sierra_from_felt252s, sierra_to_felt252s, Felt252SerdeError};
+use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id, VersionId};
+use crate::felt252_serde::{
+    sierra_from_felt252s, sierra_to_felt252s, sierra_version_id_from_felts, Felt252SerdeError,
+};
 
 #[cfg(test)]
 #[path = "contract_class_test.rs"]
@@ -119,4 +121,15 @@ pub struct ContractEntryPoint {
     pub selector: BigUint,
     /// The idx of the user function declaration in the sierra program.
     pub function_idx: usize,
+}
+
+/// Deserializes the Version ids from a given Sierra program.
+///
+/// Returns (sierra_version_id, compiler_version_id).
+/// See [crate::compiler_version].
+pub fn version_from_felt252s(
+    felts: &[BigUintAsHex],
+) -> Result<(VersionId, VersionId), Felt252SerdeError> {
+    let (sierra_version_id, compiler_version_id, _) = sierra_version_id_from_felts(felts)?;
+    Ok((sierra_version_id, compiler_version_id))
 }
