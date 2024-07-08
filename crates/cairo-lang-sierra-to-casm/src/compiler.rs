@@ -122,6 +122,10 @@ pub enum CasmCairoProgramError {
     MissingFunctionDebugName {},
 }
 
+fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
+    opt_field.is_none()
+}
+
 /// Represents a serialized Cairo program.
 #[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmCairoProgram {
@@ -130,6 +134,7 @@ pub struct CasmCairoProgram {
     pub compiler_version: String,
     pub bytecode: Vec<BigUintAsHex>,
     pub hints: Vec<(usize, Vec<Hint>)>,
+    #[serde(skip_serializing_if = "skip_if_none")]
     pub pythonic_hints: Vec<(usize, Vec<String>)>,
     pub entry_points_by_function: OrderedHashMap<String, CasmCairoEntryPoint>,
 }
