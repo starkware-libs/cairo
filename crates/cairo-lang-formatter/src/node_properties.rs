@@ -40,6 +40,9 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
+            SyntaxKind::TokenOr => {
+                matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprClosure))
+            }
             SyntaxKind::TokenLBrack
                 if !matches!(
                     grandparent_kind(db, self),
@@ -93,6 +96,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                 grandparent_kind(db, self),
                 Some(SyntaxKind::PatternStruct | SyntaxKind::ExprStructCtorCall)
             ),
+            SyntaxKind::TokenOr => {
+                matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprClosure))
+            }
             SyntaxKind::ExprPath | SyntaxKind::TerminalIdentifier
                 if matches!(
                     parent_kind(db, self),

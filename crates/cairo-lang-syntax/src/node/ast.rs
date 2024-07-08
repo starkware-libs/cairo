@@ -239,6 +239,7 @@ pub enum Expr {
     Loop(ExprLoop),
     While(ExprWhile),
     For(ExprFor),
+    Closure(ExprClosure),
     ErrorPropagate(ExprErrorPropagate),
     FieldInitShorthand(ExprFieldInitShorthand),
     Indexed(ExprIndexed),
@@ -349,6 +350,11 @@ impl From<ExprWhilePtr> for ExprPtr {
 }
 impl From<ExprForPtr> for ExprPtr {
     fn from(value: ExprForPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprClosurePtr> for ExprPtr {
+    fn from(value: ExprClosurePtr) -> Self {
         Self(value.0)
     }
 }
@@ -472,6 +478,11 @@ impl From<ExprForGreen> for ExprGreen {
         Self(value.0)
     }
 }
+impl From<ExprClosureGreen> for ExprGreen {
+    fn from(value: ExprClosureGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprErrorPropagateGreen> for ExprGreen {
     fn from(value: ExprErrorPropagateGreen) -> Self {
         Self(value.0)
@@ -544,6 +555,7 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::ExprLoop => Expr::Loop(ExprLoop::from_syntax_node(db, node)),
             SyntaxKind::ExprWhile => Expr::While(ExprWhile::from_syntax_node(db, node)),
             SyntaxKind::ExprFor => Expr::For(ExprFor::from_syntax_node(db, node)),
+            SyntaxKind::ExprClosure => Expr::Closure(ExprClosure::from_syntax_node(db, node)),
             SyntaxKind::ExprErrorPropagate => {
                 Expr::ErrorPropagate(ExprErrorPropagate::from_syntax_node(db, node))
             }
@@ -581,6 +593,7 @@ impl TypedSyntaxNode for Expr {
             Expr::Loop(x) => x.as_syntax_node(),
             Expr::While(x) => x.as_syntax_node(),
             Expr::For(x) => x.as_syntax_node(),
+            Expr::Closure(x) => x.as_syntax_node(),
             Expr::ErrorPropagate(x) => x.as_syntax_node(),
             Expr::FieldInitShorthand(x) => x.as_syntax_node(),
             Expr::Indexed(x) => x.as_syntax_node(),
@@ -620,6 +633,7 @@ impl Expr {
             SyntaxKind::ExprLoop => true,
             SyntaxKind::ExprWhile => true,
             SyntaxKind::ExprFor => true,
+            SyntaxKind::ExprClosure => true,
             SyntaxKind::ExprErrorPropagate => true,
             SyntaxKind::ExprFieldInitShorthand => true,
             SyntaxKind::ExprIndexed => true,
@@ -5567,6 +5581,302 @@ impl TypedSyntaxNode for OptionFixedSizeArraySizeEmpty {
 }
 impl From<&OptionFixedSizeArraySizeEmpty> for SyntaxStablePtrId {
     fn from(node: &OptionFixedSizeArraySizeEmpty) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprClosure {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl ExprClosure {
+    pub const INDEX_WRAPPER: usize = 0;
+    pub const INDEX_RET_TY: usize = 1;
+    pub const INDEX_OPTIONAL_NO_PANIC: usize = 2;
+    pub const INDEX_EXPR: usize = 3;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        wrapper: ClosureParamWrapperGreen,
+        ret_ty: OptionReturnTypeClauseGreen,
+        optional_no_panic: OptionTerminalNoPanicGreen,
+        expr: ExprGreen,
+    ) -> ExprClosureGreen {
+        let children: Vec<GreenId> = vec![wrapper.0, ret_ty.0, optional_no_panic.0, expr.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        ExprClosureGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprClosure,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl ExprClosure {
+    pub fn wrapper(&self, db: &dyn SyntaxGroup) -> ClosureParamWrapper {
+        ClosureParamWrapper::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn ret_ty(&self, db: &dyn SyntaxGroup) -> OptionReturnTypeClause {
+        OptionReturnTypeClause::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn optional_no_panic(&self, db: &dyn SyntaxGroup) -> OptionTerminalNoPanic {
+        OptionTerminalNoPanic::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[3].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprClosurePtr(pub SyntaxStablePtrId);
+impl ExprClosurePtr {}
+impl TypedStablePtr for ExprClosurePtr {
+    type SyntaxNode = ExprClosure;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ExprClosure {
+        ExprClosure::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ExprClosurePtr> for SyntaxStablePtrId {
+    fn from(ptr: ExprClosurePtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprClosureGreen(pub GreenId);
+impl TypedSyntaxNode for ExprClosure {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprClosure);
+    type StablePtr = ExprClosurePtr;
+    type Green = ExprClosureGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprClosureGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprClosure,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        ClosureParamWrapper::missing(db).0,
+                        OptionReturnTypeClause::missing(db).0,
+                        OptionTerminalNoPanic::missing(db).0,
+                        Expr::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprClosure,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprClosure
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprClosurePtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&ExprClosure> for SyntaxStablePtrId {
+    fn from(node: &ExprClosure) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum ClosureParamWrapper {
+    Nullary(TerminalOrOr),
+    NAry(ClosureParamWrapperNAry),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ClosureParamWrapperPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for ClosureParamWrapperPtr {
+    type SyntaxNode = ClosureParamWrapper;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ClosureParamWrapper {
+        ClosureParamWrapper::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ClosureParamWrapperPtr> for SyntaxStablePtrId {
+    fn from(ptr: ClosureParamWrapperPtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<TerminalOrOrPtr> for ClosureParamWrapperPtr {
+    fn from(value: TerminalOrOrPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ClosureParamWrapperNAryPtr> for ClosureParamWrapperPtr {
+    fn from(value: ClosureParamWrapperNAryPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalOrOrGreen> for ClosureParamWrapperGreen {
+    fn from(value: TerminalOrOrGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ClosureParamWrapperNAryGreen> for ClosureParamWrapperGreen {
+    fn from(value: ClosureParamWrapperNAryGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ClosureParamWrapperGreen(pub GreenId);
+impl TypedSyntaxNode for ClosureParamWrapper {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = ClosureParamWrapperPtr;
+    type Green = ClosureParamWrapperGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalOrOr => {
+                ClosureParamWrapper::Nullary(TerminalOrOr::from_syntax_node(db, node))
+            }
+            SyntaxKind::ClosureParamWrapperNAry => {
+                ClosureParamWrapper::NAry(ClosureParamWrapperNAry::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "ClosureParamWrapper"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            ClosureParamWrapper::Nullary(x) => x.as_syntax_node(),
+            ClosureParamWrapper::NAry(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ClosureParamWrapperPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&ClosureParamWrapper> for SyntaxStablePtrId {
+    fn from(node: &ClosureParamWrapper) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl ClosureParamWrapper {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TerminalOrOr => true,
+            SyntaxKind::ClosureParamWrapperNAry => true,
+            _ => false,
+        }
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ClosureParamWrapperNAry {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl ClosureParamWrapperNAry {
+    pub const INDEX_LEFTOR: usize = 0;
+    pub const INDEX_PARAMS: usize = 1;
+    pub const INDEX_RIGHTOR: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        leftor: TerminalOrGreen,
+        params: ParamListGreen,
+        rightor: TerminalOrGreen,
+    ) -> ClosureParamWrapperNAryGreen {
+        let children: Vec<GreenId> = vec![leftor.0, params.0, rightor.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        ClosureParamWrapperNAryGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ClosureParamWrapperNAry,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl ClosureParamWrapperNAry {
+    pub fn leftor(&self, db: &dyn SyntaxGroup) -> TerminalOr {
+        TerminalOr::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn params(&self, db: &dyn SyntaxGroup) -> ParamList {
+        ParamList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rightor(&self, db: &dyn SyntaxGroup) -> TerminalOr {
+        TerminalOr::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ClosureParamWrapperNAryPtr(pub SyntaxStablePtrId);
+impl ClosureParamWrapperNAryPtr {}
+impl TypedStablePtr for ClosureParamWrapperNAryPtr {
+    type SyntaxNode = ClosureParamWrapperNAry;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ClosureParamWrapperNAry {
+        ClosureParamWrapperNAry::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ClosureParamWrapperNAryPtr> for SyntaxStablePtrId {
+    fn from(ptr: ClosureParamWrapperNAryPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ClosureParamWrapperNAryGreen(pub GreenId);
+impl TypedSyntaxNode for ClosureParamWrapperNAry {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ClosureParamWrapperNAry);
+    type StablePtr = ClosureParamWrapperNAryPtr;
+    type Green = ClosureParamWrapperNAryGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ClosureParamWrapperNAryGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ClosureParamWrapperNAry,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalOr::missing(db).0,
+                        ParamList::missing(db).0,
+                        TerminalOr::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ClosureParamWrapperNAry,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ClosureParamWrapperNAry
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ClosureParamWrapperNAryPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&ClosureParamWrapperNAry> for SyntaxStablePtrId {
+    fn from(node: &ClosureParamWrapperNAry) -> Self {
         node.stable_ptr().untyped()
     }
 }
