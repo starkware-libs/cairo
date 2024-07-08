@@ -19,11 +19,12 @@ use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::poseidon::PoseidonType;
 use cairo_lang_sierra::extensions::range_check::{RangeCheck96Type, RangeCheckType};
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
+use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, GenericTypeId, VarId};
 use cairo_lang_sierra::program::{
-    BranchTarget, Function, GenericArg, Invocation, Program, Statement, StatementIdx,
+    BranchTarget, GenericArg, Invocation, Program, Statement, StatementIdx,
 };
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
@@ -115,6 +116,12 @@ pub struct SierraToCasmConfig {
     pub max_bytecode_size: usize,
 }
 
+#[derive(Debug, Error)]
+pub enum CasmCairoProgramError {
+    #[error("Function has no debug_name")]
+    MissingFunctionDebugName {},
+}
+
 /// Represents a serialized Cairo program.
 #[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmCairoProgram {
@@ -124,16 +131,28 @@ pub struct CasmCairoProgram {
     pub bytecode: Vec<BigUintAsHex>,
     pub hints: Vec<(usize, Vec<Hint>)>,
     pub pythonic_hints: Vec<(usize, Vec<String>)>,
-    pub entrypoint: usize,
+    pub entry_points_by_function: OrderedHashMap<String, CasmCairoEntryPoint>,
+}
+
+#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CasmCairoEntryPoint {
+    pub offset: usize,
     pub builtins: Vec<String>,
-    pub input_args_type: Vec<String>,
-    pub return_type: Vec<String>,
+    pub input_args: Vec<CasmCairoArg>,
+    pub return_arg: Vec<CasmCairoArg>,
+}
+
+#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CasmCairoArg {
+    pub name: String,
+    pub size: i16,
 }
 
 impl CasmCairoProgram {
     pub fn new(
+        sierra_program: &Program,
         cairo_program: &CairoProgram,
-        main_func: &Function,
+        add_pythonic_hints: bool,
     ) -> Result<Self, CompilationError> {
         let prime = Felt252::prime();
 
@@ -151,12 +170,15 @@ impl CasmCairoProgram {
             })
             .collect();
 
-        let pythonic_hints = hints
-            .iter()
-            .map(|(pc, hints)| {
-                (*pc, hints.iter().map(|hint| hint.get_pythonic_hint()).collect_vec())
-            })
-            .collect_vec();
+        let pythonic_hints = match add_pythonic_hints {
+            true => hints
+                .iter()
+                .map(|(pc, hints)| {
+                    (*pc, hints.iter().map(|hint| hint.get_pythonic_hint()).collect_vec())
+                })
+                .collect_vec(),
+            false => Vec::new(),
+        };
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
             RangeCheckType::id(),
@@ -166,42 +188,69 @@ impl CasmCairoProgram {
             PoseidonType::id(),
             RangeCheck96Type::id(),
             GasBuiltinType::id(),
+            SystemType::id(),
             SegmentArenaType::id(),
             AddModType::id(),
             MulModType::id(),
         ]);
 
-        let entrypoint = main_func.entry_point.0;
+        let sierra_program_registry =
+            ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra_program)
+                .map_err(CompilationError::ProgramRegistryError)?;
 
-        let mut builtins: Vec<String> = Vec::new();
+        let type_sizes =
+            get_type_size_map(sierra_program, &sierra_program_registry).unwrap_or_default();
 
-        let mut input_args_type: Vec<String> = Vec::new();
+        let entry_points_by_function: OrderedHashMap<String, CasmCairoEntryPoint> =
+            OrderedHashMap::from_iter(sierra_program.funcs.iter().map(|f| {
+                let offset = f.entry_point.0;
+                let function_name =
+                    f.id.debug_name
+                        .as_ref()
+                        .ok_or(CasmCairoProgramError::MissingFunctionDebugName {})
+                        .unwrap()
+                        .split("::")
+                        .last()
+                        .unwrap()
+                        .to_string();
 
-        for type_id in main_func.signature.param_types.iter() {
-            let debug_name = match type_id.debug_name.clone() {
-                Some(debug_name) => debug_name,
-                None => panic!(),
-            };
-            let generic_id = GenericTypeId::from(debug_name);
-            if builtin_types.contains(&generic_id) {
-                builtins.push(generic_id.0.as_str().to_case(Case::Snake));
-            } else {
-                input_args_type.push(generic_id.0.as_str().to_string());
-            };
-        }
+                let mut builtins: Vec<String> = Vec::new();
+                let mut input_args: Vec<CasmCairoArg> = Vec::new();
+                let mut return_arg: Vec<CasmCairoArg> = Vec::new();
 
-        let mut return_type = Vec::new();
-        match main_func.signature.ret_types.last() {
-            Some(ty)
-                if !builtin_types
-                    .contains(&GenericTypeId::from(ty.clone().debug_name.unwrap())) =>
-            {
-                return_type.push(
-                    GenericTypeId::from(ty.clone().debug_name.unwrap()).0.as_str().to_string(),
-                )
-            }
-            _ => (),
-        };
+                for type_id in f.signature.param_types.iter() {
+                    let generic_id = GenericTypeId::from(
+                        type_id
+                            .debug_name
+                            .as_ref()
+                            .ok_or(CasmCairoProgramError::MissingFunctionDebugName {})
+                            .unwrap()
+                            .clone(),
+                    );
+                    if builtin_types.contains(&generic_id) {
+                        builtins.push(generic_id.0.as_str().to_case(Case::Snake));
+                    } else {
+                        let name = generic_id.0.to_string();
+                        let size = *type_sizes.get(type_id).unwrap();
+                        input_args.push(CasmCairoArg { name, size });
+                    };
+                }
+
+                match f.signature.ret_types.last() {
+                    Some(ty)
+                        if !builtin_types
+                            .contains(&GenericTypeId::from(ty.clone().debug_name.unwrap())) =>
+                    {
+                        let name =
+                            GenericTypeId::from(ty.clone().debug_name.unwrap()).0.to_string();
+                        let size = *type_sizes.get(ty).unwrap();
+                        return_arg.push(CasmCairoArg { name, size })
+                    }
+                    _ => (),
+                };
+
+                (function_name, CasmCairoEntryPoint { offset, builtins, input_args, return_arg })
+            }));
 
         Ok(Self {
             prime,
@@ -209,10 +258,7 @@ impl CasmCairoProgram {
             bytecode,
             hints,
             pythonic_hints,
-            entrypoint,
-            builtins,
-            input_args_type,
-            return_type,
+            entry_points_by_function,
         })
     }
 }
