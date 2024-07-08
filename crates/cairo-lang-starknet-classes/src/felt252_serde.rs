@@ -81,15 +81,28 @@ pub fn sierra_to_felt252s(
     Ok(serialized)
 }
 
+/// Partially deserializes a Sierra program from a slice of felt252s.
+///
+/// Returns (sierra_version_id, compiler_version_id, remaining),
+/// where 'remaining' are all the felts other than the ones dedicated to the version, unprocessed.
+/// See [crate::compiler_version].
+pub fn version_id_from_felt252s(
+    sierra_program: &[BigUintAsHex],
+) -> Result<(VersionId, VersionId, &[BigUintAsHex]), Felt252SerdeError> {
+    let (sierra_version_id, remaining) = VersionId::deserialize(sierra_program)?;
+    let (compiler_version_id, remaining) = VersionId::deserialize(remaining)?;
+    Ok((sierra_version_id, compiler_version_id, remaining))
+}
+
 /// Deserializes a Sierra program from a slice of felt252s.
 ///
 /// Returns (sierra_version_id, compiler_version_id, program).
 /// See [crate::compiler_version].
 pub fn sierra_from_felt252s(
-    felts: &[BigUintAsHex],
+    sierra_program: &[BigUintAsHex],
 ) -> Result<(VersionId, VersionId, Program), Felt252SerdeError> {
-    let (sierra_version_id, remaining) = VersionId::deserialize(felts)?;
-    let (compiler_version_id, remaining) = VersionId::deserialize(remaining)?;
+    let (sierra_version_id, compiler_version_id, remaining) =
+        version_id_from_felt252s(sierra_program)?;
     let mut program_felts = vec![];
     decompress(remaining, &mut program_felts)
         .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
