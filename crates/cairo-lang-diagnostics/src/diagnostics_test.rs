@@ -29,6 +29,10 @@ impl DiagnosticEntry for SimpleDiag {
             },
         }
     }
+
+    fn is_same_kind(&self, _other: &Self) -> bool {
+        true
+    }
 }
 
 fn setup() -> (FilesDatabaseForTesting, FileId) {

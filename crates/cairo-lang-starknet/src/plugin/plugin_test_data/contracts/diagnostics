@@ -190,11 +190,6 @@ warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self
 #[starknet::contract]
 ^*******************^
 
-warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
- --> lib.cairo:1:1
-#[starknet::contract]
-^*******************^
-
 //! > ==========================================================================
 
 //! > Test invalid constructor name.
