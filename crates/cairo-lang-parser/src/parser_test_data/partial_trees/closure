@@ -6,7 +6,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 //! > cairo_code
 /// TODO(Tomerstarkware): fix formatting.
 fn test() {
-    let expensive_closure =  |num: u32, b, c: felt252 | -> u32 {
+    let expensive_closure = | num: u32, b, c: felt252| -> u32 {
         let x = num + 5;
         x
     };

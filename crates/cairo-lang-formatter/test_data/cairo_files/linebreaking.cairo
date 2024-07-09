@@ -18,6 +18,7 @@ fn bar(first_arg: T, second_arg: T, third_arg: T, fourth_arg: T, fifth_arg: T, s
     match 5 {
         1|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|2|3=>4,
     }
+    let foo = |first_arg: T, second_arg: T, third_arg: T, fourth_arg: T, fifth_arg: T, sixth_arg: T, seventh_arg: T| { 1+2+3+4+5+6+7+8+9+1+2+3+4+5+6+7+8+9+1+2+3+4+5+6+7+8+9 };
 }
 
 impl AnImpl<T, impl i: ATrait<T,S,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,>,> of ATrait {}
