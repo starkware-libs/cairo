@@ -1,3 +1,4 @@
+pub use self::crate_data::Crate;
 pub use self::project_manifest_path::*;
 
 mod crate_data;

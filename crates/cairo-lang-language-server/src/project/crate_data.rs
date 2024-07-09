@@ -4,10 +4,11 @@ use std::sync::Arc;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CrateConfiguration, CrateSettings, FilesGroupEx, CORELIB_CRATE_NAME,
+    AsFilesGroupMut, CrateConfiguration, CrateSettings, FilesGroup, FilesGroupEx,
+    CORELIB_CRATE_NAME,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
-use cairo_lang_utils::Intern;
+use cairo_lang_utils::{Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use crate::lang::db::AnalysisDatabase;
@@ -49,9 +50,36 @@ impl Crate {
         }
     }
 
+    /// Construct a [`Crate`] from data already applied to the [`AnalysisDatabase`].
+    ///
+    /// Returns `None` if the crate is virtual or the crate configuration is missing.
+    pub fn reconstruct(db: &AnalysisDatabase, crate_id: CrateId) -> Option<Self> {
+        let CrateLongId::Real(name) = crate_id.lookup_intern(db) else {
+            return None;
+        };
+
+        let Some(CrateConfiguration { root: Directory::Real(root), settings }) =
+            db.crate_config(crate_id)
+        else {
+            return None;
+        };
+
+        let custom_main_file_stem = extract_custom_file_stem(db, crate_id);
+
+        Some(Self { name, root, custom_main_file_stem, settings })
+    }
+
     /// States whether this is the `core` crate.
     pub fn is_core(&self) -> bool {
         self.name == CORELIB_CRATE_NAME
+    }
+
+    /// Returns the path to the main file of this crate.
+    pub fn source_path(&self) -> PathBuf {
+        self.root.join(match &self.custom_main_file_stem {
+            Some(stem) => format!("{stem}.cairo"),
+            None => "lib.cairo".into(),
+        })
     }
 }
 
@@ -66,4 +94,23 @@ fn inject_virtual_wrapper_lib(db: &mut AnalysisDatabase, crate_id: CrateId, file
     // Inject virtual lib file wrapper.
     db.as_files_group_mut()
         .override_file_content(file_id, Some(Arc::new(format!("mod {file_stem};"))));
+}
+
+/// The inverse of [`inject_virtual_wrapper_lib`],
+/// tries to infer root module name from crate if it does not have real `lib.cairo`.
+fn extract_custom_file_stem(db: &AnalysisDatabase, crate_id: CrateId) -> Option<SmolStr> {
+    let CrateConfiguration { root: Directory::Real(root), .. } = db.crate_config(crate_id)? else {
+        return None;
+    };
+
+    if root.join("lib.cairo").exists() {
+        return None;
+    }
+
+    let module_id = ModuleId::CrateRoot(crate_id);
+    let file_id = db.module_main_file(module_id).ok()?;
+    let content = db.file_content(file_id)?;
+
+    let name = content.strip_prefix("mod ")?.strip_suffix(';')?;
+    Some(name.into())
 }

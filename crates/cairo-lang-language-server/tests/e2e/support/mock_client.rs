@@ -418,3 +418,9 @@ impl MockClient {
             .collect()
     }
 }
+
+impl AsRef<Fixture> for MockClient {
+    fn as_ref(&self) -> &Fixture {
+        &self.fixture
+    }
+}
