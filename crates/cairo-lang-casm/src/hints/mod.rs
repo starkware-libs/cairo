@@ -125,7 +125,7 @@ pub enum CoreHint {
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
     TestLessThanOrEqual { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
     /// Variant of TestLessThanOrEqual that compares addresses.
-    #[cfg_attr(feature = "parity-scale-codec", codec(index = 28))]
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 29))]
     TestLessThanOrEqualAddress { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
     /// Multiplies two 128-bit integers and returns two 128-bit integers: the high and low parts of
     /// the product.
@@ -292,6 +292,7 @@ pub enum CoreHint {
         n_mul_mods: ResOperand,
         mul_mod_builtin: ResOperand,
     },
+    // Next parity-scale-codec index is 30 (TestLessThanOrEqualAddress uses 29).
 }
 
 /// Represents a deprecated hint which is kept for backward compatibility of previously deployed
