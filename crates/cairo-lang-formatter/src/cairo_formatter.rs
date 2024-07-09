@@ -157,7 +157,7 @@ impl FormattableInput for String {
             parent: None,
             name: "string_to_format".into(),
             content: Arc::new(self.clone()),
-            code_mappings: Default::default(),
+            code_mappings: [].into(),
             kind: FileKind::Module,
         })
         .intern(db))
@@ -176,7 +176,7 @@ impl FormattableInput for StdinFmt {
             parent: None,
             name: "<stdin>".into(),
             content: Arc::new(buffer),
-            code_mappings: Default::default(),
+            code_mappings: [].into(),
             kind: FileKind::Module,
         })
         .intern(db))

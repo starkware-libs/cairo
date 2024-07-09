@@ -50,7 +50,7 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
         parent: None,
         name: "string_to_format".into(),
         content: Arc::new(content.clone()),
-        code_mappings: Default::default(),
+        code_mappings: [].into(),
         kind: FileKind::Module,
     })
     .intern(db);

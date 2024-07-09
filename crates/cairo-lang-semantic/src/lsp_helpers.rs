@@ -20,7 +20,7 @@ pub fn methods_in_module(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     type_filter: TypeFilter,
-) -> Arc<Vec<TraitFunctionId>> {
+) -> Arc<[TraitFunctionId]> {
     let mut result = Vec::new();
     let Ok(module_traits_ids) = db.module_traits_ids(module_id) else {
         return result.into();
@@ -66,7 +66,7 @@ pub fn methods_in_crate(
     db: &dyn SemanticGroup,
     crate_id: CrateId,
     type_filter: TypeFilter,
-) -> Arc<Vec<TraitFunctionId>> {
+) -> Arc<[TraitFunctionId]> {
     let mut result = Vec::new();
     for module_id in db.crate_modules(crate_id).iter() {
         result.extend_from_slice(&db.methods_in_module(*module_id, type_filter.clone())[..])

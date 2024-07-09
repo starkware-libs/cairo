@@ -44,15 +44,17 @@ pub fn generic_completions(
     }));
 
     // Module completions.
-    completions.extend(db.module_items(module_file_id.0).unwrap_or_default().iter().map(|item| {
-        CompletionItem {
-            label: item.name(db.upcast()).to_string(),
-            kind: ResolvedGenericItem::from_module_item(db, *item)
-                .ok()
-                .map(resolved_generic_item_completion_kind),
-            ..CompletionItem::default()
-        }
-    }));
+    if let Ok(module_items) = db.module_items(module_file_id.0) {
+        completions.extend(module_items.iter().map(|item| {
+            CompletionItem {
+                label: item.name(db.upcast()).to_string(),
+                kind: ResolvedGenericItem::from_module_item(db, *item)
+                    .ok()
+                    .map(resolved_generic_item_completion_kind),
+                ..CompletionItem::default()
+            }
+        }));
+    }
 
     // Local variables and params.
     let Some(lookup_item_id) = lookup_items.into_iter().next() else {
@@ -130,7 +132,7 @@ pub fn colon_colon_completions(
     Some(match item {
         ResolvedConcreteItem::Module(module_id) => db
             .module_items(module_id)
-            .unwrap_or_default()
+            .ok()?
             .iter()
             .map(|item| CompletionItem {
                 label: item.name(db.upcast()).to_string(),

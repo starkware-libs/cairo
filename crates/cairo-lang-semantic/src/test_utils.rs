@@ -129,7 +129,7 @@ pub fn setup_test_crate_ex(
         parent: None,
         name: "lib.cairo".into(),
         content: Arc::new(content.into()),
-        code_mappings: Default::default(),
+        code_mappings: [].into(),
         kind: FileKind::Module,
     })
     .intern(db);

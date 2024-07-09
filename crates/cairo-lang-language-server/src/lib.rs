@@ -341,8 +341,12 @@ impl Backend {
             let db = self.db_mut().await;
             let mut files_set = HashSet::new();
             for crate_id in db.crates() {
-                for module_id in db.crate_modules(crate_id).iter() {
-                    for file_id in db.module_files(*module_id).unwrap_or_default().iter() {
+                for module_files in db
+                    .crate_modules(crate_id)
+                    .iter()
+                    .filter_map(|module_id| db.module_files(*module_id).ok())
+                {
+                    for file_id in module_files.iter() {
                         files_set.insert(db.url_for_file(*file_id));
                     }
                 }
@@ -500,8 +504,12 @@ impl Backend {
             query_diags(db, file_id);
         }
         for crate_id in db.crates() {
-            for module_id in db.crate_modules(crate_id).iter() {
-                for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
+            for module_files in db
+                .crate_modules(crate_id)
+                .iter()
+                .filter_map(|module_id| db.module_files(*module_id).ok())
+            {
+                for file_id in module_files.iter().copied() {
                     query_diags(db, file_id);
                 }
             }

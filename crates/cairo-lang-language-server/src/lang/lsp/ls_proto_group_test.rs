@@ -28,7 +28,7 @@ fn file_url() {
             parent: None,
             name: "foo".into(),
             content: Default::default(),
-            code_mappings: Default::default(),
+            code_mappings: [].into(),
             kind: FileKind::Module,
         }),
     );
@@ -38,7 +38,7 @@ fn file_url() {
             parent: None,
             name: "foo/bar".into(),
             content: Default::default(),
-            code_mappings: Default::default(),
+            code_mappings: [].into(),
             kind: FileKind::Module,
         }),
     );

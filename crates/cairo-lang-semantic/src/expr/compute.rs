@@ -387,7 +387,7 @@ fn compute_expr_inline_macro_semantic(
         parent: Some(syntax.stable_ptr().untyped().file_id(ctx.db.upcast())),
         name: code.name,
         content: Arc::new(code.content),
-        code_mappings: Arc::new(code.code_mappings),
+        code_mappings: code.code_mappings.into(),
         kind: FileKind::Expr,
     })
     .intern(ctx.db);

@@ -786,8 +786,8 @@ pub fn impl_types(
 pub fn impl_type_ids(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
-) -> Maybe<Arc<Vec<ImplTypeDefId>>> {
-    Ok(Arc::new(db.impl_types(impl_def_id)?.keys().copied().collect()))
+) -> Maybe<Arc<[ImplTypeDefId]>> {
+    Ok(db.impl_types(impl_def_id)?.keys().copied().collect_vec().into())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_type_by_id].
@@ -863,8 +863,8 @@ pub fn impl_impls(
 pub fn impl_impl_ids(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
-) -> Maybe<Arc<Vec<ImplImplDefId>>> {
-    Ok(Arc::new(db.impl_impls(impl_def_id)?.keys().copied().collect()))
+) -> Maybe<Arc<[ImplImplDefId]>> {
+    Ok(db.impl_impls(impl_def_id)?.keys().copied().collect_vec().into())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_impl_by_id].
@@ -1215,21 +1215,23 @@ pub fn module_impl_ids_for_trait_filter(
     trait_filter: TraitFilter,
 ) -> Maybe<Vec<UninferredImpl>> {
     let mut uninferred_impls = Vec::new();
-    for impl_def_id in db.module_impls_ids(module_id).unwrap_or_default().iter().copied() {
-        uninferred_impls.push(UninferredImpl::Def(impl_def_id));
+    if let Ok(impl_ids) = db.module_impls_ids(module_id) {
+        uninferred_impls.extend(impl_ids.iter().copied().map(UninferredImpl::Def));
     }
-    for impl_alias_id in db.module_impl_aliases_ids(module_id).unwrap_or_default().iter().copied() {
-        uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
+    if let Ok(impl_aliases_ids) = db.module_impl_aliases_ids(module_id) {
+        uninferred_impls.extend(impl_aliases_ids.iter().copied().map(UninferredImpl::ImplAlias));
     }
-    for use_id in db.module_uses_ids(module_id).unwrap_or_default().iter().copied() {
-        match db.use_resolved_item(use_id) {
-            Ok(ResolvedGenericItem::Impl(impl_def_id)) => {
-                uninferred_impls.push(UninferredImpl::Def(impl_def_id));
+    if let Ok(uses_ids) = db.module_uses_ids(module_id) {
+        for use_id in uses_ids.iter().copied() {
+            match db.use_resolved_item(use_id) {
+                Ok(ResolvedGenericItem::Impl(impl_def_id)) => {
+                    uninferred_impls.push(UninferredImpl::Def(impl_def_id));
+                }
+                Ok(ResolvedGenericItem::GenericImplAlias(impl_alias_id)) => {
+                    uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
+                }
+                _ => {}
             }
-            Ok(ResolvedGenericItem::GenericImplAlias(impl_alias_id)) => {
-                uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
-            }
-            _ => {}
         }
     }
     let mut res = Vec::new();

@@ -184,7 +184,7 @@ impl<'a> AbiBuilder<'a> {
         let mut structs = Vec::new();
         let mut impl_defs = Vec::new();
         let mut impl_aliases = Vec::new();
-        for item in &*self.db.module_items(ModuleId::Submodule(submodule_id)).unwrap_or_default() {
+        for item in &*self.db.module_items(ModuleId::Submodule(submodule_id))? {
             match item {
                 ModuleItemId::FreeFunction(id) => free_functions.push(*id),
                 ModuleItemId::Struct(id) => structs.push(*id),
