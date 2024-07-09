@@ -121,8 +121,10 @@ pub struct SierraToCasmConfig {
 
 #[derive(Debug, Error)]
 pub enum CasmCairoProgramError {
-    #[error("Function has no debug_name")]
+    #[error("Function has no debug_name?")]
     MissingFunctionDebugName {},
+    #[error("Invalid entry point.")]
+    EntryPointError,
 }
 
 fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
@@ -216,7 +218,14 @@ impl CasmCairoProgram {
 
         let entry_points_by_function: OrderedHashMap<String, CasmCairoEntryPoint> =
             OrderedHashMap::from_iter(sierra_program.funcs.iter().map(|f| {
-                let offset = f.entry_point.0;
+                let offset = cairo_program
+                    .debug_info
+                    .sierra_statement_info
+                    .get(f.entry_point.0)
+                    .ok_or(CasmCairoProgramError::EntryPointError)
+                    .unwrap()
+                    .start_offset;
+
                 let function_name =
                     f.id.debug_name
                         .as_ref()
