@@ -123,7 +123,7 @@ pub trait FilesGroup {
     /// Change this mechanism to hold file_overrides on the db struct outside salsa mechanism,
     /// and invalidate manually.
     #[salsa::input]
-    fn file_overrides(&self) -> Arc<OrderedHashMap<FileId, Arc<String>>>;
+    fn file_overrides(&self) -> Arc<OrderedHashMap<FileId, Arc<str>>>;
 
     // TODO(yuval): consider moving this to a separate crate, or rename this crate.
     /// The compilation flags.
@@ -139,9 +139,9 @@ pub trait FilesGroup {
     fn crate_config(&self, crate_id: CrateId) -> Option<CrateConfiguration>;
 
     /// Query for raw file contents. Private.
-    fn priv_raw_file_content(&self, file_id: FileId) -> Option<Arc<String>>;
+    fn priv_raw_file_content(&self, file_id: FileId) -> Option<Arc<str>>;
     /// Query for the file contents. This takes overrides into consideration.
-    fn file_content(&self, file_id: FileId) -> Option<Arc<String>>;
+    fn file_content(&self, file_id: FileId) -> Option<Arc<str>>;
     fn file_summary(&self, file_id: FileId) -> Option<Arc<FileSummary>>;
 
     /// Query to get a compilation flag by its ID.
@@ -182,7 +182,7 @@ impl AsFilesGroupMut for dyn FilesGroup {
 
 pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
     /// Overrides file content. None value removes the override.
-    fn override_file_content(&mut self, file: FileId, content: Option<Arc<String>>) {
+    fn override_file_content(&mut self, file: FileId, content: Option<Arc<str>>) {
         let mut overrides = Upcast::upcast(self).file_overrides().as_ref().clone();
         match content {
             Some(content) => overrides.insert(file, content),
@@ -232,16 +232,16 @@ fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration>
     }
 }
 
-fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
+fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> {
     match file.lookup_intern(db) {
         FileLongId::OnDisk(path) => match fs::read_to_string(path) {
-            Ok(content) => Some(Arc::new(content)),
+            Ok(content) => Some(content.into()),
             Err(_) => None,
         },
         FileLongId::Virtual(virt) => Some(virt.content),
     }
 }
-fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
+fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> {
     let overrides = db.file_overrides();
     overrides.get(&file).cloned().or_else(|| db.priv_raw_file_content(file))
 }

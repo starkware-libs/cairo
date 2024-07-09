@@ -119,8 +119,7 @@ pub fn test_expand_plugin_inner(
 
     // Main module file.
     let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db);
-    db.as_files_group_mut()
-        .override_file_content(file_id, Some(Arc::new(format!("{cairo_code}\n"))));
+    db.as_files_group_mut().override_file_content(file_id, Some(format!("{cairo_code}\n").into()));
 
     let mut diagnostic_items = vec![];
     let expanded_module =
