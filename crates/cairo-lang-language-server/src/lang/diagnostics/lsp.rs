@@ -15,7 +15,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
     diags: &mut Vec<Diagnostic>,
     diagnostics: &Diagnostics<T>,
 ) {
-    for diagnostic in diagnostics.get_all() {
+    for diagnostic in diagnostics.get_diagnostics_without_duplicates(db) {
         let mut message = diagnostic.format(db);
         let mut related_information = vec![];
         for note in diagnostic.notes(db) {

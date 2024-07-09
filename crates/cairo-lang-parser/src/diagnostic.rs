@@ -130,4 +130,8 @@ Did you mean to write `{identifier}!{left}...{right}'?",
     fn location(&self, _db: &dyn FilesGroup) -> cairo_lang_diagnostics::DiagnosticLocation {
         cairo_lang_diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.span }
     }
+
+    fn is_same_kind(&self, _other: &Self) -> bool {
+        _other.kind == self.kind
+    }
 }
