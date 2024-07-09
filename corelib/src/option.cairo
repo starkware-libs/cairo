@@ -5,6 +5,12 @@ pub enum Option<T> {
     None,
 }
 
+impl OptionDefault<T> of Default<Option<T>> {
+    fn default() -> Option<T> {
+        Option::None
+    }
+}
+
 pub impl DestructOption<T, +Destruct<T>, -Drop<Option<T>>> of Destruct<Option<T>> {
     #[inline(always)]
     fn destruct(self: Option<T>) nopanic {

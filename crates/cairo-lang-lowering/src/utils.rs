@@ -8,6 +8,16 @@ use crate::{
     VarUsage, VariableId,
 };
 
+/// Options for the `inlining-strategy` arguments.
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum InliningStrategy {
+    /// Do not override inlining strategy.
+    #[default]
+    Default,
+    /// Inline only in the case of an `inline(always)` annotation.
+    Avoid,
+}
+
 /// A rebuilder trait for rebuilding lowered representation.
 pub trait Rebuilder {
     fn map_var_id(&mut self, var: VariableId) -> VariableId;

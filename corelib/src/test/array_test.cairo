@@ -1,5 +1,4 @@
 use core::test::test_utils::{assert_eq, assert_ne};
-#[feature("collections-into-iter")]
 use core::iter::{IntoIterator, Iterator};
 
 #[test]

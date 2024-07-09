@@ -100,3 +100,9 @@ use core::{zeroable, zeroable::{NonZero, Zeroable}};
 #[cfg(test)]
 use core::test;
 pub use core::ops::Deref;
+
+
+pub use starknet::storage::{
+    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, StoragePointerReadAccess,
+    StoragePointerWriteAccess
+};

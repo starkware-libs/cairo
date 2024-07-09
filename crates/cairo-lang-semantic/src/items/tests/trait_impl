@@ -1120,21 +1120,52 @@ fn foo() {
 foo
 
 //! > module_code
-trait MyTrait {
-    impl I: Self;
+trait OtherTrait {
     fn f();
 }
-impl MyImpl of MyTrait {
-    fn f() {}
+trait MyTrait {
+    impl I: OtherTrait;
 }
+impl MyImpl of MyTrait {}
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'I'.
- --> lib.cairo:5:6
-impl MyImpl of MyTrait {
-     ^****^
+error: Cannot infer implicit impl `I.`
+Could not find implementation of trait `test::OtherTrait`
+ --> lib.cairo:7:1
+impl MyImpl of MyTrait {}
+^***********************^
 
-error: Trait has no implementation in context: test::MyTrait.
- --> lib.cairo:8:10
+error: Trait has no implementation in context: test::OtherTrait.
+ --> lib.cairo:7:1
+impl MyImpl of MyTrait {}
+^***********************^
+
+//! > ==========================================================================
+
+//! > Inferring missing Impl Impl from context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: *)
+
+//! > function
 fn foo() {
-         ^
+    MyImpl::I::f()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    fn f();
+}
+impl OtherImpl of OtherTrait {
+    fn f() {}
+}
+trait MyTrait {
+    impl I: OtherTrait;
+}
+
+impl MyImpl of MyTrait {}
+
+//! > expected_diagnostics

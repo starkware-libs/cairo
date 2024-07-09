@@ -7,7 +7,7 @@ use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongI
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
     DEPRECATED_ATTR, FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR,
-    MUST_USE_ATTR, PHANTOM_ATTR, STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
+    INTERNAL_ATTR, MUST_USE_ATTR, PHANTOM_ATTR, STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
 };
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -100,6 +100,10 @@ pub trait DefsGroup:
     /// Returns the set of `derive` that were declared as by a plugin.
     /// A derive that is not in this set will be handled as an unknown derive.
     fn declared_derives(&self) -> Arc<OrderedHashSet<String>>;
+
+    /// Returns the set of attributes that were declared as phantom type attributes by a plugin,
+    /// i.e. a type marked with this attribute is considered a phantom type.
+    fn declared_phantom_type_attributes(&self) -> Arc<OrderedHashSet<String>>;
 
     // Module to syntax.
     /// Gets the main file of the module.
@@ -230,6 +234,7 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
         MUST_USE_ATTR.into(),
         UNSTABLE_ATTR.into(),
         DEPRECATED_ATTR.into(),
+        INTERNAL_ATTR.into(),
         FEATURE_ATTR.into(),
         PHANTOM_ATTR.into(),
         IMPLICIT_PRECEDENCE_ATTR.into(),
@@ -254,6 +259,14 @@ fn declared_derives(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
         all_derives.extend(plugin.declared_derives());
     }
     Arc::new(all_derives)
+}
+
+fn declared_phantom_type_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
+    let mut all_phantom_type_attributes = OrderedHashSet::from_iter([PHANTOM_ATTR.into()]);
+    for plugin in db.macro_plugins() {
+        all_phantom_type_attributes.extend(plugin.phantom_type_attributes());
+    }
+    Arc::new(all_phantom_type_attributes)
 }
 
 fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
@@ -429,12 +442,20 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     let mut files = Vec::new();
     let mut plugin_diagnostics = Vec::new();
 
+    let crate_id = module_id.owning_crate(db);
     let cfg_set = db
-        .crate_config(module_id.owning_crate(db))
+        .crate_config(crate_id)
         .and_then(|cfg| cfg.settings.cfg_set.map(Arc::new))
         .unwrap_or(db.cfg_set());
-    let metadata =
-        MacroPluginMetadata { cfg_set: &cfg_set, declared_derives: &db.declared_derives() };
+    let edition = db
+        .crate_config(module_id.owning_crate(db))
+        .map(|cfg| cfg.settings.edition)
+        .unwrap_or_default();
+    let metadata = MacroPluginMetadata {
+        cfg_set: &cfg_set,
+        declared_derives: &db.declared_derives(),
+        edition,
+    };
 
     let mut items = vec![];
     generated_file_infos.push(main_file_info);

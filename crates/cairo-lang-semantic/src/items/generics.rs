@@ -291,6 +291,11 @@ pub fn priv_generic_param_data(
     let inference_id = InferenceId::GenericParam(generic_param_id);
     let mut resolver =
         Resolver::with_data(db, (*context_resolver_data).clone_with_inference_id(db, inference_id));
+    resolver.set_allowed_features(
+        &lookup_item,
+        &lookup_item.untyped_stable_ptr(db.upcast()).lookup(db.upcast()),
+        &mut diagnostics,
+    );
     let generic_params_syntax = extract_matches!(
         generic_param_generic_params_list(db, generic_param_id)?,
         ast::OptionWrappedGenericParamList::WrappedGenericParamList

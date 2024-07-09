@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait IERC20<TContractState> {
+pub trait IERC20<TContractState> {
     fn get_name(self: @TContractState) -> felt252;
     fn get_symbol(self: @TContractState) -> felt252;
     fn get_decimals(self: @TContractState) -> u8;
@@ -20,7 +20,7 @@ trait IERC20<TContractState> {
 }
 
 #[starknet::contract]
-mod erc_20 {
+pub mod erc_20 {
     use core::num::traits::Zero;
     use starknet::get_caller_address;
     use starknet::contract_address_const;
@@ -82,7 +82,7 @@ mod erc_20 {
     }
 
     #[abi(embed_v0)]
-    impl IERC20Impl of super::IERC20<ContractState> {
+    pub impl IERC20Impl of super::IERC20<ContractState> {
         fn get_name(self: @ContractState) -> felt252 {
             self.name.read()
         }

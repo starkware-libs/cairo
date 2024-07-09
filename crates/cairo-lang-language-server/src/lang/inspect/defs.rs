@@ -12,6 +12,7 @@ use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{Mutability, Variable};
 use cairo_lang_syntax::node::ast::{Param, PatternIdentifier, PatternPtr, TerminalIdentifier};
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
@@ -28,12 +29,25 @@ use crate::{find_definition, ResolvedItem};
 pub enum SymbolDef {
     Item(ItemDef),
     Variable(VariableDef),
+    ExprInlineMacro(String),
 }
 
 impl SymbolDef {
     /// Finds definition of the symbol referred by the given identifier.
     #[tracing::instrument(name = "SymbolDef::find", level = "trace", skip_all)]
     pub fn find(db: &AnalysisDatabase, identifier: &TerminalIdentifier) -> Option<Self> {
+        if let Some(parent) = identifier.as_syntax_node().parent() {
+            if parent.kind(db.upcast()) == SyntaxKind::PathSegmentSimple
+                && is_grandparent_of_kind(db, &parent, SyntaxKind::ExprInlineMacro)
+            {
+                return Some(Self::ExprInlineMacro(
+                    parent
+                        .parent()
+                        .expect("Grandparent already exists")
+                        .get_text_without_trivia(db.upcast()),
+                ));
+            }
+        }
         // Get the resolved item info and the syntax node of the definition.
         let (definition_item, definition_node) = {
             let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;

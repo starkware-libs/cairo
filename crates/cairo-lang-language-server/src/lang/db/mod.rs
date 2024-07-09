@@ -3,6 +3,7 @@ use cairo_lang_doc::db::DocDatabase;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
+use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
@@ -39,7 +40,7 @@ impl AnalysisDatabase {
         let mut db = Self { storage: Default::default() };
 
         init_files_group(&mut db);
-        init_lowering_group(&mut db);
+        init_lowering_group(&mut db, InliningStrategy::Default);
 
         db.set_cfg_set(Self::initial_cfg_set().into());
 

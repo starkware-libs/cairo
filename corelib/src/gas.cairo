@@ -1,6 +1,7 @@
 #[derive(Copy, Drop)]
 pub extern type BuiltinCosts;
 pub extern type GasBuiltin;
+use core::RangeCheck;
 
 pub extern fn withdraw_gas() -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
 pub extern fn withdraw_gas_all(

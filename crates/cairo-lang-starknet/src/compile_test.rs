@@ -14,6 +14,7 @@ use crate::test_utils::{get_example_file_path, get_test_contract};
 #[test_case("minimal_contract::minimal_contract")]
 #[test_case("hello_starknet::hello_starknet")]
 #[test_case("erc20::erc_20")]
+#[test_case("storage_accesses::storage_accesses")]
 #[test_case("token_bridge::token_bridge")]
 #[test_case("with_erc20::erc20_contract")]
 #[test_case("with_ownable::ownable_balance")]

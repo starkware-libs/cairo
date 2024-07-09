@@ -322,6 +322,43 @@ impl StoreInterface1Dispatcher of starknet::Store::<Interface1Dispatcher> {
     }
 }
 
+#[derive(Drop, Copy)]
+struct Interface1DispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl Interface1DispatcherSubPointersImpl of starknet::storage::SubPointers<Interface1Dispatcher> {
+type SubPointersType = Interface1DispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<Interface1Dispatcher>) -> Interface1DispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                Interface1DispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableInterface1DispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl MutableInterface1DispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Interface1Dispatcher> {
+type SubPointersType = MutableInterface1DispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface1Dispatcher>>) -> MutableInterface1DispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableInterface1DispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+
 
 lib.cairo:1:1
 #[starknet::interface]
@@ -376,6 +413,43 @@ impl StoreInterface1LibraryDispatcher of starknet::Store::<Interface1LibraryDisp
     #[inline(always)]
     fn size() -> u8 {
         starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct Interface1LibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl Interface1LibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<Interface1LibraryDispatcher> {
+type SubPointersType = Interface1LibraryDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<Interface1LibraryDispatcher>) -> Interface1LibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                Interface1LibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableInterface1LibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl MutableInterface1LibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Interface1LibraryDispatcher> {
+type SubPointersType = MutableInterface1LibraryDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface1LibraryDispatcher>>) -> MutableInterface1LibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableInterface1LibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
     }
 }
 
@@ -436,6 +510,43 @@ impl StoreInterface1SafeLibraryDispatcher of starknet::Store::<Interface1SafeLib
     }
 }
 
+#[derive(Drop, Copy)]
+struct Interface1SafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl Interface1SafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<Interface1SafeLibraryDispatcher> {
+type SubPointersType = Interface1SafeLibraryDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<Interface1SafeLibraryDispatcher>) -> Interface1SafeLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                Interface1SafeLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableInterface1SafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl MutableInterface1SafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Interface1SafeLibraryDispatcher> {
+type SubPointersType = MutableInterface1SafeLibraryDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface1SafeLibraryDispatcher>>) -> MutableInterface1SafeLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableInterface1SafeLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
+
 
 lib.cairo:1:1
 #[starknet::interface]
@@ -490,6 +601,43 @@ impl StoreInterface1SafeDispatcher of starknet::Store::<Interface1SafeDispatcher
     #[inline(always)]
     fn size() -> u8 {
         starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct Interface1SafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl Interface1SafeDispatcherSubPointersImpl of starknet::storage::SubPointers<Interface1SafeDispatcher> {
+type SubPointersType = Interface1SafeDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<Interface1SafeDispatcher>) -> Interface1SafeDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                Interface1SafeDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableInterface1SafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl MutableInterface1SafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Interface1SafeDispatcher> {
+type SubPointersType = MutableInterface1SafeDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface1SafeDispatcher>>) -> MutableInterface1SafeDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableInterface1SafeDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
     }
 }
 
@@ -550,6 +698,43 @@ impl StoreInterface2Dispatcher of starknet::Store::<Interface2Dispatcher> {
     }
 }
 
+#[derive(Drop, Copy)]
+struct Interface2DispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl Interface2DispatcherSubPointersImpl of starknet::storage::SubPointers<Interface2Dispatcher> {
+type SubPointersType = Interface2DispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<Interface2Dispatcher>) -> Interface2DispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                Interface2DispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableInterface2DispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl MutableInterface2DispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Interface2Dispatcher> {
+type SubPointersType = MutableInterface2DispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface2Dispatcher>>) -> MutableInterface2DispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableInterface2DispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+
 
 lib.cairo:6:1
 #[starknet::interface]
@@ -604,6 +789,43 @@ impl StoreInterface2LibraryDispatcher of starknet::Store::<Interface2LibraryDisp
     #[inline(always)]
     fn size() -> u8 {
         starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct Interface2LibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl Interface2LibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<Interface2LibraryDispatcher> {
+type SubPointersType = Interface2LibraryDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<Interface2LibraryDispatcher>) -> Interface2LibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                Interface2LibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableInterface2LibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl MutableInterface2LibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Interface2LibraryDispatcher> {
+type SubPointersType = MutableInterface2LibraryDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface2LibraryDispatcher>>) -> MutableInterface2LibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableInterface2LibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
     }
 }
 
@@ -664,6 +886,43 @@ impl StoreInterface2SafeLibraryDispatcher of starknet::Store::<Interface2SafeLib
     }
 }
 
+#[derive(Drop, Copy)]
+struct Interface2SafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl Interface2SafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<Interface2SafeLibraryDispatcher> {
+type SubPointersType = Interface2SafeLibraryDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<Interface2SafeLibraryDispatcher>) -> Interface2SafeLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                Interface2SafeLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableInterface2SafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl MutableInterface2SafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Interface2SafeLibraryDispatcher> {
+type SubPointersType = MutableInterface2SafeLibraryDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface2SafeLibraryDispatcher>>) -> MutableInterface2SafeLibraryDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableInterface2SafeLibraryDispatcherSubPointers {
+           class_hash: class_hash_value,
+        }
+    }
+}
+
 
 lib.cairo:6:1
 #[starknet::interface]
@@ -721,6 +980,187 @@ impl StoreInterface2SafeDispatcher of starknet::Store::<Interface2SafeDispatcher
     }
 }
 
+#[derive(Drop, Copy)]
+struct Interface2SafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl Interface2SafeDispatcherSubPointersImpl of starknet::storage::SubPointers<Interface2SafeDispatcher> {
+type SubPointersType = Interface2SafeDispatcherSubPointers;
+   fn sub_pointers(self: starknet::storage::StoragePointer<Interface2SafeDispatcher>) -> Interface2SafeDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                Interface2SafeDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableInterface2SafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl MutableInterface2SafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Interface2SafeDispatcher> {
+type SubPointersType = MutableInterface2SafeDispatcherSubPointers;
+   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface2SafeDispatcher>>) -> MutableInterface2SafeDispatcherSubPointers {
+               let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address,
+            offset: current_offset,
+        };
+                MutableInterface2SafeDispatcherSubPointers {
+           contract_address: contract_address_value,
+        }
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl Interface1DispatcherSubPointersDrop of core::traits::Drop::<Interface1DispatcherSubPointers>;
+impl Interface1DispatcherSubPointersCopy of core::traits::Copy::<Interface1DispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MutableInterface1DispatcherSubPointersDrop of core::traits::Drop::<MutableInterface1DispatcherSubPointers>;
+impl MutableInterface1DispatcherSubPointersCopy of core::traits::Copy::<MutableInterface1DispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl Interface1LibraryDispatcherSubPointersDrop of core::traits::Drop::<Interface1LibraryDispatcherSubPointers>;
+impl Interface1LibraryDispatcherSubPointersCopy of core::traits::Copy::<Interface1LibraryDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MutableInterface1LibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableInterface1LibraryDispatcherSubPointers>;
+impl MutableInterface1LibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableInterface1LibraryDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl Interface1SafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<Interface1SafeLibraryDispatcherSubPointers>;
+impl Interface1SafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Interface1SafeLibraryDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MutableInterface1SafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableInterface1SafeLibraryDispatcherSubPointers>;
+impl MutableInterface1SafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableInterface1SafeLibraryDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl Interface1SafeDispatcherSubPointersDrop of core::traits::Drop::<Interface1SafeDispatcherSubPointers>;
+impl Interface1SafeDispatcherSubPointersCopy of core::traits::Copy::<Interface1SafeDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MutableInterface1SafeDispatcherSubPointersDrop of core::traits::Drop::<MutableInterface1SafeDispatcherSubPointers>;
+impl MutableInterface1SafeDispatcherSubPointersCopy of core::traits::Copy::<MutableInterface1SafeDispatcherSubPointers>;
+
+
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl Interface2DispatcherSubPointersDrop of core::traits::Drop::<Interface2DispatcherSubPointers>;
+impl Interface2DispatcherSubPointersCopy of core::traits::Copy::<Interface2DispatcherSubPointers>;
+
+
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MutableInterface2DispatcherSubPointersDrop of core::traits::Drop::<MutableInterface2DispatcherSubPointers>;
+impl MutableInterface2DispatcherSubPointersCopy of core::traits::Copy::<MutableInterface2DispatcherSubPointers>;
+
+
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl Interface2LibraryDispatcherSubPointersDrop of core::traits::Drop::<Interface2LibraryDispatcherSubPointers>;
+impl Interface2LibraryDispatcherSubPointersCopy of core::traits::Copy::<Interface2LibraryDispatcherSubPointers>;
+
+
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MutableInterface2LibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableInterface2LibraryDispatcherSubPointers>;
+impl MutableInterface2LibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableInterface2LibraryDispatcherSubPointers>;
+
+
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl Interface2SafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<Interface2SafeLibraryDispatcherSubPointers>;
+impl Interface2SafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Interface2SafeLibraryDispatcherSubPointers>;
+
+
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MutableInterface2SafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableInterface2SafeLibraryDispatcherSubPointers>;
+impl MutableInterface2SafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableInterface2SafeLibraryDispatcherSubPointers>;
+
+
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl Interface2SafeDispatcherSubPointersDrop of core::traits::Drop::<Interface2SafeDispatcherSubPointers>;
+impl Interface2SafeDispatcherSubPointersCopy of core::traits::Copy::<Interface2SafeDispatcherSubPointers>;
+
+
+lib.cairo:6:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MutableInterface2SafeDispatcherSubPointersDrop of core::traits::Drop::<MutableInterface2SafeDispatcherSubPointers>;
+impl MutableInterface2SafeDispatcherSubPointersCopy of core::traits::Copy::<MutableInterface2SafeDispatcherSubPointers>;
+
 
 lib.cairo:11:1
 #[starknet::component]
@@ -732,11 +1172,15 @@ component:
 pub enum Event {}
 
 
+#[phantom]
+pub struct Storage {
+}
+
 #[derive(Drop, Copy)]
-struct ComponentStorageBase {
+pub struct ComponentStorageBase {
 }
 #[derive(Drop, Copy)]
-struct ComponentStorageBaseMut {
+pub struct ComponentStorageBaseMut {
 }
 impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
     type BaseType = ComponentStorageBase;
@@ -778,10 +1222,6 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
 }
 
 
-use starknet::storage::{
-    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
-    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
-};
 // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
 #[deprecated(
     feature: "deprecated_legacy_map",
@@ -1012,13 +1452,18 @@ contract:
 
 
 
+#[phantom]
+pub struct Storage {
+          pub comp_storage: super::comp::Storage,
+}
+
 #[derive(Drop, Copy)]
-struct ContractStorageBase {
-    comp_storage: starknet::storage::StorageBase<super::comp::Storage>,
+pub struct ContractStorageBase {
+    pub comp_storage: starknet::storage::StorageBase<super::comp::Storage>,
 }
 #[derive(Drop, Copy)]
-struct ContractStorageBaseMut {
-    comp_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::comp::Storage>>,
+pub struct ContractStorageBaseMut {
+    pub comp_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::comp::Storage>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -1063,10 +1508,6 @@ pub fn contract_state_for_testing() -> ContractState {
     unsafe_new_contract_state()
 }
 
-use starknet::storage::{
-    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, 
-    StorableStoragePointerReadAccess, StorableStoragePointerWriteAccess
-};
 // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
 #[deprecated(
     feature: "deprecated_legacy_map",

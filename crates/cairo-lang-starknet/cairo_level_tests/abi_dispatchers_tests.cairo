@@ -1,5 +1,4 @@
 use starknet::{account::Call, ContractAddress};
-use core::test::test_utils::{assert_eq, assert_ne};
 
 use super::utils::serialized;
 
@@ -53,22 +52,14 @@ mod test_contract {
 fn test_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
     test_contract::__external::set_another_address(serialized(a));
-    assert_eq(
-        @test_contract::__external::get_another_address(serialized(())),
-        @serialized(a),
-        'Wrong result'
-    );
+    assert_eq!(test_contract::__external::get_another_address(serialized(())), serialized(a),);
 }
 
 #[test]
 fn test_library_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
     test_contract::__external::set_another_class_hash(serialized(a));
-    assert_eq(
-        @test_contract::__external::get_another_class_hash(serialized(())),
-        @serialized(a),
-        'Wrong result'
-    );
+    assert_eq!(test_contract::__external::get_another_class_hash(serialized(())), serialized(a),);
 }
 
 
@@ -116,7 +107,7 @@ fn test_validate_gas_cost() {
     let serialized_args = serialized(calls);
     let post_serialization_gas = withdraw_and_get_available_gas();
 
-    test_contract::__wrapper____validate__(serialized_args);
+    test_contract::__external::__validate__(serialized_args);
     let post_call_gas = withdraw_and_get_available_gas();
 
     let call_building_gas_usage = base_gas - post_call_building_gas;
