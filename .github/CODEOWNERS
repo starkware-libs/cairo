@@ -1,3 +1,3 @@
-/crates/cairo-lang-doc @mkaput @piotmag769
-/crates/cairo-lang-language-server @mkaput @Draggu
-/vscode-cairo @mkaput @Draggu
+/crates/cairo-lang-doc @orizi @mkaput @piotmag769
+/crates/cairo-lang-language-server @orizi @mkaput @Draggu
+/vscode-cairo @orizi @mkaput @Draggu
