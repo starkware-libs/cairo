@@ -100,7 +100,7 @@ pub trait Intern<'a, DynDbGroup: ?Sized, ShortId> {
 #[macro_export]
 macro_rules! define_short_id {
     ($short_id:ident, $long_id:path, $db:ident, $lookup:ident, $intern:ident) => {
-        #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+        #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
         pub struct $short_id(salsa::InternId);
         impl<'a> cairo_lang_utils::LookupIntern<'a, dyn $db + 'a, $long_id> for $short_id {
             fn lookup_intern(
