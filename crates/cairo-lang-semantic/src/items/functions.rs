@@ -13,9 +13,11 @@ use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
+use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{
-    define_short_id, require, try_extract_matches, Intern, LookupIntern, OptionFrom,
+    define_short_id, extract_matches, require, try_extract_matches, Intern, LookupIntern,
+    OptionFrom,
 };
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
@@ -892,7 +894,11 @@ fn ast_param_to_semantic(
     let name = ast_param.name(syntax_db).text(syntax_db);
 
     let id = ParamLongId(resolver.module_file_id, ast_param.stable_ptr()).intern(db);
-    let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
+
+    // TODO(Tomerstarkware): handle missing type clause to support closures.
+    let ty_syntax =
+        extract_matches!(ast_param.type_clause(syntax_db), OptionTypeClause::TypeClause)
+            .ty(syntax_db);
     let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
 
     let mutability = modifiers::compute_mutability(

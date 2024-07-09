@@ -385,7 +385,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_struct(StructBuilder::new("Param")
         .node("modifiers", "ModifierList")
         .key_node("name", "TerminalIdentifier")
-        .node("type_clause", "TypeClause")
+        .node("type_clause", "OptionTypeClause")
     )
     .add_list("ModifierList", "Modifier")
     .add_enum(EnumBuilder::new("Modifier")

@@ -9872,7 +9872,7 @@ impl Param {
         db: &dyn SyntaxGroup,
         modifiers: ModifierListGreen,
         name: TerminalIdentifierGreen,
-        type_clause: TypeClauseGreen,
+        type_clause: OptionTypeClauseGreen,
     ) -> ParamGreen {
         let children: Vec<GreenId> = vec![modifiers.0, name.0, type_clause.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
@@ -9892,8 +9892,8 @@ impl Param {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
-        TypeClause::from_syntax_node(db, self.children[2].clone())
+    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
+        OptionTypeClause::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -9936,7 +9936,7 @@ impl TypedSyntaxNode for Param {
                     children: vec![
                         ModifierList::missing(db).0,
                         TerminalIdentifier::missing(db).0,
-                        TypeClause::missing(db).0,
+                        OptionTypeClause::missing(db).0,
                     ],
                     width: TextWidth::default(),
                 },
