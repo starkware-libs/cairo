@@ -861,6 +861,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
     fn error_code(&self) -> Option<ErrorCode> {
         self.kind.error_code()
     }
+
+    fn is_same_kind(&self, _other: &Self) -> bool {
+        _other.kind == self.kind
+    }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
