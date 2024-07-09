@@ -33,6 +33,7 @@ impl MutableVecAsPointer<T> of StorageAsPointer<StoragePath<Mutable<Vec<T>>>> {
 pub trait VecTrait<T> {
     type ElementType;
     fn get(self: T, index: u64) -> Option<StoragePath<Self::ElementType>>;
+    fn at(self: T, index: u64) -> StoragePath<Self::ElementType>;
     fn len(self: T) -> u64;
 }
 
@@ -46,6 +47,10 @@ impl VecImpl<T> of VecTrait<StoragePath<Vec<T>>> {
         } else {
             Option::None
         }
+    }
+    fn at(self: StoragePath<Vec<T>>, index: u64) -> StoragePath<T> {
+        assert!(index < self.len(), "Index out of bounds");
+        self.update(index)
     }
     fn len(self: StoragePath<Vec<T>>) -> u64 {
         self.as_ptr().read()
@@ -64,6 +69,9 @@ impl PathableVecImpl<
     fn get(self: T, index: u64) -> Option<StoragePath<VecTraitImpl::ElementType>> {
         self.as_path().get(index)
     }
+    fn at(self: T, index: u64) -> StoragePath<VecTraitImpl::ElementType> {
+        self.as_path().at(index)
+    }
     fn len(self: T) -> u64 {
         self.as_path().len()
     }
@@ -73,12 +81,13 @@ impl PathableVecImpl<
 pub trait MutableVecTrait<T> {
     type ElementType;
     fn get(self: T, index: u64) -> Option<StoragePath<Mutable<Self::ElementType>>>;
+    fn at(self: T, index: u64) -> StoragePath<Mutable<Self::ElementType>>;
     fn len(self: T) -> u64;
     fn append(self: T) -> StoragePath<Mutable<Self::ElementType>>;
 }
 
 /// Implement `MutableVecTrait` for `StoragePath<Mutable<Vec<T>>`.
-impl MutableVecImpl<T, +Drop<T>> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>> {
+impl MutableVecImpl<T> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>> {
     type ElementType = T;
     fn get(self: StoragePath<Mutable<Vec<T>>>, index: u64) -> Option<StoragePath<Mutable<T>>> {
         let vec_len = self.len();
@@ -87,6 +96,10 @@ impl MutableVecImpl<T, +Drop<T>> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>
         } else {
             Option::None
         }
+    }
+    fn at(self: StoragePath<Mutable<Vec<T>>>, index: u64) -> StoragePath<Mutable<T>> {
+        assert!(index < self.len(), "Index out of bounds");
+        self.update(index)
     }
     fn len(self: StoragePath<Mutable<Vec<T>>>) -> u64 {
         self.as_ptr().read()
@@ -110,6 +123,9 @@ impl PathableMutableVecImpl<
     fn get(self: T, index: u64) -> Option<StoragePath<Mutable<VecTraitImpl::ElementType>>> {
         self.as_path().get(index)
     }
+    fn at(self: T, index: u64) -> StoragePath<Mutable<VecTraitImpl::ElementType>> {
+        self.as_path().at(index)
+    }
     fn len(self: T) -> u64 {
         self.as_path().len()
     }
@@ -118,3 +134,42 @@ impl PathableMutableVecImpl<
     }
 }
 
+pub(crate) impl VecIndexView<T> of core::ops::IndexView<StoragePath<Vec<T>>, u64> {
+    type Target = StoragePath<T>;
+    fn index(self: @StoragePath<Vec<T>>, index: u64) -> Self::Target {
+        (*self).at(index)
+    }
+}
+
+pub(crate) impl MutableVecIndexView<T> of core::ops::IndexView<StoragePath<Mutable<Vec<T>>>, u64> {
+    type Target = StoragePath<Mutable<T>>;
+    fn index(self: @StoragePath<Mutable<Vec<T>>>, index: u64) -> Self::Target {
+        (*self).at(index)
+    }
+}
+
+pub(crate) impl PathableVecIndexView<
+    T,
+    +Copy<T>,
+    +Drop<T>,
+    impl PathImpl: StorageAsPath<T>,
+    impl VecTraitImpl: VecTrait<StoragePath<PathImpl::Value>>
+> of core::ops::IndexView<T, u64> {
+    type Target = StoragePath<VecTraitImpl::ElementType>;
+    fn index(self: @T, index: u64) -> Self::Target {
+        (*self).as_path().at(index)
+    }
+}
+
+pub(crate) impl PathableMutableVecIndexView<
+    T,
+    +Drop<T>,
+    +Copy<T>,
+    impl PathImpl: StorageAsPath<T>,
+    impl VecTraitImpl: MutableVecTrait<StoragePath<PathImpl::Value>>
+> of core::ops::IndexView<T, u64> {
+    type Target = StoragePath<Mutable<VecTraitImpl::ElementType>>;
+    fn index(self: @T, index: u64) -> Self::Target {
+        (*self).as_path().at(index)
+    }
+}
