@@ -3,6 +3,7 @@ pub mod cursor;
 pub mod fixture;
 pub mod jsonrpc;
 mod mock_client;
+pub mod normalize;
 mod runtime;
 
 pub use self::cursor::cursors;
@@ -17,6 +18,7 @@ pub use self::mock_client::MockClient;
 macro_rules! sandbox {
     (
         $(files { $($file:expr => $content:expr),* $(,)? })?
+        $(dyn_files($dyn_file_iter:expr))?
         $(client_capabilities = $client_capabilities:expr;)?
         $(workspace_configuration = $workspace_configuration:expr;)?
     ) => {{
@@ -29,6 +31,12 @@ macro_rules! sandbox {
         let mut fixture = Fixture::new();
 
         $($(fixture.add_file($file, $content);)*)?
+
+        $(
+            for (file, content) in $dyn_file_iter {
+                fixture.add_file(file, content);
+            }
+        )?
 
         #[allow(unused_mut)]
         let mut client_capabilities = client_capabilities::base();
