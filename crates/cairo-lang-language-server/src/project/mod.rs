@@ -1,3 +1,4 @@
+pub use self::krate::Crate;
 pub use self::project_manifest_path::*;
 
 mod krate;
