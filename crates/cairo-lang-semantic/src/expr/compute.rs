@@ -386,7 +386,7 @@ fn compute_expr_inline_macro_semantic(
     let new_file = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr().untyped().file_id(ctx.db.upcast())),
         name: code.name,
-        content: Arc::new(code.content),
+        content: code.content.into(),
         code_mappings: code.code_mappings.into(),
         kind: FileKind::Expr,
     })

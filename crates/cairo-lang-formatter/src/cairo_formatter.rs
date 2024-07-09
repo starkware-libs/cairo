@@ -2,7 +2,6 @@ use std::fmt::{Debug, Display};
 use std::fs;
 use std::io::{stdin, Read};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use anyhow::{anyhow, Context, Result};
 use cairo_lang_diagnostics::FormattedDiagnosticEntry;
@@ -156,7 +155,7 @@ impl FormattableInput for String {
         Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "string_to_format".into(),
-            content: Arc::new(self.clone()),
+            content: self.clone().into(),
             code_mappings: [].into(),
             kind: FileKind::Module,
         })
@@ -175,7 +174,7 @@ impl FormattableInput for StdinFmt {
         Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "<stdin>".into(),
-            content: Arc::new(buffer),
+            content: buffer.into(),
             code_mappings: [].into(),
             kind: FileKind::Module,
         })

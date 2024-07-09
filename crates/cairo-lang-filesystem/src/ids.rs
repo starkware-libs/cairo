@@ -105,7 +105,7 @@ pub enum CodeOrigin {
 pub struct VirtualFile {
     pub parent: Option<FileId>,
     pub name: SmolStr,
-    pub content: Arc<String>,
+    pub content: Arc<str>,
     pub code_mappings: Arc<[CodeMapping]>,
     pub kind: FileKind,
 }
