@@ -135,7 +135,7 @@ pub struct CasmCairoProgram {
     pub bytecode: Vec<BigUintAsHex>,
     pub hints: Vec<(usize, Vec<Hint>)>,
     #[serde(skip_serializing_if = "skip_if_none")]
-    pub pythonic_hints: Vec<(usize, Vec<String>)>,
+    pub pythonic_hints: Option<Vec<(usize, Vec<String>)>>,
     pub entry_points_by_function: OrderedHashMap<String, CasmCairoEntryPoint>,
 }
 
@@ -176,13 +176,15 @@ impl CasmCairoProgram {
             .collect();
 
         let pythonic_hints = match add_pythonic_hints {
-            true => hints
-                .iter()
-                .map(|(pc, hints)| {
-                    (*pc, hints.iter().map(|hint| hint.get_pythonic_hint()).collect_vec())
-                })
-                .collect_vec(),
-            false => Vec::new(),
+            true => Some(
+                hints
+                    .iter()
+                    .map(|(pc, hints)| {
+                        (*pc, hints.iter().map(|hint| hint.get_pythonic_hint()).collect_vec())
+                    })
+                    .collect_vec(),
+            ),
+            false => None,
         };
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
