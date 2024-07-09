@@ -728,7 +728,7 @@ impl From<&ExprList> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Arg {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Arg {
     pub const INDEX_MODIFIERS: usize = 0;
@@ -922,7 +922,7 @@ impl ArgClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgClauseNamed {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ArgClauseNamed {
     pub const INDEX_NAME: usize = 0;
@@ -1022,7 +1022,7 @@ impl From<&ArgClauseNamed> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgClauseUnnamed {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ArgClauseUnnamed {
     pub const INDEX_VALUE: usize = 0;
@@ -1105,7 +1105,7 @@ impl From<&ArgClauseUnnamed> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgClauseFieldInitShorthand {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ArgClauseFieldInitShorthand {
     pub const INDEX_COLON: usize = 0;
@@ -1199,7 +1199,7 @@ impl From<&ArgClauseFieldInitShorthand> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprFieldInitShorthand {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprFieldInitShorthand {
     pub const INDEX_NAME: usize = 0;
@@ -1380,7 +1380,7 @@ impl From<&ArgList> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprMissing {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> ExprMissingGreen {
@@ -1542,7 +1542,7 @@ impl PathSegment {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PathSegmentSimple {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl PathSegmentSimple {
     pub const INDEX_IDENT: usize = 0;
@@ -1718,7 +1718,7 @@ impl OptionTerminalColonColon {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTerminalColonColonEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionTerminalColonColonEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalColonColonEmptyGreen {
@@ -1793,7 +1793,7 @@ impl From<&OptionTerminalColonColonEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PathSegmentWithGenericArgs {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl PathSegmentWithGenericArgs {
     pub const INDEX_IDENT: usize = 0;
@@ -1988,7 +1988,7 @@ impl From<&ExprPath> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprParenthesized {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprParenthesized {
     pub const INDEX_LPAREN: usize = 0;
@@ -2088,7 +2088,7 @@ impl From<&ExprParenthesized> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprUnary {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprUnary {
     pub const INDEX_OP: usize = 0;
@@ -2310,7 +2310,7 @@ impl UnaryOperator {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprBinary {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprBinary {
     pub const INDEX_LHS: usize = 0;
@@ -2823,7 +2823,7 @@ impl BinaryOperator {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprListParenthesized {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprListParenthesized {
     pub const INDEX_LPAREN: usize = 0;
@@ -2923,7 +2923,7 @@ impl From<&ExprListParenthesized> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprFunctionCall {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprFunctionCall {
     pub const INDEX_PATH: usize = 0;
@@ -3014,7 +3014,7 @@ impl From<&ExprFunctionCall> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgListParenthesized {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ArgListParenthesized {
     pub const INDEX_LPAREN: usize = 0;
@@ -3204,7 +3204,7 @@ impl OptionArgListParenthesized {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionArgListParenthesizedEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionArgListParenthesizedEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionArgListParenthesizedEmptyGreen {
@@ -3279,7 +3279,7 @@ impl From<&OptionArgListParenthesizedEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprStructCtorCall {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprStructCtorCall {
     pub const INDEX_PATH: usize = 0;
@@ -3370,7 +3370,7 @@ impl From<&ExprStructCtorCall> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgListBraced {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl StructArgListBraced {
     pub const INDEX_LBRACE: usize = 0;
@@ -3470,7 +3470,7 @@ impl From<&StructArgListBraced> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprBlock {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprBlock {
     pub const INDEX_LBRACE: usize = 0;
@@ -3570,7 +3570,7 @@ impl From<&ExprBlock> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprMatch {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprMatch {
     pub const INDEX_MATCH_KW: usize = 0;
@@ -3777,7 +3777,7 @@ impl From<&MatchArms> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct MatchArm {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl MatchArm {
     pub const INDEX_PATTERNS: usize = 0;
@@ -3877,7 +3877,7 @@ impl From<&MatchArm> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprIf {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprIf {
     pub const INDEX_IF_KW: usize = 0;
@@ -4066,7 +4066,7 @@ impl Condition {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ConditionLet {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ConditionLet {
     pub const INDEX_LET_KW: usize = 0;
@@ -4172,7 +4172,7 @@ impl From<&ConditionLet> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ConditionExpr {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ConditionExpr {
     pub const INDEX_EXPR: usize = 0;
@@ -4338,7 +4338,7 @@ impl BlockOrIf {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprLoop {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprLoop {
     pub const INDEX_LOOP_KW: usize = 0;
@@ -4429,7 +4429,7 @@ impl From<&ExprLoop> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprWhile {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprWhile {
     pub const INDEX_WHILE_KW: usize = 0;
@@ -4529,7 +4529,7 @@ impl From<&ExprWhile> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprFor {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprFor {
     pub const INDEX_FOR_KW: usize = 0;
@@ -4658,7 +4658,7 @@ impl From<&ExprFor> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ElseClause {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ElseClause {
     pub const INDEX_ELSE_KW: usize = 0;
@@ -4839,7 +4839,7 @@ impl OptionElseClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionElseClauseEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionElseClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionElseClauseEmptyGreen {
@@ -4914,7 +4914,7 @@ impl From<&OptionElseClauseEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprErrorPropagate {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprErrorPropagate {
     pub const INDEX_EXPR: usize = 0;
@@ -5005,7 +5005,7 @@ impl From<&ExprErrorPropagate> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprIndexed {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprIndexed {
     pub const INDEX_EXPR: usize = 0;
@@ -5111,7 +5111,7 @@ impl From<&ExprIndexed> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprInlineMacro {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprInlineMacro {
     pub const INDEX_PATH: usize = 0;
@@ -5211,7 +5211,7 @@ impl From<&ExprInlineMacro> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprFixedSizeArray {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprFixedSizeArray {
     pub const INDEX_LBRACK: usize = 0;
@@ -5317,7 +5317,7 @@ impl From<&ExprFixedSizeArray> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FixedSizeArraySize {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl FixedSizeArraySize {
     pub const INDEX_SEMICOLON: usize = 0;
@@ -5498,7 +5498,7 @@ impl OptionFixedSizeArraySize {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionFixedSizeArraySizeEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionFixedSizeArraySizeEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionFixedSizeArraySizeEmptyGreen {
@@ -5573,7 +5573,7 @@ impl From<&OptionFixedSizeArraySizeEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgExpr {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl StructArgExpr {
     pub const INDEX_COLON: usize = 0;
@@ -5754,7 +5754,7 @@ impl OptionStructArgExpr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionStructArgExprEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionStructArgExprEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionStructArgExprEmptyGreen {
@@ -5829,7 +5829,7 @@ impl From<&OptionStructArgExprEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgSingle {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl StructArgSingle {
     pub const INDEX_IDENTIFIER: usize = 0;
@@ -5932,7 +5932,7 @@ impl From<&StructArgSingle> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgTail {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl StructArgTail {
     pub const INDEX_DOTDOT: usize = 0;
@@ -6205,7 +6205,7 @@ impl From<&StructArgList> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgListBraced {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ArgListBraced {
     pub const INDEX_LBRACE: usize = 0;
@@ -6305,7 +6305,7 @@ impl From<&ArgListBraced> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgListBracketed {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ArgListBracketed {
     pub const INDEX_LBRACK: usize = 0;
@@ -6526,7 +6526,7 @@ impl WrappedArgList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WrappedArgListMissing {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl WrappedArgListMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> WrappedArgListMissingGreen {
@@ -6836,7 +6836,7 @@ impl Pattern {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternIdentifier {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl PatternIdentifier {
     pub const INDEX_MODIFIERS: usize = 0;
@@ -6936,7 +6936,7 @@ impl From<&PatternIdentifier> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternStruct {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl PatternStruct {
     pub const INDEX_PATH: usize = 0;
@@ -7137,7 +7137,7 @@ impl From<&PatternStructParamList> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternTuple {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl PatternTuple {
     pub const INDEX_LPAREN: usize = 0;
@@ -7237,7 +7237,7 @@ impl From<&PatternTuple> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternFixedSizeArray {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl PatternFixedSizeArray {
     pub const INDEX_LBRACK: usize = 0;
@@ -7633,7 +7633,7 @@ impl PatternStructParam {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternStructParamWithExpr {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl PatternStructParamWithExpr {
     pub const INDEX_MODIFIERS: usize = 0;
@@ -7739,7 +7739,7 @@ impl From<&PatternStructParamWithExpr> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternEnum {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl PatternEnum {
     pub const INDEX_PATH: usize = 0;
@@ -7833,7 +7833,7 @@ impl From<&PatternEnum> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternEnumInnerPattern {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl PatternEnumInnerPattern {
     pub const INDEX_LPAREN: usize = 0;
@@ -8025,7 +8025,7 @@ impl OptionPatternEnumInnerPattern {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionPatternEnumInnerPatternEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionPatternEnumInnerPatternEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionPatternEnumInnerPatternEmptyGreen {
@@ -8100,7 +8100,7 @@ impl From<&OptionPatternEnumInnerPatternEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TypeClause {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl TypeClause {
     pub const INDEX_COLON: usize = 0;
@@ -8281,7 +8281,7 @@ impl OptionTypeClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTypeClauseEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionTypeClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTypeClauseEmptyGreen {
@@ -8356,7 +8356,7 @@ impl From<&OptionTypeClauseEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ReturnTypeClause {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ReturnTypeClause {
     pub const INDEX_ARROW: usize = 0;
@@ -8537,7 +8537,7 @@ impl OptionReturnTypeClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionReturnTypeClauseEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionReturnTypeClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionReturnTypeClauseEmptyGreen {
@@ -8828,7 +8828,7 @@ impl From<&StatementList> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementMissing {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl StatementMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> StatementMissingGreen {
@@ -8903,7 +8903,7 @@ impl From<&StatementMissing> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementLet {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl StatementLet {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -9127,7 +9127,7 @@ impl OptionTerminalSemicolon {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTerminalSemicolonEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionTerminalSemicolonEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalSemicolonEmptyGreen {
@@ -9202,7 +9202,7 @@ impl From<&OptionTerminalSemicolonEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementExpr {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl StatementExpr {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -9302,7 +9302,7 @@ impl From<&StatementExpr> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementContinue {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl StatementContinue {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -9402,7 +9402,7 @@ impl From<&StatementContinue> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprClause {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprClause {
     pub const INDEX_EXPR: usize = 0;
@@ -9575,7 +9575,7 @@ impl OptionExprClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionExprClauseEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionExprClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionExprClauseEmptyGreen {
@@ -9650,7 +9650,7 @@ impl From<&OptionExprClauseEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementReturn {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl StatementReturn {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -9756,7 +9756,7 @@ impl From<&StatementReturn> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementBreak {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl StatementBreak {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -9862,7 +9862,7 @@ impl From<&StatementBreak> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Param {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Param {
     pub const INDEX_MODIFIERS: usize = 0;
@@ -10218,7 +10218,7 @@ impl From<&ParamList> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ImplicitsClause {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ImplicitsClause {
     pub const INDEX_IMPLICITS_KW: usize = 0;
@@ -10509,7 +10509,7 @@ impl OptionImplicitsClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionImplicitsClauseEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionImplicitsClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionImplicitsClauseEmptyGreen {
@@ -10674,7 +10674,7 @@ impl OptionTerminalNoPanic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTerminalNoPanicEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionTerminalNoPanicEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalNoPanicEmptyGreen {
@@ -10749,7 +10749,7 @@ impl From<&OptionTerminalNoPanicEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FunctionSignature {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl FunctionSignature {
     pub const INDEX_LPAREN: usize = 0;
@@ -10874,7 +10874,7 @@ impl From<&FunctionSignature> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Member {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Member {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -11084,7 +11084,7 @@ impl From<&MemberList> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Variant {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Variant {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -11624,7 +11624,7 @@ impl From<&ModuleItemList> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ModuleItemMissing {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ModuleItemMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> ModuleItemMissingGreen {
@@ -11699,7 +11699,7 @@ impl From<&ModuleItemMissing> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Attribute {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Attribute {
     pub const INDEX_HASH: usize = 0;
@@ -11880,7 +11880,7 @@ impl From<&AttributeList> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct VisibilityDefault {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl VisibilityDefault {
     pub fn new_green(db: &dyn SyntaxGroup) -> VisibilityDefaultGreen {
@@ -11955,7 +11955,7 @@ impl From<&VisibilityDefault> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct VisibilityPubArgumentClause {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl VisibilityPubArgumentClause {
     pub const INDEX_LPAREN: usize = 0;
@@ -12149,7 +12149,7 @@ impl OptionVisibilityPubArgumentClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionVisibilityPubArgumentClauseEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionVisibilityPubArgumentClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionVisibilityPubArgumentClauseEmptyGreen {
@@ -12225,7 +12225,7 @@ impl From<&OptionVisibilityPubArgumentClauseEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct VisibilityPub {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl VisibilityPub {
     pub const INDEX_PUB_KW: usize = 0;
@@ -12404,7 +12404,7 @@ impl Visibility {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemModule {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ItemModule {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -12612,7 +12612,7 @@ impl MaybeModuleBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ModuleBody {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ModuleBody {
     pub const INDEX_LBRACE: usize = 0;
@@ -12712,7 +12712,7 @@ impl From<&ModuleBody> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FunctionDeclaration {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl FunctionDeclaration {
     pub const INDEX_FUNCTION_KW: usize = 0;
@@ -12827,7 +12827,7 @@ impl From<&FunctionDeclaration> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemConstant {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ItemConstant {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -12975,7 +12975,7 @@ impl From<&ItemConstant> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FunctionWithBody {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl FunctionWithBody {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -13090,7 +13090,7 @@ impl From<&FunctionWithBody> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemExternFunction {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ItemExternFunction {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -13212,7 +13212,7 @@ impl From<&ItemExternFunction> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemExternType {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ItemExternType {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -13353,7 +13353,7 @@ impl From<&ItemExternType> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemTrait {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ItemTrait {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -13568,7 +13568,7 @@ impl MaybeTraitBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitBody {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl TraitBody {
     pub const INDEX_LBRACE: usize = 0;
@@ -13868,7 +13868,7 @@ impl TraitItem {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemMissing {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl TraitItemMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> TraitItemMissingGreen {
@@ -13943,7 +13943,7 @@ impl From<&TraitItemMissing> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemFunction {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl TraitItemFunction {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -14052,7 +14052,7 @@ impl From<&TraitItemFunction> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemType {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl TraitItemType {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -14174,7 +14174,7 @@ impl From<&TraitItemType> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemConstant {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl TraitItemConstant {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -14296,7 +14296,7 @@ impl From<&TraitItemConstant> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemImpl {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl TraitItemImpl {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -14514,7 +14514,7 @@ impl MaybeTraitFunctionBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemImpl {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ItemImpl {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -14662,7 +14662,7 @@ impl From<&ItemImpl> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemInlineMacro {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ItemInlineMacro {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -14859,7 +14859,7 @@ impl MaybeImplBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ImplBody {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ImplBody {
     pub const INDEX_LBRACE: usize = 0;
@@ -15261,7 +15261,7 @@ impl ImplItem {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ImplItemMissing {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ImplItemMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> ImplItemMissingGreen {
@@ -15336,7 +15336,7 @@ impl From<&ImplItemMissing> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemImplAlias {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ItemImplAlias {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -15484,7 +15484,7 @@ impl From<&ItemImplAlias> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemStruct {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ItemStruct {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -15632,7 +15632,7 @@ impl From<&ItemStruct> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemEnum {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ItemEnum {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -15780,7 +15780,7 @@ impl From<&ItemEnum> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemTypeAlias {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ItemTypeAlias {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -15928,7 +15928,7 @@ impl From<&ItemTypeAlias> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemUse {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ItemUse {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -16147,7 +16147,7 @@ impl UsePath {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UsePathLeaf {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl UsePathLeaf {
     pub const INDEX_IDENT: usize = 0;
@@ -16255,7 +16255,7 @@ impl From<&UsePathLeaf> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UsePathSingle {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl UsePathSingle {
     pub const INDEX_IDENT: usize = 0;
@@ -16355,7 +16355,7 @@ impl From<&UsePathSingle> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UsePathMulti {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl UsePathMulti {
     pub const INDEX_LBRACE: usize = 0;
@@ -16550,7 +16550,7 @@ impl From<&UsePathList> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AliasClause {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl AliasClause {
     pub const INDEX_AS_KW: usize = 0;
@@ -16740,7 +16740,7 @@ impl OptionAliasClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionAliasClauseEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionAliasClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionAliasClauseEmptyGreen {
@@ -16902,7 +16902,7 @@ impl GenericArg {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgNamed {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl GenericArgNamed {
     pub const INDEX_NAME: usize = 0;
@@ -17002,7 +17002,7 @@ impl From<&GenericArgNamed> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgUnnamed {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl GenericArgUnnamed {
     pub const INDEX_VALUE: usize = 0;
@@ -17174,7 +17174,7 @@ impl GenericArgValue {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgValueExpr {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl GenericArgValueExpr {
     pub const INDEX_EXPR: usize = 0;
@@ -17257,7 +17257,7 @@ impl From<&GenericArgValueExpr> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgs {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl GenericArgs {
     pub const INDEX_LANGLE: usize = 0;
@@ -17544,7 +17544,7 @@ impl OptionWrappedGenericParamList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionWrappedGenericParamListEmpty {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl OptionWrappedGenericParamListEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionWrappedGenericParamListEmptyGreen {
@@ -17619,7 +17619,7 @@ impl From<&OptionWrappedGenericParamListEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WrappedGenericParamList {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl WrappedGenericParamList {
     pub const INDEX_LANGLE: usize = 0;
@@ -17949,7 +17949,7 @@ impl GenericParam {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamType {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl GenericParamType {
     pub const INDEX_NAME: usize = 0;
@@ -18041,7 +18041,7 @@ impl From<&GenericParamType> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamConst {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl GenericParamConst {
     pub const INDEX_CONST_KW: usize = 0;
@@ -18156,7 +18156,7 @@ impl From<&GenericParamConst> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamImplNamed {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl GenericParamImplNamed {
     pub const INDEX_IMPL_KW: usize = 0;
@@ -18271,7 +18271,7 @@ impl From<&GenericParamImplNamed> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamImplAnonymous {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl GenericParamImplAnonymous {
     pub const INDEX_PLUS: usize = 0;
@@ -18362,7 +18362,7 @@ impl From<&GenericParamImplAnonymous> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamNegativeImpl {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl GenericParamNegativeImpl {
     pub const INDEX_MINUS: usize = 0;
@@ -18453,7 +18453,7 @@ impl From<&GenericParamNegativeImpl> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TriviumSkippedNode {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl TriviumSkippedNode {
     pub const INDEX_NODE: usize = 0;
@@ -18698,7 +18698,7 @@ impl From<&TokenIdentifier> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalIdentifier {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalIdentifier {
     const KIND: SyntaxKind = SyntaxKind::TerminalIdentifier;
@@ -18876,7 +18876,7 @@ impl From<&TokenLiteralNumber> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLiteralNumber {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLiteralNumber {
     const KIND: SyntaxKind = SyntaxKind::TerminalLiteralNumber;
@@ -19053,7 +19053,7 @@ impl From<&TokenShortString> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalShortString {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalShortString {
     const KIND: SyntaxKind = SyntaxKind::TerminalShortString;
@@ -19230,7 +19230,7 @@ impl From<&TokenString> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalString {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalString {
     const KIND: SyntaxKind = SyntaxKind::TerminalString;
@@ -19407,7 +19407,7 @@ impl From<&TokenAs> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalAs {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalAs {
     const KIND: SyntaxKind = SyntaxKind::TerminalAs;
@@ -19584,7 +19584,7 @@ impl From<&TokenConst> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalConst {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalConst {
     const KIND: SyntaxKind = SyntaxKind::TerminalConst;
@@ -19761,7 +19761,7 @@ impl From<&TokenElse> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalElse {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalElse {
     const KIND: SyntaxKind = SyntaxKind::TerminalElse;
@@ -19938,7 +19938,7 @@ impl From<&TokenEnum> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEnum {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalEnum {
     const KIND: SyntaxKind = SyntaxKind::TerminalEnum;
@@ -20115,7 +20115,7 @@ impl From<&TokenExtern> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalExtern {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalExtern {
     const KIND: SyntaxKind = SyntaxKind::TerminalExtern;
@@ -20292,7 +20292,7 @@ impl From<&TokenFalse> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalFalse {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalFalse {
     const KIND: SyntaxKind = SyntaxKind::TerminalFalse;
@@ -20469,7 +20469,7 @@ impl From<&TokenFunction> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalFunction {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalFunction {
     const KIND: SyntaxKind = SyntaxKind::TerminalFunction;
@@ -20646,7 +20646,7 @@ impl From<&TokenIf> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalIf {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalIf {
     const KIND: SyntaxKind = SyntaxKind::TerminalIf;
@@ -20823,7 +20823,7 @@ impl From<&TokenWhile> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalWhile {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalWhile {
     const KIND: SyntaxKind = SyntaxKind::TerminalWhile;
@@ -21000,7 +21000,7 @@ impl From<&TokenFor> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalFor {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalFor {
     const KIND: SyntaxKind = SyntaxKind::TerminalFor;
@@ -21177,7 +21177,7 @@ impl From<&TokenLoop> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLoop {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLoop {
     const KIND: SyntaxKind = SyntaxKind::TerminalLoop;
@@ -21354,7 +21354,7 @@ impl From<&TokenImpl> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalImpl {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalImpl {
     const KIND: SyntaxKind = SyntaxKind::TerminalImpl;
@@ -21531,7 +21531,7 @@ impl From<&TokenImplicits> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalImplicits {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalImplicits {
     const KIND: SyntaxKind = SyntaxKind::TerminalImplicits;
@@ -21708,7 +21708,7 @@ impl From<&TokenLet> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLet {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLet {
     const KIND: SyntaxKind = SyntaxKind::TerminalLet;
@@ -21885,7 +21885,7 @@ impl From<&TokenMatch> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMatch {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMatch {
     const KIND: SyntaxKind = SyntaxKind::TerminalMatch;
@@ -22062,7 +22062,7 @@ impl From<&TokenModule> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalModule {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalModule {
     const KIND: SyntaxKind = SyntaxKind::TerminalModule;
@@ -22239,7 +22239,7 @@ impl From<&TokenMut> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMut {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMut {
     const KIND: SyntaxKind = SyntaxKind::TerminalMut;
@@ -22416,7 +22416,7 @@ impl From<&TokenNoPanic> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalNoPanic {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalNoPanic {
     const KIND: SyntaxKind = SyntaxKind::TerminalNoPanic;
@@ -22593,7 +22593,7 @@ impl From<&TokenOf> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalOf {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalOf {
     const KIND: SyntaxKind = SyntaxKind::TerminalOf;
@@ -22770,7 +22770,7 @@ impl From<&TokenRef> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalRef {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalRef {
     const KIND: SyntaxKind = SyntaxKind::TerminalRef;
@@ -22947,7 +22947,7 @@ impl From<&TokenContinue> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalContinue {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalContinue {
     const KIND: SyntaxKind = SyntaxKind::TerminalContinue;
@@ -23124,7 +23124,7 @@ impl From<&TokenReturn> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalReturn {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalReturn {
     const KIND: SyntaxKind = SyntaxKind::TerminalReturn;
@@ -23301,7 +23301,7 @@ impl From<&TokenBreak> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalBreak {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalBreak {
     const KIND: SyntaxKind = SyntaxKind::TerminalBreak;
@@ -23478,7 +23478,7 @@ impl From<&TokenStruct> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalStruct {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalStruct {
     const KIND: SyntaxKind = SyntaxKind::TerminalStruct;
@@ -23655,7 +23655,7 @@ impl From<&TokenTrait> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalTrait {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalTrait {
     const KIND: SyntaxKind = SyntaxKind::TerminalTrait;
@@ -23832,7 +23832,7 @@ impl From<&TokenTrue> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalTrue {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalTrue {
     const KIND: SyntaxKind = SyntaxKind::TerminalTrue;
@@ -24009,7 +24009,7 @@ impl From<&TokenType> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalType {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalType {
     const KIND: SyntaxKind = SyntaxKind::TerminalType;
@@ -24186,7 +24186,7 @@ impl From<&TokenUse> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalUse {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalUse {
     const KIND: SyntaxKind = SyntaxKind::TerminalUse;
@@ -24363,7 +24363,7 @@ impl From<&TokenPub> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalPub {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalPub {
     const KIND: SyntaxKind = SyntaxKind::TerminalPub;
@@ -24540,7 +24540,7 @@ impl From<&TokenAnd> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalAnd {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalAnd {
     const KIND: SyntaxKind = SyntaxKind::TerminalAnd;
@@ -24717,7 +24717,7 @@ impl From<&TokenAndAnd> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalAndAnd {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalAndAnd {
     const KIND: SyntaxKind = SyntaxKind::TerminalAndAnd;
@@ -24894,7 +24894,7 @@ impl From<&TokenArrow> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalArrow {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalArrow {
     const KIND: SyntaxKind = SyntaxKind::TerminalArrow;
@@ -25071,7 +25071,7 @@ impl From<&TokenAt> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalAt {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalAt {
     const KIND: SyntaxKind = SyntaxKind::TerminalAt;
@@ -25249,7 +25249,7 @@ impl From<&TokenBadCharacters> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalBadCharacters {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalBadCharacters {
     const KIND: SyntaxKind = SyntaxKind::TerminalBadCharacters;
@@ -25426,7 +25426,7 @@ impl From<&TokenColon> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalColon {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalColon {
     const KIND: SyntaxKind = SyntaxKind::TerminalColon;
@@ -25603,7 +25603,7 @@ impl From<&TokenColonColon> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalColonColon {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalColonColon {
     const KIND: SyntaxKind = SyntaxKind::TerminalColonColon;
@@ -25780,7 +25780,7 @@ impl From<&TokenComma> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalComma {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalComma {
     const KIND: SyntaxKind = SyntaxKind::TerminalComma;
@@ -25957,7 +25957,7 @@ impl From<&TokenDiv> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDiv {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalDiv {
     const KIND: SyntaxKind = SyntaxKind::TerminalDiv;
@@ -26134,7 +26134,7 @@ impl From<&TokenDivEq> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDivEq {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalDivEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalDivEq;
@@ -26311,7 +26311,7 @@ impl From<&TokenDot> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDot {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalDot {
     const KIND: SyntaxKind = SyntaxKind::TerminalDot;
@@ -26488,7 +26488,7 @@ impl From<&TokenDotDot> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDotDot {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalDotDot {
     const KIND: SyntaxKind = SyntaxKind::TerminalDotDot;
@@ -26665,7 +26665,7 @@ impl From<&TokenEndOfFile> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEndOfFile {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalEndOfFile {
     const KIND: SyntaxKind = SyntaxKind::TerminalEndOfFile;
@@ -26842,7 +26842,7 @@ impl From<&TokenEq> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEq {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalEq;
@@ -27019,7 +27019,7 @@ impl From<&TokenEqEq> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEqEq {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalEqEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalEqEq;
@@ -27196,7 +27196,7 @@ impl From<&TokenGE> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalGE {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalGE {
     const KIND: SyntaxKind = SyntaxKind::TerminalGE;
@@ -27373,7 +27373,7 @@ impl From<&TokenGT> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalGT {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalGT {
     const KIND: SyntaxKind = SyntaxKind::TerminalGT;
@@ -27550,7 +27550,7 @@ impl From<&TokenHash> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalHash {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalHash {
     const KIND: SyntaxKind = SyntaxKind::TerminalHash;
@@ -27727,7 +27727,7 @@ impl From<&TokenLBrace> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLBrace {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLBrace {
     const KIND: SyntaxKind = SyntaxKind::TerminalLBrace;
@@ -27904,7 +27904,7 @@ impl From<&TokenLBrack> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLBrack {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLBrack {
     const KIND: SyntaxKind = SyntaxKind::TerminalLBrack;
@@ -28081,7 +28081,7 @@ impl From<&TokenLE> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLE {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLE {
     const KIND: SyntaxKind = SyntaxKind::TerminalLE;
@@ -28258,7 +28258,7 @@ impl From<&TokenLParen> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLParen {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLParen {
     const KIND: SyntaxKind = SyntaxKind::TerminalLParen;
@@ -28435,7 +28435,7 @@ impl From<&TokenLT> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLT {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalLT {
     const KIND: SyntaxKind = SyntaxKind::TerminalLT;
@@ -28612,7 +28612,7 @@ impl From<&TokenMatchArrow> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMatchArrow {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMatchArrow {
     const KIND: SyntaxKind = SyntaxKind::TerminalMatchArrow;
@@ -28789,7 +28789,7 @@ impl From<&TokenMinus> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMinus {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMinus {
     const KIND: SyntaxKind = SyntaxKind::TerminalMinus;
@@ -28966,7 +28966,7 @@ impl From<&TokenMinusEq> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMinusEq {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMinusEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalMinusEq;
@@ -29143,7 +29143,7 @@ impl From<&TokenMod> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMod {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMod {
     const KIND: SyntaxKind = SyntaxKind::TerminalMod;
@@ -29320,7 +29320,7 @@ impl From<&TokenModEq> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalModEq {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalModEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalModEq;
@@ -29497,7 +29497,7 @@ impl From<&TokenMul> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMul {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMul {
     const KIND: SyntaxKind = SyntaxKind::TerminalMul;
@@ -29674,7 +29674,7 @@ impl From<&TokenMulEq> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMulEq {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalMulEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalMulEq;
@@ -29851,7 +29851,7 @@ impl From<&TokenNeq> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalNeq {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalNeq {
     const KIND: SyntaxKind = SyntaxKind::TerminalNeq;
@@ -30028,7 +30028,7 @@ impl From<&TokenNot> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalNot {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalNot {
     const KIND: SyntaxKind = SyntaxKind::TerminalNot;
@@ -30205,7 +30205,7 @@ impl From<&TokenBitNot> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalBitNot {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalBitNot {
     const KIND: SyntaxKind = SyntaxKind::TerminalBitNot;
@@ -30382,7 +30382,7 @@ impl From<&TokenOr> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalOr {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalOr {
     const KIND: SyntaxKind = SyntaxKind::TerminalOr;
@@ -30559,7 +30559,7 @@ impl From<&TokenOrOr> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalOrOr {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalOrOr {
     const KIND: SyntaxKind = SyntaxKind::TerminalOrOr;
@@ -30736,7 +30736,7 @@ impl From<&TokenPlus> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalPlus {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalPlus {
     const KIND: SyntaxKind = SyntaxKind::TerminalPlus;
@@ -30913,7 +30913,7 @@ impl From<&TokenPlusEq> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalPlusEq {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalPlusEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalPlusEq;
@@ -31090,7 +31090,7 @@ impl From<&TokenQuestionMark> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalQuestionMark {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalQuestionMark {
     const KIND: SyntaxKind = SyntaxKind::TerminalQuestionMark;
@@ -31267,7 +31267,7 @@ impl From<&TokenRBrace> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalRBrace {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalRBrace {
     const KIND: SyntaxKind = SyntaxKind::TerminalRBrace;
@@ -31444,7 +31444,7 @@ impl From<&TokenRBrack> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalRBrack {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalRBrack {
     const KIND: SyntaxKind = SyntaxKind::TerminalRBrack;
@@ -31621,7 +31621,7 @@ impl From<&TokenRParen> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalRParen {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalRParen {
     const KIND: SyntaxKind = SyntaxKind::TerminalRParen;
@@ -31798,7 +31798,7 @@ impl From<&TokenSemicolon> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalSemicolon {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalSemicolon {
     const KIND: SyntaxKind = SyntaxKind::TerminalSemicolon;
@@ -31975,7 +31975,7 @@ impl From<&TokenUnderscore> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalUnderscore {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalUnderscore {
     const KIND: SyntaxKind = SyntaxKind::TerminalUnderscore;
@@ -32152,7 +32152,7 @@ impl From<&TokenXor> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalXor {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl Terminal for TerminalXor {
     const KIND: SyntaxKind = SyntaxKind::TerminalXor;
@@ -32254,7 +32254,7 @@ impl From<&TerminalXor> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SyntaxFile {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl SyntaxFile {
     pub const INDEX_ITEMS: usize = 0;

@@ -15,7 +15,7 @@ fn test_db() -> (FilesDatabaseForTesting, FileId) {
         parent: None,
         name: "name".into(),
         content: Arc::new(TEST_STRING.into()),
-        code_mappings: Default::default(),
+        code_mappings: Arc::new([]),
         kind: FileKind::Module,
     })
     .intern(&db);

@@ -152,7 +152,7 @@ pub fn module_usable_trait_ids(
     module_id: ModuleId,
 ) -> Maybe<Arc<OrderedHashSet<TraitId>>> {
     let mut module_traits =
-        OrderedHashSet::from_iter(db.module_traits_ids(module_id)?.deref().clone());
+        OrderedHashSet::from_iter(db.module_traits_ids(module_id)?.deref().to_vec());
     // Add traits from impls in the module.
     for imp in db.module_impls_ids(module_id)?.iter().copied() {
         let Ok(trait_id) = db.impl_def_trait(imp) else {

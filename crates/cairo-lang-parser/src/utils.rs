@@ -65,7 +65,7 @@ impl SimpleParserDatabase {
             parent: None,
             name: "parser_input".into(),
             content: Arc::new(content.to_string()),
-            code_mappings: Default::default(),
+            code_mappings: Arc::new([]),
             kind: FileKind::Module,
         })
         .intern(self);

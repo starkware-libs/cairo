@@ -93,6 +93,16 @@ where
     }
 }
 
+impl<Db: ?Sized, T> DebugWithDb<Db> for [T]
+where
+    T: DebugWithDb<Db>,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
+        let elements = self.iter().map(|e| e.debug(db));
+        f.debug_list().entries(elements).finish()
+    }
+}
+
 impl<Db: ?Sized, T> DebugWithDb<Db> for Vec<T>
 where
     T: DebugWithDb<Db>,

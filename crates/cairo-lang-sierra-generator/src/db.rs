@@ -87,7 +87,7 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     /// A type depends on another type if it contains or may contain it, as a field or by holding a
     /// reference to it.
     #[salsa::invoke(crate::types::type_dependencies)]
-    fn type_dependencies(&self, type_id: semantic::TypeId) -> Maybe<Arc<Vec<semantic::TypeId>>>;
+    fn type_dependencies(&self, type_id: semantic::TypeId) -> Maybe<Arc<[semantic::TypeId]>>;
 
     /// Returns the [cairo_lang_sierra::program::FunctionSignature] object for the given function
     /// id.

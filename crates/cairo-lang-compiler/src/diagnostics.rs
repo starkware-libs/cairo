@@ -128,9 +128,11 @@ impl<'a> DiagnosticsReporter<'a> {
             }
 
             for module_id in &*db.crate_modules(crate_id) {
-                for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
-                    found_diagnostics |=
-                        self.check_diag_group(db.upcast(), db.file_syntax_diagnostics(file_id));
+                if let Ok(module_files) = db.module_files(*module_id) {
+                    for file_id in module_files.iter().copied() {
+                        found_diagnostics |=
+                            self.check_diag_group(db.upcast(), db.file_syntax_diagnostics(file_id));
+                    }
                 }
 
                 if let Ok(group) = db.module_semantic_diagnostics(*module_id) {

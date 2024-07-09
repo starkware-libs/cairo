@@ -672,7 +672,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         #[derive(Clone, Debug, Eq, Hash, PartialEq)]
         pub struct $(&name) {
             node: SyntaxNode,
-            children: Arc<Vec<SyntaxNode>>,
+            children: Arc<[SyntaxNode]>,
         }
         $new_green_impl
         impl $(&name) {

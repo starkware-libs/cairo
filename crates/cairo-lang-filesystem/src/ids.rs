@@ -106,7 +106,7 @@ pub struct VirtualFile {
     pub parent: Option<FileId>,
     pub name: SmolStr,
     pub content: Arc<String>,
-    pub code_mappings: Arc<Vec<CodeMapping>>,
+    pub code_mappings: Arc<[CodeMapping]>,
     pub kind: FileKind,
 }
 impl VirtualFile {
