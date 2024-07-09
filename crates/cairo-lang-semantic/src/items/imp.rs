@@ -16,6 +16,7 @@ use cairo_lang_diagnostics::{
 use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -2856,9 +2857,12 @@ fn validate_impl_function_signature(
 
         if expected_ty != actual_ty {
             diagnostics.report(
-                &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
-                    .type_clause(syntax_db)
-                    .ty(syntax_db),
+                &extract_matches!(
+                    signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
+                        .type_clause(syntax_db),
+                    OptionTypeClause::TypeClause
+                )
+                .ty(syntax_db),
                 WrongParameterType {
                     impl_def_id,
                     impl_function_id,

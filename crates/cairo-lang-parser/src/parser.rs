@@ -2073,9 +2073,11 @@ impl<'a> Parser<'a> {
             self.parse_identifier()
         };
 
-        let type_clause = self.parse_type_clause(ErrorRecovery {
-            should_stop: is_of_kind!(comma, rparen, module_item_kw),
-        });
+        let type_clause = self
+            .parse_type_clause(ErrorRecovery {
+                should_stop: is_of_kind!(comma, rparen, module_item_kw),
+            })
+            .into();
         Ok(Param::new_green(
             self.db,
             ModifierList::new_green(self.db, modifier_list),

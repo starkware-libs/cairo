@@ -2,11 +2,11 @@ use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
-use cairo_lang_syntax::node::ast::{self, Attribute, Modifier};
+use cairo_lang_syntax::node::ast::{self, Attribute, Modifier, OptionTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{is_single_arg_attr, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{require, try_extract_matches};
+use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 
 use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR};
 
@@ -35,7 +35,10 @@ impl ParamEx for ast::Param {
     }
 
     fn try_extract_snapshot(&self, db: &dyn SyntaxGroup) -> Option<ast::Expr> {
-        let unary = try_extract_matches!(self.type_clause(db).ty(db), ast::Expr::Unary)?;
+        let unary = try_extract_matches!(
+            extract_matches!(self.type_clause(db), OptionTypeClause::TypeClause).ty(db),
+            ast::Expr::Unary
+        )?;
         require(matches!(unary.op(db), ast::UnaryOperator::At(_)))?;
         Some(unary.expr(db))
     }
