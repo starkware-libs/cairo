@@ -153,7 +153,7 @@ impl<'a> DiagnosticsReporter<'a> {
         group: Diagnostics<TEntry>,
     ) -> bool {
         let mut found: bool = false;
-        for entry in group.format_with_severity(db) {
+        for entry in group.format_with_severity(db, false) {
             if !entry.is_empty() {
                 self.callback.on_diagnostic(entry);
                 found |= !self.allow_warnings || group.check_error_free().is_err();
