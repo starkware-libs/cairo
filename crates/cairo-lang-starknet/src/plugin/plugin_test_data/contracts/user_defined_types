@@ -723,23 +723,3 @@ warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[featur
  --> lib.cairo:11:28
         zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
                            ^*******^
-
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:10:18
-        mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
-                 ^*******^
-
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:11:28
-        zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
-                           ^*******^
-
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:10:18
-        mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
-                 ^*******^
-
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:11:28
-        zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
-                           ^*******^

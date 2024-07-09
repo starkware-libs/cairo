@@ -33,11 +33,6 @@ error: Trait has no implementation in context: core::starknet::event::Event::<te
     #[derive(Drop, starknet::Event)]
                    ^*************^
 
-error: Trait has no implementation in context: core::starknet::event::Event::<test::A>.
- --> lib.cairo:10:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
-
 //! > ==========================================================================
 
 //! > Test flat event variant which is not an enum.

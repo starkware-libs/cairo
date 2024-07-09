@@ -1091,13 +1091,3 @@ warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[featur
  --> lib.cairo:14:14
         map: LegacyMap<u32, u32>,
              ^*******^
-
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:14:14
-        map: LegacyMap<u32, u32>,
-             ^*******^
-
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:14:14
-        map: LegacyMap<u32, u32>,
-             ^*******^
