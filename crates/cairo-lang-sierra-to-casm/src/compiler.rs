@@ -27,6 +27,9 @@ use cairo_lang_sierra::program::{
     BranchTarget, GenericArg, Invocation, Program, Statement, StatementIdx,
 };
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use cairo_lang_sierra::type_resolver::TypeResolver;
+use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
+use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::casts::IntoOrPanic;
@@ -159,6 +162,9 @@ impl CasmCairoProgram {
         cairo_program: &CairoProgram,
         add_pythonic_hints: bool,
     ) -> Result<Self, CompilationError> {
+        let replacer = CanonicalReplacer::from_program(&sierra_program);
+        let sierra_program = &replacer.apply(&sierra_program);
+
         let prime = Felt252::prime();
 
         let compiler_version = current_compiler_version_id().to_string();
@@ -193,10 +199,10 @@ impl CasmCairoProgram {
             PedersenType::id(),
             EcOpType::id(),
             PoseidonType::id(),
-            RangeCheck96Type::id(),
+            SegmentArenaType::id(),
             GasBuiltinType::id(),
             SystemType::id(),
-            SegmentArenaType::id(),
+            RangeCheck96Type::id(),
             AddModType::id(),
             MulModType::id(),
         ]);
@@ -221,20 +227,14 @@ impl CasmCairoProgram {
                         .unwrap()
                         .to_string();
 
+                let type_resolver = TypeResolver { type_decl: &sierra_program.type_declarations };
                 let mut builtins: Vec<String> = Vec::new();
                 let mut input_args: Vec<CasmCairoArg> = Vec::new();
                 let mut return_arg: Vec<CasmCairoArg> = Vec::new();
 
                 for type_id in f.signature.param_types.iter() {
-                    let generic_id = GenericTypeId::from(
-                        type_id
-                            .debug_name
-                            .as_ref()
-                            .ok_or(CasmCairoProgramError::MissingFunctionDebugName {})
-                            .unwrap()
-                            .clone(),
-                    );
-                    if builtin_types.contains(&generic_id) {
+                    let generic_id = type_resolver.get_generic_id(type_id);
+                    if builtin_types.contains(generic_id) {
                         builtins.push(generic_id.0.as_str().to_case(Case::Snake));
                     } else {
                         let name = generic_id.0.to_string();
