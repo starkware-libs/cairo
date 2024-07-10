@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
-use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, PHANTOM_ATTR};
+use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, Intern, LookupIntern, OptionFrom};
@@ -161,16 +161,23 @@ impl TypeLongId {
     }
 
     /// Returns whether the type is phantom.
-    /// Type is considered phantom if it has the `#[phantom]` attribute, or is a tuple or fixed
-    /// sized array containing it.
+    /// Type is considered phantom if it has the `#[phantom]` attribute, (or an other attribute
+    /// declared by a plugin as defining a phantom type), or is a tuple or fixed sized array
+    /// containing it.
     pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
+        let phantom_type_attributes = db.declared_phantom_type_attributes();
         match self {
             TypeLongId::Concrete(id) => match id {
-                ConcreteTypeId::Struct(id) => id.has_attr(db, PHANTOM_ATTR),
-                ConcreteTypeId::Enum(id) => id.has_attr(db, PHANTOM_ATTR),
-                ConcreteTypeId::Extern(id) => id.has_attr(db, PHANTOM_ATTR),
-            }
-            .unwrap_or_default(),
+                ConcreteTypeId::Struct(id) => phantom_type_attributes
+                    .iter()
+                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
+                ConcreteTypeId::Enum(id) => phantom_type_attributes
+                    .iter()
+                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
+                ConcreteTypeId::Extern(id) => phantom_type_attributes
+                    .iter()
+                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
+            },
             TypeLongId::Tuple(inner) => inner.iter().any(|ty| ty.is_phantom(db)),
             TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_phantom(db),
             TypeLongId::Snapshot(_)

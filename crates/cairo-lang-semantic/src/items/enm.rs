@@ -5,7 +5,6 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_syntax::attribute::consts::PHANTOM_ATTR;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -251,7 +250,11 @@ pub fn enum_definition_diagnostics(
     };
     // If the enum is a phantom type, no need to check if its variants are fully valid types, as
     // they won't be used.
-    if enum_id.has_attr(db, PHANTOM_ATTR).unwrap_or_default() {
+    if db
+        .declared_phantom_type_attributes()
+        .iter()
+        .any(|attr| enum_id.has_attr(db, attr).unwrap_or_default())
+    {
         return data.diagnostics;
     }
     let mut diagnostics = SemanticDiagnostics::from(data.diagnostics);

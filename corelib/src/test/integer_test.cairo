@@ -1927,6 +1927,8 @@ fn test_signed_int_diff() {
 
 mod bounded_int {
     use core::internal::BoundedInt;
+    use core::RangeCheck;
+
     extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
     extern fn upcast<T, S>(index: T) -> S nopanic;
 

@@ -126,6 +126,13 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     fn executable_attributes(&self) -> Vec<String> {
         Vec::new()
     }
+
+    /// Attributes that mark a type as a phantom type. Must return a subset of
+    /// `declared_attributes`.
+    /// This mechanism is optional.
+    fn phantom_type_attributes(&self) -> Vec<String> {
+        Vec::new()
+    }
 }
 
 /// Result of plugin code generation.
@@ -146,6 +153,11 @@ pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send {
         item_ast: &ast::ExprInlineMacro,
         metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult;
+
+    /// Allows for the plugin to provide documentation for an inline macro.
+    fn documentation(&self) -> Option<String> {
+        None
+    }
 }
 
 /// A trait for easier addition of macro plugins.

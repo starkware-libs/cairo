@@ -1,6 +1,7 @@
 use core::traits::{Into, TryInto};
 use core::option::OptionTrait;
 use core::integer::{u128_safe_divmod, u128_to_felt252};
+use core::RangeCheck;
 
 pub(crate) const BYTES_IN_BYTES31: usize = 31;
 const BYTES_IN_U128: usize = 16;
@@ -30,7 +31,7 @@ pub impl Bytes31Impl of Bytes31Trait {
 }
 
 #[feature("deprecated-index-traits")]
-pub(crate) impl Bytes31IndexView of IndexView<bytes31, usize, u8> {
+pub(crate) impl Bytes31IndexView of core::traits::IndexView<bytes31, usize, u8> {
     fn index(self: @bytes31, index: usize) -> u8 {
         self.at(index)
     }

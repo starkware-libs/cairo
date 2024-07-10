@@ -1,9 +1,12 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
-use cairo_lang_syntax::node::ast::{self, MaybeTraitBody, OptionReturnTypeClause};
+use cairo_lang_syntax::node::ast::{
+    self, MaybeTraitBody, OptionReturnTypeClause, OptionTypeClause,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::extract_matches;
 use indoc::formatdoc;
 use itertools::Itertools;
 
@@ -108,7 +111,9 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     skip_generation = true;
                 }
                 let self_param_type_ok = if self_param.is_ref_param(db) {
-                    self_param.type_clause(db).ty(db).is_identifier(db, &single_generic_param)
+                    extract_matches!(self_param.type_clause(db), OptionTypeClause::TypeClause)
+                        .ty(db)
+                        .is_identifier(db, &single_generic_param)
                 } else if let Some(snapped_ty) = self_param.try_extract_snapshot(db) {
                     snapped_ty.is_identifier(db, &single_generic_param)
                 } else {
@@ -135,11 +140,17 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                                 .to_string(),
                         ))
                     }
-                    if param.type_clause(db).ty(db).is_dependent_type(db, &single_generic_param) {
+                    if extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
+                        .ty(db)
+                        .is_dependent_type(db, &single_generic_param)
+                    {
                         skip_generation = true;
 
                         diagnostics.push(PluginDiagnostic::error(
-                            param.type_clause(db).ty(db).stable_ptr().untyped(),
+                            extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
+                                .ty(db)
+                                .stable_ptr()
+                                .untyped(),
                             "`starknet::interface` functions don't support parameters that depend \
                              on the trait's generic param type."
                                 .to_string(),
@@ -155,7 +166,9 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         ))
                     }
 
-                    let param_type = param.type_clause(db).ty(db);
+                    let param_type =
+                        extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
+                            .ty(db);
                     let type_name = &param_type.as_syntax_node().get_text(db);
                     serialization_code.push(RewriteNode::interpolate_patched(
                         &formatdoc!(

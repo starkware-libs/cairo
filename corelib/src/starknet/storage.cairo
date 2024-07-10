@@ -206,6 +206,7 @@ pub trait StoragePathEntry<C> {
 /// A struct that represents a map in a contract storage.
 // TODO(Gil): Make it a phantom type once we can annotate a type as phantom from within another
 // attribute, specifically from #[storage].
+#[phantom]
 pub struct Map<K, V> {}
 
 /// A trait for making a map like type support implement the `StoragePathEntry` trait.
@@ -263,8 +264,6 @@ impl StorableEntryReadAccess<
     +EntryInfo<T>,
     +core::hash::Hash<EntryInfo::<T>::Key, StoragePathHashState>,
     +starknet::Store<EntryInfo::<T>::Value>,
-    +Drop<EntryInfo::<T>::Key>,
-    +Drop<EntryInfo::<T>::Value>
 > of StorageMapReadAccessTrait<StoragePath<T>> {
     type Key = EntryInfo::<T>::Key;
     type Value = EntryInfo::<T>::Value;
@@ -296,8 +295,6 @@ impl MutableStorableEntryReadAccess<
     +EntryInfo<MutableTrait::<T>::InnerType>,
     +core::hash::Hash<EntryInfo::<MutableTrait::<T>::InnerType>::Key, StoragePathHashState>,
     +starknet::Store<EntryInfo::<MutableTrait::<T>::InnerType>::Value>,
-    +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Key>,
-    +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Value>
 > of StorageMapReadAccessTrait<StoragePath<T>> {
     type Key = EntryInfo::<MutableTrait::<T>::InnerType>::Key;
     type Value = EntryInfo::<MutableTrait::<T>::InnerType>::Value;
@@ -318,7 +315,6 @@ impl MutableStorableEntryWriteAccess<
     +EntryInfo<MutableTrait::<T>::InnerType>,
     +core::hash::Hash<EntryInfo::<MutableTrait::<T>::InnerType>::Key, StoragePathHashState>,
     +starknet::Store<EntryInfo::<MutableTrait::<T>::InnerType>::Value>,
-    +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Key>,
     +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Value>
 > of StorageMapWriteAccessTrait<StoragePath<T>> {
     type Key = EntryInfo::<MutableTrait::<T>::InnerType>::Key;
@@ -436,9 +432,21 @@ impl StoragePointer0OffsetDeref<T> of core::ops::Deref<StoragePointer0Offset<T>>
 
 
 /// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
-struct PendingStoragePath<T> {
+pub struct PendingStoragePath<T> {
     hash_state: StoragePathHashState,
-    pending_key: felt252
+    pending_key: felt252,
+}
+
+/// A trait for creating a `PendingStoragePath` from a hash state and a key.
+pub trait PendingStoragePathTrait<T, S> {
+    fn new(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T>;
+}
+
+/// An implementation of `StoragePathEntry` for `PendingStoragePath`.
+impl PendingStoragePathImpl<T, S> of PendingStoragePathTrait<T, S> {
+    fn new(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T> {
+        PendingStoragePath { hash_state: *storage_path.hash_state, pending_key }
+    }
 }
 
 impl PendingStoragePathDrop<T> of Drop<PendingStoragePath<T>> {}
@@ -451,6 +459,14 @@ impl PendingStoragePathAsPath<T> of StorageAsPath<PendingStoragePath<T>> {
         StoragePath::<
             T
         > { hash_state: core::hash::HashStateTrait::update(*self.hash_state, *self.pending_key) }
+    }
+}
+
+/// Deref pending storage path into a storage path.
+impl PendingStoragePathDeref<T> of core::ops::Deref<PendingStoragePath<T>> {
+    type Target = StoragePath<T>;
+    fn deref(self: PendingStoragePath<T>) -> Self::Target {
+        self.as_path()
     }
 }
 
@@ -511,8 +527,6 @@ impl StorablePointerReadAccessImpl<
     T,
     impl PointerImpl: StorageAsPointer<T>,
     impl AccessImpl: StoragePointerReadAccess<StoragePointer0Offset<PointerImpl::Value>>,
-    +Drop<T>,
-    +Drop<AccessImpl::Value>,
 > of StoragePointerReadAccess<T> {
     type Value = AccessImpl::Value;
     fn read(self: @T) -> Self::Value {
@@ -554,6 +568,7 @@ impl PathableStorageEntryImpl<
 
 /// A wrapper around different storage related types, indicating that the instance is mutable,
 /// i.e. originally created from a `ref` contract state.
+#[phantom]
 pub struct Mutable<T> {}
 
 impl MutableDrop<T> of Drop<Mutable<T>> {}

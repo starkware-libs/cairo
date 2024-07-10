@@ -40,6 +40,9 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
+            SyntaxKind::TokenOr => {
+                matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprClosure))
+            }
             SyntaxKind::TokenLBrack
                 if !matches!(
                     grandparent_kind(db, self),
@@ -75,6 +78,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
+            SyntaxKind::ParamList
+                if parent_kind(db, self) == Some(SyntaxKind::ClosureParamWrapperNAry) =>
+            {
+                true
+            }
             _ => false,
         }
     }
@@ -93,6 +101,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                 grandparent_kind(db, self),
                 Some(SyntaxKind::PatternStruct | SyntaxKind::ExprStructCtorCall)
             ),
+            SyntaxKind::TokenOr => {
+                matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprClosure))
+            }
             SyntaxKind::ExprPath | SyntaxKind::TerminalIdentifier
                 if matches!(
                     parent_kind(db, self),
@@ -148,6 +159,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
             SyntaxKind::TokenDotDot
                 if grandparent_kind(db, self) == Some(SyntaxKind::StructArgTail) =>
+            {
+                true
+            }
+            SyntaxKind::ParamList
+                if parent_kind(db, self) == Some(SyntaxKind::ClosureParamWrapperNAry) =>
             {
                 true
             }
@@ -385,10 +401,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 ))
             }
             _ => match self.kind(db) {
-                SyntaxKind::ParamList
-                | SyntaxKind::ExprList
-                | SyntaxKind::ImplicitsList
-                | SyntaxKind::PatternList => {
+                SyntaxKind::ExprList | SyntaxKind::ImplicitsList | SyntaxKind::PatternList => {
                     BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
@@ -396,6 +409,19 @@ impl SyntaxNodeFormat for SyntaxNode {
                         false,
                     ))
                 }
+                SyntaxKind::ParamList
+                    if !matches!(
+                        parent_kind(db, self),
+                        Some(SyntaxKind::ClosureParamWrapperNAry)
+                    ) =>
+                {
+                    BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                        2,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    ))
+                } // }
                 SyntaxKind::StructArgList => {
                     BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
                         3,
@@ -536,7 +562,10 @@ impl SyntaxNodeFormat for SyntaxNode {
                     ))
                 }
                 SyntaxKind::TerminalOr
-                    if parent_kind(db, self) != Some(SyntaxKind::PatternListOr) =>
+                    if !matches!(
+                        parent_kind(db, self),
+                        Some(SyntaxKind::PatternListOr | SyntaxKind::ClosureParamWrapperNAry)
+                    ) =>
                 {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         13,

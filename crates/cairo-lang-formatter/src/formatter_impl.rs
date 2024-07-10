@@ -690,12 +690,12 @@ struct PendingLineState {
     /// Intermediate representation of the text to be emitted.
     line_buffer: LineBuilder,
     /// Should the next space between tokens be ignored.
-    force_no_space_after: bool,
+    prevent_next_space: bool,
 }
 
 impl PendingLineState {
     pub fn new() -> Self {
-        Self { line_buffer: LineBuilder::default(), force_no_space_after: true }
+        Self { line_buffer: LineBuilder::default(), prevent_next_space: true }
     }
 }
 
@@ -736,10 +736,8 @@ impl BreakLinePointsPositions {
 // TODO(spapini): Introduce the correct types here, to reflect the "applicable" nodes types.
 pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space before it.
-    /// Only applicable for token nodes.
     fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns true if a token should never have a space after it.
-    /// Only applicable for token nodes.
     fn force_no_space_after(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns true if the line is allowed to break after the node.
     /// Only applicable for terminal nodes.
@@ -787,12 +785,12 @@ impl<'a> FormatterImpl<'a> {
     }
     /// Gets a root of a syntax tree and returns the formatted string of the code it represents.
     pub fn get_formatted_string(&mut self, syntax_node: &SyntaxNode) -> String {
-        self.format_node(syntax_node, false);
+        self.format_node(syntax_node);
         self.line_state.line_buffer.build(self.config.max_line_length, self.config.tab_size)
     }
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
-    pub fn format_node(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
+    fn format_node(&mut self, syntax_node: &SyntaxNode) {
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
@@ -802,12 +800,18 @@ impl<'a> FormatterImpl<'a> {
         if let Some(precedence) = protected_zone_precedence {
             self.line_state.line_buffer.open_sub_builder(precedence);
         }
+        if syntax_node.force_no_space_before(self.db) {
+            self.line_state.prevent_next_space = true;
+        }
         if self.should_ignore_node_format(syntax_node) {
             self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
         } else if syntax_node.kind(self.db).is_terminal() {
-            self.format_terminal(syntax_node, no_space_after);
+            self.format_terminal(syntax_node);
         } else {
-            self.format_internal(syntax_node, no_space_after);
+            self.format_internal(syntax_node);
+        }
+        if syntax_node.force_no_space_after(self.db) {
+            self.line_state.prevent_next_space = true;
         }
         if protected_zone_precedence.is_some() {
             self.line_state.line_buffer.close_sub_builder();
@@ -815,12 +819,10 @@ impl<'a> FormatterImpl<'a> {
         self.append_break_line_point(node_break_points.trailing());
     }
     /// Formats an internal node and appends the formatted string to the result.
-    fn format_internal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
+    fn format_internal(&mut self, syntax_node: &SyntaxNode) {
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
-        let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db);
-
         // TODO(ilya): consider not copying here.
         let mut children = self.db.get_children(syntax_node.clone()).deref().clone();
         let n_children = children.len();
@@ -831,7 +833,7 @@ impl<'a> FormatterImpl<'a> {
             if child.width(self.db) == TextWidth::default() {
                 continue;
             }
-            self.format_node(child, no_space_after && i == n_children - 1);
+            self.format_node(child);
             if let BreakLinePointsPositions::List { properties, breaking_frequency } =
                 &internal_break_line_points_positions
             {
@@ -843,7 +845,7 @@ impl<'a> FormatterImpl<'a> {
         }
     }
     /// Formats a terminal node and appends the formatted string to the result.
-    fn format_terminal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
+    fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
         let children = self.db.get_children(syntax_node.clone());
         let mut children_iter = children.iter().cloned();
@@ -854,7 +856,7 @@ impl<'a> FormatterImpl<'a> {
         // The first newlines is the leading trivia correspond exactly to empty lines.
         self.format_trivia(leading_trivia, true);
         if !syntax_node.should_skip_terminal(self.db) {
-            self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
+            self.format_token(&token);
         }
         self.format_trivia(trailing_trivia, false);
     }
@@ -882,24 +884,22 @@ impl<'a> FormatterImpl<'a> {
                     self.is_current_line_whitespaces = true;
                 }
                 ast::Trivium::Skipped(_) => {
-                    self.format_token(&trivium.as_syntax_node(), false);
+                    self.format_token(&trivium.as_syntax_node());
                 }
                 ast::Trivium::SkippedNode(node) => {
-                    self.format_node(&node.as_syntax_node(), false);
+                    self.format_node(&node.as_syntax_node());
                 }
             }
         }
     }
     /// Formats a token node and appends it to the result.
     /// Assumes the given SyntaxNode is a token.
-    fn format_token(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
-        let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
+    fn format_token(&mut self, syntax_node: &SyntaxNode) {
         let text = syntax_node.text(self.db).unwrap();
-        if !syntax_node.force_no_space_before(self.db) && !self.line_state.force_no_space_after {
+        if !syntax_node.force_no_space_before(self.db) && !self.line_state.prevent_next_space {
             self.line_state.line_buffer.push_space();
         }
-        self.line_state.force_no_space_after = no_space_after;
-
+        self.line_state.prevent_next_space = syntax_node.force_no_space_after(self.db);
         if syntax_node.kind(self.db) != SyntaxKind::TokenWhitespace {
             self.is_current_line_whitespaces = false;
         }
@@ -911,7 +911,7 @@ impl<'a> FormatterImpl<'a> {
     fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {
         if let Some(properties) = properties {
             self.line_state.line_buffer.push_break_line_point(properties);
-            self.line_state.force_no_space_after = true;
+            self.line_state.prevent_next_space = true;
         }
     }
 

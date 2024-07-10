@@ -79,6 +79,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub data: u32,
 }
@@ -204,6 +205,7 @@ contract:
 
 
 
+#[phantom]
 pub struct Storage {
           pub test_component_storage: super::test_component::Storage,
           pub normal_member1: usize,
@@ -514,6 +516,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub data: u32,
 }
@@ -642,6 +645,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub data: u32,
 }
@@ -767,6 +771,7 @@ contract:
 
 
 
+#[phantom]
 pub struct Storage {
           pub component1_storage: super::component1::Storage,
           pub component2_storage: super::component2::Storage,
@@ -1112,6 +1117,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub data: u32,
 }
@@ -1240,6 +1246,7 @@ component:
 pub enum Event {}
 
 
+#[phantom]
 pub struct Storage {
           pub data: u32,
 }
@@ -1365,6 +1372,7 @@ contract:
 
 
 
+#[phantom]
 pub struct Storage {
           pub component1_storage: super::component1::Storage,
           pub component2_storage: super::component2::Storage,

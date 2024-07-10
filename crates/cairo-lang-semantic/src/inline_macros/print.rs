@@ -6,7 +6,7 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use indoc::formatdoc;
+use indoc::{formatdoc, indoc};
 
 use super::write::{WriteMacro, WritelnMacro};
 
@@ -25,6 +25,28 @@ impl InlineMacroExprPlugin for PrintMacro {
     ) -> InlinePluginResult {
         generate_code_inner(syntax, db, false)
     }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            indoc! {r#"
+            Prints to the standard output.
+            Equivalent to the `println!` macro except that a newline is not printed at the end of \
+            the message.
+
+            # Panics
+            Panics if any of the formatting of arguments fails.
+
+            # Examples
+            ```cairo
+            println!(\"hello\"); // Prints "hello".
+            let world: ByteArray = "world"; 
+            println!("hello {}", world_ba); // Prints "hello world".
+            println!("hello {world_ba}"); // Prints "hello world".
+            ```
+        "#}
+            .to_string(),
+        )
+    }
 }
 
 /// Macro for printing with a new line.
@@ -41,6 +63,28 @@ impl InlineMacroExprPlugin for PrintlnMacro {
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         generate_code_inner(syntax, db, true)
+    }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            indoc! {r#"
+            Prints to the standard output, with a newline.
+            This macro uses the same syntax as `format!`, but writes to the standard output instead.
+
+            # Panics
+            Panics if any of the formatting of arguments fails.
+
+            # Examples
+            ```cairo
+            println!(); // Prints an empty line.
+            println!(\"hello\"); // Prints "hello".
+            let world: ByteArray = "world"; 
+            println!("hello {}", world_ba); // Prints "hello world".
+            println!("hello {world_ba}"); // Prints "hello world".
+            ```
+        "#}
+            .to_string(),
+        )
     }
 }
 

@@ -67,7 +67,7 @@
       {
         "command": "cairo1.reload",
         "title": "Reload workspace",
-        "category": "cairo1"
+        "category": "Cairo"
       }
     ],
     "configuration": [
