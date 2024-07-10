@@ -150,6 +150,11 @@ pub fn get_sierra_program_for_functions(
     requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
     mut diagnostic_reporter: DiagnosticsReporter<'_>,
 ) -> Result<Arc<SierraProgramWithDebug>> {
+    if rayon::current_num_threads() > 1 {
+        // If we have more than one thread, we can use the other threads to warm up the db.
+        diagnostic_reporter.warm_up_diagnostics(db);
+    }
+
     diagnostic_reporter.ensure(db)?;
     db.get_sierra_program_for_functions(requested_function_ids)
         .to_option()
