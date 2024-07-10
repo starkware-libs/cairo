@@ -2609,13 +2609,3 @@ warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[featur
  --> lib.cairo:63:28
         legacy_map_balace: LegacyMap<usize, usize>,
                            ^*******^
-
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:63:28
-        legacy_map_balace: LegacyMap<usize, usize>,
-                           ^*******^
-
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:63:28
-        legacy_map_balace: LegacyMap<usize, usize>,
-                           ^*******^

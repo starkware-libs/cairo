@@ -67,7 +67,7 @@ impl Sub for TextOffset {
 }
 
 /// A range of text offsets that form a span (like text selection).
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct TextSpan {
     pub start: TextOffset,
     pub end: TextOffset,
