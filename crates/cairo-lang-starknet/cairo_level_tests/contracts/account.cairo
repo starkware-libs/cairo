@@ -5,6 +5,7 @@ mod account {
     use starknet::{
         account::Call, ContractAddress, syscalls::call_contract_syscall, SyscallResultTrait
     };
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     #[storage]
     struct Storage {

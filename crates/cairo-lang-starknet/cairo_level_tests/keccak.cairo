@@ -1,6 +1,6 @@
 /// Returns the selector for the given `ByteArray`.
 fn selector(ba: ByteArray) -> felt252 {
-    let value = keccak::compute_keccak_byte_array(@ba);
+    let value = core::keccak::compute_keccak_byte_array(@ba);
     u256 {
         low: core::integer::u128_byte_reverse(value.high),
         high: core::integer::u128_byte_reverse(value.low) & 0x3ffffffffffffffffffffffffffffff,

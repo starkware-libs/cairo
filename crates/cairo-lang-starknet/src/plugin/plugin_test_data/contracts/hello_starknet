@@ -17,6 +17,11 @@ trait HelloStarknetTrait<TContractState> {
 
 #[starknet::contract]
 mod hello_starknet {
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    #[storage]
+    struct Storage {
+        balance: usize,
+    }
 
     #[abi(embed_v0)]
     impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
@@ -32,18 +37,14 @@ mod hello_starknet {
 pub enum Event {}
 
 
-#[phantom]
-pub struct Storage {
-          pub balance: usize,
-}
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
-    pub balance: starknet::storage::StorageBase<usize>,
+ struct ContractStorageBase {
+     balance: starknet::storage::StorageBase<usize>,
 }
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
+ struct ContractStorageBaseMut {
+     balance: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -680,6 +681,11 @@ impl HelloStarknetTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<Hel
 impl MutableHelloStarknetTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableHelloStarknetTraitSafeDispatcherSubPointers>;
 impl MutableHelloStarknetTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableHelloStarknetTraitSafeDispatcherSubPointers>;
 
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    #[storage]
+    struct Storage {
+        balance: usize,
+    }
 
     #[abi(embed_v0)]
     impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
@@ -695,18 +701,14 @@ impl MutableHelloStarknetTraitSafeDispatcherSubPointersCopy of core::traits::Cop
 pub enum Event {}
 
 
-#[phantom]
-pub struct Storage {
-          pub balance: usize,
-}
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
-    pub balance: starknet::storage::StorageBase<usize>,
+ struct ContractStorageBase {
+     balance: starknet::storage::StorageBase<usize>,
 }
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
+ struct ContractStorageBaseMut {
+     balance: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;

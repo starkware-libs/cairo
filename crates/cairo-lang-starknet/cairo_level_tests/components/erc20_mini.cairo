@@ -1,5 +1,8 @@
 use starknet::{ContractAddress, get_caller_address, contract_address_const};
-use starknet::storage::{StorageAsPath, StorageNode, MutableStorageNode};
+use starknet::storage::{
+    StorageAsPath, StorageNode, MutableStorageNode, StoragePointerReadAccess,
+    StoragePointerWriteAccess, StorageMapReadAccessTrait, StorageMapWriteAccessTrait,
+};
 
 
 #[starknet::interface]

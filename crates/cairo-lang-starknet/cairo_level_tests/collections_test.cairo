@@ -1,15 +1,16 @@
-use core::starknet::storage::StoragePointerReadAccess;
-use core::starknet::storage::MutableVecTrait;
-use core::starknet::storage::StoragePathEntry;
+use core::starknet::storage::{
+    StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccessTrait,
+    StorageMapWriteAccessTrait, MutableVecTrait, StoragePathEntry
+};
 
 
 #[starknet::contract]
 mod contract_with_map {
     use starknet::storage::Map;
     #[storage]
-    struct Storage {
-        simple: Map<u64, u32>,
-        nested: Map<u64, Map<u64, u32>>,
+    pub struct Storage {
+        pub simple: Map<u64, u32>,
+        pub nested: Map<u64, Map<u64, u32>>,
     }
 }
 
@@ -17,9 +18,9 @@ mod contract_with_map {
 mod contract_with_vec {
     use starknet::storage::Vec;
     #[storage]
-    struct Storage {
-        simple: Vec<u32>,
-        nested: Vec<Vec<u32>>,
+    pub struct Storage {
+        pub simple: Vec<u32>,
+        pub nested: Vec<Vec<u32>>,
     }
 }
 
