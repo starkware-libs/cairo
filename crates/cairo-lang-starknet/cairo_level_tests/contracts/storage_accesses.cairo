@@ -38,8 +38,8 @@ mod storage_accesses {
     use starknet::ContractAddress;
     use super::{UserInfo, TransactionInfo};
     use starknet::storage::{
-        StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
-        StorageMapReadAccessTrait, StorageMapWriteAccessTrait
+        StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
+        StorageMapWriteAccess
     };
 
     #[storage]

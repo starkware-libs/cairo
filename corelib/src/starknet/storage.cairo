@@ -48,14 +48,14 @@ pub trait StoragePointerWriteAccess<T> {
 }
 
 /// Trait for reading a contract/component storage member in a specific key place.
-pub trait StorageMapReadAccessTrait<TMemberState> {
+pub trait StorageMapReadAccess<TMemberState> {
     type Key;
     type Value;
     fn read(self: TMemberState, key: Self::Key) -> Self::Value;
 }
 
 /// Trait for writing contract/component storage member in a specific key place.
-pub trait StorageMapWriteAccessTrait<TMemberState> {
+pub trait StorageMapWriteAccess<TMemberState> {
     type Key;
     type Value;
     fn write(self: TMemberState, key: Self::Key, value: Self::Value);
@@ -270,7 +270,7 @@ impl StorableEntryReadAccess<
     +EntryInfo<T>,
     +core::hash::Hash<EntryInfo::<T>::Key, StoragePathHashState>,
     +starknet::Store<EntryInfo::<T>::Value>,
-> of StorageMapReadAccessTrait<StoragePath<T>> {
+> of StorageMapReadAccess<StoragePath<T>> {
     type Key = EntryInfo::<T>::Key;
     type Value = EntryInfo::<T>::Value;
     fn read(self: StoragePath<T>, key: EntryInfo::<T>::Key) -> EntryInfo::<T>::Value {
@@ -281,10 +281,10 @@ impl StorableEntryReadAccess<
 impl StorageAsPathReadForward<
     T,
     impl PathImpl: StorageAsPath<T>,
-    impl AccessImpl: StorageMapReadAccessTrait<StoragePath<PathImpl::Value>>,
+    impl AccessImpl: StorageMapReadAccess<StoragePath<PathImpl::Value>>,
     +Drop<T>,
     +Drop<AccessImpl::Key>,
-> of StorageMapReadAccessTrait<T> {
+> of StorageMapReadAccess<T> {
     type Key = AccessImpl::Key;
     type Value = AccessImpl::Value;
     #[inline(always)]
@@ -301,7 +301,7 @@ impl MutableStorableEntryReadAccess<
     +EntryInfo<MutableTrait::<T>::InnerType>,
     +core::hash::Hash<EntryInfo::<MutableTrait::<T>::InnerType>::Key, StoragePathHashState>,
     +starknet::Store<EntryInfo::<MutableTrait::<T>::InnerType>::Value>,
-> of StorageMapReadAccessTrait<StoragePath<T>> {
+> of StorageMapReadAccess<StoragePath<T>> {
     type Key = EntryInfo::<MutableTrait::<T>::InnerType>::Key;
     type Value = EntryInfo::<MutableTrait::<T>::InnerType>::Value;
     #[inline(always)]
@@ -322,7 +322,7 @@ impl MutableStorableEntryWriteAccess<
     +core::hash::Hash<EntryInfo::<MutableTrait::<T>::InnerType>::Key, StoragePathHashState>,
     +starknet::Store<EntryInfo::<MutableTrait::<T>::InnerType>::Value>,
     +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Value>
-> of StorageMapWriteAccessTrait<StoragePath<T>> {
+> of StorageMapWriteAccess<StoragePath<T>> {
     type Key = EntryInfo::<MutableTrait::<T>::InnerType>::Key;
     type Value = EntryInfo::<MutableTrait::<T>::InnerType>::Value;
     fn write(
@@ -338,11 +338,11 @@ impl MutableStorableEntryWriteAccess<
 impl StorageAsPathWriteForward<
     T,
     impl PathImpl: StorageAsPath<T>,
-    impl AccessImpl: StorageMapWriteAccessTrait<StoragePath<PathImpl::Value>>,
+    impl AccessImpl: StorageMapWriteAccess<StoragePath<PathImpl::Value>>,
     +Drop<T>,
     +Drop<AccessImpl::Key>,
     +Drop<AccessImpl::Value>,
-> of StorageMapWriteAccessTrait<T> {
+> of StorageMapWriteAccess<T> {
     type Key = AccessImpl::Key;
     type Value = AccessImpl::Value;
     fn write(self: T, key: AccessImpl::Key, value: AccessImpl::Value) {
