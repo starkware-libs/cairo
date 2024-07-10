@@ -1,6 +1,6 @@
 use core::starknet::storage::{
-    StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccessTrait,
-    StorageMapWriteAccessTrait, MutableVecTrait, StoragePathEntry
+    StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
+    StorageMapWriteAccess, MutableVecTrait, StoragePathEntry
 };
 
 

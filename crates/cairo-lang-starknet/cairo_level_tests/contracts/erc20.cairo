@@ -26,8 +26,8 @@ pub mod erc_20 {
     use starknet::contract_address_const;
     use starknet::ContractAddress;
     use starknet::storage::{
-        Map, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccessTrait,
-        StorageMapWriteAccessTrait
+        Map, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
+        StorageMapWriteAccess
     };
 
     #[storage]
