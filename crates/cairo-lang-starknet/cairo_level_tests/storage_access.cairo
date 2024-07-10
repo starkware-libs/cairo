@@ -152,7 +152,7 @@ mod test_contract {
 
     #[external(v0)]
     pub fn get_vec_element(self: @ContractState, index: u64) -> u32 {
-        self.vecs.vec.get(index).unwrap().read()
+        self.vecs.vec[index].read()
     }
 
     #[external(v0)]
@@ -162,7 +162,7 @@ mod test_contract {
 
     #[external(v0)]
     pub fn append_to_nested_vec(ref self: ContractState, index: u64, value: u32) {
-        self.vecs.vec_of_vecs.get(index).unwrap().append().write(value);
+        self.vecs.vec_of_vecs[index].append().write(value);
     }
 
     #[external(v0)]
@@ -172,12 +172,12 @@ mod test_contract {
 
     #[external(v0)]
     pub fn get_nested_vec_length(self: @ContractState, index: u64) -> u64 {
-        self.vecs.vec_of_vecs.get(index).unwrap().len()
+        self.vecs.vec_of_vecs[index].len()
     }
 
     #[external(v0)]
     pub fn get_nested_vec_element(self: @ContractState, index: u64, nested_index: u64) -> u32 {
-        self.vecs.vec_of_vecs.get(index).unwrap().get(nested_index).unwrap().read()
+        self.vecs.vec_of_vecs[index][nested_index].read()
     }
 }
 
