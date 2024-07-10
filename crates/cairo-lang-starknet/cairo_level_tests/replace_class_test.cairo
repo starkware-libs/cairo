@@ -8,6 +8,7 @@ trait IWithReplace<TContractState> {
 
 #[starknet::contract]
 mod contract_a {
+    use core::starknet::storage::StoragePointerWriteAccess;
     use starknet::class_hash::ClassHash;
     use starknet::SyscallResultTrait;
 
@@ -36,6 +37,7 @@ trait IWithFoo<TContractState> {
 
 #[starknet::contract]
 mod contract_b {
+    use core::starknet::storage::StoragePointerReadAccess;
     #[storage]
     struct Storage {
         value: u128,

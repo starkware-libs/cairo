@@ -46,7 +46,16 @@ mod storage_accesses {
     use starknet::get_caller_address;
     use starknet::ContractAddress;
     use super::{UserInfo, TransactionInfo};
-    use starknet::storage::StoragePathEntry;
+    use starknet::storage::{
+        StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
+        StorageMapReadAccessTrait, StorageMapWriteAccessTrait
+    };
+
+    #[storage]
+    struct Storage {
+        user_info: UserInfo,
+        transaction_info: TransactionInfo,
+    }
 
     #[constructor]
     fn constructor(
@@ -155,21 +164,16 @@ mod storage_accesses {
 pub enum Event {}
 
 
-#[phantom]
-pub struct Storage {
-          pub user_info: UserInfo,
-          pub transaction_info: TransactionInfo,
-}
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
-    pub user_info: starknet::storage::StorageBase<UserInfo>,
-    pub transaction_info: starknet::storage::StorageBase<TransactionInfo>,
+ struct ContractStorageBase {
+     user_info: starknet::storage::StorageBase<UserInfo>,
+     transaction_info: starknet::storage::StorageBase<TransactionInfo>,
 }
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub user_info: starknet::storage::StorageBase<starknet::storage::Mutable<UserInfo>>,
-    pub transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable<TransactionInfo>>,
+ struct ContractStorageBaseMut {
+     user_info: starknet::storage::StorageBase<starknet::storage::Mutable<UserInfo>>,
+     transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable<TransactionInfo>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -1763,7 +1767,16 @@ impl MutableIERC20SafeDispatcherSubPointersCopy of core::traits::Copy::<MutableI
     use starknet::get_caller_address;
     use starknet::ContractAddress;
     use super::{UserInfo, TransactionInfo};
-    use starknet::storage::StoragePathEntry;
+    use starknet::storage::{
+        StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
+        StorageMapReadAccessTrait, StorageMapWriteAccessTrait
+    };
+
+    #[storage]
+    struct Storage {
+        user_info: UserInfo,
+        transaction_info: TransactionInfo,
+    }
 
     #[constructor]
     fn constructor(
@@ -1872,21 +1885,16 @@ impl MutableIERC20SafeDispatcherSubPointersCopy of core::traits::Copy::<MutableI
 pub enum Event {}
 
 
-#[phantom]
-pub struct Storage {
-          pub user_info: UserInfo,
-          pub transaction_info: TransactionInfo,
-}
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
-    pub user_info: starknet::storage::StorageBase<UserInfo>,
-    pub transaction_info: starknet::storage::StorageBase<TransactionInfo>,
+ struct ContractStorageBase {
+     user_info: starknet::storage::StorageBase<UserInfo>,
+     transaction_info: starknet::storage::StorageBase<TransactionInfo>,
 }
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub user_info: starknet::storage::StorageBase<starknet::storage::Mutable<UserInfo>>,
-    pub transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable<TransactionInfo>>,
+ struct ContractStorageBaseMut {
+     user_info: starknet::storage::StorageBase<starknet::storage::Mutable<UserInfo>>,
+     transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable<TransactionInfo>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;

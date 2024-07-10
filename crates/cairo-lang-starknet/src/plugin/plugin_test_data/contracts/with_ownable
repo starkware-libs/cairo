@@ -10,9 +10,16 @@ cairo_level_tests/contracts/with_ownable.cairo
 use starknet::ContractAddress;
 #[starknet::contract]
 mod ownable_balance {
+    use core::starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        ownable: ownable_comp::Storage,
+        balance: u128,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -45,21 +52,16 @@ mod ownable_balance {
     }
 
 
-#[phantom]
-pub struct Storage {
-          pub ownable: ownable_comp::Storage,
-          pub balance: u128,
-}
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
-    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
-    pub balance: starknet::storage::StorageBase<u128>,
+ struct ContractStorageBase {
+     ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+     balance: starknet::storage::StorageBase<u128>,
 }
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+ struct ContractStorageBaseMut {
+     ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+     balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -78,7 +80,7 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     }
 }
 pub struct ContractState {
-        pub ownable: ownable_comp::ComponentState<ContractState>,
+         ownable: ownable_comp::ComponentState<ContractState>,
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
@@ -273,9 +275,16 @@ impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
 impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 }
 
+    use core::starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        ownable: ownable_comp::Storage,
+        balance: u128,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -308,21 +317,16 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
     }
 
 
-#[phantom]
-pub struct Storage {
-          pub ownable: ownable_comp::Storage,
-          pub balance: u128,
-}
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
-    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
-    pub balance: starknet::storage::StorageBase<u128>,
+ struct ContractStorageBase {
+     ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+     balance: starknet::storage::StorageBase<u128>,
 }
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+ struct ContractStorageBaseMut {
+     ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+     balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -341,7 +345,7 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     }
 }
 pub struct ContractState {
-        pub ownable: ownable_comp::ComponentState<ContractState>,
+         ownable: ownable_comp::ComponentState<ContractState>,
 }
 
 impl ContractStateDrop of Drop<ContractState> {}

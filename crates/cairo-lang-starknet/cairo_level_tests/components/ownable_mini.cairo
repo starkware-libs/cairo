@@ -1,5 +1,8 @@
 use starknet::ContractAddress;
-use starknet::storage::{StorageAsPath, StorageNode, MutableStorageNode};
+use starknet::storage::{
+    StorageAsPath, StorageNode, MutableStorageNode, StoragePointerReadAccess,
+    StoragePointerWriteAccess
+};
 
 #[starknet::interface]
 pub trait TransferTrait<TContractState> {

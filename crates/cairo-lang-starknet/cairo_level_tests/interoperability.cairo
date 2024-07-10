@@ -8,6 +8,7 @@ trait IContract<T> {
 
 #[starknet::contract]
 mod contract_a {
+    use core::starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use starknet::get_contract_address;
     #[storage]
     struct Storage {

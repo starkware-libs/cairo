@@ -8,6 +8,7 @@ trait IMintableToken<T> {
 
 #[starknet::contract]
 mod token_bridge {
+    use core::starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use core::num::traits::Zero;
     use starknet::SyscallResultTrait;
     use starknet::{
