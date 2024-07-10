@@ -163,7 +163,7 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
         Some(CrateConfiguration {
             root: Directory::Real(core_lib_dir),
             settings: CrateSettings {
-                edition: Edition::V2023_11,
+                edition: Edition::V2024_07,
                 cfg_set: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig {
                     negative_impls: true,
