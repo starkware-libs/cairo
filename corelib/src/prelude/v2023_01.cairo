@@ -103,6 +103,5 @@ pub use core::ops::Deref;
 
 
 pub use starknet::storage::{
-    StorageMapReadAccessTrait, StorageMapWriteAccessTrait, StoragePointerReadAccess,
-    StoragePointerWriteAccess
+    StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess, StoragePointerWriteAccess
 };
