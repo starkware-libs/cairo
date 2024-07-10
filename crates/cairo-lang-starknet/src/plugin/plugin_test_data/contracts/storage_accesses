@@ -216,7 +216,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 use starknet::storage::Map as LegacyMap;
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -253,7 +253,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -272,7 +272,7 @@ fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252>
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -291,7 +291,7 @@ fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -310,7 +310,7 @@ fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -329,7 +329,7 @@ fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -351,7 +351,7 @@ fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -377,7 +377,7 @@ fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -402,7 +402,7 @@ fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span:
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -427,7 +427,7 @@ fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span:
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -448,7 +448,7 @@ fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -1933,7 +1933,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 use starknet::storage::Map as LegacyMap;
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -1970,7 +1970,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -1989,7 +1989,7 @@ fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252>
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -2008,7 +2008,7 @@ fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -2027,7 +2027,7 @@ fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -2046,7 +2046,7 @@ fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -2068,7 +2068,7 @@ fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -2094,7 +2094,7 @@ fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -2119,7 +2119,7 @@ fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span:
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -2144,7 +2144,7 @@ fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span:
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -2165,7 +2165,7 @@ fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
