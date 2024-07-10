@@ -9,6 +9,7 @@ trait IContractWithEvent<T> {
 
 #[starknet::contract]
 mod contract_with_event {
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use starknet::get_contract_address;
     #[storage]
     struct Storage {

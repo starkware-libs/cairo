@@ -88,9 +88,11 @@ struct Vecs {
 #[starknet::contract]
 mod test_contract {
     use core::option::OptionTrait;
-    use core::starknet::storage::StoragePointerWriteAccess;
     use super::{AbcEtc, ByteArrays, NonZeros, Vecs,};
-    use starknet::storage::{VecTrait, MutableVecTrait, StorageAsPath,};
+    use starknet::storage::{
+        VecTrait, MutableVecTrait, StorageAsPath, StoragePointerWriteAccess,
+        StoragePointerReadAccess,
+    };
 
     #[storage]
     struct Storage {

@@ -3,7 +3,10 @@ use starknet::ContractAddress;
 mod ownable_mini_contract {
     use cairo_level_tests::components::ownable_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageAsPath, StorageNode, MutableStorageNode};
+    use starknet::storage::{
+        StorageAsPath, StorageNode, MutableStorageNode, StoragePointerReadAccess,
+        StoragePointerWriteAccess
+    };
 
     #[storage]
     struct Storage {

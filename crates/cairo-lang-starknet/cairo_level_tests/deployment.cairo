@@ -11,6 +11,7 @@ trait IValue<TContractState> {
 mod self_caller {
     use core::traits::TryInto;
     use starknet::{ClassHash, syscalls::deploy_syscall};
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use super::{IValueDispatcher, IValueDispatcherTrait};
     #[storage]
     struct Storage {

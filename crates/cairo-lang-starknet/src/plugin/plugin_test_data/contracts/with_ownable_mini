@@ -12,7 +12,16 @@ use starknet::ContractAddress;
 mod ownable_mini_contract {
     use cairo_level_tests::components::ownable_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageAsPath, StorageNode, MutableStorageNode};
+    use starknet::storage::{
+        StorageAsPath, StorageNode, MutableStorageNode, StoragePointerReadAccess,
+        StoragePointerWriteAccess
+    };
+
+    #[storage]
+    struct Storage {
+        ownable: ownable_mini::OwnableStorage,
+        balance: u128,
+    }
 
     #[abi(embed_v0)]
     impl OwnershipTransfer = ownable_mini::TransferImpl<ContractState>;
@@ -55,21 +64,16 @@ mod ownable_mini_contract {
 pub enum Event {}
 
 
-#[phantom]
-pub struct Storage {
-          pub ownable: ownable_mini::OwnableStorage,
-          pub balance: u128,
-}
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
-    pub ownable: starknet::storage::StorageBase<ownable_mini::OwnableStorage>,
-    pub balance: starknet::storage::StorageBase<u128>,
+ struct ContractStorageBase {
+     ownable: starknet::storage::StorageBase<ownable_mini::OwnableStorage>,
+     balance: starknet::storage::StorageBase<u128>,
 }
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_mini::OwnableStorage>>,
-    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+ struct ContractStorageBaseMut {
+     ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_mini::OwnableStorage>>,
+     balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
@@ -246,7 +250,16 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
     use cairo_level_tests::components::ownable_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageAsPath, StorageNode, MutableStorageNode};
+    use starknet::storage::{
+        StorageAsPath, StorageNode, MutableStorageNode, StoragePointerReadAccess,
+        StoragePointerWriteAccess
+    };
+
+    #[storage]
+    struct Storage {
+        ownable: ownable_mini::OwnableStorage,
+        balance: u128,
+    }
 
     #[abi(embed_v0)]
     impl OwnershipTransfer = ownable_mini::TransferImpl<ContractState>;
@@ -289,21 +302,16 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 pub enum Event {}
 
 
-#[phantom]
-pub struct Storage {
-          pub ownable: ownable_mini::OwnableStorage,
-          pub balance: u128,
-}
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
-    pub ownable: starknet::storage::StorageBase<ownable_mini::OwnableStorage>,
-    pub balance: starknet::storage::StorageBase<u128>,
+ struct ContractStorageBase {
+     ownable: starknet::storage::StorageBase<ownable_mini::OwnableStorage>,
+     balance: starknet::storage::StorageBase<u128>,
 }
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_mini::OwnableStorage>>,
-    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+ struct ContractStorageBaseMut {
+     ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_mini::OwnableStorage>>,
+     balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
 }
 impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
     type BaseType = ContractStorageBase;
