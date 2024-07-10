@@ -30,3 +30,15 @@ pub fn current_compiler_version_id() -> VersionId {
 pub fn current_sierra_version_id() -> VersionId {
     VersionId { major: 1, minor: 6, patch: 0 }
 }
+
+impl PartialOrd for VersionId {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.major != other.major {
+            return self.major.partial_cmp(&other.major);
+        }
+        if self.minor != other.minor {
+            return self.minor.partial_cmp(&other.minor);
+        }
+        self.patch.partial_cmp(&other.patch)
+    }
+}
