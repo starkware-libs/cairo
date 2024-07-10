@@ -1,0 +1,272 @@
+//! > Test closure simple.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+/// TODO(Tomerstarkware): fix formatting.
+fn test() {
+    let expensive_closure =  |num: u32, b, c: felt252 | -> u32 {
+        let x = num + 5;
+        x
+    };
+}
+
+//! > top_level_kind
+ExprClosure
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprClosure
+    ├── wrapper (kind: ClosureParamWrapperNAry)
+    │   ├── leftor (kind: TokenOr): '|'
+    │   ├── params (kind: ParamList)
+    │   │   ├── item #0 (kind: Param)
+    │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │   ├── name (kind: TokenIdentifier): 'num'
+    │   │   │   └── type_clause (kind: TypeClause)
+    │   │   │       ├── colon (kind: TokenColon): ':'
+    │   │   │       └── ty (kind: ExprPath) <ignored>
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   ├── item #1 (kind: Param)
+    │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │   ├── name (kind: TokenIdentifier): 'b'
+    │   │   │   └── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   └── item #2 (kind: Param)
+    │   │       ├── modifiers (kind: ModifierList) []
+    │   │       ├── name (kind: TokenIdentifier): 'c'
+    │   │       └── type_clause (kind: TypeClause)
+    │   │           ├── colon (kind: TokenColon): ':'
+    │   │           └── ty (kind: ExprPath) <ignored>
+    │   └── rightor (kind: TokenOr): '|'
+    ├── ret_ty (kind: ReturnTypeClause)
+    │   ├── arrow (kind: TokenArrow): '->'
+    │   └── ty (kind: ExprPath) <ignored>
+    ├── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    └── expr (kind: ExprBlock)
+        ├── lbrace (kind: TokenLBrace): '{'
+        ├── statements (kind: StatementList)
+        │   ├── child #0 (kind: StatementLet)
+        │   │   ├── attributes (kind: AttributeList) []
+        │   │   ├── let_kw (kind: TokenLet): 'let'
+        │   │   ├── pattern (kind: ExprPath) <ignored>
+        │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+        │   │   ├── eq (kind: TokenEq): '='
+        │   │   ├── rhs (kind: ExprBinary)
+        │   │   │   ├── lhs (kind: ExprPath) <ignored>
+        │   │   │   ├── op (kind: TokenPlus): '+'
+        │   │   │   └── rhs (kind: TokenLiteralNumber): '5'
+        │   │   └── semicolon (kind: TokenSemicolon): ';'
+        │   └── child #1 (kind: StatementExpr)
+        │       ├── attributes (kind: AttributeList) []
+        │       ├── expr (kind: ExprPath) <ignored>
+        │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+        └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test closure empty params.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn test() {
+    let expensive_closure =  || -> u32 {
+        let x = num + 5;
+        x
+    };
+}
+
+//! > top_level_kind
+ExprClosure
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprClosure
+    ├── wrapper (kind: TokenOrOr): '||'
+    ├── ret_ty (kind: ReturnTypeClause)
+    │   ├── arrow (kind: TokenArrow): '->'
+    │   └── ty (kind: ExprPath) <ignored>
+    ├── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    └── expr (kind: ExprBlock)
+        ├── lbrace (kind: TokenLBrace): '{'
+        ├── statements (kind: StatementList)
+        │   ├── child #0 (kind: StatementLet)
+        │   │   ├── attributes (kind: AttributeList) []
+        │   │   ├── let_kw (kind: TokenLet): 'let'
+        │   │   ├── pattern (kind: ExprPath) <ignored>
+        │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+        │   │   ├── eq (kind: TokenEq): '='
+        │   │   ├── rhs (kind: ExprBinary)
+        │   │   │   ├── lhs (kind: ExprPath) <ignored>
+        │   │   │   ├── op (kind: TokenPlus): '+'
+        │   │   │   └── rhs (kind: TokenLiteralNumber): '5'
+        │   │   └── semicolon (kind: TokenSemicolon): ';'
+        │   └── child #1 (kind: StatementExpr)
+        │       ├── attributes (kind: AttributeList) []
+        │       ├── expr (kind: ExprPath) <ignored>
+        │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+        └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test closure missing return type. 
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn test() {
+    let expensive_closure =  || {
+        x
+    };
+}
+
+//! > top_level_kind
+ExprClosure
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprClosure
+    ├── wrapper (kind: TokenOrOr): '||'
+    ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
+    ├── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    └── expr (kind: ExprBlock)
+        ├── lbrace (kind: TokenLBrace): '{'
+        ├── statements (kind: StatementList)
+        │   └── child #0 (kind: StatementExpr)
+        │       ├── attributes (kind: AttributeList) []
+        │       ├── expr (kind: ExprPath) <ignored>
+        │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+        └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test closure block missing.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn test() {
+    let expensive_closure =  || 3;
+}
+
+//! > top_level_kind
+ExprClosure
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprClosure
+    ├── wrapper (kind: TokenOrOr): '||'
+    ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
+    ├── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    └── expr (kind: TokenLiteralNumber): '3'
+
+//! > ==========================================================================
+
+//! > Test closure block required after return type.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn test() {
+    let expensive_closure =  || -> u32 3;
+}
+
+//! > top_level_kind
+ExprClosure
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: '{'.
+ --> dummy_file.cairo:2:40
+    let expensive_closure =  || -> u32 3;
+                                       ^^
+
+error: Missing token TerminalLBrace.
+ --> dummy_file.cairo:2:42
+    let expensive_closure =  || -> u32 3;
+                                         ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:2:42
+    let expensive_closure =  || -> u32 3;
+                                         ^
+
+//! > expected_tree
+└── Top level kind: ExprClosure
+    ├── wrapper (kind: TokenOrOr): '||'
+    ├── ret_ty (kind: ReturnTypeClause)
+    │   ├── arrow (kind: TokenArrow): '->'
+    │   └── ty (kind: ExprPath) <ignored>
+    ├── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    └── expr (kind: ExprBlock)
+        ├── lbrace: Missing
+        ├── statements (kind: StatementList) []
+        └── rbrace: Missing
+
+//! > ==========================================================================
+
+//! > Test closure block required after no panic.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn test() {
+    let expensive_closure =  || nopanic 3;
+}
+
+//! > top_level_kind
+ExprClosure
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: '{'.
+ --> dummy_file.cairo:2:41
+    let expensive_closure =  || nopanic 3;
+                                        ^^
+
+error: Missing token TerminalLBrace.
+ --> dummy_file.cairo:2:43
+    let expensive_closure =  || nopanic 3;
+                                          ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:2:43
+    let expensive_closure =  || nopanic 3;
+                                          ^
+
+//! > expected_tree
+└── Top level kind: ExprClosure
+    ├── wrapper (kind: TokenOrOr): '||'
+    ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
+    ├── optional_no_panic (kind: TokenNoPanic): 'nopanic'
+    └── expr (kind: ExprBlock)
+        ├── lbrace: Missing
+        ├── statements (kind: StatementList) []
+        └── rbrace: Missing
