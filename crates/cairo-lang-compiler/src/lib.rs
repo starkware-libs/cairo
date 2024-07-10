@@ -150,6 +150,7 @@ pub fn get_sierra_program_for_functions(
     requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
     mut diagnostic_reporter: DiagnosticsReporter<'_>,
 ) -> Result<Arc<SierraProgramWithDebug>> {
+    diagnostic_reporter.warm_up_diagnostics(db);
     diagnostic_reporter.ensure(db)?;
     db.get_sierra_program_for_functions(requested_function_ids)
         .to_option()
