@@ -35,6 +35,9 @@ return([2]); // 2
 
 test::foo@0([0]: i8, [1]: i8) -> (BoundedInt<-256, 254>);
 
+//! > test_name
+bounded_int_add libfunc
+
 //! > ==========================================================================
 
 //! > bounded_int_sub libfunc
@@ -74,6 +77,9 @@ return([2]); // 2
 
 test::foo@0([0]: i8, [1]: i8) -> (BoundedInt<-255, 255>);
 
+//! > test_name
+bounded_int_sub libfunc
+
 //! > ==========================================================================
 
 //! > bounded_int_mul libfunc
@@ -112,6 +118,9 @@ store_temp<BoundedInt<-16256, 16384>>([2]) -> ([2]); // 1
 return([2]); // 2
 
 test::foo@0([0]: i8, [1]: i8) -> (BoundedInt<-16256, 16384>);
+
+//! > test_name
+bounded_int_mul libfunc
 
 //! > ==========================================================================
 
@@ -154,6 +163,9 @@ return([2]); // 2
 
 test::foo@0([0]: NonZero<i8>, [1]: NonZero<i8>) -> (NonZero<BoundedInt<-16256, 16384>>);
 
+//! > test_name
+bounded_int_mul libfunc on NonZero.
+
 //! > ==========================================================================
 
 //! > bounded_int_add with const libfunc
@@ -195,6 +207,9 @@ store_temp<BoundedInt<-256, 254>>([2]) -> ([2]); // 2
 return([2]); // 3
 
 test::foo@0([0]: i8) -> (BoundedInt<-256, 254>);
+
+//! > test_name
+bounded_int_add with const libfunc
 
 //! > ==========================================================================
 
@@ -254,6 +269,9 @@ store_temp<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>>([6]) -> ([6]); // 3
 return([3], [6]); // 4
 
 test::foo@0([0]: RangeCheck, [1]: BoundedInt<128, 255>, [2]: NonZero<BoundedInt<3, 8>>) -> (RangeCheck, Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>);
+
+//! > test_name
+bounded_int_div_rem libfunc
 
 //! > ==========================================================================
 
@@ -320,6 +338,9 @@ return([3], [6]); // 4
 
 test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<1, 340282366920938463463374607431768211455>>) -> (RangeCheck, Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>);
 
+//! > test_name
+bounded_int_div_rem libfunc for the wide case.
+
 //! > ==========================================================================
 
 //! > bounded_int_div_rem libfunc for the small possible quotient case.
@@ -380,6 +401,9 @@ store_temp<Tuple<BoundedInt<0, 15>, BoundedInt<0, 212676479325586539664609129644
 return([3], [6]); // 4
 
 test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>>) -> (RangeCheck, Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>);
+
+//! > test_name
+bounded_int_div_rem libfunc for the small possible quotient case.
 
 //! > ==========================================================================
 
@@ -446,6 +470,9 @@ return([4], [7]); // 10
 
 test::foo@0([0]: RangeCheck, [1]: u8) -> (RangeCheck, core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>);
 
+//! > test_name
+bounded_int_constrain libfunc.
+
 //! > ==========================================================================
 
 //! > bounded_int_constrain libfunc around 0.
@@ -510,6 +537,9 @@ store_temp<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt
 return([4], [7]); // 10
 
 test::foo@0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>);
+
+//! > test_name
+bounded_int_constrain libfunc around 0.
 
 //! > ==========================================================================
 
@@ -579,6 +609,9 @@ return([4], [7]); // 10
 
 test::foo@0([0]: RangeCheck, [1]: BoundedInt<0, 680564733841876926926749214863536422911>) -> (RangeCheck, core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>);
 
+//! > test_name
+bounded_int_constrain libfunc around 2**128.
+
 //! > ==========================================================================
 
 //! > bounded_int_constrain libfunc non-zero.
@@ -647,6 +680,9 @@ return([4], [7]); // 10
 
 test::foo@0([0]: RangeCheck, [1]: NonZero<u8>) -> (RangeCheck, core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>);
 
+//! > test_name
+bounded_int_constrain libfunc non-zero.
+
 //! > ==========================================================================
 
 //! > bounded_int_is_zero libfunc for i8.
@@ -699,6 +735,9 @@ store_temp<core::zeroable::IsZeroResult::<core::integer::i8>>([4]) -> ([4]); // 
 return([4]); // 9
 
 test::foo@0([0]: i8) -> (core::zeroable::IsZeroResult::<core::integer::i8>);
+
+//! > test_name
+bounded_int_is_zero libfunc for i8.
 
 //! > ==========================================================================
 
@@ -754,6 +793,9 @@ return([4]); // 9
 
 test::foo@0([0]: BoundedInt<0, 680564733841876926926749214863536422911>) -> (core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>);
 
+//! > test_name
+bounded_int_is_zero libfunc for large bounded int.
+
 //! > ==========================================================================
 
 //! > bounded_int_wrap_non_zero libfunc positive.
@@ -788,6 +830,9 @@ store_temp<NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>>([1])
 return([1]); // 2
 
 test::foo@0([0]: BoundedInt<1, 680564733841876926926749214863536422911>) -> (NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>);
+
+//! > test_name
+bounded_int_wrap_non_zero libfunc positive.
 
 //! > ==========================================================================
 

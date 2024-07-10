@@ -9,6 +9,7 @@ description = "Cairo Lean verification."
 [dependencies]
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.6.3" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "~2.6.3" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.6.3" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.6.3" }
 itertools.workspace = true
 num-bigint.workspace = true

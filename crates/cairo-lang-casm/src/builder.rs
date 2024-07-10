@@ -823,13 +823,29 @@ pub enum StatementDesc {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+pub enum LibfuncAlgTypeDesc {
+    /// The lhs is small enough so that its square root plus 1 can be multiplied by `2**128`
+    /// without wraparound.
+    /// `lhs_upper_sqrt` is the square root of the upper bound of the lhs, rounded up.
+    DivRemKnownSmallLhs { lhs_upper_sqrt: BigInt },
+    /// The rhs is small enough to be multiplied by `2**128` without wraparound.
+    DivRemKnownSmallRhs,
+    /// The quotient is small enough to be multiplied by `2**128` without wraparound.
+    DivRemKnownSmallQuotient { q_upper_bound: BigInt },
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CasmBuilderAuxiliaryInfo {
     pub var_names: HashMap<Var, String>,
     pub consts: Vec<ConstDesc>,
     pub args: Vec<(Var, CellExpression)>,
     pub statements: Vec<StatementDesc>,
+    // TODO: The fields below are not set by the casm builder, but outside of it.
+    // Therefore, they do not really belong here, but should be stored on a separate
+    // structure. Currently, no such structure exists.
     pub return_branches: Vec<RetBranchDesc>,
     pub core_libfunc_instr_num: usize,
+    pub alg_type: Option<LibfuncAlgTypeDesc>,
 }
 
 impl CasmBuilderAuxiliaryInfo {
@@ -1009,6 +1025,10 @@ impl CasmBuilderAuxiliaryInfo {
         self.statements.push(StatementDesc::Fail);
     }
 
+    pub fn set_alg_type(&mut self, alg_type: LibfuncAlgTypeDesc) {
+        self.alg_type = Some(alg_type);
+    }
+
     pub fn finalize(&mut self, num_casm_instructions: usize) {
         // Record the number of instructions generated for the code built up to
         // here (additional instructions may be added later).
@@ -1026,6 +1046,7 @@ impl Default for CasmBuilderAuxiliaryInfo {
             statements: Default::default(),
             return_branches: Default::default(),
             core_libfunc_instr_num: 0,
+            alg_type: None,
         }
     }
 }

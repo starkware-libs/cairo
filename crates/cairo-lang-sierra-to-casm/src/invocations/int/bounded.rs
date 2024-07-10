@@ -1,6 +1,6 @@
 use std::ops::Shl;
 
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, LibfuncAlgTypeDesc};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::bounded_int::{
     BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm,
@@ -60,6 +60,23 @@ pub fn build_div_rem(
     let alg = BoundedIntDivRemAlgorithm::try_new(lhs, rhs).unwrap();
 
     let mut casm_builder = CasmBuilder::default();
+
+    if let Some(aux_info) = &mut casm_builder.aux_info {
+        aux_info.set_alg_type(
+            match &alg {
+                BoundedIntDivRemAlgorithm::KnownSmallLhs { lhs_upper_sqrt } => {
+                    LibfuncAlgTypeDesc::DivRemKnownSmallLhs { lhs_upper_sqrt: lhs_upper_sqrt.clone() }
+                },
+                BoundedIntDivRemAlgorithm::KnownSmallRhs => {
+                    LibfuncAlgTypeDesc::DivRemKnownSmallRhs
+                },
+                BoundedIntDivRemAlgorithm::KnownSmallQuotient { q_upper_bound } => {
+                    LibfuncAlgTypeDesc::DivRemKnownSmallQuotient { q_upper_bound: q_upper_bound.clone() }
+                }
+            }
+        );
+    }
+
     let rc_slack = match &alg {
         BoundedIntDivRemAlgorithm::KnownSmallRhs => 2,
         BoundedIntDivRemAlgorithm::KnownSmallQuotient { .. }

@@ -369,6 +369,7 @@ pub fn run_test_file(
 
     let gen_lean_mode = std::env::var("CAIRO_GEN_LEAN") == Ok("1".into());
     let lean_outputs = vec!(
+        "lean_func_name",
         "lean_soundness_spec",
         "lean_soundness",
         "lean_completeness_spec",
@@ -432,11 +433,12 @@ pub fn run_test_file(
         let result = runner.run(&test.attributes, &runner_args);
 
         if gen_lean_mode {
-            write_lean_soundness_spec_file(&path, &test_name, result.outputs.get("lean_soundness_spec"))?;
-            write_lean_soundness_file(&path, &test_name, result.outputs.get("lean_soundness"))?;
-            write_lean_completeness_spec_file(&path, &test_name, result.outputs.get("lean_completeness_spec"))?;
-            write_lean_completeness_file(&path, &test_name, result.outputs.get("lean_completeness"))?;
-            write_lean_code_file(&path, &test_name, result.outputs.get("lean_code"))?;
+            let lean_func_name = result.outputs.get("lean_func_name").expect("Lean function name missing.");
+            write_lean_soundness_spec_file(&path, lean_func_name, result.outputs.get("lean_soundness_spec"))?;
+            write_lean_soundness_file(&path, lean_func_name, result.outputs.get("lean_soundness"))?;
+            write_lean_completeness_spec_file(&path, lean_func_name, result.outputs.get("lean_completeness_spec"))?;
+            write_lean_completeness_file(&path, lean_func_name, result.outputs.get("lean_completeness"))?;
+            write_lean_code_file(&path, lean_func_name, result.outputs.get("lean_code"))?;
         }
 
         // Fix if in fix mode, unrelated to the result.

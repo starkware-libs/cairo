@@ -11,34 +11,47 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 use cairo_lang_casm::builder::{
-    CasmBuilderAuxiliaryInfo,
-    RetBranchDesc,
-    StatementDesc,
-    VarBaseDesc,
-    ExprDesc,
-    VarDesc,
-    AssertDesc,
-    JumpDesc,
+    AssertDesc, CasmBuilderAuxiliaryInfo, ExprDesc, JumpDesc, LibfuncAlgTypeDesc, RetBranchDesc, StatementDesc, VarBaseDesc, VarDesc
 };
 use cairo_lang_casm::instructions::{InstructionBody, Instruction, AddApInstruction};
 use cairo_lang_casm::operand::{ CellRef, DerefOrImmediate, Register, ResOperand };
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::bigint::BigIntAsHex;
+use cairo_lang_sierra::extensions::bounded_int::BoundedIntDivRemAlgorithm;
 
-pub fn func_name_from_test_name(test_name: &str) -> String {
-    if test_name.contains('_') {
-        // If the test name contains underscores, we assume that all parts of the function
-        // name are connected by underscores.
-        test_name.split_whitespace().next().unwrap().to_string()
-    } else if let Some((prefix, suffix)) = test_name.rsplit_once(' ') {
-        if suffix == "libfunc" {
-            prefix.replace(" ", "_")
+/// Creates a function name which is based on the test name and the choice of algorithms.
+pub fn func_name_from_test_name(test_name: &str, aux_infos: &Vec<CasmBuilderAuxiliaryInfo>) -> String {
+
+    let mut func_name_parts: Vec<String> = Vec::new();
+
+    // Add teh base function name
+    func_name_parts.push(
+        if test_name.contains('_') {
+            // If the test name contains underscores, we assume that all parts of the function
+            // name are connected by underscores.
+            test_name.split_whitespace().next().unwrap().to_string()
+        } else if let Some((prefix, suffix)) = test_name.rsplit_once(' ') {
+            if suffix == "libfunc" {
+                prefix.replace(" ", "_")
+            } else {
+                test_name.replace(" ", "_")
+            }
         } else {
-            test_name.replace(" ", "_")
+            test_name.into()
         }
-    } else {
-        test_name.into()
+    );
+
+    for aux_info in aux_infos {
+        if let Some(alg_type) = &aux_info.alg_type {
+            match alg_type {
+                LibfuncAlgTypeDesc::DivRemKnownSmallLhs { .. } => func_name_parts.push("known_small_lhs".into()),
+                LibfuncAlgTypeDesc::DivRemKnownSmallRhs => func_name_parts.push("known_small_rhs".into()),
+                LibfuncAlgTypeDesc::DivRemKnownSmallQuotient { .. } => func_name_parts.push("known_small_quotient".into()),
+            };
+        }
     }
+
+    func_name_parts.join("_")
 }
 
 pub fn lean_code_name(func_name: &str) -> String {
@@ -863,6 +876,13 @@ impl<'a> LeanFuncInfo<'a> {
 
         for (i, statement) in self.aux_info.statements[start_pos..].iter().enumerate() {
             match statement {
+                StatementDesc::TempVar(var)|StatementDesc::LocalVar(var) => {
+                    if let Some(expr) = &var.expr {
+                        if self.is_range_check(expr) {
+                            rc_count += 1;
+                        }
+                    }
+                },
                 StatementDesc::Assert(assign) => {
                     if self.is_range_check(&assign.expr) {
                         rc_count += 1;
@@ -2240,6 +2260,21 @@ impl AutoSpecs {
         rebind: &mut VarRebind,
         indent: usize,
     ) {
+        if let Some(expr) = &var.expr {
+            if lean_info.is_range_check(expr) {
+                self.push_spec(
+                    indent,
+                &format!("∃ {var_name} : {var_type}, {is_range_checked} {var_name}",
+                        var_type = self.var_type(),
+                        is_range_checked = self.is_range_checked(),
+                        var_name = rebind.get_rebind_name(&var.name, &var.var_expr),
+                    ),
+                );
+                return;
+            }
+
+        }
+
         // We must first determine the bindings of the lhs variables before incrementing
         // the rebinding for the lhs.
         let (var_name, lhs_name, expr_str) = if let Some(expr) = &var.expr {
@@ -2355,8 +2390,6 @@ impl LeanGenerator for AutoSpecs {
     ) {
         self.generate_var(var, lean_info, rebind, indent);
     }
-
-    // xxxxxxxxxx use this also before calling a block and for the condition variable in a jnz.
 
     fn generate_implicit_temp_var(
         &mut self,
@@ -2723,10 +2756,18 @@ impl AutoProof {
         indent: usize,
     ) {
         let (var_name, expr) = rebind_var_assignment(var, rebind);
+        let is_range_check = if let Some(expr) = &var.expr {
+                lean_info.is_range_check(&expr)
+            } else {
+                false
+            };
+        // Ignore the expression if this is a range check.
+        let expr = if is_range_check { None } else { expr };
         let has_expr = expr.is_some();
+
         self.push_main(indent, &format!("-- {var_type} {var_name}", var_type = if is_local { "localvar" } else { "tempvar" }));
+
         if has_expr {
-            // Cayden TODO: How to do mostly similar strings but with different endings...
             let step_str4: String = format!("step_assert_eq {codes} with tv_{var_name}",
                 codes = self.make_codes(pc, op_size));
             let str_copy = step_str4.clone();
@@ -2734,7 +2775,7 @@ impl AutoProof {
         }
 
         let mkdef_str4: String = format!("mkdef hl_{var_name} : {var_name} = {expr_str}",
-        expr_str = if let Some(expr) = expr { expr } else { cell_expr_to_lean(&var.var_expr, false, false, false) });
+            expr_str = if let Some(expr) = expr { expr } else { cell_expr_to_lean(&var.var_expr, false, false, false) });
         let mkdef_copy: String = mkdef_str4.clone();
         self.push_main(indent, &mkdef_copy);
 
@@ -2753,6 +2794,44 @@ impl AutoProof {
         } else {
             self.push_main(indent, &format!("  exact hl_{var_name}"));
             self.push_final(0, &format!("use_only {var_name}"));
+        }
+
+        if is_range_check {
+            if let Some(expr) = &var.expr {
+                self.generate_range_check(
+                    lean_info,
+                    &var_name,
+                    expr,
+                    pc,
+                    op_size,
+                    indent
+                );
+            }
+        }
+    }
+
+    /// Checks whether the expression is a range check expression and generates the required code,
+    /// if it is. Returns true iff the expression is a range check expression.
+    fn generate_range_check(
+        &mut self,
+        lean_info: &LeanFuncInfo,
+        lhs_var_name: &str,
+        expr: &ExprDesc,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    ) -> bool {
+        if lean_info.is_range_check(expr) {
+            self.push_main(indent, &format!("-- range check for {lhs_var_name}"));
+            self.push_main(indent, &format!("step_assert_eq {codes} with rc_{lhs_var_name}",
+                    codes = self.make_codes(pc, op_size)));
+
+            let rc_offset = lean_info.get_offset_at(expr).unwrap_or(0.into());
+
+            self.push_final(0, &format!("rc_app rc_h_range_check {rc_offset} htv_{lhs_var_name} rc_{lhs_var_name}"));
+            true
+        } else {
+            false
         }
     }
 
@@ -3085,32 +3164,26 @@ impl LeanGenerator for AutoProof {
         indent: usize,
     ) {
         let lhs =  rebind.get_var_name(&assert.lhs.name);
-        if lean_info.is_range_check(&assert.expr) {
-            self.push_main(indent, &format!("-- range check for {lhs}"));
-            self.push_main(indent, &format!("step_assert_eq {codes} with rc_{lhs}",
-                    codes = self.make_codes(pc, op_size)));
 
-            let rc_ptr = rebind.get_var_name(lean_info.get_range_check_ptr_name(&assert.expr).unwrap());
-            let rc_offset = lean_info.get_offset_at(&assert.expr).unwrap_or(0.into());
-
-            self.push_final(0, &format!("rc_app rc_h_range_check {rc_offset} htv_{lhs} rc_{lhs}"));
-        } else {
-            self.push_main(indent, "-- assert");
-            self.push_main(indent, &format!("step_assert_eq {codes} with ha{pc}",
-                    codes = self.make_codes(pc, op_size)));
-            let rhs = rebind.replace_var_names_in_expr(&assert.expr.expr);
-
-            let a_str4: String = format!("have a{pc} : {lhs} = {rhs}");
-            let a_copy_str: String = a_str4.clone();
-            self.push_main(indent, &(a_copy_str + " := by"));
-
-            let indent = indent + 2;
-            for line in self.make_assert_proof(assert, lean_info, rebind, pc) {
-                self.push_main(indent, &line);
-            }
-
-            self.push_final(0, &format!("use_only a{pc}"));
+        if self.generate_range_check(lean_info, &lhs, &assert.expr, pc, op_size, indent) {
+            return;
         }
+
+        self.push_main(indent, "-- assert");
+        self.push_main(indent, &format!("step_assert_eq {codes} with ha{pc}",
+                codes = self.make_codes(pc, op_size)));
+        let rhs = rebind.replace_var_names_in_expr(&assert.expr.expr);
+
+        let a_str4: String = format!("have a{pc} : {lhs} = {rhs}");
+        let a_copy_str: String = a_str4.clone();
+        self.push_main(indent, &(a_copy_str + " := by"));
+
+        let indent = indent + 2;
+        for line in self.make_assert_proof(assert, lean_info, rebind, pc) {
+            self.push_main(indent, &line);
+        }
+
+        self.push_final(0, &format!("use_only a{pc}"));
     }
 
     fn generate_jmp(
@@ -3632,7 +3705,14 @@ impl CompletenessProof {
 
         self.spec_rcases.push(var_name.clone());
         if let Some(expr) = &var.expr {
-            let assert_hyp = format!("h_{var_name}");
+
+            let (rc_offset, assert_hyp) = if lean_info.is_range_check(&expr) {
+                self.rc_vals.push(var_name.clone());
+                (lean_info.get_offset_at(&expr), format!("h_rc_{}", &var_name))
+            } else {
+                (None, format!("h_{var_name}"))
+            };
+
             self.spec_rcases.push(assert_hyp.clone());
             let (rhs_var_a, rhs_var_b, simps) =
                 self.get_rhs_vars_and_simps(&expr, lean_info, &assert_hyp);
@@ -3644,7 +3724,7 @@ impl CompletenessProof {
                 rhs_var_a,
                 rhs_var_b,
                 expr.op != "" && String::from("+-*/").find(&expr.op).is_some(),
-                None,
+                rc_offset,
                 &assert_hyp,
                 Some(&simps),
                 pc,
@@ -5403,14 +5483,12 @@ fn find_func_offsets(cairo_program: &CairoProgram) -> Vec<(usize,usize)> {
 /// Returns a tuple whose first string is the spec file for the function and the second string the automatic
 /// soundness proofs for the function.
 ///
-pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) -> (String, String) {
-
-    let main_func_name: String = func_name_from_test_name(test_name);
+pub fn generate_lean_soundness(lean_func_name: &str, cairo_program: &CairoProgram) -> (String, String) {
 
     if cairo_program.aux_infos.len() == 0 {
         return (
-            format!("-- No spec generated for {main_func_name}: empty function."),
-            format!("-- No proof generated for {main_func_name}: empty function."),
+            format!("-- No spec generated for {lean_func_name}: empty function."),
+            format!("-- No proof generated for {lean_func_name}: empty function."),
         );
     }
 
@@ -5418,8 +5496,8 @@ pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) ->
     let offsets = find_func_offsets(cairo_program);
     if offsets.len() != cairo_program.aux_infos.len() {
         return (
-            format!("-- No spec generated for {main_func_name}: unsupported function call structure."),
-            format!("-- No proof generated for {main_func_name}: unsupported function call structure."),
+            format!("-- No spec generated for {lean_func_name}: unsupported function call structure."),
+            format!("-- No proof generated for {lean_func_name}: unsupported function call structure."),
         );
     }
 
@@ -5427,8 +5505,8 @@ pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) ->
     let mut soundness: Vec<String> = Vec::new();
 
     // Generate the prelude
-    soundness_spec.append(generate_soundness_spec_prelude(&main_func_name).as_mut());
-    soundness.append(generate_soundness_prelude4(&main_func_name).as_mut());
+    soundness_spec.append(generate_soundness_spec_prelude(&lean_func_name).as_mut());
+    soundness.append(generate_soundness_prelude4(&lean_func_name).as_mut());
 
 
     for (aux_info, func_offsets) in cairo_program.aux_infos.iter().zip(offsets.iter()) {
@@ -5436,8 +5514,8 @@ pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) ->
         let casm_end = (*func_offsets).1;
         let func_name_suffix = if casm_start == 0 { "".to_string() } else { "_destr".to_string() + &casm_start.to_string() };
         let lean_info = LeanFuncInfo::new(
-            main_func_name.clone(),
-            format!("{main_func_name}{func_name_suffix}"),
+            lean_func_name.to_string(),
+            format!("{lean_func_name}{func_name_suffix}"),
             aux_info,
             casm_start,
             casm_end,
@@ -5492,14 +5570,12 @@ fn generate_func_lean_soundness(lean_info: &LeanFuncInfo) -> Vec<String> {
 /// Returns a tuple whose first string is the completeness spec file for the function and the second string the automatic
 /// completeness proofs for the function.
 ///
-pub fn generate_lean_completeness(test_name: &str, cairo_program: &CairoProgram) -> (String, String) {
-
-    let main_func_name: String = func_name_from_test_name(test_name);
+pub fn generate_lean_completeness(lean_func_name: &str, cairo_program: &CairoProgram) -> (String, String) {
 
     if cairo_program.aux_infos.len() == 0 {
         return (
-            format!("-- No spec generated for {main_func_name}: empty function."),
-            format!("-- No proof generated for {main_func_name}: empty function."),
+            format!("-- No spec generated for {lean_func_name}: empty function."),
+            format!("-- No proof generated for {lean_func_name}: empty function."),
         );
     }
 
@@ -5507,8 +5583,8 @@ pub fn generate_lean_completeness(test_name: &str, cairo_program: &CairoProgram)
     let offsets = find_func_offsets(cairo_program);
     if offsets.len() != cairo_program.aux_infos.len() {
         return (
-            format!("-- No spec generated for {main_func_name}: unsupported function call structure."),
-            format!("-- No proof generated for {main_func_name}: unsupported function call structure."),
+            format!("-- No spec generated for {lean_func_name}: unsupported function call structure."),
+            format!("-- No proof generated for {lean_func_name}: unsupported function call structure."),
         );
     }
 
@@ -5516,16 +5592,16 @@ pub fn generate_lean_completeness(test_name: &str, cairo_program: &CairoProgram)
     let mut completeness: Vec<String> = Vec::new();
 
     // Generate the prelude
-    completeness_spec.append(generate_completeness_spec_prelude(&main_func_name).as_mut());
-    completeness.append(generate_completeness_prelude(&main_func_name).as_mut());
+    completeness_spec.append(generate_completeness_spec_prelude(&lean_func_name).as_mut());
+    completeness.append(generate_completeness_prelude(&lean_func_name).as_mut());
 
     for (aux_info, func_offsets) in cairo_program.aux_infos.iter().zip(offsets.iter()) {
         let casm_start = (*func_offsets).0;
         let casm_end = (*func_offsets).1;
         let func_name_suffix = if casm_start == 0 { "".to_string() } else { "_destr".to_string() + &casm_start.to_string() };
         let lean_info = LeanFuncInfo::new(
-            main_func_name.clone(),
-            format!("{main_func_name}{func_name_suffix}"),
+            lean_func_name.to_string(),
+            format!("{lean_func_name}{func_name_suffix}"),
             aux_info,
             casm_start,
             casm_end,
@@ -5596,10 +5672,9 @@ fn make_casm_lines(cairo_program: &CairoProgram) -> Vec<String> {
     casm_lines
 }
 
-pub fn generate_lean_code(test_name: &str, cairo_program: &CairoProgram) -> String {
+pub fn generate_lean_code(lean_func_name: &str, cairo_program: &CairoProgram) -> String {
 
     let mut lean_code: Vec<String> = Vec::new();
-    let func_name = func_name_from_test_name(test_name);
     let casm_lines = make_casm_lines(cairo_program);
 
     lean_code.push("import Verification.Semantics.Assembly".into());
@@ -5610,7 +5685,7 @@ pub fn generate_lean_code(test_name: &str, cairo_program: &CairoProgram) -> Stri
 
     // Soundness (field based) code.
     lean_code.push("open Casm in".into());
-    lean_code.push(format!("casm_code_def {code_def_name} := {{", code_def_name = lean_code_name(&func_name)));
+    lean_code.push(format!("casm_code_def {code_def_name} := {{", code_def_name = lean_code_name(lean_func_name)));
     for line in &casm_lines {
         lean_code.push(line.clone());
     }
@@ -5620,7 +5695,7 @@ pub fn generate_lean_code(test_name: &str, cairo_program: &CairoProgram) -> Stri
     // Completeness (VM based) code.
     // let mut casm_lines = make_casm_lines(cairo_program).as_mut();
     lean_code.push("open Casm in".into());
-    lean_code.push(format!("vm_casm_code_def {code_def_name} := {{", code_def_name = lean_vm_code_name(&func_name)));
+    lean_code.push(format!("vm_casm_code_def {code_def_name} := {{", code_def_name = lean_vm_code_name(lean_func_name)));
     for line in &casm_lines {
         lean_code.push(line.clone());
     }
@@ -5634,55 +5709,50 @@ pub fn generate_lean_code(test_name: &str, cairo_program: &CairoProgram) -> Stri
 // Lean Output Functions.
 //
 
-pub fn write_lean_soundness_spec_file(test_path: &Path, test_name: &str, spec: Option<&String>) -> Result<(), std::io::Error> {
+pub fn write_lean_soundness_spec_file(test_path: &Path, lean_func_name: &str, spec: Option<&String>) -> Result<(), std::io::Error> {
     let spec_str = match spec { Some(content) => { content }, _ => { return Ok(()); }};
-    let func_name = func_name_from_test_name(test_name);
     let lean_path = lean_verification_path(test_path);
     let soundness_file_path = lean_file_path(
-        &lean_path, &lean_soundness_spec_file_name(&func_name, true));
+        &lean_path, &lean_soundness_spec_file_name(lean_func_name, true));
     fs::create_dir_all(lean_path)?;
     fs::write(soundness_file_path, spec_str)
 }
 
-pub fn write_lean_soundness_file(test_path: &Path, test_name: &str, soundness: Option<&String>) -> Result<(), std::io::Error> {
+pub fn write_lean_soundness_file(test_path: &Path, lean_func_name: &str, soundness: Option<&String>) -> Result<(), std::io::Error> {
     let soundness_str = match soundness { Some(content) => { content }, _ => { return Ok(()); }};
-    let func_name = func_name_from_test_name(test_name);
     let lean_path = lean_verification_path(test_path);
     let soundness_file_path = lean_file_path(
-        &lean_path, &lean_soundness_file_name(&func_name, true));
+        &lean_path, &lean_soundness_file_name(lean_func_name, true));
     fs::create_dir_all(lean_path)?;
     fs::write(soundness_file_path, soundness_str)
 }
 
-pub fn write_lean_completeness_spec_file(test_path: &Path, test_name: &str, spec: Option<&String>) -> Result<(), std::io::Error> {
+pub fn write_lean_completeness_spec_file(test_path: &Path, lean_func_name: &str, spec: Option<&String>) -> Result<(), std::io::Error> {
     let spec_str = match spec { Some(content) => { content }, _ => { return Ok(()); }};
-    let func_name = func_name_from_test_name(test_name);
     let lean_path = lean_verification_path(test_path);
     let completeness_file_path = lean_file_path(
-        &lean_path, &lean_completeness_spec_file_name(&func_name, true));
+        &lean_path, &lean_completeness_spec_file_name(lean_func_name, true));
     fs::create_dir_all(lean_path)?;
     fs::write(completeness_file_path, spec_str)
 }
 
-pub fn write_lean_completeness_file(test_path: &Path, test_name: &str, completeness: Option<&String>) -> Result<(), std::io::Error> {
+pub fn write_lean_completeness_file(test_path: &Path, lean_func_name: &str, completeness: Option<&String>) -> Result<(), std::io::Error> {
     let completeness_str = match completeness { Some(content) => { content }, _ => { return Ok(()); }};
-    let func_name = func_name_from_test_name(test_name);
     let lean_path = lean_verification_path(test_path);
     let completeness_file_path = lean_file_path(
-        &lean_path, &lean_completeness_file_name(&func_name, true));
+        &lean_path, &lean_completeness_file_name(lean_func_name, true));
     fs::create_dir_all(lean_path)?;
     fs::write(completeness_file_path, completeness_str)
 }
 
 pub fn write_lean_code_file(
-    test_path: &Path, test_name: &str, lean_code: Option<&String>,
+    test_path: &Path, lean_func_name: &str, lean_code: Option<&String>,
 ) -> Result<(), std::io::Error> {
 
     let code_str = match lean_code { Some(content) => { content }, _ => { return Ok(()); }};
-    let func_name = func_name_from_test_name(test_name);
     let lean_path = lean_verification_path(test_path);
     let code_file_path = lean_file_path(
-        &lean_path, &lean_code_file_name(&func_name, true));
+        &lean_path, &lean_code_file_name(lean_func_name, true));
     fs::create_dir_all(lean_path)?;
     fs::write(code_file_path, code_str)
 }
