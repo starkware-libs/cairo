@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct VersionId {
     pub major: usize,
     pub minor: usize,
