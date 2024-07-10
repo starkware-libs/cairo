@@ -641,7 +641,7 @@ version = "2.7.0"
 dependencies = [
  "anyhow",
  "assert_fs",
- "cairo-lang-compiler",
+ "cairo-lang-debug",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
  "cairo-lang-doc",
