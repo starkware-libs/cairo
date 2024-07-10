@@ -1,6 +1,8 @@
 use cairo_lang_language_server::lsp;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use indoc::indoc;
+use tower_lsp::lsp_types::{lsp_request, ApplyWorkspaceEditResponse, ExecuteCommandParams};
 
 use crate::support::normalize::normalize;
 use crate::support::sandbox;
@@ -35,4 +37,35 @@ fn test_analyzed_crates(
         "expected analyzed crates".to_owned(),
         output,
     )]))
+}
+
+#[test]
+fn test_reload() {
+    let mut ls = sandbox! {
+        files {
+            "cairo_project.toml" => indoc! {r#"
+                [crate_roots]
+                hello = "src"
+            "#},
+            "src/lib.cairo" => "fn main() {}",
+        }
+    };
+
+    ls.open_and_wait_for_diagnostics("src/lib.cairo");
+
+    let expected = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+
+    ls.expect_request::<lsp_request!("workspace/applyEdit")>(|_| ApplyWorkspaceEditResponse {
+        applied: true,
+        failure_reason: None,
+        failed_change: None,
+    });
+    ls.send_request::<lsp_request!("workspace/executeCommand")>(ExecuteCommandParams {
+        command: "cairo.reload".into(),
+        ..Default::default()
+    });
+
+    let actual = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+
+    assert_eq!(expected, actual);
 }

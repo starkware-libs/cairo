@@ -1,8 +1,9 @@
+use std::collections::VecDeque;
 use std::ffi::OsStr;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
-use std::{future, process};
+use std::{fmt, future, mem, process};
 
 use cairo_lang_language_server::build_service_for_e2e_tests;
 use futures::channel::mpsc;
@@ -37,6 +38,7 @@ pub struct MockClient {
     output_rx: mpsc::Receiver<Message>,
     trace: Vec<Message>,
     workspace_configuration: Value,
+    expect_request_handlers: VecDeque<ExpectRequestHandler>,
     _main_loop: AbortOnDrop,
 }
 
@@ -71,6 +73,7 @@ impl MockClient {
             output_rx: responses_rx,
             trace: Vec::new(),
             workspace_configuration,
+            expect_request_handlers: Default::default(),
             _main_loop: main_loop,
         };
 
@@ -170,6 +173,10 @@ impl MockClient {
     pub fn send_request_untyped(&mut self, method: &'static str, params: Value) -> Value {
         let id = self.req_id.next();
         let message = Message::request(method, id.clone(), params);
+
+        let mut expect_request_handlers = mem::take(&mut self.expect_request_handlers);
+        let does_expect_requests = !expect_request_handlers.is_empty();
+
         let rt = self.rt.clone();
         rt.block_on(async {
             self.input_tx.send(message.clone()).await.expect("failed to send request");
@@ -181,12 +188,30 @@ impl MockClient {
                     Message::Request(res) if res.id().is_none() => {
                         // This looks like a notification, skip it.
                     }
+
                     Message::Request(req) => {
+                        if does_expect_requests {
+                            if let Some(handler) = expect_request_handlers.pop_front() {
+                                let response = (handler.f)(&req);
+                                let message = Message::Response(response);
+                                self.input_tx.send(message).await.expect("failed to send response");
+                                continue;
+                            }
+                        }
+
                         panic!("unexpected request: {:?}", req)
                     }
+
                     Message::Response(res) => {
                         let (res_id, result) = res.into_parts();
                         assert_eq!(res_id, id);
+
+                        assert!(
+                            !does_expect_requests || expect_request_handlers.is_empty(),
+                            "expected more requests to be received from the client while \
+                             processing the current server one: {expect_request_handlers:?}"
+                        );
+
                         match result {
                             Ok(result) => return result,
                             Err(err) => panic!("error response: {:#?}", err),
@@ -308,6 +333,49 @@ impl MockClient {
     }
 }
 
+/// Methods for handling interactive requests.
+impl MockClient {
+    /// Expect a specified request to be received from the served while processing the next client
+    /// request.
+    ///
+    /// The handler is expected to return a response to the caught request.
+    /// Handler can validate the request by asserting its parameters.
+    /// Calls to this method can be stacked sequentially, to expect a sequence of requests being
+    /// received from the server.
+    pub fn expect_request<R>(&mut self, handler: impl FnOnce(&R::Params) -> R::Result + 'static)
+    where
+        R: lsp_types::request::Request,
+    {
+        self.expect_request_untyped(R::METHOD, move |req| {
+            assert_eq!(req.method(), R::METHOD);
+
+            let Some(id) = req.id().cloned() else {
+                panic!("request ID is missing: {req:?}");
+            };
+
+            let params = serde_json::from_value(req.params().cloned().unwrap_or_default())
+                .expect("failed to parse request params");
+            let result = handler(&params);
+            let result = serde_json::to_value(result).expect("failed to serialize response");
+
+            jsonrpc::Response::from_ok(id, result)
+        })
+    }
+
+    /// Untyped version of [`MockClient::expect_request`].
+    ///
+    /// The `description` parameter is used in panic messages to tell that this handler did not
+    /// fire. Usually it is enough to put request method name here.
+    pub fn expect_request_untyped(
+        &mut self,
+        description: &'static str,
+        handler: impl FnOnce(&jsonrpc::Request) -> jsonrpc::Response + 'static,
+    ) {
+        self.expect_request_handlers
+            .push_back(ExpectRequestHandler { description, f: Box::new(handler) })
+    }
+}
+
 /// Quality of life helpers for interacting with the server.
 impl MockClient {
     /// Returns a `TextDocumentIdentifier` for the given file.
@@ -422,5 +490,20 @@ impl MockClient {
 impl AsRef<Fixture> for MockClient {
     fn as_ref(&self) -> &Fixture {
         &self.fixture
+    }
+}
+
+/// A container for callbacks passed to [`MockClient::expect_request`] that also carries a text
+/// telling what this callback expects.
+///
+/// The description is used in panic messages.
+struct ExpectRequestHandler {
+    description: &'static str,
+    f: Box<dyn FnOnce(&jsonrpc::Request) -> jsonrpc::Response>,
+}
+
+impl fmt::Debug for ExpectRequestHandler {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(self.description, f)
     }
 }
