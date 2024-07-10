@@ -229,7 +229,7 @@ fn ensure_exists_in_db(
     open_files: impl Iterator<Item = Url>,
 ) {
     let overrides = old_db.file_overrides();
-    let mut new_overrides: OrderedHashMap<FileId, Arc<String>> = Default::default();
+    let mut new_overrides: OrderedHashMap<FileId, Arc<str>> = Default::default();
     for uri in open_files {
         let Some(file_id) = old_db.file_for_url(&uri) else { continue };
         let new_file_id = file_id.lookup_intern(old_db).intern(new_db);
@@ -525,7 +525,7 @@ impl Backend {
             let content = db
                 .file_for_url(&params.uri)
                 .and_then(|file_id| db.file_content(file_id))
-                .map(Arc::unwrap_or_clone);
+                .map(|content| content.to_string());
             ProvideVirtualFileResponse { content }
         })
         .await
@@ -780,24 +780,25 @@ impl LanguageServer for Backend {
 
         let Some(file_id) = db.file_for_url(&uri) else { return };
         self.state_mut().await.open_files.insert(uri);
-        db.override_file_content(file_id, Some(Arc::new(params.text_document.text)));
+        db.override_file_content(file_id, Some(params.text_document.text.into()));
         drop(db);
         self.refresh_diagnostics().await.ok();
     }
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        let text =
-            if let [TextDocumentContentChangeEvent { text, .. }] = &params.content_changes[..] {
-                text
-            } else {
-                error!("unexpected format of document change");
-                return;
-            };
+        let text = if let Ok([TextDocumentContentChangeEvent { text, .. }]) =
+            TryInto::<[_; 1]>::try_into(params.content_changes)
+        {
+            text
+        } else {
+            error!("unexpected format of document change");
+            return;
+        };
         let mut db = self.db_mut().await;
         let uri = params.text_document.uri;
         let Some(file) = db.file_for_url(&uri) else { return };
-        db.override_file_content(file, Some(Arc::new(text.into())));
+        db.override_file_content(file, Some(text.into()));
         drop(db);
         self.refresh_diagnostics().await.ok();
     }

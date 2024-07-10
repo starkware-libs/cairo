@@ -482,7 +482,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     let new_file = FileLongId::Virtual(VirtualFile {
                         parent: Some(module_file),
                         name: generated.name,
-                        content: Arc::new(generated.content),
+                        content: generated.content.into(),
                         code_mappings: generated.code_mappings.into(),
                         kind: FileKind::Module,
                     })
