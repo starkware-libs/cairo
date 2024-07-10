@@ -156,7 +156,7 @@ impl ContractStateMint of
         unsafe_new_contract_state()
     }
 }
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -197,7 +197,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -968,7 +968,7 @@ impl ContractStateMint of
         unsafe_new_contract_state()
     }
 }
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -1009,7 +1009,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();

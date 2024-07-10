@@ -280,7 +280,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x13b620794e5b3dc7cc2033d0b9381b35d5d10d1f0a43fe1f5e1d495f793ebab;
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -843,7 +843,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x20768e618c747c9e742de0446492553ae65eafb837da660ed6516e1ed6b52fc;
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -1444,7 +1444,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x20768e618c747c9e742de0446492553ae65eafb837da660ed6516e1ed6b52fc;
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();

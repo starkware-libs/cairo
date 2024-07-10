@@ -63,15 +63,15 @@ pub(super) const CALLDATA_PARAM_NAME: &str = "__calldata__";
 
 /// Starknet OS required implicit precedence.
 pub(super) const IMPLICIT_PRECEDENCE: &[&str] = &[
-    "Pedersen",
-    "RangeCheck",
-    "Bitwise",
+    "core::pedersen::Pedersen",
+    "core::RangeCheck",
+    "core::integer::Bitwise",
     "core::ec::EcOp",
-    "Poseidon",
-    "SegmentArena",
+    "core::poseidon::Poseidon",
+    "core::SegmentArena",
     "core::circuit::RangeCheck96",
     "core::circuit::AddMod",
     "core::circuit::MulMod",
-    "GasBuiltin",
+    "core::gas::GasBuiltin",
     "System",
 ];
