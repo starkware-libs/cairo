@@ -77,6 +77,7 @@ use salsa::ParallelDatabase;
 use serde_json::Value;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
+use tower_lsp::lsp_types::request::Request;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
@@ -98,7 +99,7 @@ mod config;
 mod env_config;
 mod ide;
 mod lang;
-mod lsp;
+pub mod lsp;
 mod markdown;
 mod project;
 mod server;
@@ -272,6 +273,7 @@ impl Backend {
     fn build_service(tricks: Tricks) -> (LspService<Self>, ClientSocket) {
         LspService::build(|client| Self::new(client, tricks))
             .custom_method("vfs/provide", Self::vfs_provide)
+            .custom_method(lsp::ext::ViewAnalyzedCrates::METHOD, Self::view_analyzed_crates)
             .finish()
     }
 
@@ -506,6 +508,11 @@ impl Backend {
                 }
             }
         }
+    }
+
+    #[tracing::instrument(level = "trace", skip_all)]
+    async fn view_analyzed_crates(&self) -> LSPResult<String> {
+        self.with_db(lang::inspect::crates::inspect_analyzed_crates).await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
