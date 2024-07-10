@@ -23,5 +23,6 @@ indoc.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
+rayon.workspace = true
 
 [dev-dependencies]
