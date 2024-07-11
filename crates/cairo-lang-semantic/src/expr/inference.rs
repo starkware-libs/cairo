@@ -7,7 +7,7 @@ use std::ops::{Deref, DerefMut};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
+    ClosureId, ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
     ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LanguageElementId, LocalVarId,
     LookupItemId, MemberId, ParamId, StructId, TraitConstantId, TraitFunctionId, TraitId,
     TraitImplId, TraitTypeId, VarId, VariantId,
@@ -37,7 +37,8 @@ use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext, Uninf
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{
-    ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId, ImplTypeId,
+    ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
+    ImplTypeId,
 };
 use crate::{
     add_basic_rewrites, add_expr_rewrites, add_rewrite, semantic_object_for_id, ConcreteEnumId,

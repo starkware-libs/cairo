@@ -1,0 +1,34 @@
+//! > Test call
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: *)
+
+//! > module_code
+
+//! > expr_code
+|| {
+    3
+}
+
+//! > expected_semantics
+ExprClosure(
+    ExprClosure {
+        body: Block(
+            ExprBlock {
+                statements: [],
+                tail: Some(
+                    Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::felt252,
+                        },
+                    ),
+                ),
+                ty: core::felt252,
+            },
+        ),
+        ty: fn() -> core::felt252,
+    },
+)
+
+//! > expected_diagnostics

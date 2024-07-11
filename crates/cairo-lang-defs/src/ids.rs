@@ -1094,3 +1094,10 @@ define_language_element_id_as_enum! {
         ImplItem(ImplItemId),
     }
 }
+define_language_element_id_basic!(
+    ClosureId,
+    ClosureLongId,
+    ast::ExprClosure,
+    lookup_intern_closure,
+    intern_closure
+);
