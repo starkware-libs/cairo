@@ -29,7 +29,9 @@ use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstV
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId, GenericArgumentId};
+use crate::{
+    semantic, semantic_object_for_id, ConcreteTraitId, ExprId, FunctionId, GenericArgumentId,
+};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId {
@@ -47,6 +49,7 @@ pub enum TypeLongId {
     },
     ImplType(ImplTypeId),
     TraitType(TraitTypeId),
+    Closure(ClosureTypeLongId),
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -139,6 +142,13 @@ impl TypeLongId {
                     trait_type_id.name(def_db)
                 )
             }
+            TypeLongId::Closure(closure) => {
+                let containing_function = closure
+                    .containing_function
+                    .map(|function_id| function_id.full_name(db))
+                    .unwrap_or("missing".into());
+                format!("{}[{:?}]", containing_function, closure.body_id)
+            }
         }
     }
 
@@ -154,7 +164,8 @@ impl TypeLongId {
             | TypeLongId::Var(_)
             | TypeLongId::Missing(_)
             | TypeLongId::ImplType(_)
-            | TypeLongId::TraitType(_) => {
+            | TypeLongId::TraitType(_)
+            | TypeLongId::Closure(_) => {
                 return None;
             }
         })
@@ -186,7 +197,8 @@ impl TypeLongId {
             | TypeLongId::Coupon(_)
             | TypeLongId::TraitType(_)
             | TypeLongId::ImplType(_)
-            | TypeLongId::Missing(_) => false,
+            | TypeLongId::Missing(_)
+            | TypeLongId::Closure(_) => false,
         }
     }
 }
@@ -387,6 +399,18 @@ impl ConcreteExternTypeId {
     }
 }
 
+/// A type id of a closure function.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct ClosureTypeLongId {
+    // The function containing the closure.
+    // It is `None` if we do not have the function id of the containing function (for example, if
+    // there is a semantic error).
+    pub containing_function: Option<FunctionId>,
+    pub body_id: ExprId,
+    pub params: Vec<TypeId>,
+    pub ret_ty: TypeId,
+}
+
 /// An impl item of kind type.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ImplTypeId {
@@ -519,7 +543,8 @@ pub fn extract_fixed_size_array_size(
                 db,
                 (resolver.data).clone_with_inference_id(db, resolver.inference_data.inference_id),
             );
-            let mut ctx = ComputationContext::new(db, diagnostics, resolver, None, environment);
+            let mut ctx =
+                ComputationContext::new(db, diagnostics, resolver, None, environment, None);
             let size_expr_syntax = size_clause.size(syntax_db);
             let size = compute_expr_semantic(&mut ctx, &size_expr_syntax);
             let const_value = resolve_const_expr_and_evaluate(
@@ -629,7 +654,8 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         | TypeLongId::Missing(_)
         | TypeLongId::Coupon(_)
         | TypeLongId::ImplType(_)
-        | TypeLongId::TraitType(_) => false,
+        | TypeLongId::TraitType(_)
+        | TypeLongId::Closure(_) => false,
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
                 || matches!(size.lookup_intern(db),
@@ -716,7 +742,8 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
         | TypeLongId::TraitType(_)
-        | TypeLongId::ImplType(_) => {}
+        | TypeLongId::ImplType(_)
+        | TypeLongId::Closure(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
             if matches!(size.lookup_intern(db), ConstValue::Int(value,_) if value.is_zero())
                 || db.type_size_info(type_id)? == TypeSizeInformation::ZeroSized
@@ -771,6 +798,14 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_fully_concrete(db) && size.is_fully_concrete(db)
         }
+        TypeLongId::Closure(closure) => {
+            let Some(function_id) = closure.containing_function else {
+                return true;
+            };
+            function_id.lookup_intern(db).function.generic_args.is_empty()
+                && closure.params.iter().all(|param| param.is_fully_concrete(db))
+                && closure.ret_ty.is_fully_concrete(db)
+        }
     }
 }
 
@@ -786,6 +821,10 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
             type_id.is_var_free(db) && size.is_var_free(db)
         }
         TypeLongId::ImplType(impl_type) => impl_type.impl_id().is_var_free(db),
+        TypeLongId::Closure(closure) => {
+            closure.params.iter().all(|param| param.is_var_free(db))
+                && closure.ret_ty.is_var_free(db)
+        }
     }
 }
 
