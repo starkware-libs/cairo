@@ -158,6 +158,9 @@ pub fn get_concrete_long_type_id(
                 type_id.format(db.upcast())
             )
         }
+        semantic::TypeLongId::Closure(_) => {
+            panic!("Closure types should have been handled in the lowering stage.")
+        }
     })
 }
 
@@ -202,6 +205,9 @@ pub fn type_dependencies(
         semantic::TypeLongId::Tuple(inner_types) => inner_types,
         semantic::TypeLongId::Snapshot(ty) => vec![ty],
         semantic::TypeLongId::Coupon(_) => vec![],
+        semantic::TypeLongId::Closure(_) => {
+            unreachable!("Closure types should have been handled in the lowering stage.");
+        }
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
             let size = size
                 .lookup_intern(db)
