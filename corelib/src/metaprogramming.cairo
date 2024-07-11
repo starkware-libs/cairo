@@ -22,6 +22,21 @@ impl IsTupleTupleSize9<
 impl IsTupleTupleSize10<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9
 > of IsTuple<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9)>;
+impl IsTupleTupleSize11<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10
+> of IsTuple<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10)>;
+impl IsTupleTupleSize12<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11
+> of IsTuple<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11)>;
+impl IsTupleTupleSize13<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12
+> of IsTuple<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12)>;
+impl IsTupleTupleSize14<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13
+> of IsTuple<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13)>;
+impl IsTupleTupleSize15<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14
+> of IsTuple<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14)>;
 
 /// A trait for splitting a tuple into head element and a tail tuple, as well as reconstructing from
 /// them.
@@ -172,6 +187,96 @@ impl TupleSplitTupleSize10<
     ) -> (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9) nopanic {
         let (e1, e2, e3, e4, e5, e6, e7, e8, e9) = rest;
         (head, e1, e2, e3, e4, e5, e6, e7, e8, e9)
+    }
+}
+impl TupleSplitTupleSize11<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10
+> of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10)> {
+    type Head = E0;
+    type Rest = (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10);
+    fn split_head(
+        self: (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10)
+    ) -> (E0, (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10)) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10) = self;
+        (e0, (e1, e2, e3, e4, e5, e6, e7, e8, e9, e10))
+    }
+    fn reconstruct(
+        head: E0, rest: (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10)
+    ) -> (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10) nopanic {
+        let (e1, e2, e3, e4, e5, e6, e7, e8, e9, e10) = rest;
+        (head, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)
+    }
+}
+impl TupleSplitTupleSize12<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11
+> of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11)> {
+    type Head = E0;
+    type Rest = (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11);
+    fn split_head(
+        self: (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11)
+    ) -> (E0, (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11)) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11) = self;
+        (e0, (e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11))
+    }
+    fn reconstruct(
+        head: E0, rest: (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11)
+    ) -> (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11) nopanic {
+        let (e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11) = rest;
+        (head, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11)
+    }
+}
+impl TupleSplitTupleSize13<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12
+> of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12)> {
+    type Head = E0;
+    type Rest = (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12);
+    fn split_head(
+        self: (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12)
+    ) -> (E0, (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12)) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12) = self;
+        (e0, (e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12))
+    }
+    fn reconstruct(
+        head: E0, rest: (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12)
+    ) -> (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12) nopanic {
+        let (e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12) = rest;
+        (head, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12)
+    }
+}
+impl TupleSplitTupleSize14<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13
+> of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13)> {
+    type Head = E0;
+    type Rest = (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13);
+    fn split_head(
+        self: (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13)
+    ) -> (E0, (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13)) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13) = self;
+        (e0, (e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13))
+    }
+    fn reconstruct(
+        head: E0, rest: (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13)
+    ) -> (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13) nopanic {
+        let (e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13) = rest;
+        (head, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13)
+    }
+}
+impl TupleSplitTupleSize15<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14
+> of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14)> {
+    type Head = E0;
+    type Rest = (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14);
+    fn split_head(
+        self: (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14)
+    ) -> (E0, (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14)) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14) = self;
+        (e0, (e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14))
+    }
+    fn reconstruct(
+        head: E0, rest: (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14)
+    ) -> (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14) nopanic {
+        let (e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14) = rest;
+        (head, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14)
     }
 }
 impl TupleSplitFixedSizedArraySized1<T> of TupleSplit<[T; 1]> {
@@ -389,6 +494,61 @@ impl TupleExtendFrontTupleSize9<
         (element, e0, e1, e2, e3, e4, e5, e6, e7, e8)
     }
 }
+impl TupleExtendFrontTupleSize10<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E
+> of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9), E> {
+    type Result = (E, E0, E1, E2, E3, E4, E5, E6, E7, E8, E9);
+    fn extend_front(
+        value: (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9), element: E
+    ) -> (E, E0, E1, E2, E3, E4, E5, E6, E7, E8, E9) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9) = value;
+        (element, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9)
+    }
+}
+impl TupleExtendFrontTupleSize11<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E
+> of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10), E> {
+    type Result = (E, E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10);
+    fn extend_front(
+        value: (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10), element: E
+    ) -> (E, E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10) = value;
+        (element, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)
+    }
+}
+impl TupleExtendFrontTupleSize12<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E
+> of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11), E> {
+    type Result = (E, E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11);
+    fn extend_front(
+        value: (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11), element: E
+    ) -> (E, E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11) = value;
+        (element, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11)
+    }
+}
+impl TupleExtendFrontTupleSize13<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E
+> of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12), E> {
+    type Result = (E, E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12);
+    fn extend_front(
+        value: (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12), element: E
+    ) -> (E, E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12) = value;
+        (element, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12)
+    }
+}
+impl TupleExtendFrontTupleSize14<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E
+> of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13), E> {
+    type Result = (E, E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13);
+    fn extend_front(
+        value: (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13), element: E
+    ) -> (E, E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13) = value;
+        (element, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13)
+    }
+}
 impl TupleExtendFrontFixedSizedArraySize0<T> of TupleExtendFront<[T; 0], T> {
     type Result = [T; 1];
     fn extend_front(value: [T; 0], element: T) -> [T; 1] nopanic {
@@ -558,6 +718,63 @@ impl TupleSnapForwardTupleSize10<
     ) -> (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9) nopanic {
         let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9) = self;
         (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9)
+    }
+}
+impl TupleSnapForwardTupleSize11<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10
+> of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10)> {
+    type SnapForward = (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9, @E10);
+    fn snap_forward(
+        self: @(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10)
+    ) -> (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9, @E10) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10) = self;
+        (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)
+    }
+}
+impl TupleSnapForwardTupleSize12<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11
+> of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11)> {
+    type SnapForward = (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9, @E10, @E11);
+    fn snap_forward(
+        self: @(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11)
+    ) -> (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9, @E10, @E11) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11) = self;
+        (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11)
+    }
+}
+impl TupleSnapForwardTupleSize13<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12
+> of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12)> {
+    type SnapForward = (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9, @E10, @E11, @E12);
+    fn snap_forward(
+        self: @(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12)
+    ) -> (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9, @E10, @E11, @E12) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12) = self;
+        (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12)
+    }
+}
+impl TupleSnapForwardTupleSize14<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13
+> of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13)> {
+    type SnapForward = (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9, @E10, @E11, @E12, @E13);
+    fn snap_forward(
+        self: @(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13)
+    ) -> (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9, @E10, @E11, @E12, @E13) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13) = self;
+        (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13)
+    }
+}
+impl TupleSnapForwardTupleSize15<
+    E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14
+> of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14)> {
+    type SnapForward = (
+        @E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9, @E10, @E11, @E12, @E13, @E14
+    );
+    fn snap_forward(
+        self: @(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14)
+    ) -> (@E0, @E1, @E2, @E3, @E4, @E5, @E6, @E7, @E8, @E9, @E10, @E11, @E12, @E13, @E14) nopanic {
+        let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14) = self;
+        (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14)
     }
 }
 impl TupleSnapForwardFixedSizedArraySized0<T> of TupleSnapForward<[T; 0]> {
