@@ -100,12 +100,18 @@ impl CompiledTestRunner {
         );
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
-            if self.config.run_profiler == RunProfilerConfig::Cairo { db } else { None },
+            if self.config.run_profiler == RunProfilerConfig::Cairo {
+                Some(PorfilingAuxData {
+                    db: db.expect("db must be passed when profiling."),
+                    statements_functions: compiled.metadata.statements_functions.unwrap(),
+                })
+            } else {
+                None
+            },
             compiled.metadata.named_tests,
             compiled.sierra_program.program,
             compiled.metadata.function_set_costs,
             compiled.metadata.contracts_info,
-            compiled.metadata.statements_functions,
             &self.config,
         )?;
 
@@ -310,14 +316,19 @@ pub struct TestsSummary {
     failed_run_results: Vec<RunResultValue>,
 }
 
+/// Auxiliary data that is required when running tests with profiling.
+pub struct PorfilingAuxData<'a> {
+    pub db: &'a dyn SierraGenGroup,
+    pub statements_functions: UnorderedHashMap<StatementIdx, String>,
+}
+
 /// Runs the tests and process the results for a summary.
 pub fn run_tests(
-    db: Option<&RootDatabase>,
+    profiler_data: Option<PorfilingAuxData<'_>>,
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     contracts_info: OrderedHashMap<Felt252, ContractInfo>,
-    statements_functions: UnorderedHashMap<StatementIdx, String>,
     config: &TestRunConfig,
 ) -> Result<TestsSummary> {
     let runner = SierraCasmRunner::new(
@@ -352,7 +363,7 @@ pub fn run_tests(
     }));
 
     // Run in parallel if possible. If running with db, parallelism is impossible.
-    if db.is_none() {
+    if profiler_data.is_none() {
         named_tests
             .into_par_iter()
             .map(|(name, test)| run_single_test(test, name, &runner))
@@ -360,9 +371,8 @@ pub fn run_tests(
                 update_summary(
                     &wrapped_summary,
                     res,
-                    None,
+                    &None,
                     &sierra_program,
-                    &statements_functions,
                     &ProfilingInfoProcessorParams {
                         process_by_original_user_function: false,
                         process_by_cairo_function: false,
@@ -372,7 +382,7 @@ pub fn run_tests(
                 );
             });
     } else {
-        eprintln!("Note: Tests don't run in parallel when running with a database.");
+        eprintln!("Note: Tests don't run in parallel when running with profiling.");
         named_tests
             .into_iter()
             .map(move |(name, test)| run_single_test(test, name, &runner))
@@ -380,9 +390,8 @@ pub fn run_tests(
                 update_summary(
                     &wrapped_summary,
                     test_result,
-                    db.map(|db| db as &dyn SierraGenGroup),
+                    &profiler_data,
                     &sierra_program,
-                    &statements_functions,
                     &ProfilingInfoProcessorParams::default(),
                     config.print_resource_usage,
                 );
@@ -442,9 +451,8 @@ fn run_single_test(
 fn update_summary(
     wrapped_summary: &Mutex<std::prelude::v1::Result<TestsSummary, anyhow::Error>>,
     test_result: std::prelude::v1::Result<(String, Option<TestResult>), anyhow::Error>,
-    db: Option<&dyn SierraGenGroup>,
+    profiler_data: &Option<PorfilingAuxData<'_>>,
     sierra_program: &Program,
-    statements_functions: &UnorderedHashMap<StatementIdx, String>,
     profiling_params: &ProfilingInfoProcessorParams,
     print_resource_usage: bool,
 ) {
@@ -509,8 +517,14 @@ fn update_summary(
         print_resource_map(used_resources.syscalls.into_iter(), "syscalls");
     }
     if let Some(profiling_info) = profiling_info {
-        let profiling_processor =
-            ProfilingInfoProcessor::new(db, sierra_program.clone(), statements_functions.clone());
+        let Some(PorfilingAuxData { db, statements_functions }) = profiler_data else {
+            panic!("profiler_data is None");
+        };
+        let profiling_processor = ProfilingInfoProcessor::new(
+            Some(*db),
+            sierra_program.clone(),
+            statements_functions.clone(),
+        );
         let processed_profiling_info =
             profiling_processor.process_ex(&profiling_info, profiling_params);
         println!("Profiling info:\n{processed_profiling_info}");
