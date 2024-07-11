@@ -735,6 +735,14 @@ impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
     }
 }
 
+define_language_element_id_basic!(
+    ClosureId,
+    ClosureLongId,
+    ast::ExprClosure,
+    lookup_intern_closure,
+    intern_closure
+);
+
 define_language_element_id_as_enum! {
     #[toplevel]
     /// The ID of a module item with generic parameters.

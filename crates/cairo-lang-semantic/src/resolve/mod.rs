@@ -1194,6 +1194,7 @@ impl<'db> Resolver<'db> {
                     Resolver::with_data(self.db, resolver_data),
                     None,
                     environment,
+                    None,
                 );
                 let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
 

@@ -772,6 +772,7 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
                     .to_usize()
                     .unwrap()
         }
+        TypeLongId::Closure(_) => unimplemented!("unsupported"),
         TypeLongId::Coupon(_) => 0,
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
