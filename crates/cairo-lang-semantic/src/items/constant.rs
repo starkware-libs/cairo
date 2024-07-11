@@ -290,7 +290,7 @@ pub fn constant_semantic_data_helper(
     );
 
     let environment = Environment::empty();
-    let mut ctx = ComputationContext::new(db, &mut diagnostics, resolver, None, environment);
+    let mut ctx = ComputationContext::new(db, &mut diagnostics, resolver, None, environment, None);
 
     let value = compute_expr_semantic(&mut ctx, &constant_ast.value(syntax_db));
     let const_value = resolve_const_expr_and_evaluate(

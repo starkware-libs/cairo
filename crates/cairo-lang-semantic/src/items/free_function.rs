@@ -7,12 +7,14 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::Intern;
 
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
-    forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
+    forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, GenericFunctionId,
+    InlineConfiguration,
 };
-use super::generics::{semantic_generic_params, GenericParamsData};
+use super::generics::{generic_params_to_args, semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
@@ -22,7 +24,7 @@ use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, SemanticDiagnostic, TypeId};
+use crate::{semantic, ConcreteFunction, FunctionLongId, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
 #[path = "free_function_test.rs"]
@@ -229,6 +231,11 @@ pub fn priv_free_function_body_data(
         Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
 
     let environment = declaration.environment;
+    let function_id = (|| {
+        let generic_function = GenericFunctionId::Free(free_function_id);
+
+        Some(FunctionLongId::from_generic(db, generic_function).ok()?.intern(db))
+    })();
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(
         db,
@@ -236,6 +243,7 @@ pub fn priv_free_function_body_data(
         resolver,
         Some(&declaration.signature),
         environment,
+        function_id,
     );
     let function_body = free_function_syntax.body(db.upcast());
     let return_type = declaration.signature.return_type;

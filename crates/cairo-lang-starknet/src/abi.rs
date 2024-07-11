@@ -669,7 +669,8 @@ impl<'a> AbiBuilder<'a> {
             | TypeLongId::Var(_)
             | TypeLongId::TraitType(_)
             | TypeLongId::ImplType(_)
-            | TypeLongId::Missing(_) => Err(ABIError::UnexpectedType),
+            | TypeLongId::Missing(_)
+            | TypeLongId::Closure(_) => Err(ABIError::UnexpectedType),
         }
     }
 
