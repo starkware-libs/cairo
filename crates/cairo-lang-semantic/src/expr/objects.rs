@@ -4,6 +4,7 @@ use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::LookupIntern;
 use id_arena::Id;
 use num_bigint::BigInt;
 
@@ -354,7 +355,12 @@ impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVarMemberPath {
         match self {
             ExprVarMemberPath::Var(var) => var.fmt(f, db),
             ExprVarMemberPath::Member { parent, member_id, .. } => {
-                write!(f, "{:?}::{}", parent.debug(db), member_id.name(db.db.upcast()))
+                write!(
+                    f,
+                    "{:?}::{}",
+                    parent.debug(db),
+                    member_id.name(db.db.upcast()).lookup_intern(db.db)
+                )
             }
         }
     }

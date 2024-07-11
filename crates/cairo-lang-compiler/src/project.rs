@@ -86,7 +86,7 @@ pub fn update_crate_root(
     root: Directory,
 ) {
     let crate_settings = config.content.crates_config.get(&crate_name);
-    let crate_id = CrateLongId::Real(crate_name).intern(db);
+    let crate_id = CrateLongId::Real(crate_name.to_string()).intern(db);
     db.set_crate_config(
         crate_id,
         Some(CrateConfiguration { root, settings: crate_settings.clone() }),
@@ -138,6 +138,6 @@ pub fn get_main_crate_ids_from_project(
         .content
         .crate_roots
         .keys()
-        .map(|crate_id| CrateLongId::Real(crate_id.clone()).intern(db))
+        .map(|crate_id| CrateLongId::Real(crate_id.to_string()).intern(db))
         .collect()
 }

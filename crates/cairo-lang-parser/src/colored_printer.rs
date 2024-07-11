@@ -2,8 +2,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::green::GreenNodeDetails;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::SyntaxNode;
+use cairo_lang_utils::LookupIntern;
 use colored::{ColoredString, Colorize};
-use smol_str::SmolStr;
 
 struct ColoredPrinter<'a> {
     db: &'a dyn SyntaxGroup,
@@ -19,7 +19,9 @@ impl<'a> ColoredPrinter<'a> {
                 if self.verbose && node.kind == SyntaxKind::TokenMissing {
                     self.result.push_str(format!("{}", "<m>".red()).as_str());
                 } else {
-                    self.result.push_str(set_color(text.clone(), node.kind).to_string().as_str());
+                    self.result.push_str(
+                        set_color(&text.lookup_intern(self.db), node.kind).to_string().as_str(),
+                    );
                 }
             }
             GreenNodeDetails::Node { .. } => {
@@ -55,7 +57,7 @@ pub fn is_empty_kind(kind: SyntaxKind) -> bool {
     )
 }
 
-fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
+fn set_color(text: &str, kind: SyntaxKind) -> ColoredString {
     // TODO(yuval): use tags on SyntaxKind
     match kind {
         SyntaxKind::TokenIdentifier => text.truecolor(255, 255, 100), // Yellow

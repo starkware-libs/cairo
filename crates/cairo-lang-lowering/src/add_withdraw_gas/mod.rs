@@ -5,6 +5,7 @@ use cairo_lang_semantic::corelib::{
 };
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeLongId};
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_utils::Intern;
 use num_bigint::{BigInt, Sign};
 
@@ -52,7 +53,7 @@ fn add_withdraw_gas_to_function(
                 function: get_function_id(
                     db.upcast(),
                     core_submodule(db.upcast(), "gas"),
-                    "withdraw_gas".into(),
+                    TextId::interned("withdraw_gas", db),
                     vec![],
                 )
                 .lowered(db),
@@ -102,7 +103,12 @@ fn create_panic_block(
     let out_of_gas_err_var =
         variables.new_var(VarRequest { ty: core_felt252_ty(db.upcast()), location });
     let panic_instance_var = variables.new_var(VarRequest {
-        ty: get_ty_by_name(db.upcast(), core_module(db.upcast()), "Panic".into(), vec![]),
+        ty: get_ty_by_name(
+            db.upcast(),
+            core_module(db.upcast()),
+            TextId::interned("Panic", db),
+            vec![],
+        ),
         location,
     });
     let panic_data_var =
@@ -126,7 +132,7 @@ fn create_panic_block(
                 function: get_function_id(
                     db.upcast(),
                     array_module,
-                    "array_new".into(),
+                    TextId::interned("array_new", db),
                     vec![GenericArgumentId::Type(core_felt252_ty(db.upcast()))],
                 )
                 .lowered(db),
@@ -146,7 +152,7 @@ fn create_panic_block(
                 function: get_function_id(
                     db.upcast(),
                     array_module,
-                    "array_append".into(),
+                    TextId::interned("array_append", db),
                     vec![GenericArgumentId::Type(core_felt252_ty(db.upcast()))],
                 )
                 .lowered(db),

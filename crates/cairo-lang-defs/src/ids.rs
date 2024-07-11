@@ -28,12 +28,11 @@ use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{SyntaxStablePtrId, TextId};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, require, Intern, LookupIntern, OptionFrom};
-use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
 use crate::diagnostic_utils::StableLocation;
@@ -54,14 +53,14 @@ pub trait LanguageElementId {
 }
 
 pub trait NamedLanguageElementLongId {
-    fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+    fn name(&self, db: &dyn DefsGroup) -> TextId;
 }
 pub trait NamedLanguageElementId: LanguageElementId {
-    fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+    fn name(&self, db: &dyn DefsGroup) -> TextId;
 }
 pub trait TopLevelLanguageElementId: NamedLanguageElementId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
+        format!("{}::{}", self.parent_module(db).full_path(db), self.name(db).lookup_intern(db))
     }
 }
 
@@ -99,19 +98,19 @@ macro_rules! define_named_language_element_id {
                     "{}({}::{})",
                     stringify!($short_id),
                     module_file_id.0.full_path(db),
-                    self.name(db)
+                    self.name(db).lookup_intern(db),
                 )
             }
         }
         impl NamedLanguageElementLongId for $long_id {
-            fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+            fn name(&self, db: &dyn DefsGroup) -> TextId {
                 let syntax_db = db.upcast();
                 let terminal_green = self.1.name_green(syntax_db);
                 terminal_green.identifier(syntax_db)
             }
         }
         impl NamedLanguageElementId for $short_id {
-            fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+            fn name(&self, db: &dyn DefsGroup) -> TextId {
                 db.$lookup(*self).name(db)
             }
         }
@@ -247,7 +246,7 @@ macro_rules! toplevel_enum {
         }
     ) => {
         impl NamedLanguageElementId for $enum_name {
-            fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+            fn name(&self, db: &dyn DefsGroup) -> TextId {
                 match self {
                     $(
                         $enum_name::$variant(id) => id.name(db),
@@ -268,9 +267,9 @@ pub enum ModuleId {
 impl ModuleId {
     pub fn full_path(&self, db: &dyn DefsGroup) -> String {
         match self {
-            ModuleId::CrateRoot(id) => id.lookup_intern(db).name().into(),
+            ModuleId::CrateRoot(id) => id.lookup_intern(db).name(),
             ModuleId::Submodule(id) => {
-                format!("{}::{}", id.parent_module(db).full_path(db), id.name(db))
+                format!("{}::{}", id.parent_module(db).full_path(db), id.name(db).lookup_intern(db))
             }
         }
     }
@@ -384,7 +383,11 @@ impl ImplTypeDefId {
 }
 impl TopLevelLanguageElementId for ImplTypeDefId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.impl_def_id(db).name(db), self.name(db))
+        format!(
+            "{}::{}",
+            self.impl_def_id(db).name(db).lookup_intern(db),
+            self.name(db).lookup_intern(db)
+        )
     }
 }
 
@@ -407,7 +410,11 @@ impl ImplConstantDefId {
 }
 impl TopLevelLanguageElementId for ImplConstantDefId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.impl_def_id(db).name(db), self.name(db))
+        format!(
+            "{}::{}",
+            self.impl_def_id(db).name(db).lookup_intern(db),
+            self.name(db).lookup_intern(db)
+        )
     }
 }
 
@@ -430,7 +437,11 @@ impl ImplImplDefId {
 }
 impl TopLevelLanguageElementId for ImplImplDefId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.impl_def_id(db).name(db), self.name(db))
+        format!(
+            "{}::{}",
+            self.impl_def_id(db).name(db).lookup_intern(db),
+            self.name(db).lookup_intern(db)
+        )
     }
 }
 
@@ -458,7 +469,7 @@ impl UnstableSalsaId for ImplFunctionId {
 }
 impl TopLevelLanguageElementId for ImplFunctionId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db))
+        format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db).lookup_intern(db))
     }
 }
 
@@ -542,7 +553,11 @@ impl TraitTypeId {
 }
 impl TopLevelLanguageElementId for TraitTypeId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.trait_id(db).name(db), self.name(db))
+        format!(
+            "{}::{}",
+            self.trait_id(db).name(db).lookup_intern(db),
+            self.name(db).lookup_intern(db)
+        )
     }
 }
 
@@ -564,7 +579,11 @@ impl TraitConstantId {
 }
 impl TopLevelLanguageElementId for TraitConstantId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.trait_id(db).name(db), self.name(db))
+        format!(
+            "{}::{}",
+            self.trait_id(db).name(db).lookup_intern(db),
+            self.name(db).lookup_intern(db)
+        )
     }
 }
 
@@ -586,7 +605,11 @@ impl TraitImplId {
 }
 impl TopLevelLanguageElementId for TraitImplId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.trait_id(db).name(db), self.name(db))
+        format!(
+            "{}::{}",
+            self.trait_id(db).name(db).lookup_intern(db),
+            self.name(db).lookup_intern(db)
+        )
     }
 }
 
@@ -608,7 +631,11 @@ impl TraitFunctionId {
 }
 impl TopLevelLanguageElementId for TraitFunctionId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.trait_id(db).name(db), self.name(db))
+        format!(
+            "{}::{}",
+            self.trait_id(db).name(db).lookup_intern(db),
+            self.name(db).lookup_intern(db)
+        )
     }
 }
 
@@ -654,7 +681,7 @@ define_language_element_id_basic!(
     intern_generic_param
 );
 impl GenericParamLongId {
-    pub fn name(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Option<TextId> {
         let SyntaxStablePtr::Child { key_fields, kind, .. } = self.1.0.lookup_intern(db) else {
             unreachable!()
         };
@@ -667,8 +694,8 @@ impl GenericParamLongId {
         Some(name_green.identifier(db))
     }
 
-    pub fn debug_name(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.name(db).unwrap_or_else(|| "_".into())
+    pub fn debug_name(&self, db: &dyn SyntaxGroup) -> TextId {
+        self.name(db).unwrap_or_else(|| TextId::interned("_", db))
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> GenericKind {
         let SyntaxStablePtr::Child { kind, .. } = self.1.0.lookup_intern(db) else {
@@ -691,10 +718,10 @@ impl GenericParamLongId {
     }
 }
 impl GenericParamId {
-    pub fn name(&self, db: &dyn DefsGroup) -> Option<SmolStr> {
+    pub fn name(&self, db: &dyn DefsGroup) -> Option<TextId> {
         self.lookup_intern(db).name(db.upcast())
     }
-    pub fn debug_name(&self, db: &dyn DefsGroup) -> SmolStr {
+    pub fn debug_name(&self, db: &dyn DefsGroup) -> TextId {
         self.lookup_intern(db).debug_name(db.upcast())
     }
     pub fn format(&self, db: &dyn DefsGroup) -> String {
@@ -713,7 +740,7 @@ impl GenericParamId {
         }
 
         let name_green = TerminalIdentifierGreen(key_fields[0]);
-        name_green.identifier(syntax_db).into()
+        name_green.identifier(syntax_db).to_string(db)
     }
 
     pub fn kind(&self, db: &dyn DefsGroup) -> GenericKind {
@@ -730,7 +757,7 @@ impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
             "GenericParam{}({}::{})",
             self.kind(db.upcast()),
             self.generic_item(db).full_path(db),
-            self.debug_name(db.upcast())
+            self.debug_name(db.upcast()).lookup_intern(db)
         )
     }
 }
@@ -922,7 +949,7 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
         let syntax_db = db.upcast();
         let LocalVarLongId(module_file_id, ptr) = self;
         let text = ptr.lookup(syntax_db).text(syntax_db);
-        write!(f, "LocalVarId({}::{})", module_file_id.0.full_path(db), text)
+        write!(f, "LocalVarId({}::{})", module_file_id.0.full_path(db), text.lookup_intern(db))
     }
 }
 
@@ -939,7 +966,7 @@ define_language_element_id_as_enum! {
 impl FunctionTitleId {
     pub fn format(&self, db: &dyn DefsGroup) -> String {
         let function_name = match *self {
-            FunctionTitleId::Free(_) | FunctionTitleId::Extern(_) => self.name(db).into(),
+            FunctionTitleId::Free(_) | FunctionTitleId::Extern(_) => self.name(db).to_string(db),
             FunctionTitleId::Trait(id) => id.full_path(db),
             FunctionTitleId::Impl(id) => id.full_path(db),
         };
@@ -959,7 +986,7 @@ define_language_element_id_as_enum! {
 }
 impl GenericTypeId {
     pub fn format(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
+        format!("{}::{}", self.parent_module(db).full_path(db), self.name(db).lookup_intern(db))
     }
 }
 
@@ -1037,7 +1064,7 @@ define_language_element_id_as_enum! {
     }
 }
 impl TraitItemId {
-    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn DefsGroup) -> TextId {
         match self {
             TraitItemId::Function(id) => id.name(db),
             TraitItemId::Type(id) => id.name(db),
@@ -1066,7 +1093,7 @@ define_language_element_id_as_enum! {
     }
 }
 impl ImplItemId {
-    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn DefsGroup) -> TextId {
         match self {
             ImplItemId::Function(id) => id.name(db),
             ImplItemId::Type(id) => id.name(db),

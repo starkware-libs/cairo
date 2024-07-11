@@ -415,7 +415,7 @@ fn lower_tuple_match_arm(
                         "({})",
                         match_tuple_ctx.current_path.variants
                             .iter()
-                            .map(|variant| variant.id.name(ctx.db.upcast()))
+                            .map(|variant| variant.id.name(ctx.db.upcast()).lookup_intern(ctx.db))
                             .join(", ")
                     )),
                 }),
@@ -755,7 +755,7 @@ pub(crate) fn lower_concrete_enum_match(
                             kind: match_type,
                             error: MatchDiagnostic::MissingMatchArm(format!(
                                 "{}",
-                                concrete_variant.id.name(ctx.db.upcast())
+                                concrete_variant.id.name(ctx.db.upcast()).lookup_intern(ctx.db)
                             )),
                         }),
                     ))
@@ -914,7 +914,7 @@ pub(crate) fn lower_optimized_extern_match(
                             kind: match_type,
                             error: MatchDiagnostic::MissingMatchArm(format!(
                                 "{}",
-                                concrete_variant.id.name(ctx.db.upcast())
+                                concrete_variant.id.name(ctx.db.upcast()).lookup_intern(ctx.db)
                             )),
                         }),
                     ))

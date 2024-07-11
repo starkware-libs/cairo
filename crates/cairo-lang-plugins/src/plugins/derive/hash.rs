@@ -47,7 +47,10 @@ pub fn handle_hash(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mu
         },
     );
     let impl_additional_generics = info.generics.format_generics_with_trait_params_only(|t| {
-        vec![format!("+core::hash::Hash<{t}, __State, __SHashState>"), format!("+Drop<{t}>")]
+        vec![
+            format!("+core::hash::Hash<{t}, __State, __SHashState>").into(),
+            format!("+Drop<{t}>").into(),
+        ]
     });
     let extra_comma = if impl_additional_generics.is_empty() { "" } else { ",\n    " };
     result.impls.push(formatdoc! {"

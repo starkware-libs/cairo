@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
@@ -13,8 +15,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 use itertools::{chain, Itertools};
-use smol_str::SmolStr;
 
 mod clone;
 mod debug;
@@ -78,7 +80,7 @@ impl MacroPlugin for DerivePlugin {
 
 /// Information on struct members or enum variants.
 struct MemberInfo {
-    name: SmolStr,
+    name: Arc<str>,
     _ty: String,
     attributes: AttributeList,
 }
@@ -93,9 +95,9 @@ enum TypeVariantInfo {
 /// Information on generic params.
 struct GenericParamsInfo {
     /// All the generic params name, at the original order.
-    ordered: Vec<SmolStr>,
+    ordered: Vec<Arc<str>>,
     /// The generic params name that are types.
-    type_generics: Vec<SmolStr>,
+    type_generics: Vec<Arc<str>>,
     /// The generic params name that are not types.
     other_generics: Vec<String>,
 }
@@ -107,9 +109,14 @@ impl GenericParamsInfo {
         let mut other_generics = vec![];
         if let OptionWrappedGenericParamList::WrappedGenericParamList(gens) = generic_params {
             for param in gens.generic_params(db).elements(db) {
-                ordered.push(param.name(db).map(|n| n.text(db)).unwrap_or_else(|| "_".into()));
+                ordered.push(
+                    param
+                        .name(db)
+                        .map(|n| n.text(db).lookup_intern(db))
+                        .unwrap_or_else(|| "_".into()),
+                );
                 if let ast::GenericParam::Type(t) = param {
-                    type_generics.push(t.name(db).text(db));
+                    type_generics.push(t.name(db).text(db).lookup_intern(db));
                 } else {
                     other_generics.push(param.as_syntax_node().get_text_without_trivia(db));
                 }
@@ -123,12 +130,12 @@ impl GenericParamsInfo {
     /// Does not print including the `<>`.
     fn format_generics_with_trait_params_only(
         &self,
-        additional_demands: impl Fn(&SmolStr) -> Vec<String>,
+        additional_demands: impl Fn(&str) -> Vec<Arc<str>>,
     ) -> String {
         chain!(
-            self.type_generics.iter().map(|s| s.to_string()),
-            self.other_generics.iter().cloned(),
-            self.type_generics.iter().flat_map(additional_demands)
+            self.type_generics.iter().cloned(),
+            self.other_generics.iter().map(|s| s.as_str().into()),
+            self.type_generics.iter().flat_map(|s| additional_demands(s))
         )
         .join(", ")
     }
@@ -137,7 +144,7 @@ impl GenericParamsInfo {
     /// `additional_demands` formats the generic type params as additional trait bounds.
     fn format_generics_with_trait(
         &self,
-        additional_demands: impl Fn(&SmolStr) -> Vec<String>,
+        additional_demands: impl Fn(&str) -> Vec<Arc<str>>,
     ) -> String {
         if self.ordered.is_empty() {
             "".to_string()
@@ -158,7 +165,7 @@ impl GenericParamsInfo {
 
 /// Information for the type being derived.
 pub struct DeriveInfo {
-    name: SmolStr,
+    name: Arc<str>,
     attributes: AttributeList,
     generics: GenericParamsInfo,
     specific_info: TypeVariantInfo,
@@ -175,7 +182,7 @@ impl DeriveInfo {
         span: TextSpan,
     ) -> Self {
         Self {
-            name: ident.text(db),
+            name: ident.text(db).lookup_intern(db),
             attributes,
             generics: GenericParamsInfo::new(db, generic_args),
             specific_info,
@@ -196,7 +203,7 @@ impl DeriveInfo {
             name = self.name,
             generics_impl = self.generics.format_generics_with_trait(|t| dependent_traits
                 .iter()
-                .map(|d| format!("+{d}<{t}>"))
+                .map(|d| format!("+{d}<{t}>").into())
                 .collect()),
             full_typename = self.full_typename(),
         )
@@ -214,7 +221,7 @@ fn extract_members(db: &dyn SyntaxGroup, members: MemberList) -> Vec<MemberInfo>
         .elements(db)
         .into_iter()
         .map(|member| MemberInfo {
-            name: member.name(db).text(db),
+            name: member.name(db).text(db).lookup_intern(db),
             _ty: member.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db),
             attributes: member.attributes(db),
         })
@@ -227,7 +234,7 @@ fn extract_variants(db: &dyn SyntaxGroup, variants: VariantList) -> Vec<MemberIn
         .elements(db)
         .into_iter()
         .map(|variant| MemberInfo {
-            name: variant.name(db).text(db),
+            name: variant.name(db).text(db).lookup_intern(db),
             _ty: match variant.type_clause(db) {
                 ast::OptionTypeClause::Empty(_) => "()".to_string(),
                 ast::OptionTypeClause::TypeClause(t) => {

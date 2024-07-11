@@ -6,10 +6,11 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{
     is_single_arg_attr, GetIdentifier, PathSegmentEx, QueryAttrs,
 };
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 use const_format::formatcp;
 use indoc::formatdoc;
-use smol_str::SmolStr;
 
 use super::generation_data::{ContractGenerationData, StarknetModuleCommonGenerationData};
 use super::{grand_grand_parent_starknet_module, StarknetModuleKind};
@@ -38,9 +39,9 @@ struct ComponentsGenerationData {
     /// The components defined in the contract using the `component!` inline macro.
     pub components: Vec<NestedComponent>,
     /// The contract's storage members that are marked with the `substorage` attribute.
-    pub substorage_members: Vec<String>,
+    pub substorage_members: Vec<TextId>,
     /// The contract's event variants that are defined in the main event enum of the contract.
-    pub nested_event_variants: Vec<SmolStr>,
+    pub nested_event_variants: Vec<TextId>,
 }
 
 /// A component defined in a contract using the `component!` inline macro.
@@ -137,7 +138,10 @@ impl ComponentsGenerationData {
         let mut is_valid = true;
 
         let storage_name_syntax_node = storage_name.as_syntax_node();
-        if !self.substorage_members.contains(&storage_name_syntax_node.get_text(db)) {
+        if !self
+            .substorage_members
+            .contains(&TextId::interned(storage_name_syntax_node.get_text(db), db))
+        {
             diagnostics.push(PluginDiagnostic::error(
                 storage_name.stable_ptr().untyped(),
                 format!(
@@ -153,7 +157,7 @@ impl ComponentsGenerationData {
         }
 
         let event_name_str = event_name.as_syntax_node().get_text_without_trivia(db);
-        if !self.nested_event_variants.contains(&event_name_str.clone().into()) {
+        if !self.nested_event_variants.contains(&TextId::interned(event_name_str.clone(), db)) {
             diagnostics.push(PluginDiagnostic::error(
                 event_name.stable_ptr().untyped(),
                 format!(
@@ -254,7 +258,7 @@ fn handle_contract_item(
             );
         }
         ast::ModuleItem::Struct(item_struct)
-            if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
+            if item_struct.name(db).text(db).lookup_intern(db).as_ref() == STORAGE_STRUCT_NAME =>
         {
             handle_storage_struct(
                 db,
@@ -268,10 +272,7 @@ fn handle_contract_item(
                 // v0 is not validated here to not create multiple diagnostics. It's already
                 // verified in handle_storage_struct above.
                 if member.has_attr(db, SUBSTORAGE_ATTR) {
-                    data.specific
-                        .components_data
-                        .substorage_members
-                        .push(member.name(db).text(db).to_string());
+                    data.specific.components_data.substorage_members.push(member.name(db).text(db));
                 }
             }
         }
@@ -298,7 +299,8 @@ fn handle_contract_item(
             }
         }
         ast::ModuleItem::InlineMacro(inline_macro_ast)
-            if inline_macro_ast.name(db).text(db) == COMPONENT_INLINE_MACRO =>
+            if inline_macro_ast.name(db).text(db).lookup_intern(db).as_ref()
+                == COMPONENT_INLINE_MACRO =>
         {
             handle_component_inline_macro(db, diagnostics, inline_macro_ast, &mut data.specific)
         }
@@ -314,7 +316,7 @@ pub(super) fn generate_contract_specific_code(
     body: &ast::ModuleBody,
     module_ast: &ast::ItemModule,
     metadata: &MacroPluginMetadata<'_>,
-    event_variants: Vec<SmolStr>,
+    event_variants: Vec<TextId>,
 ) -> RewriteNode {
     let mut generation_data = ContractGenerationData { common: common_data, ..Default::default() };
     generation_data.specific.components_data.nested_event_variants = event_variants;
@@ -379,7 +381,7 @@ fn handle_contract_free_function(
         entry_point_kind,
         item_function,
         function_name_node,
-        function_name.text(db).into(),
+        function_name.text(db).to_string(db),
         db,
         diagnostics,
         data,
@@ -433,7 +435,11 @@ fn handle_contract_impl(
             ]
             .into(),
         );
-        let wrapper_identifier = format!("{}__{}", impl_name.text(db), function_name.text(db));
+        let wrapper_identifier = format!(
+            "{}__{}",
+            impl_name.text(db).lookup_intern(db),
+            function_name.text(db).lookup_intern(db)
+        );
         handle_contract_entry_point(
             entry_point_kind,
             &item_function,
@@ -638,7 +644,7 @@ fn is_first_generic_arg_contract_state(
     let ast::Expr::Path(first_generic_arg) = first_generic_arg.expr(db) else {
         return false;
     };
-    first_generic_arg.identifier(db) == CONTRACT_STATE_NAME
+    first_generic_arg.identifier(db).lookup_intern(db).as_ref() == CONTRACT_STATE_NAME
 }
 
 /// Verifies that a given Arg is named with given name and that the value is a path (simple if
@@ -652,7 +658,9 @@ fn try_extract_named_macro_argument(
     only_simple_identifier: bool,
 ) -> Option<ast::ExprPath> {
     match arg_ast.arg_clause(db) {
-        ast::ArgClause::Named(clause) if clause.name(db).text(db) == arg_name => {
+        ast::ArgClause::Named(clause)
+            if clause.name(db).text(db).lookup_intern(db).as_ref() == arg_name =>
+        {
             match clause.value(db) {
                 ast::Expr::Path(path) => {
                     if !only_simple_identifier {

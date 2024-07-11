@@ -4,6 +4,7 @@ use cairo_lang_syntax::node::ast::{self, MaybeTraitBody, OptionReturnTypeClause}
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 use indoc::formatdoc;
 use itertools::Itertools;
 
@@ -52,7 +53,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             if let [ast::GenericParam::Type(param)] =
                 generic_params.generic_params(db).elements(db).as_slice()
             {
-                Some(param.name(db).text(db))
+                Some(param.name(db).text(db).lookup_intern(db))
             } else {
                 None
             }
@@ -76,7 +77,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let mut library_caller_method_impls = vec![];
     let mut safe_contract_caller_method_impls = vec![];
     let mut safe_library_caller_method_impls = vec![];
-    let base_name = trait_ast.name(db).text(db);
+    let base_name = trait_ast.name(db).text(db).lookup_intern(db);
     let dispatcher_trait_name = format!("{base_name}DispatcherTrait");
     let safe_dispatcher_trait_name = format!("{base_name}SafeDispatcherTrait");
     let contract_caller_name = format!("{base_name}Dispatcher");
@@ -100,7 +101,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     ));
                     continue;
                 };
-                if self_param.name(db).text(db) != "self" {
+                if self_param.name(db).text(db).lookup_intern(db).as_ref() != "self" {
                     diagnostics.push(PluginDiagnostic::error(
                         self_param.stable_ptr().untyped(),
                         "The first parameter must be named `self`.".to_string(),
@@ -146,7 +147,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         ))
                     }
 
-                    if param.name(db).text(db) == CALLDATA_PARAM_NAME {
+                    if param.name(db).text(db).lookup_intern(db).as_ref() == CALLDATA_PARAM_NAME {
                         skip_generation = true;
 
                         diagnostics.push(PluginDiagnostic::error(
@@ -203,8 +204,10 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     )]
                     .into(),
                 ));
-                let entry_point_selector =
-                    RewriteNode::Text(format!("selector!(\"{}\")", declaration.name(db).text(db)));
+                let entry_point_selector = RewriteNode::Text(format!(
+                    "selector!(\"{}\")",
+                    declaration.name(db).text(db).lookup_intern(db)
+                ));
                 contract_caller_method_impls.push(declaration_method_impl(
                     dispatcher_signature(db, &declaration, &contract_caller_name, true),
                     entry_point_selector.clone(),
@@ -350,7 +353,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let (content, code_mappings) = builder.build();
     PluginResult {
         code: Some(PluginGeneratedFile {
-            name: dispatcher_trait_name.into(),
+            name: dispatcher_trait_name,
             content,
             code_mappings,
             aux_data: None,

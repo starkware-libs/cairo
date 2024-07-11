@@ -11,12 +11,12 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{Mutability, Variable};
 use cairo_lang_syntax::node::ast::{Param, PatternIdentifier, PatternPtr, TerminalIdentifier};
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use itertools::Itertools;
-use smol_str::SmolStr;
 use tracing::error;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
@@ -151,7 +151,7 @@ impl ItemDef {
 
 /// Information about the definition of a variable (local, function parameter).
 pub struct VariableDef {
-    name: SmolStr,
+    name: TextId,
     var: Variable,
 }
 
@@ -259,7 +259,7 @@ impl VariableDef {
         };
 
         let ty = var.ty().format(db.upcast());
-
+        let name = name.lookup_intern(db);
         format!("{prefix}{mutability}{name}: {ty}")
     }
 }

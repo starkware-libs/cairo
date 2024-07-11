@@ -14,7 +14,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{SyntaxStablePtrId, TextId};
 use cairo_lang_utils::{define_short_id, extract_matches, Intern, LookupIntern};
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
@@ -210,7 +210,11 @@ impl InferenceError {
                         generic_type.debug(db)
                     );
                 } else if trait_id
-                    == get_core_trait(db, CoreTraitContext::TopLevel, "StringLiteral".into())
+                    == get_core_trait(
+                        db,
+                        CoreTraitContext::TopLevel,
+                        TextId::interned("StringLiteral", db),
+                    )
                 {
                     let generic_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],

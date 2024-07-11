@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_utils::{define_short_id, LookupIntern};
 
 use super::db::SyntaxGroup;
@@ -10,16 +9,24 @@ use super::kind::SyntaxKind;
 use super::SyntaxNode;
 use crate::node::stable_ptr::SyntaxStablePtr;
 
-define_short_id!(GreenId, Arc::<GreenNode>, SyntaxGroup, lookup_intern_green, intern_green);
-impl GreenId {
-    /// Returns the width of the node of this green id.
-    pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
-        match &self.lookup_intern(db).details {
-            super::green::GreenNodeDetails::Token(text) => TextWidth::from_str(text),
-            super::green::GreenNodeDetails::Node { width, .. } => *width,
-        }
+define_short_id!(TextId, Arc::<str>, SyntaxGroup, lookup_intern_text, intern_text);
+impl<'a> TextId {
+    /// Creates a new `TextId` from a string type.
+    pub fn interned(
+        value: impl Into<Arc<str>>,
+        db: &(impl cairo_lang_utils::Upcast<dyn SyntaxGroup + 'a> + ?Sized),
+    ) -> Self {
+        db.upcast().intern_text(value.into())
+    }
+    /// Returns the string value of this `TextId`.
+    pub fn to_string(
+        &self,
+        db: &(impl cairo_lang_utils::Upcast<dyn SyntaxGroup + 'a> + ?Sized),
+    ) -> String {
+        self.lookup_intern(db).to_string()
     }
 }
+define_short_id!(GreenId, Arc::<GreenNode>, SyntaxGroup, lookup_intern_green, intern_green);
 
 define_short_id!(
     SyntaxStablePtrId,

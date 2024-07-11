@@ -22,7 +22,7 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{SyntaxStablePtrId, TextId};
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils as utils;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -34,7 +34,6 @@ use id_arena::Arena;
 use itertools::zip_eq;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
-use smol_str::SmolStr;
 use utils::Intern;
 
 use super::inference::canonic::ResultNoErrEx;
@@ -183,15 +182,17 @@ impl<'ctx> ComputationContext<'ctx> {
         // Pop the environment from the stack.
         let parent = self.environment.parent.take();
         for (var_name, var) in std::mem::take(&mut self.environment.variables) {
-            self.add_unused_variable_warning(&var_name, &var);
+            self.add_unused_variable_warning(var_name, &var);
         }
         self.environment = parent.unwrap();
         res
     }
 
     /// Adds warning for unused variables if required.
-    fn add_unused_variable_warning(&mut self, var_name: &str, var: &Variable) {
-        if !self.environment.used_variables.contains(&var.id()) && !var_name.starts_with('_') {
+    fn add_unused_variable_warning(&mut self, var_name: TextId, var: &Variable) {
+        if !self.environment.used_variables.contains(&var.id())
+            && !var_name.lookup_intern(self.db).starts_with('_')
+        {
             self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedVariable);
         }
     }
@@ -239,9 +240,8 @@ impl<'ctx> ComputationContext<'ctx> {
 }
 
 // TODO(ilya): Change value to VarId.
-pub type EnvVariables = OrderedHashMap<SmolStr, Variable>;
+pub type EnvVariables = OrderedHashMap<TextId, Variable>;
 
-// TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current resolver until now, and a
 /// pointer to the parent environment.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -260,7 +260,7 @@ impl Environment {
         function_title_id: FunctionTitleId,
     ) -> Maybe<()> {
         if let utils::ordered_hash_map::Entry::Vacant(entry) =
-            self.variables.entry(semantic_param.name.clone())
+            self.variables.entry(semantic_param.name)
         {
             entry.insert(Variable::Param(semantic_param));
             Ok(())
@@ -358,7 +358,9 @@ fn compute_expr_inline_macro_semantic(
 
     let macro_name = syntax.path(syntax_db).as_syntax_node().get_text_without_trivia(syntax_db);
     let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() else {
-        return Err(ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into())));
+        return Err(ctx
+            .diagnostics
+            .report(syntax, InlineMacroNotFound(TextId::interned(macro_name, ctx.db))));
     };
 
     let result = macro_plugin.generate_code(
@@ -378,7 +380,7 @@ fn compute_expr_inline_macro_semantic(
 
     let Some(code) = result.code else {
         return Err(diag_added.unwrap_or_else(|| {
-            ctx.diagnostics.report(syntax, InlineMacroFailed(macro_name.into()))
+            ctx.diagnostics.report(syntax, InlineMacroFailed(TextId::interned(macro_name, ctx.db)))
         }));
     };
 
@@ -1009,7 +1011,7 @@ fn compute_arm_semantic(
         // Typecheck the arms's patterns, and introduce the new variables to the subscope.
         // Note that if the arm expr is a block, there will be *another* subscope
         // for it.
-        let mut arm_patterns_variables: UnorderedHashMap<SmolStr, LocalVariable> =
+        let mut arm_patterns_variables: UnorderedHashMap<TextId, LocalVariable> =
             UnorderedHashMap::default();
         let patterns: Vec<_> = patterns_syntax
             .elements(syntax_db)
@@ -1023,7 +1025,7 @@ fn compute_arm_semantic(
                 );
                 let variables = pattern.variables(&new_ctx.patterns);
                 for variable in variables {
-                    match arm_patterns_variables.entry(variable.name.clone()) {
+                    match arm_patterns_variables.entry(variable.name) {
                         std::collections::hash_map::Entry::Occupied(entry) => {
                             let get_location = || variable.stable_ptr.lookup(db.upcast());
                             let var = entry.get();
@@ -1071,7 +1073,7 @@ fn compute_arm_semantic(
                 let var_def = Variable::Local(v.var.clone());
                 // TODO(spapini): Wrap this in a function to couple with semantic_defs
                 // insertion.
-                new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
+                new_ctx.environment.variables.insert(v.name, var_def.clone());
                 new_ctx.semantic_defs.insert(var_def.id(), var_def);
             }
         }
@@ -1281,24 +1283,19 @@ fn compute_expr_for_semantic(
 
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     let expr_id = expr.id;
-
     let into_iterator_trait =
-        get_core_trait(ctx.db, CoreTraitContext::Iterator, "IntoIterator".into());
+        get_core_trait(ctx.db, CoreTraitContext::Iterator, TextId::interned("IntoIterator", db));
 
     let (into_iterator_function_id, fixed_into_iter_var, into_iter_mutability) =
         compute_method_function_call_data(
             ctx,
             &[into_iterator_trait],
-            "into_iter".into(),
+            TextId::interned("into_iter", db),
             expr,
             expr_ptr.into(),
             None,
             |ty, _, inference_errors| {
-                Some(NoImplementationOfTrait {
-                    ty,
-                    inference_errors,
-                    trait_name: "IntoIterator".into(),
-                })
+                Some(NoImplementationOfTrait { ty, inference_errors, trait_name: "IntoIterator" })
             },
             |_, _, _| {
                 unreachable!(
@@ -1332,17 +1329,18 @@ fn compute_expr_for_semantic(
     });
     let into_iter_expr_id = ctx.exprs.alloc(into_iter_expr.clone());
 
-    let iterator_trait = get_core_trait(ctx.db, CoreTraitContext::Iterator, "Iterator".into());
+    let iterator_trait =
+        get_core_trait(ctx.db, CoreTraitContext::Iterator, TextId::interned("Iterator", db));
 
     let (next_function_id, _, _) = compute_method_function_call_data(
         ctx,
         &[iterator_trait],
-        "next".into(),
+        TextId::interned("next", db),
         ExprAndId { expr: into_iter_expr, id: into_iter_expr_id },
         expr_ptr.into(),
         None,
         |ty, _, inference_errors| {
-            Some(NoImplementationOfTrait { ty, inference_errors, trait_name: "Iterator".into() })
+            Some(NoImplementationOfTrait { ty, inference_errors, trait_name: "Iterator" })
         },
         |_, _, _| {
             unreachable!(
@@ -1353,14 +1351,17 @@ fn compute_expr_for_semantic(
         },
     )?;
 
-    let next_success_variant =
-        match db.concrete_function_signature(next_function_id)?.return_type.lookup_intern(db) {
-            TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
-                assert_eq!(enm.enum_id(db.upcast()).name(db.upcast()), "Option");
-                db.concrete_enum_variants(enm).unwrap().into_iter().next().unwrap()
-            }
-            _ => unreachable!(),
-        };
+    let next_success_variant = match db
+        .concrete_function_signature(next_function_id)?
+        .return_type
+        .lookup_intern(db)
+    {
+        TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
+            assert_eq!(enm.enum_id(db.upcast()).name(db.upcast()), TextId::interned("Option", db));
+            db.concrete_enum_variants(enm).unwrap().into_iter().next().unwrap()
+        }
+        _ => unreachable!(),
+    };
     let (body_id, pattern) = ctx.run_in_subscope(|new_ctx| {
         let inner_pattern = compute_pattern_semantic(
             new_ctx,
@@ -1371,7 +1372,7 @@ fn compute_expr_for_semantic(
         let variables = inner_pattern.variables(&new_ctx.patterns);
         for v in variables {
             let var_def = Variable::Local(v.var.clone());
-            new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
+            new_ctx.environment.variables.insert(v.name, var_def.clone());
             new_ctx.semantic_defs.insert(var_def.id(), var_def);
         }
         let (body, _loop_ctx) =
@@ -1513,12 +1514,14 @@ fn compute_expr_indexed_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     let candidate_traits: Vec<_> = ["Index", "IndexView"]
         .iter()
-        .map(|trait_name| get_core_trait(ctx.db, CoreTraitContext::Ops, (*trait_name).into()))
+        .map(|trait_name| {
+            get_core_trait(ctx.db, CoreTraitContext::Ops, TextId::interned(*trait_name, ctx.db))
+        })
         .collect();
     let (function_id, fixed_expr, mutability) = compute_method_function_call_data(
         ctx,
         &candidate_traits[..],
-        "index".into(),
+        TextId::interned("index", ctx.db),
         expr,
         syntax.into(),
         None,
@@ -1548,13 +1551,13 @@ fn compute_expr_indexed_semantic(
 fn compute_method_function_call_data(
     ctx: &mut ComputationContext<'_>,
     candidate_traits: &[TraitId],
-    func_name: SmolStr,
+    func_name: TextId,
     self_expr: ExprAndId,
     method_syntax: SyntaxStablePtrId,
     generic_args_syntax: Option<Vec<ast::GenericArg>>,
     no_implementation_diagnostic: fn(
         TypeId,
-        SmolStr,
+        TextId,
         TraitInferenceErrors,
     ) -> Option<SemanticDiagnosticKind>,
     multiple_trait_diagnostic: fn(
@@ -1573,7 +1576,7 @@ fn compute_method_function_call_data(
         &mut inference_errors,
         self_ty,
         candidate_traits,
-        func_name.clone(),
+        func_name,
         self_expr.stable_ptr().untyped(),
     );
     let trait_function_id = match candidates[..] {
@@ -1620,7 +1623,7 @@ pub fn compute_pattern_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::Pattern,
     ty: TypeId,
-    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
+    or_pattern_variables_map: &mut UnorderedHashMap<TextId, LocalVariable>,
 ) -> PatternAndId {
     let pat = maybe_compute_pattern_semantic(ctx, syntax, ty, or_pattern_variables_map);
     let pat = pat.unwrap_or_else(|diag_added| {
@@ -1639,7 +1642,7 @@ fn maybe_compute_pattern_semantic(
     ctx: &mut ComputationContext<'_>,
     pattern_syntax: &ast::Pattern,
     ty: TypeId,
-    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
+    or_pattern_variables_map: &mut UnorderedHashMap<TextId, LocalVariable>,
 ) -> Maybe<Pattern> {
     // TODO(spapini): Check for missing type, and don't reemit an error.
     let syntax_db = ctx.db.upcast();
@@ -1774,19 +1777,19 @@ fn maybe_compute_pattern_semantic(
             let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?;
             let mut used_members = UnorderedHashSet::<_>::default();
             let mut get_member = |ctx: &mut ComputationContext<'_>,
-                                  member_name: SmolStr,
+                                  member_name: TextId,
                                   stable_ptr: SyntaxStablePtrId| {
                 let member = members.swap_remove(&member_name).on_none(|| {
                     ctx.diagnostics.report(
                         stable_ptr,
                         if used_members.contains(&member_name) {
-                            StructMemberRedefinition { struct_id, member_name: member_name.clone() }
+                            StructMemberRedefinition { struct_id, member_name }
                         } else {
-                            NoSuchStructMember { struct_id, member_name: member_name.clone() }
+                            NoSuchStructMember { struct_id, member_name }
                         },
                     );
                 })?;
-                check_struct_member_is_visible(ctx, &member, stable_ptr, &member_name);
+                check_struct_member_is_visible(ctx, &member, stable_ptr, member_name);
                 used_members.insert(member_name);
                 Some(member)
             };
@@ -1915,7 +1918,7 @@ fn maybe_compute_tuple_like_pattern_semantic(
     ctx: &mut ComputationContext<'_>,
     pattern_syntax: &ast::Pattern,
     ty: TypeId,
-    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
+    or_pattern_variables_map: &mut UnorderedHashMap<TextId, LocalVariable>,
     unexpected_pattern: fn(TypeId) -> SemanticDiagnosticKind,
     wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind,
 ) -> Maybe<Pattern> {
@@ -2013,7 +2016,7 @@ fn create_variable_pattern(
     modifier_list: &[ast::Modifier],
     ty: TypeId,
     stable_ptr: ast::PatternPtr,
-    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
+    or_pattern_variables_map: &mut UnorderedHashMap<TextId, LocalVariable>,
 ) -> Pattern {
     let syntax_db = ctx.db.upcast();
 
@@ -2083,7 +2086,7 @@ fn struct_ctor_expr(
                     ctx,
                     member,
                     arg_identifier.stable_ptr().untyped(),
-                    &arg_name,
+                    arg_name,
                 );
 
                 // Extract expression.
@@ -2167,10 +2170,10 @@ fn struct_ctor_expr(
                     ctx,
                     member,
                     base_struct.clone().unwrap().1.stable_ptr().untyped(),
-                    member_name,
+                    *member_name,
                 );
             } else {
-                ctx.diagnostics.report(ctor_syntax, MissingMember(member_name.clone()));
+                ctx.diagnostics.report(ctor_syntax, MissingMember(*member_name));
             }
         }
     }
@@ -2206,19 +2209,19 @@ fn get_tail_expression(
 /// Creates a new numeric literal expression.
 fn new_literal_expr(
     ctx: &mut ComputationContext<'_>,
-    ty: Option<&str>,
+    ty: Option<TextId>,
     value: BigInt,
     stable_ptr: ExprPtr,
 ) -> Maybe<ExprLiteral> {
     let ty = if let Some(ty_str) = ty {
         // Requires specific blocking as `NonZero` now has NumericLiteral support.
-        if ty_str == "NonZero" {
+        if ty_str == TextId::interned("NonZero", ctx.db) {
             return Err(ctx.diagnostics.report(
                 stable_ptr.untyped(),
                 SemanticDiagnosticKind::WrongNumberOfArguments { expected: 1, actual: 0 },
             ));
         }
-        try_get_core_ty_by_name(ctx.db, ty_str.into(), vec![])
+        try_get_core_ty_by_name(ctx.db, ty_str, vec![])
             .map_err(|err| ctx.diagnostics.report(stable_ptr.untyped(), err))?
     } else {
         ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()))
@@ -2244,7 +2247,6 @@ fn literal_to_semantic(
     let syntax_db = db.upcast();
 
     let (value, ty) = literal_syntax.numeric_value_and_suffix(syntax_db).unwrap_or_default();
-    let ty = ty.as_ref().map(SmolStr::as_str);
 
     new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr().into())
 }
@@ -2260,7 +2262,6 @@ fn short_string_to_semantic(
     let value = short_string_syntax.numeric_value(syntax_db).unwrap_or_default();
 
     let suffix = short_string_syntax.suffix(syntax_db);
-    let suffix = suffix.as_ref().map(SmolStr::as_str);
 
     new_literal_expr(ctx, suffix, value, short_string_syntax.stable_ptr().into())
 }
@@ -2274,7 +2275,11 @@ fn new_string_literal_expr(
     let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
 
     // String trait.
-    let trait_id = get_core_trait(ctx.db, CoreTraitContext::TopLevel, "StringLiteral".into());
+    let trait_id = get_core_trait(
+        ctx.db,
+        CoreTraitContext::TopLevel,
+        TextId::interned("StringLiteral", ctx.db),
+    );
     let generic_args = vec![GenericArgumentId::Type(ty)];
     let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
@@ -2305,7 +2310,7 @@ fn expr_as_identifier(
     ctx: &mut ComputationContext<'_>,
     path: &ast::ExprPath,
     syntax_db: &dyn SyntaxGroup,
-) -> Maybe<SmolStr> {
+) -> Maybe<TextId> {
     let segments = path.elements(syntax_db);
     if segments.len() == 1 {
         return Ok(segments[0].identifier(syntax_db));
@@ -2427,7 +2432,7 @@ fn member_access_expr(
     match &long_ty {
         TypeLongId::Concrete(_) | TypeLongId::Tuple(_) | TypeLongId::FixedSizeArray { .. } => {
             let EnrichedMembers { members, deref_functions } =
-                enriched_members(ctx, lexpr.clone(), stable_ptr, Some(member_name.clone()))?;
+                enriched_members(ctx, lexpr.clone(), stable_ptr, Some(member_name))?;
             let Some((member, n_derefs)) = members.get(&member_name) else {
                 return Err(ctx.diagnostics.report(
                     &rhs_syntax,
@@ -2438,7 +2443,7 @@ fn member_access_expr(
                 ctx,
                 member,
                 rhs_syntax.stable_ptr().untyped(),
-                &member_name,
+                member_name,
             );
             let member_path = match &long_ty {
                 TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))
@@ -2518,7 +2523,7 @@ fn member_access_expr(
 struct EnrichedMembers {
     /// A map from member names to their semantic representation and the number of deref operations
     /// needed to access them.
-    members: OrderedHashMap<SmolStr, (semantic::Member, usize)>,
+    members: OrderedHashMap<TextId, (semantic::Member, usize)>,
     /// The sequence of deref functions needed to access the members.
     deref_functions: Vec<(FunctionId, Mutability)>,
 }
@@ -2533,7 +2538,7 @@ fn enriched_members(
     ctx: &mut ComputationContext<'_>,
     mut expr: ExprAndId,
     stable_ptr: ast::ExprPtr,
-    accessed_member_name: Option<SmolStr>,
+    accessed_member_name: Option<TextId>,
 ) -> Maybe<EnrichedMembers> {
     // TODO(Gil): Use this function for LS completions.
     let mut ty = expr.ty();
@@ -2552,7 +2557,7 @@ fn enriched_members(
     if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
         let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
         for (member_name, member) in members.iter() {
-            res.insert(member_name.clone(), (member.clone(), 0));
+            res.insert(*member_name, (member.clone(), 0));
             if let Some(ref accessed_member_name) = accessed_member_name {
                 if *member_name == *accessed_member_name {
                     return Ok(EnrichedMembers { members: res, deref_functions });
@@ -2570,7 +2575,7 @@ fn enriched_members(
             compute_method_function_call_data(
                 ctx,
                 &[deref_trait],
-                if use_deref_mut { "deref_mut".into() } else { "deref".into() },
+                TextId::interned(if use_deref_mut { "deref_mut" } else { "deref" }, ctx.db),
                 expr.clone(),
                 stable_ptr.0,
                 None,
@@ -2630,8 +2635,8 @@ fn enriched_members(
             let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
             for (member_name, member) in members.iter() {
                 // Insert member if there is not already a member with the same name.
-                if res.get(&member_name.clone()).is_none() {
-                    res.insert(member_name.clone(), (member.clone(), n_deref));
+                if res.get(member_name).is_none() {
+                    res.insert(*member_name, (member.clone(), n_deref));
                     if let Some(ref accessed_member_name) = accessed_member_name {
                         if *member_name == *accessed_member_name {
                             return Ok(EnrichedMembers { members: res, deref_functions });
@@ -2688,7 +2693,7 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
     if let [PathSegment::Simple(ident_segment)] = &segments[..] {
         let identifier = ident_segment.ident(syntax_db);
         let variable_name = identifier.text(ctx.db.upcast());
-        if let Some(res) = get_variable_by_name(ctx, &variable_name, path.stable_ptr().into()) {
+        if let Some(res) = get_variable_by_name(ctx, variable_name, path.stable_ptr().into()) {
             let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
             ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(), item);
             return Ok(res);
@@ -2734,7 +2739,7 @@ pub fn resolve_variable_by_name(
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
-    let res = get_variable_by_name(ctx, &variable_name, stable_ptr)
+    let res = get_variable_by_name(ctx, variable_name, stable_ptr)
         .ok_or_else(|| ctx.diagnostics.report(identifier, VariableNotFound(variable_name)))?;
     let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
     ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(), item);
@@ -2744,12 +2749,12 @@ pub fn resolve_variable_by_name(
 /// Returns the requested variable from the environment if it exists. Returns None otherwise.
 pub fn get_variable_by_name(
     ctx: &mut ComputationContext<'_>,
-    variable_name: &SmolStr,
+    variable_name: TextId,
     stable_ptr: ast::ExprPtr,
 ) -> Option<Expr> {
     let mut maybe_env = Some(&mut *ctx.environment);
     while let Some(env) = maybe_env {
-        if let Some(var) = env.variables.get(variable_name) {
+        if let Some(var) = env.variables.get(&variable_name) {
             env.used_variables.insert(var.id());
             return Some(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }));
         }
@@ -2852,7 +2857,9 @@ fn maybe_pop_coupon_argument(
     let mut coupon_arg: Option<ExprId> = None;
     if let Some(NamedArg(arg, Some(name_terminal), mutability)) = named_args.last() {
         let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_file_id);
-        if name_terminal.text(ctx.db.upcast()) == "__coupon__" && coupons_enabled {
+        if coupons_enabled
+            && name_terminal.text(ctx.db.upcast()) == TextId::interned("__coupon__", ctx.db)
+        {
             // Check that the argument type is correct.
             let expected_ty = TypeLongId::Coupon(function_id).intern(ctx.db);
             let arg_typ = arg.ty();
@@ -2921,10 +2928,10 @@ fn check_named_arguments(
         if let Some(name_terminal) = name_opt {
             seen_named_arguments = true;
             let name = name_terminal.text(ctx.db.upcast());
-            if param.name != name.clone() {
+            if param.name != name {
                 res = Err(ctx.diagnostics.report(
                     name_terminal,
-                    NamedArgumentMismatch { expected: param.name.clone(), found: name },
+                    NamedArgumentMismatch { expected: param.name, found: name },
                 ));
             }
         } else if seen_named_arguments && !reported_unnamed_argument_follows_named {
@@ -2947,7 +2954,7 @@ pub fn compute_statement_semantic(
     validate_statement_attributes(ctx, &syntax);
     let mut features_to_remove = vec![];
     for feature_name in extract_item_allowed_features(syntax_db, &syntax, ctx.diagnostics) {
-        if ctx.resolver.data.allowed_features.insert(feature_name.clone()) {
+        if ctx.resolver.data.allowed_features.insert(feature_name) {
             features_to_remove.push(feature_name);
         }
     }
@@ -2992,10 +2999,8 @@ pub fn compute_statement_semantic(
             let variables = pattern.variables(&ctx.patterns);
             for v in variables {
                 let var_def = Variable::Local(v.var.clone());
-                if let Some(old_var) =
-                    ctx.environment.variables.insert(v.name.clone(), var_def.clone())
-                {
-                    ctx.add_unused_variable_warning(&v.name, &old_var);
+                if let Some(old_var) = ctx.environment.variables.insert(v.name, var_def.clone()) {
+                    ctx.add_unused_variable_warning(v.name, &old_var);
                 }
                 ctx.semantic_defs.insert(var_def.id(), var_def);
             }
@@ -3153,7 +3158,7 @@ fn check_struct_member_is_visible(
     ctx: &mut ComputationContext<'_>,
     member: &Member,
     stable_ptr: SyntaxStablePtrId,
-    member_name: &SmolStr,
+    member_name: TextId,
 ) {
     let db = ctx.db.upcast();
     let containing_module_id = member.id.parent_module(db);
@@ -3162,7 +3167,7 @@ fn check_struct_member_is_visible(
     }
     let user_module_id = ctx.resolver.module_file_id.0;
     if !visibility::peek_visible_in(db, member.visibility, containing_module_id, user_module_id) {
-        ctx.diagnostics.report(stable_ptr, MemberNotVisible(member_name.clone()));
+        ctx.diagnostics.report(stable_ptr, MemberNotVisible(member_name));
     }
 }
 

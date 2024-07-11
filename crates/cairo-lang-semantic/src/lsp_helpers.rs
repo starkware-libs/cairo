@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ModuleId, TraitFunctionId};
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_syntax::node::ids::TextId;
 
 use crate::db::SemanticGroup;
 use crate::types::TypeHead;
@@ -25,6 +26,7 @@ pub fn methods_in_module(
     let Ok(module_traits_ids) = db.module_traits_ids(module_id) else {
         return result.into();
     };
+    let self_kw = TextId::interned("self", db);
     for trait_id in module_traits_ids.iter().copied() {
         for (_, trait_function) in db.trait_functions(trait_id).unwrap_or_default() {
             let Ok(signature) = db.trait_function_signature(trait_function) else {
@@ -33,7 +35,7 @@ pub fn methods_in_module(
             let Some(first_param) = signature.params.first() else {
                 continue;
             };
-            if first_param.name != "self" {
+            if first_param.name != self_kw {
                 continue;
             }
             if let TypeFilter::TypeHead(type_head) = &type_filter {

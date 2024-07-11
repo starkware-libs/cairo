@@ -3,6 +3,7 @@ use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 use indent::indent_by;
 use indoc::formatdoc;
 
@@ -203,7 +204,7 @@ fn handle_enum(
         } else {
             i + usize::from(default_index.is_none())
         };
-        let variant_name = variant.name(db).text(db);
+        let variant_name = variant.name(db).text(db).lookup_intern(db);
         let variant_type = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => "()".to_string(),
             ast::OptionTypeClause::TypeClause(tc) => {

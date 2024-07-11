@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{SyntaxStablePtrId, TextId};
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, Intern, LookupIntern, OptionFrom};
 use itertools::Itertools;
@@ -120,11 +120,16 @@ impl TypeLongId {
                 }
             }
             TypeLongId::Snapshot(ty) => format!("@{}", ty.format(db)),
-            TypeLongId::GenericParameter(generic_param) => {
-                format!("{}", generic_param.name(def_db).unwrap_or_else(|| "_".into()))
-            }
+            TypeLongId::GenericParameter(generic_param) => generic_param
+                .name(def_db)
+                .map(|name| name.to_string(db))
+                .unwrap_or_else(|| "_".into()),
             TypeLongId::ImplType(impl_type_id) => {
-                format!("{}::{}", impl_type_id.impl_id.name(db), impl_type_id.ty.name(def_db))
+                format!(
+                    "{}::{}",
+                    impl_type_id.impl_id.name(db),
+                    impl_type_id.ty.name(def_db).lookup_intern(db)
+                )
             }
             TypeLongId::Var(var) => format!("?{}", var.id.0),
             TypeLongId::Coupon(function_id) => format!("{}::Coupon", function_id.full_name(db)),
@@ -135,8 +140,8 @@ impl TypeLongId {
             TypeLongId::TraitType(trait_type_id) => {
                 format!(
                     "{}::{}",
-                    trait_type_id.trait_id(def_db).name(def_db),
-                    trait_type_id.name(def_db)
+                    trait_type_id.trait_id(def_db).name(def_db).lookup_intern(db),
+                    trait_type_id.name(def_db).lookup_intern(db)
                 )
             }
         }
@@ -413,7 +418,12 @@ impl ImplTypeId {
         self.ty
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.ty.name(db.upcast())).into()
+        format!(
+            "{}::{}",
+            self.impl_id.name(db.upcast()),
+            self.ty.name(db.upcast()).lookup_intern(db)
+        )
+        .into()
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplTypeId {
@@ -650,7 +660,7 @@ pub fn add_type_based_diagnostics(
     }
     if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.lookup_intern(db) {
         let long_id = extrn.lookup_intern(db);
-        if long_id.extern_type_id.name(db.upcast()).as_str() == "Array" {
+        if long_id.extern_type_id.name(db.upcast()) == TextId::interned("Array", db) {
             if let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..] {
                 if db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized) {
                     diagnostics.report(stable_ptr, ArrayOfZeroSizedElements(*arg_ty));

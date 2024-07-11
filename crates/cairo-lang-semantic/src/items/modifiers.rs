@@ -1,7 +1,7 @@
 use cairo_lang_syntax::node::ast::Modifier;
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::Terminal;
-use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind::RedundantModifier;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -13,23 +13,19 @@ pub fn compute_mutability(
     syntax_db: &dyn SyntaxGroup,
     modifier_list: &[Modifier],
 ) -> Mutability {
-    let mut mutability = Mutability::Immutable;
-
+    let mut last: Option<&Modifier> = None;
     for modifier in modifier_list {
-        match mutability {
-            Mutability::Immutable => {
-                mutability = match modifier {
-                    Modifier::Ref(_) => Mutability::Reference,
-                    Modifier::Mut(_) => Mutability::Mutable,
-                };
+        match last {
+            None => {
+                last = Some(modifier);
             }
-            Mutability::Mutable | Mutability::Reference => match modifier {
+            Some(last) => match modifier {
                 Modifier::Ref(terminal) => {
                     diagnostics.report(
                         terminal,
                         RedundantModifier {
                             current_modifier: terminal.text(syntax_db),
-                            previous_modifier: get_relevant_modifier(&mutability),
+                            previous_modifier: get_relevant_modifier(last, syntax_db),
                         },
                     );
                 }
@@ -38,23 +34,24 @@ pub fn compute_mutability(
                         terminal,
                         RedundantModifier {
                             current_modifier: terminal.text(syntax_db),
-                            previous_modifier: get_relevant_modifier(&mutability),
+                            previous_modifier: get_relevant_modifier(last, syntax_db),
                         },
                     );
                 }
             },
         }
     }
-    mutability
+    match last {
+        None => Mutability::Immutable,
+        Some(Modifier::Mut(_)) => Mutability::Mutable,
+        Some(Modifier::Ref(_)) => Mutability::Reference,
+    }
 }
 
 /// Gets the text of the modifier that causes a variable to have the given mutability status.
-fn get_relevant_modifier(mutability: &Mutability) -> SmolStr {
-    match mutability {
-        Mutability::Immutable => "",
-        Mutability::Mutable => "mut",
-        Mutability::Reference => "ref",
+fn get_relevant_modifier(modifier: &Modifier, db: &dyn SyntaxGroup) -> TextId {
+    match modifier {
+        Modifier::Mut(terminal) => terminal.text(db),
+        Modifier::Ref(terminal) => terminal.text(db),
     }
-    .to_string()
-    .into()
 }

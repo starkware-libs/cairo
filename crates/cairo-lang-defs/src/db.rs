@@ -17,7 +17,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
 
 use crate::ids::*;
@@ -285,8 +285,8 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
                     db.module_file(submodule_id.module_file_id(db))?
                 }
                 MaybeModuleBody::None(_) => {
-                    let name = submodule_id.name(db);
-                    db.module_dir(parent)?.file(db.upcast(), format!("{name}.cairo").into())
+                    let name = submodule_id.name(db).lookup_intern(db);
+                    db.module_dir(parent)?.file(db.upcast(), format!("{name}.cairo"))
                 }
             }
         }
@@ -308,8 +308,8 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
-            let name = submodule_id.name(db);
-            Ok(db.module_dir(parent)?.subdir(name))
+            let name = submodule_id.name(db).lookup_intern(db);
+            Ok(db.module_dir(parent)?.subdir(name.to_string()))
         }
     }
 }
@@ -586,7 +586,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         &inline_macro_ast,
                         format!(
                             "Unknown inline item macro: '{}'.",
-                            inline_macro_ast.name(db.upcast()).text(db.upcast())
+                            inline_macro_ast.name(db.upcast()).text(db.upcast()).lookup_intern(db)
                         ),
                     ),
                 )),

@@ -3,7 +3,7 @@ use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, Attribut
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::byte_array::{BYTES_IN_WORD, BYTE_ARRAY_MAGIC};
-use cairo_lang_utils::{require, OptionHelper};
+use cairo_lang_utils::{require, LookupIntern, OptionHelper};
 use itertools::chain;
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
@@ -166,7 +166,7 @@ fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fel
     else {
         return None;
     };
-    require(name.text == "expected")?;
+    require(name.text.lookup_intern(db).as_ref() == "expected")?;
 
     match value {
         ast::Expr::Tuple(panic_exprs) => {

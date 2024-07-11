@@ -8,6 +8,7 @@ use cairo_lang_diagnostics::{DiagnosticNote, DiagnosticsBuilder};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -201,13 +202,16 @@ fn test_sizes() {
     let type_aliases = db.module_type_aliases(test_module.module_id).unwrap();
     assert_eq!(type_aliases.len(), type_to_size.len());
     let alias_expected_size = HashMap::<_, _>::from_iter(
-        type_to_size.iter().enumerate().map(|(i, (_, size))| (format!("T{i}"), *size)),
+        type_to_size
+            .iter()
+            .enumerate()
+            .map(|(i, (_, size))| (TextId::interned(format!("T{i}"), db), *size)),
     );
     for (alias_id, alias) in type_aliases.iter() {
         let ty = db.module_type_alias_resolved_type(*alias_id).unwrap();
         let size = db.type_size(ty);
         let alias_name = alias.name(db.upcast()).text(db.upcast());
-        let expected_size = alias_expected_size[alias_name.as_str()];
+        let expected_size = alias_expected_size[&alias_name];
         assert_eq!(size, expected_size, "Wrong size for type alias `{}`", ty.format(db.upcast()));
     }
 }

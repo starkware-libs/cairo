@@ -2,6 +2,8 @@
 #[path = "lexer_test.rs"]
 mod test;
 
+use std::sync::Arc;
+
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
@@ -10,8 +12,8 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::Token;
-use cairo_lang_utils::require;
-use smol_str::SmolStr;
+use cairo_lang_utils::{require, LookupIntern};
+use itertools::chain;
 
 pub struct Lexer<'a> {
     db: &'a dyn SyntaxGroup,
@@ -94,19 +96,19 @@ impl<'a> Lexer<'a> {
     /// Assumes the next character is one of [' ', '\r', '\t'].
     fn match_trivium_whitespace(&mut self) -> TriviumGreen {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
-        TokenWhitespace::new_green(self.db, SmolStr::from(self.consume_span())).into()
+        TokenWhitespace::new_green_str(self.db, self.consume_span()).into()
     }
 
     /// Assumes the next character '/n'.
     fn match_trivium_newline(&mut self) -> TriviumGreen {
         self.take();
-        TokenNewline::new_green(self.db, SmolStr::from(self.consume_span())).into()
+        TokenNewline::new_green_str(self.db, self.consume_span()).into()
     }
 
     /// Assumes the next 2 characters are "//".
     fn match_trivium_single_line_comment(&mut self) -> TriviumGreen {
         self.take_while(|c| c != '\n');
-        TokenSingleLineComment::new_green(self.db, SmolStr::from(self.consume_span())).into()
+        TokenSingleLineComment::new_green_str(self.db, self.consume_span()).into()
     }
 
     /// Token matchers.
@@ -293,7 +295,7 @@ impl<'a> Lexer<'a> {
             TokenKind::EndOfFile
         };
 
-        let text = SmolStr::from(self.consume_span());
+        let text = self.consume_span().into();
         let trailing_trivia = self.match_trivia(false);
         let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
 
@@ -305,7 +307,7 @@ impl<'a> Lexer<'a> {
 /// Output terminal emitted by the lexer.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct LexerTerminal {
-    pub text: SmolStr,
+    pub text: Arc<str>,
     /// The kind of the inner token of this terminal.
     pub kind: SyntaxKind,
     pub leading_trivia: Vec<TriviumGreen>,
@@ -313,9 +315,10 @@ pub struct LexerTerminal {
 }
 impl LexerTerminal {
     pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
-        self.leading_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
+        chain!(&self.leading_trivia, &self.trailing_trivia)
+            .map(|t| t.0.lookup_intern(db).width)
+            .sum::<TextWidth>()
             + TextWidth::from_str(&self.text)
-            + self.trailing_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
     }
 }
 

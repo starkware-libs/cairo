@@ -5,7 +5,7 @@ use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::grandparent_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use tower_lsp::lsp_types::SemanticTokenType;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
@@ -84,7 +84,7 @@ impl SemanticTokenKind {
         node = node.parent().unwrap();
         let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.clone());
 
-        if identifier.text(syntax_db) == "super" {
+        if identifier.text(syntax_db).lookup_intern(db).as_ref() == "super" {
             return Some(SemanticTokenKind::Keyword);
         }
 

@@ -7,6 +7,7 @@ use cairo_lang_sierra::extensions::lib_func::{
 };
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
@@ -33,7 +34,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
     let array_ty = db
         .get_concrete_type_id(get_core_ty_by_name(
             db.upcast(),
-            "Array".into(),
+            TextId::interned("Array", db),
             vec![GenericArgumentId::Type(db.core_felt252_ty())],
         ))
         .expect("Can't find core::Array<core::felt252>.");

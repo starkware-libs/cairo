@@ -9,9 +9,9 @@ use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::UsePathEx;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use smol_str::SmolStr;
 
 use super::feature_kind::FeatureKind;
 use super::us::SemanticUseEx;
@@ -32,7 +32,7 @@ pub struct ModuleItemInfo {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleSemanticData {
     // The items in the module without duplicates.
-    pub items: OrderedHashMap<SmolStr, ModuleItemInfo>,
+    pub items: OrderedHashMap<TextId, ModuleItemInfo>,
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
 }
 
@@ -99,15 +99,12 @@ pub fn priv_module_semantic_data(
         };
         let visibility = Visibility::from_ast(db.upcast(), &mut diagnostics, &visibility);
         let feature_kind = FeatureKind::from_ast(db.upcast(), &mut diagnostics, &attributes);
-        if items
-            .insert(name.clone(), ModuleItemInfo { item_id, visibility, feature_kind })
-            .is_some()
-        {
+        if items.insert(name, ModuleItemInfo { item_id, visibility, feature_kind }).is_some() {
             // `item` is extracted from `module_items` and thus `module_item_name_stable_ptr` is
             // guaranteed to succeed.
             diagnostics.report(
                 db.module_item_name_stable_ptr(module_id, item_id).unwrap(),
-                SemanticDiagnosticKind::NameDefinedMultipleTimes(name.clone()),
+                SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
             );
         }
     }
@@ -117,7 +114,7 @@ pub fn priv_module_semantic_data(
 pub fn module_item_by_name(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-    name: SmolStr,
+    name: TextId,
 ) -> Maybe<Option<ModuleItemId>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).map(|info| info.item_id))
@@ -126,7 +123,7 @@ pub fn module_item_by_name(
 pub fn module_item_info_by_name(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-    name: SmolStr,
+    name: TextId,
 ) -> Maybe<Option<ModuleItemInfo>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).cloned())

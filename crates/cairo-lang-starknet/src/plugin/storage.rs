@@ -3,6 +3,7 @@ use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 use indoc::formatdoc;
 
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
@@ -176,7 +177,8 @@ fn get_substorage_member_code(
             let (last, path_prefix) = elements.split_last().unwrap();
             match last {
                 ast::PathSegment::Simple(segment)
-                    if segment.ident(db).text(db) == STORAGE_STRUCT_NAME =>
+                    if segment.ident(db).text(db).lookup_intern(db).as_ref()
+                        == STORAGE_STRUCT_NAME =>
                 {
                     let component_path = RewriteNode::interspersed(
                         path_prefix

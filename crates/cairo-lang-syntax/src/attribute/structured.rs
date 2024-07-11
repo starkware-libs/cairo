@@ -1,9 +1,11 @@
 use std::fmt;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_utils::LookupIntern;
 use smol_str::SmolStr;
 
 use crate::node::db::SyntaxGroup;
+use crate::node::ids::TextId;
 use crate::node::{ast, Terminal, TypedSyntaxNode};
 
 /// Easier to digest representation of an [ast::Attribute].
@@ -53,7 +55,7 @@ pub enum AttributeArgVariant {
 /// The data on a name part of an argument.
 pub struct NameInfo {
     /// The name of the argument.
-    pub text: SmolStr,
+    pub text: TextId,
     /// The stable pointer to the name.
     pub stable_ptr: ast::TerminalIdentifierPtr,
 }
@@ -66,7 +68,7 @@ impl NameInfo {
 /// Easier to digest representation of a [`ast::Modifier`] attached to [`AttributeArg`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Modifier {
-    pub text: SmolStr,
+    pub text: TextId,
     pub stable_ptr: ast::ModifierPtr,
 }
 
@@ -156,10 +158,14 @@ impl AttributeArg {
                 value.as_syntax_node().get_text_without_trivia(db)
             }
             AttributeArgVariant::Named { value, name } => {
-                format!("{}: {}", name.text, value.as_syntax_node().get_text_without_trivia(db))
+                format!(
+                    "{}: {}",
+                    name.text.lookup_intern(db),
+                    value.as_syntax_node().get_text_without_trivia(db)
+                )
             }
             AttributeArgVariant::FieldInitShorthand(name) => {
-                format!(":{}", name.text)
+                format!(":{}", name.text.lookup_intern(db))
             }
         }
     }
@@ -170,7 +176,10 @@ impl Modifier {
     fn from(modifier: ast::Modifier, db: &dyn SyntaxGroup) -> Modifier {
         Modifier {
             stable_ptr: modifier.stable_ptr(),
-            text: modifier.as_syntax_node().get_text(db).into(),
+            text: match modifier {
+                ast::Modifier::Ref(r) => r.text(db),
+                ast::Modifier::Mut(m) => m.text(db),
+            },
         }
     }
 }

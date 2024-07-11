@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{SyntaxStablePtrId, TextId};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{
     define_short_id, extract_matches, try_extract_matches, Intern, LookupIntern,
@@ -17,7 +17,6 @@ use id_arena::Arena;
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::{Num, ToPrimitive, Zero};
-use smol_str::SmolStr;
 
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::ImplId;
@@ -212,9 +211,12 @@ impl ImplConstantId {
         self.trait_constant_id
     }
 
-    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.trait_constant_id.name(db.upcast()))
-            .into()
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        format!(
+            "{}::{}",
+            self.impl_id.name(db.upcast()),
+            self.trait_constant_id.name(db.upcast()).lookup_intern(db)
+        )
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplConstantId {
@@ -379,12 +381,12 @@ pub fn value_as_const_value(
 ) -> Result<ConstValue, LiteralError> {
     validate_literal(db.upcast(), ty, value.clone())?;
     let get_basic_const_value = |ty| {
-        let u256_ty = get_core_ty_by_name(db.upcast(), "u256".into(), vec![]);
+        let u256_ty = get_core_ty_by_name(db.upcast(), TextId::interned("u256", db), vec![]);
 
         if ty != u256_ty {
             ConstValue::Int(value.clone(), ty)
         } else {
-            let u128_ty = get_core_ty_by_name(db.upcast(), "u128".into(), vec![]);
+            let u128_ty = get_core_ty_by_name(db.upcast(), TextId::interned("u128", db), vec![]);
             let mask128 = BigInt::from(u128::MAX);
             let low = value & mask128;
             let high = value >> 128;
@@ -498,7 +500,7 @@ fn is_function_const(db: &dyn SemanticGroup, function_id: FunctionId) -> bool {
     let Ok(trait_id) = db.impl_def_trait(impl_def) else {
         return false;
     };
-    let expected_trait_name = match imp.function_body.name(db.upcast()).as_str() {
+    let expected_trait_name = match imp.function_body.name(db.upcast()).lookup_intern(db).as_ref() {
         "neg" => "Neg",
         "add" => "Add",
         "sub" => "Sub",
@@ -510,7 +512,8 @@ fn is_function_const(db: &dyn SemanticGroup, function_id: FunctionId) -> bool {
         "bitxor" => "BitXor",
         _ => return false,
     };
-    trait_id == get_core_trait(db, CoreTraitContext::TopLevel, expected_trait_name.into())
+    trait_id
+        == get_core_trait(db, CoreTraitContext::TopLevel, TextId::interned(expected_trait_name, db))
 }
 
 /// Attempts to evaluate constants from a function call.
@@ -562,7 +565,7 @@ fn evaluate_const_function_call(
         GenericFunctionId::Impl
     );
     let is_felt252_ty = expr.ty == core_felt252_ty(db.upcast());
-    let mut value = match imp.function.name(db.upcast()).as_str() {
+    let mut value = match imp.function.name(db.upcast()).lookup_intern(db).as_ref() {
         "neg" => -&args[0],
         "add" => &args[0] + &args[1],
         "sub" => &args[0] - &args[1],

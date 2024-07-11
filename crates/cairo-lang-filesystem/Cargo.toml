@@ -12,7 +12,6 @@ cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.7.0-rc.1", feat
 path-clean.workspace = true
 salsa.workspace = true
 serde = { workspace = true, default-features = true }
-smol_str.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true

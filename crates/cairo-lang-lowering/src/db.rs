@@ -587,8 +587,8 @@ fn extract_coupon_function(
     else {
         return Ok(None);
     };
-    let name = extern_function_id.lookup_intern(db).name(db.upcast());
-    if !(name == "coupon_buy" || name == "coupon_refund") {
+    let name = extern_function_id.lookup_intern(db).name(db.upcast()).lookup_intern(db);
+    if !(name.as_ref() == "coupon_buy" || name.as_ref() == "coupon_refund") {
         return Ok(None);
     }
 
@@ -753,7 +753,12 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
                     .unwrap_or_default()
             }
             ConcreteTypeId::Extern(extern_id) => {
-                match extern_id.extern_type_id(db.upcast()).name(db.upcast()).as_str() {
+                match extern_id
+                    .extern_type_id(db.upcast())
+                    .name(db.upcast())
+                    .lookup_intern(db)
+                    .as_ref()
+                {
                     "Array" | "SquashedFelt252Dict" | "EcPoint" => 2,
                     "EcState" => 3,
                     "Uint128MulGuarantee" => 4,

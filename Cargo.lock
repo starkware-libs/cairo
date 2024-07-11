@@ -556,7 +556,6 @@ dependencies = [
  "itertools 0.12.1",
  "pretty_assertions",
  "salsa",
- "smol_str",
  "test-log",
 ]
 
@@ -609,7 +608,6 @@ dependencies = [
  "salsa",
  "serde",
  "serde_json",
- "smol_str",
  "test-log",
 ]
 
@@ -629,7 +627,6 @@ dependencies = [
  "pretty_assertions",
  "salsa",
  "serde",
- "smol_str",
  "test-case",
  "thiserror",
 ]
@@ -664,7 +661,6 @@ dependencies = [
  "scarb-metadata",
  "serde",
  "serde_json",
- "smol_str",
  "test-log",
  "tokio",
  "tower-lsp",
@@ -699,7 +695,6 @@ dependencies = [
  "once_cell",
  "pretty_assertions",
  "salsa",
- "smol_str",
  "test-log",
 ]
 
@@ -720,7 +715,6 @@ dependencies = [
  "num-traits 0.2.19",
  "pretty_assertions",
  "salsa",
- "smol_str",
  "test-log",
  "unescaper",
 ]
@@ -743,7 +737,6 @@ dependencies = [
  "itertools 0.12.1",
  "salsa",
  "serde_json",
- "smol_str",
  "test-log",
 ]
 
@@ -994,7 +987,6 @@ dependencies = [
  "pretty_assertions",
  "serde",
  "serde_json",
- "smol_str",
  "starknet-types-core",
  "test-case",
  "test-log",

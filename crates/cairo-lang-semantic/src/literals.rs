@@ -1,5 +1,6 @@
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_utils::{require, try_extract_matches};
 use id_arena::Arena;
 use num_bigint::BigInt;
@@ -26,6 +27,12 @@ pub fn try_extract_minus_literal(
         GenericFunctionId::Impl
     )?;
     let trait_id = imp.impl_id.concrete_trait(db).to_option()?.trait_id(db);
-    require(trait_id == get_core_trait(db, CoreTraitContext::TopLevel, "Neg".into()))?;
-    if imp.function.name(db.upcast()) != "neg" { None } else { Some(-literal.value.clone()) }
+    require(
+        trait_id == get_core_trait(db, CoreTraitContext::TopLevel, TextId::interned("Neg", db)),
+    )?;
+    if imp.function.name(db.upcast()) != TextId::interned("neg", db) {
+        None
+    } else {
+        Some(-literal.value.clone())
+    }
 }

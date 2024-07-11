@@ -145,7 +145,7 @@ fn test_module_file() {
     let db = &db_val;
     let item_id =
         extract_matches!(db.module_items(module_id).ok().unwrap()[0], ModuleItemId::Submodule);
-    assert_eq!(item_id.name(db), "mysubmodule");
+    assert_eq!(item_id.name(db).to_string(db), "mysubmodule");
 
     let submodule_id = ModuleId::Submodule(item_id);
     assert_eq!(
@@ -219,7 +219,10 @@ impl MacroPlugin for DummyPlugin {
                 PluginResult {
                     code: Some(PluginGeneratedFile {
                         name: "virt".into(),
-                        content: format!("fn f(x:{}){{}}", struct_ast.name(db).text(db)),
+                        content: format!(
+                            "fn f(x:{}){{}}",
+                            struct_ast.name(db).text(db).lookup_intern(db)
+                        ),
                         code_mappings: Default::default(),
                         aux_data: None,
                     }),
@@ -335,7 +338,7 @@ impl MacroPlugin for FooToBarPlugin {
         else {
             return PluginResult::default();
         };
-        if free_function_ast.declaration(db).name(db).text(db) != "foo" {
+        if free_function_ast.declaration(db).name(db).text(db).lookup_intern(db).as_ref() != "foo" {
             return PluginResult::default();
         }
         if !free_function_ast.has_attr(db, "foo_to_bar") {

@@ -3,7 +3,7 @@ use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResul
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx};
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::{try_extract_matches, LookupIntern};
 use indoc::formatdoc;
 use itertools::chain;
 
@@ -30,7 +30,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     let mut diagnostics = vec![];
     let generic_params = item_impl.generic_params(db);
     let impl_name = item_impl.name(db);
-    let impl_name_str = impl_name.text(db);
+    let impl_name_str = impl_name.text(db).lookup_intern(db);
     let impl_name = RewriteNode::new_trimmed(impl_name.as_syntax_node());
     let (is_valid_params, maybe_generic_args, generic_params_node) = match &generic_params {
         ast::OptionWrappedGenericParamList::Empty(_) => {
@@ -60,7 +60,10 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             let first_generic_param = elements.next();
             let is_valid_params = first_generic_param
                 .and_then(|param| try_extract_matches!(param, ast::GenericParam::Type))
-                .map_or(false, |param| param.name(db).text(db) == GENERIC_CONTRACT_STATE_NAME);
+                .map_or(false, |param| {
+                    param.name(db).text(db).lookup_intern(db).as_ref()
+                        == GENERIC_CONTRACT_STATE_NAME
+                });
             let generic_args = RewriteNode::interspersed(
                 chain!(
                     [RewriteNode::text(GENERIC_CONTRACT_STATE_NAME)],
@@ -118,7 +121,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             continue;
         };
         let function_name = item_function.declaration(db).name(db);
-        let function_name_str = function_name.text(db);
+        let function_name_str = function_name.text(db).lookup_intern(db);
         let function_name = RewriteNode::new_trimmed(function_name.as_syntax_node());
         let function_path = RewriteNode::interpolate_patched(
             "$impl_name$$maybe_generic_args$::$func_name$",

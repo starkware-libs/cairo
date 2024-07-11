@@ -93,7 +93,12 @@ pub fn get_concrete_long_type_id(
                 semantic::ConcreteTypeId::Extern(extrn) => {
                     ConcreteTypeLongId {
                         // TODO(Gil): Implement name for semantic::ConcreteTypeId
-                        generic_id: extrn.extern_type_id(db.upcast()).name(db.upcast()).into(),
+                        generic_id: extrn
+                            .extern_type_id(db.upcast())
+                            .name(db.upcast())
+                            .lookup_intern(db)
+                            .to_string()
+                            .into(),
                         generic_args: ty
                             .generic_args(db.upcast())
                             .into_iter()

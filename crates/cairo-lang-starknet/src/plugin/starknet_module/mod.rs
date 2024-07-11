@@ -11,10 +11,11 @@ use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, require};
+use cairo_lang_utils::{extract_matches, require, LookupIntern};
 
 use self::component::generate_component_specific_code;
 use self::contract::generate_contract_specific_code;
@@ -140,7 +141,7 @@ fn validate_module(
         };
     };
     let Some(storage_struct_ast) = body.items_vec(db).into_iter().find(|item| {
-        matches!(item, ast::ModuleItem::Struct(struct_ast) if struct_ast.name(db).text(db) == STORAGE_STRUCT_NAME)
+        matches!(item, ast::ModuleItem::Struct(struct_ast) if struct_ast.name(db).text(db).lookup_intern(db).as_ref() == STORAGE_STRUCT_NAME)
     }) else {
         return PluginResult {
             code: None,
@@ -251,7 +252,7 @@ pub(super) fn handle_module_by_storage(
 fn maybe_add_extra_use(
     db: &dyn SyntaxGroup,
     item: ast::ModuleItem,
-    extra_uses: &mut OrderedHashMap<smol_str::SmolStr, String>,
+    extra_uses: &mut OrderedHashMap<TextId, String>,
 ) {
     if let Some(ident) = match item {
         ast::ModuleItem::Use(item) => {
@@ -259,7 +260,7 @@ fn maybe_add_extra_use(
             for leaf in leaves {
                 extra_uses
                     .entry(leaf.stable_ptr().identifier(db))
-                    .or_insert_with_key(|ident| format!("super::{}", ident));
+                    .or_insert_with_key(|ident| format!("super::{}", ident.lookup_intern(db)));
             }
             None
         }
@@ -267,7 +268,11 @@ fn maybe_add_extra_use(
         ast::ModuleItem::Module(item) => Some(item.name(db)),
         ast::ModuleItem::Impl(item) => Some(item.name(db)),
         // Skip the storage struct, that only generates other code, but its code itself is ignored.
-        ast::ModuleItem::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME => None,
+        ast::ModuleItem::Struct(item)
+            if item.name(db).text(db).lookup_intern(db).as_ref() == STORAGE_STRUCT_NAME =>
+        {
+            None
+        }
         ast::ModuleItem::Struct(item) => Some(item.name(db)),
         ast::ModuleItem::Enum(item) => Some(item.name(db)),
         ast::ModuleItem::TypeAlias(item) => Some(item.name(db)),
@@ -280,7 +285,9 @@ fn maybe_add_extra_use(
         | ast::ModuleItem::Missing(_)
         | ast::ModuleItem::InlineMacro(_) => None,
     } {
-        extra_uses.entry(ident.text(db)).or_insert_with_key(|ident| format!("super::{}", ident));
+        extra_uses
+            .entry(ident.text(db))
+            .or_insert_with_key(|ident| format!("super::{}", ident.lookup_intern(db)));
     }
 }
 

@@ -6,11 +6,11 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::enumerate;
-use smol_str::SmolStr;
 
 use super::attribute::SemanticQueryAttrs;
 use super::generics::{semantic_generic_params, GenericParamsData};
@@ -141,7 +141,7 @@ pub fn enum_declaration_resolver_data(
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct EnumDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    variants: OrderedHashMap<SmolStr, VariantId>,
+    variants: OrderedHashMap<TextId, VariantId>,
     variant_semantic: OrderedHashMap<VariantId, Variant>,
     resolver_data: Arc<ResolverData>,
 }
@@ -217,7 +217,7 @@ pub fn priv_enum_definition_data(
             }
         };
         let variant_name = variant.name(syntax_db).text(syntax_db);
-        if let Some(_other_variant) = variants.insert(variant_name.clone(), id) {
+        if let Some(_other_variant) = variants.insert(variant_name, id) {
             diagnostics.report(&variant, EnumVariantRedefinition { enum_id, variant_name });
         }
         variant_semantic.insert(id, Variant { enum_id, id, ty, idx: variant_idx });
@@ -280,7 +280,7 @@ pub fn enum_definition_resolver_data(
 pub fn enum_variants(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
-) -> Maybe<OrderedHashMap<SmolStr, VariantId>> {
+) -> Maybe<OrderedHashMap<TextId, VariantId>> {
     Ok(db.priv_enum_definition_data(enum_id)?.variants)
 }
 

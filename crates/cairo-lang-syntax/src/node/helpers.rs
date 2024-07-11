@@ -1,5 +1,4 @@
 use cairo_lang_utils::LookupIntern;
-use smol_str::SmolStr;
 
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
@@ -11,7 +10,7 @@ use super::ast::{
     TraitItemImpl, TraitItemType, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
-use super::ids::SyntaxStablePtrId;
+use super::ids::{SyntaxStablePtrId, TextId};
 use super::kind::SyntaxKind;
 use super::{SyntaxNode, Terminal, TypedSyntaxNode};
 use crate::node::ast::{Attribute, AttributeList};
@@ -22,7 +21,7 @@ use crate::node::green::GreenNodeDetails;
 mod test;
 
 pub trait GetIdentifier {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr;
+    fn identifier(&self, db: &dyn SyntaxGroup) -> TextId;
 }
 impl ast::UsePathLeafPtr {
     pub fn name_green(&self, _syntax_db: &dyn SyntaxGroup) -> Self {
@@ -30,11 +29,11 @@ impl ast::UsePathLeafPtr {
     }
 }
 impl GetIdentifier for ast::UsePathLeafPtr {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> TextId {
         let alias_clause_green = self.alias_clause_green(db).0;
         let green_node = alias_clause_green.lookup_intern(db);
         let children = match &green_node.details {
-            GreenNodeDetails::Node { children, width: _ } => children,
+            GreenNodeDetails::Node(children) => children,
             _ => panic!("Unexpected token"),
         };
         if !children.is_empty() {
@@ -47,10 +46,10 @@ impl GetIdentifier for ast::UsePathLeafPtr {
 }
 impl GetIdentifier for ast::PathSegmentGreen {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> TextId {
         let green_node = self.0.lookup_intern(db);
         let children = match &green_node.details {
-            GreenNodeDetails::Node { children, width: _ } => children,
+            GreenNodeDetails::Node(children) => children,
             _ => panic!("Unexpected token"),
         };
         let identifier = ast::TerminalIdentifierGreen(children[0]);
@@ -59,10 +58,10 @@ impl GetIdentifier for ast::PathSegmentGreen {
 }
 impl GetIdentifier for ast::ExprPathGreen {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> TextId {
         let green_node = self.0.lookup_intern(db);
         let children = match &green_node.details {
-            GreenNodeDetails::Node { children, width: _ } => children,
+            GreenNodeDetails::Node(children) => children,
             _ => panic!("Unexpected token"),
         };
         assert_eq!(children.len() & 1, 1, "Expected an odd number of elements in the path.");
@@ -71,18 +70,16 @@ impl GetIdentifier for ast::ExprPathGreen {
     }
 }
 impl GetIdentifier for ast::TerminalIdentifierGreen {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> TextId {
         match &self.0.lookup_intern(db).details {
-            GreenNodeDetails::Token(_) => "Unexpected token".into(),
-            GreenNodeDetails::Node { children, width: _ } => {
-                TokenIdentifierGreen(children[1]).text(db)
-            }
+            GreenNodeDetails::Token(_) => TextId::interned("Unexpected token", db),
+            GreenNodeDetails::Node(children) => TokenIdentifierGreen(children[1]).text(db),
         }
     }
 }
 impl GetIdentifier for ast::ExprPath {
     /// Retrieves the identifier of the last segment of the path.
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> TextId {
         self.elements(db).last().cloned().unwrap().identifier(db)
     }
 }
@@ -111,12 +108,12 @@ impl PathSegmentEx for ast::PathSegment {
 }
 impl GetIdentifier for ast::PathSegment {
     /// Retrieves the text of the segment (without the generic args).
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> TextId {
         self.identifier_ast(db).text(db)
     }
 }
 impl GetIdentifier for ast::Modifier {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> TextId {
         match self {
             Modifier::Ref(r) => r.text(db),
             Modifier::Mut(m) => m.text(db),

@@ -13,6 +13,7 @@ use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::extensions::lib_func::{LibfuncSignature, ParamSignature, SierraApChange};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::zip_eq;
@@ -112,7 +113,7 @@ impl<'a> AddStoreVariableStatements<'a> {
             gb_ty: db
                 .get_concrete_type_id(corelib::get_core_ty_by_name(
                     db.upcast(),
-                    "GasBuiltin".into(),
+                    TextId::interned("GasBuiltin", db),
                     vec![],
                 ))
                 .unwrap(),

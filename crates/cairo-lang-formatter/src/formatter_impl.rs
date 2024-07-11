@@ -1,13 +1,14 @@
 use std::cmp::Ordering;
 use std::fmt;
+use std::sync::Arc;
 
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
-use smol_str::SmolStr;
 use syntax::node::ast::MaybeModuleBody;
 use syntax::node::helpers::QueryAttrs;
 use syntax::node::kind::SyntaxKind;
@@ -866,7 +867,7 @@ impl<'a> FormatterImpl<'a> {
                         self.line_state.line_buffer.push_space();
                     }
                     self.line_state.line_buffer.push_comment(
-                        &trivium.as_syntax_node().text(self.db).unwrap(),
+                        &trivium.as_syntax_node().text(self.db).unwrap().lookup_intern(self.db),
                         !is_leading,
                     );
                     self.is_current_line_whitespaces = false;
@@ -904,7 +905,7 @@ impl<'a> FormatterImpl<'a> {
         }
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
         self.append_break_line_point(node_break_points.leading());
-        self.line_state.line_buffer.push_str(&text);
+        self.line_state.line_buffer.push_str(&text.lookup_intern(self.db));
         self.append_break_line_point(node_break_points.trailing());
     }
     fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {
@@ -923,8 +924,8 @@ impl<'a> FormatterImpl<'a> {
 /// Represents a sortable SyntaxNode.
 #[derive(PartialEq, Eq)]
 enum MovableNode {
-    ItemModule(SmolStr),
-    ItemUse(SmolStr),
+    ItemModule(Arc<str>),
+    ItemUse(Arc<str>),
     Immovable,
 }
 impl MovableNode {
@@ -933,7 +934,7 @@ impl MovableNode {
             SyntaxKind::ItemModule => {
                 let item = ast::ItemModule::from_syntax_node(db, node.clone());
                 if matches!(item.body(db), MaybeModuleBody::None(_)) {
-                    Self::ItemModule(item.name(db).text(db))
+                    Self::ItemModule(item.name(db).text(db).lookup_intern(db))
                 } else {
                     Self::Immovable
                 }

@@ -6,6 +6,7 @@ use cairo_lang_lowering::DependencyType;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
 use crate::db::SierraGenGroup;
@@ -39,7 +40,7 @@ fn contains_cycles_test(
                 ConcreteFunctionWithBodyId::from_no_generics_free(db, *free_function_id).unwrap();
             format!(
                 "{}: ap_change={:?}, has_cycles={:?}",
-                free_function_id.name(db),
+                free_function_id.name(db).lookup_intern(db),
                 db.get_ap_change(function_id),
                 db.contains_cycle(function_id, DependencyType::Call),
             )

@@ -1,4 +1,5 @@
 use cairo_lang_defs::plugin::GeneratedFileAuxData;
+use cairo_lang_syntax::node::ids::TextId;
 
 use super::events::EventData;
 
@@ -6,7 +7,7 @@ use super::events::EventData;
 #[derive(Debug, PartialEq, Eq)]
 pub struct StarkNetContractAuxData {
     /// A list of contracts that were processed by the plugin.
-    pub contract_name: smol_str::SmolStr,
+    pub contract_name: TextId,
 }
 impl GeneratedFileAuxData for StarkNetContractAuxData {
     fn as_any(&self) -> &dyn std::any::Any {

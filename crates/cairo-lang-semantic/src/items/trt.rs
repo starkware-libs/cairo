@@ -12,12 +12,12 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{define_short_id, try_extract_matches, Intern, LookupIntern};
-use smol_str::SmolStr;
 
 use super::function_with_body::{get_implicit_precedence, get_inline_config, FunctionBodyData};
 use super::functions::{FunctionDeclarationData, ImplicitPrecedence, InlineConfiguration};
@@ -88,7 +88,7 @@ impl ConcreteTraitId {
     pub fn generic_args(&self, db: &dyn SemanticGroup) -> Vec<GenericArgumentId> {
         self.lookup_intern(db).generic_args
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> TextId {
         self.trait_id(db).name(db.upcast())
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
@@ -446,7 +446,7 @@ pub struct TraitDefinitionData {
     item_impl_asts: OrderedHashMap<TraitImplId, ast::TraitItemImpl>,
 
     /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
-    item_id_by_name: Arc<OrderedHashMap<SmolStr, TraitItemId>>,
+    item_id_by_name: Arc<OrderedHashMap<TextId, TraitItemId>>,
 }
 
 // --- Selectors ---
@@ -486,7 +486,7 @@ pub fn trait_semantic_definition_diagnostics(
 pub fn trait_required_item_names(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-) -> Maybe<OrderedHashSet<SmolStr>> {
+) -> Maybe<OrderedHashSet<TextId>> {
     let mut required_items = OrderedHashSet::<_>::default();
     for (item_name, item_id) in db.priv_trait_definition_data(trait_id)?.item_id_by_name.iter() {
         if match item_id {
@@ -497,7 +497,7 @@ pub fn trait_required_item_names(
             TraitItemId::Type(_) | TraitItemId::Constant(_) => true,
             TraitItemId::Impl(_) => false,
         } {
-            required_items.insert(item_name.clone());
+            required_items.insert(*item_name);
         }
     }
     Ok(required_items)
@@ -507,7 +507,7 @@ pub fn trait_required_item_names(
 pub fn trait_item_by_name(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-    name: SmolStr,
+    name: TextId,
 ) -> Maybe<Option<TraitItemId>> {
     Ok(db.priv_trait_definition_data(trait_id)?.item_id_by_name.get(&name).cloned())
 }
@@ -516,7 +516,7 @@ pub fn trait_item_by_name(
 pub fn trait_functions(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-) -> Maybe<OrderedHashMap<SmolStr, TraitFunctionId>> {
+) -> Maybe<OrderedHashMap<TextId, TraitFunctionId>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
         .function_asts
@@ -532,7 +532,7 @@ pub fn trait_functions(
 pub fn trait_function_by_name(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-    name: SmolStr,
+    name: TextId,
 ) -> Maybe<Option<TraitFunctionId>> {
     Ok(db.trait_functions(trait_id)?.get(&name).copied())
 }
@@ -541,7 +541,7 @@ pub fn trait_function_by_name(
 pub fn trait_types(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-) -> Maybe<OrderedHashMap<SmolStr, TraitTypeId>> {
+) -> Maybe<OrderedHashMap<TextId, TraitTypeId>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
         .item_type_asts
@@ -557,7 +557,7 @@ pub fn trait_types(
 pub fn trait_type_by_name(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-    name: SmolStr,
+    name: TextId,
 ) -> Maybe<Option<TraitTypeId>> {
     Ok(db.trait_types(trait_id)?.get(&name).copied())
 }
@@ -566,7 +566,7 @@ pub fn trait_type_by_name(
 pub fn trait_constants(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-) -> Maybe<OrderedHashMap<SmolStr, TraitConstantId>> {
+) -> Maybe<OrderedHashMap<TextId, TraitConstantId>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
         .item_constant_asts
@@ -582,7 +582,7 @@ pub fn trait_constants(
 pub fn trait_constant_by_name(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-    name: SmolStr,
+    name: TextId,
 ) -> Maybe<Option<TraitConstantId>> {
     Ok(db.trait_constants(trait_id)?.get(&name).copied())
 }
@@ -591,7 +591,7 @@ pub fn trait_constant_by_name(
 pub fn trait_impls(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-) -> Maybe<OrderedHashMap<SmolStr, TraitImplId>> {
+) -> Maybe<OrderedHashMap<TextId, TraitImplId>> {
     Ok(db
         .priv_trait_definition_data(trait_id)?
         .item_impl_asts
@@ -607,7 +607,7 @@ pub fn trait_impls(
 pub fn trait_impl_by_name(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-    name: SmolStr,
+    name: TextId,
 ) -> Maybe<Option<TraitImplId>> {
     Ok(db.trait_impls(trait_id)?.get(&name).copied())
 }
@@ -643,9 +643,7 @@ pub fn priv_trait_definition_data(
                         TraitFunctionLongId(module_file_id, func.stable_ptr()).intern(db);
                     let name_node = func.declaration(syntax_db).name(syntax_db);
                     let name = name_node.text(syntax_db);
-                    if item_id_by_name
-                        .insert(name.clone(), TraitItemId::Function(trait_func_id))
-                        .is_some()
+                    if item_id_by_name.insert(name, TraitItemId::Function(trait_func_id)).is_some()
                     {
                         diagnostics.report(
                             &name_node,
@@ -658,10 +656,7 @@ pub fn priv_trait_definition_data(
                     let trait_type_id = TraitTypeLongId(module_file_id, ty.stable_ptr()).intern(db);
                     let name_node = ty.name(syntax_db);
                     let name = name_node.text(syntax_db);
-                    if item_id_by_name
-                        .insert(name.clone(), TraitItemId::Type(trait_type_id))
-                        .is_some()
-                    {
+                    if item_id_by_name.insert(name, TraitItemId::Type(trait_type_id)).is_some() {
                         diagnostics.report(
                             &name_node,
                             SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
@@ -675,9 +670,7 @@ pub fn priv_trait_definition_data(
 
                     let name_node = constant.name(syntax_db);
                     let name = name_node.text(syntax_db);
-                    if item_id_by_name
-                        .insert(name.clone(), TraitItemId::Constant(trait_constant))
-                        .is_some()
+                    if item_id_by_name.insert(name, TraitItemId::Constant(trait_constant)).is_some()
                     {
                         diagnostics.report(
                             &name_node,
@@ -691,8 +684,7 @@ pub fn priv_trait_definition_data(
 
                     let name_node = imp.name(syntax_db);
                     let name = name_node.text(syntax_db);
-                    if item_id_by_name.insert(name.clone(), TraitItemId::Impl(trait_impl)).is_some()
-                    {
+                    if item_id_by_name.insert(name, TraitItemId::Impl(trait_impl)).is_some() {
                         diagnostics.report(
                             &name_node,
                             SemanticDiagnosticKind::NameDefinedMultipleTimes(name),

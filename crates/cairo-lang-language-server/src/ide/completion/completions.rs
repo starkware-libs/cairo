@@ -38,7 +38,7 @@ pub fn generic_completions(
 
     // Crates.
     completions.extend(db.crate_configs().keys().map(|crate_id| CompletionItem {
-        label: crate_id.lookup_intern(db).name().into(),
+        label: crate_id.lookup_intern(db).name(),
         kind: Some(CompletionItemKind::MODULE),
         ..CompletionItem::default()
     }));
@@ -47,7 +47,7 @@ pub fn generic_completions(
     if let Ok(module_items) = db.module_items(module_file_id.0) {
         completions.extend(module_items.iter().map(|item| {
             CompletionItem {
-                label: item.name(db.upcast()).to_string(),
+                label: item.name(db.upcast()).to_string(db),
                 kind: ResolvedGenericItem::from_module_item(db, *item)
                     .ok()
                     .map(resolved_generic_item_completion_kind),
@@ -68,7 +68,7 @@ pub fn generic_completions(
     };
     for param in &signature.params {
         completions.push(CompletionItem {
-            label: param.name.clone().into(),
+            label: param.name.to_string(db),
             kind: Some(CompletionItemKind::VARIABLE),
             ..CompletionItem::default()
         });
@@ -80,7 +80,7 @@ pub fn generic_completions(
     for (_id, pat) in &body.patterns {
         if let Pattern::Variable(var) = pat {
             completions.push(CompletionItem {
-                label: var.name.clone().into(),
+                label: var.name.to_string(db),
                 kind: Some(CompletionItemKind::VARIABLE),
                 ..CompletionItem::default()
             });
@@ -135,7 +135,7 @@ pub fn colon_colon_completions(
             .ok()?
             .iter()
             .map(|item| CompletionItem {
-                label: item.name(db.upcast()).to_string(),
+                label: item.name(db.upcast()).to_string(db),
                 kind: ResolvedGenericItem::from_module_item(db, *item)
                     .ok()
                     .map(resolved_generic_item_completion_kind),
@@ -147,7 +147,7 @@ pub fn colon_colon_completions(
             .unwrap_or_default()
             .iter()
             .map(|(name, _)| CompletionItem {
-                label: name.to_string(),
+                label: name.to_string(db),
                 kind: Some(CompletionItemKind::FUNCTION),
                 ..CompletionItem::default()
             })
@@ -159,7 +159,7 @@ pub fn colon_colon_completions(
                     .unwrap_or_default()
                     .iter()
                     .map(|(name, _)| CompletionItem {
-                        label: name.to_string(),
+                        label: name.to_string(db),
                         kind: Some(CompletionItemKind::FUNCTION),
                         ..CompletionItem::default()
                     })
@@ -172,7 +172,7 @@ pub fn colon_colon_completions(
                 .unwrap_or_default()
                 .iter()
                 .map(|(name, _)| CompletionItem {
-                    label: name.to_string(),
+                    label: name.to_string(db),
                     kind: Some(CompletionItemKind::ENUM_MEMBER),
                     ..CompletionItem::default()
                 })
@@ -245,7 +245,7 @@ pub fn dot_completions(
         db.concrete_struct_members(concrete_struct_id).ok()?.into_iter().for_each(
             |(name, member)| {
                 let completion = CompletionItem {
-                    label: name.to_string(),
+                    label: name.to_string(db),
                     detail: Some(member.ty.format(db.upcast())),
                     kind: Some(CompletionItemKind::FIELD),
                     ..CompletionItem::default()
@@ -266,7 +266,7 @@ fn completion_for_method(
     position: Position,
 ) -> Option<CompletionItem> {
     let trait_id = trait_function.trait_id(db.upcast());
-    let name = trait_function.name(db.upcast());
+    let name = trait_function.name(db.upcast()).lookup_intern(db);
     db.trait_function_signature(trait_function).ok()?;
 
     // TODO(spapini): Add signature.

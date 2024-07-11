@@ -6,7 +6,6 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, Token, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 use pretty_assertions::assert_eq;
-use smol_str::SmolStr;
 use test_log::test;
 
 use crate::db::ParserGroup;
@@ -14,7 +13,7 @@ use crate::test_utils::create_virtual_file;
 use crate::utils::SimpleParserDatabase;
 
 fn build_empty_file_green_tree(db: &dyn SyntaxGroup, file_id: FileId) -> SyntaxFile {
-    let eof_token = TokenEndOfFile::new_green(db, SmolStr::from(""));
+    let eof_token = TokenEndOfFile::new_green_str(db, "");
     let eof_terminal = TerminalEndOfFile::new_green(
         db,
         Trivia::new_green(db, vec![]),

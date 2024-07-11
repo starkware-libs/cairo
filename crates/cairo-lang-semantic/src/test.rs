@@ -1,5 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_syntax::node::ids::TextId;
 use indoc::indoc;
 
 use crate::db::SemanticGroup;
@@ -19,14 +20,17 @@ fn test_resolve() {
 
     let module_id = test_module.module_id;
     let db = &db_val;
-    assert!(db.module_item_by_name(module_id, "doesnt_exist".into()).unwrap().is_none());
-    let felt252_add = db.module_item_by_name(module_id, "felt252_add".into()).unwrap();
+    assert!(
+        db.module_item_by_name(module_id, TextId::interned("doesnt_exist", db)).unwrap().is_none()
+    );
+    let felt252_add =
+        db.module_item_by_name(module_id, TextId::interned("felt252_add", db)).unwrap();
     assert_eq!(format!("{:?}", felt252_add.debug(db)), "Some(ExternFunctionId(test::felt252_add))");
-    match db.module_item_by_name(module_id, "felt252_add".into()).unwrap().unwrap() {
+    match db.module_item_by_name(module_id, TextId::interned("felt252_add", db)).unwrap().unwrap() {
         ModuleItemId::ExternFunction(_) => {}
         _ => panic!("Expected an extern function"),
     };
-    match db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap() {
+    match db.module_item_by_name(module_id, TextId::interned("foo", db)).unwrap().unwrap() {
         ModuleItemId::FreeFunction(_) => {}
         _ => panic!("Expected a free function"),
     };

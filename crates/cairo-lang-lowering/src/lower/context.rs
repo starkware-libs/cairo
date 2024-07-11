@@ -6,7 +6,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{SyntaxStablePtrId, TextId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::Intern;
@@ -453,7 +453,7 @@ pub fn lowering_flow_error_to_sealed_block(
                 ty: get_ty_by_name(
                     ctx.db.upcast(),
                     core_module(ctx.db.upcast()),
-                    "Panic".into(),
+                    TextId::interned("Panic", ctx.db),
                     vec![],
                 ),
                 location,

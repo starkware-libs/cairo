@@ -13,12 +13,12 @@ use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{
     define_short_id, require, try_extract_matches, Intern, LookupIntern, OptionFrom,
 };
 use itertools::{chain, Itertools};
-use smol_str::SmolStr;
 use syntax::attribute::consts::MUST_USE_ATTR;
 use syntax::node::TypedStablePtr;
 
@@ -61,8 +61,12 @@ impl ImplGenericFunctionId {
             | ImplLongId::TraitImpl(_) => Ok(None),
         }
     }
-    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.function.name(db.upcast())).into()
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        format!(
+            "{}::{}",
+            self.impl_id.name(db.upcast()),
+            self.function.name(db.upcast()).lookup_intern(db)
+        )
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplGenericFunctionId {
@@ -112,13 +116,17 @@ impl GenericFunctionId {
             GenericFunctionId::Free(id) => id.full_path(defs_db),
             GenericFunctionId::Extern(id) => id.full_path(defs_db),
             GenericFunctionId::Impl(id) => {
-                format!("{:?}::{}", id.impl_id.debug(db.elongate()), id.function.name(defs_db))
+                format!(
+                    "{:?}::{}",
+                    id.impl_id.debug(db.elongate()),
+                    id.function.name(defs_db).lookup_intern(db)
+                )
             }
             GenericFunctionId::Trait(id) => {
                 format!(
                     "{}::{}",
                     id.concrete_trait(db).full_path(db),
-                    id.trait_function(db).name(defs_db)
+                    id.trait_function(db).name(defs_db).lookup_intern(db)
                 )
             }
         }
@@ -151,13 +159,15 @@ impl GenericFunctionId {
             GenericFunctionId::Trait(id) => db.concrete_trait_function_generic_params(id),
         }
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> String {
         match self {
-            GenericFunctionId::Free(free_function) => free_function.name(db.upcast()),
-            GenericFunctionId::Extern(extern_function) => extern_function.name(db.upcast()),
+            GenericFunctionId::Free(free_function) => free_function.name(db.upcast()).to_string(db),
+            GenericFunctionId::Extern(extern_function) => {
+                extern_function.name(db.upcast()).to_string(db)
+            }
             GenericFunctionId::Impl(impl_function) => impl_function.format(db.upcast()),
             GenericFunctionId::Trait(trait_function) => {
-                trait_function.trait_function(db).name(db.upcast())
+                trait_function.trait_function(db).name(db.upcast()).to_string(db)
             }
         }
     }
@@ -284,8 +294,8 @@ impl FunctionId {
         try_extract_matches!(self.get_concrete(db).generic_function, GenericFunctionId::Extern)
     }
 
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{:?}", self.get_concrete(db).generic_function.name(db)).into()
+    pub fn name(&self, db: &dyn SemanticGroup) -> String {
+        format!("{:?}", self.get_concrete(db).generic_function.name(db))
     }
 
     pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
@@ -328,7 +338,7 @@ pub enum ImplFunctionBodyId {
     Trait(TraitFunctionId),
 }
 impl ImplFunctionBodyId {
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> TextId {
         match self {
             Self::Impl(body_id) => body_id.name(db.upcast()),
             Self::Trait(body_id) => body_id.name(db.upcast()),
@@ -372,18 +382,21 @@ impl GenericFunctionWithBodyId {
             _ => return Ok(None),
         }))
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> String {
         match self {
-            GenericFunctionWithBodyId::Free(free) => free.name(db.upcast()),
+            GenericFunctionWithBodyId::Free(free) => free.name(db.upcast()).to_string(db),
             GenericFunctionWithBodyId::Impl(imp) => {
-                format!("{}::{}", imp.concrete_impl_id.name(db), imp.function_body.name(db)).into()
+                format!(
+                    "{}::{}",
+                    imp.concrete_impl_id.name(db).lookup_intern(db),
+                    imp.function_body.name(db).lookup_intern(db)
+                )
             }
             GenericFunctionWithBodyId::Trait(trt) => format!(
                 "{}::{}",
-                trt.concrete_trait(db).name(db),
-                trt.trait_function(db).name(db.upcast())
-            )
-            .into(),
+                trt.concrete_trait(db).name(db).lookup_intern(db),
+                trt.trait_function(db).name(db.upcast()).lookup_intern(db)
+            ),
         }
     }
 
@@ -395,13 +408,13 @@ impl GenericFunctionWithBodyId {
                 format!(
                     "{}::{}",
                     imp.concrete_impl_id.impl_def_id(db).full_path(defs_db),
-                    imp.function_body.name(db)
+                    imp.function_body.name(db).lookup_intern(db)
                 )
             }
             GenericFunctionWithBodyId::Trait(trt) => format!(
                 "{}::{}",
                 trt.concrete_trait(db).full_path(db),
-                trt.trait_function(db).name(defs_db)
+                trt.trait_function(db).name(defs_db).lookup_intern(db)
             ),
         }
     }
@@ -567,7 +580,7 @@ impl ConcreteFunctionWithBody {
     pub fn function_id(&self, db: &dyn SemanticGroup) -> Maybe<FunctionId> {
         Ok(FunctionLongId { function: self.concrete(db)? }.intern(db))
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> TextId {
         self.function_with_body_id(db).name(db.upcast())
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
@@ -634,7 +647,7 @@ impl ConcreteFunctionWithBodyId {
     pub fn generic_function(&self, db: &dyn SemanticGroup) -> GenericFunctionWithBodyId {
         self.lookup_intern(db).generic_function
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> TextId {
         self.lookup_intern(db).name(db)
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {

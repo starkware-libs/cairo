@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_semantic::corelib;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::Intern;
 
@@ -80,7 +81,7 @@ pub fn priv_movable_function_ids(db: &dyn LoweringGroup) -> Arc<UnorderedHashSet
             return FunctionLongId::Semantic(corelib::get_function_id(
                 semantic_db,
                 module,
-                path_item.into(),
+                TextId::interned(path_item, db),
                 vec![],
             ))
             .intern(db);

@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_lang_semantic::corelib;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_utils::Intern;
 
 use crate::db::LoweringGroup;
@@ -37,7 +38,7 @@ pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     let semantic_db = db.upcast();
     let bool_not_func_id = FunctionLongId::Semantic(corelib::get_core_function_id(
         semantic_db,
-        "bool_not_impl".into(),
+        TextId::interned("bool_not_impl", db),
         vec![],
     ))
     .intern(db);

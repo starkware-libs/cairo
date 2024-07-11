@@ -1,9 +1,10 @@
+use std::sync::Arc;
+
 use cairo_lang_diagnostics::DiagnosticEntry;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use smol_str::SmolStr;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParserDiagnostic {
@@ -14,7 +15,7 @@ pub struct ParserDiagnostic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParserDiagnosticKind {
     // TODO(spapini): Add tokens from the recovery set to the message.
-    SkippedElement { element_name: SmolStr },
+    SkippedElement { element_name: Arc<str> },
     MissingToken(SyntaxKind),
     MissingExpression,
     MissingPathSegment,
@@ -23,8 +24,8 @@ pub enum ParserDiagnosticKind {
     MissingWrappedArgList,
     MissingPatteren,
     ExpectedInToken,
-    ItemInlineMacroWithoutBang { identifier: SmolStr, bracket_type: SyntaxKind },
-    ReservedIdentifier { identifier: SmolStr },
+    ItemInlineMacroWithoutBang { identifier: Arc<str>, bracket_type: SyntaxKind },
+    ReservedIdentifier { identifier: Arc<str> },
     UnderscoreNotAllowedAsIdentifier,
     MissingLiteralSuffix,
     InvalidNumericLiteralValue,

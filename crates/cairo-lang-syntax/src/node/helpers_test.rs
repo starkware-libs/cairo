@@ -1,8 +1,11 @@
+use cairo_lang_utils::LookupIntern;
+
 use super::GetIdentifier;
 use crate::node::ast::{
     ExprPath, ExprPathElementOrSeparatorGreen, PathSegmentGreen, PathSegmentSimple,
     TerminalColonColon, TerminalIdentifier, TokenColonColon, TokenIdentifier, Trivia,
 };
+use crate::node::ids::TextId;
 use crate::node::test_utils::DatabaseForTesting;
 use crate::node::{Terminal, Token};
 
@@ -12,13 +15,13 @@ fn test_expr_path_identifier() {
     let db = &db_val;
 
     let no_trivia = Trivia::new_green(db, vec![]);
-    let token_foo = TokenIdentifier::new_green(db, "foo".into());
+    let token_foo = TokenIdentifier::new_green(db, TextId::interned("foo", db));
     let terminal_foo = TerminalIdentifier::new_green(db, no_trivia, token_foo, no_trivia);
 
-    let token_bar = TokenIdentifier::new_green(db, "bar".into());
+    let token_bar = TokenIdentifier::new_green(db, TextId::interned("bar", db));
     let terminal_bar = TerminalIdentifier::new_green(db, no_trivia, token_bar, no_trivia);
 
-    let token_separator = TokenColonColon::new_green(db, "::".into());
+    let token_separator = TokenColonColon::new_green(db, TextId::interned("::", db));
     let separator = TerminalColonColon::new_green(db, no_trivia, token_separator, no_trivia);
 
     PathSegmentSimple::new_green(db, terminal_foo);
@@ -29,5 +32,5 @@ fn test_expr_path_identifier() {
         PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_bar)).into(),
     ];
 
-    assert_eq!(ExprPath::new_green(db, children).identifier(db), "bar");
+    assert_eq!(ExprPath::new_green(db, children).identifier(db).lookup_intern(db).as_ref(), "bar");
 }
