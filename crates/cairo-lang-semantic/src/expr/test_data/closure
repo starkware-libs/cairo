@@ -1,13 +1,14 @@
-//! > Closure
+//! > Test closure wrong return type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo(a: felt252) {
-    || {
-        a
-    }
+fn foo() {
+    || -> i32 {
+        let d: u32 = 3;
+        d
+    };
 }
 
 //! > function_name
@@ -16,7 +17,111 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unsupported feature.
- --> lib.cairo:2:5
-    || {
-    ^**^
+error: Unexpected return type. Expected: "core::integer::i32", found: "core::integer::u32".
+ --> lib.cairo:2:15
+    || -> i32 {
+              ^
+
+//! > ==========================================================================
+
+//! > Test closure infered param type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    |a| -> i32 {
+        let d: i32 = a;
+        d
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test closure typed param type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    |a: u32| -> i32 {
+        let d: i32 = a;
+        d
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::integer::i32", found: "core::integer::u32".
+ --> lib.cairo:3:22
+        let d: i32 = a;
+                     ^
+
+//! > ==========================================================================
+
+//! > Test assignment wrong type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _x: i32 =  || {
+        let d: u32 = 3;
+        d
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::integer::i32", found: "test::foo[Id { idx: 2 }]".
+ --> lib.cairo:2:20
+    let _x: i32 =  || {
+                   ^**^
+
+//! > ==========================================================================
+
+//! > Test closure in global context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const _x: i32 =  || {
+    let d: u32 = 3;
+    d
+};
+
+//! > expected_diagnostics
+error: Closures are not allowed in this context.
+ --> lib.cairo:1:18
+const _x: i32 =  || {
+                 ^**^
+
+error: Type mismatch: `missing[Id { idx: 2 }]` and `core::integer::i32`.
+ --> lib.cairo:1:1
+const _x: i32 =  || {
+^*******************^

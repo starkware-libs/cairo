@@ -20,22 +20,24 @@ use cairo_lang_utils::{define_short_id, try_extract_matches, Intern, LookupInter
 use smol_str::SmolStr;
 
 use super::function_with_body::{get_implicit_precedence, get_inline_config, FunctionBodyData};
-use super::functions::{FunctionDeclarationData, ImplicitPrecedence, InlineConfiguration};
-use super::generics::{semantic_generic_params, GenericParamsData};
+use super::functions::{
+    FunctionDeclarationData, GenericFunctionId, ImplicitPrecedence, InlineConfiguration,
+};
+use super::generics::{generic_params_to_args, semantic_generic_params, GenericParamsData};
 use super::imp::{GenericsHeadFilter, TraitFilter};
 use super::TraitOrImplContext;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
+use crate::expr::compute::{compute_root_expr, ComputationContext, ContextFunction, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{
-    semantic, semantic_object_for_id, FunctionBody, GenericArgumentId, GenericParam, Mutability,
-    SemanticDiagnostic, TypeId,
+    semantic, semantic_object_for_id, FunctionBody, FunctionLongId, GenericArgumentId,
+    GenericParam, Mutability, SemanticDiagnostic, TypeId,
 };
 
 #[cfg(test)]
@@ -1311,6 +1313,23 @@ pub fn priv_trait_function_body_data(
     resolver.trait_or_impl_ctx = TraitOrImplContext::Trait(trait_id);
     let environment = trait_function_declaration_data.environment;
 
+    let function_id = (|| {
+        let generic_parameters = db.trait_generic_params(trait_id)?;
+        let concrete_trait = ConcreteTraitLongId {
+            trait_id,
+            generic_args: generic_params_to_args(&generic_parameters, db),
+        }
+        .intern(db);
+        let generic_function = GenericFunctionId::Trait(
+            ConcreteTraitGenericFunctionLongId {
+                concrete_trait,
+                trait_function: trait_function_id,
+            }
+            .intern(db),
+        );
+
+        Ok(FunctionLongId::from_generic(db, generic_function)?.intern(db))
+    })();
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(
         db,
@@ -1318,6 +1337,7 @@ pub fn priv_trait_function_body_data(
         resolver,
         Some(&trait_function_declaration_data.signature),
         environment,
+        ContextFunction::Function(function_id),
     );
     let function_body = match function_syntax.body(db.upcast()) {
         ast::MaybeTraitFunctionBody::Some(expr_block) => expr_block,
