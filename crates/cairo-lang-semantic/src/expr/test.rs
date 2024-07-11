@@ -30,6 +30,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         assignment: "assignment",
         attributes: "attributes",
+        calosure: "closure",
         constant: "constant",
         constructor: "constructor",
         closure: "closure",
@@ -68,6 +69,7 @@ cairo_lang_test_utils::test_file_test!(
         assignment: "assignment",
         block: "block",
         call: "call",
+        calosure: "closure",
         coupon: "coupon",
         inline_macros: "inline_macros",
         let_statement: "let_statement",

@@ -1,13 +1,14 @@
-//! > Closure
+//! > Test closure wrong return type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo(a: felt252) {
-    || {
-        a
-    }
+fn foo() {
+    || -> i32 {
+        let d: u32 = 3;
+        d
+    };
 }
 
 //! > function_name
@@ -16,7 +17,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unsupported feature.
- --> lib.cairo:2:5
-    || {
-    ^**^
+error: Unexpected return type. Expected: "core::integer::i32", found: "core::integer::u32".
+ --> lib.cairo:2:15
+    || -> i32 {
+              ^
