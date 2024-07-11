@@ -29,7 +29,9 @@ use crate::corelib::{core_submodule, get_submodule};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
+use crate::expr::compute::{
+    compute_expr_semantic, ComputationContext, ContextFunction, Environment,
+};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
@@ -1170,7 +1172,6 @@ impl<'db> Resolver<'db> {
                     inference.report_on_pending_error(err_set, diagnostics, stable_ptr)
                 });
         };
-
         Ok(match generic_param {
             GenericParam::Type(_) => {
                 let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
@@ -1194,6 +1195,7 @@ impl<'db> Resolver<'db> {
                     Resolver::with_data(self.db, resolver_data),
                     None,
                     environment,
+                    ContextFunction::Global,
                 );
                 let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
 

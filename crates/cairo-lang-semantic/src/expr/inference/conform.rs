@@ -145,6 +145,17 @@ impl<'db> InferenceConform for Inference<'db> {
                     .collect::<Result<Vec<_>, _>>()?;
                 Ok((TypeLongId::Tuple(tys).intern(self.db), n_snapshots))
             }
+            TypeLongId::Closure(closure0) => {
+                let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
+                let TypeLongId::Closure(closure1) = long_ty1 else {
+                    return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
+                };
+                if closure0.body_id != closure1.body_id {
+                    return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
+                }
+
+                Ok((TypeLongId::Closure(closure0).intern(self.db), n_snapshots))
+            }
             TypeLongId::FixedSizeArray { type_id, size } => {
                 let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
                 let TypeLongId::FixedSizeArray { type_id: type_id1, size: size1 } = long_ty1 else {
@@ -654,6 +665,10 @@ impl Inference<'_> {
             TypeLongId::Coupon(function_id) => self.function_contains_var(function_id, var),
             TypeLongId::FixedSizeArray { type_id, .. } => {
                 self.internal_ty_contains_var(type_id, var)
+            }
+            TypeLongId::Closure(closure) => {
+                closure.params.into_iter().any(|ty| self.internal_ty_contains_var(ty, var))
+                    || self.internal_ty_contains_var(closure.ret_ty, var)
             }
         }
     }

@@ -22,13 +22,15 @@ use crate::items::imp::{ImplId, ImplImplId, ImplLongId, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::substitution::{HasDb, RewriteResult, SemanticObject, SemanticRewriter};
 use crate::types::{
-    ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId, ImplTypeId,
+    ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
+    ImplTypeId,
 };
 use crate::{
     add_basic_rewrites, ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId,
     ConcreteImplLongId, ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
-    ConcreteVariant, ExprVar, ExprVarMemberPath, FunctionId, FunctionLongId, GenericArgumentId,
-    GenericParam, MatchArmSelector, Parameter, Signature, TypeId, TypeLongId, ValueSelectorArm,
+    ConcreteVariant, ExprId, ExprVar, ExprVarMemberPath, FunctionId, FunctionLongId,
+    GenericArgumentId, GenericParam, MatchArmSelector, Parameter, Signature, TypeId, TypeLongId,
+    ValueSelectorArm,
 };
 
 /// A canonical representation of a concrete trait that needs to be solved.
