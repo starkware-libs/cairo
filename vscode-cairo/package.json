@@ -68,6 +68,11 @@
         "command": "cairo.reload",
         "title": "Reload workspace",
         "category": "Cairo"
+      },
+      {
+        "command": "cairo.expandMacro",
+        "title": "Recursively expand macros for item at caret",
+        "category": "Cairo"
       }
     ],
     "configuration": [

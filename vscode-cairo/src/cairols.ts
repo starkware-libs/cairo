@@ -6,6 +6,7 @@ import { Context } from "./context";
 import { Scarb } from "./scarb";
 import { isScarbProject } from "./scarbProject";
 import { StandaloneLS } from "./standalonels";
+import { registerMacroExpandProvider, registerVfsProvider } from "./textDocumentProviders";
 
 export interface LanguageServerExecutableProvider {
   languageServerExecutable(): lc.Executable;
@@ -56,26 +57,8 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
 
   client.registerFeature(new SemanticTokensFeature(client));
 
-  const myProvider = new (class implements vscode.TextDocumentContentProvider {
-    async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-      interface ProvideVirtualFileResponse {
-        content?: string;
-      }
-
-      const res = await client.sendRequest<ProvideVirtualFileResponse>("vfs/provide", {
-        uri: uri.toString(),
-      });
-
-      return res.content ?? "";
-    }
-
-    onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
-    onDidChange = this.onDidChangeEmitter.event;
-  })();
-  client.onNotification("vfs/update", (param) => {
-    myProvider.onDidChangeEmitter.fire(param.uri);
-  });
-  vscode.workspace.registerTextDocumentContentProvider("vfs", myProvider);
+  registerVfsProvider(client)
+  registerMacroExpandProvider(client)
 
   client.onNotification("scarb/could-not-find-scarb-executable", () => notifyScarbMissing(ctx));
 
