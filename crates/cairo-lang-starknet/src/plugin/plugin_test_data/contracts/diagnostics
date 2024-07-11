@@ -10777,7 +10777,7 @@ mod contract {
 
 //! > expected_diagnostics
 error: Method `write` could not be called on type `core::starknet::storage::StorageBase::<core::felt252>`.
-Candidate `StorageMapWriteAccessTrait::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StorageMapWriteAccessTrait::<core::starknet::storage::StorageBase::<core::felt252>>.
+Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StorageMapWriteAccess::<core::starknet::storage::StorageBase::<core::felt252>>.
 Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::StorageBase::<core::felt252>>.
  --> lib.cairo:18:27
             self.a_member.write(0);
@@ -11568,7 +11568,7 @@ mod contract {
 
 //! > expected_diagnostics
 error: Method `write` could not be called on type `core::starknet::storage::StorageBase::<core::integer::u32>`.
-Candidate `StorageMapWriteAccessTrait::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StorageMapWriteAccessTrait::<core::starknet::storage::StorageBase::<core::integer::u32>>.
+Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StorageMapWriteAccess::<core::starknet::storage::StorageBase::<core::integer::u32>>.
 Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::StorageBase::<core::integer::u32>>.
  --> lib.cairo:35:40
             self.component_member.data.write();
@@ -12568,7 +12568,7 @@ error: Type "core::starknet::storage::StorageBase::<test::u256Pair>" has no memb
             self.u256_pair.a.read()
                            ^
 
-error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: StorageMapReadAccessTrait::read and StoragePointerReadAccess::read. Consider adding type annotations or explicitly refer to the impl function.
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: StorageMapReadAccess::read and StoragePointerReadAccess::read. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:59:30
             self.u256_pair.a.read()
                              ^**^
