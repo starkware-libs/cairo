@@ -369,8 +369,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
                 format!(
-                    r#"Redefinition of parameter name "{param_name}" in function "{}"."#,
-                    function_title_id.full_path(db.upcast())
+                    r#"Redefinition of parameter name "{param_name}"{}"#,
+                    function_title_id
+                        .map(|function_title_id| format!(
+                            r#" in function "{}"."#,
+                            function_title_id.full_path(db.upcast())
+                        ))
+                        .unwrap_or(".".into()),
                 )
             }
             SemanticDiagnosticKind::ConditionNotBool(condition_ty) => {
@@ -829,6 +834,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     )
                 }
             }
+            SemanticDiagnosticKind::ClosureInGlobalScope => {
+                "Closures are not allowed in this context.".into()
+            }
         }
     }
 
@@ -993,7 +1001,7 @@ pub enum SemanticDiagnosticKind {
     InfiniteSizeType(semantic::TypeId),
     ArrayOfZeroSizedElements(semantic::TypeId),
     ParamNameRedefinition {
-        function_title_id: FunctionTitleId,
+        function_title_id: Option<FunctionTitleId>,
         param_name: SmolStr,
     },
     ConditionNotBool(semantic::TypeId),
@@ -1168,6 +1176,7 @@ pub enum SemanticDiagnosticKind {
     DerefCycle {
         deref_chain: String,
     },
+    ClosureInGlobalScope,
 }
 
 /// The kind of an expression with multiple possible return types.
