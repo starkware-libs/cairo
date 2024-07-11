@@ -3,7 +3,7 @@
 //! This crate is responsible for compiling a Cairo project into a Sierra program.
 //! It is the main entry point for the compiler.
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
@@ -14,8 +14,11 @@ use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
-use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
+use cairo_lang_sierra_generator::program_generator::{
+    try_get_function_with_body_id, SierraProgramWithDebug,
+};
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
 use crate::db::RootDatabase;
 use crate::diagnostics::DiagnosticsReporter;
@@ -143,13 +146,73 @@ pub fn compile_prepared_db(
     Ok(sierra_program_with_debug)
 }
 
+/// Computes the `function_with_body_sierra` query and all dependent queries for the requested
+/// functions and their dependencies.
+///
+/// Note that typically spawn_warmup_db should be used as this function is blocking.
+fn warmup_db_blocking(
+    snapshot: salsa::Snapshot<RootDatabase>,
+    requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
+) {
+    let processed_function_ids =
+        &Mutex::new(UnorderedHashSet::<ConcreteFunctionWithBodyId>::default());
+    rayon::scope(move |s| {
+        for func_id in requested_function_ids {
+            let snapshot = salsa::ParallelDatabase::snapshot(&*snapshot);
+
+            s.spawn(move |_| {
+                fn handle_func_inner(
+                    processed_function_ids: &Mutex<UnorderedHashSet<ConcreteFunctionWithBodyId>>,
+                    snapshot: salsa::Snapshot<RootDatabase>,
+                    func_id: ConcreteFunctionWithBodyId,
+                ) {
+                    if processed_function_ids.lock().unwrap().insert(func_id) {
+                        rayon::scope(move |s| {
+                            let db = &*snapshot;
+                            let Ok(function) = db.function_with_body_sierra(func_id) else {
+                                return;
+                            };
+                            for statement in &function.body {
+                                let Some(related_function_id) =
+                                    try_get_function_with_body_id(db, statement)
+                                else {
+                                    continue;
+                                };
+
+                                let snapshot = salsa::ParallelDatabase::snapshot(&*snapshot);
+                                s.spawn(move |_| {
+                                    handle_func_inner(
+                                        processed_function_ids,
+                                        snapshot,
+                                        related_function_id,
+                                    )
+                                })
+                            }
+                        });
+                    }
+                }
+
+                handle_func_inner(processed_function_ids, snapshot, func_id)
+            });
+        }
+    });
+}
+
+// Spawns a task to warm up the db.
+fn spawn_warmup_db(db: &RootDatabase, requested_function_ids: Vec<ConcreteFunctionWithBodyId>) {
+    let snapshot = salsa::ParallelDatabase::snapshot(db);
+    rayon::spawn(move || warmup_db_blocking(snapshot, requested_function_ids));
+}
+
 ///  Checks if there are diagnostics in the database and if there are None, returns
-///  the [SierraProgramWithDebug] object of the requested functions.
+///  the [SierraProgramWithDebug] object of the requested functions
 pub fn get_sierra_program_for_functions(
     db: &RootDatabase,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
     mut diagnostic_reporter: DiagnosticsReporter<'_>,
 ) -> Result<Arc<SierraProgramWithDebug>> {
+    spawn_warmup_db(db, requested_function_ids.clone());
+
     diagnostic_reporter.ensure(db)?;
     db.get_sierra_program_for_functions(requested_function_ids)
         .to_option()
