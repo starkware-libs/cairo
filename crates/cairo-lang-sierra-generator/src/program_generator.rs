@@ -285,7 +285,7 @@ pub fn get_sierra_program_for_functions(
 }
 
 /// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.
-fn try_get_function_with_body_id(
+pub fn try_get_function_with_body_id(
     db: &dyn SierraGenGroup,
     statement: &pre_sierra::StatementWithLocation,
 ) -> Option<ConcreteFunctionWithBodyId> {
