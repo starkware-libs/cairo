@@ -28,7 +28,9 @@ use crate::corelib::{
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment, ExprAndId};
+use crate::expr::compute::{
+    compute_expr_semantic, ComputationContext, ContextFunction, Environment, ExprAndId,
+};
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
 use crate::literals::try_extract_minus_literal;
@@ -290,7 +292,14 @@ pub fn constant_semantic_data_helper(
     );
 
     let environment = Environment::empty();
-    let mut ctx = ComputationContext::new(db, &mut diagnostics, resolver, None, environment);
+    let mut ctx = ComputationContext::new(
+        db,
+        &mut diagnostics,
+        resolver,
+        None,
+        environment,
+        ContextFunction::Global,
+    );
 
     let value = compute_expr_semantic(&mut ctx, &constant_ast.value(syntax_db));
     let const_value = resolve_const_expr_and_evaluate(
