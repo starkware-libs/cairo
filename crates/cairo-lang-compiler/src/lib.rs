@@ -8,6 +8,7 @@ use std::sync::Arc;
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
@@ -122,7 +123,7 @@ pub fn compile_prepared_db_program(
 /// * `Ok(SierraProgramWithDebug)` - The compiled program with debug info.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db(
-    db: &mut RootDatabase,
+    db: &RootDatabase,
     main_crate_ids: Vec<CrateId>,
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<SierraProgramWithDebug> {
@@ -140,6 +141,19 @@ pub fn compile_prepared_db(
     }
 
     Ok(sierra_program_with_debug)
+}
+
+pub fn get_sierra_program_for_functions(
+    db: &RootDatabase,
+    requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
+    mut diagnostic_reporter: DiagnosticsReporter<'_>,
+) -> Result<SierraProgramWithDebug> {
+    diagnostic_reporter.ensure(db)?;
+    Ok(Arc::unwrap_or_clone(
+        db.get_sierra_program_for_functions(requested_function_ids)
+            .to_option()
+            .with_context(|| "Compilation failed without any diagnostics.")?,
+    ))
 }
 
 /// Runs Cairo compiler.

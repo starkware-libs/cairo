@@ -1,11 +1,11 @@
 use std::default::Default;
-use std::sync::Arc;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
+use cairo_lang_compiler::get_sierra_program_for_functions;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
-use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -71,15 +71,16 @@ pub fn compile_test_prepared_db(
     tests_compilation_config: TestsCompilationConfig,
     main_crate_ids: Vec<CrateId>,
     test_crate_ids: Vec<CrateId>,
+    allow_warnings: bool,
 ) -> Result<TestCompilation> {
     let all_entry_points = if tests_compilation_config.starknet {
         find_contracts(db, &main_crate_ids)
             .iter()
             .flat_map(|contract| {
                 chain!(
-                    get_contract_abi_functions(db, contract, EXTERNAL_MODULE).unwrap(),
-                    get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE).unwrap(),
-                    get_contract_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap(),
+                    get_contract_abi_functions(db, contract, EXTERNAL_MODULE).unwrap_or_default(),
+                    get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE).unwrap_or_default(),
+                    get_contract_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap_or_default(),
                 )
             })
             .map(|func| ConcreteFunctionWithBodyId::from_semantic(db, func.value))
@@ -87,6 +88,28 @@ pub fn compile_test_prepared_db(
     } else {
         vec![]
     };
+
+    let executable_functions = find_executable_function_ids(db, main_crate_ids.clone());
+    let all_tests = find_all_tests(db, test_crate_ids.clone());
+
+    let func_ids = chain!(
+        executable_functions.clone().into_keys(),
+        all_entry_points.iter().cloned(),
+        // TODO(maciektr): Remove test entrypoints after migration to executable attr.
+        all_tests.iter().flat_map(|(func_id, _cfg)| {
+            ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
+        })
+    )
+    .collect();
+
+    let mut diag_reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_ids);
+    if allow_warnings {
+        diag_reporter = diag_reporter.allow_warnings();
+    }
+
+    let SierraProgramWithDebug { program: mut sierra_program, debug_info } =
+        get_sierra_program_for_functions(db, func_ids, diag_reporter)?;
+
     let function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =
         all_entry_points
             .iter()
@@ -97,23 +120,7 @@ pub fn compile_test_prepared_db(
                 )
             })
             .collect();
-    let executable_functions = find_executable_function_ids(db, main_crate_ids.clone());
-    let all_tests = find_all_tests(db, test_crate_ids.clone());
-    let SierraProgramWithDebug { program: mut sierra_program, debug_info } = Arc::unwrap_or_clone(
-        db.get_sierra_program_for_functions(
-            chain!(
-                executable_functions.clone().into_keys(),
-                all_entry_points.into_iter(),
-                // TODO(maciektr): Remove test entrypoints after migration to executable attr.
-                all_tests.iter().flat_map(|(func_id, _cfg)| {
-                    ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
-                })
-            )
-            .collect(),
-        )
-        .to_option()
-        .with_context(|| "Compilation failed without any diagnostics.")?,
-    );
+
     let replacer = DebugReplacer { db };
     replacer.enrich_function_names(&mut sierra_program);
 
@@ -151,6 +158,7 @@ pub fn compile_test_prepared_db(
         annotations,
         ..DebugInfo::default()
     });
+
     Ok(TestCompilation {
         sierra_program,
         metadata: TestCompilationMetadata {
