@@ -81,6 +81,8 @@ pub trait DefsGroup:
     fn intern_generic_param(&self, id: GenericParamLongId) -> GenericParamId;
     #[salsa::interned]
     fn intern_local_var(&self, id: LocalVarLongId) -> LocalVarId;
+    #[salsa::interned]
+    fn intern_closure(&self, id: ClosureLongId) -> ClosureId;
 
     // Plugins.
     // ========

@@ -224,6 +224,7 @@ impl BlockUsages {
                 current.add_usage_and_changes(&usage);
                 self.block_usages.insert(expr_id, usage);
             }
+            Expr::ExprClosure(_) => panic!("Closure not supported"),
             Expr::FunctionCall(expr) => {
                 for arg in &expr.args {
                     match arg {

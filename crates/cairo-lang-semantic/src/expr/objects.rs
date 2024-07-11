@@ -144,6 +144,7 @@ pub enum Expr {
     PropagateError(ExprPropagateError),
     Constant(ExprConstant),
     FixedSizeArray(ExprFixedSizeArray),
+    ExprClosure(ExprClosure),
     Missing(ExprMissing),
 }
 impl Expr {
@@ -171,6 +172,7 @@ impl Expr {
             Expr::Constant(expr) => expr.ty,
             Expr::Missing(expr) => expr.ty,
             Expr::FixedSizeArray(expr) => expr.ty,
+            Expr::ExprClosure(expr) => expr.ty,
         }
     }
     pub fn stable_ptr(&self) -> ast::ExprPtr {
@@ -197,6 +199,7 @@ impl Expr {
             Expr::Constant(expr) => expr.stable_ptr,
             Expr::Missing(expr) => expr.stable_ptr,
             Expr::FixedSizeArray(expr) => expr.stable_ptr,
+            Expr::ExprClosure(expr) => expr.stable_ptr,
         }
     }
 
@@ -358,6 +361,15 @@ impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVarMemberPath {
             }
         }
     }
+}
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprClosure {
+    pub body: ExprId,
+    pub ty: TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]

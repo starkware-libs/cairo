@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, NamedLanguageElementId,
-    StructId, TraitTypeId,
+    ClosureId, EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId,
+    NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -47,6 +47,7 @@ pub enum TypeLongId {
     },
     ImplType(ImplTypeId),
     TraitType(TraitTypeId),
+    Closure(ClosureTypeLongId),
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -139,6 +140,13 @@ impl TypeLongId {
                     trait_type_id.name(def_db)
                 )
             }
+            TypeLongId::Closure(closure) => {
+                format!(
+                    "fn({}) -> {}",
+                    closure.params.iter().map(|ty| ty.format(db)).join(", "),
+                    closure.ret_ty.format(db)
+                )
+            }
         }
     }
 
@@ -154,7 +162,8 @@ impl TypeLongId {
             | TypeLongId::Var(_)
             | TypeLongId::Missing(_)
             | TypeLongId::ImplType(_)
-            | TypeLongId::TraitType(_) => {
+            | TypeLongId::TraitType(_)
+            | TypeLongId::Closure(_) => {
                 return None;
             }
         })
@@ -186,7 +195,8 @@ impl TypeLongId {
             | TypeLongId::Coupon(_)
             | TypeLongId::TraitType(_)
             | TypeLongId::ImplType(_)
-            | TypeLongId::Missing(_) => false,
+            | TypeLongId::Missing(_)
+            | TypeLongId::Closure(_) => false,
         }
     }
 }
@@ -385,6 +395,15 @@ impl ConcreteExternTypeId {
     pub fn extern_type_id(&self, db: &dyn SemanticGroup) -> ExternTypeId {
         self.lookup_intern(db).extern_type_id
     }
+}
+
+/// A type id of a closure function.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct ClosureTypeLongId {
+    pub generics: Vec<GenericParamId>,
+    pub closure: ClosureId,
+    pub params: Vec<TypeId>,
+    pub ret_ty: TypeId,
 }
 
 /// An impl item of kind type.
@@ -629,7 +648,8 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         | TypeLongId::Missing(_)
         | TypeLongId::Coupon(_)
         | TypeLongId::ImplType(_)
-        | TypeLongId::TraitType(_) => false,
+        | TypeLongId::TraitType(_)
+        | TypeLongId::Closure(_) => false,
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
                 || matches!(size.lookup_intern(db),
@@ -716,7 +736,8 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
         | TypeLongId::TraitType(_)
-        | TypeLongId::ImplType(_) => {}
+        | TypeLongId::ImplType(_)
+        | TypeLongId::Closure(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
             if matches!(size.lookup_intern(db), ConstValue::Int(value,_) if value.is_zero())
                 || db.type_size_info(type_id)? == TypeSizeInformation::ZeroSized
@@ -771,6 +792,11 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_fully_concrete(db) && size.is_fully_concrete(db)
         }
+        TypeLongId::Closure(closure) => {
+            closure.generics.is_empty()
+                && closure.params.iter().all(|param| param.is_fully_concrete(db))
+                && closure.ret_ty.is_fully_concrete(db)
+        }
     }
 }
 
@@ -786,6 +812,10 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
             type_id.is_var_free(db) && size.is_var_free(db)
         }
         TypeLongId::ImplType(impl_type) => impl_type.impl_id().is_var_free(db),
+        TypeLongId::Closure(closure) => {
+            closure.params.iter().all(|param| param.is_var_free(db))
+                && closure.ret_ty.is_var_free(db)
+        }
     }
 }
 
