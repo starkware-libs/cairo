@@ -94,6 +94,7 @@ use crate::project::ProjectManifestPath;
 use crate::server::notifier::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
+use lsp::ext::ExpandMacroParams;
 
 mod config;
 mod env_config;
@@ -274,6 +275,7 @@ impl Backend {
         LspService::build(|client| Self::new(client, tricks))
             .custom_method("vfs/provide", Self::vfs_provide)
             .custom_method(lsp::ext::ViewAnalyzedCrates::METHOD, Self::view_analyzed_crates)
+            .custom_method(lsp::ext::ExpandMacro::METHOD, Self::expand_macro)
             .finish()
     }
 
@@ -513,6 +515,11 @@ impl Backend {
     #[tracing::instrument(level = "trace", skip_all)]
     async fn view_analyzed_crates(&self) -> LSPResult<String> {
         self.with_db(lang::inspect::crates::inspect_analyzed_crates).await
+    }
+
+    #[tracing::instrument(level = "trace", skip_all)]
+    async fn expand_macro(&self, params: ExpandMacroParams) -> LSPResult<Option<String>> {
+        self.with_db(|db| lang::inspect::macros::expand_macro(db, &params)).await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
