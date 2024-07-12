@@ -9,6 +9,7 @@ use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 mod add_missing_trait;
+mod expand_macro;
 mod rename_unused_variable;
 
 /// Compute commands for a given text document and range. These commands are typically code fixes to
@@ -29,6 +30,8 @@ pub fn code_actions(params: CodeActionParams, db: &AnalysisDatabase) -> Option<C
                 .map(CodeActionOrCommand::from),
         );
     }
+    actions.extend(expand_macro::expand_macro(db, node).into_iter().map(CodeActionOrCommand::from));
+
     Some(actions)
 }
 
