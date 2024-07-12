@@ -14,7 +14,7 @@ pub struct TypeResolver<'a> {
 }
 
 impl TypeResolver<'_> {
-    fn get_long_id(&self, type_id: &ConcreteTypeId) -> &ConcreteTypeLongId {
+    pub fn get_long_id(&self, type_id: &ConcreteTypeId) -> &ConcreteTypeLongId {
         &self.type_decl[type_id.id as usize].long_id
     }
 
