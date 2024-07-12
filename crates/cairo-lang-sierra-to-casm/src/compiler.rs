@@ -12,6 +12,7 @@ use cairo_lang_sierra::extensions::core::{
 };
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcOpType;
+use cairo_lang_sierra::extensions::enm::EnumType;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
@@ -38,7 +39,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
 use convert_case::{Case, Casing};
-use itertools::{chain, zip_eq, Itertools};
+use itertools::{chain, zip_eq, Either, Itertools};
 use num_bigint::{BigInt, BigUint};
 use num_integer::Integer;
 use num_traits::{Signed, ToPrimitive, Zero};
@@ -149,13 +150,25 @@ pub struct CasmCairoEntryPoint {
     pub offset: usize,
     pub builtins: Vec<String>,
     pub input_args: Vec<CasmCairoArg>,
-    pub return_arg: Vec<CasmCairoArg>,
+    pub return_arg: Vec<CasmCairoOutputArg>,
 }
 
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmCairoArg {
-    pub name: String,
+    pub generic_id: GenericTypeId,
     pub size: i16,
+    #[serde(skip_serializing_if = "skip_if_none")]
+    pub debug_name: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CasmCairoOutputArg {
+    pub generic_id: GenericTypeId,
+    pub size: i16,
+    #[serde(skip_serializing_if = "skip_if_none")]
+    pub debug_name: Option<String>,
+    #[serde(skip_serializing_if = "skip_if_none")]
+    pub panic_inner_type: Option<CasmCairoArg>,
 }
 
 impl CasmCairoProgram {
@@ -237,33 +250,61 @@ impl CasmCairoProgram {
                         .to_string();
 
                 let type_resolver = TypeResolver { type_decl: &sierra_program.type_declarations };
-                let mut builtins: Vec<String> = Vec::new();
-                let mut input_args: Vec<CasmCairoArg> = Vec::new();
-                let mut return_arg: Vec<CasmCairoArg> = Vec::new();
 
-                for type_id in f.signature.param_types.iter() {
-                    let generic_id = type_resolver.get_generic_id(type_id);
-                    if builtin_types.contains(generic_id) {
-                        builtins.push(generic_id.0.as_str().to_case(Case::Snake));
-                    } else {
-                        let name = generic_id.0.to_string();
+                let (builtins, input_args): (Vec<String>, Vec<CasmCairoArg>) =
+                    f.signature.param_types.iter().partition_map(|type_id| {
+                        let debug_name = type_id.debug_name.as_ref().map(|name| name.to_string());
+                        let generic_id = type_resolver.get_generic_id(type_id).clone();
+                        if builtin_types.contains(&generic_id) {
+                            Either::Left(generic_id.0.as_str().to_case(Case::Snake))
+                        } else {
+                            let size = *type_sizes.get(type_id).unwrap();
+                            Either::Right(CasmCairoArg { generic_id, size, debug_name })
+                        }
+                    });
+
+                let return_arg: Vec<CasmCairoOutputArg> = f
+                    .signature
+                    .ret_types
+                    .last()
+                    .filter(|type_id| {
+                        !builtin_types.contains(type_resolver.get_generic_id(type_id))
+                    })
+                    .and_then(|type_id| {
+                        let debug_name = type_id.debug_name.clone().map(|name| name.to_string());
+                        let generic_id = type_resolver.get_generic_id(type_id).clone();
                         let size = *type_sizes.get(type_id).unwrap();
-                        input_args.push(CasmCairoArg { name, size });
-                    };
-                }
 
-                match f.signature.ret_types.last() {
-                    Some(ty)
-                        if !builtin_types
-                            .contains(&GenericTypeId::from(ty.clone().debug_name.unwrap())) =>
-                    {
-                        let name =
-                            GenericTypeId::from(ty.clone().debug_name.unwrap()).0.to_string();
-                        let size = *type_sizes.get(ty).unwrap();
-                        return_arg.push(CasmCairoArg { name, size })
-                    }
-                    _ => (),
-                };
+                        let long_id = type_resolver.get_long_id(type_id);
+
+                        let panic_inner_type = if generic_id == EnumType::ID {
+                            long_id.generic_args.get(0).and_then(|arg| match arg {
+                                GenericArg::UserType(ut) => ut
+                                    .debug_name
+                                    .as_ref()
+                                    .filter(|name| name.starts_with("core::panics::PanicResult::"))
+                                    .and_then(|_| long_id.generic_args.get(1))
+                                    .and_then(|arg| match arg {
+                                        GenericArg::Type(ty) => {
+                                            let debug_name =
+                                                ty.debug_name.clone().map(|name| name.to_string());
+                                            let generic_id =
+                                                type_resolver.get_generic_id(ty).clone();
+                                            let size = *type_sizes.get(ty).unwrap();
+                                            Some(CasmCairoArg { generic_id, size, debug_name })
+                                        }
+                                        _ => None,
+                                    }),
+                                _ => None,
+                            })
+                        } else {
+                            None
+                        };
+
+                        Some(CasmCairoOutputArg { generic_id, size, panic_inner_type, debug_name })
+                    })
+                    .into_iter()
+                    .collect_vec();
 
                 (function_name, CasmCairoEntryPoint { offset, builtins, input_args, return_arg })
             }));
