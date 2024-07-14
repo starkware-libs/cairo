@@ -117,14 +117,15 @@ pub fn compile_test_prepared_db(
     let replacer = DebugReplacer { db };
     replacer.enrich_function_names(&mut sierra_program);
 
-    let statements_functions_for_tests =
-        debug_info.statements_locations.get_statements_functions_map_for_tests(db);
-
-    let annotations = if tests_compilation_config.add_statements_functions {
-        Annotations::from(debug_info.statements_locations.extract_statements_functions(db))
-    } else {
-        Annotations::default()
-    };
+    let (annotations, statements_functions_for_tests) =
+        if tests_compilation_config.add_statements_functions {
+            (
+                Annotations::from(debug_info.statements_locations.extract_statements_functions(db)),
+                Some(debug_info.statements_locations.get_statements_functions_map_for_tests(db)),
+            )
+        } else {
+            (Annotations::default(), None)
+        };
 
     let executables = collect_executables(db, executable_functions, &sierra_program);
     let named_tests = all_tests
@@ -195,7 +196,7 @@ pub struct TestCompilationMetadata {
     /// with profiling.
     // TODO(Gil): consider serializing this field once it is stable.
     #[serde(skip)]
-    pub statements_functions: UnorderedHashMap<StatementIdx, String>,
+    pub statements_functions: Option<UnorderedHashMap<StatementIdx, String>>,
 }
 
 /// Finds the tests in the requested crates.
