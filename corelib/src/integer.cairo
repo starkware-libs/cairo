@@ -853,7 +853,7 @@ pub fn u256_overflowing_add(lhs: u256, rhs: u256) -> (u256, bool) implicits(Rang
     }
 }
 
-pub fn u256_overflow_sub(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
+pub fn u256_overflowing_sub(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
     let (high, overflow) = match u128_overflowing_sub(lhs.high, rhs.high) {
         Result::Ok(high) => (high, false),
         Result::Err(high) => (high, true),
@@ -869,7 +869,15 @@ pub fn u256_overflow_sub(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCh
     }
 }
 
-pub fn u256_overflow_mul(lhs: u256, rhs: u256) -> (u256, bool) {
+#[deprecated(
+    feature: "deprecated-overflow-functions",
+    note: "Use `core::integer::u256_overflowing_add` instead"
+)]
+pub fn u256_overflow_sub(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
+    u256_overflowing_sub(lhs, rhs)
+}
+
+pub fn u256_overflowing_mul(lhs: u256, rhs: u256) -> (u256, bool) {
     let (high1, low) = u128_wide_mul(lhs.low, rhs.low);
     let (overflow_value1, high2) = u128_wide_mul(lhs.low, rhs.high);
     let (overflow_value2, high3) = u128_wide_mul(lhs.high, rhs.low);
@@ -889,6 +897,14 @@ pub fn u256_overflow_mul(lhs: u256, rhs: u256) -> (u256, bool) {
     (u256 { low, high }, overflow)
 }
 
+#[deprecated(
+    feature: "deprecated-overflow-functions",
+    note: "Use `core::integer::u256_overflowing_mul` instead"
+)]
+pub fn u256_overflow_mul(lhs: u256, rhs: u256) -> (u256, bool) {
+    u256_overflowing_mul(lhs, rhs)
+}
+
 fn u256_checked_add(lhs: u256, rhs: u256) -> Option<u256> implicits(RangeCheck) nopanic {
     let (r, overflow) = u256_overflowing_add(lhs, rhs);
     if overflow {
@@ -906,7 +922,7 @@ impl U256Add of Add<u256> {
 
 #[panic_with('u256_sub Overflow', u256_sub)]
 fn u256_checked_sub(lhs: u256, rhs: u256) -> Option<u256> implicits(RangeCheck) nopanic {
-    let (r, overflow) = u256_overflow_sub(lhs, rhs);
+    let (r, overflow) = u256_overflowing_sub(lhs, rhs);
     if overflow {
         Option::None
     } else {
@@ -921,7 +937,7 @@ impl U256Sub of Sub<u256> {
 }
 
 fn u256_checked_mul(lhs: u256, rhs: u256) -> Option<u256> implicits(RangeCheck) {
-    let (r, overflow) = u256_overflow_mul(lhs, rhs);
+    let (r, overflow) = u256_overflowing_mul(lhs, rhs);
     if overflow {
         Option::None
     } else {
@@ -2960,7 +2976,7 @@ impl U128OverflowingSub of core::num::traits::OverflowingSub<u128> {
 
 impl U256OverflowingSub of core::num::traits::OverflowingSub<u256> {
     fn overflowing_sub(self: u256, v: u256) -> (u256, bool) {
-        u256_overflow_sub(self, v)
+        u256_overflowing_sub(self, v)
     }
 }
 
@@ -3059,7 +3075,7 @@ impl U128OverflowingMul of core::num::traits::OverflowingMul<u128> {
 
 impl U256OverflowingMul of core::num::traits::OverflowingMul<u256> {
     fn overflowing_mul(self: u256, v: u256) -> (u256, bool) {
-        u256_overflow_mul(self, v)
+        u256_overflowing_mul(self, v)
     }
 }
 
