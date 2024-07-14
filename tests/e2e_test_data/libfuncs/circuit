@@ -43,6 +43,57 @@ test::foo@0([0]: RangeCheck96) -> (RangeCheck96, CircuitInputAccumulator<Circuit
 
 //! > ==========================================================================
 
+//! > init_circuit_data multiple calls.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::circuit::{AddModGate, CircuitInput, CircuitInputAccumulator, init_circuit_data, Circuit};
+type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>,)>;
+
+fn foo() -> (CircuitInputAccumulator<MyCircuit>, CircuitInputAccumulator<MyCircuit>) {
+    (init_circuit_data::<MyCircuit>(), init_circuit_data::<MyCircuit>())
+}
+
+//! > casm
+[ap + 0] = [fp + -3] + 64, ap++;
+[ap + 0] = [fp + -3] + 4, ap++;
+[ap + 0] = [fp + -3] + 16, ap++;
+[ap + 0] = [fp + -3] + 36, ap++;
+[ap + 0] = [fp + -3] + 48, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 4084})
+
+//! > sierra_code
+type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
+type CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>> = Struct<ut@Tuple, CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> = Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> [storable: false, drop: false, dup: false, zero_sized: true];
+type core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> = AddModGate<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> [storable: false, drop: false, dup: false, zero_sized: true];
+type core::circuit::CircuitInput::<2> = CircuitInput<2> [storable: false, drop: false, dup: false, zero_sized: true];
+type (core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>) = Struct<ut@Tuple, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>> [storable: false, drop: false, dup: false, zero_sized: true];
+type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: true];
+type core::circuit::CircuitInput::<1> = CircuitInput<1> [storable: false, drop: false, dup: false, zero_sized: true];
+
+libfunc init_circuit_data<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = init_circuit_data<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>;
+libfunc struct_construct<Tuple<CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>>> = struct_construct<Tuple<CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>>>;
+libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
+libfunc store_temp<Tuple<CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>>> = store_temp<Tuple<CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>>>;
+
+init_circuit_data<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>([0]) -> ([1], [2]); // 0
+init_circuit_data<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>([1]) -> ([3], [4]); // 1
+struct_construct<Tuple<CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>>>([2], [4]) -> ([5]); // 2
+store_temp<RangeCheck96>([3]) -> ([3]); // 3
+store_temp<Tuple<CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>>>([5]) -> ([5]); // 4
+return([3], [5]); // 5
+
+test::foo@0([0]: RangeCheck96) -> (RangeCheck96, Tuple<CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>, CircuitInputAccumulator<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>>);
+
+//! > ==========================================================================
+
 //! > add_input
 
 //! > test_runner_name
@@ -50,8 +101,8 @@ SmallE2ETestRunner
 
 //! > cairo
 use core::circuit::{
-    U96Guarantee, AddModGate, add_circuit_input, AddInputResult, CircuitInput, CircuitInputAccumulator,
-    init_circuit_data, Circuit
+    U96Guarantee, AddModGate, add_circuit_input, AddInputResult, CircuitInput,
+    CircuitInputAccumulator, Circuit
 };
 type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>,)>;
 
