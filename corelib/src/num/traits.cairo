@@ -7,6 +7,7 @@ pub use one::One;
 pub mod bit_size;
 pub use bit_size::BitSize;
 
+#[feature("corelib-internal-use")]
 pub mod ops;
 pub use ops::overflowing::{OverflowingAdd, OverflowingSub, OverflowingMul};
 pub use ops::wrapping::{WrappingAdd, WrappingSub, WrappingMul};

@@ -4,6 +4,7 @@
 SmallE2ETestRunner
 
 //! > cairo
+#[feature("corelib-internal-use")]
 fn foo(a: u128, b: u128) -> Result::<u128, u128> {
     integer::u128_overflowing_add(a, b)
 }
@@ -63,6 +64,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 SmallE2ETestRunner
 
 //! > cairo
+#[feature("corelib-internal-use")]
 fn foo(a: u128, b: u128) -> Result::<u128, u128> {
     integer::u128_overflowing_sub(a, b)
 }
@@ -122,6 +124,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 SmallE2ETestRunner
 
 //! > cairo
+#[feature("corelib-internal-use")]
 fn foo(a: u128, b: u128) -> (u128, u128) {
     integer::u128_wide_mul(a, b)
 }
@@ -429,6 +432,7 @@ test::foo@0() -> (core::bool);
 SmallE2ETestRunner
 
 //! > cairo
+#[feature("corelib-internal-use")]
 fn foo(value: u128) -> u64 {
     integer::u128_sqrt(value)
 }

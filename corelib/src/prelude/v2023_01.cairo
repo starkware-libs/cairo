@@ -39,9 +39,12 @@ use core::{
         Felt252TryIntoU64, Felt252TryIntoU8, I128IntoFelt252, I16IntoFelt252, I32IntoFelt252,
         I64IntoFelt252, I8IntoFelt252, NumericLiteral, U128IntoFelt252, U16IntoFelt252,
         U32IntoFelt252, U64IntoFelt252, U8IntoFelt252, i128, i16, i32, i64, i8, u128, u128_is_zero,
-        u128_sqrt, u16, u256, u256_sqrt, u32, u64, u8
+        u16, u256, u32, u64, u8
     }
 };
+#[feature("corelib-internal-use")]
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
+use core::integer::{u128_sqrt, u256_sqrt};
 use core::internal;
 use core::keccak;
 use core::math;
