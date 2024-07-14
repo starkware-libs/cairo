@@ -367,6 +367,7 @@ fn compute_expr_inline_macro_semantic(
         &MacroPluginMetadata {
             cfg_set: &ctx.cfg_set,
             declared_derives: &ctx.db.declared_derives(),
+            allowed_features: &ctx.resolver.data.allowed_features,
             edition: ctx.resolver.edition,
         },
     );
