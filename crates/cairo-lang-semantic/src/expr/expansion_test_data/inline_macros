@@ -1,7 +1,7 @@
 //! > Test expansion of consteval_int! simple usage
 
 //! > test_runner_name
-test_expand_expr(expect_diagnostics: false)
+test_expand_expr(expect_diagnostics: warnings_only)
 
 //! > expr_code
 consteval_int!(4 + 5)
@@ -10,13 +10,17 @@ consteval_int!(4 + 5)
 9
 
 //! > diagnostics
+warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:2:1
+consteval_int!(4 + 5)
+^*******************^
 
 //! > ==========================================================================
 
 //! > Test expansion of consteval_int! complex usage
 
 //! > test_runner_name
-test_expand_expr(expect_diagnostics: false)
+test_expand_expr(expect_diagnostics: warnings_only)
 
 //! > expr_code
 consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
@@ -25,13 +29,17 @@ consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
 47
 
 //! > diagnostics
+warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:2:1
+consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
+^**************************************^
 
 //! > ==========================================================================
 
 //! > Test expansion of consteval_int! handle temporary overflow
 
 //! > test_runner_name
-test_expand_expr(expect_diagnostics: false)
+test_expand_expr(expect_diagnostics: warnings_only)
 
 //! > expr_code
 consteval_int!(255 + 1 - 1)
@@ -40,6 +48,10 @@ consteval_int!(255 + 1 - 1)
 255
 
 //! > diagnostics
+warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:2:1
+consteval_int!(255 + 1 - 1)
+^*************************^
 
 //! > ==========================================================================
 

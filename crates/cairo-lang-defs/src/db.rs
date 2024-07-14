@@ -423,6 +423,8 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     };
 
     let allowed_attributes = db.allowed_attributes();
+    // TODO(orizi): Actually extract the allowed features per module.
+    let allowed_features = Default::default();
 
     let mut module_queue = VecDeque::new();
     module_queue.push_back((module_file, item_asts));
@@ -454,6 +456,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     let metadata = MacroPluginMetadata {
         cfg_set: &cfg_set,
         declared_derives: &db.declared_derives(),
+        allowed_features: &allowed_features,
         edition,
     };
 
