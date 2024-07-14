@@ -13,9 +13,8 @@ use cairo_lang_utils::Intern;
 use defs::diagnostic_utils::StableLocation;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
-use semantic::corelib::{core_module, get_ty_by_name, get_usize_ty};
+use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::expr::inference::InferenceError;
-use semantic::items::constant::value_as_const_value;
 use semantic::types::wrap_in_snapshots;
 use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
@@ -300,17 +299,7 @@ impl LoweredExpr {
             LoweredExpr::Snapshot { expr, .. } => {
                 wrap_in_snapshots(ctx.db.upcast(), expr.ty(ctx), 1)
             }
-            LoweredExpr::FixedSizeArray { exprs, .. } => semantic::TypeLongId::FixedSizeArray {
-                type_id: exprs[0].ty(ctx),
-                size: value_as_const_value(
-                    ctx.db.upcast(),
-                    get_usize_ty(ctx.db.upcast()),
-                    &exprs.len().into(),
-                )
-                .unwrap()
-                .intern(ctx.db),
-            }
-            .intern(ctx.db),
+            LoweredExpr::FixedSizeArray { ty, .. } => *ty,
         }
     }
     pub fn location(&self) -> LocationId {
