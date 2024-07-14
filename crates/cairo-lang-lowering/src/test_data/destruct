@@ -17,14 +17,14 @@ fn foo(flag: bool) -> Option<A> {
 foo
 
 //! > module_code
-use integer::u128_overflowing_add;
 struct A {}
 impl ADestruct of Destruct<A> {
     #[inline(never)]
+    #[feature("corelib-internal-use")]
     fn destruct(self: A) nopanic {
         let A { } = self;
         // Use RangeCheck, a previously unused implicit.
-        match u128_overflowing_add(1_u128, 2_u128) {
+        match core::integer::u128_overflowing_add(1_u128, 2_u128) {
             Result::Ok(v) => v,
             Result::Err(v) => v,
         };

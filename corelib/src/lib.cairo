@@ -265,16 +265,20 @@ use ec::{EcOp, EcPoint, EcState};
 pub mod ecdsa;
 
 /// Integer.
+#[feature("corelib-internal-use")]
 pub mod integer;
 use integer::{
     i8, I8IntoFelt252, i16, I16IntoFelt252, i32, I32IntoFelt252, i64, I64IntoFelt252, i128,
-    I128IntoFelt252, NumericLiteral, u128, u128_sqrt, u128_is_zero, u8, u16, u32, u64, u256,
-    u256_sqrt, Felt252TryIntoU8, U8IntoFelt252, Felt252TryIntoU16, U16IntoFelt252,
-    Felt252TryIntoU32, U32IntoFelt252, Felt252TryIntoU64, U64IntoFelt252, Felt252TryIntoU128,
-    U128IntoFelt252, Felt252IntoU256, Bitwise
+    I128IntoFelt252, NumericLiteral, u128, u128_is_zero, u8, u16, u32, u64, u256, Felt252TryIntoU8,
+    U8IntoFelt252, Felt252TryIntoU16, U16IntoFelt252, Felt252TryIntoU32, U32IntoFelt252,
+    Felt252TryIntoU64, U64IntoFelt252, Felt252TryIntoU128, U128IntoFelt252, Felt252IntoU256, Bitwise
 };
+#[feature("corelib-internal-use")]
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
+use integer::{u128_sqrt, u256_sqrt};
 
 /// Math.
+#[feature("corelib-internal-use")]
 pub mod math;
 
 /// Num.
@@ -333,6 +337,7 @@ pub mod debug;
 pub mod fmt;
 
 /// Starknet
+#[feature("corelib-internal-use")]
 pub mod starknet;
 use starknet::System;
 

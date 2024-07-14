@@ -34,13 +34,20 @@ fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopan
 
 pub(crate) extern fn u128_to_felt252(a: u128) -> felt252 nopanic;
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead"
+)]
 pub extern fn u128_overflowing_add(
     lhs: u128, rhs: u128
 ) -> Result<u128, u128> implicits(RangeCheck) nopanic;
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingSub` instead"
+)]
 pub extern fn u128_overflowing_sub(
     lhs: u128, rhs: u128
 ) -> Result<u128, u128> implicits(RangeCheck) nopanic;
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingAdd` instead")]
 pub fn u128_wrapping_add(lhs: u128, rhs: u128) -> u128 implicits(RangeCheck) nopanic {
     match u128_overflowing_add(lhs, rhs) {
         Result::Ok(x) => x,
@@ -48,6 +55,7 @@ pub fn u128_wrapping_add(lhs: u128, rhs: u128) -> u128 implicits(RangeCheck) nop
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingSub` instead")]
 pub fn u128_wrapping_sub(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic {
     match u128_overflowing_sub(a, b) {
         Result::Ok(x) => x,
@@ -68,6 +76,7 @@ extern fn u128_guarantee_mul(a: u128, b: u128) -> (u128, u128, U128MulGuarantee)
 extern fn u128_mul_guarantee_verify(guarantee: U128MulGuarantee) implicits(RangeCheck) nopanic;
 
 /// Multiplies two u128s and returns `(high, low)` - the 128-bit parts of the result.
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 #[inline(always)]
 pub fn u128_wide_mul(a: u128, b: u128) -> (u128, u128) nopanic {
     let (high, low, _) = u128_guarantee_mul(a, b);
@@ -80,8 +89,12 @@ impl U128MulGuaranteeDestruct of Destruct<U128MulGuarantee> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u128_sqrt(value: u128) -> u64 implicits(RangeCheck) nopanic;
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingMul` instead"
+)]
 pub fn u128_overflowing_mul(lhs: u128, rhs: u128) -> (u128, bool) implicits(RangeCheck) nopanic {
     let (top_word, bottom_word) = u128_wide_mul(lhs, rhs);
     match u128_to_felt252(top_word) {
@@ -262,9 +275,16 @@ impl U8PartialOrd of PartialOrd<u8> {
     }
 }
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead"
+)]
 pub extern fn u8_overflowing_add(lhs: u8, rhs: u8) -> Result<u8, u8> implicits(RangeCheck) nopanic;
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingSub` instead"
+)]
 pub extern fn u8_overflowing_sub(lhs: u8, rhs: u8) -> Result<u8, u8> implicits(RangeCheck) nopanic;
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingAdd` instead")]
 pub fn u8_wrapping_add(lhs: u8, rhs: u8) -> u8 implicits(RangeCheck) nopanic {
     match u8_overflowing_add(lhs, rhs) {
         Result::Ok(x) => x,
@@ -272,6 +292,7 @@ pub fn u8_wrapping_add(lhs: u8, rhs: u8) -> u8 implicits(RangeCheck) nopanic {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingSub` instead")]
 pub fn u8_wrapping_sub(lhs: u8, rhs: u8) -> u8 implicits(RangeCheck) nopanic {
     match u8_overflowing_sub(lhs, rhs) {
         Result::Ok(x) => x,
@@ -305,7 +326,9 @@ impl U8Sub of Sub<u8> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn u8_wide_mul(lhs: u8, rhs: u8) -> u16 implicits() nopanic;
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u8_sqrt(value: u8) -> u8 implicits(RangeCheck) nopanic;
 
 impl U8Mul of Mul<u8> {
@@ -409,13 +432,20 @@ impl U16PartialOrd of PartialOrd<u16> {
     }
 }
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead"
+)]
 pub extern fn u16_overflowing_add(
     lhs: u16, rhs: u16
 ) -> Result<u16, u16> implicits(RangeCheck) nopanic;
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingSub` instead"
+)]
 pub extern fn u16_overflowing_sub(
     lhs: u16, rhs: u16
 ) -> Result<u16, u16> implicits(RangeCheck) nopanic;
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingAdd` instead")]
 pub fn u16_wrapping_add(lhs: u16, rhs: u16) -> u16 implicits(RangeCheck) nopanic {
     match u16_overflowing_add(lhs, rhs) {
         Result::Ok(x) => x,
@@ -423,6 +453,7 @@ pub fn u16_wrapping_add(lhs: u16, rhs: u16) -> u16 implicits(RangeCheck) nopanic
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingSub` instead")]
 pub fn u16_wrapping_sub(lhs: u16, rhs: u16) -> u16 implicits(RangeCheck) nopanic {
     match u16_overflowing_sub(lhs, rhs) {
         Result::Ok(x) => x,
@@ -456,7 +487,9 @@ impl U16Sub of Sub<u16> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn u16_wide_mul(lhs: u16, rhs: u16) -> u32 implicits() nopanic;
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u16_sqrt(value: u16) -> u8 implicits(RangeCheck) nopanic;
 
 impl U16Mul of Mul<u16> {
@@ -562,13 +595,20 @@ impl U32PartialOrd of PartialOrd<u32> {
     }
 }
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead"
+)]
 pub extern fn u32_overflowing_add(
     lhs: u32, rhs: u32
 ) -> Result<u32, u32> implicits(RangeCheck) nopanic;
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingSub` instead"
+)]
 pub extern fn u32_overflowing_sub(
     lhs: u32, rhs: u32
 ) -> Result<u32, u32> implicits(RangeCheck) nopanic;
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingAdd` instead")]
 pub fn u32_wrapping_add(lhs: u32, rhs: u32) -> u32 implicits(RangeCheck) nopanic {
     match u32_overflowing_add(lhs, rhs) {
         Result::Ok(x) => x,
@@ -576,6 +616,7 @@ pub fn u32_wrapping_add(lhs: u32, rhs: u32) -> u32 implicits(RangeCheck) nopanic
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingSub` instead")]
 pub fn u32_wrapping_sub(lhs: u32, rhs: u32) -> u32 implicits(RangeCheck) nopanic {
     match u32_overflowing_sub(lhs, rhs) {
         Result::Ok(x) => x,
@@ -609,7 +650,9 @@ impl U32Sub of Sub<u32> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn u32_wide_mul(lhs: u32, rhs: u32) -> u64 implicits() nopanic;
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u32_sqrt(value: u32) -> u16 implicits(RangeCheck) nopanic;
 
 impl U32Mul of Mul<u32> {
@@ -715,13 +758,20 @@ impl U64PartialOrd of PartialOrd<u64> {
     }
 }
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead"
+)]
 pub extern fn u64_overflowing_add(
     lhs: u64, rhs: u64
 ) -> Result<u64, u64> implicits(RangeCheck) nopanic;
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingSub` instead"
+)]
 pub extern fn u64_overflowing_sub(
     lhs: u64, rhs: u64
 ) -> Result<u64, u64> implicits(RangeCheck) nopanic;
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingAdd` instead")]
 pub fn u64_wrapping_add(lhs: u64, rhs: u64) -> u64 implicits(RangeCheck) nopanic {
     match u64_overflowing_add(lhs, rhs) {
         Result::Ok(x) => x,
@@ -729,6 +779,7 @@ pub fn u64_wrapping_add(lhs: u64, rhs: u64) -> u64 implicits(RangeCheck) nopanic
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingSub` instead")]
 pub fn u64_wrapping_sub(lhs: u64, rhs: u64) -> u64 implicits(RangeCheck) nopanic {
     match u64_overflowing_sub(lhs, rhs) {
         Result::Ok(x) => x,
@@ -762,7 +813,9 @@ impl U64Sub of Sub<u64> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn u64_wide_mul(lhs: u64, rhs: u64) -> u128 implicits() nopanic;
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u64_sqrt(value: u64) -> u32 implicits(RangeCheck) nopanic;
 
 impl U64Mul of Mul<u64> {
@@ -837,6 +890,9 @@ pub struct u256 {
 }
 impl NumericLiteralU256 of NumericLiteral<u256>;
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead"
+)]
 pub fn u256_overflowing_add(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
     let (high, overflow) = match u128_overflowing_add(lhs.high, rhs.high) {
         Result::Ok(high) => (high, false),
@@ -853,6 +909,9 @@ pub fn u256_overflowing_add(lhs: u256, rhs: u256) -> (u256, bool) implicits(Rang
     }
 }
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingSub` instead"
+)]
 pub fn u256_overflowing_sub(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
     let (high, overflow) = match u128_overflowing_sub(lhs.high, rhs.high) {
         Result::Ok(high) => (high, false),
@@ -877,6 +936,9 @@ pub fn u256_overflow_sub(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCh
     u256_overflowing_sub(lhs, rhs)
 }
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingMul` instead"
+)]
 pub fn u256_overflowing_mul(lhs: u256, rhs: u256) -> (u256, bool) {
     let (high1, low) = u128_wide_mul(lhs.low, rhs.low);
     let (overflow_value1, high2) = u128_wide_mul(lhs.low, rhs.high);
@@ -1015,6 +1077,7 @@ fn u256_safe_div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) implicits(Ra
     let (q, r, _) = u256_safe_divmod(lhs, rhs);
     (q, r)
 }
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u256_sqrt(a: u256) -> u128 implicits(RangeCheck) nopanic;
 
 #[panic_with('u256 is 0', u256_as_non_zero)]
@@ -1065,6 +1128,7 @@ fn u128_add_with_carry(a: u128, b: u128) -> (u128, u128) nopanic {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
     let (limb1, limb0) = u128_wide_mul(a.low, b.low);
     let (limb2, limb1_part) = u128_wide_mul(a.low, b.high);
@@ -1704,6 +1768,7 @@ impl I8Neg of Neg<i8> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i8_wide_mul(lhs: i8, rhs: i8) -> i16 implicits() nopanic;
 impl I8Mul of Mul<i8> {
     fn mul(lhs: i8, rhs: i8) -> i8 {
@@ -1788,6 +1853,7 @@ impl I16Neg of Neg<i16> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i16_wide_mul(lhs: i16, rhs: i16) -> i32 implicits() nopanic;
 impl I16Mul of Mul<i16> {
     fn mul(lhs: i16, rhs: i16) -> i16 {
@@ -1872,6 +1938,7 @@ impl I32Neg of Neg<i32> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i32_wide_mul(lhs: i32, rhs: i32) -> i64 implicits() nopanic;
 impl I32Mul of Mul<i32> {
     fn mul(lhs: i32, rhs: i32) -> i32 {
@@ -1956,6 +2023,7 @@ impl I64Neg of Neg<i64> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i64_wide_mul(lhs: i64, rhs: i64) -> i128 implicits() nopanic;
 impl I64Mul of Mul<i64> {
     fn mul(lhs: i64, rhs: i64) -> i64 {
