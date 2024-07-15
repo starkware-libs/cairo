@@ -58,7 +58,9 @@ use super::type_aliases::{
     type_alias_semantic_data_helper, TypeAliasData,
 };
 use super::{resolve_trait_path, TraitOrImplContext};
-use crate::corelib::{copy_trait, deref_trait, drop_trait};
+use crate::corelib::{
+    copy_trait, core_submodule, deref_trait, drop_trait, get_core_trait, CoreTraitContext,
+};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -556,6 +558,16 @@ pub fn priv_impl_declaration_data_inner(
     } else {
         Err(diagnostics.report(&trait_path_syntax, ImplRequirementCycle))
     };
+
+    // Check for reimplementation of TypeEqual Trait.
+    if let Ok(concrete_trait) = concrete_trait {
+        if concrete_trait.trait_id(db)
+            == get_core_trait(db, CoreTraitContext::MetaProgramming, "TypeEqual".into())
+            && impl_def_id.module_file_id(db.upcast()).0 != core_submodule(db, "metaprogramming")
+        {
+            diagnostics.report(&trait_path_syntax, TypeEqualTraitReImplementation);
+        }
+    }
 
     // Check fully resolved.
     let inference = &mut resolver.inference();

@@ -834,6 +834,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     )
                 }
             }
+            SemanticDiagnosticKind::TypeEqualTraitReImplementation => {
+                "Type equals trait should not be re-implemented.".into()
+            }
             SemanticDiagnosticKind::ClosureInGlobalScope => {
                 "Closures are not allowed in this context.".into()
             }
@@ -1176,6 +1179,7 @@ pub enum SemanticDiagnosticKind {
     DerefCycle {
         deref_chain: String,
     },
+    TypeEqualTraitReImplementation,
     ClosureInGlobalScope,
 }
 
