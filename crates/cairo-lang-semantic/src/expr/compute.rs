@@ -78,8 +78,8 @@ use crate::types::{
     ClosureTypeLongId, ConcreteTypeId,
 };
 use crate::{
-    ConcreteEnumId, GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral,
-    PatternStruct, Signature,
+    ConcreteEnumId, ConcreteTraitLongId, GenericArgumentId, GenericParam, Member, Mutability,
+    Parameter, PatternStringLiteral, PatternStruct, Signature,
 };
 
 /// Expression with its id.
@@ -869,6 +869,40 @@ pub fn compute_root_expr(
     syntax: &ast::ExprBlock,
     return_type: TypeId,
 ) -> Maybe<ExprId> {
+    // Conform TypeEqual constraints for Associated type bounds.
+    let inference = &mut ctx.resolver.data.inference_data.inference(ctx.db);
+    for param in &ctx.resolver.data.generic_params {
+        let GenericParam::Impl(imp) = ctx.db.priv_generic_param_data(*param)?.generic_param else {
+            continue;
+        };
+        let Ok(concrete_trait_id) = imp.concrete_trait else {
+            continue;
+        };
+        let ConcreteTraitLongId { trait_id, generic_args } =
+            concrete_trait_id.lookup_intern(ctx.db);
+        if trait_id != get_core_trait(ctx.db, CoreTraitContext::MetaProgramming, "TypeEqual".into())
+        {
+            continue;
+        }
+        let (GenericArgumentId::Type(ty0), GenericArgumentId::Type(ty1)) =
+            (generic_args[0], generic_args[1])
+        else {
+            unreachable!("TypeEqual should have 2 arguments");
+        };
+        let ty0 = if let TypeLongId::ImplType(impl_type) = ty0.lookup_intern(ctx.db) {
+            inference.impl_type_assignment(impl_type)
+        } else {
+            ty0
+        };
+        let ty1 = if let TypeLongId::ImplType(impl_type) = ty1.lookup_intern(ctx.db) {
+            inference.impl_type_assignment(impl_type)
+        } else {
+            ty1
+        };
+        inference.conform_ty(ty0, ty1).ok();
+    }
+    inference.finalize_impl_type_bounds();
+
     let return_type = ctx.reduce_ty(return_type);
     let res = compute_expr_block_semantic(ctx, syntax)?;
     let res_ty = ctx.reduce_ty(res.ty());
