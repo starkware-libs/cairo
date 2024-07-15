@@ -55,6 +55,13 @@ macro_rules! rangle {
 }
 pub(crate) use rangle;
 
+macro_rules! or {
+    () => {
+        SyntaxKind::TerminalOr
+    };
+}
+pub(crate) use or;
+
 macro_rules! comma {
     () => {
         SyntaxKind::TerminalComma

@@ -1,20 +1,13 @@
 use std::fs;
 use std::path::Path;
-use std::sync::Arc;
 
 use anyhow::{bail, ensure, Context, Result};
-use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CrateConfiguration, CrateSettings, Edition, ExperimentalFeaturesConfig,
-    FilesGroupEx, CORELIB_CRATE_NAME,
-};
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
-use cairo_lang_utils::Intern;
+use cairo_lang_filesystem::db::{CrateSettings, Edition, ExperimentalFeaturesConfig};
 use scarb_metadata::{Metadata, PackageMetadata};
 use tracing::{debug, warn};
 
 use crate::lang::db::AnalysisDatabase;
+use crate::project::crate_data::Crate;
 
 /// Updates crate roots in the database with the information from Scarb metadata.
 ///
@@ -30,14 +23,7 @@ use crate::lang::db::AnalysisDatabase;
 //  causes overriding of the crate within single call of this function. This is an UX problem, for
 //  which we do not know the solution yet.
 pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
-    #[derive(Debug)]
-    struct Root<'a> {
-        crate_long_id: CrateLongId,
-        crate_configuration: CrateConfiguration,
-        non_lib_source_mod: Option<&'a str>,
-    }
-
-    let mut crate_roots = Vec::<Root<'_>>::new();
+    let mut crates = Vec::<Crate>::new();
     for compilation_unit in &metadata.compilation_units {
         if compilation_unit.target.kind == "cairo-plugin" {
             debug!("skipping cairo plugin compilation unit: {}", compilation_unit.id);
@@ -46,7 +32,6 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
 
         for component in &compilation_unit.components {
             let crate_name = component.name.as_str();
-            let crate_long_id = CrateLongId::Real(crate_name.into());
 
             let package = metadata.packages.iter().find(|package| package.id == component.package);
             if package.is_none() {
@@ -73,28 +58,25 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                 experimental_features: scarb_package_experimental_features(&package),
             };
 
-            let crate_configuration =
-                CrateConfiguration { root: Directory::Real(root.into()), settings };
+            let custom_main_file_stem = (file_stem != "lib").then_some(file_stem.into());
 
-            let non_lib_source_mod = (file_stem != "lib").then_some(file_stem);
-
-            crate_roots.push(Root { crate_long_id, crate_configuration, non_lib_source_mod });
+            crates.push(Crate {
+                name: crate_name.into(),
+                root: root.into(),
+                custom_main_file_stem,
+                settings,
+            });
         }
     }
 
-    debug!("updating crate roots from scarb metadata: {crate_roots:#?}");
+    debug!("updating crate roots from scarb metadata: {crates:#?}");
 
-    if !crate_roots.iter().any(|r| r.crate_long_id.name() == CORELIB_CRATE_NAME) {
+    if !crates.iter().any(Crate::is_core) {
         warn!("core crate is missing in scarb metadata, did not initialize it");
     }
 
-    for Root { crate_long_id, crate_configuration, non_lib_source_mod } in crate_roots {
-        let crate_id = crate_long_id.intern(db);
-        db.set_crate_config(crate_id, Some(crate_configuration));
-
-        if let Some(file_stem) = non_lib_source_mod {
-            inject_virtual_wrapper_lib(crate_id, file_stem, db);
-        }
+    for cr in crates {
+        cr.apply(db);
     }
 }
 
@@ -185,17 +167,4 @@ fn scarb_package_experimental_features(
         negative_impls: contains("negative_impls"),
         coupons: contains("coupons"),
     }
-}
-
-/// Generate a wrapper lib file for a compilation unit without a root `lib.cairo`.
-///
-/// This approach allows compiling crates that do not define `lib.cairo` file. For example, single
-/// file crates can be created this way. The actual single file module is defined as `mod` item in
-/// created lib file.
-fn inject_virtual_wrapper_lib(crate_id: CrateId, file_stem: &str, db: &mut AnalysisDatabase) {
-    let module_id = ModuleId::CrateRoot(crate_id);
-    let file_id = db.module_main_file(module_id).unwrap();
-    // Inject virtual lib file wrapper.
-    db.as_files_group_mut()
-        .override_file_content(file_id, Some(Arc::new(format!("mod {file_stem};"))));
 }

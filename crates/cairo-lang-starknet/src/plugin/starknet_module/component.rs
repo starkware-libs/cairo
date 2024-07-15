@@ -2,10 +2,11 @@ use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant};
+use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{require, try_extract_matches};
+use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 use indoc::{formatdoc, indoc};
 use itertools::chain;
 
@@ -425,11 +426,10 @@ fn handle_first_param_for_embeddable_as(
 ) -> Option<(String, String, String)> {
     require(param.name(db).text(db) == "self")?;
     if param.is_ref_param(db) {
-        return if param.type_clause(db).ty(db).is_name_with_arg(
-            db,
-            COMPONENT_STATE_NAME,
-            GENERIC_CONTRACT_STATE_NAME,
-        ) {
+        return if extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
+            .ty(db)
+            .is_name_with_arg(db, COMPONENT_STATE_NAME, GENERIC_CONTRACT_STATE_NAME)
+        {
             Some((
                 format!("ref self: {GENERIC_CONTRACT_STATE_NAME}"),
                 format!("let mut component = {HAS_COMPONENT_TRAIT}::get_component_mut(ref self);"),

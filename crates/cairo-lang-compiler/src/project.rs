@@ -1,5 +1,5 @@
 use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::ModuleId;
@@ -68,11 +68,7 @@ pub fn setup_single_file_project(
 /// Updates the crate roots from a ProjectConfig object.
 pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config: &ProjectConfig) {
     for (crate_name, directory_path) in config.content.crate_roots.iter() {
-        let mut path = PathBuf::from(&directory_path);
-        if path.is_relative() {
-            path = config.base_path.clone().join(path);
-        }
-        let root = Directory::Real(path);
+        let root = Directory::Real(config.absolute_crate_root(directory_path));
         update_crate_root(db, config, crate_name.clone(), root);
     }
 }

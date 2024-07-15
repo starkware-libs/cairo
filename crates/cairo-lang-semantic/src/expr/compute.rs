@@ -347,6 +347,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
         ast::Expr::For(expr) => compute_expr_for_semantic(ctx, expr),
+        ast::Expr::Closure(_) => Err(ctx.diagnostics.report(syntax, Unsupported)),
     }
 }
 

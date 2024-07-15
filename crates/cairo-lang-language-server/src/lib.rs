@@ -77,6 +77,7 @@ use salsa::ParallelDatabase;
 use serde_json::Value;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
+use tower_lsp::lsp_types::request::Request;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
@@ -87,7 +88,7 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::client_capabilities::ClientCapabilitiesExt;
-use crate::project::scarb::db::update_crate_roots;
+use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
 use crate::server::notifier::Notifier;
@@ -98,7 +99,7 @@ mod config;
 mod env_config;
 mod ide;
 mod lang;
-mod lsp;
+pub mod lsp;
 mod markdown;
 mod project;
 mod server;
@@ -272,6 +273,7 @@ impl Backend {
     fn build_service(tricks: Tricks) -> (LspService<Self>, ClientSocket) {
         LspService::build(|client| Self::new(client, tricks))
             .custom_method("vfs/provide", Self::vfs_provide)
+            .custom_method(lsp::ext::ViewAnalyzedCrates::METHOD, Self::view_analyzed_crates)
             .finish()
     }
 
@@ -509,6 +511,11 @@ impl Backend {
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
+    async fn view_analyzed_crates(&self) -> LSPResult<String> {
+        self.with_db(lang::inspect::crates::inspect_analyzed_crates).await
+    }
+
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn vfs_provide(
         &self,
         params: ProvideVirtualFileRequest,
@@ -617,7 +624,7 @@ impl TryFrom<String> for ServerCommands {
 
     fn try_from(value: String) -> anyhow::Result<Self> {
         match value.as_str() {
-            "cairo1.reload" => Ok(ServerCommands::Reload),
+            "cairo.reload" => Ok(ServerCommands::Reload),
             _ => bail!("Unrecognized command: {value}"),
         }
     }
@@ -646,7 +653,7 @@ impl LanguageServer for Backend {
                     completion_item: None,
                 }),
                 execute_command_provider: Some(ExecuteCommandOptions {
-                    commands: vec!["cairo1.reload".to_string()],
+                    commands: vec!["cairo.reload".to_string()],
                     work_done_progress_options: Default::default(),
                 }),
                 workspace: Some(WorkspaceServerCapabilities {
