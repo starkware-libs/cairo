@@ -2280,3 +2280,206 @@ error: Trait has no implementation in context: test::MyTrait.
  --> lib.cairo:5:10
 fn foo() {
          ^
+
+//! > ==========================================================================
+
+//! > Associated type bounds.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn bar<+MyTrait, +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>>(
+    _y: MyTrait::ty
+) -> felt252 {
+    _y + 3
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Associated type bounds transitive.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<
+    impl I1: MyTrait,
+    impl I2: MyTrait,
+    +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
+    +core::metaprogramming::TypeEqual<felt252, I1::ty>
+>() -> I2::ty {
+    3_u32
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::felt252", found: "core::integer::u32".
+ --> lib.cairo:9:15
+>() -> I2::ty {
+              ^
+
+//! > ==========================================================================
+
+//! > Associated type bounds conflicts.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<
+    +MyTrait,
+    +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>,
+    +core::metaprogramming::TypeEqual<MyTrait::ty, u32>
+>(
+    _y: MyTrait::ty
+) -> MyTrait::ty {
+    _y
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `core::felt252` and `core::integer::u32`.
+ --> lib.cairo:4:1
+fn bar<
+^*****^
+
+//! > ==========================================================================
+
+//! > Associated type bounds inference based on bounds.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+///TODO(TomerStarkware): remove diagnostic and make it compile without errors.
+fn bar<
+    +MyTrait,
+    +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>,
+    +TraitWithInferredParams<MyTrait::ty>,
+>(
+    _y: MyTrait::ty
+) -> MyTrait::ty {
+    _y + TraitWithInferredParams::<MyTrait::ty>::foo()
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+trait OtherTrait<T> {
+    fn foo() -> T;
+}
+impl OtherImpl of OtherTrait<felt252> {
+    fn foo() -> felt252 {
+        3
+    }
+}
+trait TraitWithInferredParams<T, +OtherTrait<T>> {
+    fn foo() -> T;
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: test::OtherTrait::<_::ty>.
+ --> lib.cairo:19:6
+    +TraitWithInferredParams<MyTrait::ty>,
+     ^*********************^
+
+error: Trait has no implementation in context: test::TraitWithInferredParams::<core::felt252, test::OtherImpl>.
+ --> lib.cairo:23:50
+    _y + TraitWithInferredParams::<MyTrait::ty>::foo()
+                                                 ^*^
+
+//! > ==========================================================================
+
+//! > Associated type bounds, only bound associated types to nother associated types. 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn bar<
+    impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>
+>() -> I1::ty {
+    I1::foo()
+}
+fn foo() {
+    bar::<MyImplu32, MyImplu32>();
+    bar::<MyImplfelt252, MyImplfelt252>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
+impl MyImplu32 of MyTrait {
+    type ty = u32;
+    fn foo() -> Self::ty {
+        3
+    }
+}
+impl MyImplfelt252 of MyTrait {
+    type ty = felt252;
+    fn foo() -> Self::ty {
+        3
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Reimplementing TypeEqual trait. 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+impl I of core::metaprogramming::TypeEqual<u32, felt252>;
+
+//! > expected_diagnostics
+error: Type equals trait should not be re-implemented.
+ --> lib.cairo:1:11
+impl I of core::metaprogramming::TypeEqual<u32, felt252>;
+          ^********************************************^

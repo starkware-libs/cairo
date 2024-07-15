@@ -685,6 +685,8 @@ pub enum CoreTraitContext {
     Ops,
     /// The iterator core library context.
     Iterator,
+    /// The meta programming core library context.
+    MetaProgramming,
 }
 
 /// Given a core library context and trait name, returns [TraitId].
@@ -693,27 +695,36 @@ pub fn get_core_trait(db: &dyn SemanticGroup, context: CoreTraitContext, name: S
         CoreTraitContext::TopLevel => db.core_module(),
         CoreTraitContext::Ops => core_submodule(db, "ops"),
         CoreTraitContext::Iterator => core_submodule(db, "iter"),
+        CoreTraitContext::MetaProgramming => core_submodule(db, "metaprogramming"),
     };
     // This should not fail if the corelib is present.
-    let use_id = extract_matches!(
-        db.module_item_by_name(base_module, name.clone())
-            .unwrap_or_else(|_| panic!(
+    let item_id = db
+        .module_item_by_name(base_module, name.clone())
+        .unwrap_or_else(|_| {
+            panic!(
                 "Core module `{module}` failed to compile.",
                 module = base_module.full_path(db.upcast())
-            ))
-            .unwrap_or_else(|| panic!(
+            )
+        })
+        .unwrap_or_else(|| {
+            panic!(
                 "Core module `{module}` is missing an use item for trait `{name}`.",
                 module = base_module.full_path(db.upcast()),
-            )),
-        ModuleItemId::Use
-    );
-    extract_matches!(
-        db.use_resolved_item(use_id).unwrap_or_else(|_| panic!(
-            "Could not resolve core trait `{module}::{name}`.",
-            module = base_module.full_path(db.upcast()),
-        )),
-        ResolvedGenericItem::Trait
-    )
+            )
+        });
+    match item_id {
+        ModuleItemId::Trait(id) => id,
+        ModuleItemId::Use(use_id) => {
+            extract_matches!(
+                db.use_resolved_item(use_id).unwrap_or_else(|_| panic!(
+                    "Could not resolve core trait `{module}::{name}`.",
+                    module = base_module.full_path(db.upcast()),
+                )),
+                ResolvedGenericItem::Trait
+            )
+        }
+        _ => panic!("Expecting only traits, or uses pointing to traits."),
+    }
 }
 
 /// Given a core library context, trait name and fn name, returns [TraitFunctionId].
