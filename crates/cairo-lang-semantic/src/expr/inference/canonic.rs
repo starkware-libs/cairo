@@ -205,6 +205,7 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
         *value = TypeLongId::Var(TypeVar {
             id: *self.to_canonic.type_var_mapping.entry(var.id).or_insert(next_id),
             inference_id: InferenceId::Canonical,
+            is_solve_required: var.is_solve_required,
         });
         Ok(RewriteResult::Modified)
     }
@@ -419,7 +420,11 @@ impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
             .get(&var.id)
             .copied()
             .ok_or(MapperError(InferenceVar::Type(var.id)))?;
-        *value = TypeLongId::Var(TypeVar { id, inference_id: self.mapping.target_inference_id });
+        *value = TypeLongId::Var(TypeVar {
+            id,
+            inference_id: self.mapping.target_inference_id,
+            is_solve_required: var.is_solve_required,
+        });
         Ok(RewriteResult::Modified)
     }
 }

@@ -108,6 +108,15 @@ impl<'db> InferenceConform for Inference<'db> {
                     }
                 }
             }
+            TypeLongId::ImplType(impl_type) => {
+                if let Some(ty) = self.impl_type_bounds.get(&impl_type) {
+                    return self.conform_ty_ex(
+                        ty0,
+                        TypeLongId::Var(*ty).intern(self.db),
+                        ty0_is_self,
+                    );
+                }
+            }
             _ => {}
         }
         let n_snapshots = 0;
@@ -170,7 +179,14 @@ impl<'db> InferenceConform for Inference<'db> {
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
             TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, n_snapshots)),
-            TypeLongId::ImplType(_) => {
+            TypeLongId::ImplType(impl_type) => {
+                if let Some(ty) = self.impl_type_bounds.get(&impl_type) {
+                    return self.conform_ty_ex(
+                        TypeLongId::Var(*ty).intern(self.db),
+                        ty1,
+                        ty0_is_self,
+                    );
+                }
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
             TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),

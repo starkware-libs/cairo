@@ -2280,3 +2280,95 @@ error: Trait has no implementation in context: test::MyTrait.
  --> lib.cairo:5:10
 fn foo() {
          ^
+
+//! > ==========================================================================
+
+//! > Associated type bounds.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn bar<+MyTrait, +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>>(
+    _y: MyTrait::ty
+) -> felt252 {
+    _y + 3
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Associated type bounds2.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<
+    impl I1: MyTrait,
+    impl I2: MyTrait,
+    +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
+    +core::metaprogramming::TypeEqual<felt252, I1::ty>
+>(
+    _y: I1::ty
+) -> I2::ty {
+    _y + 3_u32
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u32".
+ --> lib.cairo:12:10
+    _y + 3_u32
+         ^***^
+
+//! > ==========================================================================
+
+//! > Associated type bounds conflicts.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<
+    +MyTrait,
+    +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>,
+    +core::metaprogramming::TypeEqual<MyTrait::ty, u32>
+>(
+    _y: MyTrait::ty
+) -> MyTrait::ty {
+    _y
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `core::felt252` and `core::integer::u32`.
+ --> lib.cairo:4:1
+fn bar<
+^*****^

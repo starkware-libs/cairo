@@ -369,6 +369,8 @@ pub mod testing;
 
 /// Metaprogramming.
 pub mod metaprogramming;
+use metaprogramming::TypeEqual;
+
 
 /// Preludes.
 mod prelude;
