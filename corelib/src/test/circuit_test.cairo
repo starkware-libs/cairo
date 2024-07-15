@@ -96,5 +96,6 @@ fn test_fill_inputs_loop() {
         circuit_inputs = circuit_inputs.next(input);
     };
 
-    circuit_inputs.done();
+    let modulus = TryInto::<_, CircuitModulus>::try_into([55, 0, 0, 0]).unwrap();
+    circuit_inputs.done().eval(modulus).unwrap();
 }

@@ -129,14 +129,19 @@ pub enum AddInputResult<C> {
 }
 
 mod internal {
+    use core::traits::PanicDestructForDestruct;
     impl AddInputResultDrop<C> of Drop<super::AddInputResult<C>>;
-    pub impl PanicDestructAddInputResult<C> of PanicDestruct<super::AddInputResult<C>> {
-        // Inlining to make sure possibly huge `C` won't be in a user function name.
-        #[inline(always)]
-        fn panic_destruct(self: super::AddInputResult<C>, ref panic: core::panics::Panic) nopanic {}
-    }
+    impl CircuitDataDrop<C> of Drop<super::CircuitData<C>>;
+    impl CircuitInputAccumulatorDrop<C> of Drop<super::CircuitInputAccumulator<C>>;
+
+    pub impl PanicDestructAddInputResult<C> = PanicDestructForDestruct<super::AddInputResult<C>>;
+    pub impl PanicDestructCircuitData<C> = PanicDestructForDestruct<super::CircuitData<C>>;
+    pub impl PanicDestructCircuitInputAccumulator<C> =
+        PanicDestructForDestruct<super::CircuitInputAccumulator<C>>;
 }
 impl PanicDestructAddInputResult<C> = internal::PanicDestructAddInputResult<C>;
+impl PanicDestructCircuitData<C> = internal::PanicDestructCircuitData<C>;
+impl PanicDestructCircuitInputAccumulator<C> = internal::PanicDestructCircuitInputAccumulator<C>;
 
 /// Type for accumulating inputs into the circuit instance's data.
 extern type CircuitInputAccumulator<C>;
@@ -156,9 +161,7 @@ extern type CircuitPartialOutputs<C>;
 /// A type representing a circuit descriptor.
 extern type CircuitDescriptor<C>;
 
-impl CircuitDataDrop<C> of Drop<CircuitData<C>>;
 impl CircuitDescriptorDrop<C> of Drop<CircuitDescriptor<C>>;
-impl CircuitInputAccumulatorDrop<C> of Drop<CircuitInputAccumulator<C>>;
 impl CircuitModulusDrop of Drop<CircuitModulus>;
 impl CircuitOutputsDrop<C> of Drop<CircuitOutputs<C>>;
 impl CircuitPartialOutputsDrop<C> of Drop<CircuitPartialOutputs<C>>;
