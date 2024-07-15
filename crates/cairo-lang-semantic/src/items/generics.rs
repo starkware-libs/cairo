@@ -17,17 +17,19 @@ use syntax::node::TypedStablePtr;
 use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId, ImplLongId};
 use super::resolve_trait_path;
+use crate::corelib::{get_core_trait, CoreTraitContext};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
 use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::InferenceId;
 use crate::lookup_item::LookupItemEx;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::{resolve_type, TypeHead};
-use crate::{ConcreteTraitId, SemanticDiagnostic, TypeId, TypeLongId};
+use crate::{ConcreteTraitId, ConcreteTraitLongId, SemanticDiagnostic, TypeId, TypeLongId};
 
 /// Generic argument.
 /// A value assigned to a generic parameter.
@@ -391,7 +393,38 @@ pub fn semantic_generic_params(
             })
             .collect::<Result<Vec<_>, _>>(),
     };
-    res
+    // Conform TypeEqual constraints for Associated type bounds.
+    let inference = &mut resolver.inference();
+    let res = res?;
+    for param in res.iter() {
+        let GenericParam::Impl(imp) = param else {
+            continue;
+        };
+        let Ok(concrete_trait_id) = imp.concrete_trait else {
+            continue;
+        };
+        let ConcreteTraitLongId { trait_id, generic_args } = concrete_trait_id.lookup_intern(db);
+        if trait_id == get_core_trait(db, CoreTraitContext::MetaProgramming, "TypeEqual".into()) {
+            let (GenericArgumentId::Type(ty0), GenericArgumentId::Type(ty1)) =
+                (generic_args[0], generic_args[1])
+            else {
+                unreachable!("TypeEqual should have 2 arguments");
+            };
+            let ty0 = if let TypeLongId::ImplType(impl_type) = ty0.lookup_intern(db) {
+                inference.impl_type_assignment(impl_type)
+            } else {
+                ty0
+            };
+            let ty1 = if let TypeLongId::ImplType(impl_type) = ty1.lookup_intern(db) {
+                inference.impl_type_assignment(impl_type)
+            } else {
+                ty1
+            };
+            inference.conform_ty(ty0, ty1).ok();
+        }
+    }
+    inference.finalize_impl_type_bounds();
+    Ok(res)
 }
 
 /// Returns true if negative impls are enabled in the module.

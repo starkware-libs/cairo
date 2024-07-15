@@ -817,7 +817,8 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_var_free(db) && size.is_var_free(db)
         }
-        TypeLongId::ImplType(impl_type) => impl_type.impl_id().is_var_free(db),
+        // ImplType need to be rewritten if they have bounds constraints.
+        TypeLongId::ImplType(_) => false,
         TypeLongId::Closure(closure) => {
             closure.param_tys.iter().all(|param| param.is_var_free(db))
                 && closure.ret_ty.is_var_free(db)
