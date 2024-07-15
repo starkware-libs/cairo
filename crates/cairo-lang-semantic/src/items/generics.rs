@@ -17,17 +17,19 @@ use syntax::node::TypedStablePtr;
 use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId, ImplLongId};
 use super::resolve_trait_path;
+use crate::corelib::{get_core_trait, CoreTraitContext};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
 use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::InferenceId;
 use crate::lookup_item::LookupItemEx;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::{resolve_type, TypeHead};
-use crate::{ConcreteTraitId, SemanticDiagnostic, TypeId, TypeLongId};
+use crate::{ConcreteTraitId, ConcreteTraitLongId, SemanticDiagnostic, TypeId, TypeLongId};
 
 /// Generic argument.
 /// A value assigned to a generic parameter.
