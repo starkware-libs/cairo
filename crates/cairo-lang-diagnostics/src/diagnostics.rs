@@ -67,6 +67,22 @@ impl DiagnosticLocation {
         let (file_id, span) = get_originating_location(db, self.file_id, self.span);
         Self { file_id, span }
     }
+
+    /// Helper function to format the location of a diagnostic.
+    pub fn fmt_location(&self, f: &mut fmt::Formatter<'_>, db: &dyn FilesGroup) -> fmt::Result {
+        let user_location = self.user_location(db);
+        let file_path = user_location.file_id.full_path(db);
+        let start = match user_location.span.start.position_in_file(db, user_location.file_id) {
+            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+            None => "?".into(),
+        };
+
+        let end = match user_location.span.end.position_in_file(db, user_location.file_id) {
+            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+            None => "?".into(),
+        };
+        write!(f, "{file_path}:{start}: {end}")
+    }
 }
 
 impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {

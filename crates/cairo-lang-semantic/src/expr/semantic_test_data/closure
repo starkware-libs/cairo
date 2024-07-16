@@ -6,8 +6,8 @@ test_expr_semantics(expect_diagnostics: *)
 //! > module_code
 
 //! > expr_code
-|| {
-    3
+|a| {
+    a + 3
 }
 
 //! > expected_semantics
@@ -17,9 +17,25 @@ ExprClosure(
             ExprBlock {
                 statements: [],
                 tail: Some(
-                    Literal(
-                        ExprLiteral {
-                            value: 3,
+                    FunctionCall(
+                        ExprFunctionCall {
+                            function: core::Felt252Add::add,
+                            args: [
+                                Value(
+                                    Var(
+                                        ParamId(test::a),
+                                    ),
+                                ),
+                                Value(
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::felt252,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            coupon_arg: None,
                             ty: core::felt252,
                         },
                     ),
@@ -27,7 +43,10 @@ ExprClosure(
                 ty: core::felt252,
             },
         ),
-        ty: test::test_func[Id { idx: 1 }],
+        param_ids: [
+            ParamId(test::a),
+        ],
+        ty: {closure@lib.cairo:2:1: 2:4},
     },
 )
 
