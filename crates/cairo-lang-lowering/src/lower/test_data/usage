@@ -191,3 +191,41 @@ Block 8:27:
   Changes:
   Snapshot_Usage: ParamId(test::a)::b,
   Introductions: LocalVarId(test::c), LocalVarId(test::only_used_in_condition),
+
+//! > ==========================================================================
+
+//! > Test closure usage
+
+//! > test_runner_name
+test_function_usage
+
+//! > function
+fn foo(a: u32) {
+    |b: u32| {
+        a + b
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > usage
+Block 1:7:
+  Usage: ParamId(test::a),
+  Changes:
+  Snapshot_Usage:
+  Introductions:
+Closure 1:4:
+  Usage: ParamId(test::a),
+  Changes:
+  Snapshot_Usage:
+  Introductions:
+Block 0:15:
+  Usage:
+  Changes:
+  Snapshot_Usage:
+  Introductions:
