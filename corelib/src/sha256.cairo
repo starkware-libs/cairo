@@ -154,4 +154,8 @@ fn append_zeros(ref arr: Array<u32>, count: felt252) {
         return;
     }
     arr.append(0);
+    if count == 15 {
+        return;
+    }
+    arr.append(0);
 }
