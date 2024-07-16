@@ -368,7 +368,7 @@ impl StorageNodeDeref<T, +StorageNode<T>> of core::ops::Deref<StoragePath<T>> {
 /// A mutable version of `StorageNode`, works the same way, but on `Mutable<T>`.
 pub trait MutableStorageNode<T> {
     type NodeType;
-    fn mutable_storage_node(self: StoragePath<Mutable<T>>) -> Self::NodeType;
+    fn storage_node_mut(self: StoragePath<Mutable<T>>) -> Self::NodeType;
 }
 
 /// This makes the storage node members directly accessible from a path to the parent struct.
@@ -377,7 +377,7 @@ impl MutableStorageNodeDeref<
 > of core::ops::Deref<StoragePath<Mutable<T>>> {
     type Target = MutableStorageNode::<T>::NodeType;
     fn deref(self: StoragePath<Mutable<T>>) -> Self::Target {
-        self.mutable_storage_node()
+        self.storage_node_mut()
     }
 }
 
@@ -404,7 +404,7 @@ pub trait MutableSubPointers<T> {
     /// The type of the storage pointers, generated for the struct T.
     type SubPointersType;
     /// Creates a sub pointers struct for the given storage pointer to a struct T.
-    fn mutable_sub_pointers(self: StoragePointer<Mutable<T>>) -> Self::SubPointersType;
+    fn sub_pointers_mut(self: StoragePointer<Mutable<T>>) -> Self::SubPointersType;
 }
 
 /// This makes the sub-pointers members directly accessible from a pointer to the parent struct.
@@ -413,7 +413,7 @@ impl MutableSubPointersDeref<
 > of core::ops::Deref<StoragePointer<Mutable<T>>> {
     type Target = MutableSubPointers::<T>::SubPointersType;
     fn deref(self: StoragePointer<Mutable<T>>) -> Self::Target {
-        self.mutable_sub_pointers()
+        self.sub_pointers_mut()
     }
 }
 
@@ -622,7 +622,7 @@ struct MutableU256SubPointers {
 
 impl MutableU256SubPointersImpl of starknet::storage::MutableSubPointers<u256> {
     type SubPointersType = MutableU256SubPointers;
-    fn mutable_sub_pointers(
+    fn sub_pointers_mut(
         self: starknet::storage::StoragePointer<Mutable<u256>>
     ) -> MutableU256SubPointers {
         let base_address = self.address;

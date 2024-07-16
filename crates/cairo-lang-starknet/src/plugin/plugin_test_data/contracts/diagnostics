@@ -2891,7 +2891,7 @@ struct MutableInterfaceTraitDispatcherSubPointers {
 }
 impl MutableInterfaceTraitDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<InterfaceTraitDispatcher> {
 type SubPointersType = MutableInterfaceTraitDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceTraitDispatcher>>) -> MutableInterfaceTraitDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceTraitDispatcher>>) -> MutableInterfaceTraitDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -2985,7 +2985,7 @@ struct MutableInterfaceTraitLibraryDispatcherSubPointers {
 }
 impl MutableInterfaceTraitLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<InterfaceTraitLibraryDispatcher> {
 type SubPointersType = MutableInterfaceTraitLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceTraitLibraryDispatcher>>) -> MutableInterfaceTraitLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceTraitLibraryDispatcher>>) -> MutableInterfaceTraitLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -3079,7 +3079,7 @@ struct MutableInterfaceTraitSafeLibraryDispatcherSubPointers {
 }
 impl MutableInterfaceTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<InterfaceTraitSafeLibraryDispatcher> {
 type SubPointersType = MutableInterfaceTraitSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceTraitSafeLibraryDispatcher>>) -> MutableInterfaceTraitSafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceTraitSafeLibraryDispatcher>>) -> MutableInterfaceTraitSafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -3173,7 +3173,7 @@ struct MutableInterfaceTraitSafeDispatcherSubPointers {
 }
 impl MutableInterfaceTraitSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<InterfaceTraitSafeDispatcher> {
 type SubPointersType = MutableInterfaceTraitSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceTraitSafeDispatcher>>) -> MutableInterfaceTraitSafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceTraitSafeDispatcher>>) -> MutableInterfaceTraitSafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -4154,7 +4154,7 @@ struct MutableIContractDispatcherSubPointers {
 }
 impl MutableIContractDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractDispatcher> {
 type SubPointersType = MutableIContractDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractDispatcher>>) -> MutableIContractDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractDispatcher>>) -> MutableIContractDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -4248,7 +4248,7 @@ struct MutableIContractLibraryDispatcherSubPointers {
 }
 impl MutableIContractLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractLibraryDispatcher> {
 type SubPointersType = MutableIContractLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractLibraryDispatcher>>) -> MutableIContractLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractLibraryDispatcher>>) -> MutableIContractLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -4342,7 +4342,7 @@ struct MutableIContractSafeLibraryDispatcherSubPointers {
 }
 impl MutableIContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractSafeLibraryDispatcher> {
 type SubPointersType = MutableIContractSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeLibraryDispatcher>>) -> MutableIContractSafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeLibraryDispatcher>>) -> MutableIContractSafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -4436,7 +4436,7 @@ struct MutableIContractSafeDispatcherSubPointers {
 }
 impl MutableIContractSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractSafeDispatcher> {
 type SubPointersType = MutableIContractSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeDispatcher>>) -> MutableIContractSafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeDispatcher>>) -> MutableIContractSafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -4711,7 +4711,7 @@ struct MutableIContractDispatcherSubPointers {
 }
 impl MutableIContractDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractDispatcher> {
 type SubPointersType = MutableIContractDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractDispatcher>>) -> MutableIContractDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractDispatcher>>) -> MutableIContractDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -4805,7 +4805,7 @@ struct MutableIContractLibraryDispatcherSubPointers {
 }
 impl MutableIContractLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractLibraryDispatcher> {
 type SubPointersType = MutableIContractLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractLibraryDispatcher>>) -> MutableIContractLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractLibraryDispatcher>>) -> MutableIContractLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -4899,7 +4899,7 @@ struct MutableIContractSafeLibraryDispatcherSubPointers {
 }
 impl MutableIContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractSafeLibraryDispatcher> {
 type SubPointersType = MutableIContractSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeLibraryDispatcher>>) -> MutableIContractSafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeLibraryDispatcher>>) -> MutableIContractSafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -4993,7 +4993,7 @@ struct MutableIContractSafeDispatcherSubPointers {
 }
 impl MutableIContractSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractSafeDispatcher> {
 type SubPointersType = MutableIContractSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeDispatcher>>) -> MutableIContractSafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeDispatcher>>) -> MutableIContractSafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -5234,7 +5234,7 @@ struct MutableIContractDispatcherSubPointers {
 }
 impl MutableIContractDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractDispatcher> {
 type SubPointersType = MutableIContractDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractDispatcher>>) -> MutableIContractDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractDispatcher>>) -> MutableIContractDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -5328,7 +5328,7 @@ struct MutableIContractLibraryDispatcherSubPointers {
 }
 impl MutableIContractLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractLibraryDispatcher> {
 type SubPointersType = MutableIContractLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractLibraryDispatcher>>) -> MutableIContractLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractLibraryDispatcher>>) -> MutableIContractLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -5422,7 +5422,7 @@ struct MutableIContractSafeLibraryDispatcherSubPointers {
 }
 impl MutableIContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractSafeLibraryDispatcher> {
 type SubPointersType = MutableIContractSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeLibraryDispatcher>>) -> MutableIContractSafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeLibraryDispatcher>>) -> MutableIContractSafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -5516,7 +5516,7 @@ struct MutableIContractSafeDispatcherSubPointers {
 }
 impl MutableIContractSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractSafeDispatcher> {
 type SubPointersType = MutableIContractSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeDispatcher>>) -> MutableIContractSafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeDispatcher>>) -> MutableIContractSafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -5764,7 +5764,7 @@ struct MutableIContractDispatcherSubPointers {
 }
 impl MutableIContractDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractDispatcher> {
 type SubPointersType = MutableIContractDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractDispatcher>>) -> MutableIContractDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractDispatcher>>) -> MutableIContractDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -5858,7 +5858,7 @@ struct MutableIContractLibraryDispatcherSubPointers {
 }
 impl MutableIContractLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractLibraryDispatcher> {
 type SubPointersType = MutableIContractLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractLibraryDispatcher>>) -> MutableIContractLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractLibraryDispatcher>>) -> MutableIContractLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -5952,7 +5952,7 @@ struct MutableIContractSafeLibraryDispatcherSubPointers {
 }
 impl MutableIContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractSafeLibraryDispatcher> {
 type SubPointersType = MutableIContractSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeLibraryDispatcher>>) -> MutableIContractSafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeLibraryDispatcher>>) -> MutableIContractSafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -6046,7 +6046,7 @@ struct MutableIContractSafeDispatcherSubPointers {
 }
 impl MutableIContractSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IContractSafeDispatcher> {
 type SubPointersType = MutableIContractSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeDispatcher>>) -> MutableIContractSafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeDispatcher>>) -> MutableIContractSafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -6540,7 +6540,7 @@ struct MutableInterfaceDispatcherSubPointers {
 }
 impl MutableInterfaceDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<InterfaceDispatcher> {
 type SubPointersType = MutableInterfaceDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceDispatcher>>) -> MutableInterfaceDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceDispatcher>>) -> MutableInterfaceDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -6634,7 +6634,7 @@ struct MutableInterfaceLibraryDispatcherSubPointers {
 }
 impl MutableInterfaceLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<InterfaceLibraryDispatcher> {
 type SubPointersType = MutableInterfaceLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceLibraryDispatcher>>) -> MutableInterfaceLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceLibraryDispatcher>>) -> MutableInterfaceLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -6728,7 +6728,7 @@ struct MutableInterfaceSafeLibraryDispatcherSubPointers {
 }
 impl MutableInterfaceSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<InterfaceSafeLibraryDispatcher> {
 type SubPointersType = MutableInterfaceSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceSafeLibraryDispatcher>>) -> MutableInterfaceSafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceSafeLibraryDispatcher>>) -> MutableInterfaceSafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -6822,7 +6822,7 @@ struct MutableInterfaceSafeDispatcherSubPointers {
 }
 impl MutableInterfaceSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<InterfaceSafeDispatcher> {
 type SubPointersType = MutableInterfaceSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceSafeDispatcher>>) -> MutableInterfaceSafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceSafeDispatcher>>) -> MutableInterfaceSafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -7292,7 +7292,7 @@ struct MutableInterfaceDispatcherSubPointers {
 }
 impl MutableInterfaceDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<InterfaceDispatcher> {
 type SubPointersType = MutableInterfaceDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceDispatcher>>) -> MutableInterfaceDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceDispatcher>>) -> MutableInterfaceDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -7386,7 +7386,7 @@ struct MutableInterfaceLibraryDispatcherSubPointers {
 }
 impl MutableInterfaceLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<InterfaceLibraryDispatcher> {
 type SubPointersType = MutableInterfaceLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceLibraryDispatcher>>) -> MutableInterfaceLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceLibraryDispatcher>>) -> MutableInterfaceLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -7480,7 +7480,7 @@ struct MutableInterfaceSafeLibraryDispatcherSubPointers {
 }
 impl MutableInterfaceSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<InterfaceSafeLibraryDispatcher> {
 type SubPointersType = MutableInterfaceSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceSafeLibraryDispatcher>>) -> MutableInterfaceSafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceSafeLibraryDispatcher>>) -> MutableInterfaceSafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -7574,7 +7574,7 @@ struct MutableInterfaceSafeDispatcherSubPointers {
 }
 impl MutableInterfaceSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<InterfaceSafeDispatcher> {
 type SubPointersType = MutableInterfaceSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceSafeDispatcher>>) -> MutableInterfaceSafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceSafeDispatcher>>) -> MutableInterfaceSafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -8713,7 +8713,7 @@ struct MutableComp3TraitDispatcherSubPointers {
 }
 impl MutableComp3TraitDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Comp3TraitDispatcher> {
 type SubPointersType = MutableComp3TraitDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitDispatcher>>) -> MutableComp3TraitDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitDispatcher>>) -> MutableComp3TraitDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -8807,7 +8807,7 @@ struct MutableComp3TraitLibraryDispatcherSubPointers {
 }
 impl MutableComp3TraitLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Comp3TraitLibraryDispatcher> {
 type SubPointersType = MutableComp3TraitLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitLibraryDispatcher>>) -> MutableComp3TraitLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitLibraryDispatcher>>) -> MutableComp3TraitLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -8901,7 +8901,7 @@ struct MutableComp3TraitSafeLibraryDispatcherSubPointers {
 }
 impl MutableComp3TraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Comp3TraitSafeLibraryDispatcher> {
 type SubPointersType = MutableComp3TraitSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitSafeLibraryDispatcher>>) -> MutableComp3TraitSafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitSafeLibraryDispatcher>>) -> MutableComp3TraitSafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -8995,7 +8995,7 @@ struct MutableComp3TraitSafeDispatcherSubPointers {
 }
 impl MutableComp3TraitSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Comp3TraitSafeDispatcher> {
 type SubPointersType = MutableComp3TraitSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitSafeDispatcher>>) -> MutableComp3TraitSafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitSafeDispatcher>>) -> MutableComp3TraitSafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -9922,7 +9922,7 @@ struct MutableComp3TraitDispatcherSubPointers {
 }
 impl MutableComp3TraitDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Comp3TraitDispatcher> {
 type SubPointersType = MutableComp3TraitDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitDispatcher>>) -> MutableComp3TraitDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitDispatcher>>) -> MutableComp3TraitDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -10016,7 +10016,7 @@ struct MutableComp3TraitLibraryDispatcherSubPointers {
 }
 impl MutableComp3TraitLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Comp3TraitLibraryDispatcher> {
 type SubPointersType = MutableComp3TraitLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitLibraryDispatcher>>) -> MutableComp3TraitLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitLibraryDispatcher>>) -> MutableComp3TraitLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -10110,7 +10110,7 @@ struct MutableComp3TraitSafeLibraryDispatcherSubPointers {
 }
 impl MutableComp3TraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Comp3TraitSafeLibraryDispatcher> {
 type SubPointersType = MutableComp3TraitSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitSafeLibraryDispatcher>>) -> MutableComp3TraitSafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitSafeLibraryDispatcher>>) -> MutableComp3TraitSafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -10204,7 +10204,7 @@ struct MutableComp3TraitSafeDispatcherSubPointers {
 }
 impl MutableComp3TraitSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<Comp3TraitSafeDispatcher> {
 type SubPointersType = MutableComp3TraitSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitSafeDispatcher>>) -> MutableComp3TraitSafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Comp3TraitSafeDispatcher>>) -> MutableComp3TraitSafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -10984,7 +10984,7 @@ struct MutableContractTraitDispatcherSubPointers {
 }
 impl MutableContractTraitDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ContractTraitDispatcher> {
 type SubPointersType = MutableContractTraitDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitDispatcher>>) -> MutableContractTraitDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitDispatcher>>) -> MutableContractTraitDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -11078,7 +11078,7 @@ struct MutableContractTraitLibraryDispatcherSubPointers {
 }
 impl MutableContractTraitLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ContractTraitLibraryDispatcher> {
 type SubPointersType = MutableContractTraitLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitLibraryDispatcher>>) -> MutableContractTraitLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitLibraryDispatcher>>) -> MutableContractTraitLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -11172,7 +11172,7 @@ struct MutableContractTraitSafeLibraryDispatcherSubPointers {
 }
 impl MutableContractTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ContractTraitSafeLibraryDispatcher> {
 type SubPointersType = MutableContractTraitSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitSafeLibraryDispatcher>>) -> MutableContractTraitSafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitSafeLibraryDispatcher>>) -> MutableContractTraitSafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -11266,7 +11266,7 @@ struct MutableContractTraitSafeDispatcherSubPointers {
 }
 impl MutableContractTraitSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ContractTraitSafeDispatcher> {
 type SubPointersType = MutableContractTraitSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitSafeDispatcher>>) -> MutableContractTraitSafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitSafeDispatcher>>) -> MutableContractTraitSafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -11792,7 +11792,7 @@ struct MutableContractTraitDispatcherSubPointers {
 }
 impl MutableContractTraitDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ContractTraitDispatcher> {
 type SubPointersType = MutableContractTraitDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitDispatcher>>) -> MutableContractTraitDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitDispatcher>>) -> MutableContractTraitDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -11886,7 +11886,7 @@ struct MutableContractTraitLibraryDispatcherSubPointers {
 }
 impl MutableContractTraitLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ContractTraitLibraryDispatcher> {
 type SubPointersType = MutableContractTraitLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitLibraryDispatcher>>) -> MutableContractTraitLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitLibraryDispatcher>>) -> MutableContractTraitLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -11980,7 +11980,7 @@ struct MutableContractTraitSafeLibraryDispatcherSubPointers {
 }
 impl MutableContractTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ContractTraitSafeLibraryDispatcher> {
 type SubPointersType = MutableContractTraitSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitSafeLibraryDispatcher>>) -> MutableContractTraitSafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitSafeLibraryDispatcher>>) -> MutableContractTraitSafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -12074,7 +12074,7 @@ struct MutableContractTraitSafeDispatcherSubPointers {
 }
 impl MutableContractTraitSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ContractTraitSafeDispatcher> {
 type SubPointersType = MutableContractTraitSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitSafeDispatcher>>) -> MutableContractTraitSafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitSafeDispatcher>>) -> MutableContractTraitSafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -12831,7 +12831,7 @@ struct MutableContractTraitDispatcherSubPointers {
 }
 impl MutableContractTraitDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ContractTraitDispatcher> {
 type SubPointersType = MutableContractTraitDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitDispatcher>>) -> MutableContractTraitDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitDispatcher>>) -> MutableContractTraitDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -12925,7 +12925,7 @@ struct MutableContractTraitLibraryDispatcherSubPointers {
 }
 impl MutableContractTraitLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ContractTraitLibraryDispatcher> {
 type SubPointersType = MutableContractTraitLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitLibraryDispatcher>>) -> MutableContractTraitLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitLibraryDispatcher>>) -> MutableContractTraitLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -13019,7 +13019,7 @@ struct MutableContractTraitSafeLibraryDispatcherSubPointers {
 }
 impl MutableContractTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ContractTraitSafeLibraryDispatcher> {
 type SubPointersType = MutableContractTraitSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitSafeLibraryDispatcher>>) -> MutableContractTraitSafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitSafeLibraryDispatcher>>) -> MutableContractTraitSafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -13113,7 +13113,7 @@ struct MutableContractTraitSafeDispatcherSubPointers {
 }
 impl MutableContractTraitSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ContractTraitSafeDispatcher> {
 type SubPointersType = MutableContractTraitSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitSafeDispatcher>>) -> MutableContractTraitSafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ContractTraitSafeDispatcher>>) -> MutableContractTraitSafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
