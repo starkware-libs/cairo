@@ -33,3 +33,32 @@ impl BoundedIntPartialEq<
 
 impl BoundedIntDebug<const MIN: felt252, const MAX: felt252> =
     core::fmt::into_felt252_based::DebugImpl<BoundedInt<MIN, MAX>>;
+
+pub(crate) extern type BoundedIntGuarantee<BoundedIntType>;
+pub(crate) extern fn bounded_int_into_guarantee<BoundedIntType>(
+    value: BoundedIntType
+) -> BoundedIntGuarantee<BoundedIntType> nopanic;
+
+trait MinusOne<const VALUE: felt252> {
+    const VALUE: felt252;
+}
+impl MinusOneU96 of MinusOne<0x1000000000000000000000000> {
+    const VALUE: felt252 = 0xffffffffffffffffffffffff;
+}
+
+pub(crate) enum ConstraitFelt252Result<const BOUNDARY_MINUS_1: felt252, const BOUNDARY: felt252> {
+    Under: BoundedIntGuarantee<BoundedInt<0, BOUNDARY_MINUS_1>>,
+    Over: BoundedIntGuarantee<
+        BoundedInt<BOUNDARY, 0x800000000000011000000000000000000000000000000000000000000000000>
+    >,
+}
+
+pub(crate) extern fn bounded_int_felt252_constrain<
+    const BOUNDARY: felt252, impl BoundaryMinusOne: MinusOne<BOUNDARY>,
+>(
+    value: felt252
+) -> ConstraitFelt252Result<BoundaryMinusOne::VALUE, BOUNDARY> nopanic;
+
+pub(crate) extern fn bounded_int_verify_guarantee<BoundedIntType>(
+    guarantee: BoundedIntGuarantee<BoundedIntType>
+) implicits(RangeCheck) nopanic;
