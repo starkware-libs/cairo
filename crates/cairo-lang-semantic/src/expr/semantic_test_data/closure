@@ -27,7 +27,9 @@ ExprClosure(
                 ty: core::felt252,
             },
         ),
-        ty: test::test_func[Id { idx: 1 }],
+        ty: {closure@lib.cairo:2:1: 2:3},
+        params: [],
+        ret_ty: core::felt252,
     },
 )
 

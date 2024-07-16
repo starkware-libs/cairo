@@ -1,4 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, NamedLanguageElementId,
     StructId, TraitTypeId,
@@ -31,9 +32,7 @@ use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstV
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
-use crate::{
-    semantic, semantic_object_for_id, ConcreteTraitId, ExprId, FunctionId, GenericArgumentId,
-};
+use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId, GenericArgumentId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId {
@@ -145,11 +144,7 @@ impl TypeLongId {
                 )
             }
             TypeLongId::Closure(closure) => {
-                let containing_function = closure
-                    .containing_function
-                    .map(|function_id| function_id.full_name(db))
-                    .unwrap_or("missing".into());
-                format!("{}[{:?}]", containing_function, closure.body_id)
+                format!("{{closure@{:?}}}", closure.wrapper_location.debug(def_db))
             }
         }
     }
@@ -404,13 +399,9 @@ impl ConcreteExternTypeId {
 /// A type id of a closure function.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ClosureTypeLongId {
-    /// The function containing the closure.
-    /// It is an Error if we do not have the function id of the containing function (for example,
-    /// if there is a semantic error or the closure is defined in global context).
-    pub containing_function: Maybe<FunctionId>,
-    pub body_id: ExprId,
-    pub params: Vec<TypeId>,
-    pub ret_ty: TypeId,
+    /// Every closure has a unique type that is based on the stable location of its wrapper.
+    #[dont_rewrite]
+    pub wrapper_location: StableLocation,
 }
 
 /// An impl item of kind type.
@@ -806,14 +797,7 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_fully_concrete(db) && size.is_fully_concrete(db)
         }
-        TypeLongId::Closure(closure) => {
-            let Ok(function_id) = closure.containing_function else {
-                return true;
-            };
-            function_id.lookup_intern(db).function.generic_args.is_empty()
-                && closure.params.iter().all(|param| param.is_fully_concrete(db))
-                && closure.ret_ty.is_fully_concrete(db)
-        }
+        TypeLongId::Closure(_) => true,
     }
 }
 
@@ -829,10 +813,7 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
             type_id.is_var_free(db) && size.is_var_free(db)
         }
         TypeLongId::ImplType(impl_type) => impl_type.impl_id().is_var_free(db),
-        TypeLongId::Closure(closure) => {
-            closure.params.iter().all(|param| param.is_var_free(db))
-                && closure.ret_ty.is_var_free(db)
-        }
+        TypeLongId::Closure(_) => true,
     }
 }
 
