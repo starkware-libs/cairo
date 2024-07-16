@@ -1,0 +1,22 @@
+//! > Closure
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: felt252) {
+    || {
+        a
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:2:5
+    || {
+    ^**^
