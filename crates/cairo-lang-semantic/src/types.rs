@@ -255,15 +255,26 @@ impl ConcreteTypeId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         // TODO(spapini): Format generics.
         let generic_type_format = self.generic_type(db).format(db.upcast());
-        let generic_args = self.generic_args(db);
-        if generic_args.is_empty() {
-            generic_type_format
+        let mut generic_args = self.generic_args(db).into_iter();
+        if let Some(first) = generic_args.next() {
+            // Soft limit for the number of chars in the formatted type.
+            const CHARS_BOUND: usize = 500;
+            let mut f = generic_type_format;
+            f.push_str("::<");
+            f.push_str(&first.format(db));
+            for arg in generic_args {
+                // If the formatted type is becoming too long, stop adding more arguments.
+                if f.len() > CHARS_BOUND {
+                    f.push_str(", ...");
+                    break;
+                }
+                f.push_str(", ");
+                f.push_str(&arg.format(db));
+            }
+            f.push('>');
+            f
         } else {
-            format!(
-                "{}::<{}>",
-                generic_type_format,
-                generic_args.iter().map(|arg| arg.format(db)).join(", ")
-            )
+            generic_type_format
         }
     }
 
