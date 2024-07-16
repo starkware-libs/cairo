@@ -32,6 +32,7 @@ cairo_lang_test_utils::test_file_test!(
         attributes: "attributes",
         constant: "constant",
         constructor: "constructor",
+        closure: "closure",
         coupon: "coupon",
         enum_: "enum",
         error_propagate: "error_propagate",
