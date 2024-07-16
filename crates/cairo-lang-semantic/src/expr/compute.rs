@@ -9,6 +9,7 @@ use std::sync::Arc;
 use ast::PathSegment;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::validate_attributes_flat;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, MemberId,
     NamedLanguageElementId, TraitFunctionId, TraitId, VarId,
@@ -1454,8 +1455,7 @@ fn compute_expr_closure_semantic(
                 None,
                 &mut new_ctx.environment,
             )
-            .iter()
-            .map(|param| param.ty)
+            .into_iter()
             .collect()
         } else {
             vec![]
@@ -1487,17 +1487,15 @@ fn compute_expr_closure_semantic(
         }
         (params, ret_ty, body)
     });
-    let function_id = match ctx.function_id {
-        ContextFunction::Global => Err(ctx.diagnostics.report(syntax, ClosureInGlobalScope)),
-        ContextFunction::Function(function_id) => function_id,
-    };
+    if matches!(ctx.function_id, ContextFunction::Global) {
+        ctx.diagnostics.report(syntax, ClosureInGlobalScope);
+    }
     Ok(Expr::ExprClosure(ExprClosure {
         body,
+        params,
+        ret_ty,
         ty: TypeLongId::Closure(ClosureTypeLongId {
-            body_id: body,
-            containing_function: function_id,
-            params,
-            ret_ty,
+            stable_location: StableLocation::new(syntax.wrapper(syntax_db).stable_ptr().into()),
         })
         .intern(ctx.db),
         stable_ptr: syntax.stable_ptr().into(),
