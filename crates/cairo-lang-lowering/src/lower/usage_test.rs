@@ -55,6 +55,7 @@ fn test_function_usage(
             semantic::Expr::Loop(_) => write!(usages_str, "Loop").unwrap(),
             semantic::Expr::While(_) => write!(usages_str, "While").unwrap(),
             semantic::Expr::For(_) => write!(usages_str, "For").unwrap(),
+            semantic::Expr::ExprClosure(_) => write!(usages_str, "Closure").unwrap(),
             _ => unreachable!(),
         }
         writeln!(usages_str, " {}:{}:", position.line, position.col).unwrap();
