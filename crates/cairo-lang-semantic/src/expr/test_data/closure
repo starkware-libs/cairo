@@ -91,7 +91,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::integer::i32", found: "test::foo[Id { idx: 2 }]".
+error: Unexpected argument type. Expected: "core::integer::i32", found: "{closure@lib.cairo:2:20: 2:22}".
  --> lib.cairo:2:20
     let _x: i32 =  || {
                    ^**^
@@ -121,7 +121,7 @@ error: Closures are not allowed in this context.
 const _x: i32 =  || {
                  ^**^
 
-error: Type mismatch: `missing[Id { idx: 2 }]` and `core::integer::i32`.
+error: Type mismatch: `{closure@lib.cairo:1:18: 1:20}` and `core::integer::i32`.
  --> lib.cairo:1:1
 const _x: i32 =  || {
 ^*******************^
@@ -152,7 +152,7 @@ error: Closures are not allowed in this context.
     bar::<{  || -> u32 {
              ^*********^
 
-error: Type mismatch: `missing[Id { idx: 1 }]` and `core::integer::u32`.
+error: Type mismatch: `{closure@lib.cairo:3:14: 3:16}` and `core::integer::u32`.
  --> lib.cairo:3:11
     bar::<{  || -> u32 {
           ^************^

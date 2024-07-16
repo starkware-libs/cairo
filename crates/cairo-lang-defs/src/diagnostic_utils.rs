@@ -1,3 +1,6 @@
+use std::fmt;
+
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::DiagnosticLocation;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
@@ -46,5 +49,12 @@ impl StableLocation {
         let start = self.0.lookup(syntax_db).span_start_without_trivia(syntax_db);
         let end = until_stable_ptr.lookup(syntax_db).span_end_without_trivia(syntax_db);
         DiagnosticLocation { file_id: self.0.file_id(syntax_db), span: TextSpan { start, end } }
+    }
+}
+
+impl DebugWithDb<dyn DefsGroup> for StableLocation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn DefsGroup) -> fmt::Result {
+        let diag_location = self.diagnostic_location(db);
+        diag_location.fmt_location(f, db.upcast())
     }
 }
