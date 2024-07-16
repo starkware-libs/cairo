@@ -189,7 +189,7 @@ struct MutableASubPointers {
 }
 impl MutableASubPointersImpl of starknet::storage::MutableSubPointers<A> {
 type SubPointersType = MutableASubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<A>>) -> MutableASubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<A>>) -> MutableASubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let x_value = starknet::storage::StoragePointer {

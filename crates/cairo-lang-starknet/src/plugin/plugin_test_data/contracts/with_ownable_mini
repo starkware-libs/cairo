@@ -37,7 +37,7 @@ mod ownable_mini_contract {
         fn storage_mut(
             ref self: ContractState
         ) -> MutableStorageNode::<ownable_mini::OwnableStorage>::NodeType {
-            self.ownable.as_path().mutable_storage_node()
+            self.ownable.as_path().storage_node_mut()
         }
     }
 
@@ -275,7 +275,7 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
         fn storage_mut(
             ref self: ContractState
         ) -> MutableStorageNode::<ownable_mini::OwnableStorage>::NodeType {
-            self.ownable.as_path().mutable_storage_node()
+            self.ownable.as_path().storage_node_mut()
         }
     }
 

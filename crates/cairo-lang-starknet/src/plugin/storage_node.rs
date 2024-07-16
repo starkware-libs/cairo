@@ -131,13 +131,13 @@ impl StorageNodeInfo {
             None
         }
     }
-    /// Returns the mutable prefix of snakecase names.
-    fn mutable_snakecase(&self) -> String {
-        if self.is_mutable { "mutable_".to_string() } else { "".to_string() }
-    }
     /// Returns the mutable prefix of camelcase names.
-    fn mutable_camelcase(&self) -> String {
-        if self.is_mutable { "Mutable".to_string() } else { "".to_string() }
+    fn mutable_camelcase(&self) -> &'static str {
+        if self.is_mutable { "Mutable" } else { "" }
+    }
+    /// Returns the mutable suffix for functions.
+    fn mutable_suffix(&self) -> &'static str {
+        if self.is_mutable { "_mut" } else { "" }
     }
     /// Returns a mutable type with a given generic arg.
     fn mutable_type(&self, inner_type: &str) -> String {
@@ -180,10 +180,10 @@ impl StorageNodeInfo {
     }
     /// Returns the name of the function that initializes the storage node.
     fn node_init_function_name(&self) -> String {
-        let mutable_prefix = self.mutable_snakecase();
+        let mutable_suffix = self.mutable_suffix();
         match self.node_type {
-            StorageNodeType::StorageNode => format!("{mutable_prefix}storage_node"),
-            StorageNodeType::SubPointers => format!("{mutable_prefix}sub_pointers"),
+            StorageNodeType::StorageNode => format!("storage_node{mutable_suffix}",),
+            StorageNodeType::SubPointers => format!("sub_pointers{mutable_suffix}",),
         }
     }
     /// Returns the name of the type that the storage node originates from.
