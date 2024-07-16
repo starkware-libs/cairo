@@ -1342,7 +1342,7 @@ struct MutableUserInfoSubPointers {
 }
 impl MutableUserInfoSubPointersImpl of starknet::storage::MutableSubPointers<UserInfo> {
 type SubPointersType = MutableUserInfoSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<UserInfo>>) -> MutableUserInfoSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<UserInfo>>) -> MutableUserInfoSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let name_value = starknet::storage::StoragePointer {
@@ -1402,7 +1402,7 @@ struct MutableTransactionInfoStorageNode {
 }
 impl MutableTransactionInfoStorageNodeImpl of starknet::storage::MutableStorageNode<TransactionInfo> {
 type NodeType = MutableTransactionInfoStorageNode;
-   fn mutable_storage_node(self: starknet::storage::StoragePath<starknet::storage::Mutable::<TransactionInfo>>) -> MutableTransactionInfoStorageNode {
+   fn storage_node_mut(self: starknet::storage::StoragePath<starknet::storage::Mutable::<TransactionInfo>>) -> MutableTransactionInfoStorageNode {
        
         let balances_value = starknet::storage::PendingStoragePathTrait::new(
                         @self,
@@ -1486,7 +1486,7 @@ struct MutableIERC20DispatcherSubPointers {
 }
 impl MutableIERC20DispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IERC20Dispatcher> {
 type SubPointersType = MutableIERC20DispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20Dispatcher>>) -> MutableIERC20DispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20Dispatcher>>) -> MutableIERC20DispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
@@ -1566,7 +1566,7 @@ struct MutableIERC20LibraryDispatcherSubPointers {
 }
 impl MutableIERC20LibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IERC20LibraryDispatcher> {
 type SubPointersType = MutableIERC20LibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20LibraryDispatcher>>) -> MutableIERC20LibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20LibraryDispatcher>>) -> MutableIERC20LibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -1646,7 +1646,7 @@ struct MutableIERC20SafeLibraryDispatcherSubPointers {
 }
 impl MutableIERC20SafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IERC20SafeLibraryDispatcher> {
 type SubPointersType = MutableIERC20SafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeLibraryDispatcher>>) -> MutableIERC20SafeLibraryDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeLibraryDispatcher>>) -> MutableIERC20SafeLibraryDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
@@ -1726,7 +1726,7 @@ struct MutableIERC20SafeDispatcherSubPointers {
 }
 impl MutableIERC20SafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IERC20SafeDispatcher> {
 type SubPointersType = MutableIERC20SafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeDispatcher>>) -> MutableIERC20SafeDispatcherSubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeDispatcher>>) -> MutableIERC20SafeDispatcherSubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
