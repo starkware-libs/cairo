@@ -28,7 +28,7 @@ mod erc20_mini_contract {
         fn storage_mut(
             ref self: ContractState
         ) -> MutableStorageNode::<erc20_mini::ERC20Storage>::NodeType {
-            self.erc20_token.as_path().mutable_storage_node()
+            self.erc20_token.as_path().storage_node_mut()
         }
     }
 

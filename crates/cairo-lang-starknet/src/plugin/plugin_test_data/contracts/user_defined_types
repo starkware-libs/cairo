@@ -289,7 +289,7 @@ struct MutableWrappedFelt252SubPointers {
 }
 impl MutableWrappedFelt252SubPointersImpl of starknet::storage::MutableSubPointers<WrappedFelt252> {
 type SubPointersType = MutableWrappedFelt252SubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<WrappedFelt252>>) -> MutableWrappedFelt252SubPointers {
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<WrappedFelt252>>) -> MutableWrappedFelt252SubPointers {
                let base_address = self.address;
         let mut current_offset = self.offset;
         let value_value = starknet::storage::StoragePointer {
