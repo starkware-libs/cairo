@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{define_short_id, LookupIntern};
+use cairo_lang_utils::{define_short_id, Intern, LookupIntern, Upcast};
 use itertools::Itertools;
 use scarb_metadata::Metadata;
 use tracing::{error, warn};
 
 use crate::project::db::ProjectsContext;
+use crate::project::digests::{Digestible, LsDigestsGroup};
 use crate::project::project_manifest_path::ProjectManifestPath;
 use crate::project::unmanaged_core_crate::LsUnmanagedCoreGroup;
 use crate::project::{cairo_project, scarb, Crate};
@@ -25,7 +26,9 @@ define_short_id!(
 //   This has to be supported by bookkeeping a concept of "canonical" ProjectId for given ProjectId.
 /// Main query group for the projects' database.
 #[salsa::query_group(LsProjectsDatabase)]
-pub trait LsProjectsGroup: LsUnmanagedCoreGroup + ProjectsContext {
+pub trait LsProjectsGroup:
+    LsDigestsGroup + Upcast<dyn LsDigestsGroup> + LsUnmanagedCoreGroup + ProjectsContext
+{
     #[salsa::interned]
     fn intern_project(&self, project: ProjectManifestPath) -> ProjectId;
 
@@ -88,7 +91,11 @@ fn crates(db: &dyn LsProjectsGroup) -> Arc<[Arc<Crate>]> {
 
 #[tracing::instrument(level = "trace", skip_all, fields(project = %project.lookup_intern(db)))]
 fn project_crates(db: &dyn LsProjectsGroup, project: ProjectId) -> Arc<[Arc<Crate>]> {
-    match project.lookup_intern(db) {
+    let manifest_path = project.lookup_intern(db);
+
+    db.digest(Digestible::from(&manifest_path).intern(db));
+
+    match manifest_path {
         ProjectManifestPath::CairoProject(_) => cairo_project::project_crates(db, project),
         ProjectManifestPath::Scarb(_) => scarb::project_crates(db, project),
     }

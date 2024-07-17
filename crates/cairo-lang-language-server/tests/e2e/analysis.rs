@@ -89,7 +89,7 @@ fn cairo_projects() {
 }
 
 #[test]
-fn test_reload() {
+fn reload() {
     let mut ls = sandbox! {
         files {
             "cairo_project.toml" => indoc! {r#"
@@ -117,4 +117,134 @@ fn test_reload() {
     let actual = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
     assert_eq!(expected, actual);
+}
+
+#[test]
+fn edit_cairo_project() {
+    let mut ls = sandbox! {
+        files {
+            "cairo_project.toml" => indoc! {r#"
+                [crate_roots]
+                hello = "src"
+            "#},
+            "src/lib.cairo" => "fn main() {}",
+        }
+    };
+
+    ls.open_and_wait_for_diagnostics("src/lib.cairo");
+
+    let output = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+    assert_eq!(
+        normalize(&ls, output),
+        indoc! {r#"
+            # Analyzed Crates
+
+            - `core`: `[CAIRO_SOURCE]/corelib/src/lib.cairo`
+                ```rust
+                CrateSettings {
+                    edition: V2024_07,
+                    cfg_set: None,
+                    experimental_features: ExperimentalFeaturesConfig {
+                        negative_impls: true,
+                        coupons: true,
+                    },
+                }
+                ```
+            - `hello`: `[ROOT]/src/lib.cairo`
+                ```rust
+                CrateSettings {
+                    edition: V2023_01,
+                    cfg_set: None,
+                    experimental_features: ExperimentalFeaturesConfig {
+                        negative_impls: false,
+                        coupons: false,
+                    },
+                }
+                ```
+        "#}
+    );
+
+    ls.overwrite(
+        "cairo_project.toml",
+        indoc! {r#"
+            [crate_roots]
+            hello = "src"
+
+            [config.global]
+            edition = "2024_07"
+        "#},
+    );
+
+    let output = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+    assert_eq!(
+        normalize(&ls, output),
+        indoc! {r#"
+            # Analyzed Crates
+
+            - `core`: `[CAIRO_SOURCE]/corelib/src/lib.cairo`
+                ```rust
+                CrateSettings {
+                    edition: V2024_07,
+                    cfg_set: None,
+                    experimental_features: ExperimentalFeaturesConfig {
+                        negative_impls: true,
+                        coupons: true,
+                    },
+                }
+                ```
+            - `hello`: `[ROOT]/src/lib.cairo`
+                ```rust
+                CrateSettings {
+                    edition: V2024_07,
+                    cfg_set: None,
+                    experimental_features: ExperimentalFeaturesConfig {
+                        negative_impls: false,
+                        coupons: false,
+                    },
+                }
+                ```
+        "#}
+    );
+
+    ls.overwrite(
+        "cairo_project.toml",
+        indoc! {r#"
+            [crate_roots]
+            world = "src"
+
+            [config.global]
+            edition = "2024_07"
+        "#},
+    );
+
+    let output = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+    assert_eq!(
+        normalize(&ls, output),
+        indoc! {r#"
+            # Analyzed Crates
+
+            - `core`: `[CAIRO_SOURCE]/corelib/src/lib.cairo`
+                ```rust
+                CrateSettings {
+                    edition: V2024_07,
+                    cfg_set: None,
+                    experimental_features: ExperimentalFeaturesConfig {
+                        negative_impls: true,
+                        coupons: true,
+                    },
+                }
+                ```
+            - `world`: `[ROOT]/src/lib.cairo`
+                ```rust
+                CrateSettings {
+                    edition: V2024_07,
+                    cfg_set: None,
+                    experimental_features: ExperimentalFeaturesConfig {
+                        negative_impls: false,
+                        coupons: false,
+                    },
+                }
+                ```
+        "#}
+    );
 }

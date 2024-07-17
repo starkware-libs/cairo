@@ -59,6 +59,13 @@ impl ProjectManifestPath {
             None
         }
     }
+
+    /// Gets the underlying [`Path`] of the manifest file.
+    pub fn as_path(&self) -> &Path {
+        match self {
+            ProjectManifestPath::CairoProject(path) | ProjectManifestPath::Scarb(path) => path,
+        }
+    }
 }
 
 impl fmt::Display for ProjectManifestPath {
