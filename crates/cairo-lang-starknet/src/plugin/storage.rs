@@ -8,7 +8,7 @@ use indoc::formatdoc;
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::{backwards_compatible_storage, StarknetModuleKind};
 use super::storage_interfaces::handle_storage_interface;
-use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, STORAGE_STRUCT_NAME};
+use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, FLAT_ATTR, STORAGE_STRUCT_NAME};
 use crate::plugin::SUBSTORAGE_ATTR;
 
 /// Generate getters and setters for the members of the storage struct.
@@ -38,7 +38,7 @@ pub fn handle_storage_struct(
             {
                 substorage_members_struct_code.push(struct_code);
                 substorage_members_init_code.push(init_code);
-            } else {
+            } else if !member.has_attr(db, FLAT_ATTR) {
                 diagnostics.push(PluginDiagnostic::error(
                     member.stable_ptr(),
                     format!(
