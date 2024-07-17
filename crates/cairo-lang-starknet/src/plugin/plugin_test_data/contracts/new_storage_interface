@@ -1290,6 +1290,38 @@ impl BalancePairStorageNodeMutImpl of starknet::storage::StorageNodeMut<BalanceP
         }
     }
 }
+#[derive(Drop, Copy)]
+pub struct BalancePairStorageBase {
+    pub balance1: starknet::storage::StorageBase<u256>,
+    pub balance2: starknet::storage::StorageBase<felt252>,
+}
+impl BalancePairStorageImpl of starknet::storage::StorageTrait<BalancePair> {
+    type BaseType = BalancePairStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<BalancePair>) -> BalancePairStorageBase {
+        let balance1_value = starknet::storage::StorageBase {address: selector!("balance1")};
+        let balance2_value = starknet::storage::StorageBase {address: selector!("balance2")};
+        BalancePairStorageBase {
+           balance1: balance1_value,
+           balance2: balance2_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+pub struct BalancePairStorageBaseMut {
+    pub balance1: starknet::storage::StorageBase<starknet::storage::Mutable::<u256>>,
+    pub balance2: starknet::storage::StorageBase<starknet::storage::Mutable::<felt252>>,
+}
+impl BalancePairStorageMutImpl of starknet::storage::StorageTraitMut<BalancePair> {
+    type BaseType = BalancePairStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<BalancePair>>) -> BalancePairStorageBaseMut {
+        let balance1_value = starknet::storage::StorageBase {address: selector!("balance1")};
+        let balance2_value = starknet::storage::StorageBase {address: selector!("balance2")};
+        BalancePairStorageBaseMut {
+           balance1: balance1_value,
+           balance2: balance2_value,
+        }
+    }
+}
 
 
 lib.cairo:31:1
@@ -1552,6 +1584,38 @@ impl LinkedListStorageNodeMutImpl of starknet::storage::StorageNodeMut<LinkedLis
                         selector!("next")
                     );
                             LinkedListStorageNodeMut {
+           value: value_value,
+           next: next_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+pub struct LinkedListStorageBase {
+    pub value: starknet::storage::StorageBase<felt252>,
+    pub next: starknet::storage::StorageBase<LinkedList>,
+}
+impl LinkedListStorageImpl of starknet::storage::StorageTrait<LinkedList> {
+    type BaseType = LinkedListStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<LinkedList>) -> LinkedListStorageBase {
+        let value_value = starknet::storage::StorageBase {address: selector!("value")};
+        let next_value = starknet::storage::StorageBase {address: selector!("next")};
+        LinkedListStorageBase {
+           value: value_value,
+           next: next_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+pub struct LinkedListStorageBaseMut {
+    pub value: starknet::storage::StorageBase<starknet::storage::Mutable::<felt252>>,
+    pub next: starknet::storage::StorageBase<starknet::storage::Mutable::<LinkedList>>,
+}
+impl LinkedListStorageMutImpl of starknet::storage::StorageTraitMut<LinkedList> {
+    type BaseType = LinkedListStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<LinkedList>>) -> LinkedListStorageBaseMut {
+        let value_value = starknet::storage::StorageBase {address: selector!("value")};
+        let next_value = starknet::storage::StorageBase {address: selector!("next")};
+        LinkedListStorageBaseMut {
            value: value_value,
            next: next_value,
         }
@@ -1953,6 +2017,24 @@ impl BalancePairStorageNodeMutDrop of core::traits::Drop::<BalancePairStorageNod
 impl BalancePairStorageNodeMutCopy of core::traits::Copy::<BalancePairStorageNodeMut>;
 
 
+lib.cairo:26:1
+#[starknet::storage_node]
+^***********************^
+impls:
+
+impl BalancePairStorageBaseDrop of core::traits::Drop::<BalancePairStorageBase>;
+impl BalancePairStorageBaseCopy of core::traits::Copy::<BalancePairStorageBase>;
+
+
+lib.cairo:26:1
+#[starknet::storage_node]
+^***********************^
+impls:
+
+impl BalancePairStorageBaseMutDrop of core::traits::Drop::<BalancePairStorageBaseMut>;
+impl BalancePairStorageBaseMutCopy of core::traits::Copy::<BalancePairStorageBaseMut>;
+
+
 lib.cairo:32:16
 #[derive(Drop, starknet::Store)]
                ^*************^
@@ -2005,6 +2087,24 @@ impls:
 
 impl LinkedListStorageNodeMutDrop of core::traits::Drop::<LinkedListStorageNodeMut>;
 impl LinkedListStorageNodeMutCopy of core::traits::Copy::<LinkedListStorageNodeMut>;
+
+
+lib.cairo:44:1
+#[starknet::storage_node]
+^***********************^
+impls:
+
+impl LinkedListStorageBaseDrop of core::traits::Drop::<LinkedListStorageBase>;
+impl LinkedListStorageBaseCopy of core::traits::Copy::<LinkedListStorageBase>;
+
+
+lib.cairo:44:1
+#[starknet::storage_node]
+^***********************^
+impls:
+
+impl LinkedListStorageBaseMutDrop of core::traits::Drop::<LinkedListStorageBaseMut>;
+impl LinkedListStorageBaseMutCopy of core::traits::Copy::<LinkedListStorageBaseMut>;
 
 
 lib.cairo:1:1

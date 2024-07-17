@@ -28,12 +28,12 @@ pub trait HasStorage<
     /// The storage type.
     Storage,
     /// The storage node.
-    impl Node: starknet::storage::StorageNode<Storage>,
+    impl StorageImpl: starknet::storage::StorageTrait<Storage>,
     /// The mutable storage node.
-    impl NodeMut: starknet::storage::StorageNodeMut<Storage>
+    impl StorageImplMut: starknet::storage::StorageTraitMut<Storage>
 > {
-    fn storage(self: @TContractState) -> Node::NodeType;
-    fn storage_mut(ref self: TContractState) -> NodeMut::NodeType;
+    fn storage(self: @TContractState) -> StorageImpl::BaseType;
+    fn storage_mut(ref self: TContractState) -> StorageImplMut::BaseType;
 }
 
 
@@ -41,12 +41,12 @@ use core::num::traits::Zero;
 use starknet::storage::Map;
 #[starknet::storage_node]
 pub struct ERC20Storage {
-    name: felt252,
-    symbol: felt252,
-    decimals: u8,
-    total_supply: u256,
-    balances: Map<ContractAddress, u256>,
-    allowances: Map<(ContractAddress, ContractAddress), u256>,
+    pub name: felt252,
+    pub symbol: felt252,
+    pub decimals: u8,
+    pub total_supply: u256,
+    pub balances: Map<ContractAddress, u256>,
+    pub allowances: Map<(ContractAddress, ContractAddress), u256>,
 }
 
 #[derive(Drop, starknet::Event)]
