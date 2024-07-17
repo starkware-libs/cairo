@@ -4,7 +4,7 @@ mod ownable_mini_contract {
     use cairo_level_tests::components::ownable_mini;
     use starknet::ContractAddress;
     use starknet::storage::{
-        StorageAsPath, StorageNode, MutableStorageNode, StoragePointerReadAccess,
+        StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,
         StoragePointerWriteAccess
     };
 
@@ -27,7 +27,7 @@ mod ownable_mini_contract {
         }
         fn storage_mut(
             ref self: ContractState
-        ) -> MutableStorageNode::<ownable_mini::OwnableStorage>::NodeType {
+        ) -> StorageNodeMut::<ownable_mini::OwnableStorage>::NodeType {
             self.ownable.as_path().storage_node_mut()
         }
     }

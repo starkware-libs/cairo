@@ -1,7 +1,6 @@
 use starknet::ContractAddress;
 use starknet::storage::{
-    StorageAsPath, StorageNode, MutableStorageNode, StoragePointerReadAccess,
-    StoragePointerWriteAccess
+    StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess, StoragePointerWriteAccess
 };
 
 #[starknet::interface]
@@ -18,7 +17,7 @@ pub trait HasStorage<
     /// The storage node.
     impl Node: starknet::storage::StorageNode<Storage>,
     /// The mutable storage node.
-    impl NodeMut: starknet::storage::MutableStorageNode<Storage>
+    impl NodeMut: starknet::storage::StorageNodeMut<Storage>
 > {
     fn storage(self: @TContractState) -> Node::NodeType;
     fn storage_mut(ref self: TContractState) -> NodeMut::NodeType;

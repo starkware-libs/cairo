@@ -1,5 +1,5 @@
 use cairo_lang_defs::patcher::RewriteNode;
-use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
@@ -7,13 +7,14 @@ use indent::indent_by;
 use indoc::formatdoc;
 
 use crate::plugin::consts::STORE_TRAIT;
-use crate::plugin::storage_node::handle_storage_node;
+use crate::plugin::storage_interfaces::handle_storage_interface;
 
 /// Returns the rewrite node for the `#[derive(starknet::Store)]` attribute.
 pub fn handle_store_derive(
     db: &dyn SyntaxGroup,
     item_ast: &ast::ModuleItem,
     diagnostics: &mut Vec<PluginDiagnostic>,
+    metadata: &MacroPluginMetadata<'_>,
 ) -> Option<RewriteNode> {
     match item_ast {
         ast::ModuleItem::Struct(struct_ast) => {
@@ -21,7 +22,7 @@ pub fn handle_store_derive(
             // a sub-pointers implementation.
             let store_trait_code = handle_struct_store(db, struct_ast)?;
             let sub_pointers_code = if !struct_ast.members(db).elements(db).is_empty() {
-                let (sub_pointers_code, _) = handle_storage_node(db, struct_ast);
+                let (sub_pointers_code, _) = handle_storage_interface(db, struct_ast, metadata);
                 RewriteNode::Text(sub_pointers_code)
             } else {
                 RewriteNode::Text("".to_string())

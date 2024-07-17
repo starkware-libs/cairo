@@ -58,33 +58,37 @@ mod ownable_erc20_contract {
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
-     erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+struct StorageStorageBase {
+    ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+    erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let ownable_storage_value = starknet::storage::FlattenedStorage {};
+        let erc20_storage_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBase {
+           ownable_storage: ownable_storage_value,
+           erc20_storage: erc20_storage_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<ownable_comp::Storage>>,
-     erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<erc20_comp::Storage>>,
+struct StorageStorageBaseMut {
+    ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+    erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           ownable_storage: starknet::storage::FlattenedStorage{},
-           erc20_storage: starknet::storage::FlattenedStorage{},
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let ownable_storage_value = starknet::storage::FlattenedStorage {};
+        let erc20_storage_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBaseMut {
+           ownable_storage: ownable_storage_value,
+           erc20_storage: erc20_storage_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           ownable_storage: starknet::storage::FlattenedStorage{},
-           erc20_storage: starknet::storage::FlattenedStorage{},
-        }
-    }
- }
 
 pub struct ContractState {
          ownable_storage: ownable_comp::ComponentState<ContractState>,
@@ -298,10 +302,10 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
             owner: ContractAddress,
         );
     }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
@@ -353,33 +357,37 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
-     erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+struct StorageStorageBase {
+    ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+    erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let ownable_storage_value = starknet::storage::FlattenedStorage {};
+        let erc20_storage_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBase {
+           ownable_storage: ownable_storage_value,
+           erc20_storage: erc20_storage_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<ownable_comp::Storage>>,
-     erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<erc20_comp::Storage>>,
+struct StorageStorageBaseMut {
+    ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+    erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           ownable_storage: starknet::storage::FlattenedStorage{},
-           erc20_storage: starknet::storage::FlattenedStorage{},
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let ownable_storage_value = starknet::storage::FlattenedStorage {};
+        let erc20_storage_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBaseMut {
+           ownable_storage: ownable_storage_value,
+           erc20_storage: erc20_storage_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           ownable_storage: starknet::storage::FlattenedStorage{},
-           erc20_storage: starknet::storage::FlattenedStorage{},
-        }
-    }
- }
 
 pub struct ContractState {
          ownable_storage: ownable_comp::ComponentState<ContractState>,
@@ -593,9 +601,9 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
             owner: ContractAddress,
         );
     }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
