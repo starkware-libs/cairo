@@ -75,9 +75,6 @@ mod test_contract {
     }
 }
 
-lib.cairo:1:1
-#[derive(Drop, starknet::Store, Hash)]
-^************************************^
 impls:
 
 impl OuterTypeDrop of core::traits::Drop::<OuterType>;
@@ -94,9 +91,6 @@ impl OuterTypeHash<
 }
 
 
-lib.cairo:1:16
-#[derive(Drop, starknet::Store, Hash)]
-               ^*************^
 starknet_derive:
 
 impl StoreOuterType of starknet::Store::<OuterType> {
@@ -169,27 +163,18 @@ type SubPointersType = MutableOuterTypeSubPointers;
 }
 
 
-lib.cairo:1:16
-#[derive(Drop, starknet::Store, Hash)]
-               ^*************^
 impls:
 
 impl OuterTypeSubPointersDrop of core::traits::Drop::<OuterTypeSubPointers>;
 impl OuterTypeSubPointersCopy of core::traits::Copy::<OuterTypeSubPointers>;
 
 
-lib.cairo:1:16
-#[derive(Drop, starknet::Store, Hash)]
-               ^*************^
 impls:
 
 impl MutableOuterTypeSubPointersDrop of core::traits::Drop::<MutableOuterTypeSubPointers>;
 impl MutableOuterTypeSubPointersCopy of core::traits::Copy::<MutableOuterTypeSubPointers>;
 
 
-lib.cairo:7:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -249,10 +234,9 @@ pub struct ContractStorageBaseMut {
     pub inner_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<inner::InnerType>>,
     pub inner_type_to_inner_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<inner::InnerType, inner::InnerType>>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
            var_felt252: starknet::storage::StorageBase{ address: selector!("var_felt252") },
            var_u8: starknet::storage::StorageBase{ address: selector!("var_u8") },
@@ -270,7 +254,10 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
            inner_type_to_inner_type: starknet::storage::StorageBase{ address: selector!("inner_type_to_inner_type") },
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
            var_felt252: starknet::storage::StorageBase{ address: selector!("var_felt252") },
            var_u8: starknet::storage::StorageBase{ address: selector!("var_u8") },
@@ -288,22 +275,35 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
            inner_type_to_inner_type: starknet::storage::StorageBase{ address: selector!("inner_type_to_inner_type") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -353,17 +353,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:7:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:7:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -383,18 +377,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:7:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:7:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -402,26 +390,76 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:18:26
-        felt252_to_u128: LegacyMap::<felt252, u128>,
-                         ^*******^
+ --> lib.cairo[contract]:15:32
+          pub felt252_to_u128: LegacyMap::<felt252, u128>,
+                               ^*******^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:19:23
-        u128_to_bool: LegacyMap::<u128, bool>,
-                      ^*******^
+ --> lib.cairo[contract]:16:29
+          pub u128_to_bool: LegacyMap::<u128, bool>,
+                            ^*******^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:20:26
-        bool_to_felt252: LegacyMap::<bool, felt252>,
-                         ^*******^
+ --> lib.cairo[contract]:17:32
+          pub bool_to_felt252: LegacyMap::<bool, felt252>,
+                               ^*******^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:22:35
-        outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
-                                  ^*******^
+ --> lib.cairo[contract]:19:41
+          pub outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
+                                        ^*******^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:24:35
-        inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
-                                  ^*******^
+ --> lib.cairo[contract]:21:41
+          pub inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
+                                        ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:33:57
+    pub felt252_to_u128: starknet::storage::StorageBase<LegacyMap::<felt252, u128>>,
+                                                        ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:34:54
+    pub u128_to_bool: starknet::storage::StorageBase<LegacyMap::<u128, bool>>,
+                                                     ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:35:57
+    pub bool_to_felt252: starknet::storage::StorageBase<LegacyMap::<bool, felt252>>,
+                                                        ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:37:66
+    pub outer_type_to_outer_type: starknet::storage::StorageBase<LegacyMap::<super::OuterType, super::OuterType>>,
+                                                                 ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:39:66
+    pub inner_type_to_inner_type: starknet::storage::StorageBase<LegacyMap::<inner::InnerType, inner::InnerType>>,
+                                                                 ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:50:84
+    pub felt252_to_u128: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<felt252, u128>>>,
+                                                                                   ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:51:81
+    pub u128_to_bool: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<u128, bool>>>,
+                                                                                ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:52:84
+    pub bool_to_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<bool, felt252>>>,
+                                                                                   ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:54:93
+    pub outer_type_to_outer_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<super::OuterType, super::OuterType>>>,
+                                                                                            ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:56:93
+    pub inner_type_to_inner_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<inner::InnerType, inner::InnerType>>>,
+                                                                                            ^*******^

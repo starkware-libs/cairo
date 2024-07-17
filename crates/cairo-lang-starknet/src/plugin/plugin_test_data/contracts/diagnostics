@@ -31,9 +31,6 @@ mod test_contract {
     fn bar(_n: u32) {}
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -51,33 +48,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -127,17 +139,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -157,18 +163,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -219,9 +219,6 @@ mod test_contract {
     fn invalid_constructor_name(ref self: ContractState) {}
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -239,33 +236,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -334,17 +346,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -364,18 +370,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -422,9 +422,6 @@ mod test_contract {
     fn foo_v1(ref self: ContractState, x: (felt252, felt252)) {}
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -442,33 +439,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -584,17 +596,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -614,18 +620,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -673,17 +673,11 @@ mod test_contract {
 #[derive(Drop)]
 struct MyType {}
 
-lib.cairo:8:1
-#[derive(Drop)]
-^*************^
 impls:
 
 impl MyTypeDrop of core::traits::Drop::<MyType>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -701,33 +695,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -799,17 +808,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -829,18 +832,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -848,9 +845,9 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Trait has no implementation in context: core::serde::Serde::<test::MyType>.
- --> lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo[contract]:85:46
+        core::serde::Serde::<super::MyType>::deserialize(ref data),
+                                             ^*********^
 
 //! > ==========================================================================
 
@@ -879,9 +876,6 @@ mod test_contract {
     fn foo(ref self: ContractState) -> (felt252, felt252) {}
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -899,33 +893,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -995,17 +1004,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1025,18 +1028,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -1075,9 +1072,6 @@ mod test_contract {
     fn foo<T>(ref self: ContractState, x: T) {}
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -1095,33 +1089,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -1193,17 +1202,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1223,18 +1226,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -1252,9 +1249,9 @@ warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
 ^*******************^
 
 error: Type not found.
- --> lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo[contract]:85:30
+        core::serde::Serde::<T>::deserialize(ref data),
+                             ^
 
 error: Variable not dropped.
  --> lib.cairo:6:40
@@ -1294,9 +1291,6 @@ mod test_contract {
     ) -> (felt252, felt252) {}
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -1314,33 +1308,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -1417,17 +1426,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1447,18 +1450,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -1509,9 +1506,6 @@ mod test_contract {
     fn __execute__(ref self: ContractState) {}
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -1529,33 +1523,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -1681,17 +1690,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1711,18 +1714,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -1820,9 +1817,6 @@ mod test_contract {
     }
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -1840,33 +1834,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -1916,17 +1925,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1946,18 +1949,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -2032,9 +2029,6 @@ mod test_contract {
     }
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -2055,35 +2049,50 @@ pub struct ContractStorageBase {
 pub struct ContractStorageBaseMut {
     pub same_name: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
            same_name: starknet::storage::StorageBase{ address: selector!("same_name") },
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
            same_name: starknet::storage::StorageBase{ address: selector!("same_name") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -2133,17 +2142,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2163,18 +2166,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -2287,9 +2284,6 @@ mod test_contract {
     impl BImpl of BTrait {}
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -2307,33 +2301,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -2383,33 +2392,21 @@ pub mod __constructor {
 
 
 
-lib.cairo:5:5
-    #[external(v0)]
-    ^*************^
 generate_trait:
 
     trait ATrait {}
 
 
-lib.cairo:9:5
-    #[external(v1)]
-    ^*************^
 generate_trait:
 
     trait BTrait {}
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2429,18 +2426,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -2621,9 +2612,6 @@ mod test_contract {
     }
 }
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 InterfaceTraitDispatcherTrait:
 
 trait InterfaceTraitDispatcherTrait<T> {
@@ -2811,9 +2799,6 @@ impl InterfaceTraitSafeDispatcherImpl of InterfaceTraitSafeDispatcherTrait<Inter
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceTraitDispatcherCopy of core::traits::Copy::<InterfaceTraitDispatcher>;
@@ -2830,9 +2815,6 @@ impl InterfaceTraitDispatcherSerde of core::serde::Serde::<InterfaceTraitDispatc
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreInterfaceTraitDispatcher of starknet::Store::<InterfaceTraitDispatcher> {
@@ -2905,9 +2887,6 @@ type SubPointersType = MutableInterfaceTraitDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceTraitLibraryDispatcherCopy of core::traits::Copy::<InterfaceTraitLibraryDispatcher>;
@@ -2924,9 +2903,6 @@ impl InterfaceTraitLibraryDispatcherSerde of core::serde::Serde::<InterfaceTrait
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreInterfaceTraitLibraryDispatcher of starknet::Store::<InterfaceTraitLibraryDispatcher> {
@@ -2999,9 +2975,6 @@ type SubPointersType = MutableInterfaceTraitLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceTraitSafeLibraryDispatcherCopy of core::traits::Copy::<InterfaceTraitSafeLibraryDispatcher>;
@@ -3018,9 +2991,6 @@ impl InterfaceTraitSafeLibraryDispatcherSerde of core::serde::Serde::<InterfaceT
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreInterfaceTraitSafeLibraryDispatcher of starknet::Store::<InterfaceTraitSafeLibraryDispatcher> {
@@ -3093,9 +3063,6 @@ type SubPointersType = MutableInterfaceTraitSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceTraitSafeDispatcherCopy of core::traits::Copy::<InterfaceTraitSafeDispatcher>;
@@ -3112,9 +3079,6 @@ impl InterfaceTraitSafeDispatcherSerde of core::serde::Serde::<InterfaceTraitSaf
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreInterfaceTraitSafeDispatcher of starknet::Store::<InterfaceTraitSafeDispatcher> {
@@ -3187,81 +3151,54 @@ type SubPointersType = MutableInterfaceTraitSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceTraitDispatcherSubPointersDrop of core::traits::Drop::<InterfaceTraitDispatcherSubPointers>;
 impl InterfaceTraitDispatcherSubPointersCopy of core::traits::Copy::<InterfaceTraitDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableInterfaceTraitDispatcherSubPointersDrop of core::traits::Drop::<MutableInterfaceTraitDispatcherSubPointers>;
 impl MutableInterfaceTraitDispatcherSubPointersCopy of core::traits::Copy::<MutableInterfaceTraitDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceTraitLibraryDispatcherSubPointers>;
 impl InterfaceTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceTraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableInterfaceTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableInterfaceTraitLibraryDispatcherSubPointers>;
 impl MutableInterfaceTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableInterfaceTraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceTraitSafeLibraryDispatcherSubPointers>;
 impl InterfaceTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceTraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableInterfaceTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableInterfaceTraitSafeLibraryDispatcherSubPointers>;
 impl MutableInterfaceTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableInterfaceTraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<InterfaceTraitSafeDispatcherSubPointers>;
 impl InterfaceTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<InterfaceTraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableInterfaceTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableInterfaceTraitSafeDispatcherSubPointers>;
 impl MutableInterfaceTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableInterfaceTraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:8:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -3279,33 +3216,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -3469,9 +3421,6 @@ pub mod __constructor {
 
 
 
-lib.cairo:23:5
-    #[generate_trait]
-    ^***************^
 generate_trait:
 
     trait NonInterfaceTrait {
@@ -3484,17 +3433,11 @@ generate_trait:
     }
 
 
-lib.cairo:8:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:8:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3514,18 +3457,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:8:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:8:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -3560,9 +3497,6 @@ mod test_contract {
     enum Event {}
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 
@@ -3577,33 +3511,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -3653,17 +3602,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:5:1
-
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:6:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3683,18 +3626,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -3737,9 +3674,6 @@ mod test_contract {
     enum MyEvent {}
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -3757,33 +3691,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -3833,17 +3782,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:5:1
-
-^
 impls:
 
 impl MyEventDrop of core::traits::Drop::<MyEvent>;
 
 
-lib.cairo:7:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
 starknet_derive:
 
 impl MyEventIsEvent of starknet::Event<MyEvent> {
@@ -3863,17 +3806,11 @@ impl MyEventIsEvent of starknet::Event<MyEvent> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3893,18 +3830,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -4025,9 +3956,6 @@ trait IContract<T> {
     fn no_params() -> felt252;
 }
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -4074,9 +4002,6 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -4093,9 +4018,6 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -4168,9 +4090,6 @@ type SubPointersType = MutableIContractDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -4187,9 +4106,6 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -4262,9 +4178,6 @@ type SubPointersType = MutableIContractLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -4281,9 +4194,6 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -4356,9 +4266,6 @@ type SubPointersType = MutableIContractSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -4375,9 +4282,6 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -4450,72 +4354,48 @@ type SubPointersType = MutableIContractSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
 impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractDispatcherSubPointers>;
 impl MutableIContractDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
 impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractLibraryDispatcherSubPointers>;
 impl MutableIContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
 impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeLibraryDispatcherSubPointers>;
 impl MutableIContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
 impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeDispatcherSubPointers>;
@@ -4582,9 +4462,6 @@ trait IContract<T> {
     ) -> felt252;
 }
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -4631,9 +4508,6 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -4650,9 +4524,6 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -4725,9 +4596,6 @@ type SubPointersType = MutableIContractDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -4744,9 +4612,6 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -4819,9 +4684,6 @@ type SubPointersType = MutableIContractLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -4838,9 +4700,6 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -4913,9 +4772,6 @@ type SubPointersType = MutableIContractSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -4932,9 +4788,6 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -5007,72 +4860,48 @@ type SubPointersType = MutableIContractSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
 impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractDispatcherSubPointers>;
 impl MutableIContractDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
 impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractLibraryDispatcherSubPointers>;
 impl MutableIContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
 impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeLibraryDispatcherSubPointers>;
 impl MutableIContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
 impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeDispatcherSubPointers>;
@@ -5105,9 +4934,6 @@ trait IContract<T> {
     fn non_ref_or_snap(self: T, other: felt252) -> felt252;
 }
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -5154,9 +4980,6 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -5173,9 +4996,6 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -5248,9 +5068,6 @@ type SubPointersType = MutableIContractDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -5267,9 +5084,6 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -5342,9 +5156,6 @@ type SubPointersType = MutableIContractLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -5361,9 +5172,6 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -5436,9 +5244,6 @@ type SubPointersType = MutableIContractSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -5455,9 +5260,6 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -5530,72 +5332,48 @@ type SubPointersType = MutableIContractSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
 impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractDispatcherSubPointers>;
 impl MutableIContractDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
 impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractLibraryDispatcherSubPointers>;
 impl MutableIContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
 impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeLibraryDispatcherSubPointers>;
 impl MutableIContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
 impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeDispatcherSubPointers>;
@@ -5635,9 +5413,6 @@ trait IContract<T> {
     fn bar(self: @u32, other: felt252) -> felt252;
 }
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -5684,9 +5459,6 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -5703,9 +5475,6 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -5778,9 +5547,6 @@ type SubPointersType = MutableIContractDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -5797,9 +5563,6 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -5872,9 +5635,6 @@ type SubPointersType = MutableIContractLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -5891,9 +5651,6 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -5966,9 +5723,6 @@ type SubPointersType = MutableIContractSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -5985,9 +5739,6 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -6060,72 +5811,48 @@ type SubPointersType = MutableIContractSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
 impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractDispatcherSubPointers>;
 impl MutableIContractDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
 impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractLibraryDispatcherSubPointers>;
 impl MutableIContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
 impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeLibraryDispatcherSubPointers>;
 impl MutableIContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
 impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeDispatcherSubPointers>;
@@ -6190,9 +5917,6 @@ impl EmbeddableImpl<TContractState> of Interface<TContractState> {
     fn foo3(self: @TContractState) {}
 }
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 InterfaceDispatcherTrait:
 
 trait InterfaceDispatcherTrait<T> {
@@ -6380,9 +6104,6 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
 }
 
 
-lib.cairo:7:1
-#[starknet::embeddable]
-^*********************^
 embeddable:
 
 trait UnsafeNewContractStateTraitForEmbeddableImpl<
@@ -6460,9 +6181,6 @@ mod __constructor_EmbeddableImpl {
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceDispatcherCopy of core::traits::Copy::<InterfaceDispatcher>;
@@ -6479,9 +6197,6 @@ impl InterfaceDispatcherSerde of core::serde::Serde::<InterfaceDispatcher> {
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreInterfaceDispatcher of starknet::Store::<InterfaceDispatcher> {
@@ -6554,9 +6269,6 @@ type SubPointersType = MutableInterfaceDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceLibraryDispatcherCopy of core::traits::Copy::<InterfaceLibraryDispatcher>;
@@ -6573,9 +6285,6 @@ impl InterfaceLibraryDispatcherSerde of core::serde::Serde::<InterfaceLibraryDis
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreInterfaceLibraryDispatcher of starknet::Store::<InterfaceLibraryDispatcher> {
@@ -6648,9 +6357,6 @@ type SubPointersType = MutableInterfaceLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceSafeLibraryDispatcherCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcher>;
@@ -6667,9 +6373,6 @@ impl InterfaceSafeLibraryDispatcherSerde of core::serde::Serde::<InterfaceSafeLi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreInterfaceSafeLibraryDispatcher of starknet::Store::<InterfaceSafeLibraryDispatcher> {
@@ -6742,9 +6445,6 @@ type SubPointersType = MutableInterfaceSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceSafeDispatcherCopy of core::traits::Copy::<InterfaceSafeDispatcher>;
@@ -6761,9 +6461,6 @@ impl InterfaceSafeDispatcherSerde of core::serde::Serde::<InterfaceSafeDispatche
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreInterfaceSafeDispatcher of starknet::Store::<InterfaceSafeDispatcher> {
@@ -6836,72 +6533,48 @@ type SubPointersType = MutableInterfaceSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceDispatcherSubPointersDrop of core::traits::Drop::<InterfaceDispatcherSubPointers>;
 impl InterfaceDispatcherSubPointersCopy of core::traits::Copy::<InterfaceDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableInterfaceDispatcherSubPointersDrop of core::traits::Drop::<MutableInterfaceDispatcherSubPointers>;
 impl MutableInterfaceDispatcherSubPointersCopy of core::traits::Copy::<MutableInterfaceDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointers>;
 impl InterfaceLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableInterfaceLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableInterfaceLibraryDispatcherSubPointers>;
 impl MutableInterfaceLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableInterfaceLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointers>;
 impl InterfaceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableInterfaceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableInterfaceSafeLibraryDispatcherSubPointers>;
 impl MutableInterfaceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableInterfaceSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceSafeDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointers>;
 impl InterfaceSafeDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableInterfaceSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableInterfaceSafeDispatcherSubPointers>;
@@ -6961,19 +6634,19 @@ mod contract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[embeddable]`.
- --> lib.cairo:16:9
-        #[external(v0)]
-        ^*************^
+ --> lib.cairo[component]:90:5
+    #[external(v0)]
+    ^*************^
 
 error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[embeddable]`.
- --> lib.cairo:18:9
-        #[l1_handler]
-        ^***********^
+ --> lib.cairo[component]:95:5
+    #[l1_handler]
+    ^***********^
 
 error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[embeddable]`.
- --> lib.cairo:20:9
-        #[constructor]
-        ^************^
+ --> lib.cairo[component]:100:5
+    #[constructor]
+    ^************^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -7022,9 +6695,6 @@ mod contract {
     impl MyEmbeddedImpl = super::component::MyEmbeddableImpl<ContractState>;
 }
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 InterfaceDispatcherTrait:
 
 trait InterfaceDispatcherTrait<T> {
@@ -7212,9 +6882,6 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceDispatcherCopy of core::traits::Copy::<InterfaceDispatcher>;
@@ -7231,9 +6898,6 @@ impl InterfaceDispatcherSerde of core::serde::Serde::<InterfaceDispatcher> {
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreInterfaceDispatcher of starknet::Store::<InterfaceDispatcher> {
@@ -7306,9 +6970,6 @@ type SubPointersType = MutableInterfaceDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceLibraryDispatcherCopy of core::traits::Copy::<InterfaceLibraryDispatcher>;
@@ -7325,9 +6986,6 @@ impl InterfaceLibraryDispatcherSerde of core::serde::Serde::<InterfaceLibraryDis
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreInterfaceLibraryDispatcher of starknet::Store::<InterfaceLibraryDispatcher> {
@@ -7400,9 +7058,6 @@ type SubPointersType = MutableInterfaceLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceSafeLibraryDispatcherCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcher>;
@@ -7419,9 +7074,6 @@ impl InterfaceSafeLibraryDispatcherSerde of core::serde::Serde::<InterfaceSafeLi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreInterfaceSafeLibraryDispatcher of starknet::Store::<InterfaceSafeLibraryDispatcher> {
@@ -7494,9 +7146,6 @@ type SubPointersType = MutableInterfaceSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceSafeDispatcherCopy of core::traits::Copy::<InterfaceSafeDispatcher>;
@@ -7513,9 +7162,6 @@ impl InterfaceSafeDispatcherSerde of core::serde::Serde::<InterfaceSafeDispatche
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreInterfaceSafeDispatcher of starknet::Store::<InterfaceSafeDispatcher> {
@@ -7588,81 +7234,54 @@ type SubPointersType = MutableInterfaceSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceDispatcherSubPointersDrop of core::traits::Drop::<InterfaceDispatcherSubPointers>;
 impl InterfaceDispatcherSubPointersCopy of core::traits::Copy::<InterfaceDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableInterfaceDispatcherSubPointersDrop of core::traits::Drop::<MutableInterfaceDispatcherSubPointers>;
 impl MutableInterfaceDispatcherSubPointersCopy of core::traits::Copy::<MutableInterfaceDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointers>;
 impl InterfaceLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableInterfaceLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableInterfaceLibraryDispatcherSubPointers>;
 impl MutableInterfaceLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableInterfaceLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointers>;
 impl InterfaceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableInterfaceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableInterfaceSafeLibraryDispatcherSubPointers>;
 impl MutableInterfaceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableInterfaceSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl InterfaceSafeDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointers>;
 impl InterfaceSafeDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableInterfaceSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableInterfaceSafeDispatcherSubPointers>;
 impl MutableInterfaceSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableInterfaceSafeDispatcherSubPointers>;
 
 
-lib.cairo:7:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -7680,33 +7299,48 @@ pub struct ComponentStorageBase {
 #[derive(Drop, Copy)]
 pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -7756,17 +7390,11 @@ pub impl MyEmbeddableImpl<
     }
 }
 
-lib.cairo:7:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:7:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -7786,27 +7414,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:7:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:7:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:12:5
-    #[embeddable_as(MyEmbeddableImpl)]
-    ^********************************^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForMyEmbeddableImpl<
@@ -7887,9 +7506,6 @@ pub mod __constructor_MyEmbeddableImpl {
 }
 
 
-lib.cairo:25:1
-#[starknet::contract]
-^*******************^
 contract:
 
 
@@ -7901,26 +7517,41 @@ pub struct Storage {
 
 #[derive(Drop, Copy)]
 pub struct ContractStorageBase {
-    pub component_storage: starknet::storage::StorageBase<super::component::Storage>,
+    pub component_storage: starknet::storage::FlattenedStorage<super::component::Storage>,
 }
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
-    pub component_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::component::Storage>>,
+    pub component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<super::component::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
-           component_storage: starknet::storage::StorageBase{ address: selector!("component_storage") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           component_storage: starknet::storage::StorageBase{ address: selector!("component_storage") },
+           component_storage: starknet::storage::FlattenedStorage{},
         }
     }
 }
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           component_storage: starknet::storage::FlattenedStorage{},
+        }
+    }
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
         pub component_storage: super::component::ComponentState<ContractState>,
 }
@@ -7928,15 +7559,15 @@ pub struct ContractState {
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -8012,17 +7643,11 @@ impl HasComponentImpl_component of super::component::HasComponent<ContractState>
 }
 
 
-lib.cairo:32:1
-
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:34:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -8059,18 +7684,12 @@ impl EventCompEventIntoEvent of Into<super::component::Event, Event> {
 
 
 
-lib.cairo:25:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:25:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -8134,9 +7753,6 @@ mod test_contract {
     }
 }
 
-lib.cairo:1:1
-#[generate_trait]
-^***************^
 generate_trait:
 
 trait SomeTrait<T> {
@@ -8144,9 +7760,6 @@ trait SomeTrait<T> {
 }
 
 
-lib.cairo:5:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -8164,33 +7777,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -8240,17 +7868,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:5:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:5:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -8270,18 +7892,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:5:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:5:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -8370,29 +7986,19 @@ mod component3 {
 error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?2>", found: "test::component3::ComponentState::<TContractState>".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
- --> lib.cairo:55:32
-            get_dep_component!(self, Comp1).foo1();
-                               ^**^
+ --> lib.cairo[get_dep_component_inline_macro]:3:92
+                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(self);
+                                                                                           ^**^
 
 error: Expected variable or constant, found impl.
- --> lib.cairo:56:32
-            get_dep_component!(Comp1, @self).foo1();
-                               ^***^
+ --> lib.cairo[get_dep_component_inline_macro]:3:92
+                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
+                                                                                           ^***^
 
 error: Identifier not found.
- --> lib.cairo:56:40
-            get_dep_component!(Comp1, @self).foo1();
-                                       ^**^
-
-error: Identifier not found.
- --> lib.cairo:57:40
-            get_dep_component!(@self, @self).foo1();
-                                       ^**^
-
-error: Expected variable or constant, found impl.
- --> lib.cairo:58:32
-            get_dep_component!(Comp1, Comp1).foo1();
-                               ^***^
+ --> lib.cairo[get_dep_component_inline_macro]:4:18
+                @self::get_component(__get_dep_component_macro_temp_contract__)
+                 ^**^
 
 error: Method `foo1` not found on type `@test::component2::ComponentState::<TContractState>`. Did you import the correct trait and impl?
  --> lib.cairo:59:46
@@ -8400,21 +8006,21 @@ error: Method `foo1` not found on type `@test::component2::ComponentState::<TCon
                                              ^**^
 
 error: Invalid path.
- --> lib.cairo:60:13
-            get_dep_component!(@self, super::NotHasComponent).foo1();
-            ^***********************************************^
+ --> lib.cairo[get_dep_component_inline_macro]:4:41
+                super::NotHasComponent::get_component(__get_dep_component_macro_temp_contract__)
+                                        ^***********^
 
 error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?14>", found: "core::felt252".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
- --> lib.cairo:62:32
-            get_dep_component!(not_contract_state, Comp1).foo1();
-                               ^****************^
+ --> lib.cairo[get_dep_component_inline_macro]:3:92
+                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(not_contract_state);
+                                                                                           ^****************^
 
 error: Identifier not found.
- --> lib.cairo:63:39
-            get_dep_component!(@self, NonExistingImpl).foo1();
-                                      ^*************^
+ --> lib.cairo[get_dep_component_inline_macro]:4:17
+                NonExistingImpl::get_component(__get_dep_component_macro_temp_contract__)
+                ^*************^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -8490,9 +8096,6 @@ mod component3 {
     }
 }
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 Comp3TraitDispatcherTrait:
 
 trait Comp3TraitDispatcherTrait<T> {
@@ -8633,9 +8236,6 @@ impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSaf
 }
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitDispatcherCopy of core::traits::Copy::<Comp3TraitDispatcher>;
@@ -8652,9 +8252,6 @@ impl Comp3TraitDispatcherSerde of core::serde::Serde::<Comp3TraitDispatcher> {
 }
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreComp3TraitDispatcher of starknet::Store::<Comp3TraitDispatcher> {
@@ -8727,9 +8324,6 @@ type SubPointersType = MutableComp3TraitDispatcherSubPointers;
 }
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitLibraryDispatcherCopy of core::traits::Copy::<Comp3TraitLibraryDispatcher>;
@@ -8746,9 +8340,6 @@ impl Comp3TraitLibraryDispatcherSerde of core::serde::Serde::<Comp3TraitLibraryD
 }
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreComp3TraitLibraryDispatcher of starknet::Store::<Comp3TraitLibraryDispatcher> {
@@ -8821,9 +8412,6 @@ type SubPointersType = MutableComp3TraitLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitSafeLibraryDispatcherCopy of core::traits::Copy::<Comp3TraitSafeLibraryDispatcher>;
@@ -8840,9 +8428,6 @@ impl Comp3TraitSafeLibraryDispatcherSerde of core::serde::Serde::<Comp3TraitSafe
 }
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreComp3TraitSafeLibraryDispatcher of starknet::Store::<Comp3TraitSafeLibraryDispatcher> {
@@ -8915,9 +8500,6 @@ type SubPointersType = MutableComp3TraitSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitSafeDispatcherCopy of core::traits::Copy::<Comp3TraitSafeDispatcher>;
@@ -8934,9 +8516,6 @@ impl Comp3TraitSafeDispatcherSerde of core::serde::Serde::<Comp3TraitSafeDispatc
 }
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreComp3TraitSafeDispatcher of starknet::Store::<Comp3TraitSafeDispatcher> {
@@ -9009,81 +8588,54 @@ type SubPointersType = MutableComp3TraitSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitDispatcherSubPointers>;
 impl Comp3TraitDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitDispatcherSubPointers>;
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableComp3TraitDispatcherSubPointersDrop of core::traits::Drop::<MutableComp3TraitDispatcherSubPointers>;
 impl MutableComp3TraitDispatcherSubPointersCopy of core::traits::Copy::<MutableComp3TraitDispatcherSubPointers>;
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointers>;
 impl Comp3TraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableComp3TraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableComp3TraitLibraryDispatcherSubPointers>;
 impl MutableComp3TraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableComp3TraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointers>;
 impl Comp3TraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableComp3TraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableComp3TraitSafeLibraryDispatcherSubPointers>;
 impl MutableComp3TraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableComp3TraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitSafeDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointers>;
 impl Comp3TraitSafeDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:30:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableComp3TraitSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableComp3TraitSafeDispatcherSubPointers>;
 impl MutableComp3TraitSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableComp3TraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -9101,33 +8653,48 @@ pub struct ComponentStorageBase {
 #[derive(Drop, Copy)]
 pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -9157,9 +8724,6 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:6:5
-    #[generate_trait]
-    ^***************^
 generate_trait:
 
     trait Comp1HelperTrait<
@@ -9169,17 +8733,11 @@ generate_trait:
     }
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -9199,27 +8757,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:14:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -9237,33 +8786,48 @@ pub struct ComponentStorageBase {
 #[derive(Drop, Copy)]
 pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -9293,9 +8857,6 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:19:5
-    #[generate_trait]
-    ^***************^
 generate_trait:
 
     trait Comp1HelperTrait<
@@ -9305,17 +8866,11 @@ generate_trait:
     }
 
 
-lib.cairo:14:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:14:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -9335,27 +8890,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:14:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:14:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:36:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -9373,33 +8919,48 @@ pub struct ComponentStorageBase {
 #[derive(Drop, Copy)]
 pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -9448,17 +9009,11 @@ pub impl Comp3<
     }
 }
 
-lib.cairo:36:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:36:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -9478,27 +9033,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:36:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:36:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:42:5
-    #[embeddable_as(Comp3)]
-    ^*********************^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForComp3<
@@ -9641,19 +9187,19 @@ error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro mu
                                    ^***^
 
 error: Identifier not found.
- --> lib.cairo:52:46
-            get_dep_component_mut!(ref self, self).foo1();
-                                             ^**^
+ --> lib.cairo[get_dep_component_inline_macro]:4:17
+                self::get_component_mut(ref __get_dep_component_macro_temp_contract__)
+                ^**^
 
 error: Expected variable or constant, found impl.
- --> lib.cairo:53:40
-            get_dep_component_mut!(ref Comp1, Comp1).foo1();
-                                       ^***^
+ --> lib.cairo[get_dep_component_inline_macro]:3:104
+                let mut __get_dep_component_macro_temp_contract__ = HasComponent::get_contract_mut(ref Comp1);
+                                                                                                       ^***^
 
 error: ref argument must be a variable.
- --> lib.cairo:53:40
-            get_dep_component_mut!(ref Comp1, Comp1).foo1();
-                                       ^***^
+ --> lib.cairo[get_dep_component_inline_macro]:3:104
+                let mut __get_dep_component_macro_temp_contract__ = HasComponent::get_contract_mut(ref Comp1);
+                                                                                                       ^***^
 
 error: Method `foo1` could not be called on type `test::component2::ComponentState::<TContractState>`.
 Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `@test::component1::ComponentState::<?8>`.
@@ -9746,9 +9292,6 @@ mod component3 {
     }
 }
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 Comp3TraitDispatcherTrait:
 
 trait Comp3TraitDispatcherTrait<T> {
@@ -9842,9 +9385,6 @@ impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSaf
 }
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitDispatcherCopy of core::traits::Copy::<Comp3TraitDispatcher>;
@@ -9861,9 +9401,6 @@ impl Comp3TraitDispatcherSerde of core::serde::Serde::<Comp3TraitDispatcher> {
 }
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreComp3TraitDispatcher of starknet::Store::<Comp3TraitDispatcher> {
@@ -9936,9 +9473,6 @@ type SubPointersType = MutableComp3TraitDispatcherSubPointers;
 }
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitLibraryDispatcherCopy of core::traits::Copy::<Comp3TraitLibraryDispatcher>;
@@ -9955,9 +9489,6 @@ impl Comp3TraitLibraryDispatcherSerde of core::serde::Serde::<Comp3TraitLibraryD
 }
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreComp3TraitLibraryDispatcher of starknet::Store::<Comp3TraitLibraryDispatcher> {
@@ -10030,9 +9561,6 @@ type SubPointersType = MutableComp3TraitLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitSafeLibraryDispatcherCopy of core::traits::Copy::<Comp3TraitSafeLibraryDispatcher>;
@@ -10049,9 +9577,6 @@ impl Comp3TraitSafeLibraryDispatcherSerde of core::serde::Serde::<Comp3TraitSafe
 }
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreComp3TraitSafeLibraryDispatcher of starknet::Store::<Comp3TraitSafeLibraryDispatcher> {
@@ -10124,9 +9649,6 @@ type SubPointersType = MutableComp3TraitSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitSafeDispatcherCopy of core::traits::Copy::<Comp3TraitSafeDispatcher>;
@@ -10143,9 +9665,6 @@ impl Comp3TraitSafeDispatcherSerde of core::serde::Serde::<Comp3TraitSafeDispatc
 }
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreComp3TraitSafeDispatcher of starknet::Store::<Comp3TraitSafeDispatcher> {
@@ -10218,81 +9737,54 @@ type SubPointersType = MutableComp3TraitSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitDispatcherSubPointers>;
 impl Comp3TraitDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitDispatcherSubPointers>;
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableComp3TraitDispatcherSubPointersDrop of core::traits::Drop::<MutableComp3TraitDispatcherSubPointers>;
 impl MutableComp3TraitDispatcherSubPointersCopy of core::traits::Copy::<MutableComp3TraitDispatcherSubPointers>;
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointers>;
 impl Comp3TraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableComp3TraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableComp3TraitLibraryDispatcherSubPointers>;
 impl MutableComp3TraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableComp3TraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointers>;
 impl Comp3TraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableComp3TraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableComp3TraitSafeLibraryDispatcherSubPointers>;
 impl MutableComp3TraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableComp3TraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl Comp3TraitSafeDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointers>;
 impl Comp3TraitSafeDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:27:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableComp3TraitSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableComp3TraitSafeDispatcherSubPointers>;
 impl MutableComp3TraitSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableComp3TraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -10310,33 +9802,48 @@ pub struct ComponentStorageBase {
 #[derive(Drop, Copy)]
 pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -10366,9 +9873,6 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:6:5
-    #[generate_trait]
-    ^***************^
 generate_trait:
 
     trait Comp1HelperTrait<
@@ -10378,17 +9882,11 @@ generate_trait:
     }
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -10408,27 +9906,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:14:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -10446,33 +9935,48 @@ pub struct ComponentStorageBase {
 #[derive(Drop, Copy)]
 pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -10502,9 +10006,6 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:19:5
-    #[generate_trait]
-    ^***************^
 generate_trait:
 
     trait Comp1HelperTrait<
@@ -10514,17 +10015,11 @@ generate_trait:
     }
 
 
-lib.cairo:14:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:14:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -10544,27 +10039,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:14:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:14:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:32:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -10582,33 +10068,48 @@ pub struct ComponentStorageBase {
 #[derive(Drop, Copy)]
 pub struct ComponentStorageBaseMut {
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -10652,17 +10153,11 @@ pub impl Comp3<
     }
 }
 
-lib.cairo:32:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:32:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -10682,27 +10177,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:32:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:32:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:38:5
-    #[embeddable_as(Comp3)]
-    ^*********************^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForComp3<
@@ -10808,9 +10294,6 @@ mod contract {
     }
 }
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 ContractTraitDispatcherTrait:
 
 trait ContractTraitDispatcherTrait<T> {
@@ -10904,9 +10387,6 @@ impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<Contrac
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitDispatcherCopy of core::traits::Copy::<ContractTraitDispatcher>;
@@ -10923,9 +10403,6 @@ impl ContractTraitDispatcherSerde of core::serde::Serde::<ContractTraitDispatche
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreContractTraitDispatcher of starknet::Store::<ContractTraitDispatcher> {
@@ -10998,9 +10475,6 @@ type SubPointersType = MutableContractTraitDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitLibraryDispatcherCopy of core::traits::Copy::<ContractTraitLibraryDispatcher>;
@@ -11017,9 +10491,6 @@ impl ContractTraitLibraryDispatcherSerde of core::serde::Serde::<ContractTraitLi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreContractTraitLibraryDispatcher of starknet::Store::<ContractTraitLibraryDispatcher> {
@@ -11092,9 +10563,6 @@ type SubPointersType = MutableContractTraitLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
@@ -11111,9 +10579,6 @@ impl ContractTraitSafeLibraryDispatcherSerde of core::serde::Serde::<ContractTra
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreContractTraitSafeLibraryDispatcher of starknet::Store::<ContractTraitSafeLibraryDispatcher> {
@@ -11186,9 +10651,6 @@ type SubPointersType = MutableContractTraitSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitSafeDispatcherCopy of core::traits::Copy::<ContractTraitSafeDispatcher>;
@@ -11205,9 +10667,6 @@ impl ContractTraitSafeDispatcherSerde of core::serde::Serde::<ContractTraitSafeD
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreContractTraitSafeDispatcher of starknet::Store::<ContractTraitSafeDispatcher> {
@@ -11280,81 +10739,54 @@ type SubPointersType = MutableContractTraitSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitDispatcherSubPointers>;
 impl ContractTraitDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableContractTraitDispatcherSubPointersDrop of core::traits::Drop::<MutableContractTraitDispatcherSubPointers>;
 impl MutableContractTraitDispatcherSubPointersCopy of core::traits::Copy::<MutableContractTraitDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointers>;
 impl ContractTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableContractTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableContractTraitLibraryDispatcherSubPointers>;
 impl MutableContractTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableContractTraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointers>;
 impl ContractTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableContractTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableContractTraitSafeLibraryDispatcherSubPointers>;
 impl MutableContractTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableContractTraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointers>;
 impl ContractTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableContractTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableContractTraitSafeDispatcherSubPointers>;
 impl MutableContractTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableContractTraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:6:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -11375,35 +10807,50 @@ pub struct ContractStorageBase {
 pub struct ContractStorageBaseMut {
     pub a_member: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
            a_member: starknet::storage::StorageBase{ address: selector!("a_member") },
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
            a_member: starknet::storage::StorageBase{ address: selector!("a_member") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -11472,17 +10919,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:6:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:6:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -11502,18 +10943,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:6:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:6:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -11616,9 +11051,6 @@ mod contract {
     }
 }
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 ContractTraitDispatcherTrait:
 
 trait ContractTraitDispatcherTrait<T> {
@@ -11712,9 +11144,6 @@ impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<Contrac
 }
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitDispatcherCopy of core::traits::Copy::<ContractTraitDispatcher>;
@@ -11731,9 +11160,6 @@ impl ContractTraitDispatcherSerde of core::serde::Serde::<ContractTraitDispatche
 }
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreContractTraitDispatcher of starknet::Store::<ContractTraitDispatcher> {
@@ -11806,9 +11232,6 @@ type SubPointersType = MutableContractTraitDispatcherSubPointers;
 }
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitLibraryDispatcherCopy of core::traits::Copy::<ContractTraitLibraryDispatcher>;
@@ -11825,9 +11248,6 @@ impl ContractTraitLibraryDispatcherSerde of core::serde::Serde::<ContractTraitLi
 }
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreContractTraitLibraryDispatcher of starknet::Store::<ContractTraitLibraryDispatcher> {
@@ -11900,9 +11320,6 @@ type SubPointersType = MutableContractTraitLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
@@ -11919,9 +11336,6 @@ impl ContractTraitSafeLibraryDispatcherSerde of core::serde::Serde::<ContractTra
 }
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreContractTraitSafeLibraryDispatcher of starknet::Store::<ContractTraitSafeLibraryDispatcher> {
@@ -11994,9 +11408,6 @@ type SubPointersType = MutableContractTraitSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitSafeDispatcherCopy of core::traits::Copy::<ContractTraitSafeDispatcher>;
@@ -12013,9 +11424,6 @@ impl ContractTraitSafeDispatcherSerde of core::serde::Serde::<ContractTraitSafeD
 }
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreContractTraitSafeDispatcher of starknet::Store::<ContractTraitSafeDispatcher> {
@@ -12088,81 +11496,54 @@ type SubPointersType = MutableContractTraitSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitDispatcherSubPointers>;
 impl ContractTraitDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitDispatcherSubPointers>;
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableContractTraitDispatcherSubPointersDrop of core::traits::Drop::<MutableContractTraitDispatcherSubPointers>;
 impl MutableContractTraitDispatcherSubPointersCopy of core::traits::Copy::<MutableContractTraitDispatcherSubPointers>;
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointers>;
 impl ContractTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableContractTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableContractTraitLibraryDispatcherSubPointers>;
 impl MutableContractTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableContractTraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointers>;
 impl ContractTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableContractTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableContractTraitSafeLibraryDispatcherSubPointers>;
 impl MutableContractTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableContractTraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointers>;
 impl ContractTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:9:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableContractTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableContractTraitSafeDispatcherSubPointers>;
 impl MutableContractTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableContractTraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -12183,35 +11564,50 @@ pub struct ComponentStorageBase {
 pub struct ComponentStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -12241,17 +11637,11 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -12271,27 +11661,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:14:1
-#[starknet::contract]
-^*******************^
 contract:
 
 
@@ -12303,26 +11684,41 @@ pub struct Storage {
 
 #[derive(Drop, Copy)]
 pub struct ContractStorageBase {
-    pub component_member: starknet::storage::StorageBase<super::test_component::Storage>,
+    pub component_member: starknet::storage::FlattenedStorage<super::test_component::Storage>,
 }
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
-    pub component_member: starknet::storage::StorageBase<starknet::storage::Mutable<super::test_component::Storage>>,
+    pub component_member: starknet::storage::FlattenedStorage<starknet::storage::Mutable<super::test_component::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
-           component_member: starknet::storage::StorageBase{ address: selector!("component_member") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           component_member: starknet::storage::StorageBase{ address: selector!("component_member") },
+           component_member: starknet::storage::FlattenedStorage{},
         }
     }
 }
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           component_member: starknet::storage::FlattenedStorage{},
+        }
+    }
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
         pub component_member: super::test_component::ComponentState<ContractState>,
 }
@@ -12330,15 +11726,15 @@ pub struct ContractState {
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -12427,17 +11823,11 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
 }
 
 
-lib.cairo:24:1
-
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:26:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -12474,18 +11864,12 @@ impl EventCompEventIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:14:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:14:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -12639,9 +12023,6 @@ mod contract {
     }
 }
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 ContractTraitDispatcherTrait:
 
 trait ContractTraitDispatcherTrait<T> {
@@ -12751,9 +12132,6 @@ impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<Contrac
 }
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitDispatcherCopy of core::traits::Copy::<ContractTraitDispatcher>;
@@ -12770,9 +12148,6 @@ impl ContractTraitDispatcherSerde of core::serde::Serde::<ContractTraitDispatche
 }
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreContractTraitDispatcher of starknet::Store::<ContractTraitDispatcher> {
@@ -12845,9 +12220,6 @@ type SubPointersType = MutableContractTraitDispatcherSubPointers;
 }
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitLibraryDispatcherCopy of core::traits::Copy::<ContractTraitLibraryDispatcher>;
@@ -12864,9 +12236,6 @@ impl ContractTraitLibraryDispatcherSerde of core::serde::Serde::<ContractTraitLi
 }
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreContractTraitLibraryDispatcher of starknet::Store::<ContractTraitLibraryDispatcher> {
@@ -12939,9 +12308,6 @@ type SubPointersType = MutableContractTraitLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
@@ -12958,9 +12324,6 @@ impl ContractTraitSafeLibraryDispatcherSerde of core::serde::Serde::<ContractTra
 }
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreContractTraitSafeLibraryDispatcher of starknet::Store::<ContractTraitSafeLibraryDispatcher> {
@@ -13033,9 +12396,6 @@ type SubPointersType = MutableContractTraitSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitSafeDispatcherCopy of core::traits::Copy::<ContractTraitSafeDispatcher>;
@@ -13052,9 +12412,6 @@ impl ContractTraitSafeDispatcherSerde of core::serde::Serde::<ContractTraitSafeD
 }
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreContractTraitSafeDispatcher of starknet::Store::<ContractTraitSafeDispatcher> {
@@ -13127,81 +12484,54 @@ type SubPointersType = MutableContractTraitSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitDispatcherSubPointers>;
 impl ContractTraitDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitDispatcherSubPointers>;
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableContractTraitDispatcherSubPointersDrop of core::traits::Drop::<MutableContractTraitDispatcherSubPointers>;
 impl MutableContractTraitDispatcherSubPointersCopy of core::traits::Copy::<MutableContractTraitDispatcherSubPointers>;
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointers>;
 impl ContractTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableContractTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableContractTraitLibraryDispatcherSubPointers>;
 impl MutableContractTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableContractTraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointers>;
 impl ContractTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableContractTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableContractTraitSafeLibraryDispatcherSubPointers>;
 impl MutableContractTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableContractTraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl ContractTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointers>;
 impl ContractTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:43:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableContractTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableContractTraitSafeDispatcherSubPointers>;
 impl MutableContractTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableContractTraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:48:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -13222,35 +12552,50 @@ pub struct ContractStorageBase {
 pub struct ContractStorageBaseMut {
     pub u256_pair: starknet::storage::StorageBase<starknet::storage::Mutable<super::u256Pair>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
            u256_pair: starknet::storage::StorageBase{ address: selector!("u256_pair") },
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
            u256_pair: starknet::storage::StorageBase{ address: selector!("u256_pair") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -13320,17 +12665,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:48:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:48:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -13350,18 +12689,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:48:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:48:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;

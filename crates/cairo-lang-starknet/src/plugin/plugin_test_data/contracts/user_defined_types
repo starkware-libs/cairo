@@ -93,9 +93,6 @@ mod test_contract {
     }
 }
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -125,10 +122,9 @@ pub struct ContractStorageBaseMut {
     pub mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<WrappedFelt252, WrappedFelt252>>>,
     pub zero_size_mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<ZeroSize, ZeroSize>>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
            var: starknet::storage::StorageBase{ address: selector!("var") },
            zero_size: starknet::storage::StorageBase{ address: selector!("zero_size") },
@@ -136,7 +132,10 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
            zero_size_mapping: starknet::storage::StorageBase{ address: selector!("zero_size_mapping") },
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
            var: starknet::storage::StorageBase{ address: selector!("var") },
            zero_size: starknet::storage::StorageBase{ address: selector!("zero_size") },
@@ -144,22 +143,35 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
            zero_size_mapping: starknet::storage::StorageBase{ address: selector!("zero_size_mapping") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -209,9 +221,6 @@ pub mod __constructor {
 
 
 
-lib.cairo:13:1
-    #[derive(Drop, Hash, starknet::Store)]
-^****************************************^
 impls:
 
 impl WrappedFelt252Drop of core::traits::Drop::<WrappedFelt252>;
@@ -228,9 +237,6 @@ impl WrappedFelt252Hash<
 }
 
 
-lib.cairo:13:26
-    #[derive(Drop, Hash, starknet::Store)]
-                         ^*************^
 starknet_derive:
 
 impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
@@ -303,9 +309,6 @@ type SubPointersType = MutableWrappedFelt252SubPointers;
 }
 
 
-lib.cairo:17:1
-    #[derive(Drop, Hash, Serde, starknet::Store)]
-^***********************************************^
 impls:
 
 impl ZeroSizeDrop of core::traits::Drop::<ZeroSize>;
@@ -332,9 +335,6 @@ impl ZeroSizeSerde of core::serde::Serde::<ZeroSize> {
 }
 
 
-lib.cairo:17:33
-    #[derive(Drop, Hash, Serde, starknet::Store)]
-                                ^*************^
 starknet_derive:
 
 impl StoreZeroSize of starknet::Store::<ZeroSize> {
@@ -371,9 +371,6 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
 
 
 
-lib.cairo:19:1
-
-^
 impls:
 
 impl SimpleEnumDrop of core::traits::Drop::<SimpleEnum>;
@@ -397,9 +394,6 @@ impl SimpleEnumSerde of core::serde::Serde::<SimpleEnum> {
 }
 
 
-lib.cairo:20:27
-    #[derive(Drop, Serde, starknet::Store)]
-                          ^*************^
 starknet_derive:
 
 impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
@@ -481,9 +475,6 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
 }
 
 
-lib.cairo:25:1
-
-^
 impls:
 
 impl EnumWithDefaultDrop of core::traits::Drop::<EnumWithDefault>;
@@ -509,9 +500,6 @@ impl EnumWithDefaultSerde of core::serde::Serde::<EnumWithDefault> {
 }
 
 
-lib.cairo:26:27
-    #[derive(Drop, Serde, starknet::Store)]
-                          ^*************^
 starknet_derive:
 
 impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
@@ -615,9 +603,6 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
 }
 
 
-lib.cairo:33:1
-
-^
 impls:
 
 impl BadEnumWithDefaultDrop of core::traits::Drop::<BadEnumWithDefault>;
@@ -643,17 +628,11 @@ impl BadEnumWithDefaultSerde of core::serde::Serde::<BadEnumWithDefault> {
 }
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -673,36 +652,24 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
 impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 
-lib.cairo:13:26
-    #[derive(Drop, Hash, starknet::Store)]
-                         ^*************^
 impls:
 
 impl WrappedFelt252SubPointersDrop of core::traits::Drop::<WrappedFelt252SubPointers>;
 impl WrappedFelt252SubPointersCopy of core::traits::Copy::<WrappedFelt252SubPointers>;
 
 
-lib.cairo:13:26
-    #[derive(Drop, Hash, starknet::Store)]
-                         ^*************^
 impls:
 
 impl MutableWrappedFelt252SubPointersDrop of core::traits::Drop::<MutableWrappedFelt252SubPointers>;
@@ -715,11 +682,31 @@ error: Plugin diagnostic: Multiple variants annotated with `#[default]`
         ^********^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:10:18
-        mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
-                 ^*******^
+ --> lib.cairo[contract]:10:24
+          pub mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
+                       ^*******^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:11:28
-        zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
-                           ^*******^
+ --> lib.cairo[contract]:11:34
+          pub zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
+                                 ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:18:49
+    pub mapping: starknet::storage::StorageBase<LegacyMap::<WrappedFelt252, WrappedFelt252>>,
+                                                ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:19:59
+    pub zero_size_mapping: starknet::storage::StorageBase<LegacyMap::<ZeroSize, ZeroSize>>,
+                                                          ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:25:76
+    pub mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<WrappedFelt252, WrappedFelt252>>>,
+                                                                           ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:26:86
+    pub zero_size_mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<ZeroSize, ZeroSize>>>,
+                                                                                     ^*******^

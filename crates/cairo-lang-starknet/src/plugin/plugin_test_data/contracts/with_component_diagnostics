@@ -55,9 +55,6 @@ mod test_contract {
     component!(super::test_component, test_component_storage, ABC);
 }
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -78,35 +75,50 @@ pub struct ComponentStorageBase {
 pub struct ComponentStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -136,17 +148,11 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -166,27 +172,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 contract:
 
 
@@ -201,33 +198,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -277,17 +289,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:13:1
-
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:15:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -324,18 +330,12 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -427,9 +427,6 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage::<a>, event: ABC::<b>);
 }
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -450,35 +447,50 @@ pub struct ComponentStorageBase {
 pub struct ComponentStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -508,17 +520,11 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -538,27 +544,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 contract:
 
 
@@ -573,33 +570,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -649,17 +661,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:13:1
-
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:15:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -696,18 +702,12 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -787,9 +787,6 @@ mod test_contract {
     component!(path: a + b, storage: c + d, event: e + f);
 }
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -810,35 +807,50 @@ pub struct ComponentStorageBase {
 pub struct ComponentStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -868,17 +880,11 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -898,27 +904,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 contract:
 
 
@@ -933,33 +930,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -1009,17 +1021,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:13:1
-
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:15:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1056,18 +1062,12 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -1160,9 +1160,6 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage);
 }
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -1183,35 +1180,50 @@ pub struct ComponentStorageBase {
 pub struct ComponentStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -1241,17 +1253,11 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1271,27 +1277,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 contract:
 
 
@@ -1306,33 +1303,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -1382,17 +1394,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:13:1
-
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:15:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1429,18 +1435,12 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -1536,9 +1536,6 @@ mod test_contract {
     }
 }
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -1559,35 +1556,50 @@ pub struct ComponentStorageBase {
 pub struct ComponentStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -1617,17 +1629,11 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1647,27 +1653,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 contract:
 
 
@@ -1681,34 +1678,49 @@ pub struct Storage {
 
 #[derive(Drop, Copy)]
 pub struct ContractStorageBase {
-    pub non_path_type: starknet::storage::StorageBase<(usize, usize)>,
-    pub non_component: starknet::storage::StorageBase<usize>,
-    pub test_component_storage: starknet::storage::StorageBase<super::test_component::Storage>,
+    pub non_path_type: starknet::storage::FlattenedStorage<(usize, usize)>,
+    pub non_component: starknet::storage::FlattenedStorage<usize>,
+    pub test_component_storage: starknet::storage::FlattenedStorage<super::test_component::Storage>,
 }
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
-    pub non_path_type: starknet::storage::StorageBase<starknet::storage::Mutable<(usize, usize)>>,
-    pub non_component: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
-    pub test_component_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::test_component::Storage>>,
+    pub non_path_type: starknet::storage::FlattenedStorage<starknet::storage::Mutable<(usize, usize)>>,
+    pub non_component: starknet::storage::FlattenedStorage<starknet::storage::Mutable<usize>>,
+    pub test_component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<super::test_component::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
-           non_path_type: starknet::storage::StorageBase{ address: selector!("non_path_type") },
-           non_component: starknet::storage::StorageBase{ address: selector!("non_component") },
-           test_component_storage: starknet::storage::StorageBase{ address: selector!("test_component_storage") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           non_path_type: starknet::storage::StorageBase{ address: selector!("non_path_type") },
-           non_component: starknet::storage::StorageBase{ address: selector!("non_component") },
-           test_component_storage: starknet::storage::StorageBase{ address: selector!("test_component_storage") },
+           non_path_type: starknet::storage::FlattenedStorage{},
+           non_component: starknet::storage::FlattenedStorage{},
+           test_component_storage: starknet::storage::FlattenedStorage{},
         }
     }
 }
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           non_path_type: starknet::storage::FlattenedStorage{},
+           non_component: starknet::storage::FlattenedStorage{},
+           test_component_storage: starknet::storage::FlattenedStorage{},
+        }
+    }
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
         pub test_component_storage: super::test_component::ComponentState<ContractState>,
 }
@@ -1716,15 +1728,15 @@ pub struct ContractState {
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -1794,17 +1806,11 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
 }
 
 
-lib.cairo:22:1
-
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:24:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1841,18 +1847,12 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -1933,9 +1933,6 @@ mod test_contract {
     }
 }
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -1956,35 +1953,50 @@ pub struct ComponentStorageBase {
 pub struct ComponentStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -2014,17 +2026,11 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2044,27 +2050,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 contract:
 
 
@@ -2079,33 +2076,48 @@ pub struct ContractStorageBase {
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -2155,17 +2167,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:14:1
-
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:16:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2202,18 +2208,12 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -2287,9 +2287,6 @@ mod test_contract {
     }
 }
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -2310,35 +2307,50 @@ pub struct ComponentStorageBase {
 pub struct ComponentStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -2368,17 +2380,11 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2398,27 +2404,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 contract:
 
 
@@ -2436,35 +2433,50 @@ pub struct ContractStorageBase {
 pub struct ContractStorageBaseMut {
     pub test_component_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::test_component::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
            test_component_storage: starknet::storage::StorageBase{ address: selector!("test_component_storage") },
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
            test_component_storage: starknet::storage::StorageBase{ address: selector!("test_component_storage") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -2514,17 +2526,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:16:1
-
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:18:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2561,18 +2567,12 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -2646,9 +2646,6 @@ mod test_contract {
     }
 }
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -2669,35 +2666,50 @@ pub struct ComponentStorageBase {
 pub struct ComponentStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -2727,17 +2739,11 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2757,27 +2763,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -2792,26 +2789,41 @@ pub struct Storage {
 
 #[derive(Drop, Copy)]
 pub struct ContractStorageBase {
-    pub test_component_storage: starknet::storage::StorageBase<super::test_component::Storage>,
+    pub test_component_storage: starknet::storage::FlattenedStorage<super::test_component::Storage>,
 }
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
-    pub test_component_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::test_component::Storage>>,
+    pub test_component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<super::test_component::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
-           test_component_storage: starknet::storage::StorageBase{ address: selector!("test_component_storage") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           test_component_storage: starknet::storage::StorageBase{ address: selector!("test_component_storage") },
+           test_component_storage: starknet::storage::FlattenedStorage{},
         }
     }
 }
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           test_component_storage: starknet::storage::FlattenedStorage{},
+        }
+    }
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
         pub test_component_storage: super::test_component::ComponentState<ContractState>,
 }
@@ -2819,15 +2831,15 @@ pub struct ContractState {
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -2898,17 +2910,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2928,18 +2934,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -3029,17 +3029,11 @@ mod test_contract {
     }
 }
 
-lib.cairo:8:1
-
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:9:16
-#[derive(Drop, starknet::Event)]
-               ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3076,9 +3070,6 @@ impl EventABCIntoEvent of Into<test_component::Event, Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -3099,35 +3090,50 @@ pub struct ComponentStorageBase {
 pub struct ComponentStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -3157,17 +3163,11 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3187,27 +3187,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:14:1
-#[starknet::contract]
-^*******************^
 contract:
 
 
@@ -3219,26 +3210,41 @@ pub struct Storage {
 
 #[derive(Drop, Copy)]
 pub struct ContractStorageBase {
-    pub test_component_storage: starknet::storage::StorageBase<super::test_component::Storage>,
+    pub test_component_storage: starknet::storage::FlattenedStorage<super::test_component::Storage>,
 }
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
-    pub test_component_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::test_component::Storage>>,
+    pub test_component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<super::test_component::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
-           test_component_storage: starknet::storage::StorageBase{ address: selector!("test_component_storage") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           test_component_storage: starknet::storage::StorageBase{ address: selector!("test_component_storage") },
+           test_component_storage: starknet::storage::FlattenedStorage{},
         }
     }
 }
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           test_component_storage: starknet::storage::FlattenedStorage{},
+        }
+    }
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
         pub test_component_storage: super::test_component::ComponentState<ContractState>,
 }
@@ -3246,15 +3252,15 @@ pub struct ContractState {
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -3325,18 +3331,12 @@ pub mod __constructor {
 
 
 
-lib.cairo:14:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:14:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -3448,9 +3448,6 @@ mod test_contract {
     }
 }
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -3471,35 +3468,50 @@ pub struct ComponentStorageBase {
 pub struct ComponentStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -3529,17 +3541,11 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3559,27 +3565,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:8:1
-#[starknet::component]
-^********************^
 component:
 
 #[event]
@@ -3600,35 +3597,50 @@ pub struct ComponentStorageBase {
 pub struct ComponentStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
 }
-impl StorageBaseImpl<TContractState> of starknet::storage::StorageBaseTrait<ComponentState<TContractState>> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ComponentStorageBase;
-    type BaseMutType = ComponentStorageBaseMut;
-    fn storage_base(self: @ComponentState<TContractState>) -> ComponentStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
         ComponentStorageBase {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-    fn storage_base_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ComponentStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
         ComponentStorageBaseMut {
            data: starknet::storage::StorageBase{ address: selector!("data") },
         }
     }
-}
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ComponentStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ComponentStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ComponentStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ComponentStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ComponentState<TContractState> {
 }
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
 impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
-    type Target = ComponentStorageBase;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> ComponentStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
-    type Target = ComponentStorageBaseMut;
-    fn deref_mut(ref self: ComponentState<TContractState>) -> ComponentStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
@@ -3658,17 +3670,11 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:8:1
-#[starknet::component]
-^********************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:8:1
-#[starknet::component]
-^********************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3688,27 +3694,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:8:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
 impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
 
 
-lib.cairo:8:1
-#[starknet::component]
-^********************^
 impls:
 
 impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
 impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
 
 
-lib.cairo:16:1
-#[starknet::contract]
-^*******************^
 contract:
 
 
@@ -3721,30 +3718,45 @@ pub struct Storage {
 
 #[derive(Drop, Copy)]
 pub struct ContractStorageBase {
-    pub component1_storage: starknet::storage::StorageBase<super::component1::Storage>,
-    pub component2_storage: starknet::storage::StorageBase<super::component2::Storage>,
+    pub component1_storage: starknet::storage::FlattenedStorage<super::component1::Storage>,
+    pub component2_storage: starknet::storage::FlattenedStorage<super::component2::Storage>,
 }
 #[derive(Drop, Copy)]
 pub struct ContractStorageBaseMut {
-    pub component1_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::component1::Storage>>,
-    pub component2_storage: starknet::storage::StorageBase<starknet::storage::Mutable<super::component2::Storage>>,
+    pub component1_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<super::component1::Storage>>,
+    pub component2_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<super::component2::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
-           component1_storage: starknet::storage::StorageBase{ address: selector!("component1_storage") },
-           component2_storage: starknet::storage::StorageBase{ address: selector!("component2_storage") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           component1_storage: starknet::storage::StorageBase{ address: selector!("component1_storage") },
-           component2_storage: starknet::storage::StorageBase{ address: selector!("component2_storage") },
+           component1_storage: starknet::storage::FlattenedStorage{},
+           component2_storage: starknet::storage::FlattenedStorage{},
         }
     }
 }
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           component1_storage: starknet::storage::FlattenedStorage{},
+           component2_storage: starknet::storage::FlattenedStorage{},
+        }
+    }
+ }
+//  impl FlattenedStorageDeref of core::ops::Deref<starknet::storage::FlattenedStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlattenedStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlattenedStorageDeref of //  core::ops::Deref<starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
         pub component1_storage: super::component1::ComponentState<ContractState>,
         pub component2_storage: super::component2::ComponentState<ContractState>,
@@ -3753,15 +3765,15 @@ pub struct ContractState {
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -3852,17 +3864,11 @@ impl HasComponentImpl_component1 of super::component1::HasComponent<ContractStat
 }
 
 
-lib.cairo:29:1
-
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:31:20
-    #[derive(Drop, starknet::Event)]
-                   ^*************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3899,18 +3905,12 @@ impl EventComp1EventIntoEvent of Into<super::component1::Event, Event> {
 
 
 
-lib.cairo:16:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:16:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;

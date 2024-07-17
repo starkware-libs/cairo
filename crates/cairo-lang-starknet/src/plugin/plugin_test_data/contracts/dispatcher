@@ -21,9 +21,6 @@ trait IContract<T> {
     fn empty(self: @T);
 }
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -194,9 +191,6 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -213,9 +207,6 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -288,9 +279,6 @@ type SubPointersType = MutableIContractDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -307,9 +295,6 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -382,9 +367,6 @@ type SubPointersType = MutableIContractLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -401,9 +383,6 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -476,9 +455,6 @@ type SubPointersType = MutableIContractSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -495,9 +471,6 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -570,72 +543,48 @@ type SubPointersType = MutableIContractSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
 impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractDispatcherSubPointers>;
 impl MutableIContractDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
 impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractLibraryDispatcherSubPointers>;
 impl MutableIContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
 impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeLibraryDispatcherSubPointers>;
 impl MutableIContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
 impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeDispatcherSubPointers>;
@@ -668,9 +617,6 @@ trait IContract<T> {
     fn bad_sig2(self: @T, __calldata__: felt252);
 }
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -717,9 +663,6 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -736,9 +679,6 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -811,9 +751,6 @@ type SubPointersType = MutableIContractDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -830,9 +767,6 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -905,9 +839,6 @@ type SubPointersType = MutableIContractLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -924,9 +855,6 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -999,9 +927,6 @@ type SubPointersType = MutableIContractSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -1018,9 +943,6 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -1093,72 +1015,48 @@ type SubPointersType = MutableIContractSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
 impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractDispatcherSubPointers>;
 impl MutableIContractDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
 impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractLibraryDispatcherSubPointers>;
 impl MutableIContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
 impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeLibraryDispatcherSubPointers>;
 impl MutableIContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
 impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeDispatcherSubPointers>;
@@ -1218,9 +1116,6 @@ trait IContract<T> {
     fn empty(self: @T);
 }
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -1320,9 +1215,6 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -1339,9 +1231,6 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -1414,9 +1303,6 @@ type SubPointersType = MutableIContractDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -1433,9 +1319,6 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -1508,9 +1391,6 @@ type SubPointersType = MutableIContractLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -1527,9 +1407,6 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -1602,9 +1479,6 @@ type SubPointersType = MutableIContractSafeLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -1621,9 +1495,6 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -1696,72 +1567,48 @@ type SubPointersType = MutableIContractSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
 impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractDispatcherSubPointers>;
 impl MutableIContractDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
 impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractLibraryDispatcherSubPointers>;
 impl MutableIContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
 impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeLibraryDispatcherSubPointers>;
 impl MutableIContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIContractSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
 impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableIContractSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableIContractSafeDispatcherSubPointers>;
