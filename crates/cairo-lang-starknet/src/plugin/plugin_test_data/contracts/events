@@ -158,9 +158,9 @@ impl StoreA of starknet::Store::<A> {
 }
 
 #[derive(Drop, Copy)]
-struct ASubPointers {
-    x: starknet::storage::StoragePointer<felt252>,
-    data: starknet::storage::StoragePointer<usize>,
+pub struct ASubPointers {
+    pub x: starknet::storage::StoragePointer<felt252>,
+    pub data: starknet::storage::StoragePointer<usize>,
 }
 impl ASubPointersImpl of starknet::storage::SubPointers<A> {
 type SubPointersType = ASubPointers;
@@ -183,9 +183,9 @@ type SubPointersType = ASubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableASubPointers {
-    x: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
-    data: starknet::storage::StoragePointer<starknet::storage::Mutable::<usize>>,
+pub struct MutableASubPointers {
+    pub x: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
+    pub data: starknet::storage::StoragePointer<starknet::storage::Mutable::<usize>>,
 }
 impl MutableASubPointersImpl of starknet::storage::MutableSubPointers<A> {
 type SubPointersType = MutableASubPointers;

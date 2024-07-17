@@ -166,33 +166,39 @@ pub enum Event {}
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     user_info: starknet::storage::StorageBase<UserInfo>,
-     transaction_info: starknet::storage::StorageBase<TransactionInfo>,
+struct StorageStorageBase {
+    user_info: starknet::storage::StorageBase<UserInfo>,
+    transaction_info: starknet::storage::StorageBase<TransactionInfo>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+type BaseType = StorageStorageBase;
+   fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+       
+        let user_info_value = starknet::storage::StorageBase {address: selector!("user_info")};
+        let transaction_info_value = starknet::storage::StorageBase {address: selector!("transaction_info")};
+        StorageStorageBase {
+           user_info: user_info_value,
+           transaction_info: transaction_info_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     user_info: starknet::storage::StorageBase<starknet::storage::Mutable<UserInfo>>,
-     transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable<TransactionInfo>>,
+struct MutableStorageStorageBase {
+    user_info: starknet::storage::StorageBase<starknet::storage::Mutable::<UserInfo>>,
+    transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable::<TransactionInfo>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           user_info: starknet::storage::StorageBase{ address: selector!("user_info") },
-           transaction_info: starknet::storage::StorageBase{ address: selector!("transaction_info") },
+impl MutableStorageStorageImpl of starknet::storage::MutableStorageTrait<Storage> {
+type BaseType = MutableStorageStorageBase;
+   fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> MutableStorageStorageBase {
+       
+        let user_info_value = starknet::storage::StorageBase {address: selector!("user_info")};
+        let transaction_info_value = starknet::storage::StorageBase {address: selector!("transaction_info")};
+        MutableStorageStorageBase {
+           user_info: user_info_value,
+           transaction_info: transaction_info_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           user_info: starknet::storage::StorageBase{ address: selector!("user_info") },
-           transaction_info: starknet::storage::StorageBase{ address: selector!("transaction_info") },
-        }
-    }
- }
 
 pub struct ContractState {
 }
@@ -537,10 +543,10 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl MutableStorageStorageBaseDrop of core::traits::Drop::<MutableStorageStorageBase>;
+impl MutableStorageStorageBaseCopy of core::traits::Copy::<MutableStorageStorageBase>;
 }
 trait IERC20DispatcherTrait<T> {
     fn get_name(self: T) -> felt252;
@@ -1467,7 +1473,7 @@ impl StoreIERC20Dispatcher of starknet::Store::<IERC20Dispatcher> {
 
 #[derive(Drop, Copy)]
 struct IERC20DispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 impl IERC20DispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20Dispatcher> {
 type SubPointersType = IERC20DispatcherSubPointers;
@@ -1485,7 +1491,7 @@ type SubPointersType = IERC20DispatcherSubPointers;
 }
 #[derive(Drop, Copy)]
 struct MutableIERC20DispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
 impl MutableIERC20DispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IERC20Dispatcher> {
 type SubPointersType = MutableIERC20DispatcherSubPointers;
@@ -1547,7 +1553,7 @@ impl StoreIERC20LibraryDispatcher of starknet::Store::<IERC20LibraryDispatcher> 
 
 #[derive(Drop, Copy)]
 struct IERC20LibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 impl IERC20LibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20LibraryDispatcher> {
 type SubPointersType = IERC20LibraryDispatcherSubPointers;
@@ -1565,7 +1571,7 @@ type SubPointersType = IERC20LibraryDispatcherSubPointers;
 }
 #[derive(Drop, Copy)]
 struct MutableIERC20LibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 impl MutableIERC20LibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IERC20LibraryDispatcher> {
 type SubPointersType = MutableIERC20LibraryDispatcherSubPointers;
@@ -1627,7 +1633,7 @@ impl StoreIERC20SafeLibraryDispatcher of starknet::Store::<IERC20SafeLibraryDisp
 
 #[derive(Drop, Copy)]
 struct IERC20SafeLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 impl IERC20SafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20SafeLibraryDispatcher> {
 type SubPointersType = IERC20SafeLibraryDispatcherSubPointers;
@@ -1645,7 +1651,7 @@ type SubPointersType = IERC20SafeLibraryDispatcherSubPointers;
 }
 #[derive(Drop, Copy)]
 struct MutableIERC20SafeLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 impl MutableIERC20SafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IERC20SafeLibraryDispatcher> {
 type SubPointersType = MutableIERC20SafeLibraryDispatcherSubPointers;
@@ -1707,7 +1713,7 @@ impl StoreIERC20SafeDispatcher of starknet::Store::<IERC20SafeDispatcher> {
 
 #[derive(Drop, Copy)]
 struct IERC20SafeDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 impl IERC20SafeDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20SafeDispatcher> {
 type SubPointersType = IERC20SafeDispatcherSubPointers;
@@ -1725,7 +1731,7 @@ type SubPointersType = IERC20SafeDispatcherSubPointers;
 }
 #[derive(Drop, Copy)]
 struct MutableIERC20SafeDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
 impl MutableIERC20SafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IERC20SafeDispatcher> {
 type SubPointersType = MutableIERC20SafeDispatcherSubPointers;
@@ -1890,33 +1896,39 @@ pub enum Event {}
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     user_info: starknet::storage::StorageBase<UserInfo>,
-     transaction_info: starknet::storage::StorageBase<TransactionInfo>,
+struct StorageStorageBase {
+    user_info: starknet::storage::StorageBase<UserInfo>,
+    transaction_info: starknet::storage::StorageBase<TransactionInfo>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+type BaseType = StorageStorageBase;
+   fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+       
+        let user_info_value = starknet::storage::StorageBase {address: selector!("user_info")};
+        let transaction_info_value = starknet::storage::StorageBase {address: selector!("transaction_info")};
+        StorageStorageBase {
+           user_info: user_info_value,
+           transaction_info: transaction_info_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     user_info: starknet::storage::StorageBase<starknet::storage::Mutable<UserInfo>>,
-     transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable<TransactionInfo>>,
+struct MutableStorageStorageBase {
+    user_info: starknet::storage::StorageBase<starknet::storage::Mutable::<UserInfo>>,
+    transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable::<TransactionInfo>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           user_info: starknet::storage::StorageBase{ address: selector!("user_info") },
-           transaction_info: starknet::storage::StorageBase{ address: selector!("transaction_info") },
+impl MutableStorageStorageImpl of starknet::storage::MutableStorageTrait<Storage> {
+type BaseType = MutableStorageStorageBase;
+   fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> MutableStorageStorageBase {
+       
+        let user_info_value = starknet::storage::StorageBase {address: selector!("user_info")};
+        let transaction_info_value = starknet::storage::StorageBase {address: selector!("transaction_info")};
+        MutableStorageStorageBase {
+           user_info: user_info_value,
+           transaction_info: transaction_info_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           user_info: starknet::storage::StorageBase{ address: selector!("user_info") },
-           transaction_info: starknet::storage::StorageBase{ address: selector!("transaction_info") },
-        }
-    }
- }
 
 pub struct ContractState {
 }
@@ -2261,9 +2273,9 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl MutableStorageStorageBaseDrop of core::traits::Drop::<MutableStorageStorageBase>;
+impl MutableStorageStorageBaseCopy of core::traits::Copy::<MutableStorageStorageBase>;
 
 //! > expected_diagnostics

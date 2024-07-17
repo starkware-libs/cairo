@@ -39,29 +39,33 @@ pub enum Event {}
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     balance: starknet::storage::StorageBase<usize>,
+struct StorageStorageBase {
+    balance: starknet::storage::StorageBase<usize>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+type BaseType = StorageStorageBase;
+   fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+       
+        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
+        StorageStorageBase {
+           balance: balance_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     balance: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
+struct MutableStorageStorageBase {
+    balance: starknet::storage::StorageBase<starknet::storage::Mutable::<usize>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           balance: starknet::storage::StorageBase{ address: selector!("balance") },
+impl MutableStorageStorageImpl of starknet::storage::MutableStorageTrait<Storage> {
+type BaseType = MutableStorageStorageBase;
+   fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> MutableStorageStorageBase {
+       
+        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
+        MutableStorageStorageBase {
+           balance: balance_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           balance: starknet::storage::StorageBase{ address: selector!("balance") },
-        }
-    }
- }
 
 pub struct ContractState {
 }
@@ -174,10 +178,10 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl MutableStorageStorageBaseDrop of core::traits::Drop::<MutableStorageStorageBase>;
+impl MutableStorageStorageBaseCopy of core::traits::Copy::<MutableStorageStorageBase>;
 }
 trait HelloStarknetTraitDispatcherTrait<T> {
     // Increases the balance by the given amount.
@@ -393,7 +397,7 @@ impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDi
 
 #[derive(Drop, Copy)]
 struct HelloStarknetTraitDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 impl HelloStarknetTraitDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitDispatcher> {
 type SubPointersType = HelloStarknetTraitDispatcherSubPointers;
@@ -411,7 +415,7 @@ type SubPointersType = HelloStarknetTraitDispatcherSubPointers;
 }
 #[derive(Drop, Copy)]
 struct MutableHelloStarknetTraitDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
 impl MutableHelloStarknetTraitDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<HelloStarknetTraitDispatcher> {
 type SubPointersType = MutableHelloStarknetTraitDispatcherSubPointers;
@@ -473,7 +477,7 @@ impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknet
 
 #[derive(Drop, Copy)]
 struct HelloStarknetTraitLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 impl HelloStarknetTraitLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitLibraryDispatcher> {
 type SubPointersType = HelloStarknetTraitLibraryDispatcherSubPointers;
@@ -491,7 +495,7 @@ type SubPointersType = HelloStarknetTraitLibraryDispatcherSubPointers;
 }
 #[derive(Drop, Copy)]
 struct MutableHelloStarknetTraitLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 impl MutableHelloStarknetTraitLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<HelloStarknetTraitLibraryDispatcher> {
 type SubPointersType = MutableHelloStarknetTraitLibraryDispatcherSubPointers;
@@ -553,7 +557,7 @@ impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStar
 
 #[derive(Drop, Copy)]
 struct HelloStarknetTraitSafeLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitSafeLibraryDispatcher> {
 type SubPointersType = HelloStarknetTraitSafeLibraryDispatcherSubPointers;
@@ -571,7 +575,7 @@ type SubPointersType = HelloStarknetTraitSafeLibraryDispatcherSubPointers;
 }
 #[derive(Drop, Copy)]
 struct MutableHelloStarknetTraitSafeLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 impl MutableHelloStarknetTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<HelloStarknetTraitSafeLibraryDispatcher> {
 type SubPointersType = MutableHelloStarknetTraitSafeLibraryDispatcherSubPointers;
@@ -633,7 +637,7 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
 
 #[derive(Drop, Copy)]
 struct HelloStarknetTraitSafeDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 impl HelloStarknetTraitSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitSafeDispatcher> {
 type SubPointersType = HelloStarknetTraitSafeDispatcherSubPointers;
@@ -651,7 +655,7 @@ type SubPointersType = HelloStarknetTraitSafeDispatcherSubPointers;
 }
 #[derive(Drop, Copy)]
 struct MutableHelloStarknetTraitSafeDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
 impl MutableHelloStarknetTraitSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<HelloStarknetTraitSafeDispatcher> {
 type SubPointersType = MutableHelloStarknetTraitSafeDispatcherSubPointers;
@@ -706,29 +710,33 @@ pub enum Event {}
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     balance: starknet::storage::StorageBase<usize>,
+struct StorageStorageBase {
+    balance: starknet::storage::StorageBase<usize>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+type BaseType = StorageStorageBase;
+   fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+       
+        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
+        StorageStorageBase {
+           balance: balance_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     balance: starknet::storage::StorageBase<starknet::storage::Mutable<usize>>,
+struct MutableStorageStorageBase {
+    balance: starknet::storage::StorageBase<starknet::storage::Mutable::<usize>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           balance: starknet::storage::StorageBase{ address: selector!("balance") },
+impl MutableStorageStorageImpl of starknet::storage::MutableStorageTrait<Storage> {
+type BaseType = MutableStorageStorageBase;
+   fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> MutableStorageStorageBase {
+       
+        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
+        MutableStorageStorageBase {
+           balance: balance_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           balance: starknet::storage::StorageBase{ address: selector!("balance") },
-        }
-    }
- }
 
 pub struct ContractState {
 }
@@ -841,9 +849,9 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl MutableStorageStorageBaseDrop of core::traits::Drop::<MutableStorageStorageBase>;
+impl MutableStorageStorageBaseCopy of core::traits::Copy::<MutableStorageStorageBase>;
 
 //! > expected_diagnostics

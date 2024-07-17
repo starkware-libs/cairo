@@ -132,8 +132,8 @@ impl StoreOuterType of starknet::Store::<OuterType> {
 }
 
 #[derive(Drop, Copy)]
-struct OuterTypeSubPointers {
-    x: starknet::storage::StoragePointer<u32>,
+pub struct OuterTypeSubPointers {
+    pub x: starknet::storage::StoragePointer<u32>,
 }
 impl OuterTypeSubPointersImpl of starknet::storage::SubPointers<OuterType> {
 type SubPointersType = OuterTypeSubPointers;
@@ -150,8 +150,8 @@ type SubPointersType = OuterTypeSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableOuterTypeSubPointers {
-    x: starknet::storage::StoragePointer<starknet::storage::Mutable::<u32>>,
+pub struct MutableOuterTypeSubPointers {
+    pub x: starknet::storage::StoragePointer<starknet::storage::Mutable::<u32>>,
 }
 impl MutableOuterTypeSubPointersImpl of starknet::storage::MutableSubPointers<OuterType> {
 type SubPointersType = MutableOuterTypeSubPointers;
@@ -216,7 +216,7 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
+pub struct StorageStorageBase {
     pub var_felt252: starknet::storage::StorageBase<felt252>,
     pub var_u8: starknet::storage::StorageBase<u8>,
     pub var_u16: starknet::storage::StorageBase<u16>,
@@ -232,65 +232,95 @@ pub struct ContractStorageBase {
     pub inner_type_var: starknet::storage::StorageBase<inner::InnerType>,
     pub inner_type_to_inner_type: starknet::storage::StorageBase<LegacyMap::<inner::InnerType, inner::InnerType>>,
 }
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+type BaseType = StorageStorageBase;
+   fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+       
+        let var_felt252_value = starknet::storage::StorageBase {address: selector!("var_felt252")};
+        let var_u8_value = starknet::storage::StorageBase {address: selector!("var_u8")};
+        let var_u16_value = starknet::storage::StorageBase {address: selector!("var_u16")};
+        let var_u32_value = starknet::storage::StorageBase {address: selector!("var_u32")};
+        let var_u64_value = starknet::storage::StorageBase {address: selector!("var_u64")};
+        let var_u128_value = starknet::storage::StorageBase {address: selector!("var_u128")};
+        let var_bool_value = starknet::storage::StorageBase {address: selector!("var_bool")};
+        let felt252_to_u128_value = starknet::storage::StorageBase {address: selector!("felt252_to_u128")};
+        let u128_to_bool_value = starknet::storage::StorageBase {address: selector!("u128_to_bool")};
+        let bool_to_felt252_value = starknet::storage::StorageBase {address: selector!("bool_to_felt252")};
+        let outer_type_var_value = starknet::storage::StorageBase {address: selector!("outer_type_var")};
+        let outer_type_to_outer_type_value = starknet::storage::StorageBase {address: selector!("outer_type_to_outer_type")};
+        let inner_type_var_value = starknet::storage::StorageBase {address: selector!("inner_type_var")};
+        let inner_type_to_inner_type_value = starknet::storage::StorageBase {address: selector!("inner_type_to_inner_type")};
+        StorageStorageBase {
+           var_felt252: var_felt252_value,
+           var_u8: var_u8_value,
+           var_u16: var_u16_value,
+           var_u32: var_u32_value,
+           var_u64: var_u64_value,
+           var_u128: var_u128_value,
+           var_bool: var_bool_value,
+           felt252_to_u128: felt252_to_u128_value,
+           u128_to_bool: u128_to_bool_value,
+           bool_to_felt252: bool_to_felt252_value,
+           outer_type_var: outer_type_var_value,
+           outer_type_to_outer_type: outer_type_to_outer_type_value,
+           inner_type_var: inner_type_var_value,
+           inner_type_to_inner_type: inner_type_to_inner_type_value,
+        }
+    }
+}
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub var_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
-    pub var_u8: starknet::storage::StorageBase<starknet::storage::Mutable<u8>>,
-    pub var_u16: starknet::storage::StorageBase<starknet::storage::Mutable<u16>>,
-    pub var_u32: starknet::storage::StorageBase<starknet::storage::Mutable<u32>>,
-    pub var_u64: starknet::storage::StorageBase<starknet::storage::Mutable<u64>>,
-    pub var_u128: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
-    pub var_bool: starknet::storage::StorageBase<starknet::storage::Mutable<bool>>,
-    pub felt252_to_u128: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<felt252, u128>>>,
-    pub u128_to_bool: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<u128, bool>>>,
-    pub bool_to_felt252: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<bool, felt252>>>,
-    pub outer_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<super::OuterType>>,
-    pub outer_type_to_outer_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<super::OuterType, super::OuterType>>>,
-    pub inner_type_var: starknet::storage::StorageBase<starknet::storage::Mutable<inner::InnerType>>,
-    pub inner_type_to_inner_type: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<inner::InnerType, inner::InnerType>>>,
+pub struct MutableStorageStorageBase {
+    pub var_felt252: starknet::storage::StorageBase<starknet::storage::Mutable::<felt252>>,
+    pub var_u8: starknet::storage::StorageBase<starknet::storage::Mutable::<u8>>,
+    pub var_u16: starknet::storage::StorageBase<starknet::storage::Mutable::<u16>>,
+    pub var_u32: starknet::storage::StorageBase<starknet::storage::Mutable::<u32>>,
+    pub var_u64: starknet::storage::StorageBase<starknet::storage::Mutable::<u64>>,
+    pub var_u128: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
+    pub var_bool: starknet::storage::StorageBase<starknet::storage::Mutable::<bool>>,
+    pub felt252_to_u128: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<felt252, u128>>>,
+    pub u128_to_bool: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<u128, bool>>>,
+    pub bool_to_felt252: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<bool, felt252>>>,
+    pub outer_type_var: starknet::storage::StorageBase<starknet::storage::Mutable::<super::OuterType>>,
+    pub outer_type_to_outer_type: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<super::OuterType, super::OuterType>>>,
+    pub inner_type_var: starknet::storage::StorageBase<starknet::storage::Mutable::<inner::InnerType>>,
+    pub inner_type_to_inner_type: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<inner::InnerType, inner::InnerType>>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           var_felt252: starknet::storage::StorageBase{ address: selector!("var_felt252") },
-           var_u8: starknet::storage::StorageBase{ address: selector!("var_u8") },
-           var_u16: starknet::storage::StorageBase{ address: selector!("var_u16") },
-           var_u32: starknet::storage::StorageBase{ address: selector!("var_u32") },
-           var_u64: starknet::storage::StorageBase{ address: selector!("var_u64") },
-           var_u128: starknet::storage::StorageBase{ address: selector!("var_u128") },
-           var_bool: starknet::storage::StorageBase{ address: selector!("var_bool") },
-           felt252_to_u128: starknet::storage::StorageBase{ address: selector!("felt252_to_u128") },
-           u128_to_bool: starknet::storage::StorageBase{ address: selector!("u128_to_bool") },
-           bool_to_felt252: starknet::storage::StorageBase{ address: selector!("bool_to_felt252") },
-           outer_type_var: starknet::storage::StorageBase{ address: selector!("outer_type_var") },
-           outer_type_to_outer_type: starknet::storage::StorageBase{ address: selector!("outer_type_to_outer_type") },
-           inner_type_var: starknet::storage::StorageBase{ address: selector!("inner_type_var") },
-           inner_type_to_inner_type: starknet::storage::StorageBase{ address: selector!("inner_type_to_inner_type") },
+impl MutableStorageStorageImpl of starknet::storage::MutableStorageTrait<Storage> {
+type BaseType = MutableStorageStorageBase;
+   fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> MutableStorageStorageBase {
+       
+        let var_felt252_value = starknet::storage::StorageBase {address: selector!("var_felt252")};
+        let var_u8_value = starknet::storage::StorageBase {address: selector!("var_u8")};
+        let var_u16_value = starknet::storage::StorageBase {address: selector!("var_u16")};
+        let var_u32_value = starknet::storage::StorageBase {address: selector!("var_u32")};
+        let var_u64_value = starknet::storage::StorageBase {address: selector!("var_u64")};
+        let var_u128_value = starknet::storage::StorageBase {address: selector!("var_u128")};
+        let var_bool_value = starknet::storage::StorageBase {address: selector!("var_bool")};
+        let felt252_to_u128_value = starknet::storage::StorageBase {address: selector!("felt252_to_u128")};
+        let u128_to_bool_value = starknet::storage::StorageBase {address: selector!("u128_to_bool")};
+        let bool_to_felt252_value = starknet::storage::StorageBase {address: selector!("bool_to_felt252")};
+        let outer_type_var_value = starknet::storage::StorageBase {address: selector!("outer_type_var")};
+        let outer_type_to_outer_type_value = starknet::storage::StorageBase {address: selector!("outer_type_to_outer_type")};
+        let inner_type_var_value = starknet::storage::StorageBase {address: selector!("inner_type_var")};
+        let inner_type_to_inner_type_value = starknet::storage::StorageBase {address: selector!("inner_type_to_inner_type")};
+        MutableStorageStorageBase {
+           var_felt252: var_felt252_value,
+           var_u8: var_u8_value,
+           var_u16: var_u16_value,
+           var_u32: var_u32_value,
+           var_u64: var_u64_value,
+           var_u128: var_u128_value,
+           var_bool: var_bool_value,
+           felt252_to_u128: felt252_to_u128_value,
+           u128_to_bool: u128_to_bool_value,
+           bool_to_felt252: bool_to_felt252_value,
+           outer_type_var: outer_type_var_value,
+           outer_type_to_outer_type: outer_type_to_outer_type_value,
+           inner_type_var: inner_type_var_value,
+           inner_type_to_inner_type: inner_type_to_inner_type_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           var_felt252: starknet::storage::StorageBase{ address: selector!("var_felt252") },
-           var_u8: starknet::storage::StorageBase{ address: selector!("var_u8") },
-           var_u16: starknet::storage::StorageBase{ address: selector!("var_u16") },
-           var_u32: starknet::storage::StorageBase{ address: selector!("var_u32") },
-           var_u64: starknet::storage::StorageBase{ address: selector!("var_u64") },
-           var_u128: starknet::storage::StorageBase{ address: selector!("var_u128") },
-           var_bool: starknet::storage::StorageBase{ address: selector!("var_bool") },
-           felt252_to_u128: starknet::storage::StorageBase{ address: selector!("felt252_to_u128") },
-           u128_to_bool: starknet::storage::StorageBase{ address: selector!("u128_to_bool") },
-           bool_to_felt252: starknet::storage::StorageBase{ address: selector!("bool_to_felt252") },
-           outer_type_var: starknet::storage::StorageBase{ address: selector!("outer_type_var") },
-           outer_type_to_outer_type: starknet::storage::StorageBase{ address: selector!("outer_type_to_outer_type") },
-           inner_type_var: starknet::storage::StorageBase{ address: selector!("inner_type_var") },
-           inner_type_to_inner_type: starknet::storage::StorageBase{ address: selector!("inner_type_to_inner_type") },
-        }
-    }
- }
 
 pub struct ContractState {
 }
@@ -391,8 +421,8 @@ lib.cairo:7:1
 ^*******************^
 impls:
 
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:7:1
@@ -400,8 +430,8 @@ lib.cairo:7:1
 ^*******************^
 impls:
 
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl MutableStorageStorageBaseDrop of core::traits::Drop::<MutableStorageStorageBase>;
+impl MutableStorageStorageBaseCopy of core::traits::Copy::<MutableStorageStorageBase>;
 
 //! > expected_diagnostics
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
@@ -428,3 +458,8 @@ warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[featur
  --> lib.cairo:24:35
         inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
                                   ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo:7:1
+#[starknet::contract]
+^*******************^

@@ -84,41 +84,51 @@ pub mod contract_with_4_components {
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
-     ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
-     mintable_storage: starknet::storage::FlattenedStorage<mintable_comp::Storage>,
-     upgradable_storage: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+struct StorageStorageBase {
+    erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+    ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+    mintable_storage: starknet::storage::FlattenedStorage<mintable_comp::Storage>,
+    upgradable_storage: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+type BaseType = StorageStorageBase;
+   fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+       
+        let erc20_storage_value = starknet::storage::FlattenedStorage {};
+        let ownable_storage_value = starknet::storage::FlattenedStorage {};
+        let mintable_storage_value = starknet::storage::FlattenedStorage {};
+        let upgradable_storage_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBase {
+           erc20_storage: erc20_storage_value,
+           ownable_storage: ownable_storage_value,
+           mintable_storage: mintable_storage_value,
+           upgradable_storage: upgradable_storage_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<erc20_comp::Storage>>,
-     ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<ownable_comp::Storage>>,
-     mintable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<mintable_comp::Storage>>,
-     upgradable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<upgradable_comp::Storage>>,
+struct MutableStorageStorageBase {
+    erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
+    ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+    mintable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<mintable_comp::Storage>>,
+    upgradable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           erc20_storage: starknet::storage::FlattenedStorage{},
-           ownable_storage: starknet::storage::FlattenedStorage{},
-           mintable_storage: starknet::storage::FlattenedStorage{},
-           upgradable_storage: starknet::storage::FlattenedStorage{},
+impl MutableStorageStorageImpl of starknet::storage::MutableStorageTrait<Storage> {
+type BaseType = MutableStorageStorageBase;
+   fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> MutableStorageStorageBase {
+       
+        let erc20_storage_value = starknet::storage::FlattenedStorage {};
+        let ownable_storage_value = starknet::storage::FlattenedStorage {};
+        let mintable_storage_value = starknet::storage::FlattenedStorage {};
+        let upgradable_storage_value = starknet::storage::FlattenedStorage {};
+        MutableStorageStorageBase {
+           erc20_storage: erc20_storage_value,
+           ownable_storage: ownable_storage_value,
+           mintable_storage: mintable_storage_value,
+           upgradable_storage: upgradable_storage_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           erc20_storage: starknet::storage::FlattenedStorage{},
-           ownable_storage: starknet::storage::FlattenedStorage{},
-           mintable_storage: starknet::storage::FlattenedStorage{},
-           upgradable_storage: starknet::storage::FlattenedStorage{},
-        }
-    }
- }
 
 pub struct ContractState {
          erc20_storage: erc20_comp::ComponentState<ContractState>,
@@ -440,10 +450,10 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
             owner: ContractAddress,
         );
     }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl MutableStorageStorageBaseDrop of core::traits::Drop::<MutableStorageStorageBase>;
+impl MutableStorageStorageBaseCopy of core::traits::Copy::<MutableStorageStorageBase>;
 }
 pub trait GetSupplyDispatcherTrait<T> {
     fn get_total_supply_plus_1(self: T) -> u256;
@@ -595,8 +605,8 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
 }
 
 #[derive(Drop, Copy)]
-struct GetSupplyDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+pub struct GetSupplyDispatcherSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 impl GetSupplyDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplyDispatcher> {
 type SubPointersType = GetSupplyDispatcherSubPointers;
@@ -613,8 +623,8 @@ type SubPointersType = GetSupplyDispatcherSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableGetSupplyDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+pub struct MutableGetSupplyDispatcherSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
 impl MutableGetSupplyDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<GetSupplyDispatcher> {
 type SubPointersType = MutableGetSupplyDispatcherSubPointers;
@@ -675,8 +685,8 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
 }
 
 #[derive(Drop, Copy)]
-struct GetSupplyLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+pub struct GetSupplyLibraryDispatcherSubPointers {
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 impl GetSupplyLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplyLibraryDispatcher> {
 type SubPointersType = GetSupplyLibraryDispatcherSubPointers;
@@ -693,8 +703,8 @@ type SubPointersType = GetSupplyLibraryDispatcherSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableGetSupplyLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+pub struct MutableGetSupplyLibraryDispatcherSubPointers {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 impl MutableGetSupplyLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<GetSupplyLibraryDispatcher> {
 type SubPointersType = MutableGetSupplyLibraryDispatcherSubPointers;
@@ -755,8 +765,8 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
 }
 
 #[derive(Drop, Copy)]
-struct GetSupplySafeLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+pub struct GetSupplySafeLibraryDispatcherSubPointers {
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 impl GetSupplySafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplySafeLibraryDispatcher> {
 type SubPointersType = GetSupplySafeLibraryDispatcherSubPointers;
@@ -773,8 +783,8 @@ type SubPointersType = GetSupplySafeLibraryDispatcherSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableGetSupplySafeLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+pub struct MutableGetSupplySafeLibraryDispatcherSubPointers {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 impl MutableGetSupplySafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<GetSupplySafeLibraryDispatcher> {
 type SubPointersType = MutableGetSupplySafeLibraryDispatcherSubPointers;
@@ -835,8 +845,8 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
 }
 
 #[derive(Drop, Copy)]
-struct GetSupplySafeDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+pub struct GetSupplySafeDispatcherSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 impl GetSupplySafeDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplySafeDispatcher> {
 type SubPointersType = GetSupplySafeDispatcherSubPointers;
@@ -853,8 +863,8 @@ type SubPointersType = GetSupplySafeDispatcherSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableGetSupplySafeDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+pub struct MutableGetSupplySafeDispatcherSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
 impl MutableGetSupplySafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<GetSupplySafeDispatcher> {
 type SubPointersType = MutableGetSupplySafeDispatcherSubPointers;
@@ -957,41 +967,51 @@ impl MutableGetSupplySafeDispatcherSubPointersCopy of core::traits::Copy::<Mutab
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
-     ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
-     mintable_storage: starknet::storage::FlattenedStorage<mintable_comp::Storage>,
-     upgradable_storage: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+struct StorageStorageBase {
+    erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+    ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+    mintable_storage: starknet::storage::FlattenedStorage<mintable_comp::Storage>,
+    upgradable_storage: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+type BaseType = StorageStorageBase;
+   fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+       
+        let erc20_storage_value = starknet::storage::FlattenedStorage {};
+        let ownable_storage_value = starknet::storage::FlattenedStorage {};
+        let mintable_storage_value = starknet::storage::FlattenedStorage {};
+        let upgradable_storage_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBase {
+           erc20_storage: erc20_storage_value,
+           ownable_storage: ownable_storage_value,
+           mintable_storage: mintable_storage_value,
+           upgradable_storage: upgradable_storage_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<erc20_comp::Storage>>,
-     ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<ownable_comp::Storage>>,
-     mintable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<mintable_comp::Storage>>,
-     upgradable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<upgradable_comp::Storage>>,
+struct MutableStorageStorageBase {
+    erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
+    ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+    mintable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<mintable_comp::Storage>>,
+    upgradable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           erc20_storage: starknet::storage::FlattenedStorage{},
-           ownable_storage: starknet::storage::FlattenedStorage{},
-           mintable_storage: starknet::storage::FlattenedStorage{},
-           upgradable_storage: starknet::storage::FlattenedStorage{},
+impl MutableStorageStorageImpl of starknet::storage::MutableStorageTrait<Storage> {
+type BaseType = MutableStorageStorageBase;
+   fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> MutableStorageStorageBase {
+       
+        let erc20_storage_value = starknet::storage::FlattenedStorage {};
+        let ownable_storage_value = starknet::storage::FlattenedStorage {};
+        let mintable_storage_value = starknet::storage::FlattenedStorage {};
+        let upgradable_storage_value = starknet::storage::FlattenedStorage {};
+        MutableStorageStorageBase {
+           erc20_storage: erc20_storage_value,
+           ownable_storage: ownable_storage_value,
+           mintable_storage: mintable_storage_value,
+           upgradable_storage: upgradable_storage_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           erc20_storage: starknet::storage::FlattenedStorage{},
-           ownable_storage: starknet::storage::FlattenedStorage{},
-           mintable_storage: starknet::storage::FlattenedStorage{},
-           upgradable_storage: starknet::storage::FlattenedStorage{},
-        }
-    }
- }
 
 pub struct ContractState {
          erc20_storage: erc20_comp::ComponentState<ContractState>,
@@ -1313,9 +1333,9 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
             owner: ContractAddress,
         );
     }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl MutableStorageStorageBaseDrop of core::traits::Drop::<MutableStorageStorageBase>;
+impl MutableStorageStorageBaseCopy of core::traits::Copy::<MutableStorageStorageBase>;
 
 //! > expected_diagnostics

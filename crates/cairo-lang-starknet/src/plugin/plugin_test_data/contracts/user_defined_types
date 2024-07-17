@@ -112,41 +112,51 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
+pub struct StorageStorageBase {
     pub var: starknet::storage::StorageBase<WrappedFelt252>,
     pub zero_size: starknet::storage::StorageBase<ZeroSize>,
     pub mapping: starknet::storage::StorageBase<LegacyMap::<WrappedFelt252, WrappedFelt252>>,
     pub zero_size_mapping: starknet::storage::StorageBase<LegacyMap::<ZeroSize, ZeroSize>>,
 }
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+type BaseType = StorageStorageBase;
+   fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+       
+        let var_value = starknet::storage::StorageBase {address: selector!("var")};
+        let zero_size_value = starknet::storage::StorageBase {address: selector!("zero_size")};
+        let mapping_value = starknet::storage::StorageBase {address: selector!("mapping")};
+        let zero_size_mapping_value = starknet::storage::StorageBase {address: selector!("zero_size_mapping")};
+        StorageStorageBase {
+           var: var_value,
+           zero_size: zero_size_value,
+           mapping: mapping_value,
+           zero_size_mapping: zero_size_mapping_value,
+        }
+    }
+}
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub var: starknet::storage::StorageBase<starknet::storage::Mutable<WrappedFelt252>>,
-    pub zero_size: starknet::storage::StorageBase<starknet::storage::Mutable<ZeroSize>>,
-    pub mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<WrappedFelt252, WrappedFelt252>>>,
-    pub zero_size_mapping: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap::<ZeroSize, ZeroSize>>>,
+pub struct MutableStorageStorageBase {
+    pub var: starknet::storage::StorageBase<starknet::storage::Mutable::<WrappedFelt252>>,
+    pub zero_size: starknet::storage::StorageBase<starknet::storage::Mutable::<ZeroSize>>,
+    pub mapping: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<WrappedFelt252, WrappedFelt252>>>,
+    pub zero_size_mapping: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<ZeroSize, ZeroSize>>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           var: starknet::storage::StorageBase{ address: selector!("var") },
-           zero_size: starknet::storage::StorageBase{ address: selector!("zero_size") },
-           mapping: starknet::storage::StorageBase{ address: selector!("mapping") },
-           zero_size_mapping: starknet::storage::StorageBase{ address: selector!("zero_size_mapping") },
+impl MutableStorageStorageImpl of starknet::storage::MutableStorageTrait<Storage> {
+type BaseType = MutableStorageStorageBase;
+   fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> MutableStorageStorageBase {
+       
+        let var_value = starknet::storage::StorageBase {address: selector!("var")};
+        let zero_size_value = starknet::storage::StorageBase {address: selector!("zero_size")};
+        let mapping_value = starknet::storage::StorageBase {address: selector!("mapping")};
+        let zero_size_mapping_value = starknet::storage::StorageBase {address: selector!("zero_size_mapping")};
+        MutableStorageStorageBase {
+           var: var_value,
+           zero_size: zero_size_value,
+           mapping: mapping_value,
+           zero_size_mapping: zero_size_mapping_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           var: starknet::storage::StorageBase{ address: selector!("var") },
-           zero_size: starknet::storage::StorageBase{ address: selector!("zero_size") },
-           mapping: starknet::storage::StorageBase{ address: selector!("mapping") },
-           zero_size_mapping: starknet::storage::StorageBase{ address: selector!("zero_size_mapping") },
-        }
-    }
- }
 
 pub struct ContractState {
 }
@@ -269,8 +279,8 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
 }
 
 #[derive(Drop, Copy)]
-struct WrappedFelt252SubPointers {
-    value: starknet::storage::StoragePointer<felt252>,
+pub struct WrappedFelt252SubPointers {
+    pub value: starknet::storage::StoragePointer<felt252>,
 }
 impl WrappedFelt252SubPointersImpl of starknet::storage::SubPointers<WrappedFelt252> {
 type SubPointersType = WrappedFelt252SubPointers;
@@ -287,8 +297,8 @@ type SubPointersType = WrappedFelt252SubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableWrappedFelt252SubPointers {
-    value: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
+pub struct MutableWrappedFelt252SubPointers {
+    pub value: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
 }
 impl MutableWrappedFelt252SubPointersImpl of starknet::storage::MutableSubPointers<WrappedFelt252> {
 type SubPointersType = MutableWrappedFelt252SubPointers;
@@ -681,8 +691,8 @@ lib.cairo:1:1
 ^*******************^
 impls:
 
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:1:1
@@ -690,8 +700,8 @@ lib.cairo:1:1
 ^*******************^
 impls:
 
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl MutableStorageStorageBaseDrop of core::traits::Drop::<MutableStorageStorageBase>;
+impl MutableStorageStorageBaseCopy of core::traits::Copy::<MutableStorageStorageBase>;
 
 
 lib.cairo:13:26
@@ -726,3 +736,8 @@ warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[featur
  --> lib.cairo:11:28
         zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
                            ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^

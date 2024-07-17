@@ -79,37 +79,45 @@ mod counter_contract {
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     counter: starknet::storage::StorageBase<u128>,
-     upgradable: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
-     ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+struct StorageStorageBase {
+    counter: starknet::storage::StorageBase<u128>,
+    upgradable: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+    ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+type BaseType = StorageStorageBase;
+   fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+       
+        let counter_value = starknet::storage::StorageBase {address: selector!("counter")};
+        let upgradable_value = starknet::storage::FlattenedStorage {};
+        let ownable_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBase {
+           counter: counter_value,
+           upgradable: upgradable_value,
+           ownable: ownable_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
-     upgradable: starknet::storage::FlattenedStorage<starknet::storage::Mutable<upgradable_comp::Storage>>,
-     ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable<ownable_comp::Storage>>,
+struct MutableStorageStorageBase {
+    counter: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
+    upgradable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
+    ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           counter: starknet::storage::StorageBase{ address: selector!("counter") },
-           upgradable: starknet::storage::FlattenedStorage{},
-           ownable: starknet::storage::FlattenedStorage{},
+impl MutableStorageStorageImpl of starknet::storage::MutableStorageTrait<Storage> {
+type BaseType = MutableStorageStorageBase;
+   fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> MutableStorageStorageBase {
+       
+        let counter_value = starknet::storage::StorageBase {address: selector!("counter")};
+        let upgradable_value = starknet::storage::FlattenedStorage {};
+        let ownable_value = starknet::storage::FlattenedStorage {};
+        MutableStorageStorageBase {
+           counter: counter_value,
+           upgradable: upgradable_value,
+           ownable: ownable_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           counter: starknet::storage::StorageBase{ address: selector!("counter") },
-           upgradable: starknet::storage::FlattenedStorage{},
-           ownable: starknet::storage::FlattenedStorage{},
-        }
-    }
- }
 
 pub struct ContractState {
          upgradable: upgradable_comp::ComponentState<ContractState>,
@@ -415,10 +423,10 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
         Option::Some(CounterDecreased {amount, })
     }
 }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl MutableStorageStorageBaseDrop of core::traits::Drop::<MutableStorageStorageBase>;
+impl MutableStorageStorageBaseCopy of core::traits::Copy::<MutableStorageStorageBase>;
 }
 trait ICounterContractDispatcherTrait<T> {
     fn increase_counter(self: T, amount: u128);
@@ -673,7 +681,7 @@ impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispat
 
 #[derive(Drop, Copy)]
 struct ICounterContractDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 impl ICounterContractDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractDispatcher> {
 type SubPointersType = ICounterContractDispatcherSubPointers;
@@ -691,7 +699,7 @@ type SubPointersType = ICounterContractDispatcherSubPointers;
 }
 #[derive(Drop, Copy)]
 struct MutableICounterContractDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
 impl MutableICounterContractDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ICounterContractDispatcher> {
 type SubPointersType = MutableICounterContractDispatcherSubPointers;
@@ -753,7 +761,7 @@ impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContrac
 
 #[derive(Drop, Copy)]
 struct ICounterContractLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 impl ICounterContractLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractLibraryDispatcher> {
 type SubPointersType = ICounterContractLibraryDispatcherSubPointers;
@@ -771,7 +779,7 @@ type SubPointersType = ICounterContractLibraryDispatcherSubPointers;
 }
 #[derive(Drop, Copy)]
 struct MutableICounterContractLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 impl MutableICounterContractLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ICounterContractLibraryDispatcher> {
 type SubPointersType = MutableICounterContractLibraryDispatcherSubPointers;
@@ -833,7 +841,7 @@ impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterCon
 
 #[derive(Drop, Copy)]
 struct ICounterContractSafeLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 impl ICounterContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractSafeLibraryDispatcher> {
 type SubPointersType = ICounterContractSafeLibraryDispatcherSubPointers;
@@ -851,7 +859,7 @@ type SubPointersType = ICounterContractSafeLibraryDispatcherSubPointers;
 }
 #[derive(Drop, Copy)]
 struct MutableICounterContractSafeLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 impl MutableICounterContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ICounterContractSafeLibraryDispatcher> {
 type SubPointersType = MutableICounterContractSafeLibraryDispatcherSubPointers;
@@ -913,7 +921,7 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
 
 #[derive(Drop, Copy)]
 struct ICounterContractSafeDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 impl ICounterContractSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractSafeDispatcher> {
 type SubPointersType = ICounterContractSafeDispatcherSubPointers;
@@ -931,7 +939,7 @@ type SubPointersType = ICounterContractSafeDispatcherSubPointers;
 }
 #[derive(Drop, Copy)]
 struct MutableICounterContractSafeDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
 impl MutableICounterContractSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ICounterContractSafeDispatcher> {
 type SubPointersType = MutableICounterContractSafeDispatcherSubPointers;
@@ -1026,37 +1034,45 @@ impl MutableICounterContractSafeDispatcherSubPointersCopy of core::traits::Copy:
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     counter: starknet::storage::StorageBase<u128>,
-     upgradable: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
-     ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+struct StorageStorageBase {
+    counter: starknet::storage::StorageBase<u128>,
+    upgradable: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+    ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+type BaseType = StorageStorageBase;
+   fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+       
+        let counter_value = starknet::storage::StorageBase {address: selector!("counter")};
+        let upgradable_value = starknet::storage::FlattenedStorage {};
+        let ownable_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBase {
+           counter: counter_value,
+           upgradable: upgradable_value,
+           ownable: ownable_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
-     upgradable: starknet::storage::FlattenedStorage<starknet::storage::Mutable<upgradable_comp::Storage>>,
-     ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable<ownable_comp::Storage>>,
+struct MutableStorageStorageBase {
+    counter: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
+    upgradable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
+    ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           counter: starknet::storage::StorageBase{ address: selector!("counter") },
-           upgradable: starknet::storage::FlattenedStorage{},
-           ownable: starknet::storage::FlattenedStorage{},
+impl MutableStorageStorageImpl of starknet::storage::MutableStorageTrait<Storage> {
+type BaseType = MutableStorageStorageBase;
+   fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> MutableStorageStorageBase {
+       
+        let counter_value = starknet::storage::StorageBase {address: selector!("counter")};
+        let upgradable_value = starknet::storage::FlattenedStorage {};
+        let ownable_value = starknet::storage::FlattenedStorage {};
+        MutableStorageStorageBase {
+           counter: counter_value,
+           upgradable: upgradable_value,
+           ownable: ownable_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           counter: starknet::storage::StorageBase{ address: selector!("counter") },
-           upgradable: starknet::storage::FlattenedStorage{},
-           ownable: starknet::storage::FlattenedStorage{},
-        }
-    }
- }
 
 pub struct ContractState {
          upgradable: upgradable_comp::ComponentState<ContractState>,
@@ -1362,9 +1378,9 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
         Option::Some(CounterDecreased {amount, })
     }
 }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl MutableStorageStorageBaseDrop of core::traits::Drop::<MutableStorageStorageBase>;
+impl MutableStorageStorageBaseCopy of core::traits::Copy::<MutableStorageStorageBase>;
 
 //! > expected_diagnostics
