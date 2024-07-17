@@ -24,7 +24,7 @@ impl Fixture {
     /// Creates a new file in the fixture with provided contents.
     pub fn add_file(&mut self, path: impl AsRef<Path>, contents: impl AsRef<str>) {
         self.files.push(path.as_ref().to_owned());
-        self.t.child(path).write_str(contents.as_ref().trim()).unwrap();
+        self.write_file(path, contents);
     }
 }
 
@@ -48,5 +48,14 @@ impl Fixture {
 
     pub fn read_file(&self, path: impl AsRef<Path>) -> String {
         fs::read_to_string(self.file_absolute_path(path)).unwrap()
+    }
+}
+
+/// Runtime manipulation methods.
+impl Fixture {
+    /// Overwrites contents of a file in the fixture.
+    pub fn write_file(&self, path: impl AsRef<Path>, contents: impl AsRef<str>) {
+        assert!(self.files.contains(&path.as_ref().to_owned()));
+        self.t.child(path).write_str(contents.as_ref().trim()).unwrap();
     }
 }

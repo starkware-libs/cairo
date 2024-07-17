@@ -8,6 +8,7 @@ use tracing::{debug, error, trace};
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
+use crate::project::digests::{invalidate_digest, Digestible, LsDigestsDatabase, LsDigestsGroup};
 use crate::project::main::{LsProjectsDatabase, LsProjectsGroup};
 use crate::project::project_manifest_path::ProjectManifestPath;
 use crate::project::unmanaged_core_crate::{
@@ -19,6 +20,9 @@ use crate::toolchain::scarb::ScarbToolchain;
 // FIXME(mkaput): Deal with `scarb metadata` overriding `Scarb.lock` all the time.
 // TODO(mkaput): Test Scarb workspaces.
 // TODO(mkaput): Projects mutations should primarily be triggered by workspace-* requests.
+// TODO(mkaput): Project loading should happen asynchronously.
+// TODO(mkaput): LS should gracefully handle cases when loading a project fails,
+//   for example due to syntax error in the manifest file.
 /// A Salsa database that stores information about projects.
 ///
 /// ## I/O
@@ -33,7 +37,7 @@ use crate::toolchain::scarb::ScarbToolchain;
 /// As an output of processing these events, the database can make updates to the
 /// [`AnalysisDatabase`] inputs with the new state of projects, via the [`ProjectsDatabase::apply`]
 /// method.
-#[salsa::database(LsUnmanagedCoreDatabase, LsProjectsDatabase)]
+#[salsa::database(LsDigestsDatabase, LsUnmanagedCoreDatabase, LsProjectsDatabase)]
 pub struct ProjectsDatabase {
     storage: salsa::Storage<Self>,
     scarb_toolchain: ScarbToolchain,
@@ -69,8 +73,13 @@ impl ProjectsDatabase {
     }
 
     /// Reacts to changes in the file system.
-    pub fn on_file_changed(&mut self, _path: &Path) {
-        // TODO(mkaput): React to filesystem changes to the manifest files.
+    pub fn on_file_changed(&mut self, path: &Path) {
+        if let Some(digest) = Digestible::try_new(path) {
+            let digest = digest.intern(self);
+
+            // Invalidate the digest of the changed file, causing relevant projects to reload.
+            invalidate_digest(self, digest);
+        }
     }
 
     /// Reacts to changes in the [`Config`].
@@ -129,6 +138,12 @@ pub trait ProjectsContext {
 impl ProjectsContext for ProjectsDatabase {
     fn scarb_toolchain(&self) -> &ScarbToolchain {
         &self.scarb_toolchain
+    }
+}
+
+impl Upcast<dyn LsDigestsGroup> for ProjectsDatabase {
+    fn upcast(&self) -> &(dyn LsDigestsGroup + 'static) {
+        self
     }
 }
 

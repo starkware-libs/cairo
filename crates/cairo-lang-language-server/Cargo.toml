@@ -38,6 +38,7 @@ tower-lsp = "0.20.0"
 tracing = "0.1"
 tracing-chrome = "0.7.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
 
 [dev-dependencies]
 cairo-lang-language-server = { path = ".", features = ["testing"] }

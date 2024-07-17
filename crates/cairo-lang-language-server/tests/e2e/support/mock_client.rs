@@ -1,6 +1,7 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 use std::ffi::OsStr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use std::{fmt, future, mem, process};
@@ -38,7 +39,9 @@ pub struct MockClient {
     output_rx: mpsc::Receiver<Message>,
     trace: Vec<Message>,
     workspace_configuration: Value,
+    server_capabilities: lsp_types::ServerCapabilities,
     expect_request_handlers: VecDeque<ExpectRequestHandler>,
+    open_files: HashSet<PathBuf>,
     _main_loop: AbortOnDrop,
 }
 
@@ -73,7 +76,9 @@ impl MockClient {
             output_rx: responses_rx,
             trace: Vec::new(),
             workspace_configuration,
+            server_capabilities: Default::default(),
             expect_request_handlers: Default::default(),
+            open_files: Default::default(),
             _main_loop: main_loop,
         };
 
@@ -147,7 +152,7 @@ impl MockClient {
             name: "hello_world".to_string(),
         }]);
 
-        self.send_request::<lsp_request!("initialize")>(lsp_types::InitializeParams {
+        let result = self.send_request::<lsp_request!("initialize")>(lsp_types::InitializeParams {
             process_id: Some(process::id()),
             capabilities,
             workspace_folders,
@@ -158,6 +163,8 @@ impl MockClient {
             locale: Some("en".to_string()),
             ..lsp_types::InitializeParams::default()
         });
+
+        self.server_capabilities = result.capabilities;
 
         self.send_notification::<lsp_notification!("initialized")>(lsp_types::InitializedParams {});
     }
@@ -376,6 +383,69 @@ impl MockClient {
     }
 }
 
+/// Methods for editing files.
+impl MockClient {
+    /// Overwrite file contents and properly notify the server about the change.
+    ///
+    /// If the file is opened with [`MockClient::open`] (and derivatives), this will go through
+    /// `textDocument/didChange` and `textDocument/didSave` flows.
+    ///
+    /// If the file has not been opened yet, this will overwrite file on disk and will attempt to
+    /// send a `workspace/didChangeWatchedFiles` notification.
+    pub fn overwrite(&mut self, path: impl AsRef<Path>, new_content: impl AsRef<str>) {
+        static VERSION: AtomicI32 = AtomicI32::new(0);
+
+        let path = path.as_ref();
+        let new_content = new_content.as_ref();
+        if self.open_files.contains(path) {
+            // This logic only serves this particular text document sync capability.
+            // We make an assertion here to catch the developer attempting to change it in LS.
+            assert_eq!(
+                self.server_capabilities.text_document_sync,
+                Some(lsp_types::TextDocumentSyncCapability::Kind(
+                    lsp_types::TextDocumentSyncKind::FULL
+                ))
+            );
+
+            self.send_notification::<lsp_notification!("textDocument/didChange")>(
+                lsp_types::DidChangeTextDocumentParams {
+                    text_document: lsp_types::VersionedTextDocumentIdentifier {
+                        uri: self.fixture.file_url(path),
+                        version: VERSION.fetch_add(1, Ordering::Relaxed),
+                    },
+                    content_changes: vec![lsp_types::TextDocumentContentChangeEvent {
+                        range: None,
+                        range_length: None,
+                        text: new_content.to_owned(),
+                    }],
+                },
+            );
+
+            self.fixture.write_file(path, new_content);
+
+            self.send_notification::<lsp_notification!("textDocument/didSave")>(
+                lsp_types::DidSaveTextDocumentParams {
+                    text_document: self.doc_id(path),
+                    text: Some(new_content.to_owned()),
+                },
+            );
+        } else {
+            self.fixture.write_file(path, new_content);
+
+            // FIXME(mkaput): Respect `didChangeWatchedFiles` dynamic registration.
+            //   It is incorrect to report this notification for *any* file.
+            self.send_notification::<lsp_notification!("workspace/didChangeWatchedFiles")>(
+                lsp_types::DidChangeWatchedFilesParams {
+                    changes: vec![lsp_types::FileEvent {
+                        uri: self.fixture.file_url(path),
+                        typ: lsp_types::FileChangeType::CHANGED,
+                    }],
+                },
+            )
+        }
+    }
+}
+
 /// Quality of life helpers for interacting with the server.
 impl MockClient {
     /// Returns a `TextDocumentIdentifier` for the given file.
@@ -385,26 +455,29 @@ impl MockClient {
 
     /// Sends `textDocument/didOpen` notification to the server.
     pub fn open(&mut self, path: impl AsRef<Path>) {
-        // Poor man's attempt at guessing the language ID
-        // by assuming that file extension represents it.
-        let language_id = self
-            .fixture
-            .file_absolute_path(&path)
-            .extension()
-            .and_then(OsStr::to_str)
-            .unwrap_or_default()
-            .to_string();
+        let path = path.as_ref();
+        if self.open_files.insert(path.to_owned()) {
+            // Poor man's attempt at guessing the language ID
+            // by assuming that file extension represents it.
+            let language_id = self
+                .fixture
+                .file_absolute_path(path)
+                .extension()
+                .and_then(OsStr::to_str)
+                .unwrap_or_default()
+                .to_string();
 
-        self.send_notification::<lsp_notification!("textDocument/didOpen")>(
-            lsp_types::DidOpenTextDocumentParams {
-                text_document: lsp_types::TextDocumentItem {
-                    uri: self.fixture.file_url(&path),
-                    language_id,
-                    version: 0,
-                    text: self.fixture.read_file(&path),
+            self.send_notification::<lsp_notification!("textDocument/didOpen")>(
+                lsp_types::DidOpenTextDocumentParams {
+                    text_document: lsp_types::TextDocumentItem {
+                        uri: self.fixture.file_url(path),
+                        language_id,
+                        version: 0,
+                        text: self.fixture.read_file(path),
+                    },
                 },
-            },
-        )
+            )
+        }
     }
 
     /// Waits for `textDocument/publishDiagnostics` notification for the given file.
