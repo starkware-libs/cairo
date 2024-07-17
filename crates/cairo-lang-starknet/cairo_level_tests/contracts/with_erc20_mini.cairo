@@ -4,9 +4,10 @@ use starknet::ContractAddress;
 mod erc20_mini_contract {
     use cairo_level_tests::components::erc20_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageAsPath, StorageNode, StorageNodeMut};
+    use starknet::storage::{StorageAsPath, StorageTraitMut, StorageTrait};
     #[storage]
     struct Storage {
+        #[flat]
         erc20_token: erc20_mini::ERC20Storage,
     }
 
@@ -22,13 +23,13 @@ mod erc20_mini_contract {
     impl ERC20HelperImpl = erc20_mini::ERC20HelperImpl<ContractState, Event>;
 
     impl ERC20HasStorage of erc20_mini::HasStorage<ContractState, erc20_mini::ERC20Storage> {
-        fn storage(self: @ContractState) -> StorageNode::<erc20_mini::ERC20Storage>::NodeType {
-            self.erc20_token.as_path().storage_node()
+        fn storage(self: @ContractState) -> StorageTrait::<erc20_mini::ERC20Storage>::BaseType {
+            self.erc20_token.deref()
         }
         fn storage_mut(
             ref self: ContractState
-        ) -> StorageNodeMut::<erc20_mini::ERC20Storage>::NodeType {
-            self.erc20_token.as_path().storage_node_mut()
+        ) -> StorageTraitMut::<erc20_mini::ERC20Storage>::BaseType {
+            self.erc20_token.deref()
         }
     }
 

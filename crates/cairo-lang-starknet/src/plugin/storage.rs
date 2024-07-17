@@ -8,7 +8,7 @@ use indoc::formatdoc;
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::{backwards_compatible_storage, StarknetModuleKind};
 use super::storage_interfaces::handle_storage_interface;
-use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, STORAGE_STRUCT_NAME};
+use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, FLAT_ATTR, STORAGE_STRUCT_NAME};
 use crate::plugin::SUBSTORAGE_ATTR;
 
 /// Generate getters and setters for the members of the storage struct.
@@ -219,11 +219,13 @@ fn get_simple_member_code(
 ) -> SimpleMemberGeneratedCode {
     let member_name = member.name(db).as_syntax_node();
     let member_type = member.type_clause(db).ty(db).as_syntax_node();
-    let member_wrapper_type = RewriteNode::text(if member.has_attr(db, SUBSTORAGE_ATTR) {
-        "FlattenedStorage"
-    } else {
-        "StorageBase"
-    });
+    let member_wrapper_type = RewriteNode::text(
+        if member.has_attr(db, SUBSTORAGE_ATTR) || member.has_attr(db, FLAT_ATTR) {
+            "FlattenedStorage"
+        } else {
+            "StorageBase"
+        },
+    );
     let member_visibility = if backwards_compatible_storage(metadata.edition) {
         RewriteNode::text("pub")
     } else {
@@ -253,7 +255,7 @@ fn get_simple_member_code(
             ]
             .into(),
         ),
-        init_code: if member.has_attr(db, SUBSTORAGE_ATTR) {
+        init_code: if member.has_attr(db, SUBSTORAGE_ATTR) || member.has_attr(db, FLAT_ATTR) {
             RewriteNode::interpolate_patched(
                 "\n           $member_name$: starknet::storage::FlattenedStorage{},",
                 &[("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone()))]
