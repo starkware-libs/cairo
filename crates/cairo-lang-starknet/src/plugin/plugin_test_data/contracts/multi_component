@@ -85,38 +85,41 @@ pub mod contract_with_4_components {
 
 #[derive(Drop, Copy)]
  struct ContractStorageBase {
-     erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
-     ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
-     mintable_storage: starknet::storage::StorageBase<mintable_comp::Storage>,
-     upgradable_storage: starknet::storage::StorageBase<upgradable_comp::Storage>,
+     erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+     ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+     mintable_storage: starknet::storage::FlattenedStorage<mintable_comp::Storage>,
+     upgradable_storage: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
 }
 #[derive(Drop, Copy)]
  struct ContractStorageBaseMut {
-     erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
-     ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-     mintable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<mintable_comp::Storage>>,
-     upgradable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
+     erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<erc20_comp::Storage>>,
+     ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<ownable_comp::Storage>>,
+     mintable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<mintable_comp::Storage>>,
+     upgradable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<upgradable_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
-           erc20_storage: starknet::storage::StorageBase{ address: selector!("erc20_storage") },
-           ownable_storage: starknet::storage::StorageBase{ address: selector!("ownable_storage") },
-           mintable_storage: starknet::storage::StorageBase{ address: selector!("mintable_storage") },
-           upgradable_storage: starknet::storage::StorageBase{ address: selector!("upgradable_storage") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           erc20_storage: starknet::storage::StorageBase{ address: selector!("erc20_storage") },
-           ownable_storage: starknet::storage::StorageBase{ address: selector!("ownable_storage") },
-           mintable_storage: starknet::storage::StorageBase{ address: selector!("mintable_storage") },
-           upgradable_storage: starknet::storage::StorageBase{ address: selector!("upgradable_storage") },
+           erc20_storage: starknet::storage::FlattenedStorage{},
+           ownable_storage: starknet::storage::FlattenedStorage{},
+           mintable_storage: starknet::storage::FlattenedStorage{},
+           upgradable_storage: starknet::storage::FlattenedStorage{},
         }
     }
 }
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           erc20_storage: starknet::storage::FlattenedStorage{},
+           ownable_storage: starknet::storage::FlattenedStorage{},
+           mintable_storage: starknet::storage::FlattenedStorage{},
+           upgradable_storage: starknet::storage::FlattenedStorage{},
+        }
+    }
+ }
+
 pub struct ContractState {
          erc20_storage: erc20_comp::ComponentState<ContractState>,
          ownable_storage: ownable_comp::ComponentState<ContractState>,
@@ -127,15 +130,15 @@ pub struct ContractState {
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -955,38 +958,41 @@ impl MutableGetSupplySafeDispatcherSubPointersCopy of core::traits::Copy::<Mutab
 
 #[derive(Drop, Copy)]
  struct ContractStorageBase {
-     erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
-     ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
-     mintable_storage: starknet::storage::StorageBase<mintable_comp::Storage>,
-     upgradable_storage: starknet::storage::StorageBase<upgradable_comp::Storage>,
+     erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+     ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+     mintable_storage: starknet::storage::FlattenedStorage<mintable_comp::Storage>,
+     upgradable_storage: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
 }
 #[derive(Drop, Copy)]
  struct ContractStorageBaseMut {
-     erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
-     ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-     mintable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<mintable_comp::Storage>>,
-     upgradable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
+     erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<erc20_comp::Storage>>,
+     ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<ownable_comp::Storage>>,
+     mintable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<mintable_comp::Storage>>,
+     upgradable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable<upgradable_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
-           erc20_storage: starknet::storage::StorageBase{ address: selector!("erc20_storage") },
-           ownable_storage: starknet::storage::StorageBase{ address: selector!("ownable_storage") },
-           mintable_storage: starknet::storage::StorageBase{ address: selector!("mintable_storage") },
-           upgradable_storage: starknet::storage::StorageBase{ address: selector!("upgradable_storage") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           erc20_storage: starknet::storage::StorageBase{ address: selector!("erc20_storage") },
-           ownable_storage: starknet::storage::StorageBase{ address: selector!("ownable_storage") },
-           mintable_storage: starknet::storage::StorageBase{ address: selector!("mintable_storage") },
-           upgradable_storage: starknet::storage::StorageBase{ address: selector!("upgradable_storage") },
+           erc20_storage: starknet::storage::FlattenedStorage{},
+           ownable_storage: starknet::storage::FlattenedStorage{},
+           mintable_storage: starknet::storage::FlattenedStorage{},
+           upgradable_storage: starknet::storage::FlattenedStorage{},
         }
     }
 }
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           erc20_storage: starknet::storage::FlattenedStorage{},
+           ownable_storage: starknet::storage::FlattenedStorage{},
+           mintable_storage: starknet::storage::FlattenedStorage{},
+           upgradable_storage: starknet::storage::FlattenedStorage{},
+        }
+    }
+ }
+
 pub struct ContractState {
          erc20_storage: erc20_comp::ComponentState<ContractState>,
          ownable_storage: ownable_comp::ComponentState<ContractState>,
@@ -997,15 +1003,15 @@ pub struct ContractState {
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {

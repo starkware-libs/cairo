@@ -86,20 +86,24 @@ pub fn handle_storage_struct(
             $storage_struct_visibility$ struct {storage_base_mut_struct_name} \
              {{$members_struct_code_mut$
             }}
-            impl StorageBaseImpl{generic_arg_str} of \
-             starknet::storage::StorageBaseTrait<{full_state_struct_name}> {{
+            impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {{
                 type BaseType = {storage_base_struct_name};
-                type BaseMutType = {storage_base_mut_struct_name};
-                fn storage_base(self: @{full_state_struct_name}) -> {storage_base_struct_name} {{
+                fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> \
+             {storage_base_struct_name} {{
                     {storage_base_struct_name} {{$members_init_code$
                     }}
                 }}
-                fn storage_base_mut(ref self: {full_state_struct_name}) -> \
+            }}
+            impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {{
+                type BaseType = {storage_base_mut_struct_name};
+                fn storage_mut(self: \
+             starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> \
              {storage_base_mut_struct_name} {{
                     {storage_base_mut_struct_name} {{$members_init_code$
                     }}
                 }}
-            }}
+             }}
+
             pub struct {full_state_struct_name} {{$substorage_members_struct_code$
             }}
 
@@ -107,18 +111,19 @@ pub fn handle_storage_struct(
              
             impl {state_struct_name}Deref{generic_arg_str} of \
              core::ops::SnapshotDeref<{full_state_struct_name}> {{
-                type Target = {storage_base_struct_name};
-                fn snapshot_deref(self: @{full_state_struct_name}) -> {storage_base_struct_name} \
-             {{
-                    self.storage_base()
+                type Target = starknet::storage::FlattenedStorage<Storage>;
+                fn snapshot_deref(self: @{full_state_struct_name}) -> \
+             starknet::storage::FlattenedStorage<Storage> {{
+                    starknet::storage::FlattenedStorage {{}}
                 }}
             }}
             impl {state_struct_name}DerefMut{generic_arg_str} of \
              core::ops::DerefMut<{full_state_struct_name}> {{
-                type Target = {storage_base_mut_struct_name};
-                fn deref_mut(ref self: {full_state_struct_name}) -> {storage_base_mut_struct_name} \
-             {{
-                    self.storage_base_mut()
+                type Target = \
+             starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+                fn deref_mut(ref self: {full_state_struct_name}) -> \
+             starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {{
+                    starknet::storage::FlattenedStorage {{}}
                 }}
             }}
             pub fn {unsafe_new_function_name}{generic_arg_str}() -> {full_state_struct_name} {{
@@ -238,6 +243,11 @@ fn get_simple_member_code(
 ) -> SimpleMemberGeneratedCode {
     let member_name = member.name(db).as_syntax_node();
     let member_type = member.type_clause(db).ty(db).as_syntax_node();
+    let member_wrapper_type = RewriteNode::text(if member.has_attr(db, SUBSTORAGE_ATTR) {
+        "FlattenedStorage"
+    } else {
+        "StorageBase"
+    });
     let member_visibility = if backwards_compatible_storage(metadata.edition) {
         RewriteNode::text("pub")
     } else {
@@ -247,9 +257,10 @@ fn get_simple_member_code(
     SimpleMemberGeneratedCode {
         struct_code: RewriteNode::interpolate_patched(
             "\n    $member_visibility$ $member_name$: \
-             starknet::storage::StorageBase<$member_type$>,",
+             starknet::storage::$member_wrapper_type$<$member_type$>,",
             &[
                 ("member_visibility".to_string(), member_visibility.clone()),
+                ("member_wrapper_type".to_string(), member_wrapper_type.clone()),
                 ("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone())),
                 ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
             ]
@@ -257,19 +268,29 @@ fn get_simple_member_code(
         ),
         struct_code_mut: RewriteNode::interpolate_patched(
             "\n    $member_visibility$ $member_name$: \
-             starknet::storage::StorageBase<starknet::storage::Mutable<$member_type$>>,",
+             starknet::storage::$member_wrapper_type$<starknet::storage::Mutable<$member_type$>>,",
             &[
                 ("member_visibility".to_string(), member_visibility.clone()),
+                ("member_wrapper_type".to_string(), member_wrapper_type.clone()),
                 ("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone())),
                 ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
             ]
             .into(),
         ),
-        init_code: RewriteNode::interpolate_patched(
-            "\n           $member_name$: starknet::storage::StorageBase{ address: \
-             selector!(\"$member_name$\") },",
-            &[("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone()))].into(),
-        ),
+        init_code: if member.has_attr(db, SUBSTORAGE_ATTR) {
+            RewriteNode::interpolate_patched(
+                "\n           $member_name$: starknet::storage::FlattenedStorage{},",
+                &[("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone()))]
+                    .into(),
+            )
+        } else {
+            RewriteNode::interpolate_patched(
+                "\n           $member_name$: starknet::storage::StorageBase{ address: \
+                 selector!(\"$member_name$\") },",
+                &[("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone()))]
+                    .into(),
+            )
+        },
         storage_member: RewriteNode::interpolate_patched(
             "\n          $member_visibility$ $member_name$: $member_type$,",
             &[
