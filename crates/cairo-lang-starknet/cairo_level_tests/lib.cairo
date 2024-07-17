@@ -27,3 +27,5 @@ mod contract_address_test;
 mod utils;
 #[cfg(test)]
 mod collections_test;
+#[cfg(test)]
+mod component_usage_test;
