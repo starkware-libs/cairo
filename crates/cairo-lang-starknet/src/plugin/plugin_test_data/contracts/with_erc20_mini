@@ -13,9 +13,10 @@ use starknet::ContractAddress;
 mod erc20_mini_contract {
     use cairo_level_tests::components::erc20_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageAsPath, StorageNode, StorageNodeMut};
+    use starknet::storage::{StorageAsPath, StorageTraitMut, StorageTrait};
     #[storage]
     struct Storage {
+        #[flat]
         erc20_token: erc20_mini::ERC20Storage,
     }
 
@@ -31,13 +32,13 @@ mod erc20_mini_contract {
     impl ERC20HelperImpl = erc20_mini::ERC20HelperImpl<ContractState, Event>;
 
     impl ERC20HasStorage of erc20_mini::HasStorage<ContractState, erc20_mini::ERC20Storage> {
-        fn storage(self: @ContractState) -> StorageNode::<erc20_mini::ERC20Storage>::NodeType {
-            self.erc20_token.as_path().storage_node()
+        fn storage(self: @ContractState) -> StorageTrait::<erc20_mini::ERC20Storage>::BaseType {
+            self.erc20_token.deref()
         }
         fn storage_mut(
             ref self: ContractState
-        ) -> StorageNodeMut::<erc20_mini::ERC20Storage>::NodeType {
-            self.erc20_token.as_path().storage_node_mut()
+        ) -> StorageTraitMut::<erc20_mini::ERC20Storage>::BaseType {
+            self.erc20_token.deref()
         }
     }
 
@@ -61,12 +62,12 @@ mod erc20_mini_contract {
 
 #[derive(Drop, Copy)]
 struct StorageStorageBase {
-    erc20_token: starknet::storage::StorageBase<erc20_mini::ERC20Storage>,
+    erc20_token: starknet::storage::FlattenedStorage<erc20_mini::ERC20Storage>,
 }
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let erc20_token_value = starknet::storage::StorageBase {address: selector!("erc20_token")};
+        let erc20_token_value = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
            erc20_token: erc20_token_value,
         }
@@ -74,12 +75,12 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 }
 #[derive(Drop, Copy)]
 struct StorageStorageBaseMut {
-    erc20_token: starknet::storage::StorageBase<starknet::storage::Mutable::<erc20_mini::ERC20Storage>>,
+    erc20_token: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_mini::ERC20Storage>>,
 }
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let erc20_token_value = starknet::storage::StorageBase {address: selector!("erc20_token")};
+        let erc20_token_value = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
            erc20_token: erc20_token_value,
         }
@@ -235,9 +236,10 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
     use cairo_level_tests::components::erc20_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageAsPath, StorageNode, StorageNodeMut};
+    use starknet::storage::{StorageAsPath, StorageTraitMut, StorageTrait};
     #[storage]
     struct Storage {
+        #[flat]
         erc20_token: erc20_mini::ERC20Storage,
     }
 
@@ -253,13 +255,13 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
     impl ERC20HelperImpl = erc20_mini::ERC20HelperImpl<ContractState, Event>;
 
     impl ERC20HasStorage of erc20_mini::HasStorage<ContractState, erc20_mini::ERC20Storage> {
-        fn storage(self: @ContractState) -> StorageNode::<erc20_mini::ERC20Storage>::NodeType {
-            self.erc20_token.as_path().storage_node()
+        fn storage(self: @ContractState) -> StorageTrait::<erc20_mini::ERC20Storage>::BaseType {
+            self.erc20_token.deref()
         }
         fn storage_mut(
             ref self: ContractState
-        ) -> StorageNodeMut::<erc20_mini::ERC20Storage>::NodeType {
-            self.erc20_token.as_path().storage_node_mut()
+        ) -> StorageTraitMut::<erc20_mini::ERC20Storage>::BaseType {
+            self.erc20_token.deref()
         }
     }
 
@@ -283,12 +285,12 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 #[derive(Drop, Copy)]
 struct StorageStorageBase {
-    erc20_token: starknet::storage::StorageBase<erc20_mini::ERC20Storage>,
+    erc20_token: starknet::storage::FlattenedStorage<erc20_mini::ERC20Storage>,
 }
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let erc20_token_value = starknet::storage::StorageBase {address: selector!("erc20_token")};
+        let erc20_token_value = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
            erc20_token: erc20_token_value,
         }
@@ -296,12 +298,12 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 }
 #[derive(Drop, Copy)]
 struct StorageStorageBaseMut {
-    erc20_token: starknet::storage::StorageBase<starknet::storage::Mutable::<erc20_mini::ERC20Storage>>,
+    erc20_token: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_mini::ERC20Storage>>,
 }
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let erc20_token_value = starknet::storage::StorageBase {address: selector!("erc20_token")};
+        let erc20_token_value = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
            erc20_token: erc20_token_value,
         }

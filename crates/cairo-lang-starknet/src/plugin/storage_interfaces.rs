@@ -10,7 +10,7 @@ use indoc::formatdoc;
 
 use super::starknet_module::backwards_compatible_storage;
 use super::utils::has_derive;
-use super::{STORAGE_ATTR, STORAGE_NODE_ATTR, STORE_TRAIT, SUBSTORAGE_ATTR};
+use super::{FLAT_ATTR, STORAGE_ATTR, STORAGE_NODE_ATTR, STORE_TRAIT, SUBSTORAGE_ATTR};
 
 /// Generates an impl for the `starknet::StorageNode` to point to a generate a struct to to be
 /// pointed to allowing further access to each of its members (i.e. there will be a fitting member
@@ -106,6 +106,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
 }
 
 /// The different types of storage interfaces that can be generated.
+#[derive(Copy, Clone)]
 enum StorageInterfaceType {
     StorageNode,
     SubPointers,
@@ -121,21 +122,6 @@ struct StorageInterfaceInfo<'a> {
 
 /// Code generation for the different types of storage interfaces.
 impl<'a> StorageInterfaceInfo<'a> {
-    fn from_struct_ast(
-        db: &'a dyn SyntaxGroup,
-        struct_ast: &ast::ItemStruct,
-        is_mutable: bool,
-    ) -> Option<Self> {
-        if struct_ast.has_attr(db, STORAGE_NODE_ATTR) {
-            Some(Self { db, node_type: StorageInterfaceType::StorageNode, is_mutable })
-        } else if struct_ast.has_attr(db, STORAGE_ATTR) {
-            Some(Self { db, node_type: StorageInterfaceType::StorageTrait, is_mutable })
-        } else if has_derive(struct_ast, db, STORE_TRAIT).is_some() {
-            Some(Self { db, node_type: StorageInterfaceType::SubPointers, is_mutable })
-        } else {
-            None
-        }
-    }
     /// Returns the mutable prefix of camelcase names.
     fn mutable_camelcase(&self) -> &'static str {
         if self.is_mutable { "Mut" } else { "" }
@@ -237,7 +223,8 @@ impl<'a> StorageInterfaceInfo<'a> {
             }
             StorageInterfaceType::SubPointers => "starknet::storage::StoragePointer".to_string(),
             StorageInterfaceType::StorageTrait => {
-                if member.has_attr(self.db, SUBSTORAGE_ATTR) {
+                if member.has_attr(self.db, SUBSTORAGE_ATTR) || member.has_attr(self.db, FLAT_ATTR)
+                {
                     "starknet::storage::FlattenedStorage".to_string()
                 } else {
                     "starknet::storage::StorageBase".to_string()
@@ -295,7 +282,8 @@ impl<'a> StorageInterfaceInfo<'a> {
                 )
             }
             StorageInterfaceType::StorageTrait => {
-                if member.has_attr(self.db, SUBSTORAGE_ATTR) {
+                if member.has_attr(self.db, SUBSTORAGE_ATTR) || member.has_attr(self.db, FLAT_ATTR)
+                {
                     "        let $field_name$_value = starknet::storage::FlattenedStorage {};
 "
                     .to_string()
@@ -310,21 +298,56 @@ impl<'a> StorageInterfaceInfo<'a> {
     }
 }
 
+/// Generate the code for a single interface type.
+fn handle_storage_interface_for_interface_type(
+    db: &dyn SyntaxGroup,
+    struct_ast: &ast::ItemStruct,
+    metadata: &MacroPluginMetadata<'_>,
+    storage_node_type: StorageInterfaceType,
+    builder: &mut PatchBuilder<'_>,
+) {
+    let storage_node_info =
+        StorageInterfaceInfo { db, node_type: storage_node_type, is_mutable: false };
+    // Create Info with type and false for is_mutable
+    add_interface_struct_definition(db, builder, struct_ast, &storage_node_info, metadata);
+    add_interface_impl(db, builder, struct_ast, &storage_node_info);
+    let mutable_storage_node_info =
+        StorageInterfaceInfo { db, node_type: storage_node_type, is_mutable: true };
+    // Create Info with type and true for is_mutable
+    add_interface_struct_definition(db, builder, struct_ast, &mutable_storage_node_info, metadata);
+    add_interface_impl(db, builder, struct_ast, &mutable_storage_node_info);
+}
+
 /// Adds the storage node structs (two variants, mutable and immutable) and their constructor
-/// impls to the given builder. Used for both storage nodes and storage sub pointers which are
-/// triggered by `#[derive(Store)]`.
+/// impls to the given builder. This function is called from several places:
+///  - From this plugin for adding storage nodes, and storage base trait.
+///  - From the derive plugin of the `Store` trait which also generates a sub-pointers interface.
+///  - From the contract storage plugin, which generates storage base trait.
 pub fn handle_storage_interface(
     db: &dyn SyntaxGroup,
     struct_ast: &ast::ItemStruct,
     metadata: &MacroPluginMetadata<'_>,
 ) -> (String, Vec<CodeMapping>) {
     let mut builder = PatchBuilder::new(db, struct_ast);
-
-    add_interface_struct_definition(db, &mut builder, struct_ast, false, metadata);
-    add_interface_impl(db, &mut builder, struct_ast, false);
-    add_interface_struct_definition(db, &mut builder, struct_ast, true, metadata);
-    add_interface_impl(db, &mut builder, struct_ast, true);
-
+    // Run for both StorageNode and StorageTrait
+    let storage_interface_types = if struct_ast.has_attr(db, STORAGE_NODE_ATTR) {
+        vec![StorageInterfaceType::StorageTrait, StorageInterfaceType::StorageNode]
+    } else if struct_ast.has_attr(db, STORAGE_ATTR) {
+        vec![StorageInterfaceType::StorageTrait]
+    } else if has_derive(struct_ast, db, STORE_TRAIT).is_some() {
+        vec![StorageInterfaceType::SubPointers]
+    } else {
+        panic!("Invalid storage interface type.");
+    };
+    for interface_type in storage_interface_types {
+        handle_storage_interface_for_interface_type(
+            db,
+            struct_ast,
+            metadata,
+            interface_type,
+            &mut builder,
+        );
+    }
     builder.build()
 }
 
@@ -333,11 +356,9 @@ fn add_interface_struct_definition(
     db: &dyn SyntaxGroup,
     builder: &mut PatchBuilder<'_>,
     struct_ast: &ast::ItemStruct,
-    is_mutable: bool,
+    storage_node_info: &StorageInterfaceInfo<'_>,
     metadata: &MacroPluginMetadata<'_>,
 ) {
-    let storage_node_info =
-        StorageInterfaceInfo::from_struct_ast(db, struct_ast, is_mutable).unwrap();
     let struct_name_syntax = struct_ast.name(db).as_syntax_node();
 
     let node_type_name = storage_node_info.node_type_name();
@@ -397,10 +418,8 @@ fn add_interface_impl(
     db: &dyn SyntaxGroup,
     builder: &mut PatchBuilder<'_>,
     struct_ast: &ast::ItemStruct,
-    is_mutable: bool,
+    storage_node_info: &StorageInterfaceInfo<'_>,
 ) {
-    let storage_node_info =
-        StorageInterfaceInfo::from_struct_ast(db, struct_ast, is_mutable).unwrap();
     let struct_name_syntax = struct_ast.name(db).as_syntax_node();
     let node_type_name = storage_node_info.node_type_name();
     let node_impl_name = storage_node_info.node_impl_name();
