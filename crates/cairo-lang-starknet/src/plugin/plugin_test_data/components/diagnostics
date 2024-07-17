@@ -58,25 +58,25 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBase {
+pub struct StorageStorageBase {
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBaseMut {
+pub struct StorageStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ComponentStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
-        ComponentStorageBase {
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ComponentStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
-        ComponentStorageBaseMut {
-        }
-    }
- }
 
 pub struct ComponentState<TContractState> {
 }
@@ -157,8 +157,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
-impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:1:1
@@ -166,8 +166,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
-impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[embeddable_as(MyImpl)].
@@ -237,25 +237,25 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBase {
+pub struct StorageStorageBase {
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBaseMut {
+pub struct StorageStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ComponentStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
-        ComponentStorageBase {
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ComponentStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
-        ComponentStorageBaseMut {
-        }
-    }
- }
 
 pub struct ComponentState<TContractState> {
 }
@@ -336,8 +336,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
-impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:1:1
@@ -345,8 +345,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
-impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[embeddable_as(MyImpl)].
@@ -416,25 +416,25 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBase {
+pub struct StorageStorageBase {
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBaseMut {
+pub struct StorageStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ComponentStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
-        ComponentStorageBase {
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ComponentStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
-        ComponentStorageBaseMut {
-        }
-    }
- }
 
 pub struct ComponentState<TContractState> {
 }
@@ -515,8 +515,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
-impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:1:1
@@ -524,8 +524,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
-impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[embeddable_as(MyImpl)].
@@ -591,25 +591,25 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBase {
+pub struct StorageStorageBase {
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBaseMut {
+pub struct StorageStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ComponentStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
-        ComponentStorageBase {
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ComponentStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
-        ComponentStorageBaseMut {
-        }
-    }
- }
 
 pub struct ComponentState<TContractState> {
 }
@@ -690,8 +690,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
-impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:1:1
@@ -699,8 +699,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
-impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
@@ -766,25 +766,25 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBase {
+pub struct StorageStorageBase {
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBaseMut {
+pub struct StorageStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ComponentStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
-        ComponentStorageBase {
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ComponentStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
-        ComponentStorageBaseMut {
-        }
-    }
- }
 
 pub struct ComponentState<TContractState> {
 }
@@ -865,8 +865,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
-impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:1:1
@@ -874,8 +874,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
-impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
@@ -945,25 +945,25 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBase {
+pub struct StorageStorageBase {
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBaseMut {
+pub struct StorageStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ComponentStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
-        ComponentStorageBase {
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ComponentStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
-        ComponentStorageBaseMut {
-        }
-    }
- }
 
 pub struct ComponentState<TContractState> {
 }
@@ -1044,8 +1044,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
-impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:1:1
@@ -1053,8 +1053,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
-impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
@@ -1120,25 +1120,25 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBase {
+pub struct StorageStorageBase {
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBaseMut {
+pub struct StorageStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ComponentStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
-        ComponentStorageBase {
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ComponentStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
-        ComponentStorageBaseMut {
-        }
-    }
- }
 
 pub struct ComponentState<TContractState> {
 }
@@ -1219,8 +1219,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
-impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:1:1
@@ -1228,8 +1228,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
-impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: An impl with #[embeddable_as] should have a generic parameter which is an impl of `HasComponent<TContractState>`.
@@ -1291,25 +1291,25 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBase {
+pub struct StorageStorageBase {
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBaseMut {
+pub struct StorageStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ComponentStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
-        ComponentStorageBase {
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ComponentStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
-        ComponentStorageBaseMut {
-        }
-    }
- }
 
 pub struct ComponentState<TContractState> {
 }
@@ -1390,8 +1390,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
-impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:1:1
@@ -1399,8 +1399,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
-impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `embeddable_as` attribute is not supported for empty impls.
@@ -1474,25 +1474,25 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBase {
+pub struct StorageStorageBase {
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBaseMut {
+pub struct StorageStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ComponentStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
-        ComponentStorageBase {
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ComponentStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
-        ComponentStorageBaseMut {
-        }
-    }
- }
 
 pub struct ComponentState<TContractState> {
 }
@@ -1578,8 +1578,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
-impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:1:1
@@ -1587,8 +1587,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
-impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 
 lib.cairo:8:5
@@ -1702,25 +1702,25 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBase {
+pub struct StorageStorageBase {
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBaseMut {
+pub struct StorageStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ComponentStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
-        ComponentStorageBase {
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ComponentStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
-        ComponentStorageBaseMut {
-        }
-    }
- }
 
 pub struct ComponentState<TContractState> {
 }
@@ -1801,8 +1801,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
-impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:1:1
@@ -1810,8 +1810,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
-impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
 
@@ -1881,25 +1881,25 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBase {
+pub struct StorageStorageBase {
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ComponentStorageBaseMut {
+pub struct StorageStorageBaseMut {
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ComponentStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ComponentStorageBase {
-        ComponentStorageBase {
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ComponentStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ComponentStorageBaseMut {
-        ComponentStorageBaseMut {
-        }
-    }
- }
 
 pub struct ComponentState<TContractState> {
 }
@@ -1980,8 +1980,8 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseDrop of core::traits::Drop::<ComponentStorageBase>;
-impl ComponentStorageBaseCopy of core::traits::Copy::<ComponentStorageBase>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:1:1
@@ -1989,5 +1989,5 @@ lib.cairo:1:1
 ^********************^
 impls:
 
-impl ComponentStorageBaseMutDrop of core::traits::Drop::<ComponentStorageBaseMut>;
-impl ComponentStorageBaseMutCopy of core::traits::Copy::<ComponentStorageBaseMut>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;

@@ -49,29 +49,31 @@ mod erc20_contract {
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     erc20_token: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+struct StorageStorageBase {
+    erc20_token: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let erc20_token_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBase {
+           erc20_token: erc20_token_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     erc20_token: starknet::storage::FlattenedStorage<starknet::storage::Mutable<erc20_comp::Storage>>,
+struct StorageStorageBaseMut {
+    erc20_token: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           erc20_token: starknet::storage::FlattenedStorage{},
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let erc20_token_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBaseMut {
+           erc20_token: erc20_token_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           erc20_token: starknet::storage::FlattenedStorage{},
-        }
-    }
- }
 
 pub struct ContractState {
          erc20_token: erc20_comp::ComponentState<ContractState>,
@@ -236,10 +238,10 @@ impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
             recipient: ContractAddress
         );
     }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
@@ -280,29 +282,31 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     erc20_token: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+struct StorageStorageBase {
+    erc20_token: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let erc20_token_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBase {
+           erc20_token: erc20_token_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     erc20_token: starknet::storage::FlattenedStorage<starknet::storage::Mutable<erc20_comp::Storage>>,
+struct StorageStorageBaseMut {
+    erc20_token: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           erc20_token: starknet::storage::FlattenedStorage{},
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let erc20_token_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBaseMut {
+           erc20_token: erc20_token_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           erc20_token: starknet::storage::FlattenedStorage{},
-        }
-    }
- }
 
 pub struct ContractState {
          erc20_token: erc20_comp::ComponentState<ContractState>,
@@ -467,9 +471,9 @@ impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
             recipient: ContractAddress
         );
     }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

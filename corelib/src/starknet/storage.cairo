@@ -366,16 +366,14 @@ impl StorageNodeDeref<T, +StorageNode<T>> of core::ops::Deref<StoragePath<T>> {
 }
 
 /// A mutable version of `StorageNode`, works the same way, but on `Mutable<T>`.
-pub trait MutableStorageNode<T> {
+pub trait StorageNodeMut<T> {
     type NodeType;
     fn storage_node_mut(self: StoragePath<Mutable<T>>) -> Self::NodeType;
 }
 
 /// This makes the storage node members directly accessible from a path to the parent struct.
-impl MutableStorageNodeDeref<
-    T, +MutableStorageNode<T>
-> of core::ops::Deref<StoragePath<Mutable<T>>> {
-    type Target = MutableStorageNode::<T>::NodeType;
+impl StorageNodeMutDeref<T, +StorageNodeMut<T>> of core::ops::Deref<StoragePath<Mutable<T>>> {
+    type Target = StorageNodeMut::<T>::NodeType;
     fn deref(self: StoragePath<Mutable<T>>) -> Self::Target {
         self.storage_node_mut()
     }
@@ -400,7 +398,7 @@ impl SubPointersDeref<T, +SubPointers<T>> of core::ops::Deref<StoragePointer<T>>
 }
 
 /// A mutable version of `SubPointers`, works the same way, but on `Mutable<T>`.
-pub trait MutableSubPointers<T> {
+pub trait SubPointersMut<T> {
     /// The type of the storage pointers, generated for the struct T.
     type SubPointersType;
     /// Creates a sub pointers struct for the given storage pointer to a struct T.
@@ -408,10 +406,8 @@ pub trait MutableSubPointers<T> {
 }
 
 /// This makes the sub-pointers members directly accessible from a pointer to the parent struct.
-impl MutableSubPointersDeref<
-    T, +MutableSubPointers<T>
-> of core::ops::Deref<StoragePointer<Mutable<T>>> {
-    type Target = MutableSubPointers::<T>::SubPointersType;
+impl SubPointersMutDeref<T, +SubPointersMut<T>> of core::ops::Deref<StoragePointer<Mutable<T>>> {
+    type Target = SubPointersMut::<T>::SubPointersType;
     fn deref(self: StoragePointer<Mutable<T>>) -> Self::Target {
         self.sub_pointers_mut()
     }
@@ -497,7 +493,7 @@ impl FlattenedStorageDeref<
 /// Dereference a mutable flattened storage into a the storage object containing a mutable version
 /// of the members of the object.
 impl MutableFlattenedStorageDeref<
-    T, impl StorageImpl: MutableStorageTrait<T>
+    T, impl StorageImpl: StorageTraitMut<T>
 > of core::ops::Deref<FlattenedStorage<Mutable<T>>> {
     type Target = StorageImpl::BaseType;
     fn deref(self: FlattenedStorage<Mutable<T>>) -> Self::Target {
@@ -523,10 +519,9 @@ pub trait StorageTrait<T> {
     fn storage(self: FlattenedStorage<T>) -> Self::BaseType;
 }
 
-
 /// A trait for creating the struct containing the mutable StorageBase or FlattenedStorage of all
 /// the members of a contract state.
-pub trait MutableStorageTrait<T> {
+pub trait StorageTraitMut<T> {
     /// The type of the struct containing the mutable StorageBase or FlattenedStorage of all the
     /// members of a the type `T`.
     type BaseType;
@@ -660,7 +655,7 @@ struct MutableU256SubPointers {
     pub high: starknet::storage::StoragePointer<Mutable<u128>>,
 }
 
-impl MutableU256SubPointersImpl of starknet::storage::MutableSubPointers<u256> {
+impl MutableU256SubPointersImpl of starknet::storage::SubPointersMut<u256> {
     type SubPointersType = MutableU256SubPointers;
     fn sub_pointers_mut(
         self: starknet::storage::StoragePointer<Mutable<u256>>

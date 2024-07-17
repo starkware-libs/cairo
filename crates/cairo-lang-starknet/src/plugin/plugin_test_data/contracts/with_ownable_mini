@@ -13,7 +13,7 @@ mod ownable_mini_contract {
     use cairo_level_tests::components::ownable_mini;
     use starknet::ContractAddress;
     use starknet::storage::{
-        StorageAsPath, StorageNode, MutableStorageNode, StoragePointerReadAccess,
+        StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,
         StoragePointerWriteAccess
     };
 
@@ -36,7 +36,7 @@ mod ownable_mini_contract {
         }
         fn storage_mut(
             ref self: ContractState
-        ) -> MutableStorageNode::<ownable_mini::OwnableStorage>::NodeType {
+        ) -> StorageNodeMut::<ownable_mini::OwnableStorage>::NodeType {
             self.ownable.as_path().storage_node_mut()
         }
     }
@@ -66,33 +66,37 @@ pub enum Event {}
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     ownable: starknet::storage::StorageBase<ownable_mini::OwnableStorage>,
-     balance: starknet::storage::StorageBase<u128>,
+struct StorageStorageBase {
+    ownable: starknet::storage::StorageBase<ownable_mini::OwnableStorage>,
+    balance: starknet::storage::StorageBase<u128>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let ownable_value = starknet::storage::StorageBase {address: selector!("ownable")};
+        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
+        StorageStorageBase {
+           ownable: ownable_value,
+           balance: balance_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_mini::OwnableStorage>>,
-     balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+struct StorageStorageBaseMut {
+    ownable: starknet::storage::StorageBase<starknet::storage::Mutable::<ownable_mini::OwnableStorage>>,
+    balance: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
-           balance: starknet::storage::StorageBase{ address: selector!("balance") },
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let ownable_value = starknet::storage::StorageBase {address: selector!("ownable")};
+        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
+        StorageStorageBaseMut {
+           ownable: ownable_value,
+           balance: balance_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
-           balance: starknet::storage::StorageBase{ address: selector!("balance") },
-        }
-    }
- }
 
 pub struct ContractState {
 }
@@ -245,16 +249,16 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
     use cairo_level_tests::components::ownable_mini;
     use starknet::ContractAddress;
     use starknet::storage::{
-        StorageAsPath, StorageNode, MutableStorageNode, StoragePointerReadAccess,
+        StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,
         StoragePointerWriteAccess
     };
 
@@ -277,7 +281,7 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
         }
         fn storage_mut(
             ref self: ContractState
-        ) -> MutableStorageNode::<ownable_mini::OwnableStorage>::NodeType {
+        ) -> StorageNodeMut::<ownable_mini::OwnableStorage>::NodeType {
             self.ownable.as_path().storage_node_mut()
         }
     }
@@ -307,33 +311,37 @@ pub enum Event {}
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     ownable: starknet::storage::StorageBase<ownable_mini::OwnableStorage>,
-     balance: starknet::storage::StorageBase<u128>,
+struct StorageStorageBase {
+    ownable: starknet::storage::StorageBase<ownable_mini::OwnableStorage>,
+    balance: starknet::storage::StorageBase<u128>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+       type BaseType = StorageStorageBase;
+       fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let ownable_value = starknet::storage::StorageBase {address: selector!("ownable")};
+        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
+        StorageStorageBase {
+           ownable: ownable_value,
+           balance: balance_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_mini::OwnableStorage>>,
-     balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+struct StorageStorageBaseMut {
+    ownable: starknet::storage::StorageBase<starknet::storage::Mutable::<ownable_mini::OwnableStorage>>,
+    balance: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
-           balance: starknet::storage::StorageBase{ address: selector!("balance") },
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+       type BaseType = StorageStorageBaseMut;
+       fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let ownable_value = starknet::storage::StorageBase {address: selector!("ownable")};
+        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
+        StorageStorageBaseMut {
+           ownable: ownable_value,
+           balance: balance_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
-           balance: starknet::storage::StorageBase{ address: selector!("balance") },
-        }
-    }
- }
 
 pub struct ContractState {
 }
@@ -486,9 +494,9 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
