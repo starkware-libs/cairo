@@ -4,7 +4,6 @@ use std::vec::IntoIter;
 
 use anyhow::{bail, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::FilesGroupEx;
@@ -186,6 +185,7 @@ pub struct TestCompiler {
     pub main_crate_ids: Vec<CrateId>,
     pub test_crate_ids: Vec<CrateId>,
     pub starknet: bool,
+    pub allow_warnings: bool,
 }
 
 impl TestCompiler {
@@ -218,19 +218,13 @@ impl TestCompiler {
         db.set_flag(add_redeposit_gas_flag_id, Some(Arc::new(Flag::AddRedepositGas(true))));
 
         let main_crate_ids = setup_project(db, Path::new(&path))?;
-        let mut reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_ids);
-        if allow_warnings {
-            reporter = reporter.allow_warnings();
-        }
-        if reporter.check(db) {
-            bail!("failed to compile: {}", path.display());
-        }
 
         Ok(Self {
             db: db.snapshot(),
             test_crate_ids: main_crate_ids.clone(),
             main_crate_ids,
             starknet,
+            allow_warnings,
         })
     }
 
@@ -241,6 +235,7 @@ impl TestCompiler {
             TestsCompilationConfig { starknet: self.starknet, add_statements_functions: false },
             self.main_crate_ids.clone(),
             self.test_crate_ids.clone(),
+            self.allow_warnings,
         )
     }
 }
