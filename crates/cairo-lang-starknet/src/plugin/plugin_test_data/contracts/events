@@ -158,14 +158,14 @@ impl StoreA of starknet::Store::<A> {
 }
 
 #[derive(Drop, Copy)]
-struct ASubPointers {
-    x: starknet::storage::StoragePointer<felt252>,
-    data: starknet::storage::StoragePointer<usize>,
+pub struct ASubPointers {
+    pub x: starknet::storage::StoragePointer<felt252>,
+    pub data: starknet::storage::StoragePointer<usize>,
 }
 impl ASubPointersImpl of starknet::storage::SubPointers<A> {
-type SubPointersType = ASubPointers;
-   fn sub_pointers(self: starknet::storage::StoragePointer<A>) -> ASubPointers {
-               let base_address = self.address;
+       type SubPointersType = ASubPointers;
+       fn sub_pointers(self: starknet::storage::StoragePointer<A>) -> ASubPointers {
+        let base_address = self.address;
         let mut current_offset = self.offset;
         let x_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -183,14 +183,14 @@ type SubPointersType = ASubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableASubPointers {
-    x: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
-    data: starknet::storage::StoragePointer<starknet::storage::Mutable::<usize>>,
+pub struct ASubPointersMut {
+    pub x: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
+    pub data: starknet::storage::StoragePointer<starknet::storage::Mutable::<usize>>,
 }
-impl MutableASubPointersImpl of starknet::storage::MutableSubPointers<A> {
-type SubPointersType = MutableASubPointers;
-   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<A>>) -> MutableASubPointers {
-               let base_address = self.address;
+impl ASubPointersMutImpl of starknet::storage::SubPointersMut<A> {
+       type SubPointersType = ASubPointersMut;
+       fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<A>>) -> ASubPointersMut {
+        let base_address = self.address;
         let mut current_offset = self.offset;
         let x_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -201,7 +201,7 @@ type SubPointersType = MutableASubPointers;
             address: base_address,
             offset: current_offset,
         };
-                MutableASubPointers {
+                ASubPointersMut {
            x: x_value,
            data: data_value,
         }
@@ -458,7 +458,7 @@ lib.cairo:1:27
                           ^*************^
 impls:
 
-impl MutableASubPointersDrop of core::traits::Drop::<MutableASubPointers>;
-impl MutableASubPointersCopy of core::traits::Copy::<MutableASubPointers>;
+impl ASubPointersMutDrop of core::traits::Drop::<ASubPointersMut>;
+impl ASubPointersMutCopy of core::traits::Copy::<ASubPointersMut>;
 
 //! > expected_diagnostics

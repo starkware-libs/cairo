@@ -7,6 +7,7 @@ use indoc::formatdoc;
 
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::{backwards_compatible_storage, StarknetModuleKind};
+use super::storage_interfaces::handle_storage_interface;
 use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, STORAGE_STRUCT_NAME};
 use crate::plugin::SUBSTORAGE_ATTR;
 
@@ -23,8 +24,6 @@ pub fn handle_storage_struct(
     let generic_arg_str = starknet_module_kind.get_generic_arg_str();
     let full_generic_arg_str = starknet_module_kind.get_full_generic_arg_str();
     let full_state_struct_name = starknet_module_kind.get_full_state_struct_name();
-    let storage_base_struct_name = starknet_module_kind.get_storage_base_struct_name();
-    let storage_base_mut_struct_name = starknet_module_kind.get_storage_base_mut_struct_name();
 
     let mut members_struct_code = vec![];
     let mut members_struct_code_mut = vec![];
@@ -75,35 +74,12 @@ pub fn handle_storage_struct(
     } else {
         RewriteNode::from_ast(&struct_ast.visibility(db))
     };
+    let (storage_base_code, _) = handle_storage_interface(db, &struct_ast, metadata);
     data.state_struct_code = RewriteNode::interpolate_patched(
         &formatdoc!(
             "
             {storage_struct_code}
-            #[derive(Drop, Copy)]
-            $storage_struct_visibility$ struct {storage_base_struct_name} {{$members_struct_code$
-            }}
-            #[derive(Drop, Copy)]
-            $storage_struct_visibility$ struct {storage_base_mut_struct_name} \
-             {{$members_struct_code_mut$
-            }}
-            impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {{
-                type BaseType = {storage_base_struct_name};
-                fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> \
-             {storage_base_struct_name} {{
-                    {storage_base_struct_name} {{$members_init_code$
-                    }}
-                }}
-            }}
-            impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {{
-                type BaseType = {storage_base_mut_struct_name};
-                fn storage_mut(self: \
-             starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> \
-             {storage_base_mut_struct_name} {{
-                    {storage_base_mut_struct_name} {{$members_init_code$
-                    }}
-                }}
-             }}
-
+            {storage_base_code}
             pub struct {full_state_struct_name} {{$substorage_members_struct_code$
             }}
 
