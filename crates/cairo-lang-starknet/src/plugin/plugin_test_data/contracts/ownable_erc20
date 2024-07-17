@@ -59,30 +59,45 @@ mod ownable_erc20_contract {
 
 #[derive(Drop, Copy)]
  struct ContractStorageBase {
-     ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
-     erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
+     ownable_storage: starknet::storage::FlatStorage<ownable_comp::Storage>,
+     erc20_storage: starknet::storage::FlatStorage<erc20_comp::Storage>,
 }
 #[derive(Drop, Copy)]
  struct ContractStorageBaseMut {
-     ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-     erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
+     ownable_storage: starknet::storage::FlatStorage<starknet::storage::Mutable<ownable_comp::Storage>>,
+     erc20_storage: starknet::storage::FlatStorage<starknet::storage::Mutable<erc20_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlatStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
-           ownable_storage: starknet::storage::StorageBase{ address: selector!("ownable_storage") },
-           erc20_storage: starknet::storage::StorageBase{ address: selector!("erc20_storage") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           ownable_storage: starknet::storage::StorageBase{ address: selector!("ownable_storage") },
-           erc20_storage: starknet::storage::StorageBase{ address: selector!("erc20_storage") },
+           ownable_storage: starknet::storage::FlatStorage{},
+           erc20_storage: starknet::storage::FlatStorage{},
         }
     }
 }
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           ownable_storage: starknet::storage::FlatStorage{},
+           erc20_storage: starknet::storage::FlatStorage{},
+        }
+    }
+ }
+//  impl FlatStorageDeref of core::ops::Deref<starknet::storage::FlatStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlatStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlatStorageDeref of //  core::ops::Deref<starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
          ownable_storage: ownable_comp::ComponentState<ContractState>,
          erc20_storage: erc20_comp::ComponentState<ContractState>,
@@ -91,15 +106,15 @@ pub struct ContractState {
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlatStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlatStorage<Storage> {
+        starknet::storage::FlatStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlatStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -351,30 +366,45 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 #[derive(Drop, Copy)]
  struct ContractStorageBase {
-     ownable_storage: starknet::storage::StorageBase<ownable_comp::Storage>,
-     erc20_storage: starknet::storage::StorageBase<erc20_comp::Storage>,
+     ownable_storage: starknet::storage::FlatStorage<ownable_comp::Storage>,
+     erc20_storage: starknet::storage::FlatStorage<erc20_comp::Storage>,
 }
 #[derive(Drop, Copy)]
  struct ContractStorageBaseMut {
-     ownable_storage: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-     erc20_storage: starknet::storage::StorageBase<starknet::storage::Mutable<erc20_comp::Storage>>,
+     ownable_storage: starknet::storage::FlatStorage<starknet::storage::Mutable<ownable_comp::Storage>>,
+     erc20_storage: starknet::storage::FlatStorage<starknet::storage::Mutable<erc20_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlatStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
-           ownable_storage: starknet::storage::StorageBase{ address: selector!("ownable_storage") },
-           erc20_storage: starknet::storage::StorageBase{ address: selector!("erc20_storage") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           ownable_storage: starknet::storage::StorageBase{ address: selector!("ownable_storage") },
-           erc20_storage: starknet::storage::StorageBase{ address: selector!("erc20_storage") },
+           ownable_storage: starknet::storage::FlatStorage{},
+           erc20_storage: starknet::storage::FlatStorage{},
         }
     }
 }
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
+        ContractStorageBaseMut {
+           ownable_storage: starknet::storage::FlatStorage{},
+           erc20_storage: starknet::storage::FlatStorage{},
+        }
+    }
+ }
+//  impl FlatStorageDeref of core::ops::Deref<starknet::storage::FlatStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlatStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlatStorageDeref of //  core::ops::Deref<starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
          ownable_storage: ownable_comp::ComponentState<ContractState>,
          erc20_storage: erc20_comp::ComponentState<ContractState>,
@@ -383,15 +413,15 @@ pub struct ContractState {
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlatStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlatStorage<Storage> {
+        starknet::storage::FlatStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlatStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {

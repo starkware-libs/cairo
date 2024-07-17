@@ -253,9 +253,6 @@ mod hello_starknet {
     }
 }
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 HelloStarknetTraitDispatcherTrait:
 
 trait HelloStarknetTraitDispatcherTrait<T> {
@@ -1243,9 +1240,6 @@ self: HelloStarknetTraitSafeDispatcher, user_id: usize, subbalance_id: usize
 }
 
 
-lib.cairo:26:1
-#[starknet::storage_node]
-^***********************^
 storage_node:
 
 #[derive(Drop, Copy)]
@@ -1296,17 +1290,11 @@ type NodeType = MutableBalancePairStorageNode;
 }
 
 
-lib.cairo:31:1
-
-^
 impls:
 
 impl SlicedBalanceTrioDrop of core::traits::Drop::<SlicedBalanceTrio>;
 
 
-lib.cairo:32:16
-#[derive(Drop, starknet::Store)]
-               ^*************^
 starknet_derive:
 
 impl StoreSlicedBalanceTrio of starknet::Store::<SlicedBalanceTrio> {
@@ -1404,17 +1392,11 @@ type SubPointersType = MutableSlicedBalanceTrioSubPointers;
 }
 
 
-lib.cairo:37:1
-
-^
 impls:
 
 impl SlicedBalancePairDrop of core::traits::Drop::<SlicedBalancePair>;
 
 
-lib.cairo:38:16
-#[derive(Drop, starknet::Store)]
-               ^*************^
 starknet_derive:
 
 impl StoreSlicedBalancePair of starknet::Store::<SlicedBalancePair> {
@@ -1512,9 +1494,6 @@ type SubPointersType = MutableSlicedBalancePairSubPointers;
 }
 
 
-lib.cairo:44:1
-#[starknet::storage_node]
-^***********************^
 storage_node:
 
 #[derive(Drop, Copy)]
@@ -1565,9 +1544,6 @@ type NodeType = MutableLinkedListStorageNode;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl HelloStarknetTraitDispatcherCopy of core::traits::Copy::<HelloStarknetTraitDispatcher>;
@@ -1584,9 +1560,6 @@ impl HelloStarknetTraitDispatcherSerde of core::serde::Serde::<HelloStarknetTrai
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDispatcher> {
@@ -1659,9 +1632,6 @@ type SubPointersType = MutableHelloStarknetTraitDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl HelloStarknetTraitLibraryDispatcherCopy of core::traits::Copy::<HelloStarknetTraitLibraryDispatcher>;
@@ -1678,9 +1648,6 @@ impl HelloStarknetTraitLibraryDispatcherSerde of core::serde::Serde::<HelloStark
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknetTraitLibraryDispatcher> {
@@ -1753,9 +1720,6 @@ type SubPointersType = MutableHelloStarknetTraitLibraryDispatcherSubPointers;
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl HelloStarknetTraitSafeLibraryDispatcherCopy of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcher>;
@@ -1772,9 +1736,6 @@ impl HelloStarknetTraitSafeLibraryDispatcherSerde of core::serde::Serde::<HelloS
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStarknetTraitSafeLibraryDispatcher> {
@@ -1847,9 +1808,6 @@ type SubPointersType = MutableHelloStarknetTraitSafeLibraryDispatcherSubPointers
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl HelloStarknetTraitSafeDispatcherCopy of core::traits::Copy::<HelloStarknetTraitSafeDispatcher>;
@@ -1866,9 +1824,6 @@ impl HelloStarknetTraitSafeDispatcherSerde of core::serde::Serde::<HelloStarknet
 }
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 starknet_derive:
 
 impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTraitSafeDispatcher> {
@@ -1941,153 +1896,102 @@ type SubPointersType = MutableHelloStarknetTraitSafeDispatcherSubPointers;
 }
 
 
-lib.cairo:26:1
-#[starknet::storage_node]
-^***********************^
 impls:
 
 impl BalancePairStorageNodeDrop of core::traits::Drop::<BalancePairStorageNode>;
 impl BalancePairStorageNodeCopy of core::traits::Copy::<BalancePairStorageNode>;
 
 
-lib.cairo:26:1
-#[starknet::storage_node]
-^***********************^
 impls:
 
 impl MutableBalancePairStorageNodeDrop of core::traits::Drop::<MutableBalancePairStorageNode>;
 impl MutableBalancePairStorageNodeCopy of core::traits::Copy::<MutableBalancePairStorageNode>;
 
 
-lib.cairo:32:16
-#[derive(Drop, starknet::Store)]
-               ^*************^
 impls:
 
 impl SlicedBalanceTrioSubPointersDrop of core::traits::Drop::<SlicedBalanceTrioSubPointers>;
 impl SlicedBalanceTrioSubPointersCopy of core::traits::Copy::<SlicedBalanceTrioSubPointers>;
 
 
-lib.cairo:32:16
-#[derive(Drop, starknet::Store)]
-               ^*************^
 impls:
 
 impl MutableSlicedBalanceTrioSubPointersDrop of core::traits::Drop::<MutableSlicedBalanceTrioSubPointers>;
 impl MutableSlicedBalanceTrioSubPointersCopy of core::traits::Copy::<MutableSlicedBalanceTrioSubPointers>;
 
 
-lib.cairo:38:16
-#[derive(Drop, starknet::Store)]
-               ^*************^
 impls:
 
 impl SlicedBalancePairSubPointersDrop of core::traits::Drop::<SlicedBalancePairSubPointers>;
 impl SlicedBalancePairSubPointersCopy of core::traits::Copy::<SlicedBalancePairSubPointers>;
 
 
-lib.cairo:38:16
-#[derive(Drop, starknet::Store)]
-               ^*************^
 impls:
 
 impl MutableSlicedBalancePairSubPointersDrop of core::traits::Drop::<MutableSlicedBalancePairSubPointers>;
 impl MutableSlicedBalancePairSubPointersCopy of core::traits::Copy::<MutableSlicedBalancePairSubPointers>;
 
 
-lib.cairo:44:1
-#[starknet::storage_node]
-^***********************^
 impls:
 
 impl LinkedListStorageNodeDrop of core::traits::Drop::<LinkedListStorageNode>;
 impl LinkedListStorageNodeCopy of core::traits::Copy::<LinkedListStorageNode>;
 
 
-lib.cairo:44:1
-#[starknet::storage_node]
-^***********************^
 impls:
 
 impl MutableLinkedListStorageNodeDrop of core::traits::Drop::<MutableLinkedListStorageNode>;
 impl MutableLinkedListStorageNodeCopy of core::traits::Copy::<MutableLinkedListStorageNode>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl HelloStarknetTraitDispatcherSubPointersDrop of core::traits::Drop::<HelloStarknetTraitDispatcherSubPointers>;
 impl HelloStarknetTraitDispatcherSubPointersCopy of core::traits::Copy::<HelloStarknetTraitDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableHelloStarknetTraitDispatcherSubPointersDrop of core::traits::Drop::<MutableHelloStarknetTraitDispatcherSubPointers>;
 impl MutableHelloStarknetTraitDispatcherSubPointersCopy of core::traits::Copy::<MutableHelloStarknetTraitDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl HelloStarknetTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<HelloStarknetTraitLibraryDispatcherSubPointers>;
 impl HelloStarknetTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<HelloStarknetTraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableHelloStarknetTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableHelloStarknetTraitLibraryDispatcherSubPointers>;
 impl MutableHelloStarknetTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableHelloStarknetTraitLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcherSubPointers>;
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableHelloStarknetTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableHelloStarknetTraitSafeLibraryDispatcherSubPointers>;
 impl MutableHelloStarknetTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableHelloStarknetTraitSafeLibraryDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl HelloStarknetTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<HelloStarknetTraitSafeDispatcherSubPointers>;
 impl HelloStarknetTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<HelloStarknetTraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:1:1
-#[starknet::interface]
-^********************^
 impls:
 
 impl MutableHelloStarknetTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableHelloStarknetTraitSafeDispatcherSubPointers>;
 impl MutableHelloStarknetTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableHelloStarknetTraitSafeDispatcherSubPointers>;
 
 
-lib.cairo:50:1
-#[starknet::contract]
-^*******************^
 contract:
 
 #[event]
@@ -2129,10 +2033,9 @@ pub struct ContractStorageBaseMut {
     pub linked_list: starknet::storage::StorageBase<starknet::storage::Mutable<LinkedList>>,
     pub arr: starknet::storage::StorageBase<starknet::storage::Mutable<Vec<usize>>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
+impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
+    fn storage(self: starknet::storage::FlatStorage<Storage>) -> ContractStorageBase {
         ContractStorageBase {
            balance: starknet::storage::StorageBase{ address: selector!("balance") },
            user_balance: starknet::storage::StorageBase{ address: selector!("user_balance") },
@@ -2144,7 +2047,10 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
            arr: starknet::storage::StorageBase{ address: selector!("arr") },
         }
     }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
+}
+impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
+    type BaseType = ContractStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
         ContractStorageBaseMut {
            balance: starknet::storage::StorageBase{ address: selector!("balance") },
            user_balance: starknet::storage::StorageBase{ address: selector!("user_balance") },
@@ -2156,22 +2062,35 @@ impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
            arr: starknet::storage::StorageBase{ address: selector!("arr") },
         }
     }
-}
+ }
+//  impl FlatStorageDeref of core::ops::Deref<starknet::storage::FlatStorage<Storage>> {
+//     type Target = ContractStorageBase;
+//     fn deref(self: starknet::storage::FlatStorage<Storage>) -> //  ContractStorageBase {
+//             self.storage()
+//     }
+// }
+// impl MutableFlatStorageDeref of //  core::ops::Deref<starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>>> //  {
+//     type Target = ContractStorageBaseMut;
+//     fn deref(self: //  starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>>) -> //  ContractStorageBaseMut {
+//             self.storage_mut()
+//     }
+// }
+
 pub struct ContractState {
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlatStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlatStorage<Storage> {
+        starknet::storage::FlatStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlatStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlatStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -2557,17 +2476,11 @@ pub mod __constructor {
 
 
 
-lib.cairo:50:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:50:1
-#[starknet::contract]
-^*******************^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2587,18 +2500,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:50:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
 impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
 
 
-lib.cairo:50:1
-#[starknet::contract]
-^*******************^
 impls:
 
 impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
@@ -2606,6 +2513,16 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:63:28
-        legacy_map_balace: LegacyMap<usize, usize>,
-                           ^*******^
+ --> lib.cairo[contract]:11:34
+          pub legacy_map_balace: LegacyMap<usize, usize>,
+                                 ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:23:59
+    pub legacy_map_balace: starknet::storage::StorageBase<LegacyMap<usize, usize>>,
+                                                          ^*******^
+
+warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+ --> lib.cairo[contract]:34:86
+    pub legacy_map_balace: starknet::storage::StorageBase<starknet::storage::Mutable<LegacyMap<usize, usize>>>,
+                                                                                     ^*******^

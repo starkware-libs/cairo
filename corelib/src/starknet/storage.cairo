@@ -476,24 +476,55 @@ impl PendingStoragePathDeref<T> of core::ops::Deref<PendingStoragePath<T>> {
     }
 }
 
+
+/// A type that represents a flat storage, i.e. a storage object which does not have any effect on
+/// the path taken into consideration when computing the address of the storage object.
+pub struct FlatStorage<T> {}
+
+impl FlatStorageDrop<T> of Drop<FlatStorage<T>> {}
+impl FlatStorageCopy<T> of Copy<FlatStorage<T>> {}
+
+/// Dereference a flat storage into a the storage object containing the members of the object.
+impl FlatStorageDeref<T, impl StorageImpl: StorageTrait<T>> of core::ops::Deref<FlatStorage<T>> {
+    type Target = StorageImpl::BaseType;
+    fn deref(self: FlatStorage<T>) -> Self::Target {
+        self.storage()
+    }
+}
+
+/// Dereference a mutable flat storage into a the storage object containing a mutable version of the
+/// members of the object.
+impl MutableFlatStorageDeref<
+    T, impl StorageImpl: MutableStorageTrait<T>
+> of core::ops::Deref<FlatStorage<Mutable<T>>> {
+    type Target = StorageImpl::BaseType;
+    fn deref(self: FlatStorage<Mutable<T>>) -> Self::Target {
+        self.storage_mut()
+    }
+}
+
 /// A struct for holding an address to initialize a storage path with. The members (not direct
-/// members, but accessible using deref) of the contract state are `StorageBase` instances, with the
-/// generic type representing the type of the stored member.
+/// members, but accessible using deref) of a contract state are either `StorageBase` or
+/// `FlatStorage`` instances, with the generic type representing the type of the stored member.
 pub struct StorageBase<T> {
     pub address: felt252,
 }
 
-/// A trait for creating the struct containing the storage base of all the members of a contract
-/// state.
-pub trait StorageBaseTrait<T> {
+/// A trait for creating the struct containing the StorageBase or FlatStorage of all the members of
+/// a contract state.
+pub trait StorageTrait<T> {
     type BaseType;
-    type BaseMutType;
-    /// Creates a struct containing the storage base of all the members of a contract state. Should
-    /// be called from the `deref` method of the contract state.
-    fn storage_base(self: @T) -> Self::BaseType;
-    /// Creates a struct containing the storage base, with the generic type wrapped in a `Mutable`
-    /// type. Should be called from the `deref_mut` method of the contract state.
-    fn storage_base_mut(ref self: T) -> Self::BaseMutType;
+    /// Creates a struct containing the StorageBase or FlatStorage of all the members of a contract
+    /// state. Should be called from the `deref` method of the contract state.
+    fn storage(self: FlatStorage<T>) -> Self::BaseType;
+}
+
+pub trait MutableStorageTrait<T> {
+    type BaseType;
+    /// Creates a struct containing a mutable version of the the StorageBase or FlatStorage of all
+    /// the members of a contract state. Should be called from the `deref` method of the contract
+    /// state.
+    fn storage_mut(self: FlatStorage<Mutable<T>>) -> Self::BaseType;
 }
 
 impl StorageBaseDrop<T> of Drop<StorageBase<T>> {}
