@@ -4,7 +4,7 @@ use starknet::ContractAddress;
 mod erc20_mini_contract {
     use cairo_level_tests::components::erc20_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageAsPath, StorageNode, MutableStorageNode};
+    use starknet::storage::{StorageAsPath, StorageNode, StorageNodeMut};
     #[storage]
     struct Storage {
         erc20_token: erc20_mini::ERC20Storage,
@@ -27,7 +27,7 @@ mod erc20_mini_contract {
         }
         fn storage_mut(
             ref self: ContractState
-        ) -> MutableStorageNode::<erc20_mini::ERC20Storage>::NodeType {
+        ) -> StorageNodeMut::<erc20_mini::ERC20Storage>::NodeType {
             self.erc20_token.as_path().storage_node_mut()
         }
     }

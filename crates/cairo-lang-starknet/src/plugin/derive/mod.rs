@@ -1,5 +1,7 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
-use cairo_lang_defs::plugin::{DynGeneratedFileAuxData, PluginGeneratedFile, PluginResult};
+use cairo_lang_defs::plugin::{
+    DynGeneratedFileAuxData, MacroPluginMetadata, PluginGeneratedFile, PluginResult,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
@@ -17,7 +19,11 @@ pub fn derive_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) -> boo
 }
 
 /// Handles the derive attributes for the given item.
-pub fn handle_derive(db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
+pub fn handle_derive(
+    db: &dyn SyntaxGroup,
+    item_ast: ast::ModuleItem,
+    metadata: &MacroPluginMetadata<'_>,
+) -> PluginResult {
     let mut builder = PatchBuilder::new(db, &item_ast);
     let mut diagnostics = vec![];
     let mut aux_data = None;
@@ -33,7 +39,7 @@ pub fn handle_derive(db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginR
         }
     }
     if let Some(derive_arg) = has_derive(&item_ast, db, STORE_TRAIT) {
-        if let Some(node) = store::handle_store_derive(db, &item_ast, &mut diagnostics) {
+        if let Some(node) = store::handle_store_derive(db, &item_ast, &mut diagnostics, metadata) {
             builder.add_modified(RewriteNode::Mapped {
                 node: node.into(),
                 origin: derive_arg.as_syntax_node().span_without_trivia(db),

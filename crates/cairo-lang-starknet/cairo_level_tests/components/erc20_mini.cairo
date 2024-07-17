@@ -1,7 +1,7 @@
 use starknet::{ContractAddress, get_caller_address, contract_address_const};
 use starknet::storage::{
-    StorageAsPath, StorageNode, MutableStorageNode, StoragePointerReadAccess,
-    StoragePointerWriteAccess, StorageMapReadAccess, StorageMapWriteAccess,
+    StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess, StoragePointerWriteAccess,
+    StorageMapReadAccess, StorageMapWriteAccess,
 };
 
 
@@ -30,7 +30,7 @@ pub trait HasStorage<
     /// The storage node.
     impl Node: starknet::storage::StorageNode<Storage>,
     /// The mutable storage node.
-    impl NodeMut: starknet::storage::MutableStorageNode<Storage>
+    impl NodeMut: starknet::storage::StorageNodeMut<Storage>
 > {
     fn storage(self: @TContractState) -> Node::NodeType;
     fn storage_mut(ref self: TContractState) -> NodeMut::NodeType;

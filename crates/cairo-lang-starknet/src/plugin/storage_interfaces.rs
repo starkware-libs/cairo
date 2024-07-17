@@ -8,8 +8,9 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
 
+use super::starknet_module::backwards_compatible_storage;
 use super::utils::has_derive;
-use super::{STORAGE_NODE_ATTR, STORE_TRAIT};
+use super::{STORAGE_ATTR, STORAGE_NODE_ATTR, STORE_TRAIT, SUBSTORAGE_ATTR};
 
 /// Generates an impl for the `starknet::StorageNode` to point to a generate a struct to to be
 /// pointed to allowing further access to each of its members (i.e. there will be a fitting member
@@ -46,14 +47,14 @@ use super::{STORAGE_NODE_ATTR, STORE_TRAIT};
 /// ```
 #[derive(Debug, Default)]
 #[non_exhaustive]
-pub struct StorageNodePlugin;
+pub struct StorageInterfacesPlugin;
 
-impl MacroPlugin for StorageNodePlugin {
+impl MacroPlugin for StorageInterfacesPlugin {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata<'_>,
+        metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::Struct(struct_ast) => {
@@ -79,7 +80,7 @@ impl MacroPlugin for StorageNodePlugin {
                 if !diagnostics.is_empty() {
                     return PluginResult { code: None, diagnostics, remove_original_item: false };
                 }
-                let (content, code_mappings) = handle_storage_node(db, &struct_ast);
+                let (content, code_mappings) = handle_storage_interface(db, &struct_ast, metadata);
                 PluginResult {
                     code: Some(PluginGeneratedFile {
                         name: "storage_node".into(),
@@ -104,36 +105,40 @@ impl MacroPlugin for StorageNodePlugin {
     }
 }
 
-/// The different types of storage nodes that can be generated.
-enum StorageNodeType {
+/// The different types of storage interfaces that can be generated.
+enum StorageInterfaceType {
     StorageNode,
     SubPointers,
+    StorageTrait,
 }
 
-/// Helper enum to generate the code snippets for the different types of storage nodes.
-struct StorageNodeInfo {
-    node_type: StorageNodeType,
+/// Helper enum to generate the code snippets for the different types of storage interfaces.
+struct StorageInterfaceInfo<'a> {
+    db: &'a dyn SyntaxGroup,
+    node_type: StorageInterfaceType,
     is_mutable: bool,
 }
 
-/// Code generation for the different types of storage nodes.
-impl StorageNodeInfo {
+/// Code generation for the different types of storage interfaces.
+impl<'a> StorageInterfaceInfo<'a> {
     fn from_struct_ast(
-        db: &dyn SyntaxGroup,
+        db: &'a dyn SyntaxGroup,
         struct_ast: &ast::ItemStruct,
         is_mutable: bool,
     ) -> Option<Self> {
         if struct_ast.has_attr(db, STORAGE_NODE_ATTR) {
-            Some(Self { node_type: StorageNodeType::StorageNode, is_mutable })
+            Some(Self { db, node_type: StorageInterfaceType::StorageNode, is_mutable })
+        } else if struct_ast.has_attr(db, STORAGE_ATTR) {
+            Some(Self { db, node_type: StorageInterfaceType::StorageTrait, is_mutable })
         } else if has_derive(struct_ast, db, STORE_TRAIT).is_some() {
-            Some(Self { node_type: StorageNodeType::SubPointers, is_mutable })
+            Some(Self { db, node_type: StorageInterfaceType::SubPointers, is_mutable })
         } else {
             None
         }
     }
     /// Returns the mutable prefix of camelcase names.
     fn mutable_camelcase(&self) -> &'static str {
-        if self.is_mutable { "Mutable" } else { "" }
+        if self.is_mutable { "Mut" } else { "" }
     }
     /// Returns the mutable suffix for functions.
     fn mutable_suffix(&self) -> &'static str {
@@ -149,100 +154,130 @@ impl StorageNodeInfo {
     }
     /// Returns the name of the storage node type of the specific struct.
     fn node_type_name(&self) -> String {
-        let mutable_prefix = self.mutable_camelcase();
+        let mutable_suffix = self.mutable_camelcase();
         match self.node_type {
-            StorageNodeType::StorageNode => {
-                format!("{mutable_prefix}$struct_name$StorageNode")
+            StorageInterfaceType::StorageNode => {
+                format!("$struct_name$StorageNode{mutable_suffix}")
             }
-            StorageNodeType::SubPointers => {
-                format!("{mutable_prefix}$struct_name$SubPointers")
+            StorageInterfaceType::SubPointers => {
+                format!("$struct_name$SubPointers{mutable_suffix}")
+            }
+            StorageInterfaceType::StorageTrait => {
+                format!("$struct_name$StorageBase{mutable_suffix}")
             }
         }
     }
     /// Returns the name of the trait that the storage node implements.
     fn node_trait_name(&self) -> String {
-        let mutable_prefix = self.mutable_camelcase();
+        let mutable_suffix = self.mutable_camelcase();
         match self.node_type {
-            StorageNodeType::StorageNode => {
-                format!("starknet::storage::{mutable_prefix}StorageNode<$struct_name$>")
+            StorageInterfaceType::StorageNode => {
+                format!("starknet::storage::StorageNode{mutable_suffix}<$struct_name$>")
             }
-            StorageNodeType::SubPointers => {
-                format!("starknet::storage::{mutable_prefix}SubPointers<$struct_name$>")
+            StorageInterfaceType::SubPointers => {
+                format!("starknet::storage::SubPointers{mutable_suffix}<$struct_name$>")
+            }
+            StorageInterfaceType::StorageTrait => {
+                format!("starknet::storage::StorageTrait{mutable_suffix}<$struct_name$>")
             }
         }
     }
     /// Returns the name of the associated type of the storage node.
     fn node_type(&self) -> String {
         match self.node_type {
-            StorageNodeType::StorageNode => "NodeType".to_string(),
-            StorageNodeType::SubPointers => "SubPointersType".to_string(),
+            StorageInterfaceType::StorageNode => "NodeType".to_string(),
+            StorageInterfaceType::SubPointers => "SubPointersType".to_string(),
+            StorageInterfaceType::StorageTrait => "BaseType".to_string(),
         }
     }
     /// Returns the name of the function that initializes the storage node.
     fn node_init_function_name(&self) -> String {
         let mutable_suffix = self.mutable_suffix();
         match self.node_type {
-            StorageNodeType::StorageNode => format!("storage_node{mutable_suffix}",),
-            StorageNodeType::SubPointers => format!("sub_pointers{mutable_suffix}",),
+            StorageInterfaceType::StorageNode => format!("storage_node{mutable_suffix}",),
+            StorageInterfaceType::SubPointers => format!("sub_pointers{mutable_suffix}",),
+            StorageInterfaceType::StorageTrait => format!("storage{mutable_suffix}",),
         }
     }
     /// Returns the name of the type that the storage node originates from.
     fn originating_type(&self) -> String {
         let mutable_type = self.mutable_type("$struct_name$");
         match self.node_type {
-            StorageNodeType::StorageNode => {
+            StorageInterfaceType::StorageNode => {
                 format!("starknet::storage::StoragePath<{mutable_type}>")
             }
-            StorageNodeType::SubPointers => {
+            StorageInterfaceType::SubPointers => {
                 format!("starknet::storage::StoragePointer<{mutable_type}>")
+            }
+            StorageInterfaceType::StorageTrait => {
+                format!("starknet::storage::FlattenedStorage<{mutable_type}>")
             }
         }
     }
     /// Returns the name of the generated impl for the storage node.
     fn node_impl_name(&self) -> String {
-        let mutable_prefix = self.mutable_camelcase();
+        let mutable_suffix = self.mutable_camelcase();
         match self.node_type {
-            StorageNodeType::StorageNode => {
-                format!("{mutable_prefix}$struct_name$StorageNodeImpl")
+            StorageInterfaceType::StorageNode => {
+                format!("$struct_name$StorageNode{mutable_suffix}Impl")
             }
-            StorageNodeType::SubPointers => {
-                format!("{mutable_prefix}$struct_name$SubPointersImpl")
+            StorageInterfaceType::SubPointers => {
+                format!("$struct_name$SubPointers{mutable_suffix}Impl")
+            }
+            StorageInterfaceType::StorageTrait => {
+                format!("$struct_name$Storage{mutable_suffix}Impl")
             }
         }
     }
     /// Returns the type of the members of the storage node generated struct.
-    fn generic_node_members_type(&self) -> String {
+    fn generic_node_members_type(&self, member: impl QueryAttrs) -> String {
         match self.node_type {
-            StorageNodeType::StorageNode => "starknet::storage::PendingStoragePath".to_string(),
-            StorageNodeType::SubPointers => "starknet::storage::StoragePointer".to_string(),
+            StorageInterfaceType::StorageNode => {
+                "starknet::storage::PendingStoragePath".to_string()
+            }
+            StorageInterfaceType::SubPointers => "starknet::storage::StoragePointer".to_string(),
+            StorageInterfaceType::StorageTrait => {
+                if member.has_attr(self.db, SUBSTORAGE_ATTR) {
+                    "starknet::storage::FlattenedStorage".to_string()
+                } else {
+                    "starknet::storage::StorageBase".to_string()
+                }
+            }
         }
     }
     /// Returns the type of the members of the storage node generated struct, with the generic arg.
-    fn concrete_node_members_type(&self) -> String {
-        format!("{}<{}>", self.generic_node_members_type(), self.mutable_type("$field_type$"))
+    fn concrete_node_members_type(&self, member: impl QueryAttrs) -> String {
+        format!("{}<{}>", self.generic_node_members_type(member), self.mutable_type("$field_type$"))
     }
     /// Returns the code that should be added before the initialization of the storage node struct.
     fn node_constructor_prefix_code(&self) -> String {
         match self.node_type {
-            StorageNodeType::StorageNode => "".to_string(),
-            StorageNodeType::SubPointers => "        let base_address = self.address;
+            StorageInterfaceType::StorageNode | StorageInterfaceType::StorageTrait => {
+                "".to_string()
+            }
+            StorageInterfaceType::SubPointers => "
+        let base_address = self.address;
         let mut current_offset = self.offset;"
                 .to_string(),
         }
     }
     /// Returns the code that should be added for the initialization of each field of the storage
     /// node struct.
-    fn node_constructor_field_init_code(&self, is_last: bool) -> String {
-        let member_type = self.generic_node_members_type();
+    fn node_constructor_field_init_code(
+        &self,
+        is_last: bool,
+        member: impl QueryAttrs + Clone,
+    ) -> String {
+        let member_type = self.generic_node_members_type(member.clone());
         match self.node_type {
-            StorageNodeType::StorageNode => "        let $field_name$_value = \
-                                             starknet::storage::PendingStoragePathTrait::new(
+            StorageInterfaceType::StorageNode => "        let $field_name$_value = \
+                                                  starknet::storage::PendingStoragePathTrait::new(
                         @self,
                         selector!(\"$field_name$\")
                     );
                     "
             .to_string(),
-            StorageNodeType::SubPointers => {
+            StorageInterfaceType::SubPointers => {
                 let offset_increment = if is_last {
                     "".to_string()
                 } else {
@@ -259,6 +294,18 @@ impl StorageNodeInfo {
         {offset_increment}"
                 )
             }
+            StorageInterfaceType::StorageTrait => {
+                if member.has_attr(self.db, SUBSTORAGE_ATTR) {
+                    "        let $field_name$_value = starknet::storage::FlattenedStorage {};
+"
+                    .to_string()
+                } else {
+                    "        let $field_name$_value = starknet::storage::StorageBase {address: \
+                     selector!(\"$field_name$\")};
+"
+                    .to_string()
+                }
+            }
         }
     }
 }
@@ -266,50 +313,76 @@ impl StorageNodeInfo {
 /// Adds the storage node structs (two variants, mutable and immutable) and their constructor
 /// impls to the given builder. Used for both storage nodes and storage sub pointers which are
 /// triggered by `#[derive(Store)]`.
-pub fn handle_storage_node(
+pub fn handle_storage_interface(
     db: &dyn SyntaxGroup,
     struct_ast: &ast::ItemStruct,
+    metadata: &MacroPluginMetadata<'_>,
 ) -> (String, Vec<CodeMapping>) {
     let mut builder = PatchBuilder::new(db, struct_ast);
 
-    add_node_struct_definition(db, &mut builder, struct_ast, false);
-    add_node_impl(db, &mut builder, struct_ast, false);
-    add_node_struct_definition(db, &mut builder, struct_ast, true);
-    add_node_impl(db, &mut builder, struct_ast, true);
+    add_interface_struct_definition(db, &mut builder, struct_ast, false, metadata);
+    add_interface_impl(db, &mut builder, struct_ast, false);
+    add_interface_struct_definition(db, &mut builder, struct_ast, true, metadata);
+    add_interface_impl(db, &mut builder, struct_ast, true);
 
     builder.build()
 }
 
-/// Generates the struct definition for the storage node.
-fn add_node_struct_definition(
+/// Generates the struct definition for the storage interface.
+fn add_interface_struct_definition(
     db: &dyn SyntaxGroup,
     builder: &mut PatchBuilder<'_>,
     struct_ast: &ast::ItemStruct,
     is_mutable: bool,
+    metadata: &MacroPluginMetadata<'_>,
 ) {
-    let storage_node_info = StorageNodeInfo::from_struct_ast(db, struct_ast, is_mutable).unwrap();
+    let storage_node_info =
+        StorageInterfaceInfo::from_struct_ast(db, struct_ast, is_mutable).unwrap();
     let struct_name_syntax = struct_ast.name(db).as_syntax_node();
 
     let node_type_name = storage_node_info.node_type_name();
     let struct_name_rewrite_node = RewriteNode::new_trimmed(struct_name_syntax.clone());
-    let concrete_node_members_type = storage_node_info.concrete_node_members_type();
-
+    let struct_visibility = if backwards_compatible_storage(metadata.edition) {
+        RewriteNode::text("pub ")
+    } else {
+        RewriteNode::Trimmed {
+            node: struct_ast.visibility(db).as_syntax_node(),
+            trim_left: true,
+            trim_right: false,
+        }
+    };
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
             "#[derive(Drop, Copy)]
-            struct {node_type_name} {{
+            $struct_visibility$struct {node_type_name} {{
 ",
         ),
-        &[("struct_name".to_string(), struct_name_rewrite_node.clone())].into(),
+        &[
+            ("struct_visibility".to_string(), struct_visibility),
+            ("struct_name".to_string(), struct_name_rewrite_node.clone()),
+        ]
+        .into(),
     ));
 
     for field in struct_ast.members(db).elements(db) {
         let field_name = field.name(db).as_syntax_node();
         let field_type = field.type_clause(db).ty(db).as_syntax_node();
+        let concrete_node_members_type =
+            storage_node_info.concrete_node_members_type(field.clone());
+        let field_visibility = if backwards_compatible_storage(metadata.edition) {
+            RewriteNode::text("pub ")
+        } else {
+            RewriteNode::Trimmed {
+                node: field.visibility(db).as_syntax_node(),
+                trim_left: true,
+                trim_right: false,
+            }
+        };
 
         builder.add_modified(RewriteNode::interpolate_patched(
-            &format!("    $field_name$: {concrete_node_members_type},\n",),
+            &format!("    $field_visibility$$field_name$: {concrete_node_members_type},\n",),
             &[
+                ("field_visibility".to_string(), field_visibility),
                 ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
                 ("field_type".to_string(), RewriteNode::new_trimmed(field_type)),
             ]
@@ -319,14 +392,15 @@ fn add_node_struct_definition(
     builder.add_str("}\n");
 }
 
-/// Generates the impl for the storage node.
-fn add_node_impl(
+/// Generates the impl for the storage interface.
+fn add_interface_impl(
     db: &dyn SyntaxGroup,
     builder: &mut PatchBuilder<'_>,
     struct_ast: &ast::ItemStruct,
     is_mutable: bool,
 ) {
-    let storage_node_info = StorageNodeInfo::from_struct_ast(db, struct_ast, is_mutable).unwrap();
+    let storage_node_info =
+        StorageInterfaceInfo::from_struct_ast(db, struct_ast, is_mutable).unwrap();
     let struct_name_syntax = struct_ast.name(db).as_syntax_node();
     let node_type_name = storage_node_info.node_type_name();
     let node_impl_name = storage_node_info.node_impl_name();
@@ -340,8 +414,8 @@ fn add_node_impl(
         &formatdoc!(
             "impl {node_impl_name} of {node_trait_name} {{
                  type {node_type} = {node_type_name};
-                    fn {node_init_function_name}(self: {originating_type}) -> {node_type_name} {{
-                        {node_constructor_prefix_code}
+                 fn {node_init_function_name}(self: {originating_type}) -> {node_type_name} \
+             {{{node_constructor_prefix_code}
 ",
         ),
         &[("struct_name".to_string(), RewriteNode::new_trimmed(struct_name_syntax.clone()))].into(),
@@ -354,7 +428,7 @@ fn add_node_impl(
         let field_type = field.type_clause(db).ty(db).as_syntax_node();
         let is_last = fields_iter.peek().is_none();
         builder.add_modified(RewriteNode::interpolate_patched(
-            &storage_node_info.node_constructor_field_init_code(is_last),
+            &storage_node_info.node_constructor_field_init_code(is_last, field.clone()),
             &[
                 ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
                 ("field_type".to_string(), RewriteNode::new_trimmed(field_type)),

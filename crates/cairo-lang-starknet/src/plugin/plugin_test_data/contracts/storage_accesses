@@ -166,33 +166,37 @@ pub enum Event {}
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     user_info: starknet::storage::StorageBase<UserInfo>,
-     transaction_info: starknet::storage::StorageBase<TransactionInfo>,
+struct StorageStorageBase {
+    user_info: starknet::storage::StorageBase<UserInfo>,
+    transaction_info: starknet::storage::StorageBase<TransactionInfo>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let user_info_value = starknet::storage::StorageBase {address: selector!("user_info")};
+        let transaction_info_value = starknet::storage::StorageBase {address: selector!("transaction_info")};
+        StorageStorageBase {
+           user_info: user_info_value,
+           transaction_info: transaction_info_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     user_info: starknet::storage::StorageBase<starknet::storage::Mutable<UserInfo>>,
-     transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable<TransactionInfo>>,
+struct StorageStorageBaseMut {
+    user_info: starknet::storage::StorageBase<starknet::storage::Mutable::<UserInfo>>,
+    transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable::<TransactionInfo>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           user_info: starknet::storage::StorageBase{ address: selector!("user_info") },
-           transaction_info: starknet::storage::StorageBase{ address: selector!("transaction_info") },
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let user_info_value = starknet::storage::StorageBase {address: selector!("user_info")};
+        let transaction_info_value = starknet::storage::StorageBase {address: selector!("transaction_info")};
+        StorageStorageBaseMut {
+           user_info: user_info_value,
+           transaction_info: transaction_info_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           user_info: starknet::storage::StorageBase{ address: selector!("user_info") },
-           transaction_info: starknet::storage::StorageBase{ address: selector!("transaction_info") },
-        }
-    }
- }
 
 pub struct ContractState {
 }
@@ -537,10 +541,10 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 trait IERC20DispatcherTrait<T> {
     fn get_name(self: T) -> felt252;
@@ -1305,9 +1309,9 @@ struct UserInfoSubPointers {
     total_supply: starknet::storage::StoragePointer<u256>,
 }
 impl UserInfoSubPointersImpl of starknet::storage::SubPointers<UserInfo> {
-type SubPointersType = UserInfoSubPointers;
-   fn sub_pointers(self: starknet::storage::StoragePointer<UserInfo>) -> UserInfoSubPointers {
-               let base_address = self.address;
+    type SubPointersType = UserInfoSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<UserInfo>) -> UserInfoSubPointers {
+        let base_address = self.address;
         let mut current_offset = self.offset;
         let name_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -1337,16 +1341,16 @@ type SubPointersType = UserInfoSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableUserInfoSubPointers {
+struct UserInfoSubPointersMut {
     name: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
     symbol: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
     decimals: starknet::storage::StoragePointer<starknet::storage::Mutable::<u8>>,
     total_supply: starknet::storage::StoragePointer<starknet::storage::Mutable::<u256>>,
 }
-impl MutableUserInfoSubPointersImpl of starknet::storage::MutableSubPointers<UserInfo> {
-type SubPointersType = MutableUserInfoSubPointers;
-   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<UserInfo>>) -> MutableUserInfoSubPointers {
-               let base_address = self.address;
+impl UserInfoSubPointersMutImpl of starknet::storage::SubPointersMut<UserInfo> {
+    type SubPointersType = UserInfoSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<UserInfo>>) -> UserInfoSubPointersMut {
+        let base_address = self.address;
         let mut current_offset = self.offset;
         let name_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -1367,7 +1371,7 @@ type SubPointersType = MutableUserInfoSubPointers;
             address: base_address,
             offset: current_offset,
         };
-                MutableUserInfoSubPointers {
+                UserInfoSubPointersMut {
            name: name_value,
            symbol: symbol_value,
            decimals: decimals_value,
@@ -1381,9 +1385,8 @@ struct TransactionInfoStorageNode {
     allowances: starknet::storage::PendingStoragePath<Map::<ContractAddress, Map<ContractAddress, u256>>>,
 }
 impl TransactionInfoStorageNodeImpl of starknet::storage::StorageNode<TransactionInfo> {
-type NodeType = TransactionInfoStorageNode;
-   fn storage_node(self: starknet::storage::StoragePath<TransactionInfo>) -> TransactionInfoStorageNode {
-       
+    type NodeType = TransactionInfoStorageNode;
+    fn storage_node(self: starknet::storage::StoragePath<TransactionInfo>) -> TransactionInfoStorageNode {
         let balances_value = starknet::storage::PendingStoragePathTrait::new(
                         @self,
                         selector!("balances")
@@ -1399,14 +1402,13 @@ type NodeType = TransactionInfoStorageNode;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableTransactionInfoStorageNode {
+struct TransactionInfoStorageNodeMut {
     balances: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<Map::<ContractAddress, u256>>>,
     allowances: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<Map::<ContractAddress, Map<ContractAddress, u256>>>>,
 }
-impl MutableTransactionInfoStorageNodeImpl of starknet::storage::MutableStorageNode<TransactionInfo> {
-type NodeType = MutableTransactionInfoStorageNode;
-   fn storage_node_mut(self: starknet::storage::StoragePath<starknet::storage::Mutable::<TransactionInfo>>) -> MutableTransactionInfoStorageNode {
-       
+impl TransactionInfoStorageNodeMutImpl of starknet::storage::StorageNodeMut<TransactionInfo> {
+    type NodeType = TransactionInfoStorageNodeMut;
+    fn storage_node_mut(self: starknet::storage::StoragePath<starknet::storage::Mutable::<TransactionInfo>>) -> TransactionInfoStorageNodeMut {
         let balances_value = starknet::storage::PendingStoragePathTrait::new(
                         @self,
                         selector!("balances")
@@ -1415,7 +1417,7 @@ type NodeType = MutableTransactionInfoStorageNode;
                         @self,
                         selector!("allowances")
                     );
-                            MutableTransactionInfoStorageNode {
+                            TransactionInfoStorageNodeMut {
            balances: balances_value,
            allowances: allowances_value,
         }
@@ -1467,12 +1469,12 @@ impl StoreIERC20Dispatcher of starknet::Store::<IERC20Dispatcher> {
 
 #[derive(Drop, Copy)]
 struct IERC20DispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 impl IERC20DispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20Dispatcher> {
-type SubPointersType = IERC20DispatcherSubPointers;
-   fn sub_pointers(self: starknet::storage::StoragePointer<IERC20Dispatcher>) -> IERC20DispatcherSubPointers {
-               let base_address = self.address;
+    type SubPointersType = IERC20DispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<IERC20Dispatcher>) -> IERC20DispatcherSubPointers {
+        let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -1484,19 +1486,19 @@ type SubPointersType = IERC20DispatcherSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableIERC20DispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+struct IERC20DispatcherSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
-impl MutableIERC20DispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IERC20Dispatcher> {
-type SubPointersType = MutableIERC20DispatcherSubPointers;
-   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20Dispatcher>>) -> MutableIERC20DispatcherSubPointers {
-               let base_address = self.address;
+impl IERC20DispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20Dispatcher> {
+    type SubPointersType = IERC20DispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20Dispatcher>>) -> IERC20DispatcherSubPointersMut {
+        let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
             address: base_address,
             offset: current_offset,
         };
-                MutableIERC20DispatcherSubPointers {
+                IERC20DispatcherSubPointersMut {
            contract_address: contract_address_value,
         }
     }
@@ -1547,12 +1549,12 @@ impl StoreIERC20LibraryDispatcher of starknet::Store::<IERC20LibraryDispatcher> 
 
 #[derive(Drop, Copy)]
 struct IERC20LibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 impl IERC20LibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20LibraryDispatcher> {
-type SubPointersType = IERC20LibraryDispatcherSubPointers;
-   fn sub_pointers(self: starknet::storage::StoragePointer<IERC20LibraryDispatcher>) -> IERC20LibraryDispatcherSubPointers {
-               let base_address = self.address;
+    type SubPointersType = IERC20LibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<IERC20LibraryDispatcher>) -> IERC20LibraryDispatcherSubPointers {
+        let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -1564,19 +1566,19 @@ type SubPointersType = IERC20LibraryDispatcherSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableIERC20LibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+struct IERC20LibraryDispatcherSubPointersMut {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
-impl MutableIERC20LibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IERC20LibraryDispatcher> {
-type SubPointersType = MutableIERC20LibraryDispatcherSubPointers;
-   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20LibraryDispatcher>>) -> MutableIERC20LibraryDispatcherSubPointers {
-               let base_address = self.address;
+impl IERC20LibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20LibraryDispatcher> {
+    type SubPointersType = IERC20LibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20LibraryDispatcher>>) -> IERC20LibraryDispatcherSubPointersMut {
+        let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
             address: base_address,
             offset: current_offset,
         };
-                MutableIERC20LibraryDispatcherSubPointers {
+                IERC20LibraryDispatcherSubPointersMut {
            class_hash: class_hash_value,
         }
     }
@@ -1627,12 +1629,12 @@ impl StoreIERC20SafeLibraryDispatcher of starknet::Store::<IERC20SafeLibraryDisp
 
 #[derive(Drop, Copy)]
 struct IERC20SafeLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 impl IERC20SafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20SafeLibraryDispatcher> {
-type SubPointersType = IERC20SafeLibraryDispatcherSubPointers;
-   fn sub_pointers(self: starknet::storage::StoragePointer<IERC20SafeLibraryDispatcher>) -> IERC20SafeLibraryDispatcherSubPointers {
-               let base_address = self.address;
+    type SubPointersType = IERC20SafeLibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<IERC20SafeLibraryDispatcher>) -> IERC20SafeLibraryDispatcherSubPointers {
+        let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -1644,19 +1646,19 @@ type SubPointersType = IERC20SafeLibraryDispatcherSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableIERC20SafeLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+struct IERC20SafeLibraryDispatcherSubPointersMut {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
-impl MutableIERC20SafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IERC20SafeLibraryDispatcher> {
-type SubPointersType = MutableIERC20SafeLibraryDispatcherSubPointers;
-   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeLibraryDispatcher>>) -> MutableIERC20SafeLibraryDispatcherSubPointers {
-               let base_address = self.address;
+impl IERC20SafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20SafeLibraryDispatcher> {
+    type SubPointersType = IERC20SafeLibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeLibraryDispatcher>>) -> IERC20SafeLibraryDispatcherSubPointersMut {
+        let base_address = self.address;
         let mut current_offset = self.offset;
         let class_hash_value = starknet::storage::StoragePointer {
             address: base_address,
             offset: current_offset,
         };
-                MutableIERC20SafeLibraryDispatcherSubPointers {
+                IERC20SafeLibraryDispatcherSubPointersMut {
            class_hash: class_hash_value,
         }
     }
@@ -1707,12 +1709,12 @@ impl StoreIERC20SafeDispatcher of starknet::Store::<IERC20SafeDispatcher> {
 
 #[derive(Drop, Copy)]
 struct IERC20SafeDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 impl IERC20SafeDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20SafeDispatcher> {
-type SubPointersType = IERC20SafeDispatcherSubPointers;
-   fn sub_pointers(self: starknet::storage::StoragePointer<IERC20SafeDispatcher>) -> IERC20SafeDispatcherSubPointers {
-               let base_address = self.address;
+    type SubPointersType = IERC20SafeDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<IERC20SafeDispatcher>) -> IERC20SafeDispatcherSubPointers {
+        let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
             address: base_address,
@@ -1724,47 +1726,47 @@ type SubPointersType = IERC20SafeDispatcherSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableIERC20SafeDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+struct IERC20SafeDispatcherSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
-impl MutableIERC20SafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<IERC20SafeDispatcher> {
-type SubPointersType = MutableIERC20SafeDispatcherSubPointers;
-   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeDispatcher>>) -> MutableIERC20SafeDispatcherSubPointers {
-               let base_address = self.address;
+impl IERC20SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20SafeDispatcher> {
+    type SubPointersType = IERC20SafeDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeDispatcher>>) -> IERC20SafeDispatcherSubPointersMut {
+        let base_address = self.address;
         let mut current_offset = self.offset;
         let contract_address_value = starknet::storage::StoragePointer {
             address: base_address,
             offset: current_offset,
         };
-                MutableIERC20SafeDispatcherSubPointers {
+                IERC20SafeDispatcherSubPointersMut {
            contract_address: contract_address_value,
         }
     }
 }
 impl UserInfoSubPointersDrop of core::traits::Drop::<UserInfoSubPointers>;
 impl UserInfoSubPointersCopy of core::traits::Copy::<UserInfoSubPointers>;
-impl MutableUserInfoSubPointersDrop of core::traits::Drop::<MutableUserInfoSubPointers>;
-impl MutableUserInfoSubPointersCopy of core::traits::Copy::<MutableUserInfoSubPointers>;
+impl UserInfoSubPointersMutDrop of core::traits::Drop::<UserInfoSubPointersMut>;
+impl UserInfoSubPointersMutCopy of core::traits::Copy::<UserInfoSubPointersMut>;
 impl TransactionInfoStorageNodeDrop of core::traits::Drop::<TransactionInfoStorageNode>;
 impl TransactionInfoStorageNodeCopy of core::traits::Copy::<TransactionInfoStorageNode>;
-impl MutableTransactionInfoStorageNodeDrop of core::traits::Drop::<MutableTransactionInfoStorageNode>;
-impl MutableTransactionInfoStorageNodeCopy of core::traits::Copy::<MutableTransactionInfoStorageNode>;
+impl TransactionInfoStorageNodeMutDrop of core::traits::Drop::<TransactionInfoStorageNodeMut>;
+impl TransactionInfoStorageNodeMutCopy of core::traits::Copy::<TransactionInfoStorageNodeMut>;
 impl IERC20DispatcherSubPointersDrop of core::traits::Drop::<IERC20DispatcherSubPointers>;
 impl IERC20DispatcherSubPointersCopy of core::traits::Copy::<IERC20DispatcherSubPointers>;
-impl MutableIERC20DispatcherSubPointersDrop of core::traits::Drop::<MutableIERC20DispatcherSubPointers>;
-impl MutableIERC20DispatcherSubPointersCopy of core::traits::Copy::<MutableIERC20DispatcherSubPointers>;
+impl IERC20DispatcherSubPointersMutDrop of core::traits::Drop::<IERC20DispatcherSubPointersMut>;
+impl IERC20DispatcherSubPointersMutCopy of core::traits::Copy::<IERC20DispatcherSubPointersMut>;
 impl IERC20LibraryDispatcherSubPointersDrop of core::traits::Drop::<IERC20LibraryDispatcherSubPointers>;
 impl IERC20LibraryDispatcherSubPointersCopy of core::traits::Copy::<IERC20LibraryDispatcherSubPointers>;
-impl MutableIERC20LibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIERC20LibraryDispatcherSubPointers>;
-impl MutableIERC20LibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIERC20LibraryDispatcherSubPointers>;
+impl IERC20LibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20LibraryDispatcherSubPointersMut>;
+impl IERC20LibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20LibraryDispatcherSubPointersMut>;
 impl IERC20SafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointers>;
 impl IERC20SafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointers>;
-impl MutableIERC20SafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableIERC20SafeLibraryDispatcherSubPointers>;
-impl MutableIERC20SafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableIERC20SafeLibraryDispatcherSubPointers>;
+impl IERC20SafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointersMut>;
+impl IERC20SafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointersMut>;
 impl IERC20SafeDispatcherSubPointersDrop of core::traits::Drop::<IERC20SafeDispatcherSubPointers>;
 impl IERC20SafeDispatcherSubPointersCopy of core::traits::Copy::<IERC20SafeDispatcherSubPointers>;
-impl MutableIERC20SafeDispatcherSubPointersDrop of core::traits::Drop::<MutableIERC20SafeDispatcherSubPointers>;
-impl MutableIERC20SafeDispatcherSubPointersCopy of core::traits::Copy::<MutableIERC20SafeDispatcherSubPointers>;
+impl IERC20SafeDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20SafeDispatcherSubPointersMut>;
+impl IERC20SafeDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeDispatcherSubPointersMut>;
 
     use core::num::traits::Zero;
     use starknet::get_caller_address;
@@ -1890,33 +1892,37 @@ pub enum Event {}
 
 
 #[derive(Drop, Copy)]
- struct ContractStorageBase {
-     user_info: starknet::storage::StorageBase<UserInfo>,
-     transaction_info: starknet::storage::StorageBase<TransactionInfo>,
+struct StorageStorageBase {
+    user_info: starknet::storage::StorageBase<UserInfo>,
+    transaction_info: starknet::storage::StorageBase<TransactionInfo>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let user_info_value = starknet::storage::StorageBase {address: selector!("user_info")};
+        let transaction_info_value = starknet::storage::StorageBase {address: selector!("transaction_info")};
+        StorageStorageBase {
+           user_info: user_info_value,
+           transaction_info: transaction_info_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
- struct ContractStorageBaseMut {
-     user_info: starknet::storage::StorageBase<starknet::storage::Mutable<UserInfo>>,
-     transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable<TransactionInfo>>,
+struct StorageStorageBaseMut {
+    user_info: starknet::storage::StorageBase<starknet::storage::Mutable::<UserInfo>>,
+    transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable::<TransactionInfo>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageTrait<Storage> {
-    type BaseType = ContractStorageBase;
-    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> ContractStorageBase {
-        ContractStorageBase {
-           user_info: starknet::storage::StorageBase{ address: selector!("user_info") },
-           transaction_info: starknet::storage::StorageBase{ address: selector!("transaction_info") },
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let user_info_value = starknet::storage::StorageBase {address: selector!("user_info")};
+        let transaction_info_value = starknet::storage::StorageBase {address: selector!("transaction_info")};
+        StorageStorageBaseMut {
+           user_info: user_info_value,
+           transaction_info: transaction_info_value,
         }
     }
 }
-impl MutableStorageBaseImpl of starknet::storage::MutableStorageTrait<Storage> {
-    type BaseType = ContractStorageBaseMut;
-    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>>) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           user_info: starknet::storage::StorageBase{ address: selector!("user_info") },
-           transaction_info: starknet::storage::StorageBase{ address: selector!("transaction_info") },
-        }
-    }
- }
 
 pub struct ContractState {
 }
@@ -2261,9 +2267,9 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
