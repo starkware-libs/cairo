@@ -1,7 +1,0 @@
-//! > cairo_code
-trait Abc {
-
-//! > syntax
-trait                source.cairo keyword.declaration.trait.cairo storage.type.cairo
-Abc                  source.cairo entity.name.type.trait.cairo
-{                    source.cairo punctuation.brackets.curly.cairo
