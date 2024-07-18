@@ -150,7 +150,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 let TypeLongId::Closure(closure1) = long_ty1 else {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
-                if closure0.body_id != closure1.body_id {
+                if closure0.wrapper_location != closure1.wrapper_location {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 }
 
@@ -667,7 +667,7 @@ impl Inference<'_> {
                 self.internal_ty_contains_var(type_id, var)
             }
             TypeLongId::Closure(closure) => {
-                closure.params.into_iter().any(|ty| self.internal_ty_contains_var(ty, var))
+                closure.param_tys.into_iter().any(|ty| self.internal_ty_contains_var(ty, var))
                     || self.internal_ty_contains_var(closure.ret_ty, var)
             }
         }
