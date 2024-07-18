@@ -1,42 +1,91 @@
 use cairo_lang_language_server::lsp;
-use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::indoc;
 use tower_lsp::lsp_types::{lsp_request, ApplyWorkspaceEditResponse, ExecuteCommandParams};
 
 use crate::support::normalize::normalize;
 use crate::support::sandbox;
 
-cairo_lang_test_utils::test_file_test!(
-    project,
-    "tests/test_data/analysis/crates",
-    {
-        cairo_projects: "cairo_projects.txt",
-    },
-    test_analyzed_crates
-);
-
-fn test_analyzed_crates(
-    inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
-) -> TestRunnerResult {
-    let dyn_files = inputs.iter().flat_map(|(p, c)| Some((p.strip_prefix("file: ")?, c)));
-
+#[test]
+fn cairo_projects() {
     let mut ls = sandbox! {
-        dyn_files(dyn_files)
+        files {
+            "project1/cairo_project.toml" => indoc! {r#"
+                [crate_roots]
+                project1 = "src"
+            "#},
+            "project1/src/lib.cairo" => "fn main() {}",
+
+            "project2/cairo_project.toml" => indoc! {r#"
+                [crate_roots]
+                project2 = "src"
+            "#},
+            "project2/src/lib.cairo" => "fn main() {}",
+
+            "project2/subproject/cairo_project.toml" => indoc! {r#"
+                [crate_roots]
+                subproject = "src"
+            "#},
+            "project2/subproject/src/lib.cairo" => "fn main() {}"
+        }
     };
 
-    for path_to_open in inputs["open files in order"].lines() {
-        ls.open_and_wait_for_diagnostics(path_to_open);
-    }
+    ls.open_and_wait_for_diagnostics("project1/src/lib.cairo");
+    ls.open_and_wait_for_diagnostics("project2/src/lib.cairo");
+    ls.open_and_wait_for_diagnostics("project2/subproject/src/lib.cairo");
 
     let output = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
-    let output = normalize(&ls, output);
 
-    TestRunnerResult::success(OrderedHashMap::from([(
-        "expected analyzed crates".to_owned(),
-        output,
-    )]))
+    assert_eq!(
+        normalize(&ls, output),
+        indoc! {r#"
+            # Analyzed Crates
+
+            - `core`: `[CAIRO_SOURCE]/corelib/src/lib.cairo`
+                ```rust
+                CrateSettings {
+                    edition: V2024_07,
+                    cfg_set: None,
+                    experimental_features: ExperimentalFeaturesConfig {
+                        negative_impls: true,
+                        coupons: true,
+                    },
+                }
+                ```
+            - `project1`: `[ROOT]/project1/src/lib.cairo`
+                ```rust
+                CrateSettings {
+                    edition: V2023_01,
+                    cfg_set: None,
+                    experimental_features: ExperimentalFeaturesConfig {
+                        negative_impls: false,
+                        coupons: false,
+                    },
+                }
+                ```
+            - `project2`: `[ROOT]/project2/src/lib.cairo`
+                ```rust
+                CrateSettings {
+                    edition: V2023_01,
+                    cfg_set: None,
+                    experimental_features: ExperimentalFeaturesConfig {
+                        negative_impls: false,
+                        coupons: false,
+                    },
+                }
+                ```
+            - `subproject`: `[ROOT]/project2/subproject/src/lib.cairo`
+                ```rust
+                CrateSettings {
+                    edition: V2023_01,
+                    cfg_set: None,
+                    experimental_features: ExperimentalFeaturesConfig {
+                        negative_impls: false,
+                        coupons: false,
+                    },
+                }
+                ```
+        "#}
+    );
 }
 
 #[test]
