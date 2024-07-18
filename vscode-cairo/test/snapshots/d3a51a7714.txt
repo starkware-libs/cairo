@@ -1,0 +1,10 @@
+//! > cairo_code
+skipped  \\ Comment
+
+  tokens
+
+//! > syntax
+skipped              source.cairo variable.other.cairo
+␣␣\\␣                source.cairo
+Comment              source.cairo entity.name.type.cairo
+tokens               source.cairo variable.other.cairo

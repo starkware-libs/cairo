@@ -89,7 +89,9 @@ export async function parseTestFile(testFilePath) {
   const testTexts = testFileText.split(/\/\/! > =+\n/g);
   assert.ok(testTexts.length > 0, "no tests found in test file");
   for (const testText of testTexts) {
-    const sections = Array.from(testText.matchAll(/\/\/! > (?<name>[^\n]+)\n(?<text>.*)/g));
+    const sections = Array.from(
+      testText.matchAll(/\/\/! > (?<name>[^\n]+)\n(?<text>[^]*?(?=\/\/! >))/g),
+    );
     assert.ok(sections.length > 0, "no sections found in test");
 
     const obj = {
@@ -97,7 +99,7 @@ export async function parseTestFile(testFilePath) {
     };
 
     for (const m of sections) {
-      obj[m.groups.name] = m.groups.text;
+      obj[m.groups.name] = m.groups.text.trim();
     }
 
     tests.push(obj);
