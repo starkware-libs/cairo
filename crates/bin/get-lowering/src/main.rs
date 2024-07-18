@@ -48,7 +48,7 @@ fn test_lowering_consistency() {
         "core::poseidon::_poseidon_hash_span_inner".to_string(),
     )
     .unwrap();
-    format!("{:?}", PhasesFormatter { db, function_id });
+    let _unused = PhasesDisplay { db, function_id }.to_string();
 }
 
 /// Prints the lowering of a concrete function:
@@ -81,12 +81,12 @@ struct Args {
 }
 
 /// Helper class for formatting the lowering phases of a concrete function.
-struct PhasesFormatter<'a> {
+struct PhasesDisplay<'a> {
     db: &'a dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 }
 
-impl fmt::Debug for PhasesFormatter<'_> {
+impl fmt::Display for PhasesDisplay<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let db = self.db;
         let function_id = self.function_id;
@@ -96,10 +96,7 @@ impl fmt::Debug for PhasesFormatter<'_> {
 
         let mut phase_index = 0;
         let mut add_stage_state = |name: &str, lowered: &FlatLowered| {
-            writeln!(f, "{phase_index}. {name}:").unwrap();
-            let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
-            write!(f, "{:?}", lowered.debug(&lowered_formatter)).unwrap();
-
+            writeln!(f, "{phase_index}. {name}: {}", LoweredDisplay::new(db, lowered)).unwrap();
             phase_index += 1;
         };
         add_stage_state("before_all", &curr_state);
@@ -116,16 +113,48 @@ impl fmt::Debug for PhasesFormatter<'_> {
         });
         apply_stage("after_add_destructs", &|lowered| add_destructs(db, function_id, lowered));
         apply_stage("scrub_units", &|lowered| scrub_units(db, lowered));
-
-        for strategy in [db.baseline_optimization_strategy(), db.final_optimization_strategy()] {
+        let pre_opts = db.concrete_function_with_body_postpanic_lowered(function_id).unwrap();
+        let post_base_opts = db.inlined_function_with_body_lowered(self.function_id).unwrap();
+        let final_state = db.final_concrete_function_with_body_lowered(self.function_id).unwrap();
+        assert_eq!(
+            LoweredDisplay::new(db, &curr_state).to_string(),
+            LoweredDisplay::new(db, &pre_opts).to_string()
+        );
+        for (strategy, expected) in [
+            (db.baseline_optimization_strategy(), post_base_opts),
+            (db.final_optimization_strategy(), final_state),
+        ] {
             for phase in strategy.lookup_intern(db).0 {
                 let name = format!("{phase:?}").to_case(convert_case::Case::Snake);
                 phase.apply(db, function_id, &mut curr_state).unwrap();
                 add_stage_state(&name, &curr_state);
             }
+            assert_eq!(
+                LoweredDisplay::new(db, &curr_state).to_string(),
+                LoweredDisplay::new(db, &expected).to_string()
+            );
         }
 
         Ok(())
+    }
+}
+
+/// Helper for displaying the lowered representation of a concrete function.
+struct LoweredDisplay<'a> {
+    db: &'a dyn LoweringGroup,
+    lowered: &'a FlatLowered,
+}
+impl<'a> LoweredDisplay<'a> {
+    fn new(db: &'a dyn LoweringGroup, lowered: &'a FlatLowered) -> Self {
+        Self { db, lowered }
+    }
+}
+
+impl fmt::Display for LoweredDisplay<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let lowered_formatter = LoweredFormatter::new(self.db, &self.lowered.variables);
+        let dbg = self.lowered.debug(&lowered_formatter);
+        write!(f, "{dbg:?}")
     }
 }
 
@@ -227,13 +256,11 @@ fn main() -> anyhow::Result<()> {
             );
         }
 
-        match args.all {
-            true => format!("{:?}", PhasesFormatter { db, function_id }),
-            false => {
-                let lowered = db.final_concrete_function_with_body_lowered(function_id).unwrap();
-                let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
-                format!("{:?}", lowered.debug(&lowered_formatter))
-            }
+        if args.all {
+            PhasesDisplay { db, function_id }.to_string()
+        } else {
+            let lowered = db.final_concrete_function_with_body_lowered(function_id).unwrap();
+            LoweredDisplay::new(db, &lowered).to_string()
         }
     } else {
         get_all_funcs(db, &main_crate_ids)?.keys().join("\n")
