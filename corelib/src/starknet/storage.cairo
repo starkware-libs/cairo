@@ -11,12 +11,8 @@ use vec::{VecIndexView, MutableVecIndexView, PathableVecIndexView, PathableMutab
 
 mod storage_node;
 pub use storage_node::{StorageNode, StorageNodeMut};
-use storage_node::{StorageNodeDeref, StorageNodeMutDeref};
 mod sub_pointers;
-pub use sub_pointers::{SubPointers, SubPointersMut};
-use sub_pointers::{
-    SubPointersDeref, SubPointersMutDeref, u256SubPointersImpl, U256SubPointersImplMut
-};
+pub use sub_pointers::{SubPointers, SubPointersMut, SubPointersForward, SubPointersMutForward};
 mod storage_base;
 pub use storage_base::{StorageBase, FlattenedStorage, StorageTrait, StorageTraitMut};
 mod map;
@@ -31,6 +27,11 @@ pub struct StoragePointer<T> {
 
 impl StoragePointerCopy<T> of Copy<StoragePointer<T>> {}
 impl StoragePointerDrop<T> of Drop<StoragePointer<T>> {}
+
+/// StoragePointer can be dereferenced into a sub-pointers type, this import allows the impl to be
+/// found next to the type.
+use sub_pointers::{SubPointersDeref, SubPointersMutDeref};
+
 
 /// Same as `StoragePointer`, but with `offset` 0, which allows for some optimizations.
 pub struct StoragePointer0Offset<T> {
@@ -166,6 +167,11 @@ type StoragePathHashState = core::pedersen::HashState;
 
 impl StoragePathCopy<T> of core::traits::Copy<StoragePath<T>> {}
 impl StoragePathDrop<T> of core::traits::Drop<StoragePath<T>> {}
+
+/// StoragePath can be dereferenced into a storage node, this import allows the impl to be found
+/// next to the type.
+use storage_node::{StorageNodeDeref, StorageNodeMutDeref};
+
 
 /// Trait for StoragePath operations.
 trait StoragePathTrait<T> {

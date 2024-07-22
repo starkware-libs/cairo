@@ -87,10 +87,22 @@ struct Vecs {
     vec_of_vecs: Vec<Vec<u32>>,
 }
 
+#[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]
+#[starknet::sub_pointers(QueryableEnumVariants)]
+enum QueryableEnum {
+    A: (),
+    B: u128,
+    C: u256,
+}
+
 #[starknet::contract]
 mod test_contract {
+    use core::starknet::storage::{SubPointersForward, SubPointersMutForward};
     use core::option::OptionTrait;
-    use super::{AbcEtc, ByteArrays, NonZeros, Vecs,};
+    use super::{
+        AbcEtc, ByteArrays, NonZeros, Vecs, QueryableEnum, QueryableEnumVariants,
+        QueryableEnumVariantsMut
+    };
     use starknet::storage::{
         VecTrait, MutableVecTrait, StorageAsPath, StoragePointerWriteAccess,
         StoragePointerReadAccess,
@@ -102,6 +114,7 @@ mod test_contract {
         byte_arrays: ByteArrays,
         non_zeros: NonZeros,
         vecs: Vecs,
+        queryable_enum: QueryableEnum,
     }
 
     #[external(v0)]
@@ -182,6 +195,37 @@ mod test_contract {
     #[external(v0)]
     pub fn get_nested_vec_element(self: @ContractState, index: u64, nested_index: u64) -> u32 {
         self.vecs.vec_of_vecs[index][nested_index].read()
+    }
+
+    #[external(v0)]
+    pub fn set_queryable_enum(ref self: ContractState, value: QueryableEnum) {
+        self.queryable_enum.write(value);
+    }
+
+    #[external(v0)]
+    pub fn is_queryable_enum_a(self: @ContractState) -> bool {
+        if let QueryableEnumVariants::A(_) = self.queryable_enum.sub_pointers() {
+            true
+        } else {
+            false
+        }
+    }
+    #[external(v0)]
+    pub fn get_queryable_enum_low(self: @ContractState) -> u128 {
+        match self.queryable_enum.sub_pointers() {
+            QueryableEnumVariants::B(ptr) => ptr.read(),
+            QueryableEnumVariants::C(ptr) => ptr.low.read(),
+            _ => 0
+        }
+    }
+
+    #[external(v0)]
+    pub fn set_queryable_enum_low(ref self: ContractState, value: u128) {
+        match self.queryable_enum.sub_pointers_mut() {
+            QueryableEnumVariantsMut::B(ptr) => ptr.write(value),
+            QueryableEnumVariantsMut::C(ptr) => ptr.low.write(value),
+            _ => {}
+        }
     }
 }
 
@@ -326,5 +370,38 @@ fn test_storage_vec_of_vecs() {
     assert_eq!(
         deserialized(test_contract::__external::get_nested_vec_element(serialized((1_u64, 1_u64)))),
         5
+    );
+}
+
+#[test]
+fn test_enum_sub_pointers() {
+    assert!(
+        test_contract::__external::set_queryable_enum(serialized(QueryableEnum::A(()))).is_empty()
+    );
+    assert!(deserialized(test_contract::__external::is_queryable_enum_a(serialized(()))));
+    assert_eq!(deserialized(test_contract::__external::get_queryable_enum_low(serialized(()))), 0);
+    assert!(
+        test_contract::__external::set_queryable_enum(serialized(QueryableEnum::B(123_u128)))
+            .is_empty()
+    );
+    assert!(!deserialized(test_contract::__external::is_queryable_enum_a(serialized(()))));
+    assert_eq!(
+        deserialized(test_contract::__external::get_queryable_enum_low(serialized(()))), 123
+    );
+    assert!(
+        test_contract::__external::set_queryable_enum(serialized(QueryableEnum::C(456_u256)))
+            .is_empty()
+    );
+    assert!(!deserialized(test_contract::__external::is_queryable_enum_a(serialized(()))));
+    assert_eq!(
+        deserialized(test_contract::__external::get_queryable_enum_low(serialized(()))), 456
+    );
+    assert!(
+        test_contract::__external::set_queryable_enum(serialized(QueryableEnum::C(789_u256)))
+            .is_empty()
+    );
+    assert!(!deserialized(test_contract::__external::is_queryable_enum_a(serialized(()))));
+    assert_eq!(
+        deserialized(test_contract::__external::get_queryable_enum_low(serialized(()))), 789
     );
 }

@@ -27,6 +27,7 @@ trait HelloStarknetTrait<TContractState> {
     fn get_third_list_value(self: @TContractState) -> felt252;
     fn get_arr_at(self: @TContractState, index: u64) -> usize;
     fn append_to_arr(ref self: TContractState, value: usize);
+    fn get_queryable_enum(self: @TContractState) -> u128;
 }
 
 #[starknet::storage_node]
@@ -54,13 +55,24 @@ struct LinkedList {
     next: LinkedList,
 }
 
+#[starknet::sub_pointers(QueryableEnumVariants)]
+#[derive(Drop, starknet::Store)]
+enum QueryableEnum {
+    A: u128,
+    B: u256,
+}
+
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
         StorageAsPointer, StorageAsPath, StoragePathEntry, Map, SubPointersDeref, Vec, VecTrait,
-        MutableVecTrait
+        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward
     };
-    use super::{BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList};
+    use super::{
+        BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList, QueryableEnum,
+        QueryableEnumVariants
+    };
+
     #[storage]
     struct Storage {
         balance: usize,
@@ -71,6 +83,7 @@ mod hello_starknet {
         sliced_balance_trio: SlicedBalanceTrio,
         linked_list: LinkedList,
         arr: Vec<usize>,
+        queryable_enum: QueryableEnum,
     }
 
     #[abi(embed_v0)]
@@ -123,6 +136,12 @@ mod hello_starknet {
         }
         fn append_to_arr(ref self: ContractState, value: usize) {
             self.arr.append().write(value);
+        }
+        fn get_queryable_enum(self: @ContractState) -> u128 {
+            match self.queryable_enum.sub_pointers() {
+                QueryableEnumVariants::A(ptr) => ptr.read(),
+                QueryableEnumVariants::B(ptr) => ptr.low.read(),
+            }
         }
     }
 }
@@ -153,6 +172,7 @@ trait HelloStarknetTrait<TContractState> {
     fn get_third_list_value(self: @TContractState) -> felt252;
     fn get_arr_at(self: @TContractState, index: u64) -> usize;
     fn append_to_arr(ref self: TContractState, value: usize);
+    fn get_queryable_enum(self: @TContractState) -> u128;
 }
 
 #[starknet::storage_node]
@@ -180,13 +200,24 @@ struct LinkedList {
     next: LinkedList,
 }
 
+#[starknet::sub_pointers(QueryableEnumVariants)]
+#[derive(Drop, starknet::Store)]
+enum QueryableEnum {
+    A: u128,
+    B: u256,
+}
+
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
         StorageAsPointer, StorageAsPath, StoragePathEntry, Map, SubPointersDeref, Vec, VecTrait,
-        MutableVecTrait
+        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward
     };
-    use super::{BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList};
+    use super::{
+        BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList, QueryableEnum,
+        QueryableEnumVariants
+    };
+
     #[storage]
     struct Storage {
         balance: usize,
@@ -197,6 +228,7 @@ mod hello_starknet {
         sliced_balance_trio: SlicedBalanceTrio,
         linked_list: LinkedList,
         arr: Vec<usize>,
+        queryable_enum: QueryableEnum,
     }
 
     #[abi(embed_v0)]
@@ -249,6 +281,12 @@ mod hello_starknet {
         }
         fn append_to_arr(ref self: ContractState, value: usize) {
             self.arr.append().write(value);
+        }
+        fn get_queryable_enum(self: @ContractState) -> u128 {
+            match self.queryable_enum.sub_pointers() {
+                QueryableEnumVariants::A(ptr) => ptr.read(),
+                QueryableEnumVariants::B(ptr) => ptr.low.read(),
+            }
         }
     }
 }
@@ -280,6 +318,7 @@ self: T, user_id: usize, subbalance_id: usize
     fn get_third_list_value(self: T) -> felt252;
     fn get_arr_at(self: T, index: u64) -> usize;
     fn append_to_arr(self: T, value: usize);
+    fn get_queryable_enum(self: T) -> u128;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -499,6 +538,20 @@ self: HelloStarknetTraitDispatcher, user_id: usize, subbalance_id: usize
         );
         let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
+    }
+    fn get_queryable_enum(self: HelloStarknetTraitDispatcher) -> u128 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_queryable_enum"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
     }
 
 }
@@ -721,6 +774,20 @@ self: HelloStarknetTraitLibraryDispatcher, user_id: usize, subbalance_id: usize
         let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
+    fn get_queryable_enum(self: HelloStarknetTraitLibraryDispatcher) -> u128 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_queryable_enum"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
 
 }
 
@@ -761,6 +828,8 @@ self: T, user_id: usize, subbalance_id: usize
     fn get_arr_at(self: T, index: u64) -> starknet::SyscallResult<usize>;
     #[unstable(feature: "safe_dispatcher")]
     fn append_to_arr(self: T, value: usize) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn get_queryable_enum(self: T) -> starknet::SyscallResult<u128>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -998,6 +1067,22 @@ self: HelloStarknetTraitSafeLibraryDispatcher, user_id: usize, subbalance_id: us
         );
         let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
+    }
+    fn get_queryable_enum(self: HelloStarknetTraitSafeLibraryDispatcher) -> starknet::SyscallResult<u128> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_queryable_enum"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
     }
 
 }
@@ -1239,11 +1324,27 @@ self: HelloStarknetTraitSafeDispatcher, user_id: usize, subbalance_id: usize
         let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
+    fn get_queryable_enum(self: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<u128> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_queryable_enum"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
 
 }
 
 
-lib.cairo:26:1
+lib.cairo:27:1
 #[starknet::storage_node]
 ^***********************^
 storage_node:
@@ -1320,7 +1421,7 @@ impl BalancePairStorageNodeMutImpl of starknet::storage::StorageNodeMut<BalanceP
 }
 
 
-lib.cairo:32:1
+lib.cairo:33:1
 
 ^
 impls:
@@ -1328,7 +1429,7 @@ impls:
 impl SlicedBalanceTrioDrop of core::traits::Drop::<SlicedBalanceTrio>;
 
 
-lib.cairo:33:16
+lib.cairo:34:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 starknet_derive:
@@ -1428,7 +1529,7 @@ impl SlicedBalanceTrioSubPointersMutImpl of starknet::storage::SubPointersMut<Sl
 }
 
 
-lib.cairo:38:1
+lib.cairo:39:1
 
 ^
 impls:
@@ -1436,7 +1537,7 @@ impls:
 impl SlicedBalancePairDrop of core::traits::Drop::<SlicedBalancePair>;
 
 
-lib.cairo:39:16
+lib.cairo:40:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 starknet_derive:
@@ -1536,7 +1637,7 @@ impl SlicedBalancePairSubPointersMutImpl of starknet::storage::SubPointersMut<Sl
 }
 
 
-lib.cairo:45:1
+lib.cairo:46:1
 #[starknet::storage_node]
 ^***********************^
 storage_node:
@@ -1616,6 +1717,159 @@ impl LinkedListStorageNodeMutImpl of starknet::storage::StorageNodeMut<LinkedLis
            next: next_value,
         }
     }
+}
+
+
+lib.cairo:51:1
+
+^
+impls:
+
+impl QueryableEnumDrop of core::traits::Drop::<QueryableEnum>;
+
+
+lib.cairo:53:16
+#[derive(Drop, starknet::Store)]
+               ^*************^
+starknet_derive:
+
+impl StoreQueryableEnum of starknet::Store::<QueryableEnum> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<QueryableEnum> {
+        let idx = starknet::Store::<felt252>::read(address_domain, base)?;
+        match idx {
+            1 => {
+                starknet::SyscallResult::Ok(
+                    QueryableEnum::A(
+                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                    )
+                )
+            },
+            2 => {
+                starknet::SyscallResult::Ok(
+                    QueryableEnum::B(
+                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                    )
+                )
+            },
+            0 | _ => {
+                starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+            }
+        }
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: QueryableEnum) -> starknet::SyscallResult<()> {
+        match value {
+            QueryableEnum::A(x) => {
+                starknet::Store::write(address_domain, base, 1)?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            },
+            QueryableEnum::B(x) => {
+                starknet::Store::write(address_domain, base, 2)?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<QueryableEnum> {
+        let idx = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        match idx {
+            1 => {
+                starknet::SyscallResult::Ok(
+                    QueryableEnum::A(
+                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                    )
+                )
+            },
+            2 => {
+                starknet::SyscallResult::Ok(
+                    QueryableEnum::B(
+                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                    )
+                )
+            },
+            0 | _ => {
+                starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+            }
+        }
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: QueryableEnum) -> starknet::SyscallResult<()> {
+        match value {
+            QueryableEnum::A(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 1)?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            },
+            QueryableEnum::B(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        1_u8 + core::cmp::max(starknet::Store::<u256>::size(), starknet::Store::<u128>::size())
+    }
+}
+
+
+lib.cairo:52:1
+#[starknet::sub_pointers(QueryableEnumVariants)]
+^**********************************************^
+storage_node:
+
+#[derive(Drop, Copy)]
+enum QueryableEnumVariants {
+        A: starknet::storage::StoragePointer<u128>,
+    B: starknet::storage::StoragePointer<u256>,
+}
+impl QueryableEnumSubPointersImpl of starknet::storage::SubPointers<QueryableEnum> {
+type SubPointersType = QueryableEnumVariants;
+   fn sub_pointers(self: starknet::storage::StoragePointer<QueryableEnum>) -> QueryableEnumVariants {
+        let selector_storage_pointer = starknet::storage::StoragePointer::<felt252>{
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__,
+         };
+         let selector = starknet::storage::StoragePointerReadAccess::read(@selector_storage_pointer);
+         match selector {
+    
+        1 => QueryableEnumVariants::A(starknet::storage::StoragePointer {
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__ + 1,
+        }),
+        2 => QueryableEnumVariants::B(starknet::storage::StoragePointer {
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__ + 1,
+        }),
+        0 | _ => panic!("Invalid selector value"),
+    }
+}
+}
+#[derive(Drop, Copy)]
+enum QueryableEnumVariantsMut {
+        A: starknet::storage::StoragePointer<starknet::storage::Mutable::<u128>>,
+    B: starknet::storage::StoragePointer<starknet::storage::Mutable::<u256>>,
+}
+impl QueryableEnumSubPointersMutImpl of starknet::storage::SubPointersMut<QueryableEnum> {
+type SubPointersType = QueryableEnumVariantsMut;
+   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<QueryableEnum>>) -> QueryableEnumVariantsMut {
+        let selector_storage_pointer = starknet::storage::StoragePointer::<felt252>{
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__,
+         };
+         let selector = starknet::storage::StoragePointerReadAccess::read(@selector_storage_pointer);
+         match selector {
+    
+        1 => QueryableEnumVariantsMut::A(starknet::storage::StoragePointer {
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__ + 1,
+        }),
+        2 => QueryableEnumVariantsMut::B(starknet::storage::StoragePointer {
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__ + 1,
+        }),
+        0 | _ => panic!("Invalid selector value"),
+    }
+}
 }
 
 
@@ -1995,7 +2249,7 @@ impl HelloStarknetTraitSafeDispatcherSubPointersMutImpl of starknet::storage::Su
 }
 
 
-lib.cairo:26:1
+lib.cairo:27:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -2004,7 +2258,7 @@ impl BalancePairStorageBaseDrop of core::traits::Drop::<BalancePairStorageBase>;
 impl BalancePairStorageBaseCopy of core::traits::Copy::<BalancePairStorageBase>;
 
 
-lib.cairo:26:1
+lib.cairo:27:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -2013,7 +2267,7 @@ impl BalancePairStorageBaseMutDrop of core::traits::Drop::<BalancePairStorageBas
 impl BalancePairStorageBaseMutCopy of core::traits::Copy::<BalancePairStorageBaseMut>;
 
 
-lib.cairo:26:1
+lib.cairo:27:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -2022,7 +2276,7 @@ impl BalancePairStorageNodeDrop of core::traits::Drop::<BalancePairStorageNode>;
 impl BalancePairStorageNodeCopy of core::traits::Copy::<BalancePairStorageNode>;
 
 
-lib.cairo:26:1
+lib.cairo:27:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -2031,7 +2285,7 @@ impl BalancePairStorageNodeMutDrop of core::traits::Drop::<BalancePairStorageNod
 impl BalancePairStorageNodeMutCopy of core::traits::Copy::<BalancePairStorageNodeMut>;
 
 
-lib.cairo:33:16
+lib.cairo:34:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 impls:
@@ -2040,7 +2294,7 @@ impl SlicedBalanceTrioSubPointersDrop of core::traits::Drop::<SlicedBalanceTrioS
 impl SlicedBalanceTrioSubPointersCopy of core::traits::Copy::<SlicedBalanceTrioSubPointers>;
 
 
-lib.cairo:33:16
+lib.cairo:34:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 impls:
@@ -2049,7 +2303,7 @@ impl SlicedBalanceTrioSubPointersMutDrop of core::traits::Drop::<SlicedBalanceTr
 impl SlicedBalanceTrioSubPointersMutCopy of core::traits::Copy::<SlicedBalanceTrioSubPointersMut>;
 
 
-lib.cairo:39:16
+lib.cairo:40:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 impls:
@@ -2058,7 +2312,7 @@ impl SlicedBalancePairSubPointersDrop of core::traits::Drop::<SlicedBalancePairS
 impl SlicedBalancePairSubPointersCopy of core::traits::Copy::<SlicedBalancePairSubPointers>;
 
 
-lib.cairo:39:16
+lib.cairo:40:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 impls:
@@ -2067,7 +2321,7 @@ impl SlicedBalancePairSubPointersMutDrop of core::traits::Drop::<SlicedBalancePa
 impl SlicedBalancePairSubPointersMutCopy of core::traits::Copy::<SlicedBalancePairSubPointersMut>;
 
 
-lib.cairo:45:1
+lib.cairo:46:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -2076,7 +2330,7 @@ impl LinkedListStorageBaseDrop of core::traits::Drop::<LinkedListStorageBase>;
 impl LinkedListStorageBaseCopy of core::traits::Copy::<LinkedListStorageBase>;
 
 
-lib.cairo:45:1
+lib.cairo:46:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -2085,7 +2339,7 @@ impl LinkedListStorageBaseMutDrop of core::traits::Drop::<LinkedListStorageBaseM
 impl LinkedListStorageBaseMutCopy of core::traits::Copy::<LinkedListStorageBaseMut>;
 
 
-lib.cairo:45:1
+lib.cairo:46:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -2094,13 +2348,31 @@ impl LinkedListStorageNodeDrop of core::traits::Drop::<LinkedListStorageNode>;
 impl LinkedListStorageNodeCopy of core::traits::Copy::<LinkedListStorageNode>;
 
 
-lib.cairo:45:1
+lib.cairo:46:1
 #[starknet::storage_node]
 ^***********************^
 impls:
 
 impl LinkedListStorageNodeMutDrop of core::traits::Drop::<LinkedListStorageNodeMut>;
 impl LinkedListStorageNodeMutCopy of core::traits::Copy::<LinkedListStorageNodeMut>;
+
+
+lib.cairo:52:1
+#[starknet::sub_pointers(QueryableEnumVariants)]
+^**********************************************^
+impls:
+
+impl QueryableEnumVariantsDrop of core::traits::Drop::<QueryableEnumVariants>;
+impl QueryableEnumVariantsCopy of core::traits::Copy::<QueryableEnumVariants>;
+
+
+lib.cairo:52:1
+#[starknet::sub_pointers(QueryableEnumVariants)]
+^**********************************************^
+impls:
+
+impl QueryableEnumVariantsMutDrop of core::traits::Drop::<QueryableEnumVariantsMut>;
+impl QueryableEnumVariantsMutCopy of core::traits::Copy::<QueryableEnumVariantsMut>;
 
 
 lib.cairo:1:1
@@ -2175,7 +2447,7 @@ impl HelloStarknetTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<
 impl HelloStarknetTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<HelloStarknetTraitSafeDispatcherSubPointersMut>;
 
 
-lib.cairo:51:1
+lib.cairo:59:1
 #[starknet::contract]
 ^*******************^
 contract:
@@ -2195,6 +2467,7 @@ pub struct Storage {
           pub sliced_balance_trio: SlicedBalanceTrio,
           pub linked_list: LinkedList,
           pub arr: Vec<usize>,
+          pub queryable_enum: QueryableEnum,
 }
 
 #[derive(Drop, Copy)]
@@ -2207,6 +2480,7 @@ pub struct StorageStorageBase {
     pub sliced_balance_trio: starknet::storage::StorageBase<SlicedBalanceTrio>,
     pub linked_list: starknet::storage::StorageBase<LinkedList>,
     pub arr: starknet::storage::StorageBase<Vec<usize>>,
+    pub queryable_enum: starknet::storage::StorageBase<QueryableEnum>,
 }
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
@@ -2219,6 +2493,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
         let sliced_balance_trio_value = starknet::storage::StorageBase {__base_address__: selector!("sliced_balance_trio")};
         let linked_list_value = starknet::storage::StorageBase {__base_address__: selector!("linked_list")};
         let arr_value = starknet::storage::StorageBase {__base_address__: selector!("arr")};
+        let queryable_enum_value = starknet::storage::StorageBase {__base_address__: selector!("queryable_enum")};
         StorageStorageBase {
            balance: balance_value,
            user_balance: user_balance_value,
@@ -2228,6 +2503,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
            sliced_balance_trio: sliced_balance_trio_value,
            linked_list: linked_list_value,
            arr: arr_value,
+           queryable_enum: queryable_enum_value,
         }
     }
 }
@@ -2241,6 +2517,7 @@ pub struct StorageStorageBaseMut {
     pub sliced_balance_trio: starknet::storage::StorageBase<starknet::storage::Mutable::<SlicedBalanceTrio>>,
     pub linked_list: starknet::storage::StorageBase<starknet::storage::Mutable::<LinkedList>>,
     pub arr: starknet::storage::StorageBase<starknet::storage::Mutable::<Vec<usize>>>,
+    pub queryable_enum: starknet::storage::StorageBase<starknet::storage::Mutable::<QueryableEnum>>,
 }
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
@@ -2253,6 +2530,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
         let sliced_balance_trio_value = starknet::storage::StorageBase {__base_address__: selector!("sliced_balance_trio")};
         let linked_list_value = starknet::storage::StorageBase {__base_address__: selector!("linked_list")};
         let arr_value = starknet::storage::StorageBase {__base_address__: selector!("arr")};
+        let queryable_enum_value = starknet::storage::StorageBase {__base_address__: selector!("queryable_enum")};
         StorageStorageBaseMut {
            balance: balance_value,
            user_balance: user_balance_value,
@@ -2262,6 +2540,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
            sliced_balance_trio: sliced_balance_trio_value,
            linked_list: linked_list_value,
            arr: arr_value,
+           queryable_enum: queryable_enum_value,
         }
     }
 }
@@ -2300,7 +2579,7 @@ pub fn contract_state_for_testing() -> ContractState {
 )]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x3e9e6bbcccbcbff384d3036b867e9a1cfb07bc7323c15c1b5ea7c5855e4a581;
+pub const TEST_CLASS_HASH: felt252 = 0x13345f027182b66c8c6896fb7d81cff14cbe9cf251ecb0de870f4dd7fc5f8ce;
 
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -2623,6 +2902,25 @@ fn __wrapper__HelloStarknetImpl__append_to_arr(mut data: Span::<felt252>) -> Spa
     core::array::ArrayTrait::span(@arr)
 }
 
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__HelloStarknetImpl__get_queryable_enum(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = HelloStarknetImpl::get_queryable_enum(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<u128>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
 
 pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
@@ -2640,6 +2938,7 @@ pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__get_third_list_value as get_third_list_value;
     pub use super::__wrapper__HelloStarknetImpl__get_arr_at as get_arr_at;
     pub use super::__wrapper__HelloStarknetImpl__append_to_arr as append_to_arr;
+    pub use super::__wrapper__HelloStarknetImpl__get_queryable_enum as get_queryable_enum;
 }
 pub mod __l1_handler {
 }
@@ -2666,7 +2965,7 @@ pub mod __constructor {
 
 
 
-lib.cairo:51:1
+lib.cairo:59:1
 #[starknet::contract]
 ^*******************^
 impls:
@@ -2674,7 +2973,7 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:51:1
+lib.cairo:59:1
 #[starknet::contract]
 ^*******************^
 starknet_derive:
@@ -2696,7 +2995,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:51:1
+lib.cairo:59:1
 #[starknet::contract]
 ^*******************^
 impls:
@@ -2705,7 +3004,7 @@ impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:51:1
+lib.cairo:59:1
 #[starknet::contract]
 ^*******************^
 impls:
@@ -2715,11 +3014,11 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:63:28
+ --> lib.cairo:75:28
         legacy_map_balace: LegacyMap<usize, usize>,
                            ^*******^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:51:1
+ --> lib.cairo:59:1
 #[starknet::contract]
 ^*******************^

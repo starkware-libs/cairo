@@ -7,7 +7,7 @@ use indoc::formatdoc;
 
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::{backwards_compatible_storage, StarknetModuleKind};
-use super::storage_interfaces::handle_storage_interface;
+use super::storage_interfaces::handle_storage_interface_struct;
 use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, FLAT_ATTR, STORAGE_STRUCT_NAME};
 use crate::plugin::SUBSTORAGE_ATTR;
 
@@ -74,7 +74,7 @@ pub fn handle_storage_struct(
     } else {
         RewriteNode::from_ast(&struct_ast.visibility(db))
     };
-    let (storage_base_code, _) = handle_storage_interface(db, &struct_ast, metadata);
+    let (storage_base_code, _) = handle_storage_interface_struct(db, &struct_ast, metadata);
     data.state_struct_code = RewriteNode::interpolate_patched(
         &formatdoc!(
             "
