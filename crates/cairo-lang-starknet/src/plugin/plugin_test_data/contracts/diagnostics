@@ -10849,9 +10849,9 @@ mod contract {
 }
 
 //! > expected_diagnostics
-error: Method `write` could not be called on type `core::starknet::storage::StorageBase::<core::felt252>`.
-Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StorageMapWriteAccess::<core::starknet::storage::StorageBase::<core::felt252>>.
-Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::StorageBase::<core::felt252>>.
+error: Method `write` could not be called on type `core::starknet::storage::storage_base::StorageBase::<core::felt252>`.
+Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::felt252>>.
+Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::felt252>>.
  --> lib.cairo:18:27
             self.a_member.write(0);
                           ^***^
@@ -11645,9 +11645,9 @@ mod contract {
 }
 
 //! > expected_diagnostics
-error: Method `write` could not be called on type `core::starknet::storage::StorageBase::<core::integer::u32>`.
-Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StorageMapWriteAccess::<core::starknet::storage::StorageBase::<core::integer::u32>>.
-Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::StorageBase::<core::integer::u32>>.
+error: Method `write` could not be called on type `core::starknet::storage::storage_base::StorageBase::<core::integer::u32>`.
+Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::integer::u32>>.
+Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::integer::u32>>.
  --> lib.cairo:35:40
             self.component_member.data.write();
                                        ^***^
@@ -12651,7 +12651,7 @@ mod contract {
 }
 
 //! > expected_diagnostics
-error: Type "core::starknet::storage::StorageBase::<test::u256Pair>" has no member "a"
+error: Type "core::starknet::storage::storage_base::StorageBase::<test::u256Pair>" has no member "a"
  --> lib.cairo:59:28
             self.u256_pair.a.read()
                            ^
