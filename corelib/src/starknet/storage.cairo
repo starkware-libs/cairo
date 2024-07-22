@@ -13,9 +13,9 @@ mod storage_node;
 pub use storage_node::{StorageNode, StorageNodeMut};
 use storage_node::{StorageNodeDeref, StorageNodeMutDeref};
 mod sub_pointers;
-pub use sub_pointers::{SubPointers, SubPointersMut};
+pub use sub_pointers::{SubPointers, SubPointersMut, SubPointersForward, SubPointersMutForward};
 use sub_pointers::{
-    SubPointersDeref, SubPointersMutDeref, u256SubPointersImpl, U256SubPointersImplMut
+    SubPointersDeref, SubPointersMutDeref, u256SubPointersImpl, U256SubPointersImplMut,
 };
 mod storage_base;
 pub use storage_base::{StorageBase, FlattenedStorage, StorageTrait, StorageTraitMut};
