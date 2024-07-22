@@ -282,7 +282,14 @@ impl BlockUsages {
                 current.add_usage_and_changes(&usage);
                 self.block_usages.insert(expr_id, usage);
             }
-            Expr::ExprClosure(_) => unimplemented!(),
+            Expr::ExprClosure(expr) => {
+                let mut usage: Usage = Default::default();
+
+                usage.introductions.extend(expr.param_ids.iter().map(|id| VarId::Param(*id)));
+                self.handle_expr(function_body, expr.body, &mut usage);
+                usage.finalize_as_scope();
+                self.block_usages.insert(expr_id, usage);
+            }
             Expr::FunctionCall(expr) => {
                 for arg in &expr.args {
                     match arg {
