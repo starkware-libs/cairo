@@ -1,4 +1,4 @@
-use super::{StoragePointer, Mutable};
+use super::{StoragePointer, Mutable, StorageAsPointer, StoragePointer0Offset};
 
 /// Similar to storage node, but for structs which are stored sequentially in the storage. In
 /// contrast to storage node, the fields of the struct are just offsetted from the base address of
@@ -36,6 +36,71 @@ pub impl SubPointersMutDeref<
     }
 }
 
+/// A trait for implementing `SubPointers` for types which are not a `StoragePointer`, such as
+/// `StorageBase` and `StoragePath`.
+pub trait SubPointersForward<T> {
+    type SubPointersType;
+    fn sub_pointers(self: T) -> Self::SubPointersType;
+}
+
+/// Implementation of SubPointersForward for `StoragePointer0Offset`.
+impl Pointer0OffsetSubPointersForward<
+    T, impl SubPointersImpl: SubPointers<T>
+> of SubPointersForward<StoragePointer0Offset<T>> {
+    type SubPointersType = SubPointersImpl::SubPointersType;
+    fn sub_pointers(self: StoragePointer0Offset<T>) -> SubPointersImpl::SubPointersType {
+        self.deref().sub_pointers()
+    }
+}
+
+/// Implementation of SubPointersForward for types which supports `StorageAsPointer`, i.e. being
+/// able to convert to a `StoragePointer0Offset`, and the resulting type should implement
+/// `SubPointersForward` (see `Pointer0OffsetSubPointersForward`).
+impl SubPointersForwardImpl<
+    T,
+    +Drop<T>,
+    impl AsPointerImpl: StorageAsPointer<T>,
+    impl PointerForwardImpl: SubPointersForward<StoragePointer0Offset<AsPointerImpl::Value>>
+> of SubPointersForward<T> {
+    type SubPointersType = PointerForwardImpl::SubPointersType;
+    fn sub_pointers(self: T) -> Self::SubPointersType {
+        self.as_ptr().sub_pointers()
+    }
+}
+
+/// A trait for implementing `SubPointersMut` for types which are not a `StoragePointer`, such as
+/// `StorageBase` and `StoragePath`.
+pub trait SubPointersMutForward<T> {
+    type SubPointersType;
+    fn sub_pointers_mut(self: T) -> Self::SubPointersType;
+}
+
+/// Implementation of SubPointersMutForward for `StoragePointer0Offset`.
+impl Pointer0OffsetSubPointersMutForward<
+    T, impl SubPointersImpl: SubPointersMut<T>
+> of SubPointersMutForward<StoragePointer0Offset<Mutable<T>>> {
+    type SubPointersType = SubPointersImpl::SubPointersType;
+    fn sub_pointers_mut(
+        self: StoragePointer0Offset<Mutable<T>>
+    ) -> SubPointersImpl::SubPointersType {
+        self.deref().sub_pointers_mut()
+    }
+}
+
+/// Implementation of SubPointersMutForward for types which supports `StorageAsPointer`, i.e. being
+/// able to convert to a `StoragePointer0Offset`, and the resulting type should implement
+/// `SubPointersMutForward` (see `Pointer0OffsetSubPointersMutForward`).
+impl SubPointersMutForwardImpl<
+    T,
+    +Drop<T>,
+    impl AsPointerImpl: StorageAsPointer<T>,
+    impl PointerForwardImpl: SubPointersMutForward<StoragePointer0Offset<AsPointerImpl::Value>>
+> of SubPointersMutForward<T> {
+    type SubPointersType = PointerForwardImpl::SubPointersType;
+    fn sub_pointers_mut(self: T) -> Self::SubPointersType {
+        self.as_ptr().sub_pointers_mut()
+    }
+}
 
 /// Implementation of SubPointers for core types.
 #[derive(Drop, Copy)]
