@@ -62,7 +62,7 @@
     "0x23483ee29f49427763ba4352bf2f1e42b8f0372f34227e03e3f08877d61771a",
     "0x16",
     "0x44de326300524e221e75fd1c033ea363f180f845ac0f487cfa93741329644b",
-    "0x13b56b677e3a9dd255fdbc62a41dd5cd778a9058b05bb3b06affd8406a9beac",
+    "0x29f5cc87a49ecdc766cc7ed89808c68ffc76a3c28bbfd7fd7f61082da984be0",
     "0x800000000000000f00000000000000000000000000000001",
     "0x2ee1e2b1b89f8c495f200e4956278a4d47395fe262f27b52e5865c9524c08c3",
     "0x456e756d",
@@ -75,7 +75,7 @@
     "0x253a4ce2b38102a67b3f137638a3dd58d023df5fd825e0c8a2007db35835206",
     "0x2016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0",
     "0x8c9d27aab088e0a31d3d5b3321135aa7abba4ceacbc8355c7f96e6d4059a6a",
-    "0x3994cf3dca7af7aeac27ff55bb02a20a458bbc085e1983629d351686904314",
+    "0x2ae56366bd75fbcf6b7d742f7964b2303c7d0283d4ca80455fd30e314082ffe",
     "0x1c70f0545962fd5ddec28a94837b101029bfbf2fb4277ba0c91c254295894fb",
     "0x4661696c656420746f20646573657269616c697a6520706172616d202331",
     "0x800000000000000f00000000000000000000000000000002",
@@ -718,7 +718,7 @@
       ],
       [
         25,
-        "core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>"
+        "core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>"
       ],
       [
         26,
@@ -754,7 +754,7 @@
       ],
       [
         34,
-        "core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>"
+        "core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>"
       ],
       [
         35,
@@ -1116,19 +1116,19 @@
       ],
       [
         68,
-        "struct_construct<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>"
+        "struct_construct<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>"
       ],
       [
         69,
-        "snapshot_take<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>"
+        "snapshot_take<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>"
       ],
       [
         70,
-        "drop<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>"
+        "drop<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>"
       ],
       [
         71,
-        "struct_deconstruct<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>"
+        "struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>"
       ],
       [
         72,
@@ -1252,19 +1252,19 @@
       ],
       [
         102,
-        "struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>"
+        "struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>"
       ],
       [
         103,
-        "snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>"
+        "snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>"
       ],
       [
         104,
-        "drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>"
+        "drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>"
       ],
       [
         105,
-        "struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>"
+        "struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>"
       ],
       [
         106,

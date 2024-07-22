@@ -23,7 +23,7 @@ type Const<felt252, 485748461484230571791265682659113160264223489397539653310998
 type core::pedersen::HashState = Struct<ut@[491955706759561834887485461628902547533157229384102161868363599263592668322], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::starknet::storage::PendingStoragePath::<core::starknet::storage::Mutable::<core::starknet::contract_address::ContractAddress>> = Struct<ut@[997412294192162918537425203870951363183398656777833060955641879636142552858], core::pedersen::HashState, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::starknet::storage::StoragePath::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = Struct<ut@[121679146517300131661785707847323831333037750625037864079833475030771655755], core::pedersen::HashState> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = Struct<ut@[557155294927126526592566460605339563742043147736858306324569511867653406380], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = Struct<ut@[1186194745998044710126481976086910336059329647922183826753264283939642035168], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643]> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::option::Option::<core::felt252> = Enum<ut@[502540321931352404499287398278270665773953423387279675570524389549882807569], felt252, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 1749165063169615148890104124711417950509560691> = Const<felt252, 1749165063169615148890104124711417950509560691> [storable: false, drop: false, dup: false, zero_sized: false];
@@ -32,7 +32,7 @@ type core::starknet::storage::StoragePointer0Offset::<core::starknet::contract_a
 type core::starknet::storage::PendingStoragePath::<core::starknet::contract_address::ContractAddress> = Struct<ut@[1052411448244517344335223651960505153015256422865400677749560535734064206342], core::pedersen::HashState, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 907111799109225873672206001743429201758838553092777504370151546632448000192> = Const<felt252, 907111799109225873672206001743429201758838553092777504370151546632448000192> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::starknet::storage::StoragePath::<cairo_level_tests::components::ownable_mini::OwnableStorage> = Struct<ut@[248443232659051681352452627426993897827130519964652367874801289060763933290], core::pedersen::HashState> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage> = Struct<ut@[101737328367998383504420206147318989719064630274673148288932512611022422804], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage> = Struct<ut@[1212652103817930588464885950267322552910757824729903553774278326205274402814], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 804019082797431478752675531066533075830065539166570129524652105153793004795> = Const<felt252, 804019082797431478752675531066533075830065539166570129524652105153793004795> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913> = Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913> [storable: false, drop: false, dup: false, zero_sized: false];
 type Tuple<Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], Unit> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -123,10 +123,10 @@ libfunc drop<core::panics::Panic> = drop<core::panics::Panic>;
 libfunc drop<Unit> = drop<Unit>;
 libfunc const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>> = const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>;
 libfunc const_as_immediate<Const<felt252, 804019082797431478752675531066533075830065539166570129524652105153793004795>> = const_as_immediate<Const<felt252, 804019082797431478752675531066533075830065539166570129524652105153793004795>>;
-libfunc struct_construct<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = struct_construct<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>;
-libfunc snapshot_take<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = snapshot_take<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>;
-libfunc drop<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = drop<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>;
-libfunc struct_deconstruct<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = struct_deconstruct<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>;
+libfunc struct_construct<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = struct_construct<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>;
+libfunc snapshot_take<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = snapshot_take<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>;
+libfunc drop<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = drop<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>;
+libfunc struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>;
 libfunc struct_construct<core::pedersen::HashState> = struct_construct<core::pedersen::HashState>;
 libfunc struct_construct<core::starknet::storage::StoragePath::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = struct_construct<core::starknet::storage::StoragePath::<cairo_level_tests::components::ownable_mini::OwnableStorage>>;
 libfunc snapshot_take<core::starknet::storage::StoragePath::<cairo_level_tests::components::ownable_mini::OwnableStorage>> = snapshot_take<core::starknet::storage::StoragePath::<cairo_level_tests::components::ownable_mini::OwnableStorage>>;
@@ -157,10 +157,10 @@ libfunc store_temp<core::option::Option::<core::felt252>> = store_temp<core::opt
 libfunc enum_init<core::option::Option::<core::felt252>, 1> = enum_init<core::option::Option::<core::felt252>, 1>;
 libfunc enum_match<core::option::Option::<core::felt252>> = enum_match<core::option::Option::<core::felt252>>;
 libfunc drop<ContractAddress> = drop<ContractAddress>;
-libfunc struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>> = struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>;
-libfunc snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>> = snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>;
-libfunc drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>> = drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>;
-libfunc struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>> = struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>;
+libfunc struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>> = struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>;
+libfunc snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>> = snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>;
+libfunc drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>> = drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>;
+libfunc struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>> = struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>;
 libfunc struct_construct<core::starknet::storage::StoragePath::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>> = struct_construct<core::starknet::storage::StoragePath::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>;
 libfunc snapshot_take<core::starknet::storage::StoragePath::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>> = snapshot_take<core::starknet::storage::StoragePath::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>;
 libfunc drop<core::starknet::storage::StoragePath::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>> = drop<core::starknet::storage::StoragePath::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>;
@@ -486,10 +486,10 @@ store_temp<BuiltinCosts>([19]) -> ([19]); // 295
 withdraw_gas_all([5], [6], [19]) { fallthrough([20], [21]) 384([22], [23]) }; // 296
 branch_align() -> (); // 297
 const_as_immediate<Const<felt252, 804019082797431478752675531066533075830065539166570129524652105153793004795>>() -> ([24]); // 298
-struct_construct<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([24]) -> ([25]); // 299
-snapshot_take<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([25]) -> ([26], [27]); // 300
-drop<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([26]) -> (); // 301
-struct_deconstruct<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([27]) -> ([28]); // 302
+struct_construct<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([24]) -> ([25]); // 299
+snapshot_take<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([25]) -> ([26], [27]); // 300
+drop<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([26]) -> (); // 301
+struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([27]) -> ([28]); // 302
 rename<felt252>([28]) -> ([29]); // 303
 struct_construct<core::pedersen::HashState>([29]) -> ([30]); // 304
 struct_construct<core::starknet::storage::StoragePath::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([30]) -> ([31]); // 305
@@ -662,10 +662,10 @@ enum_match<core::panics::PanicResult::<((),)>>([46]) { fallthrough([47]) 529([48
 branch_align() -> (); // 472
 drop<Tuple<Unit>>([47]) -> (); // 473
 const_as_immediate<Const<felt252, 804019082797431478752675531066533075830065539166570129524652105153793004795>>() -> ([49]); // 474
-struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([49]) -> ([50]); // 475
-snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([50]) -> ([51], [52]); // 476
-drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([51]) -> (); // 477
-struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([52]) -> ([53]); // 478
+struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([49]) -> ([50]); // 475
+snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([50]) -> ([51], [52]); // 476
+drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([51]) -> (); // 477
+struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([52]) -> ([53]); // 478
 rename<felt252>([53]) -> ([54]); // 479
 struct_construct<core::pedersen::HashState>([54]) -> ([55]); // 480
 struct_construct<core::starknet::storage::StoragePath::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([55]) -> ([56]); // 481
@@ -856,10 +856,10 @@ store_temp<BuiltinCosts>([51]) -> ([51]); // 665
 withdraw_gas_all([37], [6], [51]) { fallthrough([52], [53]) 746([54], [55]) }; // 666
 branch_align() -> (); // 667
 const_as_immediate<Const<felt252, 804019082797431478752675531066533075830065539166570129524652105153793004795>>() -> ([56]); // 668
-struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([56]) -> ([57]); // 669
-snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([57]) -> ([58], [59]); // 670
-drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([58]) -> (); // 671
-struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([59]) -> ([60]); // 672
+struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([56]) -> ([57]); // 669
+snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([57]) -> ([58], [59]); // 670
+drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([58]) -> (); // 671
+struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([59]) -> ([60]); // 672
 rename<felt252>([60]) -> ([61]); // 673
 struct_construct<core::pedersen::HashState>([61]) -> ([62]); // 674
 struct_construct<core::starknet::storage::StoragePath::<core::starknet::storage::Mutable::<cairo_level_tests::components::ownable_mini::OwnableStorage>>>([62]) -> ([63]); // 675
@@ -1015,10 +1015,10 @@ store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([
 return([0], [7], [8], [3], [138]); // 825
 drop<cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractState>([4]) -> (); // 826
 const_as_immediate<Const<felt252, 804019082797431478752675531066533075830065539166570129524652105153793004795>>() -> ([5]); // 827
-struct_construct<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([5]) -> ([6]); // 828
-snapshot_take<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([6]) -> ([7], [8]); // 829
-drop<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([7]) -> (); // 830
-struct_deconstruct<core::starknet::storage::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([8]) -> ([9]); // 831
+struct_construct<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([5]) -> ([6]); // 828
+snapshot_take<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([6]) -> ([7], [8]); // 829
+drop<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([7]) -> (); // 830
+struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([8]) -> ([9]); // 831
 rename<felt252>([9]) -> ([10]); // 832
 struct_construct<core::pedersen::HashState>([10]) -> ([11]); // 833
 struct_construct<core::starknet::storage::StoragePath::<cairo_level_tests::components::ownable_mini::OwnableStorage>>([11]) -> ([12]); // 834
