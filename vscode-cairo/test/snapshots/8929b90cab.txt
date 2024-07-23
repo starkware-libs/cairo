@@ -1,9 +1,0 @@
-//! > cairo_code
-impl MyImpl of MyTrait {
-
-//! > syntax
-impl                 source.cairo keyword.other.cairo
-MyImpl               source.cairo entity.name.type.cairo
-of                   source.cairo keyword.other.cairo
-MyTrait              source.cairo entity.name.type.cairo
-{                    source.cairo punctuation.brackets.curly.cairo

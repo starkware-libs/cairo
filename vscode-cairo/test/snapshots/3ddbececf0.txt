@@ -1,8 +1,0 @@
-//! > cairo_code
-identifier(x)
-
-//! > syntax
-identifier           source.cairo meta.function.call.cairo entity.name.function.cairo
-(                    source.cairo meta.function.call.cairo punctuation.brackets.round.cairo
-x                    source.cairo meta.function.call.cairo variable.other.cairo
-)                    source.cairo meta.function.call.cairo punctuation.brackets.round.cairo

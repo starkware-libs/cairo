@@ -13,11 +13,9 @@ use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{
-    define_short_id, extract_matches, require, try_extract_matches, Intern, LookupIntern,
-    OptionFrom,
+    define_short_id, require, try_extract_matches, Intern, LookupIntern, OptionFrom,
 };
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
@@ -311,6 +309,21 @@ impl FunctionId {
                 .generic_args
                 .iter()
                 .all(|generic_argument_id| generic_argument_id.is_var_free(db))
+    }
+}
+impl FunctionLongId {
+    pub fn from_generic(
+        db: &dyn SemanticGroup,
+        generic_function: GenericFunctionId,
+    ) -> Maybe<Self> {
+        let generic_params: Vec<_> = generic_function.generic_params(db)?;
+
+        Ok(FunctionLongId {
+            function: ConcreteFunction {
+                generic_function,
+                generic_args: generic_params_to_args(&generic_params, db),
+            },
+        })
     }
 }
 
@@ -731,12 +744,13 @@ impl Signature {
         function_title_id: FunctionTitleId,
         environment: &mut Environment,
     ) -> Self {
+        let syntax_db = db.upcast();
         let params = function_signature_params(
             diagnostics,
             db,
             resolver,
-            signature_syntax,
-            function_title_id,
+            &signature_syntax.parameters(syntax_db).elements(syntax_db),
+            Some(function_title_id),
             environment,
         );
         let return_type =
@@ -802,19 +816,11 @@ pub fn function_signature_params(
     diagnostics: &mut SemanticDiagnostics,
     db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
-    sig: &ast::FunctionSignature,
-    function_title_id: FunctionTitleId,
+    params: &[ast::Param],
+    function_title_id: Option<FunctionTitleId>,
     env: &mut Environment,
 ) -> Vec<semantic::Parameter> {
-    let syntax_db = db.upcast();
-    update_env_with_ast_params(
-        diagnostics,
-        db,
-        resolver,
-        &sig.parameters(syntax_db).elements(syntax_db),
-        function_title_id,
-        env,
-    )
+    update_env_with_ast_params(diagnostics, db, resolver, params, function_title_id, env)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::function_title_signature].
@@ -867,7 +873,7 @@ fn update_env_with_ast_params(
     db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
     ast_params: &[ast::Param],
-    function_title_id: FunctionTitleId,
+    function_title_id: Option<FunctionTitleId>,
     env: &mut Environment,
 ) -> Vec<semantic::Parameter> {
     let mut semantic_params = Vec::new();
@@ -895,11 +901,14 @@ fn ast_param_to_semantic(
 
     let id = ParamLongId(resolver.module_file_id, ast_param.stable_ptr()).intern(db);
 
-    // TODO(Tomerstarkware): handle missing type clause to support closures.
-    let ty_syntax =
-        extract_matches!(ast_param.type_clause(syntax_db), OptionTypeClause::TypeClause)
-            .ty(syntax_db);
-    let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
+    let ty = match ast_param.type_clause(syntax_db) {
+        ast::OptionTypeClause::Empty(missing) => {
+            resolver.inference().new_type_var(Some(missing.stable_ptr().untyped()))
+        }
+        ast::OptionTypeClause::TypeClause(ty_syntax) => {
+            resolve_type(db, diagnostics, resolver, &ty_syntax.ty(syntax_db))
+        }
+    };
 
     let mutability = modifiers::compute_mutability(
         diagnostics,

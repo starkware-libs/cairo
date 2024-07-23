@@ -39,7 +39,8 @@ use super::constant::{
 use super::enm::SemanticEnumEx;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
-    forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
+    forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, GenericFunctionId,
+    ImplGenericFunctionId, InlineConfiguration,
 };
 use super::generics::{
     generic_params_to_args, semantic_generic_params, GenericArgumentHead, GenericParamsData,
@@ -61,7 +62,7 @@ use crate::corelib::{copy_trait, deref_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
+use crate::expr::compute::{compute_root_expr, ComputationContext, ContextFunction, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
@@ -1169,7 +1170,7 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
             }
         }
         TypeLongId::Tuple(tys) => tys,
-        TypeLongId::Snapshot(_) => vec![],
+        TypeLongId::Snapshot(_) | TypeLongId::Closure(_) => vec![],
         TypeLongId::GenericParameter(_) => {
             return Err(skip_diagnostic());
         }
@@ -2985,8 +2986,26 @@ pub fn priv_impl_function_body_data(
     ));
     let resolver =
         Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
-    let environment = declaration.function_declaration_data.environment;
+    let environment: Environment = declaration.function_declaration_data.environment;
 
+    let function_id = (|| {
+        let trait_function_id = db.impl_function_trait_function(impl_function_id)?;
+        let generic_parameters = db.impl_def_generic_params(impl_def_id)?;
+
+        let generic_function = GenericFunctionId::Impl(ImplGenericFunctionId {
+            impl_id: ImplLongId::Concrete(
+                ConcreteImplLongId {
+                    impl_def_id,
+                    generic_args: generic_params_to_args(&generic_parameters, db),
+                }
+                .intern(db),
+            )
+            .intern(db),
+            function: trait_function_id,
+        });
+
+        Ok(FunctionLongId::from_generic(db, generic_function)?.intern(db))
+    })();
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(
         db,
@@ -2994,6 +3013,7 @@ pub fn priv_impl_function_body_data(
         resolver,
         Some(&declaration.function_declaration_data.signature),
         environment,
+        ContextFunction::Function(function_id),
     );
     let function_body = function_syntax.body(db.upcast());
     let return_type = declaration.function_declaration_data.signature.return_type;

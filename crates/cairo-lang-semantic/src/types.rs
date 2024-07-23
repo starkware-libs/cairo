@@ -1,4 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, NamedLanguageElementId,
     StructId, TraitTypeId,
@@ -21,7 +22,9 @@ use crate::corelib::{
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
+use crate::expr::compute::{
+    compute_expr_semantic, ComputationContext, ContextFunction, Environment,
+};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
@@ -47,6 +50,7 @@ pub enum TypeLongId {
     },
     ImplType(ImplTypeId),
     TraitType(TraitTypeId),
+    Closure(ClosureTypeLongId),
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -139,6 +143,9 @@ impl TypeLongId {
                     trait_type_id.name(def_db)
                 )
             }
+            TypeLongId::Closure(closure) => {
+                format!("{{closure@{:?}}}", closure.wrapper_location.debug(def_db))
+            }
         }
     }
 
@@ -154,7 +161,8 @@ impl TypeLongId {
             | TypeLongId::Var(_)
             | TypeLongId::Missing(_)
             | TypeLongId::ImplType(_)
-            | TypeLongId::TraitType(_) => {
+            | TypeLongId::TraitType(_)
+            | TypeLongId::Closure(_) => {
                 return None;
             }
         })
@@ -186,7 +194,8 @@ impl TypeLongId {
             | TypeLongId::Coupon(_)
             | TypeLongId::TraitType(_)
             | TypeLongId::ImplType(_)
-            | TypeLongId::Missing(_) => false,
+            | TypeLongId::Missing(_)
+            | TypeLongId::Closure(_) => false,
         }
     }
 }
@@ -387,6 +396,16 @@ impl ConcreteExternTypeId {
     }
 }
 
+/// A type id of a closure function.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct ClosureTypeLongId {
+    pub param_tys: Vec<TypeId>,
+    pub ret_ty: TypeId,
+    /// Every closure has a unique type that is based on the stable location of its wrapper.
+    #[dont_rewrite]
+    pub wrapper_location: StableLocation,
+}
+
 /// An impl item of kind type.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ImplTypeId {
@@ -519,7 +538,14 @@ pub fn extract_fixed_size_array_size(
                 db,
                 (resolver.data).clone_with_inference_id(db, resolver.inference_data.inference_id),
             );
-            let mut ctx = ComputationContext::new(db, diagnostics, resolver, None, environment);
+            let mut ctx = ComputationContext::new(
+                db,
+                diagnostics,
+                resolver,
+                None,
+                environment,
+                ContextFunction::Global,
+            );
             let size_expr_syntax = size_clause.size(syntax_db);
             let size = compute_expr_semantic(&mut ctx, &size_expr_syntax);
             let const_value = resolve_const_expr_and_evaluate(
@@ -629,7 +655,8 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         | TypeLongId::Missing(_)
         | TypeLongId::Coupon(_)
         | TypeLongId::ImplType(_)
-        | TypeLongId::TraitType(_) => false,
+        | TypeLongId::TraitType(_)
+        | TypeLongId::Closure(_) => false,
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
                 || matches!(size.lookup_intern(db),
@@ -716,7 +743,8 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
         | TypeLongId::TraitType(_)
-        | TypeLongId::ImplType(_) => {}
+        | TypeLongId::ImplType(_)
+        | TypeLongId::Closure(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
             if matches!(size.lookup_intern(db), ConstValue::Int(value,_) if value.is_zero())
                 || db.type_size_info(type_id)? == TypeSizeInformation::ZeroSized
@@ -771,6 +799,10 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_fully_concrete(db) && size.is_fully_concrete(db)
         }
+        TypeLongId::Closure(closure) => {
+            closure.param_tys.iter().all(|param| param.is_fully_concrete(db))
+                && closure.ret_ty.is_fully_concrete(db)
+        }
     }
 }
 
@@ -786,6 +818,10 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
             type_id.is_var_free(db) && size.is_var_free(db)
         }
         TypeLongId::ImplType(impl_type) => impl_type.impl_id().is_var_free(db),
+        TypeLongId::Closure(closure) => {
+            closure.param_tys.iter().all(|param| param.is_var_free(db))
+                && closure.ret_ty.is_var_free(db)
+        }
     }
 }
 

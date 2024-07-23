@@ -9,6 +9,7 @@ use std::sync::Arc;
 use ast::PathSegment;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::validate_attributes_flat;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, MemberId,
     NamedLanguageElementId, TraitFunctionId, TraitId, VarId,
@@ -18,7 +19,8 @@ use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToOption};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::{
-    BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
+    BlockOrIf, ClosureParamWrapper, ExprPtr, OptionReturnTypeClause, PatternListOr,
+    PatternStructParam, UnaryOperator,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -61,6 +63,7 @@ use crate::diagnostic::{
 use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_allowed_features;
+use crate::items::functions::function_signature_params;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
@@ -72,7 +75,7 @@ use crate::substitution::SemanticRewriter;
 use crate::types::{
     add_type_based_diagnostics, are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots,
     peel_snapshots_ex, resolve_type, verify_fixed_size_array_size, wrap_in_snapshots,
-    ConcreteTypeId,
+    ClosureTypeLongId, ConcreteTypeId,
 };
 use crate::{
     ConcreteEnumId, GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral,
@@ -110,6 +113,11 @@ impl Deref for PatternAndId {
 #[derive(Debug, Clone)]
 pub struct NamedArg(ExprAndId, Option<ast::TerminalIdentifier>, Mutability);
 
+pub enum ContextFunction {
+    Global,
+    Function(Maybe<FunctionId>),
+}
+
 /// Context inside loops.
 #[derive(Debug, Clone)]
 enum LoopContext {
@@ -131,6 +139,7 @@ pub struct ComputationContext<'ctx> {
     pub exprs: Arena<semantic::Expr>,
     pub patterns: Arena<semantic::Pattern>,
     pub statements: Arena<semantic::Statement>,
+    function_id: ContextFunction,
     /// Definitions of semantic variables.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
     loop_ctx: Option<LoopContext>,
@@ -143,6 +152,7 @@ impl<'ctx> ComputationContext<'ctx> {
         resolver: Resolver<'ctx>,
         signature: Option<&'ctx Signature>,
         environment: Environment,
+        function_id: ContextFunction,
     ) -> Self {
         let semantic_defs =
             environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
@@ -156,6 +166,7 @@ impl<'ctx> ComputationContext<'ctx> {
             exprs: Arena::default(),
             patterns: Arena::default(),
             statements: Arena::default(),
+            function_id,
             semantic_defs,
             loop_ctx: None,
             cfg_set: db
@@ -257,7 +268,7 @@ impl Environment {
         diagnostics: &mut SemanticDiagnostics,
         semantic_param: Parameter,
         ast_param: &ast::Param,
-        function_title_id: FunctionTitleId,
+        function_title_id: Option<FunctionTitleId>,
     ) -> Maybe<()> {
         if let utils::ordered_hash_map::Entry::Vacant(entry) =
             self.variables.entry(semantic_param.name.clone())
@@ -347,7 +358,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
         ast::Expr::For(expr) => compute_expr_for_semantic(ctx, expr),
-        ast::Expr::Closure(_) => Err(ctx.diagnostics.report(syntax, Unsupported)),
+        ast::Expr::Closure(expr) => compute_expr_closure_semantic(ctx, expr),
     }
 }
 
@@ -1428,6 +1439,113 @@ fn compute_loop_body_semantic(
     })
 }
 
+/// Computes the semantic model of an expression of type [ast::ExprClosure].
+fn compute_expr_closure_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprClosure,
+) -> Maybe<Expr> {
+    let syntax_db = ctx.db.upcast();
+    let (params, ret_ty, body) = ctx.run_in_subscope(|new_ctx| {
+        let params = if let ClosureParamWrapper::NAry(params) = syntax.wrapper(syntax_db) {
+            function_signature_params(
+                new_ctx.diagnostics,
+                new_ctx.db,
+                &mut new_ctx.resolver,
+                &params.params(syntax_db).elements(syntax_db),
+                None,
+                &mut new_ctx.environment,
+            )
+            .into_iter()
+            .collect()
+        } else {
+            vec![]
+        };
+        let ret_ty = match syntax.ret_ty(syntax_db) {
+            OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type(
+                new_ctx.db,
+                new_ctx.diagnostics,
+                &mut new_ctx.resolver,
+                &ty_syntax.ty(syntax_db),
+            ),
+            OptionReturnTypeClause::Empty(missing) => {
+                new_ctx.resolver.inference().new_type_var(Some(missing.stable_ptr().untyped()))
+            }
+        };
+        let body = match syntax.expr(syntax_db) {
+            ast::Expr::Block(syntax) => compute_closure_body_semantic(new_ctx, syntax),
+            _ => compute_expr_semantic(new_ctx, &syntax.expr(syntax_db)).id,
+        };
+        let mut inference = new_ctx.resolver.inference();
+        if let Err((err_set, actual_ty, expected_ty)) =
+            inference.conform_ty_for_diag(new_ctx.exprs[body].ty(), ret_ty)
+        {
+            let diag_added = new_ctx.diagnostics.report(
+                syntax.expr(syntax_db).stable_ptr(),
+                WrongReturnType { expected_ty, actual_ty },
+            );
+            inference.consume_reported_error(err_set, diag_added);
+        }
+        (params, ret_ty, body)
+    });
+    if matches!(ctx.function_id, ContextFunction::Global) {
+        ctx.diagnostics.report(syntax, ClosureInGlobalScope);
+    }
+    Ok(Expr::ExprClosure(ExprClosure {
+        body,
+        param_ids: params.iter().map(|param| param.id).collect(),
+
+        stable_ptr: syntax.stable_ptr().into(),
+        ty: TypeLongId::Closure(ClosureTypeLongId {
+            param_tys: params.iter().map(|param| param.ty).collect(),
+            ret_ty,
+            wrapper_location: StableLocation::new(syntax.wrapper(syntax_db).stable_ptr().into()),
+        })
+        .intern(ctx.db),
+    }))
+}
+
+/// Computes the semantic model for a body of a closure.
+fn compute_closure_body_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: ast::ExprBlock,
+) -> ExprId {
+    let syntax_db = ctx.db.upcast();
+
+    let mut statements = syntax.statements(syntax_db).elements(syntax_db);
+    // Remove the typed tail expression, if exists.
+    let tail = get_tail_expression(syntax_db, statements.as_slice());
+    if tail.is_some() {
+        statements.pop();
+    }
+
+    // Convert statements to semantic model.
+    let statements_semantic: Vec<_> = statements
+        .into_iter()
+        .filter_map(|statement_syntax| {
+            compute_statement_semantic(ctx, statement_syntax).to_option()
+        })
+        .collect();
+    // Convert tail expression (if exists) to semantic model.
+    let tail_semantic_expr = tail.map(|tail_expr| compute_expr_semantic(ctx, &tail_expr));
+    let ty = if let Some(t) = &tail_semantic_expr {
+        t.ty()
+    } else if let Some(statement) = statements_semantic.last() {
+        if let Statement::Return(_) | Statement::Break(_) = &ctx.statements[*statement] {
+            never_ty(ctx.db)
+        } else {
+            unit_ty(ctx.db)
+        }
+    } else {
+        unit_ty(ctx.db)
+    };
+    ctx.exprs.alloc(Expr::Block(ExprBlock {
+        statements: statements_semantic,
+        tail: tail_semantic_expr.map(|expr| expr.id),
+        ty,
+        stable_ptr: syntax.stable_ptr().into(),
+    }))
+}
+
 /// Computes the semantic model of an expression of type [ast::ExprErrorPropagate].
 fn compute_expr_error_propagate_semantic(
     ctx: &mut ComputationContext<'_>,
@@ -2487,6 +2605,7 @@ fn member_access_expr(
             // TODO(spapini): Handle snapshot members.
             Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
         }
+        TypeLongId::Closure(_) => Err(ctx.diagnostics.report(&rhs_syntax, Unsupported)),
         TypeLongId::ImplType(impl_type_id) => {
             unreachable!(
                 "Impl type should've been reduced {:?}.",

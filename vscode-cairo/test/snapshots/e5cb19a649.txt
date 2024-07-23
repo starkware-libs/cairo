@@ -1,7 +1,0 @@
-//! > cairo_code
-skipped  \\ Comment
-
-//! > syntax
-skipped              source.cairo variable.other.cairo
-␣␣\\␣                source.cairo
-Comment              source.cairo entity.name.type.cairo

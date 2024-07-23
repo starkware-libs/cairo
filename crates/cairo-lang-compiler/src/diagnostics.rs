@@ -97,13 +97,19 @@ impl<'a> DiagnosticsReporter<'a> {
         self
     }
 
+    /// Returns the crate ids for which the diagnostics will be checked.
+    fn crates_of_interest(&self, db: &RootDatabase) -> Vec<CrateId> {
+        if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() }
+    }
+
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `true` if diagnostics were found.
     pub fn check(&mut self, db: &RootDatabase) -> bool {
         let mut found_diagnostics = false;
-        let crates = if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() };
-        for crate_id in crates {
-            let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(crate_id)) else {
+
+        let crates = self.crates_of_interest(db);
+        for crate_id in &crates {
+            let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(*crate_id)) else {
                 found_diagnostics = true;
                 self.callback.on_diagnostic(FormattedDiagnosticEntry::new(
                     Severity::Error,
@@ -127,7 +133,7 @@ impl<'a> DiagnosticsReporter<'a> {
                 found_diagnostics = true;
             }
 
-            for module_id in &*db.crate_modules(crate_id) {
+            for module_id in &*db.crate_modules(*crate_id) {
                 for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
                     found_diagnostics |=
                         self.check_diag_group(db.upcast(), db.file_syntax_diagnostics(file_id));
@@ -166,6 +172,35 @@ impl<'a> DiagnosticsReporter<'a> {
     /// Returns `Err` if diagnostics were found.
     pub fn ensure(&mut self, db: &RootDatabase) -> Result<(), DiagnosticsError> {
         if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
+    }
+
+    /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
+    /// would be faster as the queries were already computed.
+    pub(crate) fn warm_up_diagnostics(&self, db: &RootDatabase) {
+        let crates = self.crates_of_interest(db);
+        for crate_id in crates {
+            let snapshot = salsa::ParallelDatabase::snapshot(db);
+            rayon::spawn(move || {
+                let db = &*snapshot;
+
+                let crate_modules = (*db.crate_modules(crate_id)).clone();
+                for module_id in crate_modules {
+                    let snapshot = salsa::ParallelDatabase::snapshot(db);
+                    rayon::spawn(move || {
+                        let db = &*snapshot;
+                        for file_id in
+                            db.module_files(module_id).unwrap_or_default().iter().copied()
+                        {
+                            db.file_syntax_diagnostics(file_id);
+                        }
+
+                        let _ = db.module_semantic_diagnostics(module_id);
+
+                        let _ = db.module_lowering_diagnostics(module_id);
+                    });
+                }
+            });
+        }
     }
 }
 

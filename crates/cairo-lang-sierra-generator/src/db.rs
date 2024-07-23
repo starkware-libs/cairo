@@ -120,14 +120,14 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::invoke(ap_change::get_ap_change)]
     fn get_ap_change(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<SierraApChange>;
 
-    /// Returns the [cairo_lang_sierra::program::Program] object of the requested functions.
+    /// Returns the [SierraProgramWithDebug] object of the requested functions.
     #[salsa::invoke(program_generator::get_sierra_program_for_functions)]
     fn get_sierra_program_for_functions(
         &self,
         requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
     ) -> Maybe<Arc<SierraProgramWithDebug>>;
 
-    /// Returns the [cairo_lang_sierra::program::Program] object of the requested crates.
+    /// Returns the [SierraProgramWithDebug] object of the requested crates.
     #[salsa::invoke(program_generator::get_sierra_program)]
     fn get_sierra_program(
         &self,

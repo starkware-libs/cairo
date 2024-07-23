@@ -16,12 +16,7 @@ pub fn inspect_analyzed_crates(db: &AnalysisDatabase) -> String {
         .map(inspect_crate)
         .collect::<Vec<_>>()
         .join("");
-    formatdoc! {r#"
-        # Analyzed Crates
-
-        {list}
-
-    "#}
+    format!("# Analyzed Crates\n\n{list}")
 }
 
 /// Generates a Markdown fragment describing a single crate.
