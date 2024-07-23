@@ -166,12 +166,12 @@ error: Function not found.
     bar(0);
     ^*^
 
-error: Method `bar` not found on type `test::MyStruct`. Did you import the correct trait and impl?
+error[E0002]: Method `bar` not found on type `test::MyStruct`. Did you import the correct trait and impl?
  --> lib.cairo:15:7
     d.bar();
       ^*^
 
-error: Method `baz` could not be called on type `test::MyStruct`.
+error[E0002]: Method `baz` could not be called on type `test::MyStruct`.
 Candidate `MyTrait::baz` inference failed with: Trait has no implementation in context: test::MyTrait::<test::MyStruct>.
  --> lib.cairo:16:7
     d.baz();

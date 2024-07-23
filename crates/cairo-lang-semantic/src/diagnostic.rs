@@ -1188,6 +1188,9 @@ impl SemanticDiagnosticKind {
     pub fn error_code(&self) -> Option<ErrorCode> {
         Some(match &self {
             Self::UnusedVariable => error_code!(E0001),
+            Self::CannotCallMethod { .. } => {
+                error_code!(E0002)
+            }
             _ => return None,
         })
     }
