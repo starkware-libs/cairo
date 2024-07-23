@@ -9,6 +9,7 @@ use core::metaprogramming::TypeEqual;
 use core::iter::Iterator;
 use core::RangeCheck;
 
+/// An array is a collection of elements of the same type.
 #[derive(Drop)]
 pub extern type Array<T>;
 
@@ -33,16 +34,41 @@ extern fn array_slice<T>(
 ) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
+/// Basic trait for the `Array` type.
 #[generate_trait]
 pub impl ArrayImpl<T> of ArrayTrait<T> {
+    /// Creates a new array.
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// let mut arr = ArrayTrait::new();
+    /// ```
     #[inline(always)]
     fn new() -> Array<T> nopanic {
         array_new()
     }
+    /// Adds a value T to the back of the array
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// let mut arr = array![];
+    /// arr.append(1);
+    /// arr.append(2);
+    /// ```
     #[inline(always)]
     fn append(ref self: Array<T>, value: T) nopanic {
         array_append(ref self, value)
     }
+    /// Adds a span to the back of the array.
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// let mut arr = array![];
+    /// arr.append_span(array![3, 4, 5].span());
+    /// ```
     fn append_span<+Clone<T>, +Drop<T>>(ref self: Array<T>, mut span: Span<T>) {
         match span.pop_front() {
             Option::Some(current) => {
@@ -52,6 +78,17 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
             Option::None => {}
         };
     }
+    /// Pops a value from the front of the array.
+    /// Return `Option::Some` if the array is not empty, `Option::None` otherwise.
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// let mut arr = array![2, 3, 4];
+    /// assert!(arr.pop_front() == Option::Some(2));
+    /// assert!(arr.pop_front() == Option::Some(3));
+    /// assert!(arr.pop_front() == Option::Some(4));
+    /// ```
     #[inline(always)]
     fn pop_front(ref self: Array<T>) -> Option<T> nopanic {
         match array_pop_front(ref self) {
@@ -59,6 +96,16 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
             Option::None => Option::None,
         }
     }
+    /// Pops a value from the front of the array.
+    /// Return `Option::Some` containing the remaining array and
+    /// the value removed if the array is not empty, `Option::None` otherwise.
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// let mut arr = array![2, 3, 4];
+    /// assert!(arr.pop_front_consume() == Option::Some((array![3, 4], 2)));
+    /// ```
     #[inline(always)]
     fn pop_front_consume(self: Array<T>) -> Option<(Array<T>, T)> nopanic {
         match array_pop_front_consume(self) {
@@ -66,18 +113,53 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
             Option::None => Option::None,
         }
     }
+    /// Returns 'Option::Some' of the value at the given 'index',
+    /// if the array contains this index, 'Option::None' otherwise.
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// let mut arr = array![2, 3, 4];
+    /// assert!(arr.get(1) == Option::Some(@3));
+    /// ```
     #[inline(always)]
     fn get(self: @Array<T>, index: usize) -> Option<Box<@T>> {
         array_get(self, index)
     }
+    /// Returns a snapshot of the value at the given 'index'.
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// let mut arr = array![2, 3, 4];
+    /// assert!(arr.at(1) == @4);
+    /// ```
     fn at(self: @Array<T>, index: usize) -> @T {
         array_at(self, index).unbox()
     }
+    /// Returns the length of the array.
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// let mut arr = array![2, 3, 4];
+    /// assert!(arr.len() == 3);
+    /// ```
     #[inline(always)]
     #[must_use]
     fn len(self: @Array<T>) -> usize {
         array_len(self)
     }
+    /// Returns whether the array is empty.
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// let mut arr = array![];
+    /// assert!(arr.is_empty());
+    /// arr.append(1);
+    /// assert!(!arr.is_empty());
+    /// ```
     #[inline(always)]
     #[must_use]
     fn is_empty(self: @Array<T>) -> bool {
@@ -87,6 +169,14 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
             Option::None => true,
         }
     }
+    /// Returns a span of the array.
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// let mut arr = array![1, 2, 3];
+    /// let span = arr.span();
+    /// ```
     #[inline(always)]
     #[must_use]
     fn span(snapshot: @Array<T>) -> Span<T> {
@@ -139,8 +229,14 @@ fn deserialize_array_helper<T, +Serde<T>, +Drop<T>>(
     deserialize_array_helper(ref serialized, curr_output, remaining - 1)
 }
 
-// Span.
+/// A span is a view into a collection, which allows for safe and efficient access to the elements.
 pub struct Span<T> {
+    /// The snapshot of the array.
+    ///
+    /// Example:
+    /// ```
+    /// let span = array![1, 2, 3].span();
+    /// ```
     pub(crate) snapshot: @Array<T>
 }
 
@@ -194,8 +290,17 @@ impl SpanSerde<T, +Serde<T>, +Drop<T>, -TypeEqual<felt252, T>> of Serde<Span<T>>
     }
 }
 
+/// Basic trait for the `Span` type.
 #[generate_trait]
 pub impl SpanImpl<T> of SpanTrait<T> {
+    /// Pops a value from the front of the span.
+    /// Return `Option::Some` if the span is not empty, `Option::None` otherwise.
+    ///
+    /// Example:
+    /// ```
+    /// let mut span = array![1, 2, 3].span();
+    /// assert!(span.pop_front() == Option::Some(@1));
+    /// ```
     #[inline(always)]
     fn pop_front(ref self: Span<T>) -> Option<@T> {
         let mut snapshot = self.snapshot;
@@ -206,6 +311,14 @@ pub impl SpanImpl<T> of SpanTrait<T> {
             Option::None => Option::None,
         }
     }
+    /// Pops a value from the back of the span.
+    /// Return `Option::Some` if the span is not empty, `Option::None` otherwise.
+    ///
+    /// Example:
+    /// ```
+    /// let mut span = array![1, 2, 3].span();
+    /// assert!(span.pop_back() == Option::Some(@7));
+    /// ```
     #[inline(always)]
     fn pop_back(ref self: Span<T>) -> Option<@T> {
         let mut snapshot = self.snapshot;
@@ -217,30 +330,82 @@ pub impl SpanImpl<T> of SpanTrait<T> {
         }
     }
     /// Pops multiple values from the front of the span.
+    /// Returns 'Option::Some' of the elements removed if the
+    /// action completed successfully, 'Option::None' otherwise.
+    ///
+    /// Example:
+    /// ```
+    /// let mut span = array![1, 2, 3].span();
+    /// assert!(span.multi_pop_front::<2>() == Option::Some(@[1, 2]));
+    /// ```
     fn multi_pop_front<const SIZE: usize>(ref self: Span<T>) -> Option<@Box<[T; SIZE]>> {
         array_snapshot_multi_pop_front(ref self.snapshot)
     }
     /// Pops multiple values from the back of the span.
+    /// Returns 'Option::Some' of the elements removed if the
+    /// action completed successfully, 'Option::None' otherwise.
+    ///
+    /// Example:
+    /// ```
+    /// let mut span = array![1, 2, 3].span();
+    /// assert!(span.multi_pop_back::<2>() == Option::Some(@[2, 3]));
+    /// ```
     fn multi_pop_back<const SIZE: usize>(ref self: Span<T>) -> Option<@Box<[T; SIZE]>> {
         array_snapshot_multi_pop_back(ref self.snapshot)
     }
+    /// Returns 'Option::Some' of the value at the given 'index',
+    ///
+    /// Example:
+    /// ```
+    /// let mut span = array![1, 2, 3].span();
+    /// assert!(span.get(1) == Option::Some(@2));
+    /// ```
     #[inline(always)]
     fn get(self: Span<T>, index: usize) -> Option<Box<@T>> {
         array_get(self.snapshot, index)
     }
+    /// Returns a snapshot of the value at the given 'index'.
+    ///
+    /// Example:
+    /// ```
+    /// let mut span = array![1, 2, 3].span();
+    /// assert!(span.at(1) == @2);
+    /// ```
     #[inline(always)]
     fn at(self: Span<T>, index: usize) -> @T {
         array_at(self.snapshot, index).unbox()
     }
+    /// Returns a span containing values from the 'start' index, with
+    /// amount equal to 'length'.
+    ///
+    /// Example:
+    /// ```
+    /// let mut span = array![1, 2, 3].span();
+    /// assert!(span.slice(1, 2) == array![2, 3].span());
+    /// ```
     #[inline(always)]
     fn slice(self: Span<T>, start: usize, length: usize) -> Span<T> {
         Span { snapshot: array_slice(self.snapshot, start, length).expect('Index out of bounds') }
     }
+    /// Returns the length of the span.
+    ///
+    /// Example:
+    /// ```
+    /// let mut span = array![1, 2, 3].span();
+    /// assert!(span.len() == 3);
+    /// ```
     #[inline(always)]
     #[must_use]
     fn len(self: Span<T>) -> usize {
         array_len(self.snapshot)
     }
+    /// Returns whether the span is empty.
+    ///
+    /// Example:
+    /// ```
+    /// let mut span = array![1, 2, 3].span();
+    /// assert!(!span.is_empty());
+    /// ```
     #[inline(always)]
     #[must_use]
     fn is_empty(self: Span<T>) -> bool {
@@ -252,15 +417,33 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     }
 }
 
+/// Implementation of the `SpanIndex` trait for spans.
 pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
+    /// Access the span using[], returns the element at the 'index'.
+    ///
+    /// Example:
+    /// ```
+    /// let mut arr = array![1, 2, 3];
+    /// let span = arr.span();
+    /// assert!(span[0] == @1);
+    /// assert!(span[1] == @2);
+    /// assert!(span[2] == @3);
+    /// ```
     #[inline(always)]
     fn index(self: @Span<T>, index: usize) -> @T {
         array_at(*self.snapshot, index).unbox()
     }
 }
 
+/// A Trait that, given a data structure, returns a span of the data.
 pub trait ToSpanTrait<C, T> {
     /// Returns a span pointing to the data in the input.
+    ///
+    /// Example:
+    /// ```
+    /// let mut arr = array![1, 2, 3];
+    /// assert!(arr.span().len() == 3);
+    /// ```
     #[must_use]
     fn span(self: @C) -> Span<T>;
 }
