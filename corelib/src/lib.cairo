@@ -287,7 +287,7 @@ pub mod num;
 /// Module containing the operations that can be performed on the different types.
 pub mod ops;
 
-/// Cmp.
+/// Module for comparison operations.
 pub mod cmp;
 
 /// Module for handling gas operations.
