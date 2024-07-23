@@ -1486,6 +1486,30 @@ pub trait SemanticGroup:
         crate_id: CrateId,
         type_filter: lsp_helpers::TypeFilter,
     ) -> Arc<[TraitFunctionId]>;
+    /// Returns all the traits visible from a module, alongside a visible use path to the trait.
+    #[salsa::invoke(lsp_helpers::visible_traits_from_module)]
+    fn visible_traits_from_module(
+        &self,
+        module_id: ModuleId,
+    ) -> Arc<OrderedHashMap<TraitId, String>>;
+    /// Returns all visible traits in a module, alongside a visible use path to the trait.
+    /// `user_module_id` is the module from which the traits are should be visible. If
+    /// `include_parent` is true, the parent module of `module_id` is also considered.
+    #[salsa::invoke(lsp_helpers::visible_traits_in_module)]
+    fn visible_traits_in_module(
+        &self,
+        module_id: ModuleId,
+        user_module_id: ModuleId,
+        include_parent: bool,
+    ) -> Arc<[(TraitId, String)]>;
+    /// Returns all visible traits in a crate, alongside a visible use path to the trait.
+    /// `user_module_id` is the module from which the traits are should be visible.
+    #[salsa::invoke(lsp_helpers::visible_traits_in_crate)]
+    fn visible_traits_in_crate(
+        &self,
+        crate_id: CrateId,
+        user_module_id: ModuleId,
+    ) -> Arc<[(TraitId, String)]>;
 }
 
 impl<T: Upcast<dyn SemanticGroup + 'static>> Elongate for T {
