@@ -47,27 +47,27 @@ pub fn get_execution_info() -> Box<v2::ExecutionInfo> {
 }
 
 pub fn get_caller_address() -> ContractAddress {
-    get_execution_info().unbox().caller_address
+    get_execution_info().caller_address
 }
 
 pub fn get_contract_address() -> ContractAddress {
-    get_execution_info().unbox().contract_address
+    get_execution_info().contract_address
 }
 
 pub fn get_block_info() -> Box<BlockInfo> {
-    get_execution_info().unbox().block_info
+    get_execution_info().block_info
 }
 
 pub fn get_tx_info() -> Box<v2::TxInfo> {
-    get_execution_info().unbox().tx_info
+    get_execution_info().tx_info
 }
 
 pub fn get_block_timestamp() -> u64 {
-    get_block_info().unbox().block_timestamp
+    get_block_info().block_timestamp
 }
 
 pub fn get_block_number() -> u64 {
-    get_block_info().unbox().block_number
+    get_block_info().block_number
 }
 
 /// The extended version of the `get_execution_info` syscall result.
