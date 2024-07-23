@@ -1,7 +1,9 @@
 /// A trait for dereferencing a value. This is used in order to directly access members of the
 /// dereferenced value.
 pub trait Deref<T> {
+    /// The type of the dereferenced value.
     type Target;
+    /// Returns the dereferenced value.
     fn deref(self: T) -> Self::Target;
 }
 
@@ -9,7 +11,9 @@ pub trait Deref<T> {
 /// reference.
 #[unstable(feature: "deref_mut")]
 pub trait DerefMut<T> {
+    /// The type of the dereferenced value.
     type Target;
+    /// Returns the dereferenced value.
     fn deref_mut(ref self: T) -> Self::Target;
 }
 
@@ -17,7 +21,9 @@ pub trait DerefMut<T> {
 /// A helper trait for dereferencing a snapshot of a type. Should not be implemented for copyable
 /// types.
 pub trait SnapshotDeref<T> {
+    /// The type of the dereferenced value.
     type Target;
+    /// Returns the dereferenced value.
     fn snapshot_deref(self: @T) -> Self::Target;
 }
 
