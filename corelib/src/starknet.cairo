@@ -101,4 +101,6 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
 pub const VALIDATED: felt252 = 'VALID';
 
 /// Module for starknet testing only.
+/// Provides functions useful for testing event emission, starknet state information, and the
+/// cheatcode concept in general.
 pub mod testing;
