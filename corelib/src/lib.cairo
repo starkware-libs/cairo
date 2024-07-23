@@ -234,6 +234,8 @@ pub mod nullable;
 use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
 
 /// Array.
+/// contains Basic trait for the `Array` and 'Span' type, which are contintues collections of the
+/// same elements.
 pub mod array;
 use array::{Array, ArrayTrait};
 
