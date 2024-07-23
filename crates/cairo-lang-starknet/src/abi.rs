@@ -886,7 +886,10 @@ pub enum ABIError {
     DuplicateEntryPointName { name: String, source_ptr: Source },
     #[error("Only supported argument for #[starknet::contract] is `account` or nothing.")]
     IllegalContractAttrArgs,
-    #[error("`{selector}` is a reserved entry point names for account contracts only.")]
+    #[error(
+        "`{selector}` is a reserved entry point name for account contracts only (marked with \
+         `#[starknet::contract(account)]`)."
+    )]
     EntryPointSupportedOnlyOnAccountContract { selector: String, source_ptr: Source },
     #[error("`{selector}` entry point must exist for account contracts.")]
     EntryPointMissingForAccountContract { selector: String },
