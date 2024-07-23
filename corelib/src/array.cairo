@@ -9,6 +9,7 @@ use core::metaprogramming::TypeEqual;
 use core::iter::Iterator;
 use core::RangeCheck;
 
+/// A macro to create an array.
 #[derive(Drop)]
 pub extern type Array<T>;
 
@@ -33,6 +34,24 @@ extern fn array_slice<T>(
 ) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
+/// Implementation of the `FixedSizedArrayInfo` trait for arrays.
+///
+/// # Examples
+///
+/// ```
+/// let mut arr = array![];
+/// arr.append(1);
+/// arr.append(2);
+/// assert!(arr.pop_front() == Option::Some(1));
+/// assert!(arr.pop_front() == Option::Some(2));
+/// assert!(arr.pop_front() == Option::None);
+/// arr.append_span(array![3, 4, 5].span());
+/// assert!(arr.get(1) == Option::Some(@4));
+/// assert!(arr.at(1) == @4);
+/// assert!(arr.len() == 3);
+/// assert!(!arr.is_empty());
+/// assert!(arr.pop_front_consume() == Option::Some((array![4, 5], 3)));
+/// ```
 #[generate_trait]
 pub impl ArrayImpl<T> of ArrayTrait<T> {
     #[inline(always)]
@@ -139,7 +158,15 @@ fn deserialize_array_helper<T, +Serde<T>, +Drop<T>>(
     deserialize_array_helper(ref serialized, curr_output, remaining - 1)
 }
 
-// Span.
+/// A span is a view into a collection, which allows for safe and efficient access to the elements.
+///
+/// # Examples
+/// ```
+/// let mut arr = array![1, 2, 3];
+/// let span = arr.span();
+/// assert!(span.len() == 3);
+/// assert!(span.get(1) == Option::Some(@2));
+/// ```
 pub struct Span<T> {
     pub(crate) snapshot: @Array<T>
 }
@@ -194,6 +221,22 @@ impl SpanSerde<T, +Serde<T>, +Drop<T>, -TypeEqual<felt252, T>> of Serde<Span<T>>
     }
 }
 
+/// Implementation of the `SpanTrait` trait for spans.
+///
+/// # Examples
+/// ```
+/// let mut arr = array![1, 2, 3, 4, 5, 6, 7];
+/// let span = arr.span();
+/// assert!(span.len() == 3);
+/// assert!(span.get(1) == Option::Some(@2));
+/// assert!(span.at(1) == @2);
+/// assert!(span.slice(1, 2) == array![2, 3].span());
+/// assert!(!span.is_empty());
+/// assert!(span.pop_front() == Option::Some(@1));
+/// assert!(span.multi_pop_front::<2>() == Option::Some(@[2, 3]));
+/// assert!(span.pop_back() == Option::Some(@7));
+/// assert!(span.multi_pop_front::<2>() == Option::Some(@[5, 6]));
+/// ```
 #[generate_trait]
 pub impl SpanImpl<T> of SpanTrait<T> {
     #[inline(always)]
@@ -252,6 +295,16 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     }
 }
 
+/// Implementation of the `SpanIndex` trait for spans.
+///
+/// # Examples
+/// ```
+/// let mut arr = array![1, 2, 3];
+/// let span = arr.span();
+/// assert!(span[0] == @1);
+/// assert!(span[1] == @2);
+/// assert!(span[2] == @3);
+/// ```
 pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     #[inline(always)]
     fn index(self: @Span<T>, index: usize) -> @T {
@@ -259,6 +312,13 @@ pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     }
 }
 
+/// A Trait that, given a data structure, returns a span of the data.
+///
+/// # Examples
+/// ```
+/// let mut arr = array![1, 2, 3];
+/// assert!(arr.span().len() == 3);
+/// ```
 pub trait ToSpanTrait<C, T> {
     /// Returns a span pointing to the data in the input.
     #[must_use]
@@ -371,6 +431,17 @@ impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
 }
 
 /// An iterator struct over a span collection.
+///
+/// # Examples
+/// ```
+/// let mut arr = array![1, 2, 3];
+/// let span = arr.span();
+/// let mut iter = span.into_iter();
+/// assert!(iter.next() == Option::Some(@1));
+/// assert!(iter.next() == Option::Some(@2));
+/// assert!(iter.next() == Option::Some(@3));
+/// assert!(iter.next() == Option::None);
+/// ```
 pub struct SpanIter<T> {
     span: Span<T>,
 }
@@ -393,6 +464,16 @@ impl SpanIntoIterator<T> of core::iter::IntoIterator<Span<T>> {
 }
 
 /// An iterator struct over an array collection.
+///
+/// # Examples
+/// ```
+/// let mut arr = array![1, 2, 3];
+/// let mut iter = arr.into_iter();
+/// assert!(iter.next() == Option::Some(1));
+/// assert!(iter.next() == Option::Some(2));
+/// assert!(iter.next() == Option::Some(3));
+/// assert!(iter.next() == Option::None);
+/// ```
 #[derive(Drop)]
 pub struct ArrayIter<T> {
     array: Array<T>,
