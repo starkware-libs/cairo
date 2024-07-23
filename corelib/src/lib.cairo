@@ -234,6 +234,10 @@ pub mod nullable;
 use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
 
 /// Array.
+/// Implementation of the ArrayTrait trait for Array.
+/// Implementation of the Span trait for Array.
+/// Implementation of the SpanIndexView trait for Span.
+/// Implementation of the SpanIter and ArrayIter traits.
 pub mod array;
 use array::{Array, ArrayTrait};
 
