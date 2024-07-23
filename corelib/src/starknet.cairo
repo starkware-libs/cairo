@@ -69,7 +69,45 @@ pub use event::Event;
 pub mod account;
 pub use account::AccountContract;
 
-/// Storage members interfaces.
+/// This module contains the storage-related types and traits for Cairo contracts. It provides
+/// abstractions for reading and writing to Starknet storage.
+///
+/// The life cycle of a storage object is as follows:
+/// 1. The storage struct of a contract is represented by a `FlattenedStorage` struct, which
+///    contains a member for each storage member of the contract. This member can be either a
+///    `StorageBase` or a `FlattenedStorage` instance. Members are represented as a
+///    `FlattenedStorage` if the storage member is attributed with either `#[substorage(v0)]` (for
+///    backward compatibility) or `#[flat]`. `FlattenedStorage` is used to structure the storage
+///    access; however, it does not affect the address of the storage object.
+/// 2. `StorageBase` members of a `FlattenedStorage` struct hold a single `felt252` value, which is
+///    the Keccak hash of the name of the member. For simple types, this value will be the address
+///    of the member in the storage.
+/// 3. `StorageBase` members are then converted to `StoragePath` instances, which are   essentially
+///    a wrapper around a `HashState` instance, used to account for more values when computing the
+///    address of the storage object. `StoragePath` instances can be updated with values coming from
+///    two sources:
+///     - Storage nodes, which are structs that represent another struct with all its members
+///       in the storage, similar to `FlattenedStorage`. However, unlike `FlattenedStorage`, the
+///       members of a storage node do affect the address of the storage object. See `StorageNode`
+///       for more details.
+///     - Storage collections, specifically `Map` and `Vec`, simulate the behavior of collections by
+///       updating the hash state with the key or index of the collection member.
+/// 4. After finishing the updates, the `StoragePath` instance is finalized, resulting in a
+///    `StoragePointer0Offset` instance, which is a pointer to the address of the storage object. If
+///    the pointer is to an object of size greater than 1, the object is stored in a sequential
+///    manner starting from the address of the pointer. The whole object can be read or written
+///    using `read` and `write` methods, and specific members can also be accessed in the case of a
+///    struct. See `SubPointers` for more details.
+///
+/// Each of the types mentioned above has a phantom generic type, which is the type of the stored
+/// object, carried through the whole life cycle of the storage object. This is done to
+/// provide specific behavior for each type of stored object, e.g., a `StoragePath` of `Map` type
+/// will have an `entry` method, but it won't have a `read` or `write` method, as `Map` is not
+/// storable by itself, only its values are.
+/// The generic type of the storage object can also be wrapped with a `Mutable` type, which
+/// indicates that the storage object is mutable, i.e., it was created from a `ref` contract state,
+/// and thus the object can be written to.
+// TODO(Gil): Move it inside the module when inner doc comments are supported.
 pub mod storage;
 
 pub extern type System;
