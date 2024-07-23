@@ -10,6 +10,7 @@ use starknet::{
     SyscallResult, SyscallResultTrait
 };
 
+/// A point on the Secp256k1 curve.
 #[derive(Copy, Drop)]
 pub extern type Secp256k1Point;
 
