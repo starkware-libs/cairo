@@ -1,0 +1,158 @@
+//! > unused capture
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(mut a: Array<u32>) {
+    |b: u32| {
+        let _ = a.append(b);
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable not dropped.
+ --> lib.cairo:2:5
+    |b: u32| {
+    ^********^
+note: Trait has no implementation in context: core::traits::Drop::<{closure@lib.cairo:2:5: 2:13}>.
+note: Trait has no implementation in context: core::traits::Destruct::<{closure@lib.cairo:2:5: 2:13}>.
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:2:5: 2:13}) <- struct_construct(v0{`a`})
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > invalidated capture
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(mut a: Array<u32>) {
+    |b: u32| {
+        let _ = a.append(b);
+    };
+    a.append(0);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:2:5: 2:13}) <- struct_construct(v0{`a`})
+  (v2: core::integer::u32) <- 0
+  (v3: core::array::Array::<core::integer::u32>) <- struct_destructure(v1{`a`})
+  (v5: core::array::Array::<core::integer::u32>, v4: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v3{`a`}, v2{`0`})
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > capture use after invalidatian.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(mut a: Array<u32>) {
+    let f = |b: u32| {
+        let _ = a.append(b);
+    };
+    a.append(0);
+    use_f(f)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_f<T>(f: T) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved.
+ --> lib.cairo:7:11
+    use_f(f)
+          ^
+note: variable was previously used here:
+  --> lib.cairo:6:5
+    a.append(0);
+    ^
+note: Trait has no implementation in context: core::traits::Copy::<{closure@lib.cairo:3:13: 3:21}>.
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:3:13: 3:21}) <- struct_construct(v0{`a`})
+  (v2: core::integer::u32) <- 0
+  (v3: core::array::Array::<core::integer::u32>) <- struct_destructure(v1{`a`})
+  (v5: core::array::Array::<core::integer::u32>, v4: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v3{`a`}, v2{`0`})
+  () <- test::use_f::<{closure@lib.cairo:3:13: 3:21}>(v1{`f`})
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Snapshot capture
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(mut a: Array<u32>) {
+    let f = |_b: u32| {
+        let _ = a.len();
+    };
+    a.append(0);
+    use_f(f)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_f<T>(f: T) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::integer::u32>, v2: @core::array::Array::<core::integer::u32>) <- snapshot(v0{`a`})
+  (v3: {closure@lib.cairo:3:13: 3:22}) <- struct_construct(v2{`|_b: u32| { let _ = a.len(); }`})
+  (v4: core::integer::u32) <- 0
+  (v6: core::array::Array::<core::integer::u32>, v5: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v1{`a`}, v4{`0`})
+  () <- test::use_f::<{closure@lib.cairo:3:13: 3:22}>(v3{`f`})
+  (v7: ()) <- struct_construct()
+End:
+  Return(v7)

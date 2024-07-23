@@ -4,15 +4,26 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use itertools::zip_eq;
 
 use super::usage::MemberPath;
 use crate::db::LoweringGroup;
 use crate::VariableId;
 
+#[derive(Clone, Debug)]
+pub struct ClosureInfo {
+    pub members: Vec<MemberPath>,
+    pub types: Vec<semantic::TypeId>,
+    pub var_id: VariableId,
+}
+
 /// Maps member paths ([MemberPath]) to lowered variable ids.
 #[derive(Clone, Default, Debug)]
 pub struct SemanticLoweringMapping {
     scattered: OrderedHashMap<MemberPath, Value>,
+    pub captured_vars: UnorderedHashMap<MemberPath, usize>,
+    pub closures: Vec<Option<ClosureInfo>>,
 }
 impl SemanticLoweringMapping {
     /// Returns the topmost mapped member path containing the given member path, or None no such
@@ -52,11 +63,28 @@ impl SemanticLoweringMapping {
         )
     }
 
+    pub fn invalidate_closure<TContext: StructRecomposer>(
+        &mut self,
+        ctx: &mut TContext,
+        closure_idx: usize,
+    ) {
+        let opt_closure = std::mem::take(&mut self.closures[closure_idx]);
+        if let Some(ClosureInfo { members, types, var_id }) = opt_closure {
+            let new_vars = ctx.deconstruct_by_types(var_id, types.into_iter());
+            for (path, new_var) in zip_eq(members, new_vars) {
+                self.captured_vars.remove(&path);
+                self.update(ctx, &path, new_var).unwrap();
+            }
+        }
+    }
     pub fn get<TContext: StructRecomposer>(
         &mut self,
         mut ctx: TContext,
         path: &MemberPath,
     ) -> Option<VariableId> {
+        if let Some(closure_idx) = self.captured_vars.get(path) {
+            self.invalidate_closure(&mut ctx, *closure_idx);
+        }
         let value = self.break_into_value(&mut ctx, path)?;
         Self::assemble_value(&mut ctx, value)
     }
@@ -67,11 +95,11 @@ impl SemanticLoweringMapping {
 
     pub fn update<TContext: StructRecomposer>(
         &mut self,
-        mut ctx: TContext,
+        ctx: &mut TContext,
         path: &MemberPath,
         var: VariableId,
     ) -> Option<()> {
-        let value = self.break_into_value(&mut ctx, path)?;
+        let value = self.break_into_value(ctx, path)?;
         *value = Value::Var(var);
         Some(())
     }
@@ -132,6 +160,13 @@ pub trait StructRecomposer {
         concrete_struct_id: semantic::ConcreteStructId,
         value: VariableId,
     ) -> OrderedHashMap<MemberId, VariableId>;
+
+    fn deconstruct_by_types(
+        &mut self,
+        value: VariableId,
+        types: impl Iterator<Item = semantic::TypeId>,
+    ) -> Vec<VariableId>;
+
     fn reconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId,

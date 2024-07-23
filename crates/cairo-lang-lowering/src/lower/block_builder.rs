@@ -14,10 +14,11 @@ use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringRe
 use super::generators;
 use super::generators::StatementsBuilder;
 use super::refs::{SemanticLoweringMapping, StructRecomposer};
-use super::usage::MemberPath;
+use super::usage::{MemberPath, Usage};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
+use crate::lower::refs::ClosureInfo;
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
 };
@@ -95,7 +96,7 @@ impl BlockBuilder {
         location: LocationId,
     ) {
         self.semantics.update(
-            BlockStructRecomposer { statements: &mut self.statements, ctx, location },
+            &mut BlockStructRecomposer { statements: &mut self.statements, ctx, location },
             &member_path,
             var,
         );
@@ -253,6 +254,50 @@ impl BlockBuilder {
         let prev_scope = std::mem::replace(self, new_scope);
         prev_scope.finalize(ctx, FlatBlockEnd::Match { info: match_info });
         Ok(merged_expr)
+    }
+
+    pub fn capture(
+        &mut self,
+        ctx: &mut LoweringContext<'_, '_>,
+        usage: Usage,
+        expr: &semantic::ExprClosure,
+    ) -> VarUsage {
+        let location = ctx.get_location(expr.stable_ptr.untyped());
+
+        let inputs = chain!(
+            usage.usage.values().map(|expr| { LoweredExpr::Member(expr.clone(), location) }),
+            usage.snap_usage.values().map(|expr| {
+                LoweredExpr::Snapshot {
+                    expr: Box::new(LoweredExpr::Member(expr.clone(), location)),
+                    location,
+                }
+            })
+        )
+        .map(|expr| expr.as_var_usage(ctx, self).unwrap())
+        .collect_vec();
+
+        let var_usage = generators::StructConstruct { inputs, ty: expr.ty, location }
+            .add(ctx, &mut self.statements);
+
+        let members: Vec<MemberPath> = chain!(usage.usage.values(), usage.snap_usage.values())
+            .map(|expr| expr.into())
+            .collect_vec();
+
+        let types = chain!(usage.usage.iter(), usage.snap_usage.iter())
+            .map(|(_, expr)| expr.ty())
+            .collect_vec();
+
+        let closure_idx = self.semantics.closures.len();
+        for member in usage.usage.keys() {
+            self.semantics.captured_vars.insert(member.clone(), closure_idx);
+        }
+
+        self.semantics.closures.push(Some(ClosureInfo {
+            members,
+            types,
+            var_id: var_usage.var_id,
+        }));
+        var_usage
     }
 
     /// Merges sibling sealed blocks.
@@ -418,17 +463,26 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
         let members = members.values().collect_vec();
         let member_ids = members.iter().map(|m| m.id);
 
+        let member_values =
+            self.deconstruct_by_types(value, members.iter().map(|member| member.ty));
+        OrderedHashMap::from_iter(zip_eq(member_ids, member_values))
+    }
+
+    fn deconstruct_by_types(
+        &mut self,
+        value: VariableId,
+        types: impl Iterator<Item = semantic::TypeId>,
+    ) -> Vec<VariableId> {
         // We use the location of the variable being deconstructed for the members
         // to get a better location for variable not dropped errors.
         let location = self.ctx.variables[value].location;
-        let var_reqs =
-            members.iter().map(|member| VarRequest { ty: member.ty, location }).collect();
-        let member_values = generators::StructDestructure {
+        let var_reqs = types.map(|ty| VarRequest { ty, location }).collect_vec();
+
+        generators::StructDestructure {
             input: VarUsage { var_id: value, location: self.location },
             var_reqs,
         }
-        .add(self.ctx, self.statements);
-        OrderedHashMap::from_iter(zip_eq(member_ids, member_values))
+        .add(self.ctx, self.statements)
     }
 
     fn reconstruct(
