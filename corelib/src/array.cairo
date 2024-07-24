@@ -285,12 +285,18 @@ extern fn span_from_tuple<T, impl Info: FixedSizedArrayInfo<T>>(
     struct_like: Box<@T>
 ) -> @Array<Info::Element> nopanic;
 
+impl FixedSizeArrayBoxToSpan<T, const SIZE: usize> of ToSpanTrait<Box<@[T; SIZE]>, T> {
+    fn span(self: @Box<@[T; SIZE]>) -> Span<T> {
+        Span { snapshot: span_from_tuple(*self) }
+    }
+}
+
 impl FixedSizeArrayToSpan<
     T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
 > of ToSpanTrait<[T; SIZE], T> {
     #[inline(always)]
     fn span(self: @[T; SIZE]) -> Span<T> {
-        Span { snapshot: span_from_tuple(BoxTrait::new(self)) }
+        BoxTrait::new(self).span()
     }
 }
 
