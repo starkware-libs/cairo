@@ -1,0 +1,2045 @@
+//! > MacroExpand
+
+//! > test_runner_name
+test_macro_expand
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2023_11"
+
+//! > cairo_code
+use Balance::contr<caret>act_state_for_testing;
+
+/// The balance contract interface.
+#[star<caret>knet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increa<caret>ses the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet:<caret>:contract]
+mod Balance {
+    use c<caret>ore::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref se<caret>lf: Cont<caret>ractState, value_: u128) {
+        self.va<caret>lue.write(<caret>value_);
+    }
+
+    #[abi(em<caret>bed_v0)]
+    impl Balance of super::IBa<caret>lance<Con<caret>tractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.r<caret>ead()
+        }
+        fn increase(ref self: ContractState, a: u128)  {
+            self.value.wr<caret>ite( self.value.read() + <caret>a );
+        }
+    }
+}
+
+//! > macro expand #0
+// = source context
+use Balance::contr<caret>act_state_for_testing;
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
+
+//! > macro expand #1
+// = source context
+#[star<caret>knet::interface]
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+
+// ------------
+
+trait IBalanceDispatcherTrait<T> {
+    /// Returns the current balance.
+    fn get(self: T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(self: T, a: u128);
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IBalanceDispatcher {
+    pub contract_address: starknet::ContractAddress,
+}
+
+impl IBalanceDispatcherImpl of IBalanceDispatcherTrait<IBalanceDispatcher> {
+    /// Returns the current balance.
+    fn get(self: IBalanceDispatcher) -> u128 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            0x17c00f03de8b5bd58d2016b59d251c13056b989171c5852949903bc043bc27,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(
+            __dispatcher_return_data__
+        );
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    /// Increases the balance by the given amount.
+    fn increase(self: IBalanceDispatcher, a: u128) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u128>::serialize(@a, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            0x9be09a9a955d79baeb70c3b225ab5090fb9bc543cf23547b9f095c38a27574,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(
+            __dispatcher_return_data__
+        );
+        ()
+    }
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IBalanceLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
+}
+
+impl IBalanceLibraryDispatcherImpl of IBalanceDispatcherTrait<IBalanceLibraryDispatcher> {
+    /// Returns the current balance.
+    fn get(self: IBalanceLibraryDispatcher) -> u128 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            0x17c00f03de8b5bd58d2016b59d251c13056b989171c5852949903bc043bc27,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(
+            __dispatcher_return_data__
+        );
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    /// Increases the balance by the given amount.
+    fn increase(self: IBalanceLibraryDispatcher, a: u128) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u128>::serialize(@a, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            0x9be09a9a955d79baeb70c3b225ab5090fb9bc543cf23547b9f095c38a27574,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(
+            __dispatcher_return_data__
+        );
+        ()
+    }
+}
+
+trait IBalanceSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
+    /// Returns the current balance.
+    fn get(self: T) -> starknet::SyscallResult<u128>;
+    #[unstable(feature: "safe_dispatcher")]
+    /// Increases the balance by the given amount.
+    fn increase(self: T, a: u128) -> starknet::SyscallResult<()>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IBalanceSafeLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
+}
+
+impl IBalanceSafeLibraryDispatcherImpl of IBalanceSafeDispatcherTrait<
+    IBalanceSafeLibraryDispatcher
+> {
+    /// Returns the current balance.
+    fn get(self: IBalanceSafeLibraryDispatcher) -> starknet::SyscallResult<u128> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            0x17c00f03de8b5bd58d2016b59d251c13056b989171c5852949903bc043bc27,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    /// Increases the balance by the given amount.
+    fn increase(self: IBalanceSafeLibraryDispatcher, a: u128) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u128>::serialize(@a, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            0x9be09a9a955d79baeb70c3b225ab5090fb9bc543cf23547b9f095c38a27574,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IBalanceSafeDispatcher {
+    pub contract_address: starknet::ContractAddress,
+}
+
+impl IBalanceSafeDispatcherImpl of IBalanceSafeDispatcherTrait<IBalanceSafeDispatcher> {
+    /// Returns the current balance.
+    fn get(self: IBalanceSafeDispatcher) -> starknet::SyscallResult<u128> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            0x17c00f03de8b5bd58d2016b59d251c13056b989171c5852949903bc043bc27,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    /// Increases the balance by the given amount.
+    fn increase(self: IBalanceSafeDispatcher, a: u128) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u128>::serialize(@a, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            0x9be09a9a955d79baeb70c3b225ab5090fb9bc543cf23547b9f095c38a27574,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+}
+
+
+// ------------
+
+impl IBalanceDispatcherCopy of core::traits::Copy<IBalanceDispatcher>;
+impl IBalanceDispatcherDrop of core::traits::Drop<IBalanceDispatcher>;
+impl IBalanceDispatcherSerde of core::serde::Serde<IBalanceDispatcher> {
+    fn serialize(self: @IBalanceDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(
+        ref serialized: core::array::Span<felt252>
+    ) -> core::option::Option<IBalanceDispatcher> {
+        core::option::Option::Some(
+            IBalanceDispatcher {
+                contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            }
+        )
+    }
+}
+
+
+// ------------
+
+impl StoreIBalanceDispatcher of starknet::Store<IBalanceDispatcher> {
+    fn read(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+    ) -> starknet::SyscallResult<IBalanceDispatcher> {
+        let contract_address = starknet::Store::<
+            starknet::ContractAddress
+        >::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(IBalanceDispatcher { contract_address, })
+    }
+    fn write(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        value: IBalanceDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<
+            starknet::ContractAddress
+        >::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+    ) -> starknet::SyscallResult<IBalanceDispatcher> {
+        let contract_address = starknet::Store::<
+            starknet::ContractAddress
+        >::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(IBalanceDispatcher { contract_address, })
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        offset: u8,
+        value: IBalanceDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<
+            starknet::ContractAddress
+        >::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct IBalanceDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl IBalanceDispatcherSubPointersImpl of starknet::storage::SubPointers<IBalanceDispatcher> {
+    type SubPointersType = IBalanceDispatcherSubPointers;
+    fn sub_pointers(
+        self: starknet::storage::StoragePointer<IBalanceDispatcher>
+    ) -> IBalanceDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        IBalanceDispatcherSubPointers { contract_address: contract_address_value, }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableIBalanceDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<
+        starknet::storage::Mutable<starknet::ContractAddress>
+    >,
+}
+impl MutableIBalanceDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<
+    IBalanceDispatcher
+> {
+    type SubPointersType = MutableIBalanceDispatcherSubPointers;
+    fn mutable_sub_pointers(
+        self: starknet::storage::StoragePointer<starknet::storage::Mutable<IBalanceDispatcher>>
+    ) -> MutableIBalanceDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        MutableIBalanceDispatcherSubPointers { contract_address: contract_address_value, }
+    }
+}
+
+
+// ------------
+
+impl IBalanceLibraryDispatcherCopy of core::traits::Copy<IBalanceLibraryDispatcher>;
+impl IBalanceLibraryDispatcherDrop of core::traits::Drop<IBalanceLibraryDispatcher>;
+impl IBalanceLibraryDispatcherSerde of core::serde::Serde<IBalanceLibraryDispatcher> {
+    fn serialize(self: @IBalanceLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(
+        ref serialized: core::array::Span<felt252>
+    ) -> core::option::Option<IBalanceLibraryDispatcher> {
+        core::option::Option::Some(
+            IBalanceLibraryDispatcher {
+                class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            }
+        )
+    }
+}
+
+
+// ------------
+
+impl StoreIBalanceLibraryDispatcher of starknet::Store<IBalanceLibraryDispatcher> {
+    fn read(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+    ) -> starknet::SyscallResult<IBalanceLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(IBalanceLibraryDispatcher { class_hash, })
+    }
+    fn write(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        value: IBalanceLibraryDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+    ) -> starknet::SyscallResult<IBalanceLibraryDispatcher> {
+        let class_hash = starknet::Store::<
+            starknet::ClassHash
+        >::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(IBalanceLibraryDispatcher { class_hash, })
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        offset: u8,
+        value: IBalanceLibraryDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<
+            starknet::ClassHash
+        >::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct IBalanceLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl IBalanceLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<
+    IBalanceLibraryDispatcher
+> {
+    type SubPointersType = IBalanceLibraryDispatcherSubPointers;
+    fn sub_pointers(
+        self: starknet::storage::StoragePointer<IBalanceLibraryDispatcher>
+    ) -> IBalanceLibraryDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        IBalanceLibraryDispatcherSubPointers { class_hash: class_hash_value, }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableIBalanceLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable<starknet::ClassHash>>,
+}
+impl MutableIBalanceLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<
+    IBalanceLibraryDispatcher
+> {
+    type SubPointersType = MutableIBalanceLibraryDispatcherSubPointers;
+    fn mutable_sub_pointers(
+        self: starknet::storage::StoragePointer<
+            starknet::storage::Mutable<IBalanceLibraryDispatcher>
+        >
+    ) -> MutableIBalanceLibraryDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        MutableIBalanceLibraryDispatcherSubPointers { class_hash: class_hash_value, }
+    }
+}
+
+
+// ------------
+
+impl IBalanceSafeLibraryDispatcherCopy of core::traits::Copy<IBalanceSafeLibraryDispatcher>;
+impl IBalanceSafeLibraryDispatcherDrop of core::traits::Drop<IBalanceSafeLibraryDispatcher>;
+impl IBalanceSafeLibraryDispatcherSerde of core::serde::Serde<IBalanceSafeLibraryDispatcher> {
+    fn serialize(self: @IBalanceSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(
+        ref serialized: core::array::Span<felt252>
+    ) -> core::option::Option<IBalanceSafeLibraryDispatcher> {
+        core::option::Option::Some(
+            IBalanceSafeLibraryDispatcher {
+                class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            }
+        )
+    }
+}
+
+
+// ------------
+
+impl StoreIBalanceSafeLibraryDispatcher of starknet::Store<IBalanceSafeLibraryDispatcher> {
+    fn read(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+    ) -> starknet::SyscallResult<IBalanceSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(IBalanceSafeLibraryDispatcher { class_hash, })
+    }
+    fn write(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        value: IBalanceSafeLibraryDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+    ) -> starknet::SyscallResult<IBalanceSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<
+            starknet::ClassHash
+        >::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(IBalanceSafeLibraryDispatcher { class_hash, })
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        offset: u8,
+        value: IBalanceSafeLibraryDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<
+            starknet::ClassHash
+        >::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct IBalanceSafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl IBalanceSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<
+    IBalanceSafeLibraryDispatcher
+> {
+    type SubPointersType = IBalanceSafeLibraryDispatcherSubPointers;
+    fn sub_pointers(
+        self: starknet::storage::StoragePointer<IBalanceSafeLibraryDispatcher>
+    ) -> IBalanceSafeLibraryDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        IBalanceSafeLibraryDispatcherSubPointers { class_hash: class_hash_value, }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableIBalanceSafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable<starknet::ClassHash>>,
+}
+impl MutableIBalanceSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<
+    IBalanceSafeLibraryDispatcher
+> {
+    type SubPointersType = MutableIBalanceSafeLibraryDispatcherSubPointers;
+    fn mutable_sub_pointers(
+        self: starknet::storage::StoragePointer<
+            starknet::storage::Mutable<IBalanceSafeLibraryDispatcher>
+        >
+    ) -> MutableIBalanceSafeLibraryDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        MutableIBalanceSafeLibraryDispatcherSubPointers { class_hash: class_hash_value, }
+    }
+}
+
+
+// ------------
+
+impl IBalanceSafeDispatcherCopy of core::traits::Copy<IBalanceSafeDispatcher>;
+impl IBalanceSafeDispatcherDrop of core::traits::Drop<IBalanceSafeDispatcher>;
+impl IBalanceSafeDispatcherSerde of core::serde::Serde<IBalanceSafeDispatcher> {
+    fn serialize(self: @IBalanceSafeDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(
+        ref serialized: core::array::Span<felt252>
+    ) -> core::option::Option<IBalanceSafeDispatcher> {
+        core::option::Option::Some(
+            IBalanceSafeDispatcher {
+                contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            }
+        )
+    }
+}
+
+
+// ------------
+
+impl StoreIBalanceSafeDispatcher of starknet::Store<IBalanceSafeDispatcher> {
+    fn read(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+    ) -> starknet::SyscallResult<IBalanceSafeDispatcher> {
+        let contract_address = starknet::Store::<
+            starknet::ContractAddress
+        >::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(IBalanceSafeDispatcher { contract_address, })
+    }
+    fn write(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        value: IBalanceSafeDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<
+            starknet::ContractAddress
+        >::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+    ) -> starknet::SyscallResult<IBalanceSafeDispatcher> {
+        let contract_address = starknet::Store::<
+            starknet::ContractAddress
+        >::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(IBalanceSafeDispatcher { contract_address, })
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        offset: u8,
+        value: IBalanceSafeDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<
+            starknet::ContractAddress
+        >::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct IBalanceSafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl IBalanceSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<
+    IBalanceSafeDispatcher
+> {
+    type SubPointersType = IBalanceSafeDispatcherSubPointers;
+    fn sub_pointers(
+        self: starknet::storage::StoragePointer<IBalanceSafeDispatcher>
+    ) -> IBalanceSafeDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        IBalanceSafeDispatcherSubPointers { contract_address: contract_address_value, }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableIBalanceSafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<
+        starknet::storage::Mutable<starknet::ContractAddress>
+    >,
+}
+impl MutableIBalanceSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<
+    IBalanceSafeDispatcher
+> {
+    type SubPointersType = MutableIBalanceSafeDispatcherSubPointers;
+    fn mutable_sub_pointers(
+        self: starknet::storage::StoragePointer<starknet::storage::Mutable<IBalanceSafeDispatcher>>
+    ) -> MutableIBalanceSafeDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        MutableIBalanceSafeDispatcherSubPointers { contract_address: contract_address_value, }
+    }
+}
+
+
+// ------------
+
+impl IBalanceDispatcherSubPointersDrop of core::traits::Drop<IBalanceDispatcherSubPointers>;
+impl IBalanceDispatcherSubPointersCopy of core::traits::Copy<IBalanceDispatcherSubPointers>;
+
+
+// ------------
+
+impl MutableIBalanceDispatcherSubPointersDrop of core::traits::Drop<
+    MutableIBalanceDispatcherSubPointers
+>;
+impl MutableIBalanceDispatcherSubPointersCopy of core::traits::Copy<
+    MutableIBalanceDispatcherSubPointers
+>;
+
+
+// ------------
+
+impl IBalanceLibraryDispatcherSubPointersDrop of core::traits::Drop<
+    IBalanceLibraryDispatcherSubPointers
+>;
+impl IBalanceLibraryDispatcherSubPointersCopy of core::traits::Copy<
+    IBalanceLibraryDispatcherSubPointers
+>;
+
+
+// ------------
+
+impl MutableIBalanceLibraryDispatcherSubPointersDrop of core::traits::Drop<
+    MutableIBalanceLibraryDispatcherSubPointers
+>;
+impl MutableIBalanceLibraryDispatcherSubPointersCopy of core::traits::Copy<
+    MutableIBalanceLibraryDispatcherSubPointers
+>;
+
+
+// ------------
+
+impl IBalanceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop<
+    IBalanceSafeLibraryDispatcherSubPointers
+>;
+impl IBalanceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy<
+    IBalanceSafeLibraryDispatcherSubPointers
+>;
+
+
+// ------------
+
+impl MutableIBalanceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop<
+    MutableIBalanceSafeLibraryDispatcherSubPointers
+>;
+impl MutableIBalanceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy<
+    MutableIBalanceSafeLibraryDispatcherSubPointers
+>;
+
+
+// ------------
+
+impl IBalanceSafeDispatcherSubPointersDrop of core::traits::Drop<IBalanceSafeDispatcherSubPointers>;
+impl IBalanceSafeDispatcherSubPointersCopy of core::traits::Copy<IBalanceSafeDispatcherSubPointers>;
+
+
+// ------------
+
+impl MutableIBalanceSafeDispatcherSubPointersDrop of core::traits::Drop<
+    MutableIBalanceSafeDispatcherSubPointers
+>;
+impl MutableIBalanceSafeDispatcherSubPointersCopy of core::traits::Copy<
+    MutableIBalanceSafeDispatcherSubPointers
+>;
+// ------------
+
+//! > macro expand #2
+// = source context
+    /// Increa<caret>ses the balance by the given amount.
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+
+// ------------
+
+trait IBalanceDispatcherTrait<T> {
+    /// Returns the current balance.
+    fn get(self: T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(self: T, a: u128);
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IBalanceDispatcher {
+    pub contract_address: starknet::ContractAddress,
+}
+
+impl IBalanceDispatcherImpl of IBalanceDispatcherTrait<IBalanceDispatcher> {
+    /// Returns the current balance.
+    fn get(self: IBalanceDispatcher) -> u128 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            0x17c00f03de8b5bd58d2016b59d251c13056b989171c5852949903bc043bc27,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(
+            __dispatcher_return_data__
+        );
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    /// Increases the balance by the given amount.
+    fn increase(self: IBalanceDispatcher, a: u128) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u128>::serialize(@a, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            0x9be09a9a955d79baeb70c3b225ab5090fb9bc543cf23547b9f095c38a27574,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(
+            __dispatcher_return_data__
+        );
+        ()
+    }
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IBalanceLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
+}
+
+impl IBalanceLibraryDispatcherImpl of IBalanceDispatcherTrait<IBalanceLibraryDispatcher> {
+    /// Returns the current balance.
+    fn get(self: IBalanceLibraryDispatcher) -> u128 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            0x17c00f03de8b5bd58d2016b59d251c13056b989171c5852949903bc043bc27,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(
+            __dispatcher_return_data__
+        );
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    /// Increases the balance by the given amount.
+    fn increase(self: IBalanceLibraryDispatcher, a: u128) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u128>::serialize(@a, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            0x9be09a9a955d79baeb70c3b225ab5090fb9bc543cf23547b9f095c38a27574,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(
+            __dispatcher_return_data__
+        );
+        ()
+    }
+}
+
+trait IBalanceSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
+    /// Returns the current balance.
+    fn get(self: T) -> starknet::SyscallResult<u128>;
+    #[unstable(feature: "safe_dispatcher")]
+    /// Increases the balance by the given amount.
+    fn increase(self: T, a: u128) -> starknet::SyscallResult<()>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IBalanceSafeLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
+}
+
+impl IBalanceSafeLibraryDispatcherImpl of IBalanceSafeDispatcherTrait<
+    IBalanceSafeLibraryDispatcher
+> {
+    /// Returns the current balance.
+    fn get(self: IBalanceSafeLibraryDispatcher) -> starknet::SyscallResult<u128> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            0x17c00f03de8b5bd58d2016b59d251c13056b989171c5852949903bc043bc27,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    /// Increases the balance by the given amount.
+    fn increase(self: IBalanceSafeLibraryDispatcher, a: u128) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u128>::serialize(@a, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            0x9be09a9a955d79baeb70c3b225ab5090fb9bc543cf23547b9f095c38a27574,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IBalanceSafeDispatcher {
+    pub contract_address: starknet::ContractAddress,
+}
+
+impl IBalanceSafeDispatcherImpl of IBalanceSafeDispatcherTrait<IBalanceSafeDispatcher> {
+    /// Returns the current balance.
+    fn get(self: IBalanceSafeDispatcher) -> starknet::SyscallResult<u128> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            0x17c00f03de8b5bd58d2016b59d251c13056b989171c5852949903bc043bc27,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    /// Increases the balance by the given amount.
+    fn increase(self: IBalanceSafeDispatcher, a: u128) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u128>::serialize(@a, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            0x9be09a9a955d79baeb70c3b225ab5090fb9bc543cf23547b9f095c38a27574,
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+}
+
+
+// ------------
+
+impl IBalanceDispatcherCopy of core::traits::Copy<IBalanceDispatcher>;
+impl IBalanceDispatcherDrop of core::traits::Drop<IBalanceDispatcher>;
+impl IBalanceDispatcherSerde of core::serde::Serde<IBalanceDispatcher> {
+    fn serialize(self: @IBalanceDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(
+        ref serialized: core::array::Span<felt252>
+    ) -> core::option::Option<IBalanceDispatcher> {
+        core::option::Option::Some(
+            IBalanceDispatcher {
+                contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            }
+        )
+    }
+}
+
+
+// ------------
+
+impl StoreIBalanceDispatcher of starknet::Store<IBalanceDispatcher> {
+    fn read(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+    ) -> starknet::SyscallResult<IBalanceDispatcher> {
+        let contract_address = starknet::Store::<
+            starknet::ContractAddress
+        >::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(IBalanceDispatcher { contract_address, })
+    }
+    fn write(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        value: IBalanceDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<
+            starknet::ContractAddress
+        >::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+    ) -> starknet::SyscallResult<IBalanceDispatcher> {
+        let contract_address = starknet::Store::<
+            starknet::ContractAddress
+        >::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(IBalanceDispatcher { contract_address, })
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        offset: u8,
+        value: IBalanceDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<
+            starknet::ContractAddress
+        >::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct IBalanceDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl IBalanceDispatcherSubPointersImpl of starknet::storage::SubPointers<IBalanceDispatcher> {
+    type SubPointersType = IBalanceDispatcherSubPointers;
+    fn sub_pointers(
+        self: starknet::storage::StoragePointer<IBalanceDispatcher>
+    ) -> IBalanceDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        IBalanceDispatcherSubPointers { contract_address: contract_address_value, }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableIBalanceDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<
+        starknet::storage::Mutable<starknet::ContractAddress>
+    >,
+}
+impl MutableIBalanceDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<
+    IBalanceDispatcher
+> {
+    type SubPointersType = MutableIBalanceDispatcherSubPointers;
+    fn mutable_sub_pointers(
+        self: starknet::storage::StoragePointer<starknet::storage::Mutable<IBalanceDispatcher>>
+    ) -> MutableIBalanceDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        MutableIBalanceDispatcherSubPointers { contract_address: contract_address_value, }
+    }
+}
+
+
+// ------------
+
+impl IBalanceLibraryDispatcherCopy of core::traits::Copy<IBalanceLibraryDispatcher>;
+impl IBalanceLibraryDispatcherDrop of core::traits::Drop<IBalanceLibraryDispatcher>;
+impl IBalanceLibraryDispatcherSerde of core::serde::Serde<IBalanceLibraryDispatcher> {
+    fn serialize(self: @IBalanceLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(
+        ref serialized: core::array::Span<felt252>
+    ) -> core::option::Option<IBalanceLibraryDispatcher> {
+        core::option::Option::Some(
+            IBalanceLibraryDispatcher {
+                class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            }
+        )
+    }
+}
+
+
+// ------------
+
+impl StoreIBalanceLibraryDispatcher of starknet::Store<IBalanceLibraryDispatcher> {
+    fn read(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+    ) -> starknet::SyscallResult<IBalanceLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(IBalanceLibraryDispatcher { class_hash, })
+    }
+    fn write(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        value: IBalanceLibraryDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+    ) -> starknet::SyscallResult<IBalanceLibraryDispatcher> {
+        let class_hash = starknet::Store::<
+            starknet::ClassHash
+        >::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(IBalanceLibraryDispatcher { class_hash, })
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        offset: u8,
+        value: IBalanceLibraryDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<
+            starknet::ClassHash
+        >::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct IBalanceLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl IBalanceLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<
+    IBalanceLibraryDispatcher
+> {
+    type SubPointersType = IBalanceLibraryDispatcherSubPointers;
+    fn sub_pointers(
+        self: starknet::storage::StoragePointer<IBalanceLibraryDispatcher>
+    ) -> IBalanceLibraryDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        IBalanceLibraryDispatcherSubPointers { class_hash: class_hash_value, }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableIBalanceLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable<starknet::ClassHash>>,
+}
+impl MutableIBalanceLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<
+    IBalanceLibraryDispatcher
+> {
+    type SubPointersType = MutableIBalanceLibraryDispatcherSubPointers;
+    fn mutable_sub_pointers(
+        self: starknet::storage::StoragePointer<
+            starknet::storage::Mutable<IBalanceLibraryDispatcher>
+        >
+    ) -> MutableIBalanceLibraryDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        MutableIBalanceLibraryDispatcherSubPointers { class_hash: class_hash_value, }
+    }
+}
+
+
+// ------------
+
+impl IBalanceSafeLibraryDispatcherCopy of core::traits::Copy<IBalanceSafeLibraryDispatcher>;
+impl IBalanceSafeLibraryDispatcherDrop of core::traits::Drop<IBalanceSafeLibraryDispatcher>;
+impl IBalanceSafeLibraryDispatcherSerde of core::serde::Serde<IBalanceSafeLibraryDispatcher> {
+    fn serialize(self: @IBalanceSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(
+        ref serialized: core::array::Span<felt252>
+    ) -> core::option::Option<IBalanceSafeLibraryDispatcher> {
+        core::option::Option::Some(
+            IBalanceSafeLibraryDispatcher {
+                class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            }
+        )
+    }
+}
+
+
+// ------------
+
+impl StoreIBalanceSafeLibraryDispatcher of starknet::Store<IBalanceSafeLibraryDispatcher> {
+    fn read(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+    ) -> starknet::SyscallResult<IBalanceSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(IBalanceSafeLibraryDispatcher { class_hash, })
+    }
+    fn write(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        value: IBalanceSafeLibraryDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+    ) -> starknet::SyscallResult<IBalanceSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<
+            starknet::ClassHash
+        >::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(IBalanceSafeLibraryDispatcher { class_hash, })
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        offset: u8,
+        value: IBalanceSafeLibraryDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<
+            starknet::ClassHash
+        >::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct IBalanceSafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl IBalanceSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<
+    IBalanceSafeLibraryDispatcher
+> {
+    type SubPointersType = IBalanceSafeLibraryDispatcherSubPointers;
+    fn sub_pointers(
+        self: starknet::storage::StoragePointer<IBalanceSafeLibraryDispatcher>
+    ) -> IBalanceSafeLibraryDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        IBalanceSafeLibraryDispatcherSubPointers { class_hash: class_hash_value, }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableIBalanceSafeLibraryDispatcherSubPointers {
+    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable<starknet::ClassHash>>,
+}
+impl MutableIBalanceSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<
+    IBalanceSafeLibraryDispatcher
+> {
+    type SubPointersType = MutableIBalanceSafeLibraryDispatcherSubPointers;
+    fn mutable_sub_pointers(
+        self: starknet::storage::StoragePointer<
+            starknet::storage::Mutable<IBalanceSafeLibraryDispatcher>
+        >
+    ) -> MutableIBalanceSafeLibraryDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let class_hash_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        MutableIBalanceSafeLibraryDispatcherSubPointers { class_hash: class_hash_value, }
+    }
+}
+
+
+// ------------
+
+impl IBalanceSafeDispatcherCopy of core::traits::Copy<IBalanceSafeDispatcher>;
+impl IBalanceSafeDispatcherDrop of core::traits::Drop<IBalanceSafeDispatcher>;
+impl IBalanceSafeDispatcherSerde of core::serde::Serde<IBalanceSafeDispatcher> {
+    fn serialize(self: @IBalanceSafeDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(
+        ref serialized: core::array::Span<felt252>
+    ) -> core::option::Option<IBalanceSafeDispatcher> {
+        core::option::Option::Some(
+            IBalanceSafeDispatcher {
+                contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            }
+        )
+    }
+}
+
+
+// ------------
+
+impl StoreIBalanceSafeDispatcher of starknet::Store<IBalanceSafeDispatcher> {
+    fn read(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+    ) -> starknet::SyscallResult<IBalanceSafeDispatcher> {
+        let contract_address = starknet::Store::<
+            starknet::ContractAddress
+        >::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(IBalanceSafeDispatcher { contract_address, })
+    }
+    fn write(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        value: IBalanceSafeDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<
+            starknet::ContractAddress
+        >::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+    ) -> starknet::SyscallResult<IBalanceSafeDispatcher> {
+        let contract_address = starknet::Store::<
+            starknet::ContractAddress
+        >::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(IBalanceSafeDispatcher { contract_address, })
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32,
+        base: starknet::storage_access::StorageBaseAddress,
+        offset: u8,
+        value: IBalanceSafeDispatcher
+    ) -> starknet::SyscallResult<()> {
+        starknet::Store::<
+            starknet::ContractAddress
+        >::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct IBalanceSafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl IBalanceSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<
+    IBalanceSafeDispatcher
+> {
+    type SubPointersType = IBalanceSafeDispatcherSubPointers;
+    fn sub_pointers(
+        self: starknet::storage::StoragePointer<IBalanceSafeDispatcher>
+    ) -> IBalanceSafeDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        IBalanceSafeDispatcherSubPointers { contract_address: contract_address_value, }
+    }
+}
+#[derive(Drop, Copy)]
+struct MutableIBalanceSafeDispatcherSubPointers {
+    contract_address: starknet::storage::StoragePointer<
+        starknet::storage::Mutable<starknet::ContractAddress>
+    >,
+}
+impl MutableIBalanceSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<
+    IBalanceSafeDispatcher
+> {
+    type SubPointersType = MutableIBalanceSafeDispatcherSubPointers;
+    fn mutable_sub_pointers(
+        self: starknet::storage::StoragePointer<starknet::storage::Mutable<IBalanceSafeDispatcher>>
+    ) -> MutableIBalanceSafeDispatcherSubPointers {
+        let base_address = self.address;
+        let mut current_offset = self.offset;
+        let contract_address_value = starknet::storage::StoragePointer {
+            address: base_address, offset: current_offset,
+        };
+        MutableIBalanceSafeDispatcherSubPointers { contract_address: contract_address_value, }
+    }
+}
+
+
+// ------------
+
+impl IBalanceDispatcherSubPointersDrop of core::traits::Drop<IBalanceDispatcherSubPointers>;
+impl IBalanceDispatcherSubPointersCopy of core::traits::Copy<IBalanceDispatcherSubPointers>;
+
+
+// ------------
+
+impl MutableIBalanceDispatcherSubPointersDrop of core::traits::Drop<
+    MutableIBalanceDispatcherSubPointers
+>;
+impl MutableIBalanceDispatcherSubPointersCopy of core::traits::Copy<
+    MutableIBalanceDispatcherSubPointers
+>;
+
+
+// ------------
+
+impl IBalanceLibraryDispatcherSubPointersDrop of core::traits::Drop<
+    IBalanceLibraryDispatcherSubPointers
+>;
+impl IBalanceLibraryDispatcherSubPointersCopy of core::traits::Copy<
+    IBalanceLibraryDispatcherSubPointers
+>;
+
+
+// ------------
+
+impl MutableIBalanceLibraryDispatcherSubPointersDrop of core::traits::Drop<
+    MutableIBalanceLibraryDispatcherSubPointers
+>;
+impl MutableIBalanceLibraryDispatcherSubPointersCopy of core::traits::Copy<
+    MutableIBalanceLibraryDispatcherSubPointers
+>;
+
+
+// ------------
+
+impl IBalanceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop<
+    IBalanceSafeLibraryDispatcherSubPointers
+>;
+impl IBalanceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy<
+    IBalanceSafeLibraryDispatcherSubPointers
+>;
+
+
+// ------------
+
+impl MutableIBalanceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop<
+    MutableIBalanceSafeLibraryDispatcherSubPointers
+>;
+impl MutableIBalanceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy<
+    MutableIBalanceSafeLibraryDispatcherSubPointers
+>;
+
+
+// ------------
+
+impl IBalanceSafeDispatcherSubPointersDrop of core::traits::Drop<IBalanceSafeDispatcherSubPointers>;
+impl IBalanceSafeDispatcherSubPointersCopy of core::traits::Copy<IBalanceSafeDispatcherSubPointers>;
+
+
+// ------------
+
+impl MutableIBalanceSafeDispatcherSubPointersDrop of core::traits::Drop<
+    MutableIBalanceSafeDispatcherSubPointers
+>;
+impl MutableIBalanceSafeDispatcherSubPointersCopy of core::traits::Copy<
+    MutableIBalanceSafeDispatcherSubPointers
+>;
+// ------------
+
+//! > macro expand #3
+// = source context
+#[starknet:<caret>:contract]
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
+
+//! > macro expand #4
+// = source context
+    use c<caret>ore::traits::Into;
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
+
+//! > macro expand #5
+// = source context
+    fn constructor(ref se<caret>lf: ContractState, value_: u128) {
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
+
+//! > macro expand #6
+// = source context
+    fn constructor(ref self: Cont<caret>ractState, value_: u128) {
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
+
+//! > macro expand #7
+// = source context
+        self.va<caret>lue.write(value_);
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
+
+//! > macro expand #8
+// = source context
+        self.value.write(<caret>value_);
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
+
+//! > macro expand #9
+// = source context
+    #[abi(em<caret>bed_v0)]
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
+
+//! > macro expand #10
+// = source context
+    impl Balance of super::IBa<caret>lance<ContractState> {
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
+
+//! > macro expand #11
+// = source context
+    impl Balance of super::IBalance<Con<caret>tractState> {
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
+
+//! > macro expand #12
+// = source context
+            self.value.r<caret>ead()
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
+
+//! > macro expand #13
+// = source context
+            self.value.wr<caret>ite( self.value.read() + a );
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
+
+//! > macro expand #14
+// = source context
+            self.value.write( self.value.read() + <caret>a );
+// = expansion
+use Balance::contract_state_for_testing;
+
+/// The balance contract interface.
+#[starknet::interface]
+trait IBalance<T> {
+    /// Returns the current balance.
+    fn get(self: @T) -> u128;
+    /// Increases the balance by the given amount.
+    fn increase(ref self: T, a: u128);
+}
+
+/// The balance contract.
+#[starknet::contract]
+mod Balance {
+    use core::traits::Into;
+
+    #[storage]
+    struct Storage {
+        /// Storage value.
+        value: u128,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
+        self.value.write(value_);
+    }
+
+    #[abi(embed_v0)]
+    impl Balance of super::IBalance<ContractState> {
+        fn get(self: @ContractState) -> u128 {
+            self.value.read()
+        }
+        fn increase(ref self: ContractState, a: u128) {
+            self.value.write(self.value.read() + a);
+        }
+    }
+}
+// ------------
