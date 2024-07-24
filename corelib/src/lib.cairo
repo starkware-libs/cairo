@@ -281,10 +281,10 @@ use integer::{u128_sqrt, u256_sqrt};
 #[feature("corelib-internal-use")]
 pub mod math;
 
-/// Num.
+/// Module containing the traits for relevant for numeric types.
 pub mod num;
 
-/// General operations.
+/// Module containing the operations that can be performed on the different types.
 pub mod ops;
 
 /// Cmp.
