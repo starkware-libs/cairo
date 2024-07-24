@@ -290,7 +290,7 @@ pub mod ops;
 /// Cmp.
 pub mod cmp;
 
-/// Gas.
+/// Module for handling gas operations.
 pub mod gas;
 use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
