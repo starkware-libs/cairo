@@ -233,7 +233,7 @@ use box::{Box, BoxTrait};
 pub mod nullable;
 use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
 
-/// Array.
+/// Module for `Array` and other continuous same type collections.
 pub mod array;
 use array::{Array, ArrayTrait};
 
