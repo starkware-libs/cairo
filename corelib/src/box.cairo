@@ -26,6 +26,13 @@ pub impl BoxImpl<T> of BoxTrait<T> {
     }
 }
 
+impl BoxDeref<T> of core::ops::Deref<Box<T>> {
+    type Target = T;
+    fn deref(self: Box<T>) -> T {
+        self.unbox()
+    }
+}
+
 impl BoxDebug<T, impl TDebug: core::fmt::Debug<T>> of core::fmt::Debug<Box<T>> {
     fn fmt(self: @Box<T>, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
         write!(f, "&")?;

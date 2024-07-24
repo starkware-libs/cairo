@@ -65,34 +65,34 @@ pub fn get_execution_info() -> Box<v2::ExecutionInfo> {
 ///
 /// See `ExecutionInfo.caller_address` for more information.
 pub fn get_caller_address() -> ContractAddress {
-    get_execution_info().unbox().caller_address
+    get_execution_info().caller_address
 }
 
 /// Returns the address of the contract being executed.
 ///
 /// See `ExecutionInfo.contract_address` for more information.
 pub fn get_contract_address() -> ContractAddress {
-    get_execution_info().unbox().contract_address
+    get_execution_info().contract_address
 }
 
 /// Returns the block info for the current block.
 pub fn get_block_info() -> Box<BlockInfo> {
-    get_execution_info().unbox().block_info
+    get_execution_info().block_info
 }
 
 /// Returns the transaction info for the current transaction.
 pub fn get_tx_info() -> Box<v2::TxInfo> {
-    get_execution_info().unbox().tx_info
+    get_execution_info().tx_info
 }
 
 /// Returns the timestamp of the current block.
 pub fn get_block_timestamp() -> u64 {
-    get_block_info().unbox().block_timestamp
+    get_block_info().block_timestamp
 }
 
 /// Returns the number of the current block.
 pub fn get_block_number() -> u64 {
-    get_block_info().unbox().block_number
+    get_block_info().block_number
 }
 
 /// The extended version of the `get_execution_info` syscall result.
