@@ -1,6 +1,8 @@
 use core::traits::TryInto;
 use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress, SyscallResult,};
 use super::utils::{deserialized, serialized};
+
+#[feature("deprecated-bounded-int-trait")]
 use core::integer::BoundedInt;
 use core::num::traits::Zero;
 use core::byte_array::ByteArrayTrait;
