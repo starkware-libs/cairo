@@ -1,0 +1,894 @@
+//! > MacroExpand
+
+//! > test_runner_name
+test_macro_expand
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2023_11"
+
+//! > cairo_code
+fn a<caret>(){
+    let b <caret>= ar<caret>ray![1<caret>23, 'test'];
+
+    let a = 123<caret>45;
+    let c = for<caret>mat!("template string {}", a<caret>);<caret>
+}
+
+#<caret>[derive(De<caret>bug, Clone)]
+struct <caret>Test {
+    a: felt252
+}
+
+#[generat<caret>e_trait]
+impl MissingTraitImpl of MissingTrait<Test>{
+    fn<caret> sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}<caret>
+
+#[generate_t<caret>rait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_ow<caret>ner(self: @T<caret>est) {
+        // noop
+    }
+}
+
+//! > macro expand #0
+// = source context
+fn a<caret>(){
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+}
+
+//! > macro expand #1
+// = source context
+    let b <caret>= array![123, 'test'];
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+}
+
+//! > macro expand #2
+// = source context
+    let b = ar<caret>ray![123, 'test'];
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+}
+
+//! > macro expand #3
+// = source context
+    let b = array![1<caret>23, 'test'];
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+}
+
+//! > macro expand #4
+// = source context
+    let a = 123<caret>45;
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+}
+
+//! > macro expand #5
+// = source context
+    let c = for<caret>mat!("template string {}", a);
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+}
+
+//! > macro expand #6
+// = source context
+    let c = format!("template string {}", a<caret>);
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+}
+
+//! > macro expand #7
+// = source context
+    let c = format!("template string {}", a);<caret>
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+}
+
+//! > macro expand #8
+// = source context
+#<caret>[derive(Debug, Clone)]
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+} // impls
+// -----
+
+impl TestDebug of core::fmt::Debug<Test> {
+    fn fmt(
+        self: @Test, ref f: core::fmt::Formatter
+    ) -> core::result::Result::<(), core::fmt::Error> {
+        {
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0x54657374207b, 6);
+            core::result::Result::<(), core::fmt::Error>::Ok(())
+        }?;
+        {
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0x20613a20, 4);
+            core::result::Result::<(), core::fmt::Error>::Ok(())
+        }?;
+        core::fmt::Debug::fmt(self.a, ref f)?;
+        {
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0x207d, 2);
+            core::result::Result::<(), core::fmt::Error>::Ok(())
+        }
+    }
+}
+impl TestClone of core::clone::Clone<Test> {
+    fn clone(self: @Test) -> Test {
+        Test { a: core::clone::Clone::clone(self.a), }
+    }
+}
+
+//! > macro expand #9
+// = source context
+#[derive(De<caret>bug, Clone)]
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+} // impls
+// -----
+
+impl TestDebug of core::fmt::Debug<Test> {
+    fn fmt(
+        self: @Test, ref f: core::fmt::Formatter
+    ) -> core::result::Result::<(), core::fmt::Error> {
+        {
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0x54657374207b, 6);
+            core::result::Result::<(), core::fmt::Error>::Ok(())
+        }?;
+        {
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0x20613a20, 4);
+            core::result::Result::<(), core::fmt::Error>::Ok(())
+        }?;
+        core::fmt::Debug::fmt(self.a, ref f)?;
+        {
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0x207d, 2);
+            core::result::Result::<(), core::fmt::Error>::Ok(())
+        }
+    }
+}
+impl TestClone of core::clone::Clone<Test> {
+    fn clone(self: @Test) -> Test {
+        Test { a: core::clone::Clone::clone(self.a), }
+    }
+}
+
+//! > macro expand #10
+// = source context
+struct <caret>Test {
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+} // impls
+// -----
+
+impl TestDebug of core::fmt::Debug<Test> {
+    fn fmt(
+        self: @Test, ref f: core::fmt::Formatter
+    ) -> core::result::Result::<(), core::fmt::Error> {
+        {
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0x54657374207b, 6);
+            core::result::Result::<(), core::fmt::Error>::Ok(())
+        }?;
+        {
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0x20613a20, 4);
+            core::result::Result::<(), core::fmt::Error>::Ok(())
+        }?;
+        core::fmt::Debug::fmt(self.a, ref f)?;
+        {
+            core::byte_array::ByteArrayTrait::append_word(ref f.buffer, 0x207d, 2);
+            core::result::Result::<(), core::fmt::Error>::Ok(())
+        }
+    }
+}
+impl TestClone of core::clone::Clone<Test> {
+    fn clone(self: @Test) -> Test {
+        Test { a: core::clone::Clone::clone(self.a), }
+    }
+}
+
+//! > macro expand #11
+// = source context
+#[generat<caret>e_trait]
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+} // generate_trait
+// --------------
+
+trait MissingTrait {
+    fn sum(self: felt252, b: felt252) -> felt252;
+}
+
+//! > macro expand #12
+// = source context
+    fn<caret> sum(self: felt252, b: felt252) -> felt252 {
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+} // generate_trait
+// --------------
+
+trait MissingTrait {
+    fn sum(self: felt252, b: felt252) -> felt252;
+}
+
+//! > macro expand #13
+// = source context
+}<caret>
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+} // generate_trait
+// --------------
+
+trait MissingTrait {
+    fn sum(self: felt252, b: felt252) -> felt252;
+}
+
+//! > macro expand #14
+// = source context
+#[generate_t<caret>rait]
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+} // generate_trait
+// --------------
+
+trait PrivateMethodsTrait {
+    fn only_owner(self: @Test);
+}
+
+//! > macro expand #15
+// = source context
+    fn only_ow<caret>ner(self: @Test) {
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+} // generate_trait
+// --------------
+
+trait PrivateMethodsTrait {
+    fn only_owner(self: @Test);
+}
+
+//! > macro expand #16
+// = source context
+    fn only_owner(self: @T<caret>est) {
+// = expansion
+// lib.cairo
+// ---------
+
+fn a() {
+    let b = {
+        let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 123);
+        core::array::ArrayTrait::append(ref __array_builder_macro_result__, 'test');
+        __array_builder_macro_result__
+    };
+
+    let a = 12345;
+    let c = {
+        let mut __formatter_for_format_macro__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error
+        >::unwrap(write!(__formatter_for_format_macro__, "template string {}", a));
+        __formatter_for_format_macro__.buffer
+    };
+}
+
+#[derive(Debug, Clone)]
+struct Test {
+    a: felt252
+}
+
+#[generate_trait]
+impl MissingTraitImpl of MissingTrait<Test> {
+    fn sum(self: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+}
+
+#[generate_trait]
+impl PrivateMethods of PrivateMethodsTrait {
+    fn only_owner(self: @Test) {// noop
+    }
+} // generate_trait
+// --------------
+
+trait PrivateMethodsTrait {
+    fn only_owner(self: @Test);
+}
