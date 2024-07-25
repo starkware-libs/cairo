@@ -10,6 +10,10 @@ use tower_lsp::lsp_types::SemanticTokenType;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
+pub enum MultilineSemanticTokenKind {
+    String,
+}
+
 #[allow(dead_code)]
 pub enum SemanticTokenKind {
     Namespace,
@@ -34,6 +38,7 @@ pub enum SemanticTokenKind {
     InlineMacro,
     GenericParamImpl,
 }
+
 impl SemanticTokenKind {
     pub fn from_syntax_node(db: &AnalysisDatabase, mut node: SyntaxNode) -> Option<Self> {
         let syntax_db = db.upcast();
@@ -231,5 +236,12 @@ impl SemanticTokenKind {
             SemanticTokenType::MACRO,
             SemanticTokenType::INTERFACE,
         ]
+    }
+
+    pub fn as_multiline_token(&self) -> Option<MultilineSemanticTokenKind> {
+        match self {
+            Self::String => Some(MultilineSemanticTokenKind::String),
+            _ => None,
+        }
     }
 }
