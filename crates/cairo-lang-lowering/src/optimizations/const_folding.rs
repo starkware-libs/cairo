@@ -171,6 +171,8 @@ struct ConstFoldingContext<'a> {
     into_box: ExternFunctionId,
     /// The `upcast` libfunc.
     upcast: ExternFunctionId,
+    /// The `downcast` libfunc.
+    downcast: ExternFunctionId,
     /// The `storage_base_address_from_felt252` libfunc.
     storage_base_address_from_felt252: FunctionId,
     /// The set of functions that check if a number is zero.
@@ -187,6 +189,7 @@ impl<'a> ConstFoldingContext<'a> {
         let into_box = box_module.extern_function_id("into_box");
         let integer_module = core.submodule("integer");
         let upcast = integer_module.extern_function_id("upcast");
+        let downcast = integer_module.extern_function_id("downcast");
         let starknet_module = core.submodule("starknet");
         let storage_access_module = starknet_module.submodule("storage_access");
         let storage_base_address_from_felt252 =
@@ -204,6 +207,7 @@ impl<'a> ConstFoldingContext<'a> {
             felt_sub,
             into_box,
             upcast,
+            downcast,
             storage_base_address_from_felt252,
             nz_fns,
             storage_access_module,
@@ -288,6 +292,31 @@ impl<'a> ConstFoldingContext<'a> {
                     FlatBlockEnd::Goto(arm.block_id, Default::default()),
                 )
             });
+        } else if let Some(extrn) = info.function.get_extern(self.db) {
+            if extrn == self.downcast {
+                let input_var = info.inputs[0].var_id;
+                let Some(VarInfo::Const(ConstValue::Int(value, _))) = self.var_info.get(&input_var)
+                else {
+                    return None;
+                };
+                let success_output = info.arms[0].var_ids[0];
+                let ty = self.variables[success_output].ty;
+                return Some(
+                    if corelib::validate_literal(self.db.upcast(), ty, value.clone()).is_ok() {
+                        let value = ConstValue::Int(value.clone(), ty);
+                        self.var_info.insert(success_output, VarInfo::Const(value.clone()));
+                        (
+                            Some(Statement::Const(StatementConst {
+                                value,
+                                output: success_output,
+                            })),
+                            FlatBlockEnd::Goto(info.arms[0].block_id, Default::default()),
+                        )
+                    } else {
+                        (None, FlatBlockEnd::Goto(info.arms[1].block_id, Default::default()))
+                    },
+                );
+            }
         }
         None
     }
