@@ -1,3 +1,4 @@
+#[feature("deprecated-bounded-int-trait")]
 use core::{integer, integer::{BoundedInt, u512_safe_div_rem_by_u256, u512}};
 use core::test::test_utils::{assert_eq, assert_ne, assert_le, assert_lt, assert_gt, assert_ge};
 use core::num::traits::{Sqrt, WideMul, WrappingSub};

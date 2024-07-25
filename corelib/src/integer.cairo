@@ -223,7 +223,7 @@ impl U128BitOr of core::traits::BitOr<u128> {
 }
 impl U128BitNot of core::traits::BitNot<u128> {
     fn bitnot(a: u128) -> u128 {
-        BoundedInt::max() - a
+        core::num::traits::Bounded::MAX - a
     }
 }
 
@@ -362,7 +362,7 @@ impl U8DivRem of DivRem<u8> {
 
 impl U8BitNot of BitNot<u8> {
     fn bitnot(a: u8) -> u8 {
-        BoundedInt::max() - a
+        core::num::traits::Bounded::MAX - a
     }
 }
 extern fn u8_bitwise(lhs: u8, rhs: u8) -> (u8, u8, u8) implicits(Bitwise) nopanic;
@@ -525,7 +525,7 @@ impl U16DivRem of DivRem<u16> {
 
 impl U16BitNot of BitNot<u16> {
     fn bitnot(a: u16) -> u16 {
-        BoundedInt::max() - a
+        core::num::traits::Bounded::MAX - a
     }
 }
 extern fn u16_bitwise(lhs: u16, rhs: u16) -> (u16, u16, u16) implicits(Bitwise) nopanic;
@@ -688,7 +688,7 @@ impl U32DivRem of DivRem<u32> {
 
 impl U32BitNot of BitNot<u32> {
     fn bitnot(a: u32) -> u32 {
-        BoundedInt::max() - a
+        core::num::traits::Bounded::MAX - a
     }
 }
 extern fn u32_bitwise(lhs: u32, rhs: u32) -> (u32, u32, u32) implicits(Bitwise) nopanic;
@@ -851,7 +851,7 @@ impl U64DivRem of DivRem<u64> {
 
 impl U64BitNot of BitNot<u64> {
     fn bitnot(a: u64) -> u64 {
-        BoundedInt::max() - a
+        core::num::traits::Bounded::MAX - a
     }
 }
 extern fn u64_bitwise(lhs: u64, rhs: u64) -> (u64, u64, u64) implicits(Bitwise) nopanic;
@@ -1184,134 +1184,44 @@ impl U512TryIntoU256 of TryInto<u512, u256> {
     }
 }
 
-/// Bounded
+/// Trait for getting the maximal and minimal values of an integer type.
+#[deprecated(
+    feature: "deprecated-bounded-int-trait", note: "Use `core::num::traits::Bounded` instead"
+)]
 pub trait BoundedInt<T> {
+    /// Returns the minimal value of the type.
     #[must_use]
     fn min() -> T nopanic;
+    /// Returns the maximal value of the type.
     #[must_use]
     fn max() -> T nopanic;
 }
 
-impl BoundedU8 of BoundedInt<u8> {
-    #[inline(always)]
-    fn min() -> u8 nopanic {
-        0_u8
-    }
-    #[inline(always)]
-    fn max() -> u8 nopanic {
-        0xff_u8
-    }
-}
-
-impl BoundedU16 of BoundedInt<u16> {
-    #[inline(always)]
-    fn min() -> u16 nopanic {
-        0_u16
-    }
-    #[inline(always)]
-    fn max() -> u16 nopanic {
-        0xffff_u16
+mod bounded_int_impls {
+    #[feature("deprecated-bounded-int-trait")]
+    pub impl ByBounded<T, impl Bounded: core::num::traits::Bounded<T>> of super::BoundedInt<T> {
+        #[inline(always)]
+        fn min() -> T nopanic {
+            Bounded::MIN
+        }
+        #[inline(always)]
+        fn max() -> T nopanic {
+            Bounded::MAX
+        }
     }
 }
 
-impl BoundedU32 of BoundedInt<u32> {
-    #[inline(always)]
-    fn min() -> u32 nopanic {
-        0_u32
-    }
-    #[inline(always)]
-    fn max() -> u32 nopanic {
-        0xffffffff_u32
-    }
-}
-
-impl BoundedU64 of BoundedInt<u64> {
-    #[inline(always)]
-    fn min() -> u64 nopanic {
-        0_u64
-    }
-    #[inline(always)]
-    fn max() -> u64 nopanic {
-        0xffffffffffffffff_u64
-    }
-}
-
-impl BoundedU128 of BoundedInt<u128> {
-    #[inline(always)]
-    fn min() -> u128 nopanic {
-        0_u128
-    }
-    #[inline(always)]
-    fn max() -> u128 nopanic {
-        0xffffffffffffffffffffffffffffffff_u128
-    }
-}
-
-impl BoundedU256 of BoundedInt<u256> {
-    #[inline(always)]
-    fn min() -> u256 nopanic {
-        0_u256
-    }
-    #[inline(always)]
-    fn max() -> u256 nopanic {
-        u256 { low: BoundedInt::max(), high: BoundedInt::max() }
-    }
-}
-
-impl BoundedI8 of BoundedInt<i8> {
-    #[inline(always)]
-    fn min() -> i8 nopanic {
-        -0x80
-    }
-    #[inline(always)]
-    fn max() -> i8 nopanic {
-        0x7f
-    }
-}
-
-impl BoundedI16 of BoundedInt<i16> {
-    #[inline(always)]
-    fn min() -> i16 nopanic {
-        -0x8000
-    }
-    #[inline(always)]
-    fn max() -> i16 nopanic {
-        0x7fff
-    }
-}
-
-impl BoundedI32 of BoundedInt<i32> {
-    #[inline(always)]
-    fn min() -> i32 nopanic {
-        -0x80000000
-    }
-    #[inline(always)]
-    fn max() -> i32 nopanic {
-        0x7fffffff
-    }
-}
-
-impl BoundedI64 of BoundedInt<i64> {
-    #[inline(always)]
-    fn min() -> i64 nopanic {
-        -0x8000000000000000
-    }
-    #[inline(always)]
-    fn max() -> i64 nopanic {
-        0x7fffffffffffffff
-    }
-}
-
-impl BoundedI128 of BoundedInt<i128> {
-    #[inline(always)]
-    fn min() -> i128 nopanic {
-        -0x80000000000000000000000000000000
-    }
-    #[inline(always)]
-    fn max() -> i128 nopanic {
-        0x7fffffffffffffffffffffffffffffff
-    }
-}
+impl BoundedU8 = bounded_int_impls::ByBounded<u8>;
+impl BoundedU16 = bounded_int_impls::ByBounded<u16>;
+impl BoundedU32 = bounded_int_impls::ByBounded<u32>;
+impl BoundedU64 = bounded_int_impls::ByBounded<u64>;
+impl BoundedU128 = bounded_int_impls::ByBounded<u128>;
+impl BoundedU256 = bounded_int_impls::ByBounded<u256>;
+impl BoundedI8 = bounded_int_impls::ByBounded<i8>;
+impl BoundedI16 = bounded_int_impls::ByBounded<i16>;
+impl BoundedI32 = bounded_int_impls::ByBounded<i32>;
+impl BoundedI64 = bounded_int_impls::ByBounded<i64>;
+impl BoundedI128 = bounded_int_impls::ByBounded<i128>;
 
 /// Conversions.
 pub(crate) impl Felt252TryIntoU8 of TryInto<felt252, u8> {
@@ -3102,7 +3012,7 @@ impl I128OverflowingSub of core::num::traits::OverflowingSub<i128> {
 impl U8OverflowingMul of core::num::traits::OverflowingMul<u8> {
     fn overflowing_mul(self: u8, v: u8) -> (u8, bool) {
         let wide_result = u8_wide_mul(self, v);
-        let MASK: u16 = BoundedInt::<u8>::max().into();
+        let MASK: u16 = core::num::traits::Bounded::<u8>::MAX.into();
         let (v_low, _, v_with_low_masked) = u16_bitwise(wide_result, MASK);
         (v_low.try_into().unwrap(), v_with_low_masked != MASK)
     }
@@ -3111,7 +3021,7 @@ impl U8OverflowingMul of core::num::traits::OverflowingMul<u8> {
 impl U16OverflowingMul of core::num::traits::OverflowingMul<u16> {
     fn overflowing_mul(self: u16, v: u16) -> (u16, bool) {
         let wide_result = u16_wide_mul(self, v);
-        let MASK: u32 = BoundedInt::<u16>::max().into();
+        let MASK: u32 = core::num::traits::Bounded::<u16>::MAX.into();
         let (v_low, _, v_with_low_masked) = u32_bitwise(wide_result, MASK);
         (v_low.try_into().unwrap(), v_with_low_masked != MASK)
     }
@@ -3120,7 +3030,7 @@ impl U16OverflowingMul of core::num::traits::OverflowingMul<u16> {
 impl U32OverflowingMul of core::num::traits::OverflowingMul<u32> {
     fn overflowing_mul(self: u32, v: u32) -> (u32, bool) {
         let wide_result = u32_wide_mul(self, v);
-        let MASK: u64 = BoundedInt::<u32>::max().into();
+        let MASK: u64 = core::num::traits::Bounded::<u32>::MAX.into();
         let (v_low, _, v_with_low_masked) = u64_bitwise(wide_result, MASK);
         (v_low.try_into().unwrap(), v_with_low_masked != MASK)
     }
@@ -3129,7 +3039,7 @@ impl U32OverflowingMul of core::num::traits::OverflowingMul<u32> {
 impl U64OverflowingMul of core::num::traits::OverflowingMul<u64> {
     fn overflowing_mul(self: u64, v: u64) -> (u64, bool) {
         let wide_result = u64_wide_mul(self, v);
-        let MASK: u128 = BoundedInt::<u64>::max().into();
+        let MASK: u128 = core::num::traits::Bounded::<u64>::MAX.into();
         let (v_low, _, v_with_low_masked) = bitwise(wide_result, MASK);
         (v_low.try_into().unwrap(), v_with_low_masked != MASK)
     }
