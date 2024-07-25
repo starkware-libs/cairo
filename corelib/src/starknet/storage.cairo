@@ -178,11 +178,20 @@ trait StoragePathUpdateTrait<SourceType, TargetType, Value> {
     fn update(self: StoragePath<SourceType>, value: Value) -> StoragePath<TargetType>;
 }
 
+/// Trait for converting a storage path of type `SourceType` to a storage path of type `TargetType`.
 impl StoragePathUpdateImpl<
     SourceType, TargetType, Value, impl HashImpl: core::hash::Hash<Value, StoragePathHashState>
 > of StoragePathUpdateTrait<SourceType, TargetType, Value> {
     fn update(self: StoragePath<SourceType>, value: Value) -> StoragePath<TargetType> {
         StoragePath { hash_state: HashImpl::update_state(self.hash_state, value) }
+    }
+}
+
+impl StoragePathSIntoStoragePathTImpl<
+    SourceType, TargetType
+> of Into<StoragePath<SourceType>, StoragePath<TargetType>> {
+    fn into(self: StoragePath<SourceType>) -> StoragePath<TargetType> {
+        StoragePath { hash_state: self.hash_state }
     }
 }
 

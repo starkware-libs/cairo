@@ -219,6 +219,9 @@ impl<'a> StorageInterfaceInfo<'a> {
     fn generic_node_members_type(&self, member: impl QueryAttrs) -> String {
         match self.node_type {
             StorageInterfaceType::StorageNode => {
+                if member.has_attr(self.db, FLAT_ATTR) {
+                    return "starknet::storage::StoragePath".to_string();
+                }
                 "starknet::storage::PendingStoragePath".to_string()
             }
             StorageInterfaceType::SubPointers => "starknet::storage::StoragePointer".to_string(),
@@ -257,13 +260,19 @@ impl<'a> StorageInterfaceInfo<'a> {
     ) -> String {
         let member_type = self.generic_node_members_type(member.clone());
         match self.node_type {
-            StorageInterfaceType::StorageNode => "        let $field_name$_value = \
-                                                  starknet::storage::PendingStoragePathTrait::new(
+            StorageInterfaceType::StorageNode => {
+                if member.has_attr(self.db, FLAT_ATTR) {
+                    return "        let $field_name$_value = self.into();
+                    "
+                    .to_string();
+                }
+                "        let $field_name$_value = starknet::storage::PendingStoragePathTrait::new(
                         @self,
                         selector!(\"$field_name$\")
                     );
                     "
-            .to_string(),
+                .to_string()
+            }
             StorageInterfaceType::SubPointers => {
                 let offset_increment = if is_last {
                     "".to_string()
