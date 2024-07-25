@@ -33,7 +33,12 @@ hello = "src"
 [config.global]
 edition = "2023_11"
 "#,
-            "src/lib.cairo" => r#"fn main() {}"#,
+            "src/lib.cairo" => r#"
+fn main() {
+    let _ = "
+    ";
+}
+"#,
         }
         client_capabilities = caps;
     };
@@ -52,5 +57,18 @@ edition = "2023_11"
     let lsp_types::SemanticTokensResult::Tokens(tokens) = res else {
         panic!("expected full tokens")
     };
-    assert!(tokens.data.len() > 1);
+
+    // there is multiline (2) string
+    // check if 2 consecutive tokens are of type string
+    assert!(tokens.data.windows(2).any(|tokens| {
+        let string_type = 16; // SemanticTokenKind::String.as_u32()
+        let first = tokens[0];
+        let second = tokens[1];
+
+        let are_on_consecutive_lines = first.delta_line + 1 == second.delta_line;
+        let are_both_string =
+            first.token_type == second.token_type && first.token_type == string_type;
+
+        are_both_string && are_on_consecutive_lines
+    }));
 }
