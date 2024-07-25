@@ -1,9 +1,8 @@
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax as syntax;
-use cairo_lang_syntax::node::ast::{self};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::*;
@@ -69,16 +68,23 @@ impl SemanticTokensTraverser {
                 let maybe_semantic_kind = self
                     .offset_to_kind_lookahead
                     .remove(&node.offset())
-                    .or_else(|| SemanticTokenKind::from_syntax_node(db, node));
+                    .or_else(|| SemanticTokenKind::from_syntax_node(db, node.clone()));
+
                 if let Some(semantic_kind) = maybe_semantic_kind {
-                    let EncodedToken { delta_line, delta_start } = self.encoder.encode(width);
-                    data.push(SemanticToken {
-                        delta_line,
-                        delta_start,
-                        length: width,
-                        token_type: semantic_kind.as_u32(),
-                        token_modifiers_bitset: 0,
-                    });
+                    let Some(text) = node.text(db) else { unreachable!() };
+
+                    if text.contains('\n') {
+                        // Split multiline token into multiple single line tokens.
+                        for line in text.split_inclusive('\n') {
+                            self.push_semantic_token(line.len() as u32, &semantic_kind, data);
+
+                            if line.ends_with('\n') {
+                                self.encoder.next_line();
+                            }
+                        }
+                    } else {
+                        self.push_semantic_token(width, &semantic_kind, data);
+                    }
                 } else {
                     self.encoder.skip(width);
                 }
@@ -126,6 +132,23 @@ impl SemanticTokensTraverser {
                 }
             }
         }
+    }
+
+    fn push_semantic_token(
+        &mut self,
+        width: u32,
+        semantic_kind: &SemanticTokenKind,
+        data: &mut Vec<SemanticToken>,
+    ) {
+        let EncodedToken { delta_line, delta_start } = self.encoder.encode(width);
+
+        data.push(SemanticToken {
+            delta_line,
+            delta_start,
+            length: width,
+            token_type: semantic_kind.as_u32(),
+            token_modifiers_bitset: 0,
+        });
     }
 
     fn mark_future_token(&mut self, offset: TextOffset, semantic_kind: SemanticTokenKind) {
