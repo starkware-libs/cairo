@@ -29,3 +29,5 @@ mod utils;
 mod collections_test;
 #[cfg(test)]
 mod component_usage_test;
+#[cfg(test)]
+mod flat_storage_test;
