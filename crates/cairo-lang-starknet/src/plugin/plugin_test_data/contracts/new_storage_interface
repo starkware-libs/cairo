@@ -32,6 +32,7 @@ trait HelloStarknetTrait<TContractState> {
 #[starknet::storage_node]
 struct BalancePair {
     balance1: u256,
+    #[flat]
     balance2: felt252,
 }
 
@@ -157,6 +158,7 @@ trait HelloStarknetTrait<TContractState> {
 #[starknet::storage_node]
 struct BalancePair {
     balance1: u256,
+    #[flat]
     balance2: felt252,
 }
 
@@ -1249,13 +1251,13 @@ storage_node:
 #[derive(Drop, Copy)]
 pub struct BalancePairStorageBase {
     pub balance1: starknet::storage::StorageBase<u256>,
-    pub balance2: starknet::storage::StorageBase<felt252>,
+    pub balance2: starknet::storage::FlattenedStorage<felt252>,
 }
 impl BalancePairStorageImpl of starknet::storage::StorageTrait<BalancePair> {
     type BaseType = BalancePairStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<BalancePair>) -> BalancePairStorageBase {
         let balance1_value = starknet::storage::StorageBase {address: selector!("balance1")};
-        let balance2_value = starknet::storage::StorageBase {address: selector!("balance2")};
+        let balance2_value = starknet::storage::FlattenedStorage {};
         BalancePairStorageBase {
            balance1: balance1_value,
            balance2: balance2_value,
@@ -1265,13 +1267,13 @@ impl BalancePairStorageImpl of starknet::storage::StorageTrait<BalancePair> {
 #[derive(Drop, Copy)]
 pub struct BalancePairStorageBaseMut {
     pub balance1: starknet::storage::StorageBase<starknet::storage::Mutable::<u256>>,
-    pub balance2: starknet::storage::StorageBase<starknet::storage::Mutable::<felt252>>,
+    pub balance2: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<felt252>>,
 }
 impl BalancePairStorageMutImpl of starknet::storage::StorageTraitMut<BalancePair> {
     type BaseType = BalancePairStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<BalancePair>>) -> BalancePairStorageBaseMut {
         let balance1_value = starknet::storage::StorageBase {address: selector!("balance1")};
-        let balance2_value = starknet::storage::StorageBase {address: selector!("balance2")};
+        let balance2_value = starknet::storage::FlattenedStorage {};
         BalancePairStorageBaseMut {
            balance1: balance1_value,
            balance2: balance2_value,
@@ -1281,7 +1283,7 @@ impl BalancePairStorageMutImpl of starknet::storage::StorageTraitMut<BalancePair
 #[derive(Drop, Copy)]
 pub struct BalancePairStorageNode {
     pub balance1: starknet::storage::PendingStoragePath<u256>,
-    pub balance2: starknet::storage::PendingStoragePath<felt252>,
+    pub balance2: starknet::storage::StoragePath<felt252>,
 }
 impl BalancePairStorageNodeImpl of starknet::storage::StorageNode<BalancePair> {
     type NodeType = BalancePairStorageNode;
@@ -1290,10 +1292,7 @@ impl BalancePairStorageNodeImpl of starknet::storage::StorageNode<BalancePair> {
                         @self,
                         selector!("balance1")
                     );
-                            let balance2_value = starknet::storage::PendingStoragePathTrait::new(
-                        @self,
-                        selector!("balance2")
-                    );
+                            let balance2_value = self.into();
                             BalancePairStorageNode {
            balance1: balance1_value,
            balance2: balance2_value,
@@ -1303,7 +1302,7 @@ impl BalancePairStorageNodeImpl of starknet::storage::StorageNode<BalancePair> {
 #[derive(Drop, Copy)]
 pub struct BalancePairStorageNodeMut {
     pub balance1: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<u256>>,
-    pub balance2: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<felt252>>,
+    pub balance2: starknet::storage::StoragePath<starknet::storage::Mutable::<felt252>>,
 }
 impl BalancePairStorageNodeMutImpl of starknet::storage::StorageNodeMut<BalancePair> {
     type NodeType = BalancePairStorageNodeMut;
@@ -1312,10 +1311,7 @@ impl BalancePairStorageNodeMutImpl of starknet::storage::StorageNodeMut<BalanceP
                         @self,
                         selector!("balance1")
                     );
-                            let balance2_value = starknet::storage::PendingStoragePathTrait::new(
-                        @self,
-                        selector!("balance2")
-                    );
+                            let balance2_value = self.into();
                             BalancePairStorageNodeMut {
            balance1: balance1_value,
            balance2: balance2_value,
@@ -1324,7 +1320,7 @@ impl BalancePairStorageNodeMutImpl of starknet::storage::StorageNodeMut<BalanceP
 }
 
 
-lib.cairo:31:1
+lib.cairo:32:1
 
 ^
 impls:
@@ -1332,7 +1328,7 @@ impls:
 impl SlicedBalanceTrioDrop of core::traits::Drop::<SlicedBalanceTrio>;
 
 
-lib.cairo:32:16
+lib.cairo:33:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 starknet_derive:
@@ -1432,7 +1428,7 @@ impl SlicedBalanceTrioSubPointersMutImpl of starknet::storage::SubPointersMut<Sl
 }
 
 
-lib.cairo:37:1
+lib.cairo:38:1
 
 ^
 impls:
@@ -1440,7 +1436,7 @@ impls:
 impl SlicedBalancePairDrop of core::traits::Drop::<SlicedBalancePair>;
 
 
-lib.cairo:38:16
+lib.cairo:39:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 starknet_derive:
@@ -1540,7 +1536,7 @@ impl SlicedBalancePairSubPointersMutImpl of starknet::storage::SubPointersMut<Sl
 }
 
 
-lib.cairo:44:1
+lib.cairo:45:1
 #[starknet::storage_node]
 ^***********************^
 storage_node:
@@ -2035,7 +2031,7 @@ impl BalancePairStorageNodeMutDrop of core::traits::Drop::<BalancePairStorageNod
 impl BalancePairStorageNodeMutCopy of core::traits::Copy::<BalancePairStorageNodeMut>;
 
 
-lib.cairo:32:16
+lib.cairo:33:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 impls:
@@ -2044,7 +2040,7 @@ impl SlicedBalanceTrioSubPointersDrop of core::traits::Drop::<SlicedBalanceTrioS
 impl SlicedBalanceTrioSubPointersCopy of core::traits::Copy::<SlicedBalanceTrioSubPointers>;
 
 
-lib.cairo:32:16
+lib.cairo:33:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 impls:
@@ -2053,7 +2049,7 @@ impl SlicedBalanceTrioSubPointersMutDrop of core::traits::Drop::<SlicedBalanceTr
 impl SlicedBalanceTrioSubPointersMutCopy of core::traits::Copy::<SlicedBalanceTrioSubPointersMut>;
 
 
-lib.cairo:38:16
+lib.cairo:39:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 impls:
@@ -2062,7 +2058,7 @@ impl SlicedBalancePairSubPointersDrop of core::traits::Drop::<SlicedBalancePairS
 impl SlicedBalancePairSubPointersCopy of core::traits::Copy::<SlicedBalancePairSubPointers>;
 
 
-lib.cairo:38:16
+lib.cairo:39:16
 #[derive(Drop, starknet::Store)]
                ^*************^
 impls:
@@ -2071,7 +2067,7 @@ impl SlicedBalancePairSubPointersMutDrop of core::traits::Drop::<SlicedBalancePa
 impl SlicedBalancePairSubPointersMutCopy of core::traits::Copy::<SlicedBalancePairSubPointersMut>;
 
 
-lib.cairo:44:1
+lib.cairo:45:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -2080,7 +2076,7 @@ impl LinkedListStorageBaseDrop of core::traits::Drop::<LinkedListStorageBase>;
 impl LinkedListStorageBaseCopy of core::traits::Copy::<LinkedListStorageBase>;
 
 
-lib.cairo:44:1
+lib.cairo:45:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -2089,7 +2085,7 @@ impl LinkedListStorageBaseMutDrop of core::traits::Drop::<LinkedListStorageBaseM
 impl LinkedListStorageBaseMutCopy of core::traits::Copy::<LinkedListStorageBaseMut>;
 
 
-lib.cairo:44:1
+lib.cairo:45:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -2098,7 +2094,7 @@ impl LinkedListStorageNodeDrop of core::traits::Drop::<LinkedListStorageNode>;
 impl LinkedListStorageNodeCopy of core::traits::Copy::<LinkedListStorageNode>;
 
 
-lib.cairo:44:1
+lib.cairo:45:1
 #[starknet::storage_node]
 ^***********************^
 impls:
@@ -2179,7 +2175,7 @@ impl HelloStarknetTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<
 impl HelloStarknetTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<HelloStarknetTraitSafeDispatcherSubPointersMut>;
 
 
-lib.cairo:50:1
+lib.cairo:51:1
 #[starknet::contract]
 ^*******************^
 contract:
@@ -2670,7 +2666,7 @@ pub mod __constructor {
 
 
 
-lib.cairo:50:1
+lib.cairo:51:1
 #[starknet::contract]
 ^*******************^
 impls:
@@ -2678,7 +2674,7 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:50:1
+lib.cairo:51:1
 #[starknet::contract]
 ^*******************^
 starknet_derive:
@@ -2700,7 +2696,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:50:1
+lib.cairo:51:1
 #[starknet::contract]
 ^*******************^
 impls:
@@ -2709,7 +2705,7 @@ impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:50:1
+lib.cairo:51:1
 #[starknet::contract]
 ^*******************^
 impls:
@@ -2719,11 +2715,11 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:62:28
+ --> lib.cairo:63:28
         legacy_map_balace: LegacyMap<usize, usize>,
                            ^*******^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:50:1
+ --> lib.cairo:51:1
 #[starknet::contract]
 ^*******************^
