@@ -418,11 +418,16 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
         let members = members.values().collect_vec();
         let member_ids = members.iter().map(|m| m.id);
 
+        // We use the location of the variable being deconstructed for the members
+        // to get a better location for variable not dropped errors.
         let location = self.ctx.variables[value].location;
         let var_reqs =
             members.iter().map(|member| VarRequest { ty: member.ty, location }).collect();
-        let member_values =
-            generators::StructDestructure { input: value, var_reqs }.add(self.ctx, self.statements);
+        let member_values = generators::StructDestructure {
+            input: VarUsage { var_id: value, location: self.location },
+            var_reqs,
+        }
+        .add(self.ctx, self.statements);
         OrderedHashMap::from_iter(zip_eq(member_ids, member_values))
     }
 
