@@ -1,11 +1,11 @@
 use std::ops::Shl;
+use std::sync::LazyLock;
 
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{extract_matches, require};
 use num_bigint::BigInt;
 use num_traits::{One, Signed, ToPrimitive, Zero};
-use once_cell::sync::Lazy;
 
 use super::range_check::RangeCheck96Type;
 use super::structure::StructType;
@@ -30,7 +30,7 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 /// The set of types that are considered circuit components.
 /// A circuit it defined as Circuit<(Output0, Output1, ...)> where all the outputs are
 /// circuit components (recursively).
-static CIRCUIT_COMPONENTS: Lazy<UnorderedHashSet<GenericTypeId>> = Lazy::new(|| {
+static CIRCUIT_COMPONENTS: LazyLock<UnorderedHashSet<GenericTypeId>> = LazyLock::new(|| {
     UnorderedHashSet::from_iter([
         CircuitInput::ID,
         AddModGate::ID,
