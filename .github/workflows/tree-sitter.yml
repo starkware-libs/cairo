@@ -23,3 +23,19 @@ jobs:
         with:
           files: ./**/*.cairo
           invalid-files: crates/cairo-lang-parser/src/parser_test_data/cairo_test_files/*.cairo
+
+  notify_failed:
+    runs-on: ubuntu-latest
+    # Do not run on dry_run or success
+    if: always() && !(inputs.dry_run) && contains(needs.*.result, 'failure')
+    needs: [ test ]
+    steps:
+      - name: Notifying about Nightly fail!
+        uses: slackapi/slack-github-action@v1.26.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TREE_SITTER_FAILURE_WEBHOOK }}
+        with:
+          payload: |
+            {
+              "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
