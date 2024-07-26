@@ -110,7 +110,7 @@ impl PatternVariablesQueryable for Arena<Pattern> {
     }
 }
 
-/// Query a function for variables of patters defined within it.
+/// Query a function for variables of patterns defined within it.
 ///
 /// This is a wrapper over [`SemanticGroup`] that takes [`FunctionWithBodyId`]
 /// and relays queries to [`SemanticGroup::pattern_semantic`].

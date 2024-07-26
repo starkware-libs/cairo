@@ -11,7 +11,7 @@ use indoc::formatdoc;
 use super::utils::has_derive;
 use super::{STORAGE_NODE_ATTR, STORE_TRAIT};
 
-/// Generates an impl for the `starknet::StorageNode` to point to a generate a struct to to be
+/// Generates an impl for the `starknet::StorageNode` to point to a generate a struct to be
 /// pointed to allowing further access to each of its members (i.e. there will be a fitting member
 /// in the inner struct for each member of the struct).
 ///
