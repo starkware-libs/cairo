@@ -29,7 +29,6 @@ env_logger.workspace = true
 itertools = { workspace = true, default-features = true }
 log.workspace = true
 num-bigint = { workspace = true, default-features = true }
-once_cell.workspace = true
 pretty_assertions.workspace = true
 rstest.workspace = true
 salsa.workspace = true

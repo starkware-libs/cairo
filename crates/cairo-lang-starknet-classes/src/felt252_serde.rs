@@ -1,4 +1,5 @@
 use std::ops::{Shl, Shr};
+use std::sync::LazyLock;
 
 use cairo_lang_sierra::extensions::circuit::{
     CircuitFailureGuaranteeVerifyLibFunc, U96LimbsLessThanGuaranteeVerifyLibfunc,
@@ -29,7 +30,6 @@ use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_traits::{Signed, ToPrimitive};
-use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 use thiserror::Error;
 
@@ -184,7 +184,7 @@ impl Felt252Serde for StatementIdx {
 // Impls for generic ids.
 const SHORT_STRING_BOUND: usize = 31;
 /// A set of all the supported long generic ids.
-static SERDE_SUPPORTED_LONG_IDS: Lazy<OrderedHashSet<&'static str>> = Lazy::new(|| {
+static SERDE_SUPPORTED_LONG_IDS: LazyLock<OrderedHashSet<&'static str>> = LazyLock::new(|| {
     OrderedHashSet::from_iter([
         StorageAddressFromBaseAndOffsetLibfunc::STR_ID,
         ContractAddressTryFromFelt252Libfunc::STR_ID,
@@ -198,7 +198,7 @@ static SERDE_SUPPORTED_LONG_IDS: Lazy<OrderedHashSet<&'static str>> = Lazy::new(
     ])
 });
 /// A mapping of all the long names when fixing them from the hashed keccak representation.
-static LONG_NAME_FIX: Lazy<UnorderedHashMap<BigUint, &'static str>> = Lazy::new(|| {
+static LONG_NAME_FIX: LazyLock<UnorderedHashMap<BigUint, &'static str>> = LazyLock::new(|| {
     UnorderedHashMap::from_iter(
         SERDE_SUPPORTED_LONG_IDS.iter().map(|name| (starknet_keccak(name.as_bytes()), *name)),
     )

@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::ModuleId;
@@ -19,7 +19,6 @@ use cairo_lang_utils::{Intern, Upcast, UpcastMut};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use lowering::optimizations::config::OptimizationConfig;
-use once_cell::sync::Lazy;
 use semantic::inline_macros::get_default_plugin_suite;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
@@ -47,10 +46,10 @@ impl salsa::ParallelDatabase for SierraGenDatabaseForTesting {
         salsa::Snapshot::new(SierraGenDatabaseForTesting { storage: self.storage.snapshot() })
     }
 }
-pub static SHARED_DB: Lazy<Mutex<SierraGenDatabaseForTesting>> =
-    Lazy::new(|| Mutex::new(SierraGenDatabaseForTesting::new_empty()));
-pub static SHARED_DB_WITHOUT_AD_WITHDRAW_GAS: Lazy<Mutex<SierraGenDatabaseForTesting>> =
-    Lazy::new(|| {
+pub static SHARED_DB: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
+    LazyLock::new(|| Mutex::new(SierraGenDatabaseForTesting::new_empty()));
+pub static SHARED_DB_WITHOUT_AD_WITHDRAW_GAS: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
+    LazyLock::new(|| {
         let mut db = SierraGenDatabaseForTesting::new_empty();
         let add_withdraw_gas_flag_id = FlagId::new(db.upcast_mut(), "add_withdraw_gas");
         db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
