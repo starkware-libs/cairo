@@ -13,6 +13,7 @@ use super::ast::{
 use super::kind::SyntaxKind;
 use super::{SyntaxNode, Terminal, Token};
 use crate::node::ast::{TerminalLiteralNumber, TokenLiteralNumber};
+use crate::node::ids::TextId;
 use crate::node::test_utils::DatabaseForTesting;
 
 #[test]
@@ -58,7 +59,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenIdentifier,
-                Some("foo".into()),
+                Some(TextId::interned("foo", db)),
                 TextOffset::default().add_width(TextWidth::new_for_testing(0)),
                 TextWidth::new_for_testing(3)
             ),
@@ -70,7 +71,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenWhitespace,
-                Some(" ".into()),
+                Some(TextId::interned(" ", db)),
                 TextOffset::default().add_width(TextWidth::new_for_testing(3)),
                 TextWidth::new_for_testing(1)
             ),
@@ -88,7 +89,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenPlus,
-                Some("+".into()),
+                Some(TextId::interned("+", db)),
                 TextOffset::default().add_width(TextWidth::new_for_testing(4)),
                 TextWidth::new_for_testing(1)
             ),
@@ -100,7 +101,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenWhitespace,
-                Some(" ".into()),
+                Some(TextId::interned(" ", db)),
                 TextOffset::default().add_width(TextWidth::new_for_testing(5)),
                 TextWidth::new_for_testing(1)
             ),
@@ -118,7 +119,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenLiteralNumber,
-                Some("5".into()),
+                Some(TextId::interned("5", db)),
                 TextOffset::default().add_width(TextWidth::new_for_testing(6)),
                 TextWidth::new_for_testing(1)
             ),
@@ -147,11 +148,11 @@ fn test_stable_ptr() {
 fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     // TODO: Use a builder for easier construction of token.
     // Construct green nodes.
-    let token_foo = TokenIdentifier::new_green(db, "foo".into());
-    let token_whitespace1 = TokenWhitespace::new_green(db, " ".into());
-    let token_plus = TokenPlus::new_green(db, "+".into());
-    let token_whitespace2 = TokenWhitespace::new_green(db, " ".into());
-    let token5 = TokenLiteralNumber::new_green(db, "5".into());
+    let token_foo = TokenIdentifier::new_green_str(db, "foo");
+    let token_whitespace1 = TokenWhitespace::new_green_str(db, " ");
+    let token_plus = TokenPlus::new_green_str(db, "+");
+    let token_whitespace2 = TokenWhitespace::new_green_str(db, " ");
+    let token5 = TokenLiteralNumber::new_green_str(db, "5");
     assert_eq!(token_whitespace1, token_whitespace2);
     let no_trivia = Trivia::new_green(db, vec![]);
     let triviums = [token_whitespace1, token_whitespace2];

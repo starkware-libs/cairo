@@ -7,6 +7,7 @@ use cairo_lang_syntax::attribute::structured::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
@@ -166,12 +167,12 @@ fn extract_success_ty_and_variants(
         return None;
     };
     let ty = segment.ident(db).text(db);
-    if ty == "Option" {
+    if ty == TextId::interned("Option", db) {
         let [inner] = &segment.generic_args(db).generic_args(db).elements(db)[..] else {
             return None;
         };
         Some((inner.clone(), "Option::Some".to_owned(), "Option::None".to_owned()))
-    } else if ty == "Result" {
+    } else if ty == TextId::interned("Result", db) {
         let [inner, _err] = &segment.generic_args(db).generic_args(db).elements(db)[..] else {
             return None;
         };

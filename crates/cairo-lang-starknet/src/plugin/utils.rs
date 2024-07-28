@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::ast::{self, Attribute, Modifier};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{is_single_arg_attr, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{require, try_extract_matches};
+use cairo_lang_utils::{require, try_extract_matches, LookupIntern};
 
 use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR};
 
@@ -72,7 +72,7 @@ impl AstPathExtract for ast::ExprPath {
             return false;
         };
 
-        arg_segment.ident(db).text(db) == identifier
+        arg_segment.ident(db).text(db).lookup_intern(db).as_ref() == identifier
     }
 
     fn is_name_with_arg(&self, db: &dyn SyntaxGroup, name: &str, generic_arg: &str) -> bool {
@@ -83,7 +83,7 @@ impl AstPathExtract for ast::ExprPath {
             return false;
         };
 
-        if path_segment_with_generics.ident(db).text(db) != name {
+        if path_segment_with_generics.ident(db).text(db).lookup_intern(db).as_ref() != name {
             return false;
         }
         let args = path_segment_with_generics.generic_args(db).generic_args(db).elements(db);
@@ -102,7 +102,8 @@ impl AstPathExtract for ast::ExprPath {
         let Some((last, head)) = segments.split_last() else { return false };
         match last {
             ast::PathSegment::Simple(arg_segment) => {
-                head.is_empty() && arg_segment.ident(db).text(db) == identifier
+                head.is_empty()
+                    && arg_segment.ident(db).text(db).lookup_intern(db).as_ref() == identifier
             }
             ast::PathSegment::WithGenericArgs(with_generics) => {
                 with_generics.generic_args(db).generic_args(db).elements(db).iter().any(|arg| {

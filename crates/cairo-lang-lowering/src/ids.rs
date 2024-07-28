@@ -9,7 +9,6 @@ use defs::ids::{ExternFunctionId, FreeFunctionId};
 use semantic::items::functions::GenericFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
 use semantic::{ExprVar, Mutability};
-use smol_str::SmolStr;
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use crate::db::LoweringGroup;
@@ -142,9 +141,11 @@ impl ConcreteFunctionWithBodyLongId {
             ConcreteFunctionWithBodyLongId::Generated(generated) => generated.parent,
         }
     }
-    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn LoweringGroup) -> String {
         match self {
-            ConcreteFunctionWithBodyLongId::Semantic(semantic) => semantic.name(db.upcast()),
+            ConcreteFunctionWithBodyLongId::Semantic(semantic) => {
+                semantic.name(db.upcast()).to_string(db)
+            }
             ConcreteFunctionWithBodyLongId::Generated(generated) => generated.name(db),
         }
     }
@@ -165,7 +166,7 @@ impl ConcreteFunctionWithBodyId {
     pub fn function_id(&self, db: &dyn LoweringGroup) -> Maybe<FunctionId> {
         self.lookup_intern(db).function_id(db)
     }
-    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn LoweringGroup) -> String {
         self.lookup_intern(db).name(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
@@ -241,7 +242,7 @@ impl FunctionLongId {
             FunctionLongId::Generated(generated) => generated.body(db).signature(db),
         }
     }
-    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn LoweringGroup) -> String {
         match *self {
             FunctionLongId::Semantic(semantic) => semantic.name(db.upcast()),
             FunctionLongId::Generated(generated) => generated.name(db),
@@ -264,7 +265,7 @@ impl FunctionId {
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         self.lookup_intern(db).signature(db)
     }
-    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn LoweringGroup) -> String {
         self.lookup_intern(db).name(db)
     }
     pub fn semantic_full_path(&self, db: &dyn LoweringGroup) -> String {
@@ -312,8 +313,8 @@ impl GeneratedFunction {
             ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, element });
         long_id.intern(db)
     }
-    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
-        format!("{}[expr{}]", self.parent.full_path(db.upcast()), self.element.index()).into()
+    pub fn name(&self, db: &dyn LoweringGroup) -> String {
+        format!("{}[expr{}]", self.parent.full_path(db.upcast()), self.element.index())
     }
 }
 

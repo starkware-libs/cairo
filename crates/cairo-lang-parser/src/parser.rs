@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
-use cairo_lang_utils::{extract_matches, require, LookupIntern};
+use cairo_lang_utils::{extract_matches, require, Intern, LookupIntern};
 use syntax::node::green::{GreenNode, GreenNodeDetails};
 use syntax::node::ids::GreenId;
 
@@ -1396,7 +1396,8 @@ impl<'a> Parser<'a> {
         // Check that `expr` is `ExprPath`.
         let GreenNode {
             kind: SyntaxKind::ExprPath,
-            details: GreenNodeDetails::Node { children: children0, .. },
+            details: GreenNodeDetails::Node(children0),
+            ..
         } = &*expr.0.lookup_intern(self.db)
         else {
             return None;
@@ -1410,7 +1411,8 @@ impl<'a> Parser<'a> {
         // Check that `path_segment` is `PathSegmentSimple`.
         let GreenNode {
             kind: SyntaxKind::PathSegmentSimple,
-            details: GreenNodeDetails::Node { children: children1, .. },
+            details: GreenNodeDetails::Node(children1),
+            ..
         } = &*path_segment.lookup_intern(self.db)
         else {
             return None;
@@ -1697,7 +1699,7 @@ impl<'a> Parser<'a> {
         let for_kw = self.take::<TerminalFor>();
         let pattern = self.parse_pattern();
         let ident = self.take_raw();
-        let in_identifier: TerminalIdentifierGreen = match ident.text.as_str() {
+        let in_identifier: TerminalIdentifierGreen = match ident.text.as_ref() {
             "in" => self.add_trivia_to_terminal::<TerminalIdentifier>(ident),
             _ => {
                 self.append_skipped_token_to_pending_trivia(
@@ -1811,7 +1813,7 @@ impl<'a> Parser<'a> {
                     _ => {
                         let green_node = path.0.lookup_intern(self.db);
                         let children = match &green_node.details {
-                            GreenNodeDetails::Node { children, width: _ } => children,
+                            GreenNodeDetails::Node(children) => children,
                             _ => return Err(TryParseFailure::SkipToken),
                         };
                         // If the path has more than 1 element assume it's a simplified Enum variant
@@ -2262,7 +2264,7 @@ impl<'a> Parser<'a> {
         let green = self.take::<TerminalLiteralNumber>();
         let span = TextSpan { start: self.offset, end: self.offset.add_width(self.current_width) };
 
-        validate_literal_number(self.diagnostics, text, span, self.file_id);
+        validate_literal_number(self.diagnostics, &text, span, self.file_id);
         green
     }
 
@@ -2272,7 +2274,7 @@ impl<'a> Parser<'a> {
         let green = self.take::<TerminalShortString>();
         let span = TextSpan { start: self.offset, end: self.offset.add_width(self.current_width) };
 
-        validate_short_string(self.diagnostics, text, span, self.file_id);
+        validate_short_string(self.diagnostics, &text, span, self.file_id);
         green
     }
 
@@ -2282,7 +2284,7 @@ impl<'a> Parser<'a> {
         let green = self.take::<TerminalString>();
         let span = TextSpan { start: self.offset, end: self.offset.add_width(self.current_width) };
 
-        validate_string(self.diagnostics, text, span, self.file_id);
+        validate_string(self.diagnostics, &text, span, self.file_id);
         green
     }
 
@@ -2594,11 +2596,13 @@ impl<'a> Parser<'a> {
         let orig_offset = self.offset;
         let diag_start =
             self.offset.add_width(trivia_total_width(self.db, &terminal.leading_trivia));
-        let diag_end = diag_start.add_width(TextWidth::from_str(&terminal.text));
+        let width = TextWidth::from_str(&terminal.text);
+        let diag_end = diag_start.add_width(width);
 
         // Add to pending trivia.
         self.pending_trivia.extend(terminal.leading_trivia.clone());
-        self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
+        self.pending_trivia
+            .push(TokenSkipped::new_green_ex(self.db, terminal.text.intern(self.db), width).into());
         self.pending_trivia.extend(terminal.trailing_trivia.clone());
         self.pending_skipped_token_diagnostics.push(PendingParserDiagnostic {
             kind: diagnostic_kind,
@@ -2639,7 +2643,8 @@ impl<'a> Parser<'a> {
         // Add to pending trivia.
         self.pending_trivia.push(trivium_green);
 
-        let start_of_node_offset = end_of_node_offset.sub_width(trivium_green.0.width(self.db));
+        let start_of_node_offset =
+            end_of_node_offset.sub_width(trivium_green.0.lookup_intern(self.db).width);
         let diag_pos = end_of_node_offset
             .sub_width(trailing_trivia_width(self.db, trivium_green.0).unwrap_or_default());
 
@@ -2681,10 +2686,13 @@ impl<'a> Parser<'a> {
         while !should_stop(self.peek().kind) {
             let terminal = self.take_raw();
             diag_start.get_or_insert(self.offset);
-            diag_end = Some(self.offset.add_width(TextWidth::from_str(&terminal.text)));
+            let width = TextWidth::from_str(&terminal.text);
+            diag_end = Some(self.offset.add_width(width));
 
             self.pending_trivia.extend(terminal.leading_trivia);
-            self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
+            self.pending_trivia.push(
+                TokenSkipped::new_green_ex(self.db, terminal.text.intern(self.db), width).into(),
+            );
             self.pending_trivia.extend(terminal.trailing_trivia);
         }
         if let (Some(diag_start), Some(diag_end)) = (diag_start, diag_end) {
@@ -2701,7 +2709,8 @@ impl<'a> Parser<'a> {
         lexer_terminal: LexerTerminal,
     ) -> Terminal::Green {
         let LexerTerminal { text, kind: _, leading_trivia, trailing_trivia } = lexer_terminal;
-        let token = Terminal::TokenType::new_green(self.db, text);
+        let width = TextWidth::from_str(&text);
+        let token = Terminal::TokenType::new_green_ex(self.db, text.intern(self.db), width);
         let mut new_leading_trivia = mem::take(&mut self.pending_trivia);
 
         self.consume_pending_skipped_diagnostics();
@@ -2850,18 +2859,18 @@ pub struct PendingParserDiagnostic {
 
 /// Returns the total width of the given trivia list.
 fn trivia_total_width(db: &dyn SyntaxGroup, trivia: &[TriviumGreen]) -> TextWidth {
-    trivia.iter().map(|trivium| trivium.0.width(db)).sum::<TextWidth>()
+    trivia.iter().map(|trivium| trivium.0.lookup_intern(db).width).sum::<TextWidth>()
 }
 
 /// The width of the trailing trivia, traversing the tree to the bottom right node.
 fn trailing_trivia_width(db: &dyn SyntaxGroup, green_id: GreenId) -> Option<TextWidth> {
     let node = green_id.lookup_intern(db);
     if node.kind == SyntaxKind::Trivia {
-        return Some(node.width());
+        return Some(node.width);
     }
     match &node.details {
         GreenNodeDetails::Token(_) => Some(TextWidth::default()),
-        GreenNodeDetails::Node { children, .. } => {
+        GreenNodeDetails::Node(children) => {
             for child in children.iter().rev() {
                 if let Some(width) = trailing_trivia_width(db, *child) {
                     return Some(width);

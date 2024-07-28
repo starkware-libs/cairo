@@ -1,5 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_utils::extract_matches;
 use pretty_assertions::assert_eq;
 use test_log::test;
@@ -21,7 +22,7 @@ fn test_extern_function() {
     let module_id = test_module.module_id;
 
     let extern_function_id = extract_matches!(
-        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
+        db.module_item_by_name(module_id, TextId::interned("foo", db)).unwrap().unwrap(),
         ModuleItemId::ExternFunction
     );
     let signature = db.extern_function_signature(extern_function_id).unwrap();

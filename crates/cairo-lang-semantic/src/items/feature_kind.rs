@@ -10,9 +10,9 @@ use cairo_lang_syntax::attribute::structured::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use smol_str::SmolStr;
 
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::SemanticDiagnostic;
@@ -23,12 +23,12 @@ pub enum FeatureKind {
     /// The feature of the item is stable.
     Stable,
     /// The feature of the item is unstable, with the given name to allow.
-    Unstable { feature: SmolStr, note: Option<SmolStr> },
+    Unstable { feature: TextId, note: Option<TextId> },
     /// The feature of the item is deprecated, with the given name to allow, and an optional note
     /// to appear in diagnostics.
-    Deprecated { feature: SmolStr, note: Option<SmolStr> },
+    Deprecated { feature: TextId, note: Option<TextId> },
     /// This feature is for internal corelib use only. Using it in user code is not advised.
-    Internal { feature: SmolStr, note: Option<SmolStr> },
+    Internal { feature: TextId, note: Option<TextId> },
 }
 impl FeatureKind {
     pub fn from_ast(
@@ -46,21 +46,18 @@ impl FeatureKind {
             add_diag(diagnostics, &attrs.stable_ptr(), FeatureMarkerDiagnostic::MultipleMarkers);
             return Self::Stable;
         }
-
+        let allowed_args = ["feature", "note", "since"].map(|x| TextId::interned(x, db));
         if !unstable_attrs.is_empty() {
             let attr = unstable_attrs.into_iter().next().unwrap().structurize(db);
-            let [feature, note, _] =
-                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
+            let [feature, note, _] = parse_feature_attr(db, diagnostics, &attr, allowed_args);
             feature.map(|feature| Self::Unstable { feature, note }).ok_or(attr)
         } else if !deprecated_attrs.is_empty() {
             let attr = deprecated_attrs.into_iter().next().unwrap().structurize(db);
-            let [feature, note, _] =
-                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
+            let [feature, note, _] = parse_feature_attr(db, diagnostics, &attr, allowed_args);
             feature.map(|feature| Self::Deprecated { feature, note }).ok_or(attr)
         } else {
             let attr = internal_attrs.into_iter().next().unwrap().structurize(db);
-            let [feature, note, _] =
-                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
+            let [feature, note, _] = parse_feature_attr(db, diagnostics, &attr, allowed_args);
             feature.map(|feature| Self::Internal { feature, note }).ok_or(attr)
         }
         .unwrap_or_else(|attr| {
@@ -88,15 +85,15 @@ fn parse_feature_attr<const EXTRA_ALLOWED: usize>(
     db: &dyn SyntaxGroup,
     diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
     attr: &structured::Attribute,
-    allowed_args: [&str; EXTRA_ALLOWED],
-) -> [Option<SmolStr>; EXTRA_ALLOWED] {
+    allowed_args: [TextId; EXTRA_ALLOWED],
+) -> [Option<TextId>; EXTRA_ALLOWED] {
     let mut arg_values = std::array::from_fn(|_| None);
     for AttributeArg { variant, arg, .. } in &attr.args {
         let AttributeArgVariant::Named { value: ast::Expr::String(value), name } = variant else {
             add_diag(diagnostics, &arg.stable_ptr(), FeatureMarkerDiagnostic::UnsupportedArgument);
             continue;
         };
-        let Some(i) = allowed_args.iter().position(|x| x == &name.text.as_str()) else {
+        let Some(i) = allowed_args.iter().position(|x| x == &name.text) else {
             add_diag(diagnostics, &name.stable_ptr, FeatureMarkerDiagnostic::UnsupportedArgument);
             continue;
         };
@@ -126,7 +123,7 @@ pub fn extract_item_allowed_features(
     db: &dyn SyntaxGroup,
     syntax: &impl QueryAttrs,
     diagnostics: &mut SemanticDiagnostics,
-) -> OrderedHashSet<SmolStr> {
+) -> OrderedHashSet<TextId> {
     let mut features = OrderedHashSet::default();
     for attr_syntax in syntax.query_attr(db, FEATURE_ATTR) {
         let attr = attr_syntax.structurize(db);
@@ -157,7 +154,7 @@ pub fn extract_allowed_features(
     element_id: &impl LanguageElementId,
     syntax: &impl QueryAttrs,
     diagnostics: &mut SemanticDiagnostics,
-) -> OrderedHashSet<SmolStr> {
+) -> OrderedHashSet<TextId> {
     let syntax_db = db.upcast();
     let mut allowed_features = extract_item_allowed_features(syntax_db, syntax, diagnostics);
     let ignored_diagnostics = &mut SemanticDiagnostics::default();

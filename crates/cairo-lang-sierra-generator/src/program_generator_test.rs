@@ -4,6 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::try_extract_matches;
@@ -76,7 +77,9 @@ fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
             .iter()
             .find_map(|module_id| {
                 try_extract_matches!(
-                    db.module_item_by_name(*module_id, func_name.into()).unwrap().unwrap(),
+                    db.module_item_by_name(*module_id, TextId::interned(func_name, &db))
+                        .unwrap()
+                        .unwrap(),
                     ModuleItemId::FreeFunction
                 )
             })

@@ -22,12 +22,11 @@ use cairo_lang_starknet_classes::abi::{
     StructMember,
 };
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{SyntaxStablePtrId, TextId};
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{require, try_extract_matches, Intern, LookupIntern};
 use itertools::zip_eq;
-use smol_str::SmolStr;
 use thiserror::Error;
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
@@ -48,7 +47,7 @@ enum EventInfo {
     /// The event is a struct.
     Struct,
     /// The event is an enum, contains its set of selectors.
-    Enum(HashSet<String>),
+    Enum(HashSet<TextId>),
 }
 
 /// The information of an entrypoint.
@@ -86,7 +85,7 @@ pub struct AbiBuilder<'a> {
 
     /// List of entry point names that were included in the abi.
     /// Used to avoid duplication.
-    entry_points: HashMap<String, EntryPointInfo>,
+    entry_points: HashMap<TextId, EntryPointInfo>,
 
     /// The constructor for the contract.
     ctor: Option<EntryPointInfo>,
@@ -147,14 +146,15 @@ impl<'a> AbiBuilder<'a> {
         }
         if is_account_contract {
             for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
-                if !self.entry_points.contains_key(*selector) {
+                if !self.entry_points.contains_key(&TextId::interned(*selector, self.db)) {
                     self.errors.push(ABIError::EntryPointMissingForAccountContract {
                         selector: selector.to_string(),
                     });
                 }
             }
-            if let Some(validate_deploy) =
-                self.entry_points.get(VALIDATE_DEPLOY_ENTRY_POINT_SELECTOR)
+            if let Some(validate_deploy) = self
+                .entry_points
+                .get(&TextId::interned(VALIDATE_DEPLOY_ENTRY_POINT_SELECTOR, self.db))
             {
                 let ctor_inputs =
                     self.ctor.as_ref().map(|ctor| ctor.inputs.as_slice()).unwrap_or(&[]);
@@ -166,7 +166,7 @@ impl<'a> AbiBuilder<'a> {
             }
         } else {
             for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
-                if let Some(info) = self.entry_points.get(*selector) {
+                if let Some(info) = self.entry_points.get(&TextId::interned(*selector, self.db)) {
                     self.errors.push(ABIError::EntryPointSupportedOnlyOnAccountContract {
                         selector: selector.to_string(),
                         source_ptr: info.source,
@@ -198,11 +198,11 @@ impl<'a> AbiBuilder<'a> {
         // Get storage type for later validations.
         let mut storage_type = None;
         for struct_id in structs {
-            let struct_name = struct_id.name(self.db.upcast());
+            let struct_name = struct_id.name(self.db.upcast()).lookup_intern(self.db);
             let concrete_struct_id =
                 ConcreteStructLongId { struct_id, generic_args: vec![] }.intern(self.db);
             let source = Source::Struct(concrete_struct_id);
-            if struct_name == CONTRACT_STATE_NAME {
+            if struct_name.as_ref() == CONTRACT_STATE_NAME {
                 if storage_type.is_some() {
                     self.errors.push(ABIError::MultipleStorages(source));
                 }
@@ -212,7 +212,7 @@ impl<'a> AbiBuilder<'a> {
                 );
             }
             // Forbid a struct named Event.
-            if struct_name == EVENT_TYPE_NAME {
+            if struct_name.as_ref() == EVENT_TYPE_NAME {
                 self.errors.push(ABIError::EventMustBeEnum(source));
             }
         }
@@ -268,7 +268,9 @@ impl<'a> AbiBuilder<'a> {
         // Add events to ABI.
         for enum_id in enums {
             let enm_name = enum_id.name(self.db.upcast());
-            if enm_name == EVENT_TYPE_NAME && enum_id.has_attr(self.db.upcast(), EVENT_ATTR)? {
+            if enm_name.lookup_intern(self.db).as_ref() == EVENT_TYPE_NAME
+                && enum_id.has_attr(self.db.upcast(), EVENT_ATTR)?
+            {
                 // Get the ConcreteEnumId from the EnumId.
                 let concrete_enum_id =
                     ConcreteEnumLongId { enum_id, generic_args: vec![] }.intern(self.db);
@@ -300,7 +302,7 @@ impl<'a> AbiBuilder<'a> {
         for function in self.db.trait_functions(trait_id).unwrap_or_default().values() {
             let f = self.trait_function_as_abi(*function, storage_type)?;
             self.add_entry_point(
-                function.name(self.db.upcast()).into(),
+                function.name(self.db.upcast()),
                 EntryPointInfo { source, inputs: f.inputs.clone() },
             )?;
             items.push(Item::Function(f));
@@ -344,7 +346,7 @@ impl<'a> AbiBuilder<'a> {
         let trait_id = trt.trait_id(self.db);
         let interface_name = trait_id.full_path(self.db.upcast());
 
-        let abi_name = impl_alias_name.unwrap_or(impl_name.into());
+        let abi_name = impl_alias_name.unwrap_or(impl_name.lookup_intern(self.db).to_string());
         let impl_item = Item::Impl(Imp { name: abi_name, interface_name });
         self.add_abi_item(impl_item, true, source)?;
         self.add_interface(source, trait_id)?;
@@ -386,7 +388,7 @@ impl<'a> AbiBuilder<'a> {
         self.add_embedded_impl(
             source,
             impl_def,
-            Some(impl_alias_id.name(self.db.upcast()).into()),
+            Some(impl_alias_id.name(self.db.upcast()).lookup_intern(self.db).to_string()),
         )?;
 
         Ok(())
@@ -414,10 +416,10 @@ impl<'a> AbiBuilder<'a> {
         function_with_body_id: FunctionWithBodyId,
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
-        let name: String = function_with_body_id.name(self.db.upcast()).into();
+        let name = function_with_body_id.name(self.db.upcast());
         let signature = self.db.function_with_body_signature(function_with_body_id)?;
 
-        let function = self.function_as_abi(&name, signature, storage_type)?;
+        let function = self.function_as_abi(name, signature, storage_type)?;
         self.add_abi_item(Item::Function(function), true, Source::Function(function_with_body_id))?;
 
         Ok(())
@@ -433,7 +435,7 @@ impl<'a> AbiBuilder<'a> {
         if self.ctor.is_some() {
             return Err(ABIError::MultipleConstructors(source));
         }
-        let name = function_with_body_id.name(self.db.upcast()).into();
+        let name = function_with_body_id.name(self.db.upcast());
         let signature = self.db.function_with_body_signature(function_with_body_id)?;
 
         let (inputs, state_mutability) =
@@ -441,7 +443,10 @@ impl<'a> AbiBuilder<'a> {
         self.ctor = Some(EntryPointInfo { source, inputs: inputs.clone() });
         require(state_mutability == StateMutability::External).ok_or(ABIError::UnexpectedType)?;
 
-        let constructor_item = Item::Constructor(Constructor { name, inputs });
+        let constructor_item = Item::Constructor(Constructor {
+            name: name.lookup_intern(self.db).to_string(),
+            inputs,
+        });
         self.add_abi_item(constructor_item, true, source)?;
 
         Ok(())
@@ -453,7 +458,7 @@ impl<'a> AbiBuilder<'a> {
         function_with_body_id: FunctionWithBodyId,
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
-        let name = function_with_body_id.name(self.db.upcast()).into();
+        let name = function_with_body_id.name(self.db.upcast()).lookup_intern(self.db).to_string();
         let signature = self.db.function_with_body_signature(function_with_body_id)?;
 
         let (inputs, state_mutability) =
@@ -478,7 +483,8 @@ impl<'a> AbiBuilder<'a> {
         let Some(first_param) = params.next() else {
             return Err(ABIError::EntrypointMustHaveSelf);
         };
-        require(first_param.name == "self").ok_or(ABIError::EntrypointMustHaveSelf)?;
+        require(first_param.name.lookup_intern(self.db).as_ref() == "self")
+            .ok_or(ABIError::EntrypointMustHaveSelf)?;
         let is_ref = first_param.mutability == Mutability::Reference;
         let expected_storage_ty = is_ref
             .then_some(storage_type)
@@ -490,7 +496,7 @@ impl<'a> AbiBuilder<'a> {
         for param in params {
             self.add_type(param.ty)?;
             inputs.push(Input {
-                name: param.id.name(self.db.upcast()).into(),
+                name: param.id.name(self.db.upcast()).lookup_intern(self.db).to_string(),
                 ty: param.ty.format(self.db),
             });
         }
@@ -517,16 +523,16 @@ impl<'a> AbiBuilder<'a> {
         trait_function_id: TraitFunctionId,
         storage_type: TypeId,
     ) -> Result<Function, ABIError> {
-        let name: String = trait_function_id.name(self.db.upcast()).into();
+        let name = trait_function_id.name(self.db.upcast());
         let signature = self.db.trait_function_signature(trait_function_id)?;
 
-        self.function_as_abi(&name, signature, storage_type)
+        self.function_as_abi(name, signature, storage_type)
     }
 
     /// Converts a function name and signature to an ABI::Function.
     fn function_as_abi(
         &mut self,
-        name: &str,
+        name: TextId,
         signature: Signature,
         storage_type: TypeId,
     ) -> Result<Function, ABIError> {
@@ -535,7 +541,12 @@ impl<'a> AbiBuilder<'a> {
 
         let outputs = self.get_signature_outputs(&signature)?;
 
-        Ok(Function { name: name.to_string(), inputs, outputs, state_mutability })
+        Ok(Function {
+            name: name.lookup_intern(self.db).to_string(),
+            inputs,
+            outputs,
+            state_mutability,
+        })
     }
 
     /// Adds an event to the ABI from a type with an Event derive.
@@ -571,11 +582,11 @@ impl<'a> AbiBuilder<'a> {
                     unreachable!();
                 };
                 let mut selectors = HashSet::new();
-                let mut add_selector = |selector: &str, source_ptr| {
-                    if !selectors.insert(selector.to_string()) {
+                let mut add_selector = |selector: TextId, source_ptr| {
+                    if !selectors.insert(selector) {
                         Err(ABIError::EventSelectorDuplication {
                             event: type_id.format(self.db),
-                            selector: selector.to_string(),
+                            selector: selector.lookup_intern(self.db).to_string(),
                             source_ptr,
                         })
                     } else {
@@ -587,14 +598,14 @@ impl<'a> AbiBuilder<'a> {
                     .map(|((name, kind), concrete_variant)| {
                         let source = Source::Variant(concrete_variant.id);
                         if kind == EventFieldKind::Nested {
-                            add_selector(&name, source)?;
+                            add_selector(name, source)?;
                         }
                         let field =
-                            self.add_event_field(kind, concrete_variant.ty, name.clone(), source)?;
+                            self.add_event_field(kind, concrete_variant.ty, name, source)?;
                         if kind == EventFieldKind::Flat {
                             if let EventInfo::Enum(inner) = &self.event_info[&concrete_variant.ty] {
                                 for selector in inner {
-                                    add_selector(selector, source)?;
+                                    add_selector(*selector, source)?;
                                 }
                             } else {
                                 let bad_attr = concrete_variant
@@ -634,14 +645,18 @@ impl<'a> AbiBuilder<'a> {
         &mut self,
         kind: EventFieldKind,
         ty: TypeId,
-        name: SmolStr,
+        name: TextId,
         source: Source,
     ) -> Result<EventField, ABIError> {
         match kind {
             EventFieldKind::KeySerde | EventFieldKind::DataSerde => self.add_type(ty)?,
             EventFieldKind::Nested | EventFieldKind::Flat => self.add_event(ty, source)?,
         };
-        Ok(EventField { name: name.into(), ty: ty.format(self.db), kind })
+        Ok(EventField {
+            name: name.lookup_intern(self.db).to_string(),
+            ty: ty.format(self.db),
+            kind,
+        })
     }
 
     /// Adds a type to the ABI from a TypeId.
@@ -709,7 +724,10 @@ impl<'a> AbiBuilder<'a> {
             .iter()
             .map(|(name, member)| {
                 self.add_type(member.ty)?;
-                Ok(StructMember { name: name.to_string(), ty: member.ty.format(self.db) })
+                Ok(StructMember {
+                    name: name.lookup_intern(self.db).to_string(),
+                    ty: member.ty.format(self.db),
+                })
             })
             .collect()
     }
@@ -730,7 +748,10 @@ impl<'a> AbiBuilder<'a> {
                     &self.db.variant_semantic(generic_id, *variant_id)?,
                 )?;
                 self.add_type(variant.ty)?;
-                Ok(EnumVariant { name: name.to_string(), ty: variant.ty.format(self.db) })
+                Ok(EnumVariant {
+                    name: name.lookup_intern(self.db).to_string(),
+                    ty: variant.ty.format(self.db),
+                })
             })
             .collect::<Result<Vec<_>, ABIError>>()
     }
@@ -749,7 +770,10 @@ impl<'a> AbiBuilder<'a> {
             Item::L1Handler(item) => Some((item.name.to_string(), item.inputs.clone())),
             _ => None,
         } {
-            self.add_entry_point(name, EntryPointInfo { source, inputs })?;
+            self.add_entry_point(
+                TextId::interned(name, self.db),
+                EntryPointInfo { source, inputs },
+            )?;
         }
 
         self.insert_abi_item(item, prevent_dups.then_some(source))
@@ -787,10 +811,13 @@ impl<'a> AbiBuilder<'a> {
     }
 
     /// Adds an entry point name to the set of names, to track unsupported duplication.
-    fn add_entry_point(&mut self, name: String, info: EntryPointInfo) -> Result<(), ABIError> {
+    fn add_entry_point(&mut self, name: TextId, info: EntryPointInfo) -> Result<(), ABIError> {
         let source_ptr = info.source;
-        if self.entry_points.insert(name.clone(), info).is_some() {
-            return Err(ABIError::DuplicateEntryPointName { name, source_ptr });
+        if self.entry_points.insert(name, info).is_some() {
+            return Err(ABIError::DuplicateEntryPointName {
+                name: name.lookup_intern(self.db).to_string(),
+                source_ptr,
+            });
         }
         Ok(())
     }
@@ -812,12 +839,14 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
     let starknet_module = core_submodule(db, "starknet");
     // `starknet::event`.
     let event_module = try_extract_matches!(
-        db.module_item_by_name(starknet_module, "event".into()).unwrap().unwrap(),
+        db.module_item_by_name(starknet_module, TextId::interned("event", db)).unwrap().unwrap(),
         ModuleItemId::Submodule
     )?;
     // `starknet::event::Event`.
     let event_trait_id = try_extract_matches!(
-        db.module_item_by_name(ModuleId::Submodule(event_module), "Event".into()).unwrap().unwrap(),
+        db.module_item_by_name(ModuleId::Submodule(event_module), TextId::interned("Event", db))
+            .unwrap()
+            .unwrap(),
         ModuleItemId::Trait
     )?;
     // `starknet::event::Event<ThisEvent>`.

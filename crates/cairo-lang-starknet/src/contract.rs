@@ -21,11 +21,12 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::{
     deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
 };
-use cairo_lang_utils::{extract_matches, Intern};
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::chain;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
@@ -75,7 +76,7 @@ pub fn module_contract(db: &dyn SemanticGroup, module_id: ModuleId) -> Option<Co
         if let ModuleId::Submodule(submodule_id) = module_id {
             Some(ContractDeclaration { submodule_id })
         } else {
-            unreachable!("Contract `{contract_name}` was not found.");
+            unreachable!("Contract `{}` was not found.", contract_name.lookup_intern(db).as_ref());
         }
     })
 }
@@ -141,7 +142,7 @@ fn get_module_aliased_functions(
             {
                 Ok(Aliased {
                     value: function_id,
-                    alias: leaf.stable_ptr().identifier(db.upcast()).to_string(),
+                    alias: leaf.stable_ptr().identifier(db.upcast()).to_string(db),
                 })
             } else {
                 bail!("Expected a free function.")
@@ -189,7 +190,7 @@ fn get_impl_aliases_abi_functions(
         let Some((impl_final_part, impl_module)) = impl_path_elements.split_last() else {
             unreachable!("impl_path should have at least one segment")
         };
-        let impl_name = impl_final_part.identifier(syntax_db);
+        let impl_name = impl_final_part.identifier(syntax_db).lookup_intern(db);
         let generic_args = impl_final_part.generic_args(syntax_db).unwrap_or_default();
         let ResolvedConcreteItem::Module(impl_module) = resolver
             .resolve_concrete_path(
@@ -241,14 +242,17 @@ fn get_generated_contract_module(
     let contract_name = contract.submodule_id.name(db.upcast());
 
     match db
-        .module_item_by_name(parent_module_id, contract_name.clone())
+        .module_item_by_name(parent_module_id, contract_name)
         .to_option()
         .with_context(|| "Failed to initiate a lookup in the root module.")?
     {
         Some(ModuleItemId::Submodule(generated_module_id)) => {
             Ok(ModuleId::Submodule(generated_module_id))
         }
-        _ => anyhow::bail!(format!("Failed to get generated module {contract_name}.")),
+        _ => anyhow::bail!(format!(
+            "Failed to get generated module {}.",
+            contract_name.lookup_intern(db).as_ref()
+        )),
     }
 }
 
@@ -259,7 +263,7 @@ fn get_submodule_id(
     submodule_name: &str,
 ) -> anyhow::Result<ModuleId> {
     match db
-        .module_item_by_name(module_id, submodule_name.into())
+        .module_item_by_name(module_id, TextId::interned(submodule_name, db))
         .to_option()
         .with_context(|| "Failed to initiate a lookup in the {module_name} module.")?
     {
@@ -312,8 +316,10 @@ fn analyze_contract<T: SierraIdReplacer>(
     replacer: &T,
 ) -> anyhow::Result<(Felt252, ContractInfo)> {
     // Extract class hash.
-    let item =
-        db.module_item_by_name(contract.module_id(), "TEST_CLASS_HASH".into()).unwrap().unwrap();
+    let item = db
+        .module_item_by_name(contract.module_id(), TextId::interned("TEST_CLASS_HASH", db))
+        .unwrap()
+        .unwrap();
     let constant_id = extract_matches!(item, ModuleItemId::Constant);
     let constant = db.constant_semantic_data(constant_id).unwrap();
     let class_hash: Felt252 =

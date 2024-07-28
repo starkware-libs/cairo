@@ -7,6 +7,7 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 use indoc::{formatdoc, indoc};
 use itertools::Itertools;
 
@@ -142,7 +143,9 @@ pub fn handle_entry_point(
 ) {
     let declaration = item_function.declaration(db);
     let name_node = declaration.name(db);
-    if entry_point_kind == EntryPointKind::Constructor && name_node.text(db) != CONSTRUCTOR_NAME {
+    if entry_point_kind == EntryPointKind::Constructor
+        && name_node.text(db).lookup_intern(db).as_ref() != CONSTRUCTOR_NAME
+    {
         diagnostics.push(PluginDiagnostic::error(
             name_node.stable_ptr().untyped(),
             format!("The constructor function must be called `{CONSTRUCTOR_NAME}`."),
@@ -234,7 +237,7 @@ fn generate_entry_point_wrapper(
             "The first parameter of an entry point must be `self`.".into(),
         )]);
     };
-    if first_param.name(db).text(db) != "self" {
+    if first_param.name(db).text(db).lookup_intern(db).as_ref() != "self" {
         return Err(vec![PluginDiagnostic::error(
             first_param.stable_ptr().untyped(),
             "The first parameter of an entry point must be `self`.".into(),
@@ -245,7 +248,7 @@ fn generate_entry_point_wrapper(
 
     let raw_output = function.has_attr(db, RAW_OUTPUT_ATTR);
     for (param_idx, param) in params {
-        let arg_name = format!("__arg_{}", param.name(db).text(db));
+        let arg_name = format!("__arg_{}", param.name(db).text(db).lookup_intern(db));
         let arg_type_ast = param.type_clause(db).ty(db);
         let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db);
 
@@ -377,7 +380,7 @@ fn validate_l1_handler_first_parameter(
         }
 
         // Validate name
-        if maybe_strip_underscore(first_param.name(db).text(db).as_str())
+        if maybe_strip_underscore(first_param.name(db).text(db).lookup_intern(db).as_ref())
             != L1_HANDLER_FIRST_PARAM_NAME
         {
             diagnostics.push(PluginDiagnostic::error(

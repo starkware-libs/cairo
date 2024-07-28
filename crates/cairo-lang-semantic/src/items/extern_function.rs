@@ -5,6 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 
@@ -166,7 +167,7 @@ pub fn priv_extern_function_declaration_data(
 
     if signature.panicable {
         let panic_function = extract_matches!(
-            get_core_generic_function_id(db.upcast(), "panic".into()),
+            get_core_generic_function_id(db.upcast(), TextId::interned("panic", db)),
             GenericFunctionId::Extern
         );
         if extern_function_id != panic_function {

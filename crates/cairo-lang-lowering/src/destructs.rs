@@ -8,6 +8,7 @@ use cairo_lang_semantic::corelib::unit_ty;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::ConcreteFunction;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
 use semantic::corelib::{core_module, destruct_trait_fn, get_ty_by_name, panic_destruct_trait_fn};
@@ -263,7 +264,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
 }
 
 fn panic_ty(db: &dyn LoweringGroup) -> semantic::TypeId {
-    get_ty_by_name(db.upcast(), core_module(db.upcast()), "Panic".into(), vec![])
+    get_ty_by_name(db.upcast(), core_module(db.upcast()), TextId::interned("Panic", db), vec![])
 }
 
 /// Report borrow checking diagnostics.

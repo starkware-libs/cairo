@@ -12,7 +12,7 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::helpers::PathSegmentEx;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{SyntaxStablePtrId, TextId};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -20,7 +20,6 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, require, try_extract_matches, Intern, LookupIntern};
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
-use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::QueryAttrs;
 use syntax::node::TypedStablePtr;
@@ -105,7 +104,7 @@ pub struct ResolverData {
     /// Current module in which to resolve the path.
     pub module_file_id: ModuleFileId,
     /// Named generic parameters accessible to the resolver.
-    generic_param_by_name: OrderedHashMap<SmolStr, GenericParamId>,
+    generic_param_by_name: OrderedHashMap<TextId, GenericParamId>,
     /// All generic parameters accessible to the resolver.
     pub generic_params: Vec<GenericParamId>,
     /// Lookback map for resolved identifiers in path. Used in "Go to definition".
@@ -114,7 +113,7 @@ pub struct ResolverData {
     pub inference_data: InferenceData,
     /// The trait/impl context the resolver is currently in. Used to resolve "Self::" paths.
     pub trait_or_impl_ctx: TraitOrImplContext,
-    pub allowed_features: OrderedHashSet<SmolStr>,
+    pub allowed_features: OrderedHashSet<TextId>,
 }
 impl ResolverData {
     pub fn new(module_file_id: ModuleFileId, inference_id: InferenceId) -> Self {
@@ -362,7 +361,7 @@ impl<'db> Resolver<'db> {
                         db,
                         segments.next().unwrap(),
                         ResolvedConcreteItem::Module(ModuleId::CrateRoot(
-                            CrateLongId::Real(identifier.text(syntax_db)).intern(db),
+                            CrateLongId::Real(identifier.text(syntax_db).to_string(db)).intern(db),
                         )),
                     )
                 }
@@ -479,7 +478,7 @@ impl<'db> Resolver<'db> {
                         db,
                         segments.next().unwrap(),
                         ResolvedGenericItem::Module(ModuleId::CrateRoot(
-                            CrateLongId::Real(identifier.text(syntax_db)).intern(db),
+                            CrateLongId::Real(identifier.text(syntax_db).to_string(db)).intern(db),
                         )),
                     )
                 }
@@ -499,7 +498,9 @@ impl<'db> Resolver<'db> {
         let mut module_id = self.module_file_id.0;
         for segment in segments.peeking_take_while(|segment| match segment {
             ast::PathSegment::WithGenericArgs(_) => false,
-            ast::PathSegment::Simple(simple) => simple.ident(syntax_db).text(syntax_db) == "super",
+            ast::PathSegment::Simple(simple) => {
+                simple.ident(syntax_db).text(syntax_db) == TextId::interned("super", self.db)
+            }
         }) {
             module_id = match module_id {
                 ModuleId::CrateRoot(_) => {
@@ -525,7 +526,7 @@ impl<'db> Resolver<'db> {
 
         let ident = identifier.text(syntax_db);
 
-        if identifier.text(syntax_db) == "Self" {
+        if identifier.text(syntax_db) == TextId::interned("Self", self.db) {
             return Err(diagnostics.report(identifier, SelfMustBeFirst));
         }
 
@@ -533,7 +534,7 @@ impl<'db> Resolver<'db> {
             ResolvedConcreteItem::Module(module_id) => {
                 // Prefix "super" segments should be removed earlier. Middle "super" segments are
                 // not allowed.
-                if ident == "super" {
+                if ident == TextId::interned("super", self.db) {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 }
                 let inner_item_info = self
@@ -762,7 +763,9 @@ impl<'db> Resolver<'db> {
                     }
                 }
             }
-            ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => {
+            ResolvedConcreteItem::Function(function_id)
+                if ident == TextId::interned("Coupon", self.db) =>
+            {
                 if !are_coupons_enabled(self.db, self.module_file_id) {
                     diagnostics.report(identifier, CouponsDisabled);
                 }
@@ -936,13 +939,13 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
 
         // If an item with this name is found inside the current module, use the current module.
-        if let Ok(Some(_)) = self.db.module_item_by_name(self.module_file_id.0, ident.clone()) {
+        if let Ok(Some(_)) = self.db.module_item_by_name(self.module_file_id.0, ident) {
             return Some(self.module_file_id.0);
         }
 
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
-        let crate_id = CrateLongId::Real(ident).intern(self.db);
+        let crate_id = CrateLongId::Real(ident.lookup_intern(self.db).to_string()).intern(self.db);
         require(self.db.crate_config(crate_id).is_none())?;
         // Last resort, use the `prelude` module as the base module.
         Some(self.prelude_submodule())
@@ -1274,26 +1277,20 @@ impl<'db> Resolver<'db> {
             FeatureKind::Unstable { feature, note }
                 if !self.data.allowed_features.contains(feature) =>
             {
-                diagnostics.report(
-                    identifier,
-                    UnstableFeature { feature_name: feature.clone(), note: note.clone() },
-                );
+                diagnostics
+                    .report(identifier, UnstableFeature { feature_name: *feature, note: *note });
             }
             FeatureKind::Deprecated { feature, note }
                 if !self.data.allowed_features.contains(feature) =>
             {
-                diagnostics.report(
-                    identifier,
-                    DeprecatedFeature { feature_name: feature.clone(), note: note.clone() },
-                );
+                diagnostics
+                    .report(identifier, DeprecatedFeature { feature_name: *feature, note: *note });
             }
             FeatureKind::Internal { feature, note }
                 if !self.data.allowed_features.contains(feature) =>
             {
-                diagnostics.report(
-                    identifier,
-                    InternalFeature { feature_name: feature.clone(), note: note.clone() },
-                );
+                diagnostics
+                    .report(identifier, InternalFeature { feature_name: *feature, note: *note });
             }
             _ => {}
         }
@@ -1479,7 +1476,7 @@ fn resolve_self_segment(
     identifier: &ast::TerminalIdentifier,
     trait_or_impl_ctx: &TraitOrImplContext,
 ) -> Option<Maybe<ResolvedConcreteItem>> {
-    require(identifier.text(db.upcast()) == "Self")?;
+    require(identifier.text(db.upcast()) == TextId::interned("Self", db))?;
     Some(resolve_actual_self_segment(db, diagnostics, identifier, trait_or_impl_ctx))
 }
 

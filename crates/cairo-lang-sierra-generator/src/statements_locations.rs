@@ -87,13 +87,15 @@ pub fn function_identifier_relative_to_file_module(
                     )
                     .declaration(syntax_db)
                     .name(syntax_db)
-                    .text(syntax_db);
+                    .text(syntax_db)
+                    .lookup_intern(db)
+                    .to_string();
 
                 if relative_semantic_path_segments.is_empty() {
                     statement_located_in_function = true;
                 }
 
-                relative_semantic_path_segments.push(function_name.to_string());
+                relative_semantic_path_segments.push(function_name);
             }
             cairo_lang_syntax::node::kind::SyntaxKind::ItemImpl => {
                 let impl_name = cairo_lang_syntax::node::ast::ItemImpl::from_syntax_node(
@@ -101,7 +103,8 @@ pub fn function_identifier_relative_to_file_module(
                     syntax_node.clone(),
                 )
                 .name(syntax_db)
-                .text(syntax_db);
+                .text(syntax_db)
+                .lookup_intern(db);
                 relative_semantic_path_segments.push(impl_name.to_string());
             }
             cairo_lang_syntax::node::kind::SyntaxKind::ItemModule => {
@@ -110,7 +113,8 @@ pub fn function_identifier_relative_to_file_module(
                     syntax_node.clone(),
                 )
                 .name(syntax_db)
-                .text(syntax_db);
+                .text(syntax_db)
+                .lookup_intern(db);
                 relative_semantic_path_segments.push(module_name.to_string());
             }
             _ => {}

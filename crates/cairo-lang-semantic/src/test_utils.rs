@@ -14,6 +14,7 @@ use cairo_lang_filesystem::ids::{
 };
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
@@ -218,7 +219,7 @@ pub fn setup_test_function_ex(
     };
     let (test_module, diagnostics) = setup_test_module_ex(db, &content, crate_settings).split();
     let generic_function_id = db
-        .module_item_by_name(test_module.module_id, function_name.into())
+        .module_item_by_name(test_module.module_id, TextId::interned(function_name, db))
         .expect("Failed to load module")
         .and_then(GenericFunctionId::option_from)
         .unwrap_or_else(|| panic!("Function '{function_name}' was not found."));

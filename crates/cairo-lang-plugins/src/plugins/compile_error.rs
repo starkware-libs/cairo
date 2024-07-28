@@ -3,6 +3,7 @@ use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginDiagnostic
 use cairo_lang_defs::plugin_utils::PluginResultTrait;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 
 /// Plugin that allows writing item level `compile_error!` causing a diagnostic.
 /// Useful for testing that `cfg` attributes are valid.
@@ -18,7 +19,7 @@ impl MacroPlugin for CompileErrorPlugin {
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         if let ast::ModuleItem::InlineMacro(inline_macro_ast) = item_ast {
-            if inline_macro_ast.name(db).text(db) == "compile_error" {
+            if inline_macro_ast.name(db).text(db).lookup_intern(db).as_ref() == "compile_error" {
                 let compilation_error_arg = extract_macro_single_unnamed_arg!(
                     db,
                     &inline_macro_ast,
@@ -33,7 +34,7 @@ impl MacroPlugin for CompileErrorPlugin {
                 };
                 return PluginResult::diagnostic_only(PluginDiagnostic::error(
                     &inline_macro_ast,
-                    err_message.text(db).to_string(),
+                    err_message.text(db).to_string(db),
                 ));
             }
         }

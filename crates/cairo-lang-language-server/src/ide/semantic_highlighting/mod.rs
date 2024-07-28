@@ -5,7 +5,7 @@ use cairo_lang_syntax::node::ast::{self};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use tower_lsp::lsp_types::*;
 use tracing::error;
 
@@ -65,7 +65,7 @@ impl SemanticTokensTraverser {
                     return;
                 }
 
-                let width = text.len() as u32;
+                let width = text.lookup_intern(db).len() as u32;
                 let maybe_semantic_kind = self
                     .offset_to_kind_lookahead
                     .remove(&node.offset())

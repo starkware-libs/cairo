@@ -3,6 +3,7 @@ use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::db::{AsFilesGroupMut, CrateConfiguration, FilesGroupEx};
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_utils::{extract_matches, Intern};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
@@ -33,7 +34,7 @@ fn test_resolve_path() {
     let module_id = test_module.module_id;
 
     let function_id = FunctionWithBodyId::Free(extract_matches!(
-        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
+        db.module_item_by_name(module_id, TextId::interned("foo", db)).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     ));
     let expr_formatter = ExprFormatter { db, function_id };
@@ -85,21 +86,23 @@ fn test_resolve_path_super() {
     );
     let test_module = ModuleId::CrateRoot(crate_id);
     let inner2_module_id = ModuleId::Submodule(extract_matches!(
-        db.module_item_by_name(test_module, "inner2".into()).unwrap().unwrap(),
+        db.module_item_by_name(test_module, TextId::interned("inner2", db)).unwrap().unwrap(),
         ModuleItemId::Submodule
     ));
     let struct_id = extract_matches!(
-        db.module_item_by_name(inner2_module_id, "InnerStruct2".into()).unwrap().unwrap(),
+        db.module_item_by_name(inner2_module_id, TextId::interned("InnerStruct2", db))
+            .unwrap()
+            .unwrap(),
         ModuleItemId::Struct
     );
     let members = db.struct_members(struct_id).unwrap();
     assert_eq!(
-        format!("{:?}", members["a"].debug(db)),
+        format!("{:?}", members[&TextId::interned("a", db)].debug(db)),
         "Member { id: MemberId(test::inner2::a), ty: test::inner1::InnerStruct1, visibility: \
          Private }"
     );
     assert_eq!(
-        format!("{:?}", members["b"].debug(db)),
+        format!("{:?}", members[&TextId::interned("b", db)].debug(db)),
         "Member { id: MemberId(test::inner2::b), ty: test::OuterStruct, visibility: Private }"
     );
 }
@@ -130,7 +133,7 @@ fn test_resolve_path_trait_impl() {
     let module_id = test_module.module_id;
 
     let function_id = FunctionWithBodyId::Free(extract_matches!(
-        db.module_item_by_name(module_id, "main".into()).unwrap().unwrap(),
+        db.module_item_by_name(module_id, TextId::interned("main", db)).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     ));
     let expr_formatter = ExprFormatter { db, function_id };

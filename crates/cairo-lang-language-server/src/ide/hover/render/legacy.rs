@@ -7,7 +7,7 @@ use cairo_lang_semantic::Mutability;
 use cairo_lang_syntax::node::ast::{Expr, Pattern, TerminalIdentifier};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use tower_lsp::lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
@@ -76,7 +76,11 @@ fn get_expr_hint(
                             Mutability::Mutable => "mut ",
                             Mutability::Reference => "ref ",
                         };
-                        format!("{mutability}{}: {}", arg.name, arg.ty.format(db.upcast()))
+                        format!(
+                            "{mutability}{}: {}",
+                            arg.name.lookup_intern(db),
+                            arg.ty.format(db.upcast())
+                        )
                     })
                     .collect::<Vec<String>>()
                     .join(", ")

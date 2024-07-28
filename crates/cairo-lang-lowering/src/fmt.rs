@@ -292,9 +292,13 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchEnumValue {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StatementEnumConstruct {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        let enum_name =
-            self.variant.concrete_enum_id.enum_id(ctx.db.upcast()).name(ctx.db.upcast());
-        let variant_name = self.variant.id.name(ctx.db.upcast());
+        let enum_name = self
+            .variant
+            .concrete_enum_id
+            .enum_id(ctx.db.upcast())
+            .name(ctx.db.upcast())
+            .lookup_intern(ctx.db);
+        let variant_name = self.variant.id.name(ctx.db.upcast()).lookup_intern(ctx.db);
         write!(f, "{enum_name}::{variant_name}(",)?;
         self.input.fmt(f, ctx)?;
         write!(f, ")")

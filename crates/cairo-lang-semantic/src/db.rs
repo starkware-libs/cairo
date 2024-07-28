@@ -14,11 +14,11 @@ use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{LookupIntern, Upcast};
-use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
@@ -170,11 +170,8 @@ pub trait SemanticGroup:
     /// Returns [Maybe::Err] if the module was not properly resolved.
     /// Returns [Maybe::Ok(Option::None)] if the item does not exist.
     #[salsa::invoke(items::module::module_item_by_name)]
-    fn module_item_by_name(
-        &self,
-        module_id: ModuleId,
-        name: SmolStr,
-    ) -> Maybe<Option<ModuleItemId>>;
+    fn module_item_by_name(&self, module_id: ModuleId, name: TextId)
+    -> Maybe<Option<ModuleItemId>>;
 
     /// Returns [Maybe::Err] if the module was not properly resolved.
     /// Returns [Maybe::Ok(Option::None)] if the item does not exist.
@@ -182,7 +179,7 @@ pub trait SemanticGroup:
     fn module_item_info_by_name(
         &self,
         module_id: ModuleId,
-        name: SmolStr,
+        name: TextId,
     ) -> Maybe<Option<ModuleItemInfo>>;
 
     /// Returns the attributes of a module.
@@ -235,7 +232,7 @@ pub trait SemanticGroup:
     fn struct_members(
         &self,
         struct_id: StructId,
-    ) -> Maybe<OrderedHashMap<SmolStr, semantic::Member>>;
+    ) -> Maybe<OrderedHashMap<TextId, semantic::Member>>;
     /// Returns the resolution resolved_items of a struct definition.
     #[salsa::invoke(items::structure::struct_definition_resolver_data)]
     fn struct_definition_resolver_data(&self, structure_id: StructId) -> Maybe<Arc<ResolverData>>;
@@ -270,7 +267,7 @@ pub trait SemanticGroup:
     fn enum_definition_diagnostics(&self, enum_id: EnumId) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the members of an enum.
     #[salsa::invoke(items::enm::enum_variants)]
-    fn enum_variants(&self, enum_id: EnumId) -> Maybe<OrderedHashMap<SmolStr, VariantId>>;
+    fn enum_variants(&self, enum_id: EnumId) -> Maybe<OrderedHashMap<TextId, VariantId>>;
     /// Returns the semantic model of a variant.
     #[salsa::invoke(items::enm::variant_semantic)]
     fn variant_semantic(&self, enum_id: EnumId, variant_id: VariantId) -> Maybe<semantic::Variant>;
@@ -396,45 +393,43 @@ pub trait SemanticGroup:
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the names of all the non default implemented items of a trait.
     #[salsa::invoke(items::trt::trait_required_item_names)]
-    fn trait_required_item_names(&self, trait_id: TraitId) -> Maybe<OrderedHashSet<SmolStr>>;
+    fn trait_required_item_names(&self, trait_id: TraitId) -> Maybe<OrderedHashSet<TextId>>;
     /// Returns the item of the trait, by the given `name`, if exists.
     #[salsa::invoke(items::trt::trait_item_by_name)]
-    fn trait_item_by_name(&self, trait_id: TraitId, name: SmolStr) -> Maybe<Option<TraitItemId>>;
+    fn trait_item_by_name(&self, trait_id: TraitId, name: TextId) -> Maybe<Option<TraitItemId>>;
     /// Returns the functions of a trait.
     #[salsa::invoke(items::trt::trait_functions)]
-    fn trait_functions(&self, trait_id: TraitId)
-    -> Maybe<OrderedHashMap<SmolStr, TraitFunctionId>>;
+    fn trait_functions(&self, trait_id: TraitId) -> Maybe<OrderedHashMap<TextId, TraitFunctionId>>;
     /// Returns the function with the given name of the given trait, if exists.
     #[salsa::invoke(items::trt::trait_function_by_name)]
     fn trait_function_by_name(
         &self,
         trait_id: TraitId,
-        name: SmolStr,
+        name: TextId,
     ) -> Maybe<Option<TraitFunctionId>>;
     /// Returns the types of a trait.
     #[salsa::invoke(items::trt::trait_types)]
-    fn trait_types(&self, trait_id: TraitId) -> Maybe<OrderedHashMap<SmolStr, TraitTypeId>>;
+    fn trait_types(&self, trait_id: TraitId) -> Maybe<OrderedHashMap<TextId, TraitTypeId>>;
     /// Returns the item type with the given name of the given trait, if exists.
     #[salsa::invoke(items::trt::trait_type_by_name)]
-    fn trait_type_by_name(&self, trait_id: TraitId, name: SmolStr) -> Maybe<Option<TraitTypeId>>;
+    fn trait_type_by_name(&self, trait_id: TraitId, name: TextId) -> Maybe<Option<TraitTypeId>>;
 
     /// Returns the constants of a trait.
     #[salsa::invoke(items::trt::trait_constants)]
-    fn trait_constants(&self, trait_id: TraitId)
-    -> Maybe<OrderedHashMap<SmolStr, TraitConstantId>>;
+    fn trait_constants(&self, trait_id: TraitId) -> Maybe<OrderedHashMap<TextId, TraitConstantId>>;
     /// Returns the item constants with the given name of the given trait, if exists.
     #[salsa::invoke(items::trt::trait_constant_by_name)]
     fn trait_constant_by_name(
         &self,
         trait_id: TraitId,
-        name: SmolStr,
+        name: TextId,
     ) -> Maybe<Option<TraitConstantId>>;
     /// Returns the constants of a trait.
     #[salsa::invoke(items::trt::trait_impls)]
-    fn trait_impls(&self, trait_id: TraitId) -> Maybe<OrderedHashMap<SmolStr, TraitImplId>>;
+    fn trait_impls(&self, trait_id: TraitId) -> Maybe<OrderedHashMap<TextId, TraitImplId>>;
     /// Returns the item impls with the given name of the given trait, if exists.
     #[salsa::invoke(items::trt::trait_impl_by_name)]
-    fn trait_impl_by_name(&self, trait_id: TraitId, name: SmolStr) -> Maybe<Option<TraitImplId>>;
+    fn trait_impl_by_name(&self, trait_id: TraitId, name: TextId) -> Maybe<Option<TraitImplId>>;
 
     /// Private query to compute definition data about a trait.
     #[salsa::invoke(items::trt::priv_trait_definition_data)]
@@ -702,14 +697,13 @@ pub trait SemanticGroup:
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the item of the impl, by the given `name`, if exists.
     #[salsa::invoke(items::imp::impl_item_by_name)]
-    fn impl_item_by_name(&self, impl_def_id: ImplDefId, name: SmolStr)
-    -> Maybe<Option<ImplItemId>>;
+    fn impl_item_by_name(&self, impl_def_id: ImplDefId, name: TextId) -> Maybe<Option<ImplItemId>>;
     /// Returns the trait impl of an implicit impl if `name` exists in trait and not in the impl.
     #[salsa::invoke(items::imp::impl_implicit_impl_by_name)]
     fn impl_implicit_impl_by_name(
         &self,
         impl_def_id: ImplDefId,
-        name: SmolStr,
+        name: TextId,
     ) -> Maybe<Option<TraitImplId>>;
     /// Returns the type items in the impl.
     #[salsa::invoke(items::imp::impl_types)]
@@ -778,7 +772,7 @@ pub trait SemanticGroup:
     fn impl_functions(
         &self,
         impl_def_id: ImplDefId,
-    ) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>>;
+    ) -> Maybe<OrderedHashMap<TextId, ImplFunctionId>>;
     /// Returns the impl function that matches the given trait function, if exists.
     /// Note that a function that doesn't exist in the impl doesn't necessarily indicate an error,
     /// as, e.g., a trait function that has a default implementation doesn't have to be

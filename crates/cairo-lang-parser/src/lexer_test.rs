@@ -277,7 +277,7 @@ fn test_lex_single_token() {
         let terminal = lexer.next().unwrap();
         // TODO(spapini): Remove calling new_root on non root elements.
         assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
-        assert_eq!(terminal.text, text, "Wrong token text.");
+        assert_eq!(terminal.text.as_ref(), text, "Wrong token text.");
 
         assert_eq!(
             lexer.next().unwrap().kind,
@@ -310,7 +310,8 @@ fn test_lex_double_token() {
                     terminal.kind
                 );
                 assert_eq!(
-                    token_text, text0,
+                    token_text.as_ref(),
+                    text0,
                     "Wrong first token text, with total text: \"{token_text}\".",
                 );
 
@@ -322,7 +323,8 @@ fn test_lex_double_token() {
                     terminal.kind
                 );
                 assert_eq!(
-                    token_text, text1,
+                    token_text.as_ref(),
+                    text1,
                     "Wrong second token text, with total text: \"{token_text}\".",
                 );
 
@@ -349,7 +351,7 @@ fn test_lex_token_with_trivia() {
                 let terminal = lexer.next().unwrap();
                 let token_text = terminal.text;
                 assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
-                assert_eq!(token_text, expected_token_text, "Wrong token text.");
+                assert_eq!(token_text.as_ref(), expected_token_text, "Wrong token text.");
                 // TODO: verify trivia kinds and texts
 
                 assert_eq!(
@@ -376,7 +378,7 @@ fn test_cases() {
                 text: "let".into(),
                 kind: SyntaxKind::TerminalLet,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+                trailing_trivia: vec![TokenWhitespace::new_green_str(db, " ").into()]
             },
             LexerTerminal {
                 text: "x".into(),
@@ -388,7 +390,7 @@ fn test_cases() {
                 text: ":".into(),
                 kind: SyntaxKind::TerminalColon,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+                trailing_trivia: vec![TokenWhitespace::new_green_str(db, " ").into()]
             },
             LexerTerminal {
                 text: "&".into(),
@@ -400,19 +402,19 @@ fn test_cases() {
                 text: "T".into(),
                 kind: SyntaxKind::TerminalIdentifier,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+                trailing_trivia: vec![TokenWhitespace::new_green_str(db, " ").into()]
             },
             LexerTerminal {
                 text: "=".into(),
                 kind: SyntaxKind::TerminalEq,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+                trailing_trivia: vec![TokenWhitespace::new_green_str(db, " ").into()]
             },
             LexerTerminal {
                 text: "`".into(),
                 kind: SyntaxKind::TerminalBadCharacters,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+                trailing_trivia: vec![TokenWhitespace::new_green_str(db, " ").into()]
             },
             LexerTerminal {
                 text: "6".into(),
@@ -425,8 +427,8 @@ fn test_cases() {
                 kind: SyntaxKind::TerminalSemicolon,
                 leading_trivia: vec![],
                 trailing_trivia: vec![
-                    TokenWhitespace::new_green(db, " ".into()).into(),
-                    TokenSingleLineComment::new_green(db, "//  5+ 3;".into()).into()
+                    TokenWhitespace::new_green_str(db, " ").into(),
+                    TokenSingleLineComment::new_green_str(db, "//  5+ 3;").into()
                 ]
             },
             LexerTerminal {
@@ -453,7 +455,7 @@ fn test_bad_character() {
         SyntaxKind::TerminalBadCharacters,
         "Wrong token kind, with text: \"{text}\".",
     );
-    assert_eq!(token_text, text, "Wrong token text.");
+    assert_eq!(token_text.as_ref(), text, "Wrong token text.");
 
     assert_eq!(
         lexer.next().unwrap().kind,

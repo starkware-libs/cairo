@@ -7,7 +7,6 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use num_bigint::BigInt;
 use num_traits::Num;
-use smol_str::SmolStr;
 use unescaper::unescape;
 
 use crate::diagnostic::ParserDiagnosticKind;
@@ -22,13 +21,13 @@ use crate::ParserDiagnostic;
 /// 2. Has properly formatted suffix.
 pub fn validate_literal_number(
     diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-    text: SmolStr,
+    text: &str,
     span: TextSpan,
     file_id: FileId,
 ) {
     let (text, ty) = match text.split_once('_') {
         Some((text, ty)) => (text, Some(ty)),
-        None => (text.as_str(), None),
+        None => (text, None),
     };
 
     // Verify number value is parsable.
@@ -74,7 +73,7 @@ pub fn validate_literal_number(
 /// 3. Is entirely ASCII.
 pub fn validate_short_string(
     diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-    text: SmolStr,
+    text: &str,
     span: TextSpan,
     file_id: FileId,
 ) {
@@ -99,7 +98,7 @@ pub fn validate_short_string(
 /// 3. Is entirely ASCII.
 pub fn validate_string(
     diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-    text: SmolStr,
+    text: &str,
     span: TextSpan,
     file_id: FileId,
 ) {
@@ -117,7 +116,7 @@ pub fn validate_string(
 /// Validates a short-string/string.
 fn validate_any_string(
     diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-    text: SmolStr,
+    text: &str,
     span: TextSpan,
     file_id: FileId,
     delimiter: char,

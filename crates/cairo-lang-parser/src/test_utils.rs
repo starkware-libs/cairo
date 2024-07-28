@@ -2,7 +2,6 @@ use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Intern;
-use smol_str::SmolStr;
 
 use crate::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 
@@ -25,7 +24,7 @@ pub fn get_diagnostics(
 /// Creates a virtual file with the given content and returns its ID.
 pub fn create_virtual_file(
     db: &SimpleParserDatabase,
-    file_name: impl Into<SmolStr>,
+    file_name: impl Into<String>,
     content: &str,
 ) -> FileId {
     FileLongId::Virtual(VirtualFile {

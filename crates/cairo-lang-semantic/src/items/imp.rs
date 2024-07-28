@@ -16,6 +16,7 @@ use cairo_lang_diagnostics::{
 use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -23,7 +24,6 @@ use cairo_lang_utils::{
     define_short_id, extract_matches, try_extract_matches, Intern, LookupIntern,
 };
 use itertools::{izip, Itertools};
-use smol_str::SmolStr;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use syntax::node::ast::{self, GenericArg, ImplItem, MaybeImplBody, OptionReturnTypeClause};
 use syntax::node::db::SyntaxGroup;
@@ -131,7 +131,7 @@ impl ConcreteImplId {
     ) -> Maybe<Option<ImplFunctionId>> {
         db.impl_function_by_trait_function(self.impl_def_id(db), function)
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> TextId {
         self.impl_def_id(db).name(db.upcast())
     }
     pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
@@ -181,14 +181,15 @@ impl ImplLongId {
             }
         })
     }
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> String {
         match self {
-            ImplLongId::Concrete(concrete_impl) => concrete_impl.name(db),
-            ImplLongId::GenericParameter(generic_param_impl) => {
-                generic_param_impl.name(db.upcast()).unwrap_or_else(|| "_".into())
-            }
+            ImplLongId::Concrete(concrete_impl) => concrete_impl.name(db).to_string(db),
+            ImplLongId::GenericParameter(generic_param_impl) => generic_param_impl
+                .name(db.upcast())
+                .map(|name| name.to_string(db))
+                .unwrap_or_else(|| "_".to_string()),
             ImplLongId::ImplVar(var) => {
-                format!("ImplVar({})", var.concrete_trait_id(db).full_path(db)).into()
+                format!("ImplVar({})", var.concrete_trait_id(db).full_path(db))
             }
             ImplLongId::ImplImpl(impl_impl) => format!(
                 "{}::{}",
@@ -196,9 +197,8 @@ impl ImplLongId {
                 db.impl_impl_concrete_trait(*impl_impl)
                     .map(|trait_impl| trait_impl.full_path(db))
                     .unwrap_or_else(|_| "_".into())
-            )
-            .into(),
-            ImplLongId::TraitImpl(trait_impl) => trait_impl.name(db.upcast()),
+            ),
+            ImplLongId::TraitImpl(trait_impl) => trait_impl.name(db.upcast()).to_string(db),
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -274,7 +274,7 @@ impl ImplId {
     }
 
     /// Returns the name of the impl.
-    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn SemanticGroup) -> String {
         self.lookup_intern(db).name(db)
     }
 
@@ -310,9 +310,12 @@ impl ImplImplId {
         self.trait_impl_id
     }
 
-    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.trait_impl_id.name(db.upcast()))
-            .into()
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        format!(
+            "{}::{}",
+            self.impl_id.name(db.upcast()),
+            self.trait_impl_id.name(db.upcast()).lookup_intern(db)
+        )
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplImplId {
@@ -592,10 +595,10 @@ pub struct ImplDefinitionData {
     item_impl_asts: Arc<OrderedHashMap<ImplImplDefId, ast::ItemImplAlias>>,
 
     /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
-    item_id_by_name: Arc<OrderedHashMap<SmolStr, ImplItemId>>,
+    item_id_by_name: Arc<OrderedHashMap<TextId, ImplItemId>>,
 
     /// Mapping of missing impl names item names to the trait id.
-    implicit_impls_id_by_name: Arc<OrderedHashMap<SmolStr, TraitImplId>>,
+    implicit_impls_id_by_name: Arc<OrderedHashMap<TextId, TraitImplId>>,
 }
 
 // --- Selectors ---
@@ -728,7 +731,7 @@ fn get_impl_based_on_single_impl_type(
 pub fn impl_functions(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
-) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>> {
+) -> Maybe<OrderedHashMap<TextId, ImplFunctionId>> {
     Ok(db
         .priv_impl_definition_data(impl_def_id)?
         .function_asts
@@ -760,7 +763,7 @@ pub fn impl_function_by_trait_function(
 pub fn impl_item_by_name(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
-    name: SmolStr,
+    name: TextId,
 ) -> Maybe<Option<ImplItemId>> {
     Ok(db.priv_impl_definition_data(impl_def_id)?.item_id_by_name.get(&name).cloned())
 }
@@ -769,7 +772,7 @@ pub fn impl_item_by_name(
 pub fn impl_implicit_impl_by_name(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
-    name: SmolStr,
+    name: TextId,
 ) -> Maybe<Option<TraitImplId>> {
     Ok(db.priv_impl_definition_data(impl_def_id)?.implicit_impls_id_by_name.get(&name).cloned())
 }
@@ -994,7 +997,7 @@ pub fn priv_impl_definition_data(
                     let name_node = func.declaration(syntax_db).name(syntax_db);
                     let name = name_node.text(syntax_db);
                     if item_id_by_name
-                        .insert(name.clone(), ImplItemId::Function(impl_function_id))
+                        .insert(name, ImplItemId::Function(impl_function_id))
                         .is_some()
                     {
                         diagnostics.report(&name_node, NameDefinedMultipleTimes(name));
@@ -1006,10 +1009,7 @@ pub fn priv_impl_definition_data(
                         ImplTypeDefLongId(module_file_id, ty.stable_ptr()).intern(db);
                     let name_node = ty.name(syntax_db);
                     let name = name_node.text(syntax_db);
-                    if item_id_by_name
-                        .insert(name.clone(), ImplItemId::Type(impl_type_id))
-                        .is_some()
-                    {
+                    if item_id_by_name.insert(name, ImplItemId::Type(impl_type_id)).is_some() {
                         diagnostics.report(&name_node, NameDefinedMultipleTimes(name));
                     }
                     item_type_asts.insert(impl_type_id, ty);
@@ -1020,7 +1020,7 @@ pub fn priv_impl_definition_data(
                     let name_node = constant.name(syntax_db);
                     let name = name_node.text(syntax_db);
                     if item_id_by_name
-                        .insert(name.clone(), ImplItemId::Constant(impl_constant_id))
+                        .insert(name, ImplItemId::Constant(impl_constant_id))
                         .is_some()
                     {
                         diagnostics.report(
@@ -1035,10 +1035,7 @@ pub fn priv_impl_definition_data(
                         ImplImplDefLongId(module_file_id, imp.stable_ptr()).intern(db);
                     let name_node = imp.name(syntax_db);
                     let name = name_node.text(syntax_db);
-                    if item_id_by_name
-                        .insert(name.clone(), ImplItemId::Impl(impl_constant_id))
-                        .is_some()
-                    {
+                    if item_id_by_name.insert(name, ImplItemId::Impl(impl_constant_id)).is_some() {
                         diagnostics.report(
                             &name_node,
                             SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
@@ -1065,7 +1062,7 @@ pub fn priv_impl_definition_data(
     // It is later verified that all items in this impl match items from `concrete_trait`.
     // To ensure exact match (up to trait functions with default implementation), it is sufficient
     // to verify here that all items in `concrete_trait` appear in this impl.
-    let impl_item_names: OrderedHashSet<SmolStr> = item_id_by_name.keys().cloned().collect();
+    let impl_item_names: OrderedHashSet<TextId> = item_id_by_name.keys().cloned().collect();
 
     let trait_required_item_names = db.trait_required_item_names(trait_id)?;
     let missing_items_in_impl =
@@ -1468,7 +1465,14 @@ impl DebugWithDb<dyn SemanticGroup> for UninferredImpl {
                 write!(f, "{:?}", impl_alias.full_path(db.upcast()))
             }
             UninferredImpl::GenericParam(param) => {
-                write!(f, "generic param {}", param.name(db.upcast()).unwrap_or_else(|| "_".into()))
+                write!(
+                    f,
+                    "generic param {}",
+                    param
+                        .name(db.upcast())
+                        .map(|name| name.to_string(db))
+                        .unwrap_or_else(|| "_".into())
+                )
             }
             UninferredImpl::ImplImpl(impl_impl) => impl_impl.fmt(f, db.elongate()),
         }
@@ -1632,7 +1636,7 @@ pub fn filter_candidate_traits(
     inference_errors: &mut Vec<(TraitFunctionId, InferenceError)>,
     self_ty: TypeId,
     candidate_traits: &[TraitId],
-    function_name: SmolStr,
+    function_name: TextId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Vec<TraitFunctionId> {
     let mut candidates = Vec::new();
@@ -1822,7 +1826,7 @@ fn validate_impl_item_type(
     let concrete_trait_id = db.impl_def_concrete_trait(impl_def_id)?;
     let trait_id = concrete_trait_id.trait_id(db);
     let type_name = impl_type_def_id.name(defs_db);
-    let trait_type_id = db.trait_type_by_name(trait_id, type_name.clone())?.ok_or_else(|| {
+    let trait_type_id = db.trait_type_by_name(trait_id, type_name)?.ok_or_else(|| {
         diagnostics.report(
             impl_type_ast,
             ImplItemNotInTrait {
@@ -2041,7 +2045,7 @@ fn validate_impl_item_constant(
     let constant_name = impl_constant_def_id.name(defs_db);
 
     let trait_constant_id =
-        db.trait_constant_by_name(trait_id, constant_name.clone())?.ok_or_else(|| {
+        db.trait_constant_by_name(trait_id, constant_name)?.ok_or_else(|| {
             diagnostics.report(
                 impl_constant_ast,
                 ImplItemNotInTrait {
@@ -2366,7 +2370,7 @@ fn validate_impl_item_impl(
     let concrete_trait_id = db.impl_def_concrete_trait(impl_def_id)?;
     let trait_id = concrete_trait_id.trait_id(db);
     let impl_name = impl_impl_def_id.name(defs_db);
-    let trait_impl_id = db.trait_impl_by_name(trait_id, impl_name.clone())?.ok_or_else(|| {
+    let trait_impl_id = db.trait_impl_by_name(trait_id, impl_name)?.ok_or_else(|| {
         diagnostics.report(
             impl_impl_ast,
             ImplItemNotInTrait {
@@ -2800,7 +2804,7 @@ fn validate_impl_function_signature(
     let trait_id = concrete_trait_id.trait_id(db);
     let function_name = impl_function_id.name(defs_db);
     let trait_function_id =
-        db.trait_function_by_name(trait_id, function_name.clone())?.ok_or_else(|| {
+        db.trait_function_by_name(trait_id, function_name)?.ok_or_else(|| {
             diagnostics.report(
                 impl_function_syntax,
                 ImplItemNotInTrait {
@@ -2896,7 +2900,7 @@ fn validate_impl_function_signature(
                     impl_def_id,
                     impl_function_id,
                     trait_id,
-                    expected_name: trait_param.name.clone(),
+                    expected_name: trait_param.name,
                 },
             );
         }

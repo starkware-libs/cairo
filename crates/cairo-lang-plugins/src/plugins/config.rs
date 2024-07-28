@@ -219,7 +219,7 @@ fn parse_predicate_item(
                 }
             };
 
-            Some(Cfg::kv(name.text, value))
+            Some(Cfg::kv(name.text.to_string(db), value))
         }
         AttributeArgVariant::Unnamed(value) => {
             let ast::Expr::Path(path) = value else {
@@ -231,7 +231,7 @@ fn parse_predicate_item(
                 return None;
             };
             let key = segment.ident(db).text(db);
-            Some(Cfg::name(key))
+            Some(Cfg::name(key.to_string(db)))
         }
     }
 }

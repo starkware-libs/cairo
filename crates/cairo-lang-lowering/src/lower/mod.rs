@@ -6,7 +6,7 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::corelib::{self, unwrap_error_propagation_type, ErrorPropagationType};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::{LocalVariable, VarId};
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{SyntaxStablePtrId, TextId};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
@@ -901,23 +901,27 @@ fn lower_expr_string_literal(
     let semantic_db = ctx.db.upcast();
 
     // Get all the relevant types from the corelib.
-    let bytes31_ty = get_core_ty_by_name(semantic_db, "bytes31".into(), vec![]);
-    let data_array_ty =
-        get_core_ty_by_name(semantic_db, "Array".into(), vec![GenericArgumentId::Type(bytes31_ty)]);
-    let byte_array_ty = get_core_ty_by_name(semantic_db, "ByteArray".into(), vec![]);
+    let bytes31_ty = get_core_ty_by_name(semantic_db, TextId::interned("bytes31", ctx.db), vec![]);
+    let data_array_ty = get_core_ty_by_name(
+        semantic_db,
+        TextId::interned("Array", ctx.db),
+        vec![GenericArgumentId::Type(bytes31_ty)],
+    );
+    let byte_array_ty =
+        get_core_ty_by_name(semantic_db, TextId::interned("ByteArray", ctx.db), vec![]);
 
     let array_submodule = core_submodule(semantic_db, "array");
     let data_array_new_function = FunctionLongId::Semantic(get_function_id(
         semantic_db,
         array_submodule,
-        "array_new".into(),
+        TextId::interned("array_new", ctx.db),
         vec![GenericArgumentId::Type(bytes31_ty)],
     ))
     .intern(ctx.db);
     let data_array_append_function = FunctionLongId::Semantic(get_function_id(
         semantic_db,
         array_submodule,
-        "array_append".into(),
+        TextId::interned("array_append", ctx.db),
         vec![GenericArgumentId::Type(bytes31_ty)],
     ))
     .intern(ctx.db);
@@ -1014,7 +1018,7 @@ fn add_pending_word(
 ) -> (VarUsage, VarUsage) {
     let expr_stable_ptr = expr.stable_ptr.untyped();
 
-    let u32_ty = get_core_ty_by_name(ctx.db.upcast(), "u32".into(), vec![]);
+    let u32_ty = get_core_ty_by_name(ctx.db.upcast(), TextId::interned("u32", ctx.db), vec![]);
     let felt252_ty = core_felt252_ty(ctx.db.upcast());
 
     let pending_word_usage = generators::Const {
@@ -1168,7 +1172,9 @@ fn lower_expr_function_call(
     };
 
     // If the function is panic(), do something special.
-    if expr.function == get_core_function_id(ctx.db.upcast(), "panic".into(), vec![]) {
+    if expr.function
+        == get_core_function_id(ctx.db.upcast(), TextId::interned("panic", ctx.db), vec![])
+    {
         let [input] = <[_; 1]>::try_from(arg_inputs).ok().unwrap();
         return Err(LoweringFlowError::Panic(input, location));
     }

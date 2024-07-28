@@ -5,7 +5,7 @@ use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{require, try_extract_matches};
+use cairo_lang_utils::{require, try_extract_matches, LookupIntern};
 use indoc::{formatdoc, indoc};
 use itertools::chain;
 
@@ -79,7 +79,7 @@ fn handle_component_item(
             handle_component_impl(db, diagnostics, item_impl, metadata, data);
         }
         ast::ModuleItem::Struct(item_struct)
-            if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
+            if item_struct.name(db).text(db).lookup_intern(db).as_ref() == STORAGE_STRUCT_NAME =>
         {
             handle_storage_struct(
                 db,
@@ -141,9 +141,9 @@ fn get_embeddable_as_impl_generic_params(
     let Some(first_generic_param) = generic_param_elements.next() else {
         return Err(first_generic_param_diagnostic(generic_params_ptr));
     };
-    if !try_extract_matches!(first_generic_param, ast::GenericParam::Type)
-        .map_or(false, |param| param.name(db).text(db) == GENERIC_CONTRACT_STATE_NAME)
-    {
+    if !try_extract_matches!(first_generic_param, ast::GenericParam::Type).map_or(false, |param| {
+        param.name(db).text(db).lookup_intern(db).as_ref() == GENERIC_CONTRACT_STATE_NAME
+    }) {
         return Err(first_generic_param_diagnostic(generic_params_ptr));
     }
 
@@ -423,7 +423,7 @@ fn handle_first_param_for_embeddable_as(
     db: &dyn SyntaxGroup,
     param: &ast::Param,
 ) -> Option<(String, String, String)> {
-    require(param.name(db).text(db) == "self")?;
+    require(param.name(db).text(db).lookup_intern(db).as_ref() == "self")?;
     if param.is_ref_param(db) {
         return if param.type_clause(db).ty(db).is_name_with_arg(
             db,

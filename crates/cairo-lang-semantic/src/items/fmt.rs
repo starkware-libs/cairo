@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 
 use super::constant::ConstValue;
 use crate::db::SemanticGroup;
@@ -38,7 +38,9 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
                 value.fmt(f, db)?;
                 write!(f, ".into_box()")
             }
-            ConstValue::Generic(param) => write!(f, "{}", param.debug_name(db.upcast())),
+            ConstValue::Generic(param) => {
+                write!(f, "{}", param.debug_name(db.upcast()).lookup_intern(db))
+            }
             ConstValue::Var(var, _) => write!(f, "?{}", var.id.0),
             ConstValue::Missing(_) => write!(f, "missing"),
             ConstValue::ImplConstant(id) => id.fmt(f, db),
@@ -50,8 +52,9 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
 impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for ConcreteVariant {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
         let db = db.upcast();
-        let enum_name = self.concrete_enum_id.enum_id(db.upcast()).name(db.upcast());
-        let variant_name = self.id.name(db.upcast());
+        let enum_name =
+            self.concrete_enum_id.enum_id(db.upcast()).name(db.upcast()).lookup_intern(db);
+        let variant_name = self.id.name(db.upcast()).lookup_intern(db);
         write!(f, "{enum_name}::{variant_name}")
     }
 }

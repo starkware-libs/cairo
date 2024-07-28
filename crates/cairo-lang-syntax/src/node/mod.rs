@@ -5,12 +5,11 @@ use std::sync::Arc;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_utils::{require, Intern, LookupIntern};
-use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
 use self::db::SyntaxGroup;
 use self::green::GreenNode;
-use self::ids::{GreenId, SyntaxStablePtrId};
+use self::ids::{GreenId, SyntaxStablePtrId, TextId};
 use self::kind::SyntaxKind;
 use self::stable_ptr::SyntaxStablePtr;
 use crate::node::iter::{Preorder, WalkEvent};
@@ -59,7 +58,7 @@ impl SyntaxNode {
         self.0.offset
     }
     pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
-        self.green_node(db).width()
+        self.green_node(db).width
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> SyntaxKind {
         self.green_node(db).kind
@@ -70,9 +69,9 @@ impl SyntaxNode {
         TextSpan { start, end }
     }
     /// Returns the text of the token if this node is a token.
-    pub fn text(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> Option<TextId> {
         match &self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => Some(text.clone()),
+            green::GreenNodeDetails::Token(text) => Some(*text),
             green::GreenNodeDetails::Node { .. } => None,
         }
     }
@@ -236,8 +235,14 @@ pub trait TypedSyntaxNode {
 }
 
 pub trait Token: TypedSyntaxNode {
-    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green;
-    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
+    fn new_green_ex(db: &dyn SyntaxGroup, text: TextId, width: TextWidth) -> Self::Green;
+    fn new_green_str(db: &dyn SyntaxGroup, text: &str) -> Self::Green {
+        Self::new_green_ex(db, TextId::interned(text, db), TextWidth::from_str(text))
+    }
+    fn new_green(db: &dyn SyntaxGroup, text: TextId) -> Self::Green {
+        Self::new_green_ex(db, text, TextWidth::from_str(&text.lookup_intern(db)))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> TextId;
 }
 
 pub trait Terminal: TypedSyntaxNode {
@@ -250,7 +255,7 @@ pub trait Terminal: TypedSyntaxNode {
         trailing_trivia: TriviaGreen,
     ) -> <Self as TypedSyntaxNode>::Green;
     /// Returns the text of the token of this terminal (excluding the trivia).
-    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
+    fn text(&self, db: &dyn SyntaxGroup) -> TextId;
 }
 
 /// Trait for stable pointers to syntax nodes.
@@ -272,7 +277,7 @@ pub struct NodeTextFormatter<'a> {
 impl<'a> Display for NodeTextFormatter<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.node.green_node(self.db).as_ref().details {
-            green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
+            green::GreenNodeDetails::Token(text) => write!(f, "{}", text.lookup_intern(self.db))?,
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.db.get_children(self.node.clone()).iter() {
                     write!(f, "{}", NodeTextFormatter { node: child, db: self.db })?;

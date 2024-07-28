@@ -3,9 +3,9 @@ use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::ids::{SyntaxStablePtrId, TextId};
+use cairo_lang_utils::LookupIntern;
 use id_arena::Arena;
-use smol_str::SmolStr;
 
 use super::fmt::ExprFormatter;
 use crate::db::SemanticGroup;
@@ -147,14 +147,14 @@ pub struct PatternStringLiteral {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct PatternVariable {
     #[dont_rewrite]
-    pub name: SmolStr,
+    pub name: TextId,
     pub var: LocalVariable,
     #[dont_rewrite]
     pub stable_ptr: ast::PatternPtr,
 }
 impl DebugWithDb<ExprFormatter<'_>> for PatternVariable {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, _db: &ExprFormatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name)
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &ExprFormatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name.lookup_intern(db.db))
     }
 }
 

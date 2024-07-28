@@ -3,9 +3,10 @@ use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_starknet_classes::abi::EventFieldKind;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 use const_format::formatcp;
-use smol_str::SmolStr;
 
 use super::consts::{EVENT_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME};
 use super::starknet_module::StarknetModuleKind;
@@ -13,8 +14,8 @@ use super::starknet_module::StarknetModuleKind;
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum EventData {
-    Struct { members: Vec<(SmolStr, EventFieldKind)> },
-    Enum { variants: Vec<(SmolStr, EventFieldKind)> },
+    Struct { members: Vec<(TextId, EventFieldKind)> },
+    Enum { variants: Vec<(TextId, EventFieldKind)> },
 }
 
 /// The code for an empty event.
@@ -31,15 +32,16 @@ pub fn get_starknet_event_variants(
     diagnostics: &mut Vec<PluginDiagnostic>,
     item: &ast::ModuleItem,
     module_kind: StarknetModuleKind,
-) -> Option<Vec<SmolStr>> {
+) -> Option<Vec<TextId>> {
     let (has_event_name, stable_ptr, variants) = match item {
         ast::ModuleItem::Struct(strct) => (
-            strct.name(db).text(db) == EVENT_TYPE_NAME,
+            strct.name(db).text(db).lookup_intern(db).as_ref() == EVENT_TYPE_NAME,
             strct.name(db).stable_ptr().untyped(),
             vec![],
         ),
         ast::ModuleItem::Enum(enm) => {
-            let has_event_name = enm.name(db).text(db) == EVENT_TYPE_NAME;
+            let has_event_name =
+                enm.name(db).text(db).lookup_intern(db).as_ref() == EVENT_TYPE_NAME;
             let variants = if has_event_name {
                 enm.variants(db).elements(db).into_iter().map(|v| v.name(db).text(db)).collect()
             } else {
@@ -50,7 +52,7 @@ pub fn get_starknet_event_variants(
         ast::ModuleItem::Use(item) => {
             for leaf in get_all_path_leaves(db, item.use_path(db)) {
                 let stable_ptr = &leaf.stable_ptr();
-                if stable_ptr.identifier(db) == EVENT_TYPE_NAME {
+                if stable_ptr.identifier(db).lookup_intern(db).as_ref() == EVENT_TYPE_NAME {
                     if !item.has_attr(db, EVENT_ATTR) {
                         diagnostics.push(PluginDiagnostic::error(
                             stable_ptr.untyped(),

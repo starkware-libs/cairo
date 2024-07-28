@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use cairo_lang_utils::{define_short_id, Intern, LookupIntern};
 use path_clean::PathClean;
-use smol_str::SmolStr;
 
 use crate::db::{CrateConfiguration, FilesGroup};
 use crate::span::{TextOffset, TextSpan};
@@ -15,12 +14,12 @@ pub const CAIRO_FILE_EXTENSION: &str = "cairo";
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum CrateLongId {
     /// A crate that appears in crate_roots(), and on the filesystem.
-    Real(SmolStr),
+    Real(String),
     /// A virtual crate, not a part of the crate_roots(). Used mainly for tests.
-    Virtual { name: SmolStr, config: CrateConfiguration },
+    Virtual { name: String, config: CrateConfiguration },
 }
 impl CrateLongId {
-    pub fn name(&self) -> SmolStr {
+    pub fn name(&self) -> String {
         match self {
             CrateLongId::Real(name) => name.clone(),
             CrateLongId::Virtual { name, .. } => name.clone(),
@@ -29,7 +28,7 @@ impl CrateLongId {
 }
 define_short_id!(CrateId, CrateLongId, FilesGroup, lookup_intern_crate, intern_crate);
 impl CrateId {
-    pub fn name(&self, db: &dyn FilesGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn FilesGroup) -> String {
         self.lookup_intern(db).name()
     }
 }
@@ -48,7 +47,7 @@ impl UnstableSalsaId for CrateId {
 
 /// The long ID for a compilation flag.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct FlagLongId(pub SmolStr);
+pub struct FlagLongId(pub String);
 define_short_id!(FlagId, FlagLongId, FilesGroup, lookup_intern_flag, intern_flag);
 impl FlagId {
     pub fn new(db: &dyn FilesGroup, name: &str) -> Self {
@@ -104,7 +103,7 @@ pub enum CodeOrigin {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct VirtualFile {
     pub parent: Option<FileId>,
-    pub name: SmolStr,
+    pub name: String,
     pub content: Arc<str>,
     pub code_mappings: Arc<[CodeMapping]>,
     pub kind: FileKind,
@@ -115,7 +114,7 @@ impl VirtualFile {
             // TODO(yuval): consider a different path format for virtual files.
             format!("{}[{}]", parent.full_path(db), self.name)
         } else {
-            self.name.clone().into()
+            self.name.clone()
         }
     }
 }
@@ -152,15 +151,15 @@ pub enum Directory {
     /// A directory on the file system.
     Real(PathBuf),
     /// A virtual directory, not on the file system. Used mainly for virtual crates.
-    Virtual { files: BTreeMap<SmolStr, FileId>, dirs: BTreeMap<SmolStr, Box<Directory>> },
+    Virtual { files: BTreeMap<String, FileId>, dirs: BTreeMap<String, Box<Directory>> },
 }
 
 impl Directory {
     /// Returns a file inside this directory. The file and directory don't necessarily exist on
     /// the file system. These are ids/paths to them.
-    pub fn file(&self, db: &dyn FilesGroup, name: SmolStr) -> FileId {
+    pub fn file(&self, db: &dyn FilesGroup, name: String) -> FileId {
         match self {
-            Directory::Real(path) => FileId::new(db, path.join(name.to_string())),
+            Directory::Real(path) => FileId::new(db, path.join(name)),
             Directory::Virtual { files, dirs: _ } => files
                 .get(&name)
                 .copied()
@@ -170,9 +169,9 @@ impl Directory {
 
     /// Returns a sub directory inside this directory. These directories don't necessarily exist on
     /// the file system. These are ids/paths to them.
-    pub fn subdir(&self, name: SmolStr) -> Directory {
+    pub fn subdir(&self, name: String) -> Directory {
         match self {
-            Directory::Real(path) => Directory::Real(path.join(name.to_string())),
+            Directory::Real(path) => Directory::Real(path.join(name)),
             Directory::Virtual { files: _, dirs } => {
                 if let Some(dir) = dirs.get(&name) {
                     dir.as_ref().clone()

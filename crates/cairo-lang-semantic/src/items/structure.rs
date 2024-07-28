@@ -6,10 +6,10 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
+use cairo_lang_syntax::node::ids::TextId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
-use smol_str::SmolStr;
 
 use super::attribute::SemanticQueryAttrs;
 use super::generics::{semantic_generic_params, GenericParamsData};
@@ -147,7 +147,7 @@ pub fn struct_declaration_resolver_data(
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct StructDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    members: OrderedHashMap<SmolStr, Member>,
+    members: OrderedHashMap<TextId, Member>,
     resolver_data: Arc<ResolverData>,
 }
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
@@ -197,9 +197,7 @@ pub fn priv_struct_definition_data(
         let visibility =
             Visibility::from_ast(syntax_db, &mut diagnostics, &member.visibility(syntax_db));
         let member_name = member.name(syntax_db).text(syntax_db);
-        if let Some(_other_member) =
-            members.insert(member_name.clone(), Member { id, ty, visibility })
-        {
+        if let Some(_other_member) = members.insert(member_name, Member { id, ty, visibility }) {
             diagnostics.report(&member, StructMemberRedefinition { struct_id, member_name });
         }
     }
@@ -248,7 +246,7 @@ pub fn struct_definition_diagnostics(
 pub fn struct_members(
     db: &dyn SemanticGroup,
     struct_id: StructId,
-) -> Maybe<OrderedHashMap<SmolStr, Member>> {
+) -> Maybe<OrderedHashMap<TextId, Member>> {
     Ok(db.priv_struct_definition_data(struct_id)?.members)
 }
 
@@ -264,7 +262,7 @@ pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
     fn concrete_struct_members(
         &self,
         concrete_struct_id: ConcreteStructId,
-    ) -> Maybe<OrderedHashMap<SmolStr, semantic::Member>> {
+    ) -> Maybe<OrderedHashMap<TextId, semantic::Member>> {
         // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
         //   always have the correct number of generic arguments.
         let db = self.upcast();

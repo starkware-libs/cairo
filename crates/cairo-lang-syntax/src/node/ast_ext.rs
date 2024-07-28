@@ -2,16 +2,16 @@
 //!
 //! The impls here are visible through [`super`] module.
 
-use cairo_lang_utils::require;
+use cairo_lang_utils::{require, LookupIntern};
 use num_bigint::{BigInt, Sign};
 use num_traits::Num;
-use smol_str::SmolStr;
 use unescaper::unescape;
 
 use super::{
     TerminalFalse, TerminalLiteralNumber, TerminalShortString, TerminalString, TerminalTrue,
 };
 use crate::node::db::SyntaxGroup;
+use crate::node::ids::TextId;
 use crate::node::Terminal;
 
 impl TerminalTrue {
@@ -38,8 +38,8 @@ impl TerminalLiteralNumber {
     pub fn numeric_value_and_suffix(
         &self,
         db: &dyn SyntaxGroup,
-    ) -> Option<(BigInt, Option<SmolStr>)> {
-        let text = self.text(db);
+    ) -> Option<(BigInt, Option<TextId>)> {
+        let text = self.text(db).lookup_intern(db);
 
         let (text, radix) = if let Some(num_no_prefix) = text.strip_prefix("0x") {
             (num_no_prefix, 16)
@@ -48,7 +48,7 @@ impl TerminalLiteralNumber {
         } else if let Some(num_no_prefix) = text.strip_prefix("0b") {
             (num_no_prefix, 2)
         } else {
-            (text.as_str(), 10)
+            (text.as_ref(), 10)
         };
 
         // Catch an edge case, where literal seems to have a suffix that is valid numeric part
@@ -59,12 +59,13 @@ impl TerminalLiteralNumber {
         } else {
             let (text, suffix) = match text.rsplit_once('_') {
                 Some((text, suffix)) => {
-                    let suffix = if suffix.is_empty() { None } else { Some(suffix) };
+                    let suffix =
+                        if suffix.is_empty() { None } else { Some(TextId::interned(suffix, db)) };
                     (text, suffix)
                 }
                 None => (text, None),
             };
-            Some((BigInt::from_str_radix(text, radix).ok()?, suffix.map(SmolStr::new)))
+            Some((BigInt::from_str_radix(text, radix).ok()?, suffix))
         }
     }
 }
@@ -72,7 +73,7 @@ impl TerminalLiteralNumber {
 impl TerminalShortString {
     /// Interpret this token/terminal as a string.
     pub fn string_value(&self, db: &dyn SyntaxGroup) -> Option<String> {
-        let text = self.text(db);
+        let text = self.text(db).lookup_intern(db);
 
         let (text, _suffix) = string_value(&text, '\'')?;
 
@@ -85,21 +86,21 @@ impl TerminalShortString {
     }
 
     /// Get suffix from this literal if it has one.
-    pub fn suffix(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
-        let text = self.text(db);
+    pub fn suffix(&self, db: &dyn SyntaxGroup) -> Option<TextId> {
+        let text = self.text(db).lookup_intern(db);
         let (_literal, mut suffix) = text[1..].rsplit_once('\'')?;
         require(!suffix.is_empty())?;
         if suffix.starts_with('_') {
             suffix = &suffix[1..];
         }
-        Some(suffix.into())
+        Some(TextId::interned(suffix, db))
     }
 }
 
 impl TerminalString {
     /// Interpret this token/terminal as a string.
     pub fn string_value(&self, db: &dyn SyntaxGroup) -> Option<String> {
-        let text = self.text(db);
+        let text = self.text(db).lookup_intern(db);
         let (text, suffix) = string_value(&text, '"')?;
         if !suffix.is_empty() {
             unreachable!();

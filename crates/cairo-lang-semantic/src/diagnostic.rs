@@ -12,8 +12,9 @@ use cairo_lang_diagnostics::{
     ErrorCode, Severity,
 };
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::node::ids::TextId;
+use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
-use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
 
 use crate::corelib::LiteralError;
@@ -114,9 +115,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 let defs_db = db.upcast();
                 format!(
                     "Impl item {item_kind} `{}::{}` is not a member of trait `{}`.",
-                    impl_def_id.name(defs_db),
-                    impl_item_name,
-                    trait_id.name(defs_db)
+                    impl_def_id.name(defs_db).lookup_intern(db),
+                    impl_item_name.lookup_intern(db),
+                    trait_id.name(defs_db).lookup_intern(db)
                 )
             }
             SemanticDiagnosticKind::ImplicitImplNotInferred {
@@ -127,7 +128,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!(
                     "Cannot infer implicit impl `{}.`\nCould not find implementation of trait \
                      `{:?}`",
-                    trait_impl_id.name(defs_db),
+                    trait_impl_id.name(defs_db).lookup_intern(db),
                     concrete_trait_id.debug(db)
                 )
             }
@@ -157,7 +158,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     .into()
             }
             SemanticDiagnosticKind::MissingMember(member_name) => {
-                format!(r#"Missing member "{member_name}"."#)
+                format!(r#"Missing member "{}"."#, member_name.lookup_intern(db))
             }
             SemanticDiagnosticKind::WrongNumberOfParameters {
                 impl_def_id,
@@ -167,16 +168,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 actual,
             } => {
                 let defs_db = db.upcast();
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(defs_db).lookup_intern(db);
                 format!(
-                    "The number of parameters in the impl function `{}::{}` is incompatible with \
-                     `{}::{}`. Expected: {}, actual: {}.",
-                    impl_def_id.name(defs_db),
-                    function_name,
-                    trait_id.name(defs_db),
-                    function_name,
-                    expected,
-                    actual,
+                    "The number of parameters in the impl function `{}::{function_name}` is \
+                     incompatible with `{}::{function_name}`. Expected: {expected}, actual: \
+                     {actual}.",
+                    impl_def_id.name(defs_db).lookup_intern(db),
+                    trait_id.name(defs_db).lookup_intern(db),
                 )
             }
             SemanticDiagnosticKind::WrongNumberOfArguments { expected, actual } => {
@@ -190,13 +188,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 actual_ty,
             } => {
                 let defs_db = db.upcast();
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(defs_db).lookup_intern(db);
                 format!(
                     "Parameter type of impl function `{}::{}` is incompatible with `{}::{}`. \
                      Expected: `{}`, actual: `{}`.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(defs_db).lookup_intern(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(defs_db).lookup_intern(db),
                     function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
@@ -209,8 +207,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 let defs_db = db.upcast();
                 format!(
                     "Parameter of trait function `{}::{}` can't be defined as mutable.",
-                    trait_id.name(defs_db),
-                    function_id.name(defs_db),
+                    trait_id.name(defs_db).lookup_intern(db),
+                    function_id.name(defs_db).lookup_intern(db),
                 )
             }
             SemanticDiagnosticKind::ParameterShouldBeReference {
@@ -219,13 +217,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 trait_id,
             } => {
                 let defs_db = db.upcast();
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(defs_db).lookup_intern(db);
                 format!(
                     "Parameter of impl function {}::{} is incompatible with {}::{}. It should be \
                      a reference.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(defs_db).lookup_intern(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(defs_db).lookup_intern(db),
                     function_name,
                 )
             }
@@ -235,14 +233,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 trait_id,
             } => {
                 let defs_db = db.upcast();
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(defs_db).lookup_intern(db);
                 format!(
-                    "Parameter of impl function {}::{} is incompatible with {}::{}. It should not \
-                     be a reference.",
-                    impl_def_id.name(defs_db),
-                    function_name,
-                    trait_id.name(defs_db),
-                    function_name,
+                    "Parameter of impl function {}::{function_name} is incompatible with \
+                     {}::{function_name}. It should not be a reference.",
+                    impl_def_id.name(defs_db).lookup_intern(db),
+                    trait_id.name(defs_db).lookup_intern(db),
                 )
             }
             SemanticDiagnosticKind::WrongParameterName {
@@ -252,12 +248,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 expected_name,
             } => {
                 let defs_db = db.upcast();
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(defs_db).lookup_intern(db);
                 format!(
                     "Parameter name of impl function {}::{function_name} is incompatible with \
-                     {}::{function_name} parameter `{expected_name}`.",
-                    impl_def_id.name(defs_db),
-                    trait_id.name(defs_db),
+                     {}::{function_name} parameter `{}`.",
+                    impl_def_id.name(defs_db).lookup_intern(db),
+                    trait_id.name(defs_db).lookup_intern(db),
+                    expected_name.lookup_intern(db),
                 )
             }
             SemanticDiagnosticKind::WrongType { expected_ty, actual_ty } => {
@@ -322,13 +319,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 actual_ty,
             } => {
                 let defs_db = db.upcast();
-                let function_name = impl_function_id.name(defs_db);
+                let function_name = impl_function_id.name(defs_db).lookup_intern(db);
                 format!(
                     "Return type of impl function `{}::{}` is incompatible with `{}::{}`. \
                      Expected: `{}`, actual: `{}`.",
-                    impl_def_id.name(defs_db),
+                    impl_def_id.name(defs_db).lookup_intern(db),
                     function_name,
-                    trait_id.name(defs_db),
+                    trait_id.name(defs_db).lookup_intern(db),
                     function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
@@ -344,20 +341,22 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 )
             }
             SemanticDiagnosticKind::VariableNotFound(name) => {
-                format!(r#"Variable "{name}" not found."#)
+                format!(r#"Variable "{}" not found."#, name.lookup_intern(db))
             }
             SemanticDiagnosticKind::MissingVariableInPattern => {
                 "Missing variable in pattern.".into()
             }
             SemanticDiagnosticKind::StructMemberRedefinition { struct_id, member_name } => {
                 format!(
-                    r#"Redefinition of member "{member_name}" on struct "{}"."#,
+                    r#"Redefinition of member "{}" on struct "{}"."#,
+                    member_name.lookup_intern(db),
                     struct_id.full_path(db.upcast())
                 )
             }
             SemanticDiagnosticKind::EnumVariantRedefinition { enum_id, variant_name } => {
                 format!(
-                    r#"Redefinition of variant "{variant_name}" on enum "{}"."#,
+                    r#"Redefinition of variant "{}" on enum "{}"."#,
+                    variant_name.lookup_intern(db),
                     enum_id.full_path(db.upcast())
                 )
             }
@@ -369,7 +368,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
                 format!(
-                    r#"Redefinition of parameter name "{param_name}" in function "{}"."#,
+                    r#"Redefinition of parameter name "{}" in function "{}"."#,
+                    param_name.lookup_intern(db),
                     function_title_id.full_path(db.upcast())
                 )
             }
@@ -399,20 +399,29 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::NoSuchStructMember { struct_id, member_name } => {
                 format!(
-                    r#"Struct "{}" has no member "{member_name}""#,
-                    struct_id.full_path(db.upcast())
+                    r#"Struct "{}" has no member "{}""#,
+                    struct_id.full_path(db.upcast()),
+                    member_name.lookup_intern(db),
                 )
             }
             SemanticDiagnosticKind::NoSuchTypeMember { ty, member_name } => {
-                format!(r#"Type "{}" has no member "{member_name}""#, ty.format(db))
+                format!(
+                    r#"Type "{}" has no member "{}""#,
+                    ty.format(db),
+                    member_name.lookup_intern(db)
+                )
             }
             SemanticDiagnosticKind::MemberNotVisible(member_name) => {
-                format!(r#"Member "{member_name}" is not visible in this context."#)
+                format!(
+                    r#"Member "{}" is not visible in this context."#,
+                    member_name.lookup_intern(db)
+                )
             }
             SemanticDiagnosticKind::NoSuchVariant { enum_id, variant_name } => {
                 format!(
-                    r#"Enum "{}" has no variant "{variant_name}""#,
-                    enum_id.full_path(db.upcast())
+                    r#"Enum "{}" has no variant "{}""#,
+                    enum_id.full_path(db.upcast()),
+                    variant_name.lookup_intern(db),
                 )
             }
             SemanticDiagnosticKind::ReturnTypeNotErrorPropagateType => {
@@ -435,24 +444,35 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Unhandled `#[must_use]` function.".into()
             }
             SemanticDiagnosticKind::UnstableFeature { feature_name, note } => {
+                let feature_name = feature_name.lookup_intern(db);
                 format!(
                     "Usage of unstable feature `{feature_name}` with no \
                      `#[feature({feature_name})]` attribute.{}",
-                    note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
+                    note.as_ref()
+                        .map(|note| format!(" Note: {}", note.lookup_intern(db)))
+                        .unwrap_or_default()
                 )
             }
             SemanticDiagnosticKind::DeprecatedFeature { feature_name, note } => {
                 format!(
                     "Usage of deprecated feature `{feature_name}` with no \
-                     `#[feature({feature_name})]` attribute.{}",
-                    note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
+                     `#[feature({feature_name})]` attribute.{note}",
+                    feature_name = feature_name.lookup_intern(db),
+                    note = note
+                        .as_ref()
+                        .map(|note| format!(" Note: {}", note.lookup_intern(db)))
+                        .unwrap_or_default()
                 )
             }
             SemanticDiagnosticKind::InternalFeature { feature_name, note } => {
                 format!(
                     "Usage of internal feature `{feature_name}` with no \
-                     `#[feature({feature_name})]` attribute.{}",
-                    note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
+                     `#[feature({feature_name})]` attribute.{note}",
+                    feature_name = feature_name.lookup_intern(db),
+                    note = note
+                        .as_ref()
+                        .map(|note| format!(" Note: {}", note.lookup_intern(db)))
+                        .unwrap_or_default()
                 )
             }
             SemanticDiagnosticKind::FeatureMarkerDiagnostic(diagnostic) => match diagnostic {
@@ -563,8 +583,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::RedundantModifier { current_modifier, previous_modifier } => {
                 format!(
-                    "`{current_modifier}` modifier was specified after another modifier \
-                     (`{previous_modifier}`). Only a single modifier is allowed."
+                    "`{}` modifier was specified after another modifier (`{}`). Only a single \
+                     modifier is allowed.",
+                    current_modifier.lookup_intern(db),
+                    previous_modifier.lookup_intern(db)
                 )
             }
             SemanticDiagnosticKind::ReferenceLocalVariable => {
@@ -578,17 +600,20 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!("Invalid drop trait implementation, {}", inference_error.format(db))
             }
             SemanticDiagnosticKind::InvalidImplItem(item_kw) => {
-                format!("`{item_kw}` is not allowed inside impl.")
+                format!("`{}` is not allowed inside impl.", item_kw.lookup_intern(db))
             }
             SemanticDiagnosticKind::MissingItemsInImpl(item_names) => {
                 format!(
                     "Not all trait items are implemented. Missing: {}.",
-                    item_names.iter().map(|name| format!("'{name}'")).join(", ")
+                    item_names
+                        .iter()
+                        .map(|name| format!("'{}'", name.lookup_intern(db)))
+                        .join(", ")
                 )
             }
             SemanticDiagnosticKind::PassPanicAsNopanic { impl_function_id, trait_id } => {
-                let name = impl_function_id.name(db.upcast());
-                let trait_name = trait_id.name(db.upcast());
+                let name = impl_function_id.name(db.upcast()).lookup_intern(db);
+                let trait_name = trait_id.name(db.upcast()).lookup_intern(db);
                 format!(
                     "The signature of function `{name}` is incompatible with trait \
                      `{trait_name}`. The trait function is declared as nopanic."
@@ -604,7 +629,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
             SemanticDiagnosticKind::NameDefinedMultipleTimes(name) => {
-                format!("The name `{name}` is defined multiple times.")
+                format!("The name `{}` is defined multiple times.", name.lookup_intern(db))
             }
             SemanticDiagnosticKind::NamedArgumentsAreNotSupported => {
                 "Named arguments are not supported in this context.".into()
@@ -613,7 +638,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Unnamed arguments cannot follow named arguments.".into()
             }
             SemanticDiagnosticKind::NamedArgumentMismatch { expected, found } => {
-                format!("Unexpected argument name. Expected: '{expected}', found '{found}'.")
+                format!(
+                    "Unexpected argument name. Expected: '{}', found '{}'.",
+                    expected.lookup_intern(db),
+                    found.lookup_intern(db)
+                )
             }
             SemanticDiagnosticKind::UnsupportedOutsideOfFunction(feature_name) => {
                 let feature_name_str = match feature_name {
@@ -680,13 +709,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     format!(
                         "Method `{}` not found on type `{}`. Did you import the correct trait and \
                          impl?",
-                        method_name,
+                        method_name.lookup_intern(db),
                         ty.format(db)
                     )
                 } else {
                     format!(
                         "Method `{}` could not be called on type `{}`.\n{}",
-                        method_name,
+                        method_name.lookup_intern(db),
                         ty.format(db),
                         inference_errors.format(db)
                     )
@@ -736,25 +765,28 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Unknown statement attribute.".into()
             }
             SemanticDiagnosticKind::InlineMacroNotFound(macro_name) => {
-                format!("Inline macro `{}` not found.", macro_name)
+                format!("Inline macro `{}` not found.", macro_name.lookup_intern(db))
             }
             SemanticDiagnosticKind::InlineMacroFailed(macro_name) => {
-                format!("Inline macro `{}` failed.", macro_name)
+                format!("Inline macro `{}` failed.", macro_name.lookup_intern(db))
             }
             SemanticDiagnosticKind::UnknownGenericParam(name) => {
-                format!("Unknown generic parameter `{}`.", name)
+                format!("Unknown generic parameter `{}`.", name.lookup_intern(db))
             }
             SemanticDiagnosticKind::PositionalGenericAfterNamed => {
                 "Positional generic parameters must come before named generic parameters.".into()
             }
             SemanticDiagnosticKind::GenericArgDuplicate(name) => {
-                format!("Generic argument `{}` is specified more than once.", name)
+                format!(
+                    "Generic argument `{}` is specified more than once.",
+                    name.lookup_intern(db)
+                )
             }
             SemanticDiagnosticKind::TooManyGenericArguments { expected, actual } => {
                 format!("Expected {} generic arguments, found {}.", expected, actual)
             }
             SemanticDiagnosticKind::GenericArgOutOfOrder(name) => {
-                format!("Generic argument `{}` is out of order.", name)
+                format!("Generic argument `{}` is out of order.", name.lookup_intern(db))
             }
             SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
                 "Only `_` is valid as a negative impl argument.".into()
@@ -815,15 +847,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
             } => {
                 if inference_errors.is_empty() {
                     format!(
-                        "Implementation of trait `{}` not found on type `{}`. Did you import the \
-                         correct trait and impl?",
-                        trait_name,
+                        "Implementation of trait `{trait_name}` not found on type `{}`. Did you \
+                         import the correct trait and impl?",
                         ty.format(db)
                     )
                 } else {
                     format!(
-                        "Could not find implementation of trait `{}` on type `{}`.\n{}",
-                        trait_name,
+                        "Could not find implementation of trait `{trait_name}` on type `{}`.\n{}",
                         ty.format(db),
                         inference_errors.format(db)
                     )
@@ -889,7 +919,7 @@ pub enum SemanticDiagnosticKind {
     NotAnImpl,
     ImplItemNotInTrait {
         impl_def_id: ImplDefId,
-        impl_item_name: SmolStr,
+        impl_item_name: TextId,
         trait_id: TraitId,
         item_kind: String,
     },
@@ -913,7 +943,7 @@ pub enum SemanticDiagnosticKind {
     TypeAliasCycle,
     ImplAliasCycle,
     ImplRequirementCycle,
-    MissingMember(SmolStr),
+    MissingMember(TextId),
     WrongNumberOfParameters {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
@@ -951,7 +981,7 @@ pub enum SemanticDiagnosticKind {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
-        expected_name: SmolStr,
+        expected_name: TextId,
     },
     WrongType {
         expected_ty: semantic::TypeId,
@@ -985,21 +1015,21 @@ pub enum SemanticDiagnosticKind {
         trait_function_id0: TraitFunctionId,
         trait_function_id1: TraitFunctionId,
     },
-    VariableNotFound(SmolStr),
+    VariableNotFound(TextId),
     MissingVariableInPattern,
     StructMemberRedefinition {
         struct_id: StructId,
-        member_name: SmolStr,
+        member_name: TextId,
     },
     EnumVariantRedefinition {
         enum_id: EnumId,
-        variant_name: SmolStr,
+        variant_name: TextId,
     },
     InfiniteSizeType(semantic::TypeId),
     ArrayOfZeroSizedElements(semantic::TypeId),
     ParamNameRedefinition {
         function_title_id: FunctionTitleId,
-        param_name: SmolStr,
+        param_name: TextId,
     },
     ConditionNotBool(semantic::TypeId),
     IncompatibleArms {
@@ -1011,25 +1041,25 @@ pub enum SemanticDiagnosticKind {
     LogicalOperatorNotAllowedInWhileLet,
     TypeHasNoMembers {
         ty: semantic::TypeId,
-        member_name: SmolStr,
+        member_name: TextId,
     },
     CannotCallMethod {
         ty: semantic::TypeId,
-        method_name: SmolStr,
+        method_name: TextId,
         inference_errors: TraitInferenceErrors,
     },
     NoSuchStructMember {
         struct_id: StructId,
-        member_name: SmolStr,
+        member_name: TextId,
     },
     NoSuchTypeMember {
         ty: semantic::TypeId,
-        member_name: SmolStr,
+        member_name: TextId,
     },
-    MemberNotVisible(SmolStr),
+    MemberNotVisible(TextId),
     NoSuchVariant {
         enum_id: EnumId,
-        variant_name: SmolStr,
+        variant_name: TextId,
     },
     ReturnTypeNotErrorPropagateType,
     IncompatibleErrorPropagateType {
@@ -1039,16 +1069,16 @@ pub enum SemanticDiagnosticKind {
     ErrorPropagateOnNonErrorType(semantic::TypeId),
     UnhandledMustUseType(semantic::TypeId),
     UnstableFeature {
-        feature_name: SmolStr,
-        note: Option<SmolStr>,
+        feature_name: TextId,
+        note: Option<TextId>,
     },
     DeprecatedFeature {
-        feature_name: SmolStr,
-        note: Option<SmolStr>,
+        feature_name: TextId,
+        note: Option<TextId>,
     },
     InternalFeature {
-        feature_name: SmolStr,
-        note: Option<SmolStr>,
+        feature_name: TextId,
+        note: Option<TextId>,
     },
     FeatureMarkerDiagnostic(FeatureMarkerDiagnostic),
     UnhandledMustUseFunction,
@@ -1073,8 +1103,8 @@ pub enum SemanticDiagnosticKind {
     SuperUsedInRootModule,
     ItemNotVisible(ModuleItemId),
     RedundantModifier {
-        current_modifier: SmolStr,
-        previous_modifier: SmolStr,
+        current_modifier: TextId,
+        previous_modifier: TextId,
     },
     ReferenceLocalVariable,
     UnexpectedEnumPattern(semantic::TypeId),
@@ -1095,8 +1125,8 @@ pub enum SemanticDiagnosticKind {
     },
     InvalidCopyTraitImpl(InferenceError),
     InvalidDropTraitImpl(InferenceError),
-    InvalidImplItem(SmolStr),
-    MissingItemsInImpl(Vec<SmolStr>),
+    InvalidImplItem(TextId),
+    MissingItemsInImpl(Vec<TextId>),
     PassPanicAsNopanic {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
@@ -1104,13 +1134,13 @@ pub enum SemanticDiagnosticKind {
     PanicableFromNonPanicable,
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
-    NameDefinedMultipleTimes(SmolStr),
+    NameDefinedMultipleTimes(TextId),
     NamedArgumentsAreNotSupported,
     ArgPassedToNegativeImpl,
     UnnamedArgumentFollowsNamed,
     NamedArgumentMismatch {
-        expected: SmolStr,
-        found: SmolStr,
+        expected: TextId,
+        found: TextId,
     },
     UnsupportedOutsideOfFunction(UnsupportedOutsideOfFunctionFeatureName),
     UnsupportedConstant,
@@ -1129,7 +1159,7 @@ pub enum SemanticDiagnosticKind {
     },
     NoImplementationOfTrait {
         ty: semantic::TypeId,
-        trait_name: SmolStr,
+        trait_name: &'static str,
         inference_errors: TraitInferenceErrors,
     },
     MultipleImplementationOfIndexOperator(semantic::TypeId),
@@ -1149,16 +1179,16 @@ pub enum SemanticDiagnosticKind {
     UnsupportedFeatureAttrArguments,
     UnsupportedPubArgument,
     UnknownStatementAttribute,
-    InlineMacroNotFound(SmolStr),
-    InlineMacroFailed(SmolStr),
-    UnknownGenericParam(SmolStr),
+    InlineMacroNotFound(TextId),
+    InlineMacroFailed(TextId),
+    UnknownGenericParam(TextId),
     PositionalGenericAfterNamed,
-    GenericArgDuplicate(SmolStr),
+    GenericArgDuplicate(TextId),
     TooManyGenericArguments {
         expected: usize,
         actual: usize,
     },
-    GenericArgOutOfOrder(SmolStr),
+    GenericArgOutOfOrder(TextId),
     CouponForExternFunctionNotAllowed,
     CouponArgumentNoModifiers,
     /// Coupons are disabled in the current crate.
