@@ -433,7 +433,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 //! > 2 components in a contract
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: warnings_only)
 
 //! > cairo_code
 #[starknet::component]
@@ -1045,13 +1045,17 @@ impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
+warning: Plugin diagnostic: The path `component2_storage.data` collides with existing path `component1_storage.data`.
+ --> lib.cairo:26:9
+        component2_storage: super::component2::Storage,
+        ^****************^
 
 //! > ==========================================================================
 
 //! > 2 components in a contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: warnings_only)
 
 //! > cairo_code
 #[starknet::component]
@@ -1096,6 +1100,10 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
+warning: Plugin diagnostic: The path `component2_storage.data` collides with existing path `component1_storage.data`.
+ --> lib.cairo:26:9
+        component2_storage: super::component2::Storage,
+        ^****************^
 
 //! > generated_cairo_code
 lib.cairo:
