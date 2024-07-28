@@ -11,6 +11,10 @@ use super::storage_interfaces::handle_storage_interface_struct;
 use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, FLAT_ATTR, STORAGE_STRUCT_NAME};
 use crate::plugin::SUBSTORAGE_ATTR;
 
+#[cfg(test)]
+#[path = "storage_test.rs"]
+mod storage_test;
+
 /// Generate getters and setters for the members of the storage struct.
 pub fn handle_storage_struct(
     db: &dyn SyntaxGroup,

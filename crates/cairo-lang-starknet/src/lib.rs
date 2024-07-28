@@ -24,7 +24,8 @@ pub fn starknet_plugin_suite() -> PluginSuite {
         .add_inline_macro_plugin::<inline_macros::selector::SelectorMacro>()
         .add_inline_macro_plugin::<inline_macros::get_dep_component::GetDepComponentMacro>()
         .add_inline_macro_plugin::<inline_macros::get_dep_component::GetDepComponentMutMacro>()
-        .add_analyzer_plugin::<analyzer::ABIAnalyzer>();
+        .add_analyzer_plugin::<analyzer::ABIAnalyzer>()
+        .add_analyzer_plugin::<analyzer::StorageAnalyzer>();
     suite
 }
 
