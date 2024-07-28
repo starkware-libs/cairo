@@ -1,0 +1,47 @@
+//! > Test event variant not deriving starknet::Event.
+
+//! > test_runner_name
+test_storage_path_check(expect_diagnostics: true)
+
+//! > cairo_code
+use core::starknet::storage::{StoragePointerWriteAccess, StoragePointerReadAccess};
+
+#[starknet::storage_node]
+struct Struct1 {
+    pub member1: felt252,
+}
+
+#[starknet::storage_node]
+struct Struct0 {
+    pub member0: Struct1,
+}
+
+#[starknet::storage_node]
+struct IgnoredMemberStruct {
+    #[flat]
+    pub ignored_member: Struct0,
+}
+
+#[starknet::contract]
+mod without_ignored {
+    use core::starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use super::{IgnoredMemberStruct, Struct0};
+    #[storage]
+    pub struct Storage {
+        #[flat]
+        pub x: IgnoredMemberStruct,
+        #[flat]
+        pub y: Struct0,
+    }
+}
+
+//! > expected_diagnostics
+warning: Plugin diagnostic: 2 different virtual paths mapped to one actual path in memory.
+                    The actual path is: member0.member1
+                    0 virtual path is: member0.member1
+                    1 virtual path is: ignored_member.member0.member1
+ --> lib.cairo:8:1
+#[starknet::storage_node]
+^***********************^
+
+//! > diagnostics
