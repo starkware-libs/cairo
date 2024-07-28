@@ -1380,6 +1380,38 @@ impl UserInfoSubPointersMutImpl of starknet::storage::SubPointersMut<UserInfo> {
     }
 }
 #[derive(Drop, Copy)]
+struct TransactionInfoStorageBase {
+    balances: starknet::storage::StorageBase<Map::<ContractAddress, u256>>,
+    allowances: starknet::storage::StorageBase<Map::<ContractAddress, Map<ContractAddress, u256>>>,
+}
+impl TransactionInfoStorageImpl of starknet::storage::StorageTrait<TransactionInfo> {
+    type BaseType = TransactionInfoStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<TransactionInfo>) -> TransactionInfoStorageBase {
+        let balances_value = starknet::storage::StorageBase {address: selector!("balances")};
+        let allowances_value = starknet::storage::StorageBase {address: selector!("allowances")};
+        TransactionInfoStorageBase {
+           balances: balances_value,
+           allowances: allowances_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct TransactionInfoStorageBaseMut {
+    balances: starknet::storage::StorageBase<starknet::storage::Mutable::<Map::<ContractAddress, u256>>>,
+    allowances: starknet::storage::StorageBase<starknet::storage::Mutable::<Map::<ContractAddress, Map<ContractAddress, u256>>>>,
+}
+impl TransactionInfoStorageMutImpl of starknet::storage::StorageTraitMut<TransactionInfo> {
+    type BaseType = TransactionInfoStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<TransactionInfo>>) -> TransactionInfoStorageBaseMut {
+        let balances_value = starknet::storage::StorageBase {address: selector!("balances")};
+        let allowances_value = starknet::storage::StorageBase {address: selector!("allowances")};
+        TransactionInfoStorageBaseMut {
+           balances: balances_value,
+           allowances: allowances_value,
+        }
+    }
+}
+#[derive(Drop, Copy)]
 struct TransactionInfoStorageNode {
     balances: starknet::storage::PendingStoragePath<Map::<ContractAddress, u256>>,
     allowances: starknet::storage::PendingStoragePath<Map::<ContractAddress, Map<ContractAddress, u256>>>,
@@ -1747,6 +1779,10 @@ impl UserInfoSubPointersDrop of core::traits::Drop::<UserInfoSubPointers>;
 impl UserInfoSubPointersCopy of core::traits::Copy::<UserInfoSubPointers>;
 impl UserInfoSubPointersMutDrop of core::traits::Drop::<UserInfoSubPointersMut>;
 impl UserInfoSubPointersMutCopy of core::traits::Copy::<UserInfoSubPointersMut>;
+impl TransactionInfoStorageBaseDrop of core::traits::Drop::<TransactionInfoStorageBase>;
+impl TransactionInfoStorageBaseCopy of core::traits::Copy::<TransactionInfoStorageBase>;
+impl TransactionInfoStorageBaseMutDrop of core::traits::Drop::<TransactionInfoStorageBaseMut>;
+impl TransactionInfoStorageBaseMutCopy of core::traits::Copy::<TransactionInfoStorageBaseMut>;
 impl TransactionInfoStorageNodeDrop of core::traits::Drop::<TransactionInfoStorageNode>;
 impl TransactionInfoStorageNodeCopy of core::traits::Copy::<TransactionInfoStorageNode>;
 impl TransactionInfoStorageNodeMutDrop of core::traits::Drop::<TransactionInfoStorageNodeMut>;
