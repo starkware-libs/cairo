@@ -1,0 +1,84 @@
+//! > Test event variant not deriving starknet::Event.
+
+//! > test_runner_name
+test_storage_path_check(expect_diagnostics: true)
+
+//! > cairo_code
+use core::starknet::storage::{StoragePointerWriteAccess, StoragePointerReadAccess};
+
+#[starknet::storage_node]
+struct Struct1 {
+    pub member1: felt252,
+}
+
+#[starknet::storage_node]
+struct Struct0 {
+    pub member0: Struct1,
+}
+
+#[starknet::storage_node]
+struct IgnoredMemberStruct {
+    #[flat]
+    pub ignored_member: Struct0,
+}
+
+#[starknet::component]
+mod component_with_and_without_ignored {
+    use super::{Struct0, IgnoredMemberStruct};
+    #[storage]
+    pub struct Storage {
+        #[flat]
+        pub x: Struct0,
+        #[flat]
+        pub y: IgnoredMemberStruct,
+    }
+}
+
+#[starknet::contract]
+mod contract_with_and_without_ignored {
+    use super::{IgnoredMemberStruct, Struct0, component_with_and_without_ignored::Storage};
+    #[storage]
+    pub struct Storage {
+        #[flat]
+        pub x: IgnoredMemberStruct,
+        #[flat]
+        pub y: Struct0,
+    }
+}
+
+#[starknet::storage_node]
+struct HasA {
+    a: felt252,
+}
+
+#[starknet::storage_node]
+struct ComponentNewStorage {
+    a: felt252,
+    #[flat]
+    has_a: HasA,
+}
+
+#[starknet::storage_node]
+struct Struct {
+    a: felt252,
+    #[flat]
+    pub has_a: HasA,
+}
+
+//! > expected_diagnostics
+
+//! > diagnostics
+warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`.
+ --> lib.cairo:51:5
+    #[flat]
+    ^*****^
+
+warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`.
+ --> lib.cairo:58:5
+    #[flat]
+    ^*****^
+
+error: The name `Storage` is defined multiple times.
+ --> lib.cairo:31:1
+#[starknet::contract]
+^*******************^
