@@ -1,0 +1,141 @@
+//! > Test flat storage path check.
+
+//! > test_runner_name
+test_storage_path_check(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::storage_node]
+struct Struct1 {
+    pub member1: felt252,
+}
+
+#[starknet::storage_node]
+struct Struct0 {
+    pub member0: Struct1,
+}
+
+#[starknet::storage_node]
+struct IgnoredMemberStruct {
+    #[flat]
+    pub ignored_member: Struct0,
+}
+
+#[starknet::storage_node]
+struct HasA {
+    a: felt252,
+}
+
+#[starknet::storage_node]
+struct ComponentNewStorage {
+    a: felt252,
+    #[flat]
+    has_a: HasA,
+}
+
+#[starknet::storage_node]
+struct Storage {
+    a: felt252,
+    #[flat]
+    pub has_a: HasA,
+}
+
+//! > expected_diagnostics
+
+//! > diagnostics
+warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`.
+ --> lib.cairo:25:5
+    #[flat]
+    ^*****^
+
+warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`.
+ --> lib.cairo:32:5
+    #[flat]
+    ^*****^
+
+//! > ==========================================================================
+
+//! > Test contract flat path check.
+
+//! > test_runner_name
+test_storage_path_check(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::storage_node]
+struct Struct1 {
+    pub member1: felt252,
+}
+
+#[starknet::storage_node]
+struct Struct0 {
+    pub member0: Struct1,
+}
+
+#[starknet::storage_node]
+struct IgnoredMemberStruct {
+    #[flat]
+    pub ignored_member: Struct0,
+}
+
+#[starknet::contract]
+mod contract_with_and_without_ignored {
+    use super::{IgnoredMemberStruct, Struct0};
+    #[storage]
+    pub struct Storage {
+        #[flat]
+        pub x: IgnoredMemberStruct,
+        #[flat]
+        pub y: Struct0,
+    }
+}
+
+//! > expected_diagnostics
+
+//! > diagnostics
+warning: Plugin diagnostic: The path `y.member0` collides with existing path `x.ignored_member.member0`.
+ --> lib.cairo:17:1
+#[starknet::contract]
+^*******************^
+
+//! > ==========================================================================
+
+//! > Test component flat path check.
+
+//! > test_runner_name
+test_storage_path_check(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::storage_node]
+struct Struct1 {
+    pub member1: felt252,
+}
+
+#[starknet::storage_node]
+struct Struct0 {
+    pub member0: Struct1,
+}
+
+#[starknet::storage_node]
+struct IgnoredMemberStruct {
+    #[flat]
+    pub ignored_member: Struct0,
+}
+
+#[starknet::component]
+mod component_with_and_without_ignored {
+    use super::{Struct0, IgnoredMemberStruct};
+    #[storage]
+    pub struct Storage {
+        #[flat]
+        pub x: Struct0,
+        #[flat]
+        pub y: IgnoredMemberStruct,
+    }
+}
+
+//! > expected_diagnostics
+
+//! > diagnostics
+warning: Plugin diagnostic: The path `y.ignored_member.member0` collides with existing path `x.member0`.
+ --> lib.cairo:17:1
+#[starknet::component]
+^********************^
