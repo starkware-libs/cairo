@@ -1,17 +1,18 @@
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::{AbiBuilder, BuilderConfig};
 use crate::plugin::consts::CONTRACT_ATTR;
 use crate::starknet_plugin_suite;
 
 /// Helper function for testing ABI failures.
-pub fn test_abi_failure(
+pub fn test_storage_path_check(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
@@ -28,31 +29,25 @@ pub fn test_abi_failure(
         .iter()
         .find(|submodule| submodule.has_attr(db, CONTRACT_ATTR).unwrap())
         .expect("No starknet::contract found in input code.");
-    let abi_error = AbiBuilder::from_submodule(
-        db,
-        *contract_submodule,
-        BuilderConfig { account_contract_validations: true },
-    )
-    .expect("No basic errors")
-    .finalize()
-    .unwrap_err();
-
+    let contract_module_id = ModuleId::Submodule(*contract_submodule);
+    let contract_diagnostics = db.module_semantic_diagnostics(contract_module_id).unwrap();
+    let diagnostic_string = contract_diagnostics.format(db);
     let test_error = verify_diagnostics_expectation(args, &diagnostics);
 
     TestRunnerResult {
         outputs: OrderedHashMap::from([
-            ("expected_error".into(), abi_error.to_string()),
             ("expected_diagnostics".into(), diagnostics),
+            ("diagnostics".into(), diagnostic_string),
         ]),
         error: test_error,
     }
 }
 
 cairo_lang_test_utils::test_file_test!(
-  abi_failures,
+  storage_path_check,
   "src/test_data",
   {
-      abi_failures: "abi_failures",
+      storage_path_check: "storage_path_check",
   },
-  test_abi_failure
+  test_storage_path_check
 );
