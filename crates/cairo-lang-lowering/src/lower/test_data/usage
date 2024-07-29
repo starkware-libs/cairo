@@ -229,3 +229,47 @@ Block 0:15:
   Changes:
   Snapshot_Usage:
   Introductions:
+
+//! > ==========================================================================
+
+//! > Test for usage
+
+//! > test_runner_name
+test_function_usage
+
+//! > function
+fn foo(a: u32) {
+    let arr = array![1, 2, 3];
+    for b in arr {
+        a + b;
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > usage
+Block 0:0:
+  Usage:
+  Changes:
+  Snapshot_Usage:
+  Introductions: LocalVarId(test::__array_builder_macro_result__),
+Block 2:17:
+  Usage: ParamId(test::a), LocalVarId(test::b),
+  Changes:
+  Snapshot_Usage:
+  Introductions:
+For 2:4:
+  Usage: LocalVarId(test::in), ParamId(test::a),
+  Changes: LocalVarId(test::in),
+  Snapshot_Usage:
+  Introductions: LocalVarId(test::b),
+Block 0:15:
+  Usage: ParamId(test::a),
+  Changes:
+  Snapshot_Usage:
+  Introductions: LocalVarId(test::arr), LocalVarId(test::in),
