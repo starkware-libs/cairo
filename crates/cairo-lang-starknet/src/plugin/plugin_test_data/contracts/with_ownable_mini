@@ -73,8 +73,8 @@ struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let ownable_value = starknet::storage::StorageBase {address: selector!("ownable")};
-        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
+        let ownable_value = starknet::storage::StorageBase {__base_address__: selector!("ownable")};
+        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
         StorageStorageBase {
            ownable: ownable_value,
            balance: balance_value,
@@ -89,8 +89,8 @@ struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let ownable_value = starknet::storage::StorageBase {address: selector!("ownable")};
-        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
+        let ownable_value = starknet::storage::StorageBase {__base_address__: selector!("ownable")};
+        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
         StorageStorageBaseMut {
            ownable: ownable_value,
            balance: balance_value,
@@ -318,8 +318,8 @@ struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let ownable_value = starknet::storage::StorageBase {address: selector!("ownable")};
-        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
+        let ownable_value = starknet::storage::StorageBase {__base_address__: selector!("ownable")};
+        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
         StorageStorageBase {
            ownable: ownable_value,
            balance: balance_value,
@@ -334,8 +334,8 @@ struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let ownable_value = starknet::storage::StorageBase {address: selector!("ownable")};
-        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
+        let ownable_value = starknet::storage::StorageBase {__base_address__: selector!("ownable")};
+        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
         StorageStorageBaseMut {
            ownable: ownable_value,
            balance: balance_value,

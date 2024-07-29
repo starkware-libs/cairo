@@ -16,7 +16,7 @@ impl VecCopy<T> of Copy<Vec<T>> {}
 impl VecAsPointer<T> of StorageAsPointer<StoragePath<Vec<T>>> {
     type Value = u64;
     fn as_ptr(self: @StoragePath<Vec<T>>) -> StoragePointer0Offset<u64> {
-        StoragePointer0Offset { address: (*self).finalize() }
+        StoragePointer0Offset { __storage_pointer_address__: (*self).finalize() }
     }
 }
 
@@ -24,7 +24,7 @@ impl VecAsPointer<T> of StorageAsPointer<StoragePath<Vec<T>>> {
 impl MutableVecAsPointer<T> of StorageAsPointer<StoragePath<Mutable<Vec<T>>>> {
     type Value = Mutable<u64>;
     fn as_ptr(self: @StoragePath<Mutable<Vec<T>>>) -> StoragePointer0Offset<Mutable<u64>> {
-        StoragePointer0Offset { address: (*self).finalize() }
+        StoragePointer0Offset { __storage_pointer_address__: (*self).finalize() }
     }
 }
 

@@ -13,8 +13,8 @@ use vec::{VecIndexView, MutableVecIndexView, PathableVecIndexView, PathableMutab
 /// A pointer to an address in storage, can be used to read and write values, if the generic type
 /// supports it (e.g. basic types like `felt252`).
 pub struct StoragePointer<T> {
-    pub address: StorageBaseAddress,
-    pub offset: u8,
+    pub __storage_pointer_address__: StorageBaseAddress,
+    pub __storage_pointer_offset__: u8,
 }
 
 impl StoragePointerCopy<T> of Copy<StoragePointer<T>> {}
@@ -22,7 +22,7 @@ impl StoragePointerDrop<T> of Drop<StoragePointer<T>> {}
 
 /// Same as `StoragePointer`, but with `offset` 0, which allows for some optimizations.
 pub struct StoragePointer0Offset<T> {
-    pub address: StorageBaseAddress,
+    pub __storage_pointer_address__: StorageBaseAddress,
 }
 
 impl StoragePointer0OffsetCopy<T> of Copy<StoragePointer0Offset<T>> {}
@@ -69,7 +69,9 @@ impl StorableStoragePointer0OffsetReadAccess<
 > of StoragePointerReadAccess<StoragePointer0Offset<T>> {
     type Value = T;
     fn read(self: @StoragePointer0Offset<T>) -> T {
-        starknet::SyscallResultTrait::unwrap_syscall(starknet::Store::<T>::read(0, *self.address))
+        starknet::SyscallResultTrait::unwrap_syscall(
+            starknet::Store::<T>::read(0, *self.__storage_pointer_address__)
+        )
     }
 }
 
@@ -81,7 +83,9 @@ impl MutableStorableStoragePointer0OffsetReadAccess<
     type Value = MutableTrait::<T>::InnerType;
     fn read(self: @StoragePointer0Offset<T>) -> MutableTrait::<T>::InnerType {
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<MutableTrait::<T>::InnerType>::read(0, *self.address)
+            starknet::Store::<
+                MutableTrait::<T>::InnerType
+            >::read(0, *self.__storage_pointer_address__)
         )
     }
 }
@@ -94,7 +98,9 @@ impl StorableStoragePointer0OffsetWriteAccess<
     type Value = MutableTrait::<T>::InnerType;
     fn write(self: StoragePointer0Offset<T>, value: MutableTrait::<T>::InnerType) {
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<MutableTrait::<T>::InnerType>::write(0, self.address, value)
+            starknet::Store::<
+                MutableTrait::<T>::InnerType
+            >::write(0, self.__storage_pointer_address__, value)
         )
     }
 }
@@ -107,7 +113,11 @@ pub impl StorableStoragePointerReadAccess<
     type Value = T;
     fn read(self: @StoragePointer<T>) -> T {
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<T>::read_at_offset(0, *self.address, *self.offset)
+            starknet::Store::<
+                T
+            >::read_at_offset(
+                0, *self.__storage_pointer_address__, *self.__storage_pointer_offset__
+            )
         )
     }
 }
@@ -121,7 +131,9 @@ impl MutableStorableStoragePointerReadAccess<
         starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<
                 MutableTrait::<T>::InnerType
-            >::read_at_offset(0, *self.address, *self.offset)
+            >::read_at_offset(
+                0, *self.__storage_pointer_address__, *self.__storage_pointer_offset__
+            )
         )
     }
 }
@@ -136,7 +148,9 @@ impl MutableStorableStoragePointerWriteAccess<
         starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<
                 MutableTrait::<T>::InnerType
-            >::write_at_offset(0, self.address, self.offset, value)
+            >::write_at_offset(
+                0, self.__storage_pointer_address__, self.__storage_pointer_offset__, value
+            )
         )
     }
 }
@@ -147,7 +161,7 @@ impl MutableStorableStoragePointerWriteAccess<
 /// `StorageAsPointer` in order to be able to get the address of the storage path. Otherwise, if
 /// T is not storable then it should implement some kind of updating trait, e.g. `StoragePathEntry`.
 pub struct StoragePath<T> {
-    hash_state: StoragePathHashState,
+    __hash_state__: StoragePathHashState,
 }
 
 /// The hash state of a storage path.
@@ -165,10 +179,10 @@ trait StoragePathTrait<T> {
 
 impl StoragePathImpl<T> of StoragePathTrait<T> {
     fn new(init_value: felt252) -> StoragePath<T> {
-        StoragePath { hash_state: core::pedersen::PedersenTrait::new(init_value) }
+        StoragePath { __hash_state__: core::pedersen::PedersenTrait::new(init_value) }
     }
     fn finalize(self: StoragePath<T>) -> StorageBaseAddress {
-        storage_base_address_from_felt252(self.hash_state.finalize())
+        storage_base_address_from_felt252(self.__hash_state__.finalize())
     }
 }
 
@@ -183,7 +197,7 @@ impl StoragePathUpdateImpl<
     SourceType, TargetType, Value, impl HashImpl: core::hash::Hash<Value, StoragePathHashState>
 > of StoragePathUpdateTrait<SourceType, TargetType, Value> {
     fn update(self: StoragePath<SourceType>, value: Value) -> StoragePath<TargetType> {
-        StoragePath { hash_state: HashImpl::update_state(self.hash_state, value) }
+        StoragePath { __hash_state__: HashImpl::update_state(self.__hash_state__, value) }
     }
 }
 
@@ -191,7 +205,7 @@ impl StoragePathSIntoStoragePathTImpl<
     SourceType, TargetType
 > of Into<StoragePath<SourceType>, StoragePath<TargetType>> {
     fn into(self: StoragePath<SourceType>) -> StoragePath<TargetType> {
-        StoragePath { hash_state: self.hash_state }
+        StoragePath { __hash_state__: self.__hash_state__ }
     }
 }
 
@@ -207,7 +221,7 @@ pub trait StorageAsPath<TMemberState> {
 impl StorableStoragePathAsPointer<T, +starknet::Store<T>> of StorageAsPointer<StoragePath<T>> {
     type Value = T;
     fn as_ptr(self: @StoragePath<T>) -> StoragePointer0Offset<T> {
-        StoragePointer0Offset { address: (*self).finalize() }
+        StoragePointer0Offset { __storage_pointer_address__: (*self).finalize() }
     }
 }
 
@@ -218,7 +232,7 @@ impl MutableStorableStoragePathAsPointer<
 > of StorageAsPointer<StoragePath<T>> {
     type Value = T;
     fn as_ptr(self: @StoragePath<T>) -> StoragePointer0Offset<T> {
-        StoragePointer0Offset { address: (*self).finalize() }
+        StoragePointer0Offset { __storage_pointer_address__: (*self).finalize() }
     }
 }
 
@@ -437,15 +451,20 @@ impl StoragePathDeref<
 impl StoragePointer0OffsetDeref<T> of core::ops::Deref<StoragePointer0Offset<T>> {
     type Target = StoragePointer<T>;
     fn deref(self: StoragePointer0Offset<T>) -> StoragePointer<T> {
-        StoragePointer::<T> { address: self.address, offset: 0 }
+        StoragePointer::<
+            T
+        > {
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: 0
+        }
     }
 }
 
 
 /// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
 pub struct PendingStoragePath<T> {
-    hash_state: StoragePathHashState,
-    pending_key: felt252,
+    __hash_state__: StoragePathHashState,
+    __pending_key__: felt252,
 }
 
 /// A trait for creating a `PendingStoragePath` from a hash state and a key.
@@ -456,7 +475,9 @@ pub trait PendingStoragePathTrait<T, S> {
 /// An implementation of `StoragePathEntry` for `PendingStoragePath`.
 impl PendingStoragePathImpl<T, S> of PendingStoragePathTrait<T, S> {
     fn new(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T> {
-        PendingStoragePath { hash_state: *storage_path.hash_state, pending_key }
+        PendingStoragePath {
+            __hash_state__: *storage_path.__hash_state__, __pending_key__: pending_key
+        }
     }
 }
 
@@ -469,7 +490,11 @@ impl PendingStoragePathAsPath<T> of StorageAsPath<PendingStoragePath<T>> {
     fn as_path(self: @PendingStoragePath<T>) -> StoragePath<T> {
         StoragePath::<
             T
-        > { hash_state: core::hash::HashStateTrait::update(*self.hash_state, *self.pending_key) }
+        > {
+            __hash_state__: core::hash::HashStateTrait::update(
+                *self.__hash_state__, *self.__pending_key__
+            )
+        }
     }
 }
 
@@ -514,7 +539,7 @@ impl MutableFlattenedStorageDeref<
 /// members, but accessible using deref) of a contract state are either `StorageBase` or
 /// `FlattenedStorage` instances, with the generic type representing the type of the stored member.
 pub struct StorageBase<T> {
-    pub address: felt252,
+    pub __base_address__: felt252,
 }
 
 /// A trait for creating the struct containing the StorageBase or FlattenedStorage of all the
@@ -546,7 +571,7 @@ impl StorageBaseCopy<T> of Copy<StorageBase<T>> {}
 impl StorageBaseAsPath<T> of StorageAsPath<StorageBase<T>> {
     type Value = T;
     fn as_path(self: @StorageBase<T>) -> StoragePath<T> {
-        StoragePathTrait::new(*self.address)
+        StoragePathTrait::new(*self.__base_address__)
     }
 }
 
@@ -644,15 +669,19 @@ struct u256SubPointers {
 impl u256SubPointersImpl of starknet::storage::SubPointers<u256> {
     type SubPointersType = u256SubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<u256>) -> u256SubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let low_value = starknet::storage::StoragePointer::<
             u128
-        > { address: base_address, offset: current_offset, };
+        > {
+            __storage_pointer_address__: base_address, __storage_pointer_offset__: current_offset,
+        };
         current_offset = current_offset + starknet::Store::<u128>::size();
         let high_value = starknet::storage::StoragePointer::<
             u128
-        > { address: base_address, offset: current_offset, };
+        > {
+            __storage_pointer_address__: base_address, __storage_pointer_offset__: current_offset,
+        };
 
         u256SubPointers { low: low_value, high: high_value, }
     }
@@ -669,15 +698,19 @@ impl MutableU256SubPointersImpl of starknet::storage::SubPointersMut<u256> {
     fn sub_pointers_mut(
         self: starknet::storage::StoragePointer<Mutable<u256>>
     ) -> MutableU256SubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let low_value = starknet::storage::StoragePointer::<
             Mutable<u128>
-        > { address: base_address, offset: current_offset, };
+        > {
+            __storage_pointer_address__: base_address, __storage_pointer_offset__: current_offset,
+        };
         current_offset = current_offset + starknet::Store::<u128>::size();
         let high_value = starknet::storage::StoragePointer::<
             Mutable<u128>
-        > { address: base_address, offset: current_offset, };
+        > {
+            __storage_pointer_address__: base_address, __storage_pointer_offset__: current_offset,
+        };
 
         MutableU256SubPointers { low: low_value, high: high_value, }
     }

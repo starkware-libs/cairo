@@ -609,11 +609,11 @@ pub struct GetSupplyDispatcherSubPointers {
 impl GetSupplyDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplyDispatcher> {
     type SubPointersType = GetSupplyDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplyDispatcher>) -> GetSupplyDispatcherSubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let contract_address_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 GetSupplyDispatcherSubPointers {
            contract_address: contract_address_value,
@@ -627,11 +627,11 @@ pub struct GetSupplyDispatcherSubPointersMut {
 impl GetSupplyDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplyDispatcher> {
     type SubPointersType = GetSupplyDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplyDispatcher>>) -> GetSupplyDispatcherSubPointersMut {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let contract_address_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 GetSupplyDispatcherSubPointersMut {
            contract_address: contract_address_value,
@@ -689,11 +689,11 @@ pub struct GetSupplyLibraryDispatcherSubPointers {
 impl GetSupplyLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplyLibraryDispatcher> {
     type SubPointersType = GetSupplyLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplyLibraryDispatcher>) -> GetSupplyLibraryDispatcherSubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let class_hash_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 GetSupplyLibraryDispatcherSubPointers {
            class_hash: class_hash_value,
@@ -707,11 +707,11 @@ pub struct GetSupplyLibraryDispatcherSubPointersMut {
 impl GetSupplyLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplyLibraryDispatcher> {
     type SubPointersType = GetSupplyLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplyLibraryDispatcher>>) -> GetSupplyLibraryDispatcherSubPointersMut {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let class_hash_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 GetSupplyLibraryDispatcherSubPointersMut {
            class_hash: class_hash_value,
@@ -769,11 +769,11 @@ pub struct GetSupplySafeLibraryDispatcherSubPointers {
 impl GetSupplySafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplySafeLibraryDispatcher> {
     type SubPointersType = GetSupplySafeLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplySafeLibraryDispatcher>) -> GetSupplySafeLibraryDispatcherSubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let class_hash_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 GetSupplySafeLibraryDispatcherSubPointers {
            class_hash: class_hash_value,
@@ -787,11 +787,11 @@ pub struct GetSupplySafeLibraryDispatcherSubPointersMut {
 impl GetSupplySafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplySafeLibraryDispatcher> {
     type SubPointersType = GetSupplySafeLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplySafeLibraryDispatcher>>) -> GetSupplySafeLibraryDispatcherSubPointersMut {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let class_hash_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 GetSupplySafeLibraryDispatcherSubPointersMut {
            class_hash: class_hash_value,
@@ -849,11 +849,11 @@ pub struct GetSupplySafeDispatcherSubPointers {
 impl GetSupplySafeDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplySafeDispatcher> {
     type SubPointersType = GetSupplySafeDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplySafeDispatcher>) -> GetSupplySafeDispatcherSubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let contract_address_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 GetSupplySafeDispatcherSubPointers {
            contract_address: contract_address_value,
@@ -867,11 +867,11 @@ pub struct GetSupplySafeDispatcherSubPointersMut {
 impl GetSupplySafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplySafeDispatcher> {
     type SubPointersType = GetSupplySafeDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplySafeDispatcher>>) -> GetSupplySafeDispatcherSubPointersMut {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let contract_address_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 GetSupplySafeDispatcherSubPointersMut {
            contract_address: contract_address_value,
