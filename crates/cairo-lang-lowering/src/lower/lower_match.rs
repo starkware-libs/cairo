@@ -585,21 +585,18 @@ pub(crate) fn lower_expr_match_tuple(
                 location,
             })
             .collect();
-        generators::StructDestructure {
-            input: expr.as_var_usage(ctx, builder)?.var_id,
-            var_reqs: reqs,
-        }
-        .add(ctx, &mut builder.statements)
-        .into_iter()
-        .map(|var_id| {
-            LoweredExpr::AtVariable(VarUsage {
-                var_id,
-                // The variable is used immediately after the destructure, so the usage
-                // location is the same as the definition location.
-                location: ctx.variables[var_id].location,
+        generators::StructDestructure { input: expr.as_var_usage(ctx, builder)?, var_reqs: reqs }
+            .add(ctx, &mut builder.statements)
+            .into_iter()
+            .map(|var_id| {
+                LoweredExpr::AtVariable(VarUsage {
+                    var_id,
+                    // The variable is used immediately after the destructure, so the usage
+                    // location is the same as the definition location.
+                    location: ctx.variables[var_id].location,
+                })
             })
-        })
-        .collect()
+            .collect()
     };
 
     let match_inputs = match_inputs_exprs

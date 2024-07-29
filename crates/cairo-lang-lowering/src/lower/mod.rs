@@ -711,7 +711,7 @@ fn lower_single_pattern(
                 structure.field_patterns.iter().map(|(member, pattern)| (member.id, pattern)),
             );
             let generator = generators::StructDestructure {
-                input: lowered_expr.as_var_usage(ctx, builder)?.var_id,
+                input: lowered_expr.as_var_usage(ctx, builder)?,
                 var_reqs: members
                     .iter()
                     .map(|(_, member)| VarRequest {
@@ -796,7 +796,7 @@ fn lower_tuple_like_pattern_helper(
                 })
                 .collect();
             generators::StructDestructure {
-                input: lowered_expr.as_var_usage(ctx, builder)?.var_id,
+                input: lowered_expr.as_var_usage(ctx, builder)?,
                 var_reqs: reqs,
             }
             .add(ctx, &mut builder.statements)
@@ -1633,7 +1633,7 @@ fn lower_expr_struct_ctor(
         } else {
             for (base_member, (_, member)) in izip!(
                 StructDestructure {
-                    input: base_struct.as_var_usage(ctx, builder)?.var_id,
+                    input: base_struct.as_var_usage(ctx, builder)?,
                     var_reqs: members
                         .iter()
                         .map(|(_, member)| VarRequest { ty: member.ty, location })
