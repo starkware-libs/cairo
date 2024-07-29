@@ -1763,3 +1763,124 @@ End:
   Return(v18)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Mul const fold.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> u8 {
+    5 * 3
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 5
+  (v1: core::integer::u8) <- 3
+  (v2: core::integer::u16) <- core::integer::u8_wide_mul(v0, v1)
+End:
+  Match(match core::integer::downcast::<core::integer::u16, core::integer::u8>(v2) {
+    Option::Some(v3) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: (core::integer::u8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v4)
+End:
+  Goto(blk3, {v5 -> v6})
+
+blk2:
+Statements:
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v8: core::felt252) <- 608642107937639184217240406363762551
+  (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v8)
+  (v10: core::panics::Panic) <- struct_construct()
+  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
+  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+End:
+  Goto(blk3, {v12 -> v6})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v6) {
+    PanicResult::Ok(v13) => blk4,
+    PanicResult::Err(v14) => blk5,
+  })
+
+blk4:
+Statements:
+  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+End:
+  Return(v17)
+
+blk5:
+Statements:
+  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+End:
+  Return(v18)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 5
+  (v1: core::integer::u8) <- 3
+  (v2: core::integer::u16) <- 15
+  (v3: core::integer::u8) <- 15
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v4: (core::integer::u8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v4)
+End:
+  Goto(blk3, {v5 -> v6})
+
+blk2:
+Statements:
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v8: core::felt252) <- 608642107937639184217240406363762551
+  (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v8)
+  (v10: core::panics::Panic) <- struct_construct()
+  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
+  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+End:
+  Goto(blk3, {v12 -> v6})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v6) {
+    PanicResult::Ok(v13) => blk4,
+    PanicResult::Err(v14) => blk5,
+  })
+
+blk4:
+Statements:
+  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+End:
+  Return(v17)
+
+blk5:
+Statements:
+  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+End:
+  Return(v18)
+
+//! > lowering_diagnostics

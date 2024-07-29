@@ -188,6 +188,15 @@ impl<'a> ConstFoldingContext<'a> {
             if val.is_zero() {
                 self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
             }
+        } else if self.wide_mul_fns.contains(&stmt.function) {
+            let lhs = self.as_int(stmt.inputs[0].var_id)?;
+            let rhs = self.as_int(stmt.inputs[1].var_id)?;
+            let value = lhs * rhs;
+            let output = stmt.outputs[0];
+            let ty = self.variables[output].ty;
+            let value = ConstValue::Int(value, ty);
+            self.var_info.insert(output, VarInfo::Const(value.clone()));
+            return Some(Statement::Const(StatementConst { value, output }));
         } else if stmt.function == self.storage_base_address_from_felt252 {
             let input_var = stmt.inputs[0].var_id;
             if let Some(ConstValue::Int(val, ty)) = self.as_const(input_var) {
@@ -379,6 +388,8 @@ struct LibfuncInfo<'a> {
     uadd_fns: UnorderedHashSet<FunctionId>,
     /// The set of functions to subtract unsigned ints.
     usub_fns: UnorderedHashSet<FunctionId>,
+    /// The set of functions to multiply integers.
+    wide_mul_fns: UnorderedHashSet<FunctionId>,
     /// The storage access module.
     storage_access_module: ModuleHelper<'a>,
     /// Type ranges.
@@ -409,6 +420,10 @@ impl<'a> LibfuncInfo<'a> {
         let usub_fns = UnorderedHashSet::<_>::from_iter(
             utypes.map(|ty| integer_module.function_id(format!("{ty}_overflowing_sub"), vec![])),
         );
+        let wide_mul_fns = UnorderedHashSet::<_>::from_iter(
+            ["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64"]
+                .map(|ty| integer_module.function_id(format!("{ty}_wide_mul"), vec![])),
+        );
         let type_value_ranges = UnorderedHashMap::from_iter(
             [
                 ("u8", TypeRange::closed(0, u8::MAX)),
@@ -436,6 +451,7 @@ impl<'a> LibfuncInfo<'a> {
             nz_fns,
             uadd_fns,
             usub_fns,
+            wide_mul_fns,
             storage_access_module,
             type_value_ranges,
         }
