@@ -8,6 +8,7 @@ use cairo_lang_semantic::{
     self as semantic, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath, FunctionBody, Pattern,
     Statement, VarId,
 };
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use id_arena::Arena;
@@ -209,6 +210,9 @@ impl BlockUsages {
                 self.block_usages.insert(expr_id, usage);
             }
             Expr::For(expr) => {
+                current.introductions.insert(
+                    extract_matches!(&expr.into_iter_member_path, ExprVarMemberPath::Var).var,
+                );
                 let mut usage: Usage = Default::default();
                 usage.usage.insert(
                     (&expr.into_iter_member_path).into(),
