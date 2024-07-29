@@ -21,7 +21,7 @@ use cairo_lang_utils::{LookupIntern, Upcast};
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 use tracing::debug;
 
-use crate::ide::utils::{find_methods_for_type, module_has_trait};
+use crate::ide::utils::find_methods_for_type;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
 
@@ -268,14 +268,13 @@ pub fn completion_for_method(
 
     // TODO(spapini): Add signature.
     let detail = trait_id.full_path(db.upcast());
-    let trait_full_path = trait_id.full_path(db.upcast());
     let mut additional_text_edits = vec![];
 
     // If the trait is not in scope, add a use statement.
-    if !module_has_trait(db, module_id, trait_id)? {
+    if let Some(trait_path) = db.visible_traits_from_module(module_id).get(&trait_id) {
         additional_text_edits.push(TextEdit {
             range: Range::new(position, position),
-            new_text: format!("use {trait_full_path};\n"),
+            new_text: format!("use {};\n", trait_path),
         });
     }
 
