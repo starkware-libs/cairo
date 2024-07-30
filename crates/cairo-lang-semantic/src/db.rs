@@ -371,9 +371,11 @@ pub trait SemanticGroup:
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of a trait.
     #[salsa::invoke(items::trt::trait_generic_params)]
+    #[salsa::cycle(items::trt::trait_generic_params_cycle)]
     fn trait_generic_params(&self, trait_id: TraitId) -> Maybe<Vec<GenericParam>>;
     /// Returns the generic parameters data of a trait.
     #[salsa::invoke(items::trt::trait_generic_params_data)]
+    #[salsa::cycle(items::trt::trait_generic_params_data_cycle)]
     fn trait_generic_params_data(&self, trait_id: TraitId) -> Maybe<GenericParamsData>;
     /// Returns the attributes of a trait.
     #[salsa::invoke(items::trt::trait_attributes)]

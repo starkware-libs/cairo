@@ -382,7 +382,7 @@ pub fn impl_def_generic_params_data(
         &mut resolver,
         module_file_id,
         &impl_ast.generic_params(db.upcast()),
-    )?;
+    );
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, impl_ast.stable_ptr().untyped());
 
@@ -2613,7 +2613,7 @@ pub fn priv_impl_function_generic_params_data(
         &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
-    )?;
+    );
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
 

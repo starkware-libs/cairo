@@ -195,7 +195,7 @@ pub struct GenericParamImpl {
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamData {
-    pub generic_param: GenericParam,
+    pub generic_param: Maybe<GenericParam>,
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
     pub resolver_data: Arc<ResolverData>,
 }
@@ -216,7 +216,7 @@ pub fn generic_param_semantic(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
 ) -> Maybe<GenericParam> {
-    Ok(db.priv_generic_param_data(generic_param_id)?.generic_param)
+    db.priv_generic_param_data(generic_param_id)?.generic_param
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_param_diagnostics].
@@ -329,7 +329,7 @@ pub fn priv_generic_param_data(
     let param_semantic = inference.rewrite(param_semantic).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamData {
-        generic_param: param_semantic,
+        generic_param: Ok(param_semantic),
         diagnostics: diagnostics.build(),
         resolver_data,
     })
@@ -342,10 +342,17 @@ pub fn priv_generic_param_data_cycle(
     generic_param_id: &GenericParamId,
 ) -> Maybe<GenericParamData> {
     let mut diagnostics = SemanticDiagnostics::default();
-    Err(diagnostics.report(
-        generic_param_id.stable_ptr(db.upcast()).untyped(),
-        SemanticDiagnosticKind::ImplRequirementCycle,
-    ))
+    Ok(GenericParamData {
+        generic_param: Err(diagnostics.report(
+            generic_param_id.stable_ptr(db.upcast()).untyped(),
+            SemanticDiagnosticKind::ImplRequirementCycle,
+        )),
+        diagnostics: diagnostics.build(),
+        resolver_data: Arc::new(ResolverData::new(
+            generic_param_id.module_file_id(db.upcast()),
+            InferenceId::GenericParam(*generic_param_id),
+        )),
+    })
 }
 
 // --- Helpers ---
@@ -372,26 +379,25 @@ pub fn semantic_generic_params(
     resolver: &mut Resolver<'_>,
     module_file_id: ModuleFileId,
     generic_params: &ast::OptionWrappedGenericParamList,
-) -> Maybe<Vec<GenericParam>> {
+) -> Vec<GenericParam> {
     let syntax_db = db.upcast();
-    let res = match generic_params {
-        syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => Ok(vec![]),
+    match generic_params {
+        syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
         syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
             .generic_params(syntax_db)
             .elements(syntax_db)
             .iter()
-            .map(|param_syntax| {
+            .filter_map(|param_syntax| {
                 let generic_param_id =
                     GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db);
-                let generic_param_data = db.priv_generic_param_data(generic_param_id)?;
+                let generic_param_data = db.priv_generic_param_data(generic_param_id).ok()?;
                 let generic_param = generic_param_data.generic_param;
                 diagnostics.extend(generic_param_data.diagnostics);
                 resolver.add_generic_param(generic_param_id);
-                Ok(generic_param)
+                generic_param.ok()
             })
-            .collect::<Result<Vec<_>, _>>(),
-    };
-    res
+            .collect(),
+    }
 }
 
 /// Returns true if negative impls are enabled in the module.

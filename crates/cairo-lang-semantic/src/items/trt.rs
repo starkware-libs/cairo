@@ -343,6 +343,15 @@ pub fn trait_semantic_declaration_diagnostics(
 pub fn trait_generic_params(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Vec<GenericParam>> {
     Ok(db.trait_generic_params_data(trait_id)?.generic_params)
 }
+/// Cycle handling for [crate::db::SemanticGroup::trait_generic_params].
+pub fn trait_generic_params_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    trait_id: &TraitId,
+) -> Maybe<Vec<GenericParam>> {
+    // Forwarding cycle handling to `priv_generic_param_data` handler.
+    trait_generic_params(db, *trait_id)
+}
 
 /// Query implementation of [crate::db::SemanticGroup::trait_generic_params_data].
 pub fn trait_generic_params_data(
@@ -365,7 +374,7 @@ pub fn trait_generic_params_data(
         &mut resolver,
         module_file_id,
         &trait_ast.generic_params(syntax_db),
-    )?;
+    );
 
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, trait_ast.stable_ptr().untyped());
@@ -374,7 +383,15 @@ pub fn trait_generic_params_data(
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
-
+/// Cycle handling for [crate::db::SemanticGroup::trait_generic_params_data].
+pub fn trait_generic_params_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    trait_id: &TraitId,
+) -> Maybe<GenericParamsData> {
+    // Forwarding cycle handling to `priv_generic_param_data` handler.
+    trait_generic_params_data(db, *trait_id)
+}
 /// Query implementation of [crate::db::SemanticGroup::trait_attributes].
 pub fn trait_attributes(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Vec<Attribute>> {
     Ok(db.priv_trait_declaration_data(trait_id)?.attributes)
@@ -788,7 +805,7 @@ pub fn priv_trait_type_generic_params_data(
         &mut resolver,
         module_file_id,
         &generic_params_node,
-    )?;
+    );
     let type_generic_params = resolver.inference().rewrite(type_generic_params).no_err();
 
     // TODO(yuval): support generics in impls (including validation), then remove this.
@@ -1085,7 +1102,7 @@ pub fn priv_trait_function_generic_params_data(
         &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
-    )?;
+    );
     let function_generic_params = resolver.inference().rewrite(function_generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData {
