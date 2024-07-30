@@ -247,8 +247,8 @@ impl<'a> StorageInterfaceInfo<'a> {
                 "".to_string()
             }
             StorageInterfaceType::SubPointers => "
-        let base_address = self.address;
-        let mut current_offset = self.offset;"
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;"
                 .to_string(),
         }
     }
@@ -285,8 +285,8 @@ impl<'a> StorageInterfaceInfo<'a> {
                 };
                 format!(
                     "        let $field_name$_value = {member_type} {{
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         }};
         {offset_increment}"
                 )
@@ -298,8 +298,8 @@ impl<'a> StorageInterfaceInfo<'a> {
 "
                     .to_string()
                 } else {
-                    "        let $field_name$_value = starknet::storage::StorageBase {address: \
-                     selector!(\"$field_name$\")};
+                    "        let $field_name$_value = starknet::storage::StorageBase \
+                     {__base_address__: selector!(\"$field_name$\")};
 "
                     .to_string()
                 }

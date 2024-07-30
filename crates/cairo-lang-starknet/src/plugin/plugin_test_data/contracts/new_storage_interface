@@ -1256,7 +1256,7 @@ pub struct BalancePairStorageBase {
 impl BalancePairStorageImpl of starknet::storage::StorageTrait<BalancePair> {
     type BaseType = BalancePairStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<BalancePair>) -> BalancePairStorageBase {
-        let balance1_value = starknet::storage::StorageBase {address: selector!("balance1")};
+        let balance1_value = starknet::storage::StorageBase {__base_address__: selector!("balance1")};
         let balance2_value = starknet::storage::FlattenedStorage {};
         BalancePairStorageBase {
            balance1: balance1_value,
@@ -1272,7 +1272,7 @@ pub struct BalancePairStorageBaseMut {
 impl BalancePairStorageMutImpl of starknet::storage::StorageTraitMut<BalancePair> {
     type BaseType = BalancePairStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<BalancePair>>) -> BalancePairStorageBaseMut {
-        let balance1_value = starknet::storage::StorageBase {address: selector!("balance1")};
+        let balance1_value = starknet::storage::StorageBase {__base_address__: selector!("balance1")};
         let balance2_value = starknet::storage::FlattenedStorage {};
         BalancePairStorageBaseMut {
            balance1: balance1_value,
@@ -1384,16 +1384,16 @@ pub struct SlicedBalanceTrioSubPointers {
 impl SlicedBalanceTrioSubPointersImpl of starknet::storage::SubPointers<SlicedBalanceTrio> {
     type SubPointersType = SlicedBalanceTrioSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<SlicedBalanceTrio>) -> SlicedBalanceTrioSubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let balance1_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
         current_offset = current_offset + starknet::Store::<u256>::size();
         let balance12_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 SlicedBalanceTrioSubPointers {
            balance1: balance1_value,
@@ -1409,16 +1409,16 @@ pub struct SlicedBalanceTrioSubPointersMut {
 impl SlicedBalanceTrioSubPointersMutImpl of starknet::storage::SubPointersMut<SlicedBalanceTrio> {
     type SubPointersType = SlicedBalanceTrioSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<SlicedBalanceTrio>>) -> SlicedBalanceTrioSubPointersMut {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let balance1_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
         current_offset = current_offset + starknet::Store::<u256>::size();
         let balance12_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 SlicedBalanceTrioSubPointersMut {
            balance1: balance1_value,
@@ -1492,16 +1492,16 @@ pub struct SlicedBalancePairSubPointers {
 impl SlicedBalancePairSubPointersImpl of starknet::storage::SubPointers<SlicedBalancePair> {
     type SubPointersType = SlicedBalancePairSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<SlicedBalancePair>) -> SlicedBalancePairSubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let balance1_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
         current_offset = current_offset + starknet::Store::<u256>::size();
         let balance2_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 SlicedBalancePairSubPointers {
            balance1: balance1_value,
@@ -1517,16 +1517,16 @@ pub struct SlicedBalancePairSubPointersMut {
 impl SlicedBalancePairSubPointersMutImpl of starknet::storage::SubPointersMut<SlicedBalancePair> {
     type SubPointersType = SlicedBalancePairSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<SlicedBalancePair>>) -> SlicedBalancePairSubPointersMut {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let balance1_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
         current_offset = current_offset + starknet::Store::<u256>::size();
         let balance2_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 SlicedBalancePairSubPointersMut {
            balance1: balance1_value,
@@ -1549,8 +1549,8 @@ pub struct LinkedListStorageBase {
 impl LinkedListStorageImpl of starknet::storage::StorageTrait<LinkedList> {
     type BaseType = LinkedListStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<LinkedList>) -> LinkedListStorageBase {
-        let value_value = starknet::storage::StorageBase {address: selector!("value")};
-        let next_value = starknet::storage::StorageBase {address: selector!("next")};
+        let value_value = starknet::storage::StorageBase {__base_address__: selector!("value")};
+        let next_value = starknet::storage::StorageBase {__base_address__: selector!("next")};
         LinkedListStorageBase {
            value: value_value,
            next: next_value,
@@ -1565,8 +1565,8 @@ pub struct LinkedListStorageBaseMut {
 impl LinkedListStorageMutImpl of starknet::storage::StorageTraitMut<LinkedList> {
     type BaseType = LinkedListStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<LinkedList>>) -> LinkedListStorageBaseMut {
-        let value_value = starknet::storage::StorageBase {address: selector!("value")};
-        let next_value = starknet::storage::StorageBase {address: selector!("next")};
+        let value_value = starknet::storage::StorageBase {__base_address__: selector!("value")};
+        let next_value = starknet::storage::StorageBase {__base_address__: selector!("next")};
         LinkedListStorageBaseMut {
            value: value_value,
            next: next_value,
@@ -1682,11 +1682,11 @@ pub struct HelloStarknetTraitDispatcherSubPointers {
 impl HelloStarknetTraitDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitDispatcher> {
     type SubPointersType = HelloStarknetTraitDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitDispatcher>) -> HelloStarknetTraitDispatcherSubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let contract_address_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 HelloStarknetTraitDispatcherSubPointers {
            contract_address: contract_address_value,
@@ -1700,11 +1700,11 @@ pub struct HelloStarknetTraitDispatcherSubPointersMut {
 impl HelloStarknetTraitDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitDispatcher> {
     type SubPointersType = HelloStarknetTraitDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitDispatcher>>) -> HelloStarknetTraitDispatcherSubPointersMut {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let contract_address_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 HelloStarknetTraitDispatcherSubPointersMut {
            contract_address: contract_address_value,
@@ -1776,11 +1776,11 @@ pub struct HelloStarknetTraitLibraryDispatcherSubPointers {
 impl HelloStarknetTraitLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitLibraryDispatcher> {
     type SubPointersType = HelloStarknetTraitLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitLibraryDispatcher>) -> HelloStarknetTraitLibraryDispatcherSubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let class_hash_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 HelloStarknetTraitLibraryDispatcherSubPointers {
            class_hash: class_hash_value,
@@ -1794,11 +1794,11 @@ pub struct HelloStarknetTraitLibraryDispatcherSubPointersMut {
 impl HelloStarknetTraitLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitLibraryDispatcher> {
     type SubPointersType = HelloStarknetTraitLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitLibraryDispatcher>>) -> HelloStarknetTraitLibraryDispatcherSubPointersMut {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let class_hash_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 HelloStarknetTraitLibraryDispatcherSubPointersMut {
            class_hash: class_hash_value,
@@ -1870,11 +1870,11 @@ pub struct HelloStarknetTraitSafeLibraryDispatcherSubPointers {
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitSafeLibraryDispatcher> {
     type SubPointersType = HelloStarknetTraitSafeLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitSafeLibraryDispatcher>) -> HelloStarknetTraitSafeLibraryDispatcherSubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let class_hash_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 HelloStarknetTraitSafeLibraryDispatcherSubPointers {
            class_hash: class_hash_value,
@@ -1888,11 +1888,11 @@ pub struct HelloStarknetTraitSafeLibraryDispatcherSubPointersMut {
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitSafeLibraryDispatcher> {
     type SubPointersType = HelloStarknetTraitSafeLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitSafeLibraryDispatcher>>) -> HelloStarknetTraitSafeLibraryDispatcherSubPointersMut {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let class_hash_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 HelloStarknetTraitSafeLibraryDispatcherSubPointersMut {
            class_hash: class_hash_value,
@@ -1964,11 +1964,11 @@ pub struct HelloStarknetTraitSafeDispatcherSubPointers {
 impl HelloStarknetTraitSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitSafeDispatcher> {
     type SubPointersType = HelloStarknetTraitSafeDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitSafeDispatcher>) -> HelloStarknetTraitSafeDispatcherSubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let contract_address_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 HelloStarknetTraitSafeDispatcherSubPointers {
            contract_address: contract_address_value,
@@ -1982,11 +1982,11 @@ pub struct HelloStarknetTraitSafeDispatcherSubPointersMut {
 impl HelloStarknetTraitSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitSafeDispatcher> {
     type SubPointersType = HelloStarknetTraitSafeDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitSafeDispatcher>>) -> HelloStarknetTraitSafeDispatcherSubPointersMut {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let contract_address_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 HelloStarknetTraitSafeDispatcherSubPointersMut {
            contract_address: contract_address_value,
@@ -2211,14 +2211,14 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
-        let user_balance_value = starknet::storage::StorageBase {address: selector!("user_balance")};
-        let user_balance_subbalance_value = starknet::storage::StorageBase {address: selector!("user_balance_subbalance")};
-        let legacy_map_balace_value = starknet::storage::StorageBase {address: selector!("legacy_map_balace")};
-        let balance_pair_value = starknet::storage::StorageBase {address: selector!("balance_pair")};
-        let sliced_balance_trio_value = starknet::storage::StorageBase {address: selector!("sliced_balance_trio")};
-        let linked_list_value = starknet::storage::StorageBase {address: selector!("linked_list")};
-        let arr_value = starknet::storage::StorageBase {address: selector!("arr")};
+        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        let user_balance_value = starknet::storage::StorageBase {__base_address__: selector!("user_balance")};
+        let user_balance_subbalance_value = starknet::storage::StorageBase {__base_address__: selector!("user_balance_subbalance")};
+        let legacy_map_balace_value = starknet::storage::StorageBase {__base_address__: selector!("legacy_map_balace")};
+        let balance_pair_value = starknet::storage::StorageBase {__base_address__: selector!("balance_pair")};
+        let sliced_balance_trio_value = starknet::storage::StorageBase {__base_address__: selector!("sliced_balance_trio")};
+        let linked_list_value = starknet::storage::StorageBase {__base_address__: selector!("linked_list")};
+        let arr_value = starknet::storage::StorageBase {__base_address__: selector!("arr")};
         StorageStorageBase {
            balance: balance_value,
            user_balance: user_balance_value,
@@ -2245,14 +2245,14 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let balance_value = starknet::storage::StorageBase {address: selector!("balance")};
-        let user_balance_value = starknet::storage::StorageBase {address: selector!("user_balance")};
-        let user_balance_subbalance_value = starknet::storage::StorageBase {address: selector!("user_balance_subbalance")};
-        let legacy_map_balace_value = starknet::storage::StorageBase {address: selector!("legacy_map_balace")};
-        let balance_pair_value = starknet::storage::StorageBase {address: selector!("balance_pair")};
-        let sliced_balance_trio_value = starknet::storage::StorageBase {address: selector!("sliced_balance_trio")};
-        let linked_list_value = starknet::storage::StorageBase {address: selector!("linked_list")};
-        let arr_value = starknet::storage::StorageBase {address: selector!("arr")};
+        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        let user_balance_value = starknet::storage::StorageBase {__base_address__: selector!("user_balance")};
+        let user_balance_subbalance_value = starknet::storage::StorageBase {__base_address__: selector!("user_balance_subbalance")};
+        let legacy_map_balace_value = starknet::storage::StorageBase {__base_address__: selector!("legacy_map_balace")};
+        let balance_pair_value = starknet::storage::StorageBase {__base_address__: selector!("balance_pair")};
+        let sliced_balance_trio_value = starknet::storage::StorageBase {__base_address__: selector!("sliced_balance_trio")};
+        let linked_list_value = starknet::storage::StorageBase {__base_address__: selector!("linked_list")};
+        let arr_value = starknet::storage::StorageBase {__base_address__: selector!("arr")};
         StorageStorageBaseMut {
            balance: balance_value,
            user_balance: user_balance_value,

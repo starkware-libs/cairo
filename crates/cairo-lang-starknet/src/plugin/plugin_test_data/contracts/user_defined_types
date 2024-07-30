@@ -121,10 +121,10 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let var_value = starknet::storage::StorageBase {address: selector!("var")};
-        let zero_size_value = starknet::storage::StorageBase {address: selector!("zero_size")};
-        let mapping_value = starknet::storage::StorageBase {address: selector!("mapping")};
-        let zero_size_mapping_value = starknet::storage::StorageBase {address: selector!("zero_size_mapping")};
+        let var_value = starknet::storage::StorageBase {__base_address__: selector!("var")};
+        let zero_size_value = starknet::storage::StorageBase {__base_address__: selector!("zero_size")};
+        let mapping_value = starknet::storage::StorageBase {__base_address__: selector!("mapping")};
+        let zero_size_mapping_value = starknet::storage::StorageBase {__base_address__: selector!("zero_size_mapping")};
         StorageStorageBase {
            var: var_value,
            zero_size: zero_size_value,
@@ -143,10 +143,10 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let var_value = starknet::storage::StorageBase {address: selector!("var")};
-        let zero_size_value = starknet::storage::StorageBase {address: selector!("zero_size")};
-        let mapping_value = starknet::storage::StorageBase {address: selector!("mapping")};
-        let zero_size_mapping_value = starknet::storage::StorageBase {address: selector!("zero_size_mapping")};
+        let var_value = starknet::storage::StorageBase {__base_address__: selector!("var")};
+        let zero_size_value = starknet::storage::StorageBase {__base_address__: selector!("zero_size")};
+        let mapping_value = starknet::storage::StorageBase {__base_address__: selector!("mapping")};
+        let zero_size_mapping_value = starknet::storage::StorageBase {__base_address__: selector!("zero_size_mapping")};
         StorageStorageBaseMut {
            var: var_value,
            zero_size: zero_size_value,
@@ -283,11 +283,11 @@ pub struct WrappedFelt252SubPointers {
 impl WrappedFelt252SubPointersImpl of starknet::storage::SubPointers<WrappedFelt252> {
     type SubPointersType = WrappedFelt252SubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<WrappedFelt252>) -> WrappedFelt252SubPointers {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let value_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 WrappedFelt252SubPointers {
            value: value_value,
@@ -301,11 +301,11 @@ pub struct WrappedFelt252SubPointersMut {
 impl WrappedFelt252SubPointersMutImpl of starknet::storage::SubPointersMut<WrappedFelt252> {
     type SubPointersType = WrappedFelt252SubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<WrappedFelt252>>) -> WrappedFelt252SubPointersMut {
-        let base_address = self.address;
-        let mut current_offset = self.offset;
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let value_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 WrappedFelt252SubPointersMut {
            value: value_value,
