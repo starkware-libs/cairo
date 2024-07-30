@@ -216,18 +216,22 @@ foo
 
 //! > usage
 Block 0:0:
-  Usage: 
-  Changes: 
-  Introductions: LocalVarId(test::__array_builder_macro_result__), 
+  Usage:
+  Changes:
+  Snapshot_Usage:
+  Introductions: LocalVarId(test::__array_builder_macro_result__),
 Block 2:17:
-  Usage: ParamId(test::a), LocalVarId(test::b), 
-  Changes: 
-  Introductions: 
+  Usage: ParamId(test::a), LocalVarId(test::b),
+  Changes:
+  Snapshot_Usage:
+  Introductions:
 For 2:4:
-  Usage: LocalVarId(test::in), ParamId(test::a), 
-  Changes: LocalVarId(test::in), 
-  Introductions: LocalVarId(test::b), 
+  Usage: LocalVarId(test::in), ParamId(test::a),
+  Changes: LocalVarId(test::in),
+  Snapshot_Usage:
+  Introductions: LocalVarId(test::b),
 Block 0:15:
-  Usage: ParamId(test::a), 
-  Changes: 
+  Usage: ParamId(test::a),
+  Changes:
+  Snapshot_Usage:
   Introductions: LocalVarId(test::arr), LocalVarId(test::in),
