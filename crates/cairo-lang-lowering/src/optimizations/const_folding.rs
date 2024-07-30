@@ -258,7 +258,7 @@ impl<'a> ConstFoldingContext<'a> {
             let lhs = self.as_int(info.inputs[0].var_id)?;
             let rhs = self.as_int(info.inputs[1].var_id)?;
             let value = if self.uadd_fns.contains(&info.function) { lhs + rhs } else { lhs - rhs };
-            let ty = self.variables[info.inputs[0].var_id].ty;
+            let ty = self.variables[info.arms[0].var_ids[0]].ty;
             let range = self.type_value_ranges.get(&ty)?;
             let (arm_index, value) = match range.normalized(value) {
                 NormalizedResult::InRange(value) => (0, value),
@@ -266,7 +266,25 @@ impl<'a> ConstFoldingContext<'a> {
             };
             let arm = &info.arms[arm_index];
             let actual_output = arm.var_ids[0];
-            let ty = self.variables[actual_output].ty;
+            let value = ConstValue::Int(value, ty);
+            self.var_info.insert(actual_output, VarInfo::Const(value.clone()));
+            return Some((
+                Some(Statement::Const(StatementConst { value, output: actual_output })),
+                FlatBlockEnd::Goto(arm.block_id, Default::default()),
+            ));
+        } else if self.iadd_fns.contains(&info.function) || self.isub_fns.contains(&info.function) {
+            let lhs = self.as_int(info.inputs[0].var_id)?;
+            let rhs = self.as_int(info.inputs[1].var_id)?;
+            let value = if self.iadd_fns.contains(&info.function) { lhs + rhs } else { lhs - rhs };
+            let ty = self.variables[info.arms[0].var_ids[0]].ty;
+            let range = self.type_value_ranges.get(&ty)?;
+            let (arm_index, value) = match range.normalized(value) {
+                NormalizedResult::InRange(value) => (0, value),
+                NormalizedResult::Under(value) => (1, value),
+                NormalizedResult::Over(value) => (2, value),
+            };
+            let arm = &info.arms[arm_index];
+            let actual_output = arm.var_ids[0];
             let value = ConstValue::Int(value, ty);
             self.var_info.insert(actual_output, VarInfo::Const(value.clone()));
             return Some((
@@ -388,6 +406,10 @@ struct LibfuncInfo<'a> {
     uadd_fns: UnorderedHashSet<FunctionId>,
     /// The set of functions to subtract unsigned ints.
     usub_fns: UnorderedHashSet<FunctionId>,
+    /// The set of functions to add signed ints.
+    iadd_fns: UnorderedHashSet<FunctionId>,
+    /// The set of functions to subtract signed ints.
+    isub_fns: UnorderedHashSet<FunctionId>,
     /// The set of functions to multiply integers.
     wide_mul_fns: UnorderedHashSet<FunctionId>,
     /// The storage access module.
@@ -414,12 +436,23 @@ impl<'a> LibfuncInfo<'a> {
                 .map(|ty| integer_module.function_id(format!("{}_is_zero", ty), vec![]))
         ));
         let utypes = ["u8", "u16", "u32", "u64", "u128"];
+        let itypes = ["i8", "i16", "i32", "i64", "i128"];
         let uadd_fns = UnorderedHashSet::<_>::from_iter(
             utypes.map(|ty| integer_module.function_id(format!("{ty}_overflowing_add"), vec![])),
         );
-        let usub_fns = UnorderedHashSet::<_>::from_iter(
+        let usub_fns = UnorderedHashSet::<_>::from_iter(chain!(
             utypes.map(|ty| integer_module.function_id(format!("{ty}_overflowing_sub"), vec![])),
-        );
+            // Considering `i*_diff` as `usub` operations - as they act exactly the same.
+            itypes.map(|ty| integer_module.function_id(format!("{ty}_diff"), vec![])),
+        ));
+        let iadd_fns =
+            UnorderedHashSet::<_>::from_iter(itypes.map(|ty| {
+                integer_module.function_id(format!("{ty}_overflowing_add_impl"), vec![])
+            }));
+        let isub_fns =
+            UnorderedHashSet::<_>::from_iter(itypes.map(|ty| {
+                integer_module.function_id(format!("{ty}_overflowing_sub_impl"), vec![])
+            }));
         let wide_mul_fns = UnorderedHashSet::<_>::from_iter(
             ["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64"]
                 .map(|ty| integer_module.function_id(format!("{ty}_wide_mul"), vec![])),
@@ -451,6 +484,8 @@ impl<'a> LibfuncInfo<'a> {
             nz_fns,
             uadd_fns,
             usub_fns,
+            iadd_fns,
+            isub_fns,
             wide_mul_fns,
             storage_access_module,
             type_value_ranges,
