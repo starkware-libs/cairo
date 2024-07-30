@@ -39,6 +39,9 @@ pub struct CompilerConfig<'c> {
     /// Replaces sierra ids with human-readable ones.
     pub replace_ids: bool,
 
+    /// Disables inlining functions.
+    pub inlining_strategy: InliningStrategy,
+
     /// The name of the allowed libfuncs list to use in compilation.
     /// If None the default list of audited libfuncs will be used.
     pub allowed_libfuncs_list_name: Option<String>,
@@ -60,11 +63,10 @@ pub struct CompilerConfig<'c> {
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_cairo_project_at_path(
     path: &Path,
-    inlining_strategy: InliningStrategy,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
     let mut db = RootDatabase::builder()
-        .with_inlining_strategy(inlining_strategy)
+        .with_inlining_strategy(compiler_config.inlining_strategy)
         .detect_corelib()
         .build()?;
     let main_crate_ids = setup_project(&mut db, path)?;
@@ -82,13 +84,9 @@ pub fn compile_cairo_project_at_path(
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile(
     project_config: ProjectConfig,
-    inlining_strategy: InliningStrategy,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
-    let mut db = RootDatabase::builder()
-        .with_project_config(project_config.clone())
-        .with_inlining_strategy(inlining_strategy)
-        .build()?;
+    let mut db = RootDatabase::builder().with_project_config(project_config.clone()).build()?;
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
 
     compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
