@@ -94,7 +94,7 @@ impl CircuitInstance<'_> {
     }
 
     /// Fills the values for a mul mod gate.
-    /// Assumes all the inputs are ready and the the modulus is not zero or one.
+    /// Assumes all the inputs are ready and the modulus is not zero or one.
     /// Returns true if the values were filled successfully, returns false if its an inverse
     /// operation and input is not invertible.
     fn fill_mul_gate(&mut self, index: usize) -> bool {

@@ -58,7 +58,7 @@ impl U384TryIntoCircuitModulus of TryInto<[u96; 4], CircuitModulus> {
 }
 
 /// Converts 'T' into a 'U96Guarantee'.
-/// 'T' must be a a value that fits inside a u96, for example: u8, u96 or BoundedInt<0, 12>.
+/// 'T' must be a value that fits inside a u96, for example: u8, u96 or BoundedInt<0, 12>.
 extern fn into_u96_guarantee<T>(val: T) -> U96Guarantee nopanic;
 extern fn u96_guarantee_verify(guarantee: U96Guarantee) implicits(RangeCheck96) nopanic;
 
