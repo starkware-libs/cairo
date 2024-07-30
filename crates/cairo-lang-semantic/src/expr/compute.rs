@@ -32,7 +32,6 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern, OptionHelper};
-use id_arena::Arena;
 use itertools::zip_eq;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
@@ -136,9 +135,8 @@ pub struct ComputationContext<'ctx> {
     pub resolver: Resolver<'ctx>,
     signature: Option<&'ctx Signature>,
     environment: Box<Environment>,
-    pub exprs: Arena<semantic::Expr>,
-    pub patterns: Arena<semantic::Pattern>,
-    pub statements: Arena<semantic::Statement>,
+    /// Arenas of semantic objects.
+    pub arenas: Arenas,
     function_id: ContextFunction,
     /// Definitions of semantic variables.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
@@ -163,9 +161,7 @@ impl<'ctx> ComputationContext<'ctx> {
             resolver,
             signature,
             environment: Box::new(environment),
-            exprs: Arena::default(),
-            patterns: Arena::default(),
-            statements: Arena::default(),
+            arenas: Default::default(),
             function_id,
             semantic_defs,
             loop_ctx: None,
@@ -228,7 +224,7 @@ impl<'ctx> ComputationContext<'ctx> {
     /// errors on types from the final expressions.
     pub fn apply_inference_rewriter_to_exprs(&mut self) {
         let mut analyzed_types = UnorderedHashSet::<_>::default();
-        for (_id, expr) in self.exprs.iter_mut() {
+        for (_id, expr) in self.arenas.exprs.iter_mut() {
             self.resolver.inference().internal_rewrite(expr).no_err();
             // Adding an error only once per type.
             if analyzed_types.insert(expr.ty()) {
@@ -240,10 +236,10 @@ impl<'ctx> ComputationContext<'ctx> {
     /// Applies inference rewriter to all the rewritable things in the computation context.
     fn apply_inference_rewriter(&mut self) {
         self.apply_inference_rewriter_to_exprs();
-        for (_id, pattern) in self.patterns.iter_mut() {
+        for (_id, pattern) in self.arenas.patterns.iter_mut() {
             self.resolver.inference().internal_rewrite(pattern).no_err();
         }
-        for (_id, stmt) in self.statements.iter_mut() {
+        for (_id, stmt) in self.arenas.statements.iter_mut() {
             self.resolver.inference().internal_rewrite(stmt).no_err();
         }
     }
@@ -294,7 +290,7 @@ impl Environment {
 pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr) -> ExprAndId {
     let expr = maybe_compute_expr_semantic(ctx, syntax);
     let expr = wrap_maybe_with_missing(ctx, expr, syntax.stable_ptr());
-    let id = ctx.exprs.alloc(expr.clone());
+    let id = ctx.arenas.exprs.alloc(expr.clone());
     ExprAndId { expr, id }
 }
 
@@ -641,11 +637,11 @@ fn call_core_binary_op(
         let ty = TypeLongId::Snapshot(lexpr.ty()).intern(ctx.db);
         let expr =
             Expr::Snapshot(ExprSnapshot { inner: lexpr.id, ty, stable_ptr: lexpr.stable_ptr() });
-        lexpr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
+        lexpr = ExprAndId { expr: expr.clone(), id: ctx.arenas.exprs.alloc(expr) };
         let ty = TypeLongId::Snapshot(rexpr.ty()).intern(ctx.db);
         let expr =
             Expr::Snapshot(ExprSnapshot { inner: rexpr.id, ty, stable_ptr: rexpr.stable_ptr() });
-        rexpr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
+        rexpr = ExprAndId { expr: expr.clone(), id: ctx.arenas.exprs.alloc(expr) };
     }
 
     let sig = ctx.db.concrete_function_signature(function)?;
@@ -865,7 +861,7 @@ pub fn compute_named_argument_clause(
             let arg_name_identifier = name_expr.name(syntax_db);
             let maybe_expr = resolve_variable_by_name(ctx, &arg_name_identifier, stable_ptr);
             let expr = wrap_maybe_with_missing(ctx, maybe_expr, stable_ptr);
-            let expr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
+            let expr = ExprAndId { expr: expr.clone(), id: ctx.arenas.exprs.alloc(expr) };
             (expr, Some(arg_name_identifier))
         }
     };
@@ -915,7 +911,7 @@ pub fn compute_root_expr(
     let return_type = ctx.reduce_ty(return_type);
     let res = compute_expr_block_semantic(ctx, syntax)?;
     let res_ty = ctx.reduce_ty(res.ty());
-    let res = ctx.exprs.alloc(res);
+    let res = ctx.arenas.exprs.alloc(res);
     let inference = &mut ctx.resolver.inference();
     if let Err((err_set, actual_ty, expected_ty)) =
         inference.conform_ty_for_diag(res_ty, return_type)
@@ -962,7 +958,9 @@ pub fn compute_expr_block_semantic(
         let ty = if let Some(t) = &tail_semantic_expr {
             t.ty()
         } else if let Some(statement) = statements_semantic.last() {
-            if let Statement::Return(_) | Statement::Break(_) = &new_ctx.statements[*statement] {
+            if let Statement::Return(_) | Statement::Break(_) =
+                &new_ctx.arenas.statements[*statement]
+            {
                 never_ty(new_ctx.db)
             } else {
                 unit_ty(db)
@@ -1068,7 +1066,7 @@ fn compute_arm_semantic(
                     expr.ty(),
                     &mut arm_patterns_variables,
                 );
-                let variables = pattern.variables(&new_ctx.patterns);
+                let variables = pattern.variables(&new_ctx.arenas.patterns);
                 for variable in variables {
                     match arm_patterns_variables.entry(variable.name.clone()) {
                         std::collections::hash_map::Entry::Occupied(entry) => {
@@ -1108,7 +1106,7 @@ fn compute_arm_semantic(
         for (pattern_syntax, pattern) in
             patterns_syntax.elements(syntax_db).iter().zip(patterns.iter())
         {
-            let variables = pattern.variables(&new_ctx.patterns);
+            let variables = pattern.variables(&new_ctx.arenas.patterns);
 
             if variables.len() != arm_patterns_variables.len() {
                 new_ctx.diagnostics.report(pattern_syntax, MissingVariableInPattern);
@@ -1127,7 +1125,7 @@ fn compute_arm_semantic(
                 unreachable!("Expected a block expression for a loop arm.");
             };
             let (id, _) = compute_loop_body_semantic(new_ctx, arm_expr_syntax, LoopContext::While);
-            let expr = new_ctx.exprs[id].clone();
+            let expr = new_ctx.arenas.exprs[id].clone();
             ExprAndId { expr, id }
         } else {
             compute_expr_semantic(new_ctx, &arm_expr_syntax)
@@ -1215,7 +1213,7 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
             let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(syntax_db))?;
             (
                 Condition::BoolExpr(compute_bool_condition_semantic(ctx, &expr.expr(syntax_db)).id),
-                ExprAndId { expr: if_block.clone(), id: ctx.exprs.alloc(if_block) },
+                ExprAndId { expr: if_block.clone(), id: ctx.arenas.exprs.alloc(if_block) },
             )
         }
     };
@@ -1245,7 +1243,7 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
     Ok(Expr::If(ExprIf {
         condition,
         if_block: if_block.id,
-        else_block: else_block_opt.map(|else_block| ctx.exprs.alloc(else_block)),
+        else_block: else_block_opt.map(|else_block| ctx.arenas.exprs.alloc(else_block)),
         ty: helper.get_final_type(),
         stable_ptr: syntax.stable_ptr().into(),
     }))
@@ -1377,7 +1375,7 @@ fn compute_expr_for_semantic(
         ty: into_iter_call.ty(),
         stable_ptr: into_iter_call.stable_ptr(),
     });
-    let into_iter_expr_id = ctx.exprs.alloc(into_iter_expr.clone());
+    let into_iter_expr_id = ctx.arenas.exprs.alloc(into_iter_expr.clone());
 
     let iterator_trait = get_core_trait(ctx.db, CoreTraitContext::Iterator, "Iterator".into());
 
@@ -1415,7 +1413,7 @@ fn compute_expr_for_semantic(
             next_success_variant.ty,
             &mut UnorderedHashMap::default(),
         );
-        let variables = inner_pattern.variables(&new_ctx.patterns);
+        let variables = inner_pattern.variables(&new_ctx.arenas.patterns);
         for v in variables {
             let var_def = Variable::Local(v.var.clone());
             new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
@@ -1423,7 +1421,7 @@ fn compute_expr_for_semantic(
         }
         let (body, _loop_ctx) =
             compute_loop_body_semantic(new_ctx, syntax.body(syntax_db), LoopContext::For);
-        (body, new_ctx.patterns.alloc(inner_pattern.pattern))
+        (body, new_ctx.arenas.patterns.alloc(inner_pattern.pattern))
     });
     Ok(Expr::For(ExprFor {
         into_iter: into_iterator_function_id,
@@ -1471,7 +1469,7 @@ fn compute_loop_body_semantic(
         }
 
         let loop_ctx = std::mem::replace(&mut new_ctx.loop_ctx, old_loop_ctx).unwrap();
-        let body = new_ctx.exprs.alloc(Expr::Block(ExprBlock {
+        let body = new_ctx.arenas.exprs.alloc(Expr::Block(ExprBlock {
             statements: statements_semantic,
             tail: tail.map(|tail| tail.id),
             ty: unit_ty(db),
@@ -1520,7 +1518,7 @@ fn compute_expr_closure_semantic(
         };
         let mut inference = new_ctx.resolver.inference();
         if let Err((err_set, actual_ty, expected_ty)) =
-            inference.conform_ty_for_diag(new_ctx.exprs[body].ty(), ret_ty)
+            inference.conform_ty_for_diag(new_ctx.arenas.exprs[body].ty(), ret_ty)
         {
             let diag_added = new_ctx.diagnostics.report(
                 syntax.expr(syntax_db).stable_ptr(),
@@ -1573,7 +1571,7 @@ fn compute_closure_body_semantic(
     let ty = if let Some(t) = &tail_semantic_expr {
         t.ty()
     } else if let Some(statement) = statements_semantic.last() {
-        if let Statement::Return(_) | Statement::Break(_) = &ctx.statements[*statement] {
+        if let Statement::Return(_) | Statement::Break(_) = &ctx.arenas.statements[*statement] {
             never_ty(ctx.db)
         } else {
             unit_ty(ctx.db)
@@ -1581,7 +1579,7 @@ fn compute_closure_body_semantic(
     } else {
         unit_ty(ctx.db)
     };
-    ctx.exprs.alloc(Expr::Block(ExprBlock {
+    ctx.arenas.exprs.alloc(Expr::Block(ExprBlock {
         statements: statements_semantic,
         tail: tail_semantic_expr.map(|expr| expr.id),
         ty,
@@ -1761,7 +1759,7 @@ fn compute_method_function_call_data(
             ty,
             stable_ptr: self_expr.stable_ptr(),
         });
-        fixed_expr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
+        fixed_expr = ExprAndId { expr: expr.clone(), id: ctx.arenas.exprs.alloc(expr) };
     }
 
     Ok((function_id, fixed_expr, first_param.mutability))
@@ -1784,7 +1782,7 @@ pub fn compute_pattern_semantic(
             diag_added,
         })
     });
-    let id = ctx.patterns.alloc(pat.clone());
+    let id = ctx.arenas.patterns.alloc(pat.clone());
     PatternAndId { pattern: pat, id }
 }
 
@@ -1964,7 +1962,7 @@ fn maybe_compute_pattern_semantic(
                             single.stable_ptr().into(),
                             or_pattern_variables_map,
                         );
-                        field_patterns.push((member, ctx.patterns.alloc(pattern)));
+                        field_patterns.push((member, ctx.arenas.patterns.alloc(pattern)));
                     }
                     PatternStructParam::WithExpr(with_expr) => {
                         let name = with_expr.name(syntax_db);
@@ -2255,7 +2253,7 @@ fn struct_ctor_expr(
                             }
                             continue;
                         };
-                        ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) }
+                        ExprAndId { expr: expr.clone(), id: ctx.arenas.exprs.alloc(expr) }
                     }
                     ast::OptionStructArgExpr::StructArgExpr(arg_expr) => {
                         compute_expr_semantic(ctx, &arg_expr.expr(syntax_db))
@@ -2619,7 +2617,8 @@ fn member_access_expr(
                 )
                 .unwrap();
 
-                derefed_expr = ExprAndId { expr: cur_expr.clone(), id: ctx.exprs.alloc(cur_expr) };
+                derefed_expr =
+                    ExprAndId { expr: cur_expr.clone(), id: ctx.arenas.exprs.alloc(cur_expr) };
             }
             let (_, long_ty) = finalized_snapshot_peeled_ty(ctx, derefed_expr.ty(), &rhs_syntax)?;
             let derefed_expr_concrete_struct_id = match long_ty {
@@ -2780,7 +2779,7 @@ fn enriched_members(
         if let TypeLongId::Var(_) = long_ty {
             break;
         }
-        expr = ExprAndId { expr: derefed_expr.clone(), id: ctx.exprs.alloc(derefed_expr) };
+        expr = ExprAndId { expr: derefed_expr.clone(), id: ctx.arenas.exprs.alloc(derefed_expr) };
         if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
             let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
             for (member_name, member) in members.iter() {
@@ -3044,7 +3043,7 @@ fn has_panic_incompatibility(
 ) -> bool {
     // If this is not an actual function call, but actually a minus literal (e.g. -1), then this is
     // the same as nopanic.
-    if try_extract_minus_literal(ctx.db, &ctx.exprs, expr_function_call).is_some() {
+    if try_extract_minus_literal(ctx.db, &ctx.arenas.exprs, expr_function_call).is_some() {
         return false;
     }
     if let Some(signature) = ctx.signature {
@@ -3144,7 +3143,7 @@ pub fn compute_statement_semantic(
                 ty,
                 &mut UnorderedHashMap::default(),
             );
-            let variables = pattern.variables(&ctx.patterns);
+            let variables = pattern.variables(&ctx.arenas.patterns);
             for v in variables {
                 let var_def = Variable::Local(v.var.clone());
                 if let Some(old_var) =
@@ -3283,7 +3282,7 @@ pub fn compute_statement_semantic(
     for feature_name in features_to_remove {
         ctx.resolver.data.allowed_features.swap_remove(&feature_name);
     }
-    Ok(ctx.statements.alloc(statement))
+    Ok(ctx.arenas.statements.alloc(statement))
 }
 
 /// Computes the semantic model of an expression and reports diagnostics if the expression does not

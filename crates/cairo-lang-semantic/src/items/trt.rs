@@ -32,12 +32,11 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosti
 use crate::expr::compute::{compute_root_expr, ComputationContext, ContextFunction, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
-use crate::items::function_with_body::Arenas;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{
-    semantic, semantic_object_for_id, FunctionBody, FunctionLongId, GenericArgumentId,
+    semantic, semantic_object_for_id, Arenas, FunctionBody, FunctionLongId, GenericArgumentId,
     GenericParam, Mutability, SemanticDiagnostic, TypeId,
 };
 
@@ -1363,7 +1362,7 @@ pub fn priv_trait_function_body_data(
     };
     let return_type = trait_function_declaration_data.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let ComputationContext { exprs, patterns, statements, resolver, .. } = ctx;
+    let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
