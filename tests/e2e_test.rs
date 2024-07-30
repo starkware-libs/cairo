@@ -1,5 +1,5 @@
 use std::ops::DerefMut;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
@@ -19,18 +19,17 @@ use cairo_lang_test_utils::test_lock;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
-use once_cell::sync::Lazy;
 
 /// Salsa databases configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
-static SHARED_DB_WITH_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
+static SHARED_DB_WITH_GAS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
     db.set_optimization_config(Arc::new(
         OptimizationConfig::default().with_minimal_movable_functions(),
     ));
     Mutex::new(db)
 });
-static SHARED_DB_NO_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
+static SHARED_DB_NO_GAS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
     db.set_optimization_config(Arc::new(
         OptimizationConfig::default().with_minimal_movable_functions(),

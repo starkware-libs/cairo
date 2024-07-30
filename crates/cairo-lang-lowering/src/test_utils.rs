@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_filesystem::db::{
@@ -10,7 +10,6 @@ use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
-use once_cell::sync::Lazy;
 
 use crate::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use crate::utils::InliningStrategy;
@@ -38,7 +37,7 @@ impl LoweringDatabaseForTesting {
         LoweringDatabaseForTesting { storage: self.storage.snapshot() }
     }
 }
-pub static SHARED_DB: Lazy<Mutex<LoweringDatabaseForTesting>> = Lazy::new(|| {
+pub static SHARED_DB: LazyLock<Mutex<LoweringDatabaseForTesting>> = LazyLock::new(|| {
     let mut res = LoweringDatabaseForTesting { storage: Default::default() };
     init_files_group(&mut res);
     let suite = get_default_plugin_suite();

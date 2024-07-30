@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
@@ -19,7 +19,6 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, Intern, LookupIntern, OptionFrom, Upcast};
-use once_cell::sync::Lazy;
 
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::inline_macros::get_default_plugin_suite;
@@ -53,8 +52,8 @@ impl SemanticDatabaseForTesting {
         SemanticDatabaseForTesting { storage: self.storage.snapshot() }
     }
 }
-pub static SHARED_DB: Lazy<Mutex<SemanticDatabaseForTesting>> =
-    Lazy::new(|| Mutex::new(SemanticDatabaseForTesting::new_empty()));
+pub static SHARED_DB: LazyLock<Mutex<SemanticDatabaseForTesting>> =
+    LazyLock::new(|| Mutex::new(SemanticDatabaseForTesting::new_empty()));
 impl Default for SemanticDatabaseForTesting {
     fn default() -> Self {
         SHARED_DB.lock().unwrap().snapshot()

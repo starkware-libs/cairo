@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::sync::LazyLock;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
@@ -35,7 +36,6 @@ use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::Signed;
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
 use starknet_types_core::hash::{Poseidon, StarkHash};
@@ -60,8 +60,8 @@ mod test;
 /// The expected gas cost of an entrypoint.
 pub const ENTRY_POINT_COST: i32 = 10000;
 
-static CONSTRUCTOR_ENTRY_POINT_SELECTOR: Lazy<BigUint> =
-    Lazy::new(|| starknet_keccak(b"constructor"));
+static CONSTRUCTOR_ENTRY_POINT_SELECTOR: LazyLock<BigUint> =
+    LazyLock::new(|| starknet_keccak(b"constructor"));
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum StarknetSierraCompilationError {
