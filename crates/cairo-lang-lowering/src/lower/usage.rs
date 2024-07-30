@@ -57,6 +57,8 @@ pub struct Usage {
     pub usage: OrderedHashMap<MemberPath, ExprVarMemberPath>,
     /// Member paths that are assigned to.
     pub changes: OrderedHashMap<MemberPath, ExprVarMemberPath>,
+    /// Member paths that are read as snapshots.
+    pub snap_usage: OrderedHashMap<MemberPath, ExprVarMemberPath>,
     /// Variables that are defined.
     pub introductions: OrderedHashSet<VarId>,
 }
@@ -69,6 +71,9 @@ impl Usage {
         }
         for (path, expr) in usage.changes.iter() {
             self.changes.insert(path.clone(), expr.clone());
+        }
+        for (path, expr) in usage.snap_usage.iter() {
+            self.snap_usage.insert(path.clone(), expr.clone());
         }
     }
 
@@ -92,6 +97,30 @@ impl Usage {
                 }
             }
         }
+        for (member_path, _) in self.snap_usage.clone() {
+            // Prune usages from snap_usage.
+            if self.usage.contains_key(&member_path) {
+                self.snap_usage.swap_remove(&member_path);
+                continue;
+            }
+
+            // Prune introductions from snap_usage.
+            if self.introductions.contains(&member_path.base_var()) {
+                self.snap_usage.swap_remove(&member_path);
+            }
+
+            // Prune snap_usage that are members of other snap_usage or usages.
+            let mut current_path = member_path.clone();
+            while let MemberPath::Member { parent, .. } = current_path {
+                current_path = *parent.clone();
+                if self.snap_usage.contains_key(&current_path)
+                    | self.usage.contains_key(&current_path)
+                {
+                    self.snap_usage.swap_remove(&member_path);
+                    break;
+                }
+            }
+        }
         for (member_path, _) in self.changes.clone() {
             // Prune introductions from changes.
             if self.introductions.contains(&member_path.base_var()) {
@@ -99,9 +128,19 @@ impl Usage {
             }
 
             // Prune changes that are members of other changes.
+            // Also if a child is changed and its parent is used, then we change the parent.
+            // TODO(TomerStarkware): Deconstruct the parent, and snap_use other members.
             let mut current_path = member_path.clone();
             while let MemberPath::Member { parent, .. } = current_path {
                 current_path = *parent.clone();
+                if self.snap_usage.contains_key(&current_path) {
+                    // Note that current_path must be top most usage as we prune snap_usage and
+                    // usage.
+                    if let Some(value) = self.snap_usage.swap_remove(&current_path) {
+                        self.usage.insert(current_path.clone(), value.clone());
+                        self.changes.insert(current_path.clone(), value);
+                    };
+                }
                 if self.changes.contains_key(&current_path) {
                     self.changes.swap_remove(&member_path);
                     break;
@@ -143,7 +182,26 @@ impl BlockUsages {
                     self.handle_expr(function_body, *value, current);
                 }
             },
-            Expr::Snapshot(expr) => self.handle_expr(function_body, expr.inner, current),
+            Expr::Snapshot(expr) => {
+                let expr_id = expr.inner;
+
+                match &function_body.exprs[expr_id] {
+                    Expr::Var(expr_var) => {
+                        current.snap_usage.insert(
+                            MemberPath::Var(expr_var.var),
+                            ExprVarMemberPath::Var(expr_var.clone()),
+                        );
+                    }
+                    Expr::MemberAccess(expr) => {
+                        if let Some(member_path) = &expr.member_path {
+                            current.snap_usage.insert(member_path.into(), member_path.clone());
+                        } else {
+                            self.handle_expr(function_body, expr.expr, current);
+                        }
+                    }
+                    _ => self.handle_expr(function_body, expr_id, current),
+                }
+            }
             Expr::Desnap(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Assignment(expr) => {
                 self.handle_expr(function_body, expr.rhs, current);
