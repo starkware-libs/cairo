@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use cairo_lang_filesystem::span::{TextPosition, TextSpan, TextWidth};
 
 use crate::DiagnosticLocation;
@@ -14,35 +16,74 @@ pub fn get_location_marks(
     let content = db.file_content(location.file_id).expect("File missing from DB.");
     let summary = db.file_summary(location.file_id).expect("File missing from DB.");
 
-    let span = &location.span;
+    let mut span = location.span;
+    span.end = std::cmp::min(summary.last_offset, span.end);
 
-    let TextPosition { line: first_line_idx, col } = span
+    let TextPosition { line: first_line_idx, col: start_col } = span
         .start
         .position_in_file(db, location.file_id)
         .expect("Failed to find location in file.");
-    let first_line_start = summary.line_offsets[first_line_idx];
-    let first_line_end = match summary.line_offsets.get(first_line_idx + 1) {
-        Some(offset) => offset.sub_width(TextWidth::from_char('\n')),
-        None => summary.last_offset,
-    };
+    let TextPosition { line: last_line_idx, col: _ } =
+        span.end.position_in_file(db, location.file_id).expect("Failed to find location in file.");
+    if first_line_idx == last_line_idx {
+        let first_line_start = summary.line_offsets[first_line_idx];
+        let first_line_end = match summary.line_offsets.get(first_line_idx + 1) {
+            Some(offset) => offset.sub_width(TextWidth::from_char('\n')),
+            None => summary.last_offset,
+        };
 
-    let first_line_span = TextSpan { start: first_line_start, end: first_line_end };
-    let mut res = first_line_span.take(&content).to_string();
-    res.push('\n');
-    for _ in 0..col {
-        res.push(' ');
-    }
-    res.push('^');
-
-    let subspan_in_first_line =
-        TextSpan { start: span.start, end: std::cmp::min(first_line_end, span.end) };
-    let marker_length = subspan_in_first_line.n_chars(&content);
-    if marker_length > 1 {
-        for _ in 0..marker_length - 2 {
-            res.push('*');
+        let first_line_span = TextSpan { start: first_line_start, end: first_line_end };
+        let mut res = first_line_span.take(&content).to_string();
+        res.push('\n');
+        for _ in 0..start_col {
+            res.push(' ');
         }
         res.push('^');
-    }
 
-    res
+        let subspan_in_first_line =
+            TextSpan { start: span.start, end: std::cmp::min(first_line_end, span.end) };
+        let marker_length = subspan_in_first_line.n_chars(&content);
+        if marker_length > 1 {
+            for _ in 0..marker_length - 2 {
+                res.push('*');
+            }
+            res.push('^');
+        }
+
+        res
+    } else {
+        let mut res = String::new();
+        let mut tab = 0;
+        let mut prefix = "\\   ";
+        let mut lines = span.take(&content).split('\n').peekable();
+        while let Some(line) = lines.next() {
+            let trimmed_line = line.trim();
+            if trimmed_line.is_empty() {
+                continue;
+            }
+            let is_else = trimmed_line.starts_with('}')
+                && line.ends_with('{')
+                && trimmed_line.contains("else");
+            if tab > 0
+                && ((trimmed_line.ends_with('}')
+                    || trimmed_line.ends_with("};") && !trimmed_line.contains('{'))
+                    || is_else)
+            {
+                tab -= 1
+            }
+            res.write_str(&format!("{prefix}{}{}\n", "    ".repeat(tab), trimmed_line)).unwrap();
+            if line.contains('{') && !line.contains('}') || is_else {
+                tab += 1
+            }
+            prefix = "|   ";
+            if lines.peek().is_none() {
+                res.write_str(&format!(
+                    "|___{}^",
+                    "_".repeat(std::cmp::max(trimmed_line.len(), 1) - 1)
+                ))
+                .unwrap();
+            }
+        }
+        res
+    }
 }

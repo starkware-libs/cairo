@@ -66,8 +66,14 @@ End:
 
 
 Generated lowering for source location:
-    loop {
-    ^****^
+\   loop {
+|       let y = x + 1;
+|       x = y;
+|       if y == 10 {
+|           break true;
+|       };
+|   }
+|___^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -220,8 +226,13 @@ End:
 
 
 Generated lowering for source location:
-    loop {
-    ^****^
+\   loop {
+|       x = x + 1;
+|       if x == 10 {
+|           break true;
+|       };
+|   }
+|___^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -394,8 +405,18 @@ End:
 
 
 Generated lowering for source location:
-    loop {
-    ^****^
+\   loop {
+|       let mut h = 0;
+|       a.b.c = c;
+|       if true {
+|           h = 1;
+|           let mut x = 4;
+|           x = 5;
+|           b = A { b: a.b, x };
+|           break b;
+|       };
+|   }
+|___^
 
 Parameters: v0: core::integer::u32, v1: test::B, v2: test::A
 blk0 (root):
@@ -540,8 +561,17 @@ End:
 
 
 Generated lowering for source location:
-    loop {
-    ^****^
+\   loop {
+|       let y = x + 1;
+|       x = y;
+|       if y == 7 {
+|           continue;
+|       }
+|       if y == 10 {
+|           break true;
+|       };
+|   }
+|___^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -709,8 +739,10 @@ End:
 
 
 Generated lowering for source location:
-    loop {
-    ^****^
+\   loop {
+|       break;
+|   }
+|___^
 
 Parameters:
 blk0 (root):
@@ -810,8 +842,17 @@ End:
 
 
 Generated lowering for source location:
-    loop {
-    ^****^
+\   loop {
+|       if (true) {
+|           x.a = 0;
+|       } else {
+|           x.a = 0;
+|       }
+|       if x.a == 0 {
+|           break;
+|       };
+|   }
+|___^
 
 Parameters: v0: core::integer::u8
 blk0 (root):
@@ -975,8 +1016,11 @@ End:
 
 
 Generated lowering for source location:
-    loop {
-    ^****^
+\   loop {
+|       s.foo();
+|       break;
+|   }
+|___^
 
 Parameters: v0: @test::S
 blk0 (root):
@@ -1060,8 +1104,11 @@ End:
 
 
 Generated lowering for source location:
-    loop {
-    ^****^
+\   loop {
+|       TT::f1oo(@t.s);
+|       break;
+|   }
+|___^
 
 Parameters: v0: @test::S
 blk0 (root):
@@ -1156,8 +1203,12 @@ End:
 
 
 Generated lowering for source location:
-        loop {
-        ^****^
+\   loop {
+|       let _y = a.b.c;
+|       ex(_y);
+|       break;
+|   }
+|___^
 
 Parameters: v0: core::integer::u32
 blk0 (root):
@@ -1178,8 +1229,17 @@ End:
 
 
 Generated lowering for source location:
-    loop {
-    ^****^
+\   loop {
+|       let _x = @a.b;
+|       ex1(_x);
+|       loop {
+|           let _y = a.b.c;
+|           ex(_y);
+|           break;
+|       };
+|       break;
+|   }
+|___^
 
 Parameters: v0: core::integer::u32, v1: @test::B
 blk0 (root):
@@ -1273,8 +1333,12 @@ End:
 
 
 Generated lowering for source location:
-        loop {
-        ^****^
+\   loop {
+|       let _y = @a.b.c;
+|       ex(_y);
+|       break;
+|   }
+|___^
 
 Parameters: v0: @core::integer::u32
 blk0 (root):
@@ -1295,8 +1359,17 @@ End:
 
 
 Generated lowering for source location:
-    loop {
-    ^****^
+\   loop {
+|       let _x = a.b;
+|       ex1(_x);
+|       loop {
+|           let _y = @a.b.c;
+|           ex(_y);
+|           break;
+|       };
+|       break;
+|   }
+|___^
 
 Parameters: v0: test::B
 blk0 (root):
@@ -1400,8 +1473,12 @@ End:
 
 
 Generated lowering for source location:
-    while i != 5 {
-    ^************^
+\   while i != 5 {
+|       a.x = i;
+|       use_a(@a);
+|       i += 1;
+|   }
+|___^
 
 Parameters: v0: core::felt252, v1: test::A
 blk0 (root):

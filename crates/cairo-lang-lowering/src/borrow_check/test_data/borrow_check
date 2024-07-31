@@ -109,8 +109,11 @@ fn foo(x: ACopy, y: ADrop) -> ADrop {
        ^
 note: the variable needs to be dropped due to the divergence here:
   --> lib.cairo:9:5
-    if true {
-    ^*******^
+\   if true {
+|       use_a_copy(x);
+|       use_a_drop(y);
+|   } else {}
+|___________^
 note: Trait has no implementation in context: core::traits::Drop::<test::ACopy>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::ACopy>.
 

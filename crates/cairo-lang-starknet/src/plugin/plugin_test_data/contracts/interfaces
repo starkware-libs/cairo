@@ -1602,8 +1602,12 @@ impl HasComponentImpl_comp of super::comp::HasComponent<ContractState> {
 
 
 lib.cairo:47:1
+\   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       CompEvent: super::comp::Event
+|   }
 
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1668,15 +1672,18 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
  --> lib.cairo:56:5
-    #[abi(embed_v0)]
-    ^**************^
+\   #[abi(embed_v0)]
+|   impl EmbeddedI1I2 = super::comp::I1I2<ContractState>;
+|_______________________________________________________^
 
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
  --> lib.cairo:58:5
-    #[abi(embed_v0)]
-    ^**************^
+\   #[abi(embed_v0)]
+|   impl EmbeddedI2I = super::comp::I2I<ContractState>;
+|_____________________________________________________^
 
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
  --> lib.cairo:61:5
-    #[external(v0)]
-    ^*************^
+\   #[external(v0)]
+|   fn foo(self: @ContractState) {}
+|_________________________________^

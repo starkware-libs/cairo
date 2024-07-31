@@ -316,8 +316,13 @@ pub mod __constructor {
 
 
 lib.cairo:27:1
+\   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       AwesomeEvent: AwesomeEvent,
+|       BestEventEver: BestEventEver,
+|   }
 
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -380,8 +385,12 @@ impl EventBestEventEverIntoEvent of Into<BestEventEver, Event> {
 
 
 lib.cairo:34:1
-    #[derive(Drop, starknet::Event)]
-^**********************************^
+\   #[derive(Drop, starknet::Event)]
+|   struct AwesomeEvent {
+|       x: felt252,
+|       data: Array::<felt252>,
+|   }
+
 impls:
 
 impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
@@ -414,8 +423,9 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
 
 
 lib.cairo:39:1
-    #[derive(Drop, starknet::Event)]
-^**********************************^
+\   #[derive(Drop, starknet::Event)]
+|   struct BestEventEver {}
+
 impls:
 
 impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;

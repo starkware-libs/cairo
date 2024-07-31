@@ -1106,8 +1106,12 @@ self: HelloStarknetTraitSafeDispatcher, user_id: usize, subbalance_id: usize
 
 
 lib.cairo:24:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct BalancePair {
+|       balance1: u256,
+|       balance2: felt252,
+|   }
+|___^
 storage_node:
 
 #[derive(Drop, Copy)]
@@ -1159,8 +1163,12 @@ type NodeType = MutableBalancePairStorageNode;
 
 
 lib.cairo:29:1
+\   #[derive(Drop, starknet::Store)]
+|   struct SlicedBalanceTrio {
+|       balance1: u256,
+|       balance12: SlicedBalancePair,
+|   }
 
-^
 impls:
 
 impl SlicedBalanceTrioDrop of core::traits::Drop::<SlicedBalanceTrio>;
@@ -1267,8 +1275,12 @@ type SubPointersType = MutableSlicedBalanceTrioSubPointers;
 
 
 lib.cairo:35:1
+\   #[derive(Drop, starknet::Store)]
+|   struct SlicedBalancePair {
+|       balance1: u256,
+|       balance2: felt252,
+|   }
 
-^
 impls:
 
 impl SlicedBalancePairDrop of core::traits::Drop::<SlicedBalancePair>;
@@ -1375,8 +1387,12 @@ type SubPointersType = MutableSlicedBalancePairSubPointers;
 
 
 lib.cairo:42:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct LinkedList {
+|       value: felt252,
+|       next: LinkedList,
+|   }
+|___^
 storage_node:
 
 #[derive(Drop, Copy)]
@@ -1804,8 +1820,12 @@ type SubPointersType = MutableHelloStarknetTraitSafeDispatcherSubPointers;
 
 
 lib.cairo:24:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct BalancePair {
+|       balance1: u256,
+|       balance2: felt252,
+|   }
+|___^
 impls:
 
 impl BalancePairStorageNodeDrop of core::traits::Drop::<BalancePairStorageNode>;
@@ -1813,8 +1833,12 @@ impl BalancePairStorageNodeCopy of core::traits::Copy::<BalancePairStorageNode>;
 
 
 lib.cairo:24:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct BalancePair {
+|       balance1: u256,
+|       balance2: felt252,
+|   }
+|___^
 impls:
 
 impl MutableBalancePairStorageNodeDrop of core::traits::Drop::<MutableBalancePairStorageNode>;
@@ -1858,8 +1882,12 @@ impl MutableSlicedBalancePairSubPointersCopy of core::traits::Copy::<MutableSlic
 
 
 lib.cairo:42:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct LinkedList {
+|       value: felt252,
+|       next: LinkedList,
+|   }
+|___^
 impls:
 
 impl LinkedListStorageNodeDrop of core::traits::Drop::<LinkedListStorageNode>;
@@ -1867,8 +1895,12 @@ impl LinkedListStorageNodeCopy of core::traits::Copy::<LinkedListStorageNode>;
 
 
 lib.cairo:42:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct LinkedList {
+|       value: felt252,
+|       next: LinkedList,
+|   }
+|___^
 impls:
 
 impl MutableLinkedListStorageNodeDrop of core::traits::Drop::<MutableLinkedListStorageNode>;

@@ -54,8 +54,12 @@ mod test_contract {
 }
 
 lib.cairo:1:1
-#[derive(Drop, starknet::Event)]
-^******************************^
+\   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       AwesomeEvent: AwesomeEvent,
+|       BestEventEver: BestEventEver,
+|   }
+
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -118,8 +122,9 @@ impl EventBestEventEverIntoEvent of Into<BestEventEver, Event> {
 
 
 lib.cairo:6:1
-#[derive(Drop, starknet::Event)]
-^******************************^
+\   #[derive(Drop, starknet::Event)]
+|   struct AwesomeEvent {}
+
 impls:
 
 impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
@@ -144,8 +149,9 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
 
 
 lib.cairo:8:1
-#[derive(Drop, starknet::Event)]
-^******************************^
+\   #[derive(Drop, starknet::Event)]
+|   struct BestEventEver {}
+
 impls:
 
 impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;

@@ -100,8 +100,11 @@ trait MyTrait<T> {
 }
 
 lib.cairo:1:1
-#[derive(Drop, starknet::Store)]
-^******************************^
+\   #[derive(Drop, starknet::Store)]
+|   struct MyType {
+|       x: u32,
+|   }
+
 impls:
 
 impl MyTypeDrop of core::traits::Drop::<MyType>;
@@ -923,8 +926,12 @@ pub impl MyImpl<
 }
 
 lib.cairo:17:1
+\   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       Log: Log,
+|   }
 
-^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -970,8 +977,9 @@ impl EventLogIntoEvent of Into<Log, Event> {
 
 
 lib.cairo:23:1
-    #[derive(Drop, starknet::Event)]
-^**********************************^
+\   #[derive(Drop, starknet::Event)]
+|   struct Log {}
+
 impls:
 
 impl LogDrop of core::traits::Drop::<Log>;
