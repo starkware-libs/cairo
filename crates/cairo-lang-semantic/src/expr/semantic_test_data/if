@@ -148,8 +148,12 @@ If(
 //! > expected_diagnostics
 error: If blocks have incompatible types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:2:1
-if a {
-^****^
+\   if a {
+|       3_u32
+|   } else {
+|       3_u16
+|   }
+|___^
 
 //! > ==========================================================================
 
@@ -253,5 +257,9 @@ If(
 //! > expected_diagnostics
 error: If blocks have incompatible types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:2:1
-if a {
-^****^
+\   if a {
+|       3 + 3_u32
+|   } else {
+|       3 + 3_u16
+|   }
+|___^

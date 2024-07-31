@@ -120,18 +120,21 @@ Duplicate entry point: 'foo'. This is not currently supported.
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
  --> lib.cairo:56:5
-    #[abi(embed_v0)]
-    ^**************^
+\   #[abi(embed_v0)]
+|   impl EmbeddedI1I2 = super::comp::I1I2<ContractState>;
+|_______________________________________________________^
 
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
  --> lib.cairo:58:5
-    #[abi(embed_v0)]
-    ^**************^
+\   #[abi(embed_v0)]
+|   impl EmbeddedI2I = super::comp::I2I<ContractState>;
+|_____________________________________________________^
 
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
  --> lib.cairo:61:5
-    #[external(v0)]
-    ^*************^
+\   #[external(v0)]
+|   fn foo(self: @ContractState) {}
+|_________________________________^
 
 //! > ==========================================================================
 
@@ -162,8 +165,11 @@ An embedded impl must be an impl of a trait marked with #[starknet::interface].
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
  --> lib.cairo:10:5
-    #[abi(embed_v0)]
-    ^**************^
+\   #[abi(embed_v0)]
+|   impl Impl of super::NonInterfaceTrait<ContractState> {
+|       fn foo(self: @ContractState) {}
+|   }
+|___^
 
 //! > ==========================================================================
 
@@ -197,8 +203,11 @@ An impl marked with #[abi(per_item)] can't be of a trait marked with #[starknet:
 warning: Plugin diagnostic: Failed to generate ABI: An impl marked with #[abi(per_item)] can't be of a trait marked with #[starknet::interface].
     Consider using #[abi(embed_v0)] instead, or use a non-interface trait.
  --> lib.cairo:11:5
-    #[abi(per_item)]
-    ^**************^
+\   #[abi(per_item)]
+|   impl Impl of super::InterfaceTrait<ContractState> {
+|       fn foo(self: @ContractState) {}
+|   }
+|___^
 
 //! > ==========================================================================
 
@@ -241,5 +250,12 @@ mod contract {
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: `__validate_deploy__` entry point must match the constructor.
  --> lib.cairo:13:9
-        #[external(v0)]
-        ^*************^
+\   #[external(v0)]
+|   fn __validate_deploy__(
+|   self: @ContractState,
+|   class_hash: felt252,
+|   contract_address_salt: felt252,
+|   param_a: starknet::ClassHash,
+|   param_b: Array<u8>,
+|   ) {}
+|______^

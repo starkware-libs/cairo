@@ -114,8 +114,10 @@ error: `enum` is not allowed inside impl.
 
 error: Impl item function `MyImpl2::my_bar` is not a member of trait `MyTrait`.
  --> lib.cairo:22:5
-    fn my_bar() {
-    ^***********^
+\   fn my_bar() {
+|       
+|   }
+|___^
 
 error: The number of parameters in the impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: 1, actual: 3.
  --> lib.cairo:26:19
@@ -144,8 +146,10 @@ error: Return type of impl function `MyImpl2::param_test` is incompatible with `
 
 error: Unexpected return type. Expected: "core::integer::u128", found: "()".
  --> lib.cairo:26:63
-    fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
-                                                              ^
+\   {
+|       
+|   }
+|___^
 
 error: Parameter of impl function MyImpl2::no_ret_ty is incompatible with MyTrait::no_ret_ty. It should not be a reference.
  --> lib.cairo:30:18
@@ -522,13 +526,23 @@ impl MyImpl of MyTrait {
 error: Cannot infer implicit impl `F.`
 Could not find implementation of trait `test::OtherTrait`
  --> lib.cairo:16:1
-impl MyImpl of MyTrait {
-^**********************^
+\   impl MyImpl of MyTrait {
+|       type X = u32;
+|       const C: u32 = 3;
+|       impl E = inner::I;
+|       fn foo2() {}
+|   }
+|___^
 
 error: Trait has no implementation in context: test::OtherTrait.
  --> lib.cairo:16:1
-impl MyImpl of MyTrait {
-^**********************^
+\   impl MyImpl of MyTrait {
+|       type X = u32;
+|       const C: u32 = 3;
+|       impl E = inner::I;
+|       fn foo2() {}
+|   }
+|___^
 
 //! > ==========================================================================
 
@@ -1002,8 +1016,10 @@ impl MyImpl of MyTrait {
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
  --> lib.cairo:6:22
-    fn foo1() -> u32 {
-                     ^
+\   {
+|       Self::foo2()
+|   }
+|___^
 
 //! > ==========================================================================
 
@@ -1108,13 +1124,27 @@ impl FooIntoIterator of core::iter::IntoIterator<Foo> {
 error: Cannot infer implicit impl `Iterator.`
 Could not find implementation of trait `core::iter::traits::iterator::Iterator::<test::FooIter>`
  --> lib.cairo:5:1
-#[feature("collections-into-iter")]
-^*********************************^
+\   #[feature("collections-into-iter")]
+|   impl FooIntoIterator of core::iter::IntoIterator<Foo> {
+|       type IntoIter = FooIter;
+|       
+|       fn into_iter(self: Foo) -> FooIter {
+|           FooIter {}
+|       }
+|   }
+|___^
 
 error: Trait has no implementation in context: core::iter::traits::iterator::Iterator::<test::FooIter>.
  --> lib.cairo:5:1
-#[feature("collections-into-iter")]
-^*********************************^
+\   #[feature("collections-into-iter")]
+|   impl FooIntoIterator of core::iter::IntoIterator<Foo> {
+|       type IntoIter = FooIter;
+|       
+|       fn into_iter(self: Foo) -> FooIter {
+|           FooIter {}
+|       }
+|   }
+|___^
 
 //! > ==========================================================================
 
@@ -1151,14 +1181,24 @@ impl BDeref of core::ops::Deref<B> {
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::A>
  --> lib.cairo:11:1
-impl BDeref of core::ops::Deref<B> {
-^**********************************^
+\   impl BDeref of core::ops::Deref<B> {
+|       type Target = A;
+|       fn deref(self: B) -> A {
+|           A {}
+|       }
+|   }
+|___^
 
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B>
  --> lib.cairo:4:1
-impl ADeref of core::ops::Deref<A> {
-^**********************************^
+\   impl ADeref of core::ops::Deref<A> {
+|       type Target = B;
+|       fn deref(self: A) -> B {
+|           B {}
+|       }
+|   }
+|___^
 
 //! > ==========================================================================
 
@@ -1203,20 +1243,35 @@ impl CDeref of core::ops::Deref<C> {
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A>
  --> lib.cairo:12:1
-impl BDeref of core::ops::Deref<B> {
-^**********************************^
+\   impl BDeref of core::ops::Deref<B> {
+|       type Target = C;
+|       fn deref(self: B) -> C {
+|           C {}
+|       }
+|   }
+|___^
 
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B>
  --> lib.cairo:19:1
-impl CDeref of core::ops::Deref<C> {
-^**********************************^
+\   impl CDeref of core::ops::Deref<C> {
+|       type Target = A;
+|       fn deref(self: C) -> A {
+|           A {}
+|       }
+|   }
+|___^
 
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C>
  --> lib.cairo:5:1
-impl ADeref of core::ops::Deref<A> {
-^**********************************^
+\   impl ADeref of core::ops::Deref<A> {
+|       type Target = B;
+|       fn deref(self: A) -> B {
+|           B {}
+|       }
+|   }
+|___^
 
 //! > ==========================================================================
 

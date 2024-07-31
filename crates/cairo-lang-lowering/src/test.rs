@@ -129,8 +129,10 @@ fn test_location_and_diagnostics() {
         format!("{:?}", location.debug(db)),
         indoc::indoc! {"
 lib.cairo:1:1
-fn test_func() { let mut a = 5; {
-^*******************************^
+\\   fn test_func() { let mut a = 5; {
+|       a = a * 3
+|   }; }
+|______^
 note: this error originates in auto-generated withdraw_gas logic.
 note: Adding destructor for:
   --> lib.cairo:2:1
@@ -150,8 +152,10 @@ a = a * 3
         indoc::indoc! {"
 error: Cannot inline a function that might call itself.
  --> lib.cairo:1:1
-fn test_func() { let mut a = 5; {
-^*******************************^
+\\   fn test_func() { let mut a = 5; {
+|       a = a * 3
+|   }; }
+|______^
 note: this error originates in auto-generated withdraw_gas logic.
 note: Adding destructor for:
   --> lib.cairo:2:1
