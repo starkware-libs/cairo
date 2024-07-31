@@ -174,7 +174,6 @@ fn foo() {
 
 //! > function_name
 foo
-
 //! > module_code
 
 //! > expected_diagnostics
@@ -182,3 +181,30 @@ error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:7
     |a| {
       ^
+//! > ==========================================================================
+
+//! > Test closure calling with direct trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+//Todo: create closure impl when the closure expression is computed.
+fn foo() {
+    let c = |a: felt252| {
+        let d = a;
+        d
+    };
+    let _k: felt252 = core::function::FnOnce::<_, (felt252,)>::call(c, (3,));
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:9
+    let c = |a: felt252| {
+        ^

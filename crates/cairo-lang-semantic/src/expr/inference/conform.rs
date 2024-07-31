@@ -4,7 +4,7 @@ use std::hash::Hash;
 use cairo_lang_defs::ids::{TraitConstantId, TraitImplId, TraitTypeId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{Intern, LookupIntern};
-use itertools::zip_eq;
+use itertools::{zip_eq, Itertools};
 
 use super::canonic::{NoError, ResultNoErrEx};
 use super::{
@@ -14,7 +14,7 @@ use super::{
 use crate::corelib::never_ty;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext};
+use crate::items::imp::{ClosureImplId, ImplId, ImplImplId, ImplLongId, ImplLookupContext};
 use crate::substitution::SemanticRewriter;
 use crate::types::{peel_snapshots, ImplTypeId};
 use crate::{
@@ -365,6 +365,34 @@ impl<'db> InferenceConform for Inference<'db> {
             ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => {
                 Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
             }
+            ImplLongId::ClosureImpl(closure_imp0) => {
+                let ImplLongId::ClosureImpl(closure_imp1) = long_impl1 else {
+                    return Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }));
+                };
+
+                if closure_imp0.args.len() != closure_imp1.args.len()
+                    || closure_imp0.trait_id != closure_imp1.trait_id
+                {
+                    return Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }));
+                }
+                let args = closure_imp0
+                    .args
+                    .iter()
+                    .zip_eq(&closure_imp1.args)
+                    .map(|(arg0, arg1)| self.conform_ty(*arg0, *arg1))
+                    .collect::<Result<_, _>>()?;
+
+                let ret = self.conform_ty(closure_imp0.ret, closure_imp1.ret)?;
+                let closure_type =
+                    self.conform_ty(closure_imp0.closure_type, closure_imp1.closure_type)?;
+                Ok(ImplLongId::ClosureImpl(ClosureImplId {
+                    args,
+                    ret,
+                    closure_type,
+                    trait_id: closure_imp0.trait_id,
+                })
+                .intern(self.db))
+            }
         }
     }
 
@@ -459,6 +487,11 @@ impl<'db> InferenceConform for Inference<'db> {
                 )
             }
             ImplLongId::ImplImpl(impl_impl) => self.impl_contains_var(impl_impl.impl_id(), var),
+            ImplLongId::ClosureImpl(closure_impl) => {
+                !(closure_impl.ret.is_var_free(self.db)
+                    || closure_impl.closure_type.is_var_free(self.db)
+                    || closure_impl.args.iter().any(|arg| arg.is_var_free(self.db)))
+            }
         }
     }
 

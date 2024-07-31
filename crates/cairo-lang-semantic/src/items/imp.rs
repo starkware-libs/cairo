@@ -169,6 +169,7 @@ pub enum ImplLongId {
     ImplVar(ImplVarId),
     ImplImpl(ImplImplId),
     TraitImpl(TraitImplId),
+    ClosureImpl(ClosureImplId),
 }
 impl ImplLongId {
     /// Returns the [ImplHead] of an impl if available.
@@ -178,7 +179,8 @@ impl ImplLongId {
             ImplLongId::GenericParameter(_)
             | ImplLongId::ImplVar(_)
             | ImplLongId::ImplImpl(_)
-            | ImplLongId::TraitImpl(_) => {
+            | ImplLongId::TraitImpl(_)
+            | ImplLongId::ClosureImpl(_) => {
                 return None;
             }
         })
@@ -201,6 +203,7 @@ impl ImplLongId {
             )
             .into(),
             ImplLongId::TraitImpl(trait_impl) => trait_impl.name(db.upcast()),
+            ImplLongId::ClosureImpl(closure_impl) => closure_impl.format(db),
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -214,6 +217,9 @@ impl ImplLongId {
             ImplLongId::ImplVar(var) => format!("{var:?}"),
             ImplLongId::ImplImpl(impl_impl) => format!("{:?}", impl_impl.debug(db.elongate())),
             ImplLongId::TraitImpl(trait_impl) => format!("{:?}", trait_impl.debug(db.elongate())),
+            ImplLongId::ClosureImpl(closure_impl) => {
+                format!("{:?}", closure_impl.debug(db.elongate()))
+            }
         }
     }
 
@@ -224,6 +230,10 @@ impl ImplLongId {
             ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => true,
             ImplLongId::ImplVar(_) => false,
             ImplLongId::ImplImpl(impl_impl) => impl_impl.impl_id().is_var_free(db),
+            ImplLongId::ClosureImpl(closure_impl) => {
+                closure_impl.ret.is_var_free(db)
+                    && closure_impl.args.iter().all(|arg| arg.is_var_free(db))
+            }
         }
     }
 
@@ -234,6 +244,7 @@ impl ImplLongId {
             ImplLongId::GenericParameter(_) => false,
             ImplLongId::ImplVar(_) => false,
             ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => false,
+            ImplLongId::ClosureImpl(_) => false,
         }
     }
 }
@@ -249,6 +260,7 @@ impl DebugWithDb<dyn SemanticGroup> for ImplLongId {
             ImplLongId::ImplVar(var) => write!(f, "?{}", var.lookup_intern(db).id.0),
             ImplLongId::ImplImpl(impl_impl) => write!(f, "{:?}", impl_impl.debug(db)),
             ImplLongId::TraitImpl(trait_impl) => write!(f, "{:?}", trait_impl.debug(db)),
+            ImplLongId::ClosureImpl(closure_impl) => write!(f, "{:?}", closure_impl.debug(db)),
         }
     }
 }
@@ -282,6 +294,37 @@ impl ImplId {
 
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         self.lookup_intern(db).format(db)
+    }
+}
+
+/// An impl item of a closure.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct ClosureImplId {
+    pub trait_id: TraitId,
+    pub closure_type: TypeId,
+    pub args: Vec<TypeId>,
+    pub ret: TypeId,
+}
+impl ClosureImplId {
+    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("Fn({:?}) -> {:?}", self.args.iter().map(|ty| ty.format(db)), self.ret.format(db))
+            .into()
+    }
+    pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
+        let generic_args = vec![
+            GenericArgumentId::Type(self.closure_type),
+            GenericArgumentId::Type(TypeLongId::Tuple(self.args.clone()).intern(db)),
+        ];
+        ConcreteTraitLongId { trait_id: self.trait_id, generic_args }.intern(db)
+    }
+}
+impl DebugWithDb<dyn SemanticGroup> for ClosureImplId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
     }
 }
 
@@ -492,6 +535,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
         ImplLongId::ImplVar(var) => Ok(var.lookup_intern(db).concrete_trait_id),
         ImplLongId::ImplImpl(impl_impl) => impl_impl_concrete_trait(db, impl_impl),
         ImplLongId::TraitImpl(trait_impl) => db.trait_impl_concrete_trait(trait_impl),
+        ImplLongId::ClosureImpl(generated_impl) => Ok(generated_impl.concrete_trait(db)),
     }
 }
 
@@ -1867,6 +1911,7 @@ pub fn impl_type_concrete_implized(
         ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) | ImplLongId::ImplVar(_) => {
             return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
         }
+        ImplLongId::ClosureImpl(closure_impl) => return Ok(closure_impl.ret),
     };
 
     let impl_def_id = concrete_impl.impl_def_id(db);
@@ -2145,6 +2190,7 @@ pub fn impl_constant_concrete_implized_type(
         ImplLongId::ImplVar(var) => var.lookup_intern(db).concrete_trait_id,
         ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(impl_impl)?,
         ImplLongId::TraitImpl(trait_impl) => db.trait_impl_concrete_trait(trait_impl)?,
+        ImplLongId::ClosureImpl(generated_impl) => generated_impl.concrete_trait(db),
     };
 
     let ty = db.concrete_trait_constant_type(ConcreteTraitConstantId::new(
