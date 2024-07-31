@@ -1,5 +1,5 @@
 use super::{
-    StorageAsPath, StorageAsPointer, StoragePath, StoragePointer0Offset, Mutable, StoragePathTrait,
+    StorageAsPath, StorageAsPointer, StoragePath, StoragePointer, Mutable, StoragePathTrait,
     StoragePathUpdateTrait, StoragePointerReadAccess, StoragePointerWriteAccess
 };
 use core::Option;
@@ -15,16 +15,20 @@ impl VecCopy<T> of Copy<Vec<T>> {}
 /// Implement as_ptr for Vec.
 impl VecAsPointer<T> of StorageAsPointer<StoragePath<Vec<T>>> {
     type Value = u64;
-    fn as_ptr(self: @StoragePath<Vec<T>>) -> StoragePointer0Offset<u64> {
-        StoragePointer0Offset { __storage_pointer_address__: (*self).finalize() }
+    fn as_ptr(self: @StoragePath<Vec<T>>) -> StoragePointer<u64> {
+        StoragePointer {
+            __storage_pointer_address__: (*self).finalize(), __storage_pointer_offset__: 0
+        }
     }
 }
 
 /// Implement as_ptr for Mutable<Vec>.
 impl MutableVecAsPointer<T> of StorageAsPointer<StoragePath<Mutable<Vec<T>>>> {
     type Value = Mutable<u64>;
-    fn as_ptr(self: @StoragePath<Mutable<Vec<T>>>) -> StoragePointer0Offset<Mutable<u64>> {
-        StoragePointer0Offset { __storage_pointer_address__: (*self).finalize() }
+    fn as_ptr(self: @StoragePath<Mutable<Vec<T>>>) -> StoragePointer<Mutable<u64>> {
+        StoragePointer {
+            __storage_pointer_address__: (*self).finalize(), __storage_pointer_offset__: 0
+        }
     }
 }
 
