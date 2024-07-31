@@ -1,13 +1,11 @@
-use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::{ModuleId, TraitFunctionId};
+use cairo_lang_defs::ids::TraitFunctionId;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
 use cairo_lang_semantic::expr::inference::solver::SolutionSet;
 use cairo_lang_semantic::expr::inference::InferenceId;
-use cairo_lang_semantic::items::us::SemanticUseEx;
 use cairo_lang_semantic::lsp_helpers::TypeFilter;
-use cairo_lang_semantic::resolve::{ResolvedGenericItem, Resolver};
+use cairo_lang_semantic::resolve::Resolver;
 use tracing::debug;
 
 use crate::lang::db::AnalysisDatabase;
@@ -61,23 +59,4 @@ pub fn find_methods_for_type(
         }
     }
     relevant_methods
-}
-
-/// Checks if a module has a trait in scope.
-#[tracing::instrument(level = "trace", skip_all)]
-pub fn module_has_trait(
-    db: &AnalysisDatabase,
-    module_id: ModuleId,
-    trait_id: cairo_lang_defs::ids::TraitId,
-) -> Option<bool> {
-    if db.module_traits_ids(module_id).ok()?.contains(&trait_id) {
-        return Some(true);
-    }
-    // TODO(Gil): Check if the trait is visible, and return the path of the visible use item.
-    for use_id in db.module_uses_ids(module_id).ok()?.iter().copied() {
-        if db.use_resolved_item(use_id) == Ok(ResolvedGenericItem::Trait(trait_id)) {
-            return Some(true);
-        }
-    }
-    Some(false)
 }
