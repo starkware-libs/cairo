@@ -363,8 +363,14 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
 
 
 lib.cairo:19:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       ABC: super::test_component::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -964,8 +970,15 @@ impl HasComponentImpl_component2 of super::component2::HasComponent<ContractStat
 
 
 lib.cairo:28:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       Comp1Event: super::component1::Event,
+|       Comp2Event: super::component2::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1592,8 +1605,15 @@ impl HasComponentImpl_component2 of super::component2::HasComponent<ContractStat
 
 
 lib.cairo:28:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       Comp1Event: super::component1::Event,
+|       Comp2Event: super::component2::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;

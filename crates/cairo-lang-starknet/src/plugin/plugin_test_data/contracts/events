@@ -66,8 +66,14 @@ enum MyEventEnum {
 }
 
 lib.cairo:1:1
-#[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
-^*****************************************************************^
+\   #[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
+|   struct A {
+|       x: felt252,
+|       #[key]
+|       data: usize,
+|   }
+|   
+|___^
 impls:
 
 impl APartialEq of core::traits::PartialEq::<A> {
@@ -91,8 +97,13 @@ impl ASerde of core::serde::Serde::<A> {
 
 
 lib.cairo:1:1
-#[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
-^*****************************************************************^
+\   #[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
+|   struct A {
+|       x: felt252,
+|       #[key]
+|       data: usize,
+|   }
+|___^
 starknet_derive:
 
 impl AIsEvent of starknet::Event<A> {
@@ -210,8 +221,13 @@ impl ASubPointersMutImpl of starknet::storage::SubPointersMut<A> {
 
 
 lib.cairo:7:1
-
-^
+\   
+|   #[derive(starknet::Event, PartialEq, Drop, Serde)]
+|   struct B {
+|       x: felt252,
+|   }
+|   
+|___^
 impls:
 
 impl BPartialEq of core::traits::PartialEq::<B> {
@@ -255,8 +271,14 @@ impl BIsEvent of starknet::Event<B> {
 
 
 lib.cairo:12:1
-
-^
+\   
+|   
+|   #[derive(starknet::Event, PartialEq, Drop)]
+|   enum NestedEventEnum {
+|       B: B,
+|   }
+|   
+|___^
 impls:
 
 impl NestedEventEnumPartialEq of core::traits::PartialEq::<NestedEventEnum> {
@@ -311,8 +333,18 @@ impl NestedEventEnumBIntoEvent of Into<B, NestedEventEnum> {
 
 
 lib.cairo:18:1
-
-^
+\   
+|   
+|   #[derive(starknet::Event, PartialEq, Drop)]
+|   enum MyEventEnum {
+|       A: A,
+|       B: B,
+|       #[flat]
+|       C: NestedEventEnum,
+|       #[flat]
+|       D: NestedEventEnum,
+|   }
+|___^
 impls:
 
 impl MyEventEnumPartialEq of core::traits::PartialEq::<MyEventEnum> {

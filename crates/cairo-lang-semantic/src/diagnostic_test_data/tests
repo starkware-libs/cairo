@@ -800,18 +800,21 @@ error: Duplicated argument for feature marker attribute.
 
 error: Multiple feature marker attributes.
  --> lib.cairo:28:1
-#[unstable(feature: "testing1")]
-^******************************^
+\   #[unstable(feature: "testing1")]
+|   #[unstable(feature: "testing2")]
+|__________________________________^
 
 error: Multiple feature marker attributes.
  --> lib.cairo:32:1
-#[deprecated(feature: "testing1")]
-^********************************^
+\   #[deprecated(feature: "testing1")]
+|   #[unstable(feature: "testing2")]
+|__________________________________^
 
 error: Multiple feature marker attributes.
  --> lib.cairo:37:1
-#[deprecated(feature: "testing1")]
-^********************************^
+\   #[deprecated(feature: "testing1")]
+|   #[internal(feature: "testing2")]
+|__________________________________^
 
 //! > ==========================================================================
 

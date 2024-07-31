@@ -245,8 +245,16 @@ impl OutsideTraitSafeDispatcherImpl of OutsideTraitSafeDispatcherTrait<OutsideTr
 
 
 lib.cairo:7:1
-#[starknet::embeddable]
-^*********************^
+\   #[starknet::embeddable]
+|   impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
+|       fn ret_3(self: @TContractState) -> felt252 {
+|           3
+|       }
+|       fn ret_identity(ref self: TContractState, from_address: felt252, value: felt252) -> felt252 {
+|           value
+|       }
+|   }
+|___^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImpl<
@@ -1127,8 +1135,15 @@ impl OutsideTraitWithDestructSafeDispatcherImpl of OutsideTraitWithDestructSafeD
 
 
 lib.cairo:6:1
-#[starknet::embeddable]
-^*********************^
+\   #[starknet::embeddable]
+|   impl OutsideImplWithDestruct<
+|   TContractState, impl DisallowedDestruct: Destruct<TContractState>,
+|   > of OutsideTraitWithDestruct<TContractState> {
+|       fn ret_3(self: @TContractState) -> felt252 {
+|           3
+|       }
+|   }
+|___^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImplWithDestruct<
@@ -1282,8 +1297,15 @@ impl OutsideTraitWithPanicDestructSafeDispatcherImpl of OutsideTraitWithPanicDes
 
 
 lib.cairo:20:1
-#[starknet::embeddable]
-^*********************^
+\   #[starknet::embeddable]
+|   impl OutsideImplWithPanicDestruct<
+|   TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+|   > of OutsideTraitWithPanicDestruct<TContractState> {
+|       fn ret_5(self: @TContractState) -> felt252 {
+|           5
+|       }
+|   }
+|___^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<
@@ -2559,8 +2581,15 @@ impl OutsideTraitWithDropSafeDispatcherImpl of OutsideTraitWithDropSafeDispatche
 
 
 lib.cairo:6:1
-#[starknet::embeddable]
-^*********************^
+\   #[starknet::embeddable]
+|   impl OutsideImplWithDrop<
+|   TContractState, +Drop<TContractState>,
+|   > of OutsideTraitWithDrop<TContractState> {
+|       fn ret_8(self: @TContractState) -> felt252 {
+|           8
+|       }
+|   }
+|___^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImplWithDrop<

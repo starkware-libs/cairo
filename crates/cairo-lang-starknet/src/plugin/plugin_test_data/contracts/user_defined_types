@@ -221,8 +221,12 @@ pub mod __constructor {
 
 
 lib.cairo:13:1
-    #[derive(Drop, Hash, starknet::Store)]
-^****************************************^
+\   #[derive(Drop, Hash, starknet::Store)]
+|   struct WrappedFelt252 {
+|       value: felt252,
+|   }
+|   
+|___^
 impls:
 
 impl WrappedFelt252Drop of core::traits::Drop::<WrappedFelt252>;
@@ -315,8 +319,10 @@ impl WrappedFelt252SubPointersMutImpl of starknet::storage::SubPointersMut<Wrapp
 
 
 lib.cairo:17:1
-    #[derive(Drop, Hash, Serde, starknet::Store)]
-^***********************************************^
+\   #[derive(Drop, Hash, Serde, starknet::Store)]
+|   struct ZeroSize {}
+|   
+|___^
 impls:
 
 impl ZeroSizeDrop of core::traits::Drop::<ZeroSize>;
@@ -383,8 +389,14 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
 
 
 lib.cairo:19:1
-
-^
+\   
+|   #[derive(Drop, Serde, starknet::Store)]
+|   enum SimpleEnum {
+|       A: u8,
+|       B: u16,
+|   }
+|   
+|___^
 impls:
 
 impl SimpleEnumDrop of core::traits::Drop::<SimpleEnum>;
@@ -493,8 +505,16 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
 
 
 lib.cairo:25:1
-
-^
+\   
+|   #[derive(Drop, Serde, starknet::Store)]
+|   enum EnumWithDefault {
+|       A: u8,
+|       #[default]
+|       B: u16,
+|       C: u32,
+|   }
+|   
+|___^
 impls:
 
 impl EnumWithDefaultDrop of core::traits::Drop::<EnumWithDefault>;
@@ -627,8 +647,17 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
 
 
 lib.cairo:33:1
-
-^
+\   
+|   #[derive(Drop, Serde, starknet::Store)]
+|   enum BadEnumWithDefault {
+|       A: u8,
+|       #[default]
+|       B: u16,
+|       #[default]
+|       C: u32,
+|   }
+|   
+|___^
 impls:
 
 impl BadEnumWithDefaultDrop of core::traits::Drop::<BadEnumWithDefault>;
@@ -722,8 +751,9 @@ impl WrappedFelt252SubPointersMutCopy of core::traits::Copy::<WrappedFelt252SubP
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`
  --> lib.cairo:39:9
-        #[default]
-        ^********^
+\   #[default]
+|   C: u32
+|________^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:10:18

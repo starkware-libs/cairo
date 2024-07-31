@@ -61,8 +61,9 @@ fn test_diagnostics() {
         indoc! { "
             error: Simple diagnostic.
              --> dummy_file.sierra:1:1
-            abcd
-            ^**^
+            \\   abcd
+            |   e
+            |___^
 
         " }
     );

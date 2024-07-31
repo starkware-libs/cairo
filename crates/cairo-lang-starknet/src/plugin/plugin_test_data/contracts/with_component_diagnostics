@@ -286,8 +286,14 @@ pub mod __constructor {
 
 
 lib.cairo:13:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       ABC: super::test_component::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -666,8 +672,14 @@ pub mod __constructor {
 
 
 lib.cairo:13:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       ABC: super::test_component::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1034,8 +1046,14 @@ pub mod __constructor {
 
 
 lib.cairo:13:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       ABC: super::test_component::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1415,8 +1433,14 @@ pub mod __constructor {
 
 
 lib.cairo:13:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       ABC: super::test_component::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1491,8 +1515,10 @@ error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<
 
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
  --> lib.cairo:24:5
-    component!(
-    ^*********^
+\   component!(
+|   path: super::test_component, storage: test_component_storage, event: ABC, another: x
+|   );
+|____^
 
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
  --> lib.cairo:28:5
@@ -1845,8 +1871,14 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
 
 
 lib.cairo:22:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       ABC: super::test_component::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1911,13 +1943,15 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 //! > expected_diagnostics
 error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
  --> lib.cairo:14:9
-        #[substorage(v0)]
-        ^***************^
+\   #[substorage(v0)]
+|   non_path_type: (usize, usize)
+|_______________________________^
 
 error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
  --> lib.cairo:16:9
-        #[substorage(v0)]
-        ^***************^
+\   #[substorage(v0)]
+|   non_component: usize
+|______________________^
 
 //! > ==========================================================================
 
@@ -2214,8 +2248,14 @@ pub mod __constructor {
 
 
 lib.cairo:14:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       ABC: super::test_component::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -2583,8 +2623,14 @@ pub mod __constructor {
 
 
 lib.cairo:16:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       ABC: super::test_component::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3109,8 +3155,13 @@ mod test_contract {
 }
 
 lib.cairo:8:1
-
-^
+\   
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       ABC: test_component::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3967,8 +4018,15 @@ impl HasComponentImpl_component1 of super::component1::HasComponent<ContractStat
 
 
 lib.cairo:29:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       Comp1Event: super::component1::Event,
+|       // Comp2Event: super::component2::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
