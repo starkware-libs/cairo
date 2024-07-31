@@ -199,20 +199,20 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub var_felt252: felt252,
-          pub var_u8: u8,
-          pub var_u16: u16,
-          pub var_u32: u32,
-          pub var_u64: u64,
-          pub var_u128: u128,
-          pub var_bool: bool,
-          pub felt252_to_u128: LegacyMap::<felt252, u128>,
-          pub u128_to_bool: LegacyMap::<u128, bool>,
-          pub bool_to_felt252: LegacyMap::<bool, felt252>,
-          pub outer_type_var: super::OuterType,
-          pub outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
-          pub inner_type_var: inner::InnerType,
-          pub inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
+        pub var_felt252: felt252,
+        pub var_u8: u8,
+        pub var_u16: u16,
+        pub var_u32: u32,
+        pub var_u64: u64,
+        pub var_u128: u128,
+        pub var_bool: bool,
+        pub felt252_to_u128: LegacyMap::<felt252, u128>,
+        pub u128_to_bool: LegacyMap::<u128, bool>,
+        pub bool_to_felt252: LegacyMap::<bool, felt252>,
+        pub outer_type_var: super::OuterType,
+        pub outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
+        pub inner_type_var: inner::InnerType,
+        pub inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
 }
 
 #[derive(Drop, Copy)]

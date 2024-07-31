@@ -67,7 +67,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
+        pub data: u32,
 }
 
 #[derive(Drop, Copy)]
@@ -447,7 +447,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
+        pub data: u32,
 }
 
 #[derive(Drop, Copy)]
@@ -815,7 +815,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
+        pub data: u32,
 }
 
 #[derive(Drop, Copy)]
@@ -1196,7 +1196,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
+        pub data: u32,
 }
 
 #[derive(Drop, Copy)]
@@ -1580,7 +1580,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
+        pub data: u32,
 }
 
 #[derive(Drop, Copy)]
@@ -1711,9 +1711,13 @@ contract:
 
 #[phantom]
 pub struct Storage {
-          pub non_path_type: (usize, usize),
-          pub non_component: usize,
-          pub test_component_storage: super::test_component::Storage,
+        #[substorage(v0)]
+        pub non_path_type: (usize, usize),
+        #[substorage(v0)]
+        pub non_component: usize,
+        // non-v0 substorage member.
+        #[substorage]
+        pub test_component_storage: super::test_component::Storage,
 }
 
 #[derive(Drop, Copy)]
@@ -1991,7 +1995,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
+        pub data: u32,
 }
 
 #[derive(Drop, Copy)]
@@ -2353,7 +2357,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
+        pub data: u32,
 }
 
 #[derive(Drop, Copy)]
@@ -2484,7 +2488,7 @@ contract:
 
 #[phantom]
 pub struct Storage {
-          pub test_component_storage: super::test_component::Storage,
+        pub test_component_storage: super::test_component::Storage,
 }
 
 #[derive(Drop, Copy)]
@@ -2722,7 +2726,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
+        pub data: u32,
 }
 
 #[derive(Drop, Copy)]
@@ -2856,7 +2860,8 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub test_component_storage: super::test_component::Storage,
+        #[substorage(v0)]
+        pub test_component_storage: super::test_component::Storage,
 }
 
 #[derive(Drop, Copy)]
@@ -3162,7 +3167,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
+        pub data: u32,
 }
 
 #[derive(Drop, Copy)]
@@ -3293,7 +3298,8 @@ contract:
 
 #[phantom]
 pub struct Storage {
-          pub test_component_storage: super::test_component::Storage,
+        #[substorage(v0)]
+        pub test_component_storage: super::test_component::Storage,
 }
 
 #[derive(Drop, Copy)]
@@ -3544,7 +3550,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
+        pub data: u32,
 }
 
 #[derive(Drop, Copy)]
@@ -3678,7 +3684,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
+        pub data: u32,
 }
 
 #[derive(Drop, Copy)]
@@ -3809,8 +3815,10 @@ contract:
 
 #[phantom]
 pub struct Storage {
-          pub component1_storage: super::component1::Storage,
-          pub component2_storage: super::component2::Storage,
+        #[substorage(v0)]
+        pub component1_storage: super::component1::Storage,
+        #[substorage(v0)]
+        pub component2_storage: super::component2::Storage,
 }
 
 #[derive(Drop, Copy)]
